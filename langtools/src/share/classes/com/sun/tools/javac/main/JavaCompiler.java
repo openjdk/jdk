@@ -928,6 +928,16 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         }
     }
 
+    /**
+     * Set needRootClasses to true, in JavaCompiler subclass constructor
+     * that want to collect public apis of classes supplied on the command line.
+     */
+    protected boolean needRootClasses = false;
+
+    /**
+     * The list of classes explicitly supplied on the command line for compilation.
+     * Not always populated.
+     */
     private List<JCClassDecl> rootClasses;
 
     /**
@@ -984,9 +994,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             }
         }
 
-        //If generating source, remember the classes declared in
-        //the original compilation units listed on the command line.
-        if (sourceOutput || stubOutput) {
+        // If generating source, or if tracking public apis,
+        // then remember the classes declared in
+        // the original compilation units listed on the command line.
+        if (needRootClasses || sourceOutput || stubOutput) {
             ListBuffer<JCClassDecl> cdefs = lb();
             for (JCCompilationUnit unit : roots) {
                 for (List<JCTree> defs = unit.defs;
@@ -1247,12 +1258,26 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 attr.postAttr(env.tree);
             }
             compileStates.put(env, CompileState.ATTR);
+            if (rootClasses != null && rootClasses.contains(env.enclClass)) {
+                // This was a class that was explicitly supplied for compilation.
+                // If we want to capture the public api of this class,
+                // then now is a good time to do it.
+                reportPublicApi(env.enclClass.sym);
+            }
         }
         finally {
             log.useSource(prev);
         }
 
         return env;
+    }
+
+    /** Report the public api of a class that was supplied explicitly for compilation,
+     *  for example on the command line to javac.
+     * @param sym The symbol of the class.
+     */
+    public void reportPublicApi(ClassSymbol sym) {
+       // Override to collect the reported public api.
     }
 
     /**
