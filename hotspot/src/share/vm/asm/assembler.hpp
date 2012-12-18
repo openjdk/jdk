@@ -226,7 +226,6 @@ class AbstractAssembler : public ResourceObj  {
   void emit_address(address x) { code_section()->emit_address(x); }
 
   void emit_byte(int x)  { emit_int8 (x); }  // deprecated
-  void emit_word(int x)  { emit_int16(x); }  // deprecated
   void emit_long(jint x) { emit_int32(x); }  // deprecated
 
   // Instruction boundaries (required when emitting relocatable values).
