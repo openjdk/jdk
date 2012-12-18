@@ -1798,12 +1798,23 @@ public class Resolve {
 
         if ((kind & TYP) != 0) {
             sym = findType(env, name);
+            if (sym.kind==TYP) {
+                 reportDependence(env.enclClass.sym, sym);
+            }
             if (sym.exists()) return sym;
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
 
         if ((kind & PCK) != 0) return reader.enterPackage(name);
         else return bestSoFar;
+    }
+
+    /** Report dependencies.
+     * @param from The enclosing class sym
+     * @param to   The found identifier that the class depends on.
+     */
+    public void reportDependence(Symbol from, Symbol to) {
+        // Override if you want to collect the reported dependencies.
     }
 
     /** Find an identifier in a package which matches a specified kind set.
