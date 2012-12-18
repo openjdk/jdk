@@ -412,16 +412,16 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
 
   case vmIntrinsics::_reverseBytes_c:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return NULL;
     break;
   case vmIntrinsics::_reverseBytes_s:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesS))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesS))  return NULL;
     break;
   case vmIntrinsics::_reverseBytes_i:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesI))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesI))  return NULL;
     break;
   case vmIntrinsics::_reverseBytes_l:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesL))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesL))  return NULL;
     break;
 
   case vmIntrinsics::_Reference_get:
@@ -536,7 +536,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   // Try to inline the intrinsic.
   if (kit.try_to_inline()) {
     if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
-      CompileTask::print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -555,7 +555,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     if (jvms->has_method()) {
       // Not a root compile.
       const char* msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
-      CompileTask::print_inlining(callee, jvms->depth() - 1, bci, msg);
+      C->print_inlining(callee, jvms->depth() - 1, bci, msg);
     } else {
       // Root compile
       tty->print("Did not generate intrinsic %s%s at bci:%d in",
@@ -585,7 +585,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
   Node* slow_ctl = kit.try_to_predicate();
   if (!kit.failing()) {
     if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
-      CompileTask::print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -602,12 +602,12 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
     if (jvms->has_method()) {
       // Not a root compile.
       const char* msg = "failed to generate predicate for intrinsic";
-      CompileTask::print_inlining(kit.callee(), jvms->depth() - 1, bci, msg);
+      C->print_inlining(kit.callee(), jvms->depth() - 1, bci, msg);
     } else {
       // Root compile
-      tty->print("Did not generate predicate for intrinsic %s%s at bci:%d in",
-               vmIntrinsics::name_at(intrinsic_id()),
-               (is_virtual() ? " (virtual)" : ""), bci);
+      C->print_inlining_stream()->print("Did not generate predicate for intrinsic %s%s at bci:%d in",
+                                        vmIntrinsics::name_at(intrinsic_id()),
+                                        (is_virtual() ? " (virtual)" : ""), bci);
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
@@ -3319,7 +3319,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
     Node* arg = args[which_arg];
     arg = null_check(arg);
     if (stopped())  break;
-    args[which_arg] = _gvn.transform(arg);
+    args[which_arg] = arg;
 
     Node* p = basic_plus_adr(arg, class_klass_offset);
     Node* kls = LoadKlassNode::make(_gvn, immutable_memory(), p, adr_type, kls_type);
