@@ -1353,12 +1353,16 @@ public abstract class Symbol implements Element {
             return defaultValue;
         }
 
-        public List<VarSymbol> getParameters() {
+         public List<VarSymbol> getParameters() {
             return params();
         }
 
         public boolean isVarArgs() {
             return (flags() & VARARGS) != 0;
+        }
+
+        public boolean isDefault() {
+            return (flags() & DEFAULT) != 0;
         }
 
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
