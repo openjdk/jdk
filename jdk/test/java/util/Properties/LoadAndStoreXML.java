@@ -23,13 +23,16 @@
 
 /*
  * @test
- * @bug 8000354 8000685
+ * @bug 8000354 8000685 8004371
  * @summary Basic test of storeToXML and loadToXML
+ * @run main LoadAndStoreXML
+ * @run main/othervm -Dsun.util.spi.XmlPropertiesProvider=jdk.internal.util.xml.BasicXmlPropertiesProvider LoadAndStoreXML
  */
 
 import java.io.*;
 import java.util.*;
 import java.security.*;
+import java.nio.file.*;
 
 public class LoadAndStoreXML {
 
@@ -67,6 +70,8 @@ public class LoadAndStoreXML {
      * read with Properties#loadFromXML.
      */
     static void testLoadAndStore(String encoding) throws IOException {
+        System.out.println("testLoadAndStore, encoding=" + encoding);
+
         Properties props = new Properties();
         props.put("k1", "foo");
         props.put("k2", "bar");
@@ -89,6 +94,8 @@ public class LoadAndStoreXML {
      * Test loadFromXML with a document that does not have an encoding declaration
      */
     static void testLoadWithoutEncoding() throws IOException {
+        System.out.println("testLoadWithoutEncoding");
+
         Properties expected = new Properties();
         expected.put("foo", "bar");
 
@@ -107,10 +114,11 @@ public class LoadAndStoreXML {
         }
     }
 
-     /**
-      * Test loadFromXML with unsupported encoding
-      */
-     static void testLoadWithBadEncoding() throws IOException {
+    /**
+     * Test loadFromXML with unsupported encoding
+     */
+    static void testLoadWithBadEncoding() throws IOException {
+        System.out.println("testLoadWithBadEncoding");
         String s = "<?xml version=\"1.0\" encoding=\"BAD\"?>" +
                    "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">" +
                    "<properties>" +
@@ -128,6 +136,7 @@ public class LoadAndStoreXML {
      * Test storeToXML with unsupported encoding
      */
     static void testStoreWithBadEncoding() throws IOException {
+        System.out.println("testStoreWithBadEncoding");
         Properties props = new Properties();
         props.put("foo", "bar");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -137,6 +146,26 @@ public class LoadAndStoreXML {
         } catch (UnsupportedEncodingException expected) { }
     }
 
+    /**
+     * Test loadFromXML with malformed documents
+     */
+    static void testLoadWithMalformedDoc(Path dir) throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.xml")) {
+            for (Path file: stream) {
+                System.out.println("testLoadWithMalformedDoc, file=" + file.getFileName());
+                try (InputStream in = Files.newInputStream(file)) {
+                    Properties props = new Properties();
+                    try {
+                        props.loadFromXML(in);
+                        throw new RuntimeException("InvalidPropertiesFormatException not thrown");
+                    } catch (InvalidPropertiesFormatException x) {
+                        System.out.println(x);
+                    }
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws IOException {
 
         testLoadAndStore("UTF-8");
@@ -144,6 +173,12 @@ public class LoadAndStoreXML {
         testLoadWithoutEncoding();
         testLoadWithBadEncoding();
         testStoreWithBadEncoding();
+
+        // malformed documents
+        String src = System.getProperty("test.src");
+        String subdir = "invalidxml";
+        Path dir = (src == null) ? Paths.get(subdir) : Paths.get(src, subdir);
+        testLoadWithMalformedDoc(dir);
 
         // re-run sanity test with security manager
         Policy orig = Policy.getPolicy();
