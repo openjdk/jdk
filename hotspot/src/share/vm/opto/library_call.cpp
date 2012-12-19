@@ -282,6 +282,7 @@ class LibraryCallKit : public GraphKit {
   typedef enum { LS_xadd, LS_xchg, LS_cmpxchg } LoadStoreKind;
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind);
   bool inline_unsafe_ordered_store(BasicType type);
+  bool inline_unsafe_fence(vmIntrinsics::ID id);
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
@@ -334,6 +335,9 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     case vmIntrinsics::_getAndSetInt:
     case vmIntrinsics::_getAndSetLong:
     case vmIntrinsics::_getAndSetObject:
+    case vmIntrinsics::_loadFence:
+    case vmIntrinsics::_storeFence:
+    case vmIntrinsics::_fullFence:
       break;  // InlineNatives does not control String.compareTo
     case vmIntrinsics::_Reference_get:
       break;  // InlineNatives does not control Reference.get
@@ -731,6 +735,10 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_getAndSetInt:             return inline_unsafe_load_store(T_INT,    LS_xchg);
   case vmIntrinsics::_getAndSetLong:            return inline_unsafe_load_store(T_LONG,   LS_xchg);
   case vmIntrinsics::_getAndSetObject:          return inline_unsafe_load_store(T_OBJECT, LS_xchg);
+
+  case vmIntrinsics::_loadFence:
+  case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
 
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_isInterrupted:            return inline_native_isInterrupted();
@@ -2838,6 +2846,26 @@ bool LibraryCallKit::inline_unsafe_ordered_store(BasicType type) {
   }
   insert_mem_bar(Op_MemBarCPUOrder);
   return true;
+}
+
+bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
+  // Regardless of form, don't allow previous ld/st to move down,
+  // then issue acquire, release, or volatile mem_bar.
+  insert_mem_bar(Op_MemBarCPUOrder);
+  switch(id) {
+    case vmIntrinsics::_loadFence:
+      insert_mem_bar(Op_MemBarAcquire);
+      return true;
+    case vmIntrinsics::_storeFence:
+      insert_mem_bar(Op_MemBarRelease);
+      return true;
+    case vmIntrinsics::_fullFence:
+      insert_mem_bar(Op_MemBarVolatile);
+      return true;
+    default:
+      fatal_unexpected_iid(id);
+      return false;
+  }
 }
 
 //----------------------------inline_unsafe_allocate---------------------------
