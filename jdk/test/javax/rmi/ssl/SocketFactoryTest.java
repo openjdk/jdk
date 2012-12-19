@@ -26,8 +26,7 @@
  * @bug 4932837 6582235
  * @summary Test SslRMI[Client|Server]SocketFactory equals() and hashCode().
  * @author Daniel Fuchs
- * @run clean SocketFactoryTest
- * @run build SocketFactoryTest
+ *
  * @run main SocketFactoryTest
  */
 

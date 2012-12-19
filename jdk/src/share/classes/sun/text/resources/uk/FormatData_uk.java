@@ -138,6 +138,17 @@ public class FormatData_uk extends ListResourceBundle {
                     "\u0441\u0431" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u041d",
+                    "\u041f",
+                    "\u0412",
+                    "\u0421",
+                    "\u0427",
+                    "\u041f",
+                    "\u0421",
+                }
+            },
             { "Eras",
                 new String[] { // era strings
                     "\u0434\u043e \u043d.\u0435.",

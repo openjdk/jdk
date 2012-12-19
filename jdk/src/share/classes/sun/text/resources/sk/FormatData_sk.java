@@ -138,6 +138,17 @@ public class FormatData_sk extends ListResourceBundle {
                     "So" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "N",
+                    "P",
+                    "U",
+                    "S",
+                    "\u0160",
+                    "P",
+                    "S",
+                }
+            },
             { "Eras",
                 new String[] { // era strings
                     "pred n.l.",

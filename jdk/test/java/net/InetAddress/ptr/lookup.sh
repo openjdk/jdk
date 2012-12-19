@@ -53,13 +53,13 @@ echo "$HOST --> $ADDR"
 
 # IPv4 reverse lookup
 echo ''
-OUT1=`$JAVA -Djava.net.preferIPv4Stack=true Lookup -q=PTR $ADDR`
+OUT1=`$JAVA ${TESTVMOPTS} -Djava.net.preferIPv4Stack=true Lookup -q=PTR $ADDR`
 echo "(IPv4) $ADDR --> $OUT1"
 
 
 # reverse lookup (default)
 echo ''
-OUT2=`$JAVA Lookup -q=PTR $ADDR`
+OUT2=`$JAVA ${TESTVMOPTS} Lookup -q=PTR $ADDR`
 echo "(default) $ADDR --> $OUT2"
 
 

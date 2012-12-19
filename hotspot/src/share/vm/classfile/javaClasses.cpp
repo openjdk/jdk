@@ -327,14 +327,14 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length) {
   return result;
 }
 
-unsigned int java_lang_String::to_hash(oop java_string) {
+unsigned int java_lang_String::hash_code(oop java_string) {
   int          length = java_lang_String::length(java_string);
-  // Zero length string will hash to zero with String.toHash() function.
+  // Zero length string will hash to zero with String.hashCode() function.
   if (length == 0) return 0;
 
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);
-  return java_lang_String::to_hash(value->char_at_addr(offset), length);
+  return java_lang_String::hash_code(value->char_at_addr(offset), length);
 }
 
 char* java_lang_String::as_quoted_ascii(oop java_string) {

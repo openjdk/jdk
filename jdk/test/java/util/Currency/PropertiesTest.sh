@@ -70,7 +70,7 @@ failures=0
 
 run() {
     echo ''
-    sh -xc "${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} $*" 2>&1
+    sh -xc "${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} $*" 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 
@@ -113,7 +113,7 @@ cp ${PROPS} $PROPLOCATION
 
 # run
 echo ''
-sh -xc "${WRITABLEJDK}${FS}bin${FS}java -cp ${TESTCLASSES} PropertiesTest -d dump3"
+sh -xc "${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest -d dump3"
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # Cleanup
