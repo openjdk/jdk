@@ -3030,7 +3030,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   strcpy(shared_archive_path, jvm_path);
   strcat(shared_archive_path, os::file_separator());
   strcat(shared_archive_path, "classes");
-  DEBUG_ONLY(strcat(shared_archive_path, "_g");)
   strcat(shared_archive_path, ".jsa");
   SharedArchivePath = shared_archive_path;
 
