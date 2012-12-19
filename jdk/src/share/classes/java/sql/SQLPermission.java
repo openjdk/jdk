@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ import java.security.*;
  * In addition, an asterisk
  * may appear at the end of the name, following a ".", or by itself, to
  * signify a wildcard match. For example: <code>loadLibrary.*</code>
- * or <code>*</code> is valid,
- * but <code>*loadLibrary</code> or <code>a*b</code> is not valid.
+ * and <code>*</code> signify a wildcard match,
+ * while <code>*loadLibrary</code> and <code>a*b</code> do not.
  * <P>
  * The following table lists all the possible <code>SQLPermission</code> target names.
  * The table gives a description of what the permission allows

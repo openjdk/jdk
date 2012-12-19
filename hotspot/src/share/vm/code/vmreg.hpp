@@ -27,21 +27,8 @@
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
-#ifdef TARGET_ARCH_x86
-# include "register_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "register_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "register_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "register_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "register_ppc.hpp"
-#endif
+#include "asm/register.hpp"
+
 #ifdef COMPILER2
 #include "opto/adlcVMDeps.hpp"
 #include "utilities/ostream.hpp"

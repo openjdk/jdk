@@ -25,6 +25,7 @@
 
 /**
  * @test
+ * @ignore 8004360
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
  * @run testng DefaultMethodRegressionTests

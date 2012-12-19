@@ -165,6 +165,7 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
         }
     }
 
+    @Override
     public String toString() {
         return name;
     }
@@ -172,6 +173,7 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
     /**
      * Compares this object with the specified object for order.
      */
+    @Override
     public int compareTo(ProtocolVersion protocolVersion) {
         return this.v - protocolVersion.v;
     }

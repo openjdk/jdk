@@ -25,6 +25,6 @@
 # @bug 4100915
 mkdir classes
 javac -d classes *.java
-java -classpath classes -Djava.policy=Allow.policy Test 
+java ${TESTVMOPTS} -classpath classes -Djava.policy=Allow.policy Test 
 # ENABLE next line when new method for invoking a main with a SecureClassLoader is known
 #java -classpath classes -Djava.policy=NotAllow.policy Test -expectSecurityException

@@ -29,8 +29,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build RMID ActivationLibrary
- * @build InheritedChannelNotServerSocket
+ * @build TestLibrary RMID ActivationLibrary
  * @run main/othervm/timeout=240 InheritedChannelNotServerSocket
  */
 

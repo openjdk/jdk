@@ -448,7 +448,7 @@ class MethodHandleNatives {
         case "getDriver":
         case "getDrivers":
         case "deregisterDriver":
-            return defc == java.sql.DriverManager.class;
+            return defc == getClass("java.sql.DriverManager");
         case "newUpdater":
             if (defc == java.util.concurrent.atomic.AtomicIntegerFieldUpdater.class)  return true;
             if (defc == java.util.concurrent.atomic.AtomicLongFieldUpdater.class)  return true;
@@ -481,5 +481,15 @@ class MethodHandleNatives {
             return defc == java.util.ResourceBundle.class;
         }
         return false;
+    }
+
+    // avoid static dependency to a class in other modules
+    private static Class<?> getClass(String cn) {
+        try {
+            return Class.forName(cn, false,
+                                 MethodHandleNatives.class.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new InternalError(e);
+        }
     }
 }

@@ -31,8 +31,7 @@
  * @author Peter Jones
  *
  * @library ../../../../../java/rmi/testlibrary
- * @build JavaVM
- * @build NoConsoleOutput
+ * @build TestLibrary JavaVM
  * @run main/othervm NoConsoleOutput
  */
 

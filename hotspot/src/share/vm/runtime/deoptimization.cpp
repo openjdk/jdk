@@ -721,7 +721,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
         guarantee(false, "wrong number of expression stack elements during deopt");
       }
       VerifyOopClosure verify;
-      iframe->oops_interpreted_do(&verify, &rm, false);
+      iframe->oops_interpreted_do(&verify, NULL, &rm, false);
       callee_size_of_parameters = mh->size_of_parameters();
       callee_max_locals = mh->max_locals();
       is_top_frame = false;
@@ -1242,8 +1242,8 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
   nmethodLocker nl(fr.pc());
 
   // Log a message
-  Events::log_deopt_message(thread, "Uncommon trap %d fr.pc " INTPTR_FORMAT,
-                            trap_request, fr.pc());
+  Events::log(thread, "Uncommon trap: trap_request=" PTR32_FORMAT " fr.pc=" INTPTR_FORMAT,
+              trap_request, fr.pc());
 
   {
     ResourceMark rm;
@@ -1273,6 +1273,11 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
 
     MethodData* trap_mdo =
       get_method_data(thread, trap_method, create_if_missing);
+
+    // Log a message
+    Events::log_deopt_message(thread, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d",
+                              trap_reason_name(reason), trap_action_name(action), fr.pc(),
+                              trap_method->name_and_sig_as_C_string(), trap_bci);
 
     // Print a bunch of diagnostics, if requested.
     if (TraceDeoptimization || LogCompilation) {

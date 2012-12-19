@@ -939,7 +939,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                      * is not removed for some reason, request that it is
                      * removed when the VM exits.
                      */
-                    spoolFile = Files.createTempFile("javaprint", ".ps").toFile();
+                    spoolFile = Files.createTempFile("javaprint", "").toFile();
                     spoolFile.deleteOnExit();
                 }
                 result = new FileOutputStream(spoolFile);

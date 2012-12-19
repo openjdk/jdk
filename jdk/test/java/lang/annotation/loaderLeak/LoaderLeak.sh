@@ -69,7 +69,7 @@ mkdir -p classes
 cp ${TESTSRC}${FS}*.java .
 ${TESTJAVA}${FS}bin${FS}javac -d classes A.java B.java C.java
 ${TESTJAVA}${FS}bin${FS}javac Main.java
-${TESTJAVA}${FS}bin${FS}java Main
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} Main
 result=$?
 if [ $result -eq 0 ]
 then
@@ -78,7 +78,7 @@ else
   echo "Failed 1 of 2"
   exit $result
 fi
-${TESTJAVA}${FS}bin${FS}java Main foo
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} Main foo
 result=$?
 if [ $result -eq 0 ]
 then

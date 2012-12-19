@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_sparc.inline.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"

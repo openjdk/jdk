@@ -21,16 +21,16 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4251010
  * @summary equals does not works on stub objects created with
  *           custom socket AndFactory
- * @library ../../../testlibrary
- *
- * @build VerifyRemoteEquals
- * @run main/othervm/timeout=40 VerifyRemoteEquals
  * @author Laird Dornin
+ *
+ * @library ../../../testlibrary
+ * @build TestLibrary
+ * @run main/othervm/timeout=40 VerifyRemoteEquals
  */
 
 import java.io.*;

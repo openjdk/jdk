@@ -31,7 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "utilities/copy.hpp"
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 // ciReplay
 
@@ -939,4 +939,4 @@ bool ciReplay::is_loaded(Method* method) {
   ciMethodRecord* rec = replay_state->find_ciMethodRecord(method);
   return rec != NULL;
 }
-#endif
+#endif // PRODUCT

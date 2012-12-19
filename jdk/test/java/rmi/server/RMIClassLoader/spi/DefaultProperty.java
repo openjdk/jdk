@@ -29,10 +29,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build DefaultProperty
- * @build ServiceConfiguration
- * @build Foo
+ * @build TestLibrary ServiceConfiguration Foo
  * @run main/othervm/policy=security.policy DefaultProperty
  */
 

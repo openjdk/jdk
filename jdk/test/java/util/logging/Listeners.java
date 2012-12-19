@@ -88,6 +88,7 @@ public class Listeners {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) throws Exception {
         LogManager logman = LogManager.getLogManager();
 

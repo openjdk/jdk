@@ -57,11 +57,13 @@ public:
   ciSymbol* as_symbol() const                    { return _symbol; }
   ciKlass*  accessing_klass() const              { return _accessing_klass; }
 
-  ciType* return_type() const;
-  ciType* type_at(int index) const;
+  ciType*   return_type() const;
+  ciType*   type_at(int index) const;
 
   int       size() const                         { return _size; }
   int       count() const                        { return _count; }
+
+  int       arg_size_for_bc(Bytecodes::Code bc)  { return size() + (Bytecodes::has_receiver(bc) ? 1 : 0); }
 
   bool equals(ciSignature* that);
 

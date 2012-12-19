@@ -62,6 +62,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memoryService.hpp"
@@ -69,18 +70,6 @@
 #include "utilities/events.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/preserveException.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
@@ -418,6 +407,10 @@ void Universe::genesis(TRAPS) {
     assert(i == _fullgc_alot_dummy_array->length(), "just checking");
   }
   #endif
+
+  // Initialize dependency array for null class loader
+  ClassLoaderData::the_null_class_loader_data()->init_dependencies(CHECK);
+
 }
 
 // CDS support for patching vtables in metadata in the shared archive.
@@ -425,14 +418,10 @@ void Universe::genesis(TRAPS) {
 // from MetaspaceObj, because the latter does not have virtual functions.
 // If the metadata type has a vtable, it cannot be shared in the read-only
 // section of the CDS archive, because the vtable pointer is patched.
-static inline void* dereference(void* addr) {
-  return *(void**)addr;
-}
-
 static inline void add_vtable(void** list, int* n, void* o, int count) {
   guarantee((*n) < count, "vtable list too small");
-  void* vtable = dereference(o);
-  assert(dereference(vtable) != NULL, "invalid vtable");
+  void* vtable = dereference_vptr(o);
+  assert(*(void**)(vtable) != NULL, "invalid vtable");
   list[(*n)++] = vtable;
 }
 

@@ -116,6 +116,23 @@ public class FormatData_fi extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "T",
+                    "H",
+                    "M",
+                    "H",
+                    "T",
+                    "K",
+                    "H",
+                    "E",
+                    "S",
+                    "L",
+                    "M",
+                    "J",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "sunnuntai", // Sunday
@@ -136,6 +153,28 @@ public class FormatData_fi extends ListResourceBundle {
                     "to", // abb Thursday
                     "pe", // abb Friday
                     "la" // abb Saturday
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "S",
+                    "M",
+                    "T",
+                    "K",
+                    "T",
+                    "P",
+                    "L",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "S",
+                    "M",
+                    "T",
+                    "K",
+                    "T",
+                    "P",
+                    "L",
                 }
             },
             { "NumberElements",
@@ -179,6 +218,12 @@ public class FormatData_fi extends ListResourceBundle {
                 new String[] {
                     "ap.", // am marker
                     "ip."  // pm marker
+                }
+            },
+            { "narrow.AmPmMarkers",
+                new String[] {
+                    "ap.",
+                    "ip.",
                 }
             },
         };
