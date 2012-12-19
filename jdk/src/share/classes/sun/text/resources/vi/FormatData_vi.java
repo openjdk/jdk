@@ -106,6 +106,17 @@ public class FormatData_vi extends ListResourceBundle {
                     "Th 7" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "CN",
+                    "T2",
+                    "T3",
+                    "T4",
+                    "T5",
+                    "T6",
+                    "T7",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "SA", // am marker

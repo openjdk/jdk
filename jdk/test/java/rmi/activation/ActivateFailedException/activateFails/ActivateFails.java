@@ -31,11 +31,8 @@
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build ActivateMe
- * @build ActivateFails
- * @build ActivateFails_Stub
- * @build ShutdownThread
+ * @build TestLibrary RMID ActivationLibrary
+ *     ActivateMe ActivateFails_Stub ShutdownThread
  * @run main/othervm/policy=security.policy/timeout=240 ActivateFails
  */
 

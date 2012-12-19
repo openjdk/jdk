@@ -50,7 +50,7 @@ chmod 000 $UNREADABLE
 : ${TESTCLASS:=.}
 : ${TESTSRC:=.}
 
-${TESTJAVA}/bin/java -esa -cp ${TESTCLASS}${DEL}${TESTSRC} MissingResourceCauseTest
+${TESTJAVA}/bin/java ${TESTVMOPTS} -esa -cp ${TESTCLASS}${DEL}${TESTSRC} MissingResourceCauseTest
 STATUS=$?
 chmod 666 $UNREADABLE
 rm -f $UNREADABLE

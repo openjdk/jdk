@@ -38,7 +38,6 @@
  * subsystems also not holding on to the loader in their daemon threads.]
  * @author Peter Jones
  *
- * @build RuntimeThreadInheritanceLeak
  * @build RuntimeThreadInheritanceLeak_Stub
  * @run main/othervm RuntimeThreadInheritanceLeak
  */
