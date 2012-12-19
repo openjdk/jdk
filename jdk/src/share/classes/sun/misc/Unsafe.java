@@ -1008,4 +1008,23 @@ public final class Unsafe {
      *         if the load average is unobtainable.
      */
     public native int getLoadAverage(double[] loadavg, int nelems);
+
+    /**
+     * Ensures lack of reordering of loads before the fence
+     * with loads or stores after the fence.
+     */
+    public native void loadFence();
+
+    /**
+     * Ensures lack of reordering of stores before the fence
+     * with loads or stores after the fence.
+     */
+    public native void storeFence();
+
+    /**
+     * Ensures lack of reordering of loads or stores before the fence
+     * with loads or stores after the fence.
+     */
+    public native void fullFence();
+
 }
