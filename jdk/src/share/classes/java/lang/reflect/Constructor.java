@@ -411,6 +411,7 @@ public final class Constructor<T> extends Executable {
 
     /**
      * {@inheritDoc}
+     * @jls 13.1 The Form of a Binary
      * @since 1.5
      */
     @Override
