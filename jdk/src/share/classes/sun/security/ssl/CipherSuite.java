@@ -37,7 +37,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 import static sun.security.ssl.CipherSuite.PRF.*;
 import static sun.security.ssl.JsseJce.*;
@@ -203,6 +202,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
      * Note that for unsupported CipherSuites parsed from a handshake
      * message we violate the equals() contract.
      */
+    @Override
     public int compareTo(CipherSuite o) {
         return o.priority - priority;
     }
@@ -210,6 +210,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
     /**
      * Returns this.name.
      */
+    @Override
     public String toString() {
         return name;
     }
@@ -378,6 +379,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
             }
         }
 
+        @Override
         public String toString() {
             return name;
         }
@@ -527,6 +529,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
             return b.booleanValue();
         }
 
+        @Override
         public String toString() {
             return description;
         }
@@ -562,6 +565,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
             return new MAC(this, protocolVersion, secret);
         }
 
+        @Override
         public String toString() {
             return name;
         }

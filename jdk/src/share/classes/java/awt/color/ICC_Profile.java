@@ -1435,7 +1435,15 @@ public class ICC_Profile implements Serializable {
 
         int renderingIntent = intFromBigEndian(theHeader, icHdrRenderingIntent);
                                                  /* set the rendering intent */
-        return renderingIntent;
+
+        /* According to ICC spec, only the least-significant 16 bits shall be
+         * used to encode the rendering intent. The most significant 16 bits
+         * shall be set to zero. Thus, we are ignoring two most significant
+         * bytes here.
+         *
+         *  See http://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
+         */
+        return (0xffff & renderingIntent);
     }
 
 

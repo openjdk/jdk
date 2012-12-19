@@ -23,7 +23,7 @@
  */
 
 // no precompiled headers
-#include "assembler_x86.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -33,7 +33,6 @@
 #include "jvm_solaris.h"
 #include "memory/allocation.inline.hpp"
 #include "mutex_solaris.inline.hpp"
-#include "nativeInst_x86.hpp"
 #include "os_share_solaris.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"
@@ -48,8 +47,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
-#include "thread_solaris.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 

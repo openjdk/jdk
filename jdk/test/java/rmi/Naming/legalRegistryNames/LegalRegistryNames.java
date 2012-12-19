@@ -21,14 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4254808
  * @summary Naming assumes '/' is present in relative URL; change in URL causes regression
  * @author Dana Burns
  * @library ../../testlibrary
- * @build TestLibrary
- * @build Legal LegalRegistryNames LegalRegistryNames_Stub
+ * @build TestLibrary Legal LegalRegistryNames_Stub
  * @run main LegalRegistryNames
  */
 

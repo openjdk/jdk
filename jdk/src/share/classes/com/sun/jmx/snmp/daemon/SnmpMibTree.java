@@ -125,7 +125,7 @@ final class SnmpMibTree {
             TreeNode node= retrieveChild(oid, cursor);
             if (node == null)
                 return this;
-            if (children.size() == 0) {
+            if (children.isEmpty()) {
                 // In this case, the node does not have any children. So no point to
                 // continue the search ...
                 return node;
@@ -149,24 +149,24 @@ final class SnmpMibTree {
 
         public void printTree(String ident) {
 
-            StringBuffer buff= new StringBuffer();
+            StringBuilder buff= new StringBuilder();
             if (agents == null) {
                 return;
             }
 
-            for(Enumeration e= agents.elements(); e.hasMoreElements(); ) {
-                SnmpMibAgent mib= (SnmpMibAgent) e.nextElement();
+            for(Enumeration<SnmpMibAgent> e= agents.elements(); e.hasMoreElements(); ) {
+                SnmpMibAgent mib= e.nextElement();
                 if (mib == null)
                     buff.append("empty ");
                 else
-                    buff.append(mib.getMibName() + " ");
+                    buff.append(mib.getMibName()).append(" ");
             }
             ident+= " ";
             if (children == null) {
                 return;
             }
-            for(Enumeration e= children.elements(); e.hasMoreElements(); ) {
-                TreeNode node= (TreeNode) e.nextElement();
+            for(Enumeration<TreeNode> e= children.elements(); e.hasMoreElements(); ) {
+                TreeNode node= e.nextElement();
                 node.printTree(ident);
             }
         }
@@ -185,7 +185,7 @@ final class SnmpMibTree {
         }
 
         private void removeAgentFully(SnmpMibAgent agent) {
-            Vector<TreeNode> v = new Vector<TreeNode>();
+            Vector<TreeNode> v = new Vector<>();
             for(Enumeration<TreeNode> e= children.elements();
                 e.hasMoreElements(); ) {
 
@@ -212,9 +212,9 @@ final class SnmpMibTree {
 
         }
 
-      private void setAgent(SnmpMibAgent agent) {
-        this.agent = agent;
-      }
+        private void setAgent(SnmpMibAgent agent) {
+            this.agent = agent;
+        }
 
         private void registerNode(long[] oid, int cursor, SnmpMibAgent agent) {
 
@@ -247,20 +247,20 @@ final class SnmpMibTree {
         private TreeNode retrieveChild(long[] oid, int current) {
             long theValue= oid[current];
 
-            for(Enumeration e= children.elements(); e.hasMoreElements(); ) {
-                TreeNode node= (TreeNode) e.nextElement();
+            for(Enumeration<TreeNode> e= children.elements(); e.hasMoreElements(); ) {
+                TreeNode node= e.nextElement();
                 if (node.match(theValue))
                     return node;
             }
             return null;
         }
 
-        final private boolean match(long value) {
+        private boolean match(long value) {
             return (nodeValue == value) ? true : false;
         }
 
-        private Vector<TreeNode> children= new Vector<TreeNode>();
-        private Vector<SnmpMibAgent> agents= new Vector<SnmpMibAgent>();
+        private Vector<TreeNode> children= new Vector<>();
+        private Vector<SnmpMibAgent> agents= new Vector<>();
         private long nodeValue;
         private SnmpMibAgent agent;
         private TreeNode parent;

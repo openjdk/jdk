@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,30 +33,16 @@
 #include <string.h>
 #include <errno.h>
 
-#define NPT_LIBNAME "npt.dll"
+#define NPT_LIBNAME "npt"
 
-#define NPT_INITIALIZE(pnpt,version,options)                            \
+#define NPT_INITIALIZE(path,pnpt,version,options)                       \
     {                                                                   \
-        HINSTANCE jvm;                                                  \
         void   *_handle;                                                \
         void   *_sym;                                                   \
-        char    buf[FILENAME_MAX+32];                                   \
-        char   *lastSlash;                                              \
                                                                         \
         if ( (pnpt) == NULL ) NPT_ERROR("NptEnv* is NULL");             \
-        _handle =  NULL;                                                \
         *(pnpt) = NULL;                                                 \
-        buf[0] = 0;                                                     \
-        jvm = GetModuleHandle("jvm.dll");                               \
-        if ( jvm == NULL ) NPT_ERROR("Cannot find jvm.dll");            \
-        GetModuleFileName(jvm, buf, FILENAME_MAX);                      \
-        lastSlash = strrchr(buf, '\\');                                 \
-        if ( lastSlash != NULL ) {                                      \
-            *lastSlash = '\0';                                          \
-            (void)strcat(buf, "\\..\\");                                \
-            (void)strcat(buf, NPT_LIBNAME);                             \
-            _handle =  LoadLibrary(buf);                                \
-        }                                                               \
+        _handle =  LoadLibrary(path);                                   \
         if ( _handle == NULL ) NPT_ERROR("Cannot open library");        \
         _sym = GetProcAddress(_handle, "nptInitialize");                \
         if ( _sym == NULL ) NPT_ERROR("Cannot find nptInitialize");     \

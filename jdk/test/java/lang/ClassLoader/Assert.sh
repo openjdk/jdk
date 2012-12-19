@@ -49,7 +49,7 @@ cp -R ${TESTSRC}/package2 .
 
 ${TESTJAVA}/bin/javac Assert.java 
 
-${TESTJAVA}/bin/java Assert
+${TESTJAVA}/bin/java ${TESTVMOPTS} Assert
 
 result=$?
 if [ $result -eq 0 ]

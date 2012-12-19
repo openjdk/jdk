@@ -70,7 +70,7 @@ case "$OS" in
 	# unsupported
 
 	${TESTJAVA}/bin/javac -d . ${TESTSRC}\\RSAEncryptDecrypt.java
-	${TESTJAVA}/bin/java RSAEncryptDecrypt
+	${TESTJAVA}/bin/java ${TESTVMOPTS} RSAEncryptDecrypt
 	exit
 	;;
 

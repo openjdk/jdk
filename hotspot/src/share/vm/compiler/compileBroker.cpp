@@ -269,10 +269,12 @@ void CompileTask::initialize(int compile_id,
                              const char* comment,
                              bool is_blocking) {
   assert(!_lock->is_locked(), "bad locking");
+  InstanceKlass* holder = method->method_holder();
 
   _compile_id = compile_id;
   _method = method();
-  _method_loader = JNIHandles::make_global(_method->method_holder()->class_loader());
+  _method_holder = JNIHandles::make_global(
+        holder->is_anonymous() ? holder->java_mirror(): holder->class_loader());
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   _comp_level = comp_level;
@@ -283,7 +285,7 @@ void CompileTask::initialize(int compile_id,
   _code_handle = NULL;
 
   _hot_method = NULL;
-  _hot_method_loader = NULL;
+  _hot_method_holder = NULL;
   _hot_count = hot_count;
   _time_queued = 0;  // tidy
   _comment = comment;
@@ -295,8 +297,12 @@ void CompileTask::initialize(int compile_id,
         _hot_method = _method;
       } else {
         _hot_method = hot_method();
+        // only add loader or mirror if different from _method_holder
+        InstanceKlass* hot_holder = hot_method->method_holder();
+        _hot_method_holder = JNIHandles::make_global(
+               hot_holder->is_anonymous() ? hot_holder->java_mirror() :
+                                            hot_holder->class_loader());
       }
-      _hot_method_loader = JNIHandles::make_global(_hot_method->method_holder()->class_loader());
     }
   }
 
@@ -321,8 +327,8 @@ void CompileTask::set_code(nmethod* nm) {
 void CompileTask::free() {
   set_code(NULL);
   assert(!_lock->is_locked(), "Should not be locked when freed");
-  JNIHandles::destroy_global(_method_loader);
-  JNIHandles::destroy_global(_hot_method_loader);
+  JNIHandles::destroy_global(_method_holder);
+  JNIHandles::destroy_global(_hot_method_holder);
 }
 
 

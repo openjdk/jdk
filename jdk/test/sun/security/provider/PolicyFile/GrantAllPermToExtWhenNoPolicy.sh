@@ -82,7 +82,7 @@ mv \
  ${TESTJAVA}${FILESEP}jre${FILESEP}lib${FILESEP}security${FILESEP}tmp_pol
 
 # run the test program
-${TESTJAVA}${FILESEP}bin${FILESEP}java -Djava.security.manager \
+${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} -Djava.security.manager \
  GrantAllPermToExtWhenNoPolicy
 
 # save error status

@@ -231,22 +231,6 @@ define install-file
 endef
 endif
 
-ifndef OPENJDK
-
-IMPORT_TARGET_FILES += \
-            $(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar \
-            $(JDK_OUTPUTDIR)/lib/security/local_policy.jar
-
-$(JDK_OUTPUTDIR)/lib/security/local_policy.jar: $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
-	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(install-file)
-
-$(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar: $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
-	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(install-file)
-
-endif # OPENJDK
-
 #######
 
 all: $(IMPORT_TARGET_FILES)

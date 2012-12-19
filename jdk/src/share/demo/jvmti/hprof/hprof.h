@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,6 +65,7 @@
 #include "jni.h"
 #include "jvmti.h"
 #include "classfile_constants.h"
+#include "jvm_md.h"
 
 #ifndef SKIP_NPT
 #include "npt.h"   /* To get NptEnv for doing character conversions */

@@ -839,6 +839,49 @@ public class Type implements PrimitiveType {
         }
     }
 
+    // a clone of a ClassType that knows about the bounds of an intersection type.
+    public static class IntersectionClassType extends ClassType implements IntersectionType {
+
+        public boolean allInterfaces;
+
+        public enum IntersectionKind {
+            EXPLICIT,
+            IMPLICT;
+        }
+
+        public IntersectionKind intersectionKind;
+
+        public IntersectionClassType(List<Type> bounds, ClassSymbol csym, boolean allInterfaces) {
+            super(Type.noType, List.<Type>nil(), csym);
+            this.allInterfaces = allInterfaces;
+            Assert.check((csym.flags() & COMPOUND) != 0);
+            supertype_field = bounds.head;
+            interfaces_field = bounds.tail;
+            Assert.check(supertype_field.tsym.completer != null ||
+                    !supertype_field.isInterface(), supertype_field);
+        }
+
+        public java.util.List<? extends TypeMirror> getBounds() {
+            return Collections.unmodifiableList(getComponents());
+        }
+
+        public List<Type> getComponents() {
+            return interfaces_field.prepend(supertype_field);
+        }
+
+        @Override
+        public TypeKind getKind() {
+            return TypeKind.INTERSECTION;
+        }
+
+        @Override
+        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+            return intersectionKind == IntersectionKind.EXPLICIT ?
+                v.visitIntersection(this, p) :
+                v.visitDeclared(this, p);
+        }
+    }
+
     public static class ArrayType extends Type
             implements javax.lang.model.type.ArrayType {
 

@@ -23,7 +23,7 @@ class LambdaConv21 {
     static void testExpressionLambda() {
         SAM_void s1 = ()->m_void(); //ok
         SAM_java_lang_Void s2 = ()->m_void(); //no - incompatible target
-        SAM_void s3 = ()->m_java_lang_Void(); //no - incompatible target
+        SAM_void s3 = ()->m_java_lang_Void(); //ok - expression statement lambda is compatible with void
         SAM_java_lang_Void s4 = ()->m_java_lang_Void(); //ok
     }
 

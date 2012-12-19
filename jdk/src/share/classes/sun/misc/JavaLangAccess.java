@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.misc;
 
+import java.lang.annotation.Annotation;
 import sun.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
@@ -83,4 +84,9 @@ public interface JavaLangAccess {
      * Returns the ith StackTraceElement for the given throwable.
      */
     StackTraceElement getStackTraceElement(Throwable t, int i);
+
+    /**
+     * Returns a directly present annotation.
+     */
+    public <A extends Annotation> A getDirectDeclaredAnnotation(Class<?> klass, Class<A> anno);
 }

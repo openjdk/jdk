@@ -69,6 +69,7 @@ FILES_java += \
 	sun/nio/ch/UnixAsynchronousSocketChannelImpl.java \
 	\
 	sun/nio/fs/GnomeFileTypeDetector.java \
+	sun/nio/fs/MimeTypesFileTypeDetector.java \
 	sun/nio/fs/PollingWatchService.java \
 	sun/nio/fs/SolarisAclFileAttributeView.java \
 	sun/nio/fs/SolarisFileStore.java \
@@ -202,6 +203,8 @@ FILES_java += \
 	sun/nio/ch/UnixAsynchronousSocketChannelImpl.java \
 	\
 	sun/nio/fs/GnomeFileTypeDetector.java \
+	sun/nio/fs/MagicFileTypeDetector.java \
+	sun/nio/fs/MimeTypesFileTypeDetector.java \
 	sun/nio/fs/LinuxDosFileAttributeView.java \
 	sun/nio/fs/LinuxFileStore.java \
 	sun/nio/fs/LinuxFileSystem.java \
@@ -239,6 +242,7 @@ FILES_c += \
 	UnixAsynchronousSocketChannelImpl.c \
 	\
 	GnomeFileTypeDetector.c \
+	MagicFileTypeDetector.c \
 	LinuxNativeDispatcher.c \
 	LinuxWatchService.c \
 	UnixCopyFile.c \
@@ -254,6 +258,7 @@ FILES_export += \
 	sun/nio/ch/UnixAsynchronousSocketChannelImpl.java \
 	\
 	sun/nio/fs/GnomeFileTypeDetector.java \
+	sun/nio/fs/MagicFileTypeDetector.java \
 	sun/nio/fs/LinuxNativeDispatcher.java \
 	sun/nio/fs/LinuxWatchService.java \
 	sun/nio/fs/UnixCopyFile.java \
@@ -277,6 +282,7 @@ FILES_java += \
 	sun/nio/ch/UnixAsynchronousServerSocketChannelImpl.java \
 	sun/nio/ch/UnixAsynchronousSocketChannelImpl.java \
 	\
+	sun/nio/fs/MimeTypesFileTypeDetector.java \
 	sun/nio/fs/BsdFileStore.java \
 	sun/nio/fs/BsdFileSystem.java \
 	sun/nio/fs/BsdFileSystemProvider.java \

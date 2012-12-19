@@ -31,10 +31,10 @@ import java.util.*;
 import java.security.*;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-import java.net.URL;
-import sun.security.action.GetPropertyAction;
 
 /**
  * There is a single global LogManager object that is used to
@@ -56,20 +56,14 @@ import sun.security.action.GetPropertyAction;
  * At startup the LogManager class is located using the
  * java.util.logging.manager system property.
  * <p>
- * By default, the LogManager reads its initial configuration from
- * a properties file "lib/logging.properties" in the JRE directory.
- * If you edit that property file you can change the default logging
- * configuration for all uses of that JRE.
- * <p>
- * In addition, the LogManager uses two optional system properties that
- * allow more control over reading the initial configuration:
+ * The LogManager defines two optional system properties that allow control over
+ * the initial configuration:
  * <ul>
  * <li>"java.util.logging.config.class"
  * <li>"java.util.logging.config.file"
  * </ul>
- * These two properties may be set via the Preferences API, or as
- * command line property definitions to the "java" command, or as
- * system property definitions passed to JNI_CreateJavaVM.
+ * These two properties may be specified on the command line to the "java"
+ * command, or as system property definitions passed to JNI_CreateJavaVM.
  * <p>
  * If the "java.util.logging.config.class" property is set, then the
  * property value is treated as a class name.  The given class will be
@@ -84,9 +78,10 @@ import sun.security.action.GetPropertyAction;
  * to specify a properties file (in java.util.Properties format). The
  * initial logging configuration will be read from this file.
  * <p>
- * If neither of these properties is defined then, as described
- * above, the LogManager will read its initial configuration from
- * a properties file "lib/logging.properties" in the JRE directory.
+ * If neither of these properties is defined then the LogManager uses its
+ * default configuration. The default configuration is typically loaded from the
+ * properties file "{@code lib/logging.properties}" in the Java installation
+ * directory.
  * <p>
  * The properties for loggers and Handlers will have names starting
  * with the dot-separated name for the handler or logger.
@@ -155,7 +150,7 @@ public class LogManager {
 
     // The map of the registered listeners. The map value is the registration
     // count to allow for cases where the same listener is registered many times.
-    private final Map<PropertyChangeListener,Integer> listenerMap = new HashMap<>();
+    private final Map<Object,Integer> listenerMap = new HashMap<>();
 
     // Table of named Loggers that maps names to Loggers.
     private Hashtable<String,LoggerWeakRef> namedLoggers = new Hashtable<>();
@@ -248,7 +243,7 @@ public class LogManager {
      * Protected constructor.  This is protected so that container applications
      * (such as J2EE containers) can subclass the object.  It is non-public as
      * it is intended that there only be one LogManager object, whose value is
-     * retrieved by calling Logmanager.getLogManager.
+     * retrieved by calling LogManager.getLogManager.
      */
     protected LogManager() {
         // Add a shutdown hook to close the global handlers.
@@ -976,21 +971,23 @@ public class LogManager {
         // Notify any interested parties that our properties have changed.
         // We first take a copy of the listener map so that we aren't holding any
         // locks when calling the listeners.
-        Map<PropertyChangeListener,Integer> listeners = null;
+        Map<Object,Integer> listeners = null;
         synchronized (listenerMap) {
             if (!listenerMap.isEmpty())
                 listeners = new HashMap<>(listenerMap);
         }
         if (listeners != null) {
-            PropertyChangeEvent ev = new PropertyChangeEvent(LogManager.class, null, null, null);
-            for (Map.Entry<PropertyChangeListener,Integer> entry : listeners.entrySet()) {
-                PropertyChangeListener listener = entry.getKey();
+            assert Beans.isBeansPresent();
+            Object ev = Beans.newPropertyChangeEvent(LogManager.class, null, null, null);
+            for (Map.Entry<Object,Integer> entry : listeners.entrySet()) {
+                Object listener = entry.getKey();
                 int count = entry.getValue().intValue();
                 for (int i = 0; i < count; i++) {
-                    listener.propertyChange(ev);
+                    Beans.invokePropertyChange(listener, ev);
                 }
             }
         }
+
 
         // Note that we need to reinitialize global handles when
         // they are first referenced.
@@ -1274,4 +1271,100 @@ public class LogManager {
         return loggingMXBean;
     }
 
+    /**
+     * A class that provides access to the java.beans.PropertyChangeListener
+     * and java.beans.PropertyChangeEvent without creating a static dependency
+     * on java.beans. This class can be removed once the addPropertyChangeListener
+     * and removePropertyChangeListener methods are removed.
+     */
+    private static class Beans {
+        private static final Class<?> propertyChangeListenerClass =
+            getClass("java.beans.PropertyChangeListener");
+
+        private static final Class<?> propertyChangeEventClass =
+            getClass("java.beans.PropertyChangeEvent");
+
+        private static final Method propertyChangeMethod =
+            getMethod(propertyChangeListenerClass,
+                      "propertyChange",
+                      propertyChangeEventClass);
+
+        private static final Constructor<?> propertyEventCtor =
+            getConstructor(propertyChangeEventClass,
+                           Object.class,
+                           String.class,
+                           Object.class,
+                           Object.class);
+
+        private static Class<?> getClass(String name) {
+            try {
+                return Class.forName(name, true, Beans.class.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
+        }
+        private static Constructor<?> getConstructor(Class<?> c, Class<?>... types) {
+            try {
+                return (c == null) ? null : c.getDeclaredConstructor(types);
+            } catch (NoSuchMethodException x) {
+                throw new AssertionError(x);
+            }
+        }
+
+        private static Method getMethod(Class<?> c, String name, Class<?>... types) {
+            try {
+                return (c == null) ? null : c.getMethod(name, types);
+            } catch (NoSuchMethodException e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        /**
+         * Returns {@code true} if java.beans is present.
+         */
+        static boolean isBeansPresent() {
+            return propertyChangeListenerClass != null &&
+                   propertyChangeEventClass != null;
+        }
+
+        /**
+         * Returns a new PropertyChangeEvent with the given source, property
+         * name, old and new values.
+         */
+        static Object newPropertyChangeEvent(Object source, String prop,
+                                             Object oldValue, Object newValue)
+        {
+            try {
+                return propertyEventCtor.newInstance(source, prop, oldValue, newValue);
+            } catch (InstantiationException | IllegalAccessException x) {
+                throw new AssertionError(x);
+            } catch (InvocationTargetException x) {
+                Throwable cause = x.getCause();
+                if (cause instanceof Error)
+                    throw (Error)cause;
+                if (cause instanceof RuntimeException)
+                    throw (RuntimeException)cause;
+                throw new AssertionError(x);
+            }
+        }
+
+        /**
+         * Invokes the given PropertyChangeListener's propertyChange method
+         * with the given event.
+         */
+        static void invokePropertyChange(Object listener, Object ev) {
+            try {
+                propertyChangeMethod.invoke(listener, ev);
+            } catch (IllegalAccessException x) {
+                throw new AssertionError(x);
+            } catch (InvocationTargetException x) {
+                Throwable cause = x.getCause();
+                if (cause instanceof Error)
+                    throw (Error)cause;
+                if (cause instanceof RuntimeException)
+                    throw (RuntimeException)cause;
+                throw new AssertionError(x);
+            }
+        }
+    }
 }
