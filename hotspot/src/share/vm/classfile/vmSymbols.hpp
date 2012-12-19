@@ -756,6 +756,15 @@
   do_intrinsic(_unpark,                   sun_misc_Unsafe,        unpark_name, unpark_signature,                 F_RN)  \
    do_name(     unpark_name,                                     "unpark")                                              \
    do_alias(    unpark_signature,                               /*(LObject;)V*/ object_void_signature)                  \
+  do_intrinsic(_loadFence,                sun_misc_Unsafe,        loadFence_name, loadFence_signature,           F_RN)  \
+   do_name(     loadFence_name,                                  "loadFence")                                           \
+   do_alias(    loadFence_signature,                              void_method_signature)                                \
+  do_intrinsic(_storeFence,               sun_misc_Unsafe,        storeFence_name, storeFence_signature,         F_RN)  \
+   do_name(     storeFence_name,                                 "storeFence")                                          \
+   do_alias(    storeFence_signature,                             void_method_signature)                                \
+  do_intrinsic(_fullFence,                sun_misc_Unsafe,        fullFence_name, fullFence_signature,           F_RN)  \
+   do_name(     fullFence_name,                                  "fullFence")                                           \
+   do_alias(    fullFence_signature,                              void_method_signature)                                \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getObject_signature,       "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
