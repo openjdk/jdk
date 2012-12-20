@@ -115,6 +115,7 @@ public abstract class ClientCommunicatorAdmin {
                     // restarted is failed by another thread
                     throw ioe;
                 }
+                return;
             } else {
                 state = RE_CONNECTING;
                 lock.notifyAll();
