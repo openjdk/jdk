@@ -2990,7 +2990,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
   set_control( _gvn.transform(new (C) ProjNode(allocx, TypeFunc::Control) ) );
   // create memory projection for i_o
   set_memory ( _gvn.transform( new (C) ProjNode(allocx, TypeFunc::Memory, true) ), rawidx );
-  make_slow_call_ex(allocx, env()->OutOfMemoryError_klass(), true);
+  make_slow_call_ex(allocx, env()->Throwable_klass(), true);
 
   // create a memory projection as for the normal control path
   Node* malloc = _gvn.transform(new (C) ProjNode(allocx, TypeFunc::Memory));
