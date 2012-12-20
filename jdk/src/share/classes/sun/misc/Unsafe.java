@@ -1009,21 +1009,123 @@ public final class Unsafe {
      */
     public native int getLoadAverage(double[] loadavg, int nelems);
 
+    // The following contain CAS-based Java implementations used on
+    // platforms not supporting native instructions
+
+    /**
+     * Atomically adds the given value to the current value of a field
+     * or array element within the given object <code>o</code>
+     * at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param delta the value to add
+     * @return the previous value
+     * @since 1.8
+     */
+    public final int getAndAddInt(Object o, long offset, int delta) {
+        int v;
+        do {
+            v = getIntVolatile(o, offset);
+        } while (!compareAndSwapInt(o, offset, v, v + delta));
+        return v;
+    }
+
+    /**
+     * Atomically adds the given value to the current value of a field
+     * or array element within the given object <code>o</code>
+     * at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param delta the value to add
+     * @return the previous value
+     * @since 1.8
+     */
+    public final long getAndAddLong(Object o, long offset, long delta) {
+        long v;
+        do {
+            v = getLongVolatile(o, offset);
+        } while (!compareAndSwapLong(o, offset, v, v + delta));
+        return v;
+    }
+
+    /**
+     * Atomically exchanges the given value with the current value of
+     * a field or array element within the given object <code>o</code>
+     * at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param newValue new value
+     * @return the previous value
+     * @since 1.8
+     */
+    public final int getAndSetInt(Object o, long offset, int newValue) {
+        int v;
+        do {
+            v = getIntVolatile(o, offset);
+        } while (!compareAndSwapInt(o, offset, v, newValue));
+        return v;
+    }
+
+    /**
+     * Atomically exchanges the given value with the current value of
+     * a field or array element within the given object <code>o</code>
+     * at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param newValue new value
+     * @return the previous value
+     * @since 1.8
+     */
+    public final long getAndSetLong(Object o, long offset, long newValue) {
+        long v;
+        do {
+            v = getLongVolatile(o, offset);
+        } while (!compareAndSwapLong(o, offset, v, newValue));
+        return v;
+    }
+
+    /**
+     * Atomically exchanges the given reference value with the current
+     * reference value of a field or array element within the given
+     * object <code>o</code> at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param newValue new value
+     * @return the previous value
+     * @since 1.8
+     */
+    public final Object getAndSetObject(Object o, long offset, Object newValue) {
+        Object v;
+        do {
+            v = getObjectVolatile(o, offset);
+        } while (!compareAndSwapObject(o, offset, v, newValue));
+        return v;
+    }
+
+
     /**
      * Ensures lack of reordering of loads before the fence
      * with loads or stores after the fence.
+     * @since 1.8
      */
     public native void loadFence();
 
     /**
      * Ensures lack of reordering of stores before the fence
      * with loads or stores after the fence.
+     * @since 1.8
      */
     public native void storeFence();
 
     /**
      * Ensures lack of reordering of loads or stores before the fence
      * with loads or stores after the fence.
+     * @since 1.8
      */
     public native void fullFence();
 
