@@ -38,14 +38,13 @@ import sun.util.spi.XmlPropertiesProvider;
 
 public class BasicXmlPropertiesProvider extends XmlPropertiesProvider {
 
-    private final PropertiesDefaultHandler handler = new PropertiesDefaultHandler();
-
     public BasicXmlPropertiesProvider() { }
 
     @Override
     public void load(Properties props, InputStream in)
         throws IOException, InvalidPropertiesFormatException
     {
+        PropertiesDefaultHandler handler = new PropertiesDefaultHandler();
         handler.load(props, in);
     }
 
@@ -54,6 +53,7 @@ public class BasicXmlPropertiesProvider extends XmlPropertiesProvider {
                       String encoding)
         throws IOException
     {
+        PropertiesDefaultHandler handler = new PropertiesDefaultHandler();
         handler.store(props, os, comment, encoding);
     }
 }
