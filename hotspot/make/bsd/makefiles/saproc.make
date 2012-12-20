@@ -24,16 +24,13 @@
 
 # Rules to build serviceability agent library, used by vm.make
 
-# libsaproc[_g].so: serviceability agent
+# libsaproc.so: serviceability agent
 SAPROC   = saproc
-SAPROC_G = $(SAPROC)$(G_SUFFIX)
 
 ifeq ($(OS_VENDOR), Darwin)
   LIBSAPROC   = lib$(SAPROC).dylib
-  LIBSAPROC_G = lib$(SAPROC_G).dylib
 else
   LIBSAPROC   = lib$(SAPROC).so
-  LIBSAPROC_G = lib$(SAPROC_G).so
 endif
 
 AGENT_DIR = $(GAMMADIR)/agent
@@ -114,7 +111,6 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           $(SA_DEBUG_CFLAGS)                                   \
 	           -o $@                                                \
 	           $(SALIBS)
-	$(QUIETLY) [ -f $(LIBSAPROC_G) ] || { ln -s $@ $(LIBSAPROC_G); }
 
 install_saproc: $(BUILDLIBSAPROC)
 	$(QUIETLY) if [ -e $(LIBSAPROC) ] ; then             \

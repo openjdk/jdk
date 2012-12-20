@@ -26,18 +26,13 @@ include $(GAMMADIR)/make/altsrc.make
 
 # Rules to build serviceability agent library, used by vm.make
 
-# libsaproc[_g].so: serviceability agent
+# libsaproc.so: serviceability agent
 
 SAPROC = saproc
 LIBSAPROC = lib$(SAPROC).so
 
-SAPROC_G = $(SAPROC)$(G_SUFFIX)
-LIBSAPROC_G = lib$(SAPROC_G).so
-
 LIBSAPROC_DEBUGINFO   = lib$(SAPROC).debuginfo
 LIBSAPROC_DIZ         = lib$(SAPROC).diz
-LIBSAPROC_G_DEBUGINFO = lib$(SAPROC_G).debuginfo
-LIBSAPROC_G_DIZ       = lib$(SAPROC_G).diz
 
 AGENT_DIR = $(GAMMADIR)/agent
 
@@ -99,7 +94,6 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           $(SA_DEBUG_CFLAGS)                                   \
 	           -o $@                                                \
 	           -lthread_db
-	$(QUIETLY) [ -f $(LIBSAPROC_G) ] || { ln -s $@ $(LIBSAPROC_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBSAPROC_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBSAPROC_DEBUGINFO) $@
@@ -111,11 +105,9 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(LIBSAPROC_G_DEBUGINFO) ] || { ln -s $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-	$(ZIPEXE) -q -y $(LIBSAPROC_DIZ) $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO)
-	$(RM) $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO)
-	[ -f $(LIBSAPROC_G_DIZ) ] || { ln -s $(LIBSAPROC_DIZ) $(LIBSAPROC_G_DIZ); }
+	$(ZIPEXE) -q -y $(LIBSAPROC_DIZ) $(LIBSAPROC_DEBUGINFO)
+	$(RM) $(LIBSAPROC_DEBUGINFO)
   endif
 endif
 
