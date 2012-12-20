@@ -83,7 +83,7 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
             if (expected > count) {
                 long nskip = expected - count;
                 if (nskip <= available()) {
-                    do {} while ((nskip = (long) (expected - count)) > 0L
+                    do {} while ((nskip = (expected - count)) > 0L
                                  && skip(Math.min(nskip, available())) > 0L);
                 } else if (expected <= KeepAliveStreamCleaner.MAX_DATA_REMAINING && !hurried) {
                     //put this KeepAliveStream on the queue so that the data remaining
