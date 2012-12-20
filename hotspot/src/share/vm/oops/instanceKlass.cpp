@@ -361,6 +361,9 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_protection_domain(NULL);
   set_signers(NULL);
   set_init_lock(NULL);
+
+  // We should deallocate the Annotations instance
+  MetadataFactory::free_metadata(loader_data, annotations());
   set_annotations(NULL);
 }
 

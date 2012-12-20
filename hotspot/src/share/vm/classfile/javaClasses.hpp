@@ -554,6 +554,7 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static int annotations_offset;
   static int parameter_annotations_offset;
   static int annotation_default_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -599,6 +600,10 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop method);
+  static void set_type_annotations(oop method, oop value);
+
   // Debugging
   friend class JavaClasses;
 };
@@ -618,6 +623,7 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static int signature_offset;
   static int annotations_offset;
   static int parameter_annotations_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -653,6 +659,10 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static oop parameter_annotations(oop method);
   static void set_parameter_annotations(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop constructor);
+  static void set_type_annotations(oop constructor, oop value);
+
   // Debugging
   friend class JavaClasses;
 };
@@ -671,6 +681,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int modifiers_offset;
   static int signature_offset;
   static int annotations_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -709,6 +720,10 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static bool has_annotation_default_field();
   static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
+
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop field);
+  static void set_type_annotations(oop field, oop value);
 
   // Debugging
   friend class JavaClasses;

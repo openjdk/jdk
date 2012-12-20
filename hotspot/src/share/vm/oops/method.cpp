@@ -1331,13 +1331,15 @@ void Method::sort_methods(Array<Method*>* methods,
                                  Array<AnnotationArray*>* methods_annotations,
                                  Array<AnnotationArray*>* methods_parameter_annotations,
                                  Array<AnnotationArray*>* methods_default_annotations,
+                                 Array<AnnotationArray*>* methods_type_annotations,
                                  bool idempotent) {
   int length = methods->length();
   if (length > 1) {
     bool do_annotations = false;
     if (methods_annotations != NULL ||
         methods_parameter_annotations != NULL ||
-        methods_default_annotations != NULL) {
+        methods_default_annotations != NULL ||
+        methods_type_annotations != NULL) {
       do_annotations = true;
     }
     if (do_annotations) {
@@ -1356,6 +1358,7 @@ void Method::sort_methods(Array<Method*>* methods,
     assert(methods_annotations == NULL           || methods_annotations->length() == methods->length(), "");
     assert(methods_parameter_annotations == NULL || methods_parameter_annotations->length() == methods->length(), "");
     assert(methods_default_annotations == NULL   || methods_default_annotations->length() == methods->length(), "");
+    assert(methods_type_annotations == NULL   || methods_type_annotations->length() == methods->length(), "");
     if (do_annotations) {
       ResourceMark rm;
       // Allocate temporary storage
@@ -1363,6 +1366,7 @@ void Method::sort_methods(Array<Method*>* methods,
       reorder_based_on_method_index(methods, methods_annotations, temp_array);
       reorder_based_on_method_index(methods, methods_parameter_annotations, temp_array);
       reorder_based_on_method_index(methods, methods_default_annotations, temp_array);
+      reorder_based_on_method_index(methods, methods_type_annotations, temp_array);
     }
 
     // Reset method ordering

@@ -228,6 +228,13 @@ class Method : public Metadata {
     }
     return ik->annotations()->get_method_default_annotations_of(method_idnum());
   }
+  AnnotationArray* type_annotations() const {
+  InstanceKlass* ik = method_holder();
+  Annotations* type_annos = ik->type_annotations();
+  if (type_annos == NULL)
+    return NULL;
+  return type_annos->get_method_annotations_of(method_idnum());
+}
 
 #ifdef CC_INTERP
   void set_result_index(BasicType type);
@@ -794,6 +801,7 @@ class Method : public Metadata {
                            Array<AnnotationArray*>* methods_annotations,
                            Array<AnnotationArray*>* methods_parameter_annotations,
                            Array<AnnotationArray*>* methods_default_annotations,
+                           Array<AnnotationArray*>* methods_type_annotations,
                            bool idempotent = false);
 
   // size of parameters
