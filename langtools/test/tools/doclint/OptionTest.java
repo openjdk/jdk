@@ -1,6 +1,3 @@
-
-import com.sun.tools.doclint.DocLint;
-
 /*
  * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,7 +23,12 @@ import com.sun.tools.doclint.DocLint;
 
 /*
  * @test
+ * @bug 8004832
+ * @summary Add new doclint package
  */
+
+import com.sun.tools.doclint.DocLint;
+
 public class OptionTest {
     public static void main(String... args) throws Exception {
         new OptionTest().run();
