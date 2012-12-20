@@ -1,5 +1,7 @@
 /*
  * @test /nodynamiccopyright/
+ * @bug 8004832
+ * @summary Add new doclint package
  * @build DocLintTester
  * @run main DocLintTester -Xmsgs:-accessibility AccessibilityTest.java
  * @run main DocLintTester -ref AccessibilityTest.out AccessibilityTest.java
