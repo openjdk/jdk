@@ -22,6 +22,8 @@
  */
 
 /* @test
+ * @bug 8004832
+ * @summary Add new doclint package
  * @bug 8000103
  * @summary Create doclint utility
  */
