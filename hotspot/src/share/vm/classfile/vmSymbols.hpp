@@ -136,6 +136,8 @@
   template(tag_runtime_visible_parameter_annotations, "RuntimeVisibleParameterAnnotations")       \
   template(tag_runtime_invisible_parameter_annotations,"RuntimeInvisibleParameterAnnotations")    \
   template(tag_annotation_default,                    "AnnotationDefault")                        \
+  template(tag_runtime_visible_type_annotations,      "RuntimeVisibleTypeAnnotations")            \
+  template(tag_runtime_invisible_type_annotations,    "RuntimeInvisibleTypeAnnotations")          \
   template(tag_enclosing_method,                      "EnclosingMethod")                          \
   template(tag_bootstrap_methods,                     "BootstrapMethods")                         \
                                                                                                   \
@@ -239,6 +241,9 @@
   template(ConstantPool_name,                         "constantPoolOop")                          \
   template(sun_reflect_UnsafeStaticFieldAccessorImpl, "sun/reflect/UnsafeStaticFieldAccessorImpl")\
   template(base_name,                                 "base")                                     \
+  /* Type Annotations (JDK 8 and above) */                                                        \
+  template(type_annotations_name,                     "typeAnnotations")                          \
+                                                                                                  \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \

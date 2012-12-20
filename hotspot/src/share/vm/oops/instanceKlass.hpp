@@ -657,6 +657,10 @@ class InstanceKlass: public Klass {
     if (annotations() == NULL) return NULL;
     return annotations()->fields_annotations();
   }
+  Annotations* type_annotations() const {
+    if (annotations() == NULL) return NULL;
+    return annotations()->type_annotations();
+  }
 
   // allocation
   instanceOop allocate_instance(TRAPS);

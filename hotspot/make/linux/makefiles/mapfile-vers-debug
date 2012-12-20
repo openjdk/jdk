@@ -124,6 +124,7 @@ SUNWprivate_1.1 {
                 JVM_GetClassNameUTF;
 		JVM_GetClassSignature;
                 JVM_GetClassSigners;
+                JVM_GetClassTypeAnnotations;
                 JVM_GetComponentType;
                 JVM_GetDeclaredClasses;
                 JVM_GetDeclaringClass;

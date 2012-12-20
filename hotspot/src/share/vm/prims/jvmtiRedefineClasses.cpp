@@ -3338,7 +3338,20 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     the_class->set_access_flags(flags);
   }
 
-  // Replace annotation fields value
+  // Since there is currently no rewriting of type annotations indexes
+  // into the CP, we null out type annotations on scratch_class before
+  // we swap annotations with the_class rather than facing the
+  // possibility of shipping annotations with broken indexes to
+  // Java-land.
+  Annotations* new_annotations = scratch_class->annotations();
+  if (new_annotations != NULL) {
+    Annotations* new_type_annotations = new_annotations->type_annotations();
+    if (new_type_annotations != NULL) {
+      MetadataFactory::free_metadata(scratch_class->class_loader_data(), new_type_annotations);
+      new_annotations->set_type_annotations(NULL);
+    }
+  }
+  // Swap annotation fields values
   Annotations* old_annotations = the_class->annotations();
   the_class->set_annotations(scratch_class->annotations());
   scratch_class->set_annotations(old_annotations);
