@@ -196,7 +196,7 @@ public abstract class ClientCommunicatorAdmin {
                     if (e instanceof IOException &&
                         !(e instanceof InterruptedIOException)) {
                         try {
-                            restart((IOException)e);
+                            gotIOException((IOException)e);
                         } catch (Exception ee) {
                             logger.warning("Checker-run",
                                            "Failed to check connection: "+ e);
