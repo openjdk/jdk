@@ -106,7 +106,7 @@ protected:
     _status(INACTIVE),
     _gang(NULL) { }
 
-  virtual ~YieldingFlexibleGangTask() { }
+  ~YieldingFlexibleGangTask() { }
 
   friend class YieldingFlexibleWorkGang;
   friend class YieldingFlexibleGangWorker;

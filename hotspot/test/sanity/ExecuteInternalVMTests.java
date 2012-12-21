@@ -22,37 +22,19 @@
  *
  */
 
-/**
- * @test
- * @bug 7184394
- * @summary add intrinsics to use AES instructions
- *
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC TestAESMain
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB TestAESMain
- *
- * @author Tom Deneau
+/* @test ExecuteInternalVMTests
+ * @bug 8004691
+ * @summary Add a jtreg test that exercises the ExecuteInternalVMTests flag
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+ExecuteInternalVMTests ExecuteInternalVMTests
  */
+public class ExecuteInternalVMTests {
+    public static void main(String[] args) throws Exception {
+        // The tests that are run are the HotSpot internal tests which are
+        // executed only when the flag -XX:+ExecuteInternalVMTests is used.
 
-public class TestAESMain {
-  public static void main(String[] args) {
-    int iters = (args.length > 0 ? Integer.valueOf(args[0]) : 1000000);
-    System.out.println(iters + " iterations");
-    TestAESEncode etest = new TestAESEncode();
-    etest.prepare();
-    long start = System.nanoTime();
-    for (int i=0; i<iters; i++) {
-      etest.run();
+        // The flag -XX:+ExecuteInternalVMTests can only be used for
+        // non-product builds of HotSpot. Therefore, the flag
+        // -XX:+IgnoreUnrecognizedVMOptions is also used, which means that this
+        // test will do nothing on a product build.
     }
-    long end = System.nanoTime();
-    System.out.println("TestAESEncode runtime was " + (double)((end - start)/1000000000.0) + " ms");
-
-    TestAESDecode dtest = new TestAESDecode();
-    dtest.prepare();
-    start = System.nanoTime();
-    for (int i=0; i<iters; i++) {
-      dtest.run();
-    }
-    end = System.nanoTime();
-    System.out.println("TestAESDecode runtime was " + (double)((end - start)/1000000000.0) + " ms");
-  }
 }

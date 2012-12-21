@@ -24,17 +24,12 @@
 
 # Rules to build signal interposition library, used by vm.make
 
-# libjsig[_g].so: signal interposition library
+# libjsig.so: signal interposition library
 JSIG = jsig
 LIBJSIG = lib$(JSIG).so
 
-JSIG_G    = $(JSIG)$(G_SUFFIX)
-LIBJSIG_G = lib$(JSIG_G).so
-
 LIBJSIG_DEBUGINFO   = lib$(JSIG).debuginfo
 LIBJSIG_DIZ         = lib$(JSIG).diz
-LIBJSIG_G_DEBUGINFO = lib$(JSIG_G).debuginfo
-LIBJSIG_G_DIZ       = lib$(JSIG_G).diz
 
 JSIGSRCDIR = $(GAMMADIR)/src/os/$(Platform_os_family)/vm
 
@@ -60,7 +55,6 @@ $(LIBJSIG): $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
 	@echo Making signal interposition lib...
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
                          $(LFLAGS_JSIG) $(JSIG_DEBUG_CFLAGS) -o $@ $< -ldl
-	$(QUIETLY) [ -f $(LIBJSIG_G) ] || { ln -s $@ $(LIBJSIG_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJSIG_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJSIG_DEBUGINFO) $@
@@ -72,11 +66,9 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(LIBJSIG_G_DEBUGINFO) ] || { ln -s $(LIBJSIG_DEBUGINFO) $(LIBJSIG_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-	$(ZIPEXE) -q -y $(LIBJSIG_DIZ) $(LIBJSIG_DEBUGINFO) $(LIBJSIG_G_DEBUGINFO)
-	$(RM) $(LIBJSIG_DEBUGINFO) $(LIBJSIG_G_DEBUGINFO)
-	[ -f $(LIBJSIG_G_DIZ) ] || { ln -s $(LIBJSIG_DIZ) $(LIBJSIG_G_DIZ); }
+	$(ZIPEXE) -q -y $(LIBJSIG_DIZ) $(LIBJSIG_DEBUGINFO)
+	$(RM) $(LIBJSIG_DEBUGINFO)
   endif
 endif
 

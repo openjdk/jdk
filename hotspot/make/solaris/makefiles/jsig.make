@@ -24,17 +24,12 @@
 
 # Rules to build signal interposition library, used by vm.make
 
-# libjsig[_g].so: signal interposition library
+# libjsig.so: signal interposition library
 JSIG      = jsig
 LIBJSIG   = lib$(JSIG).so
 
-JSIG_G    = $(JSIG)$(G_SUFFIX)
-LIBJSIG_G = lib$(JSIG_G).so
-
 LIBJSIG_DEBUGINFO   = lib$(JSIG).debuginfo
 LIBJSIG_DIZ         = lib$(JSIG).diz
-LIBJSIG_G_DEBUGINFO = lib$(JSIG_G).debuginfo
-LIBJSIG_G_DIZ       = lib$(JSIG_G).diz
 
 JSIGSRCDIR = $(GAMMADIR)/src/os/$(Platform_os_family)/vm
 
@@ -56,7 +51,6 @@ $(LIBJSIG): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(JSIGSRCDIR)/jsig.c
 	@echo Making signal interposition lib...
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
                          $(LFLAGS_JSIG) -o $@ $(JSIGSRCDIR)/jsig.c -ldl
-	[ -f $(LIBJSIG_G) ] || { ln -s $@ $(LIBJSIG_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
 # Clear the SHF_ALLOC flag (if set) from empty section headers.
@@ -77,11 +71,9 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(LIBJSIG_G_DEBUGINFO) ] || { ln -s $(LIBJSIG_DEBUGINFO) $(LIBJSIG_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-	$(ZIPEXE) -q -y $(LIBJSIG_DIZ) $(LIBJSIG_DEBUGINFO) $(LIBJSIG_G_DEBUGINFO)
-	$(RM) $(LIBJSIG_DEBUGINFO) $(LIBJSIG_G_DEBUGINFO)
-	[ -f $(LIBJSIG_G_DIZ) ] || { ln -s $(LIBJSIG_DIZ) $(LIBJSIG_G_DIZ); }
+	$(ZIPEXE) -q -y $(LIBJSIG_DIZ) $(LIBJSIG_DEBUGINFO)
+	$(RM) $(LIBJSIG_DEBUGINFO)
   endif
 endif
 

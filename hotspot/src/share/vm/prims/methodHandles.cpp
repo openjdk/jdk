@@ -1168,8 +1168,8 @@ JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject 
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
     Universe::flush_dependents_on(call_site, target);
+    java_lang_invoke_CallSite::set_target(call_site(), target());
   }
-  java_lang_invoke_CallSite::set_target(call_site(), target());
 }
 JVM_END
 
@@ -1180,8 +1180,8 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
     Universe::flush_dependents_on(call_site, target);
+    java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
   }
-  java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
 }
 JVM_END
 
