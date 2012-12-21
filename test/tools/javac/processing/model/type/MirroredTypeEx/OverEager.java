@@ -26,7 +26,7 @@
  * @bug     6362178
  * @summary MirroredType[s]Exception shouldn't be created too eagerly
  * @author  Scott Seligman
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor
  * @compile -g OverEager.java
  * @compile -processor OverEager -proc:only OverEager.java

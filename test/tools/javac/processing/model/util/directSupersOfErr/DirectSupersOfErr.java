@@ -26,7 +26,7 @@
  * @bug     6346973
  * @summary directSupertypes(t) should not return t
  * @author  Scott Seligman
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor DirectSupersOfErr
  * @compile -processor DirectSupersOfErr -proc:only C1.java
  */

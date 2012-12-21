@@ -26,7 +26,7 @@
  * @bug 6512707
  * @summary "incompatible types" after (unrelated) annotation processing
  * @author  Peter Runge
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile T6512707.java
  * @compile -processor T6512707 TestAnnotation.java

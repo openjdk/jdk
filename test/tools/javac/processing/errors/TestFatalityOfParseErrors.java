@@ -26,7 +26,7 @@
  * @bug 6403459
  * @summary Test that generating programs with syntax errors is a fatal condition
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor
  * @compile TestReturnCode.java
  * @compile TestFatalityOfParseErrors.java
