@@ -7074,3 +7074,6 @@ FormatData/sl/DatePatterns/1=dd. MMMM y
 
 # bug 7189611
 CurrencyNames/es_VE/VEF=Bs.F.
+
+# bug 7195759
+CurrencyNames//ZMW=ZMW
