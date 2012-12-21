@@ -25,7 +25,7 @@
  * @test
  * @bug 6988836
  * @summary A new JavacElements is created for each round of annotation processing
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor TestContext
  * @compile/process -processor TestContext -XprintRounds TestContext
  */

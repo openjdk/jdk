@@ -26,7 +26,7 @@
  * @bug 6453386
  * @summary Test Elements.getPackageOf
  * @author  Joseph D. Darcy
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestGetPackageOf
  * @compile -processor TestGetPackageOf -proc:only TestGetPackageOf.java
  */

@@ -26,7 +26,7 @@
  * @bug  6911256 6964740 6967842 6961571 7025809
  * @summary Test that the resource variable kind is appropriately set
  * @author  Joseph D. Darcy
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestResourceVariable
  * @compile -processor TestResourceVariable -proc:only TestResourceVariable.java
  */

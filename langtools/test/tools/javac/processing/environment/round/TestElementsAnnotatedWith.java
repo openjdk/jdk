@@ -26,7 +26,7 @@
  * @bug 6397298 6400986 6425592 6449798 6453386 6508401 6498938 6911854
  * @summary Tests that getElementsAnnotatedWith works properly.
  * @author  Joseph D. Darcy
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile TestElementsAnnotatedWith.java
  * @compile InheritedAnnotation.java

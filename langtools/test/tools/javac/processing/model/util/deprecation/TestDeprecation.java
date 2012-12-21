@@ -26,7 +26,7 @@
  * @bug 6392818
  * @summary Tests Elements.isDeprecated(Element)
  * @author  Joseph D. Darcy
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor
  * @compile TestDeprecation.java
  * @compile -processor TestDeprecation -proc:only Dep1.java
