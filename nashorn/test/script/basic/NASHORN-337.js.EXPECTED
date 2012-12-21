@@ -1,0 +1,8 @@
+Value: undefined
+Numerical Value: NaN
+Boolean Value(>0): false
+Boolean Value(<0): false
+Boolean Value(==0): false
+NaN > 0? false
+NaN < 0? false
+NaN == 0? false

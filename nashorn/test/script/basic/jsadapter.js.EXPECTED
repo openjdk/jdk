@@ -1,0 +1,22 @@
+getter called for 'foo'
+foo
+setter called for 'foo' with 33
+method 'func' called with hello, world
+new with hey!, it works!
+__getIds__ called
+foo
+bar
+__getValues__ called
+fooval
+barval
+__has__ called with 'foo'
+false
+__has__ called with 'js'
+true
+__delete__ called with 'prop'
+true
+getter called for 'js'
+js
+setter called for 'js' with javascript
+getter called for 'javascript'
+javascript

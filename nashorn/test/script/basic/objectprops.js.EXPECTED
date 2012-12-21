@@ -1,0 +1,8 @@
+obj.foo = hello
+obj.bar = bar
+obj.xyz = 44
+get abc
+obj.abc = abc
+obj2 in MyConstructor instance? true
+obj3 is an Object? true
+44

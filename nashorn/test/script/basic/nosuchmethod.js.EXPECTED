@@ -1,0 +1,4 @@
+xxx
+function() { return "yyy"; }
+xxx
+yyy

@@ -1,0 +1,6 @@
+function (exports) {
+  exports.func = function() {
+     print("module.func called");
+  }
+}
+module.func called

@@ -1,4 +1,25 @@
+syntax: glob
+
 ^build/
 ^dist/
-/nbproject/private/
 ^.hgtip
+/nbproject/private/
+^webrev/
+webrev.zip
+*.class
+*.log
+*.orig
+hotspot.log
+private.properties
+genfiles.properties
+private.xml
+.DS_Store*
+TEST-*.xml
+TESTS-*.xml
+report.xml
+CC/
+jcov2/
+buildtools/nasgen/nbproject/private/
+buildtools/nasgen/dist/
+buildtools/nasgen/build/
+.idea/*

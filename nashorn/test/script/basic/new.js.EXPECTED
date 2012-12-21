@@ -1,0 +1,14 @@
+10
+string
+function() {
+        return true;
+    }
+10
+string
+function() {
+        return true;
+    }
+obj.func called
+[object Object]
+in f1
+object

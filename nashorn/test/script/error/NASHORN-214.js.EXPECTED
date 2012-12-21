@@ -1,0 +1,3 @@
+hello
+ReferenceError: "true" can not be used as the left-hand side of assignment
+x is not a number

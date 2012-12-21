@@ -1,0 +1,33 @@
+[0] has value verbose
+[1] has value info
+[2] has value http
+[3] has value WARN
+[4] has value ERR!
+[1419973] has value win
+[427362049] has value paused
+[3737844653] has value silent
+[silly] has value -1
+[verbose] has value 0
+[info] has value 1
+[http] has value 2
+[WARN] has value 3
+[ERR!] has value 4
+[ERROR] has value 4
+[ERR] has value 4
+[win] has value 1419973
+[paused] has value 427362049
+[silent] has value 3737844653
+[-1] has value silly
+[warn] has value 3
+[err!] has value 4
+[error] has value 4
+[err] has value 4
+ar[0] = Hello
+ar[1] = World
+ar[2] = 3737844653
+ar[0] = Hello
+ar[1] = World
+ar[2] = 3737844653
+ar[34254236] = 17
+ar[3737844653] = bye
+ar[-1] = boom

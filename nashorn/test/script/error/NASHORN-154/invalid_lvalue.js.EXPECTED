@@ -1,0 +1,15 @@
+test/script/error/NASHORN-154/invalid_lvalue.js:36:0 Invalid left hand side for assignment
+3 = 4;
+^
+test/script/error/NASHORN-154/invalid_lvalue.js:37:2 Invalid left hand side for assignment
+2 + 44 = 3;
+  ^
+test/script/error/NASHORN-154/invalid_lvalue.js:38:2 Invalid left hand side for assignment
+x * y = 33;
+  ^
+test/script/error/NASHORN-154/invalid_lvalue.js:39:2 Invalid left hand side for assignment
+x / y = 23;
+  ^
+test/script/error/NASHORN-154/invalid_lvalue.js:40:1 Invalid left hand side for assignment
+x++ /= 33
+ ^

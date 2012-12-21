@@ -1,0 +1,62 @@
+
+test 1
+
+try
+finally
+got e
+
+test 2
+
+try
+finally
+
+test 3
+
+try
+finally
+
+test 4
+
+try 0
+finally 1
+try 1
+finally 2
+try 2
+finally 3
+try 3
+finally 4
+try 4
+finally 5
+try 5
+finally 6
+try 6
+finally 7
+try 7
+finally 8
+try 8
+finally 9
+try 9
+finally 10
+10
+
+test 5
+
+try 0
+finally 1
+1
+
+test 6
+
+try 0
+finally 1
+try 1
+finally 2
+try 2
+finally 3
+try 3
+finally 4
+try 4
+finally 5
+try 5
+finally 5
+5
