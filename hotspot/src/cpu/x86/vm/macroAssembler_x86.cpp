@@ -1023,7 +1023,7 @@ void MacroAssembler::lea(Address dst, AddressLiteral adr) {
 
 void MacroAssembler::leave() {
   // %%% is this really better? Why not on 32bit too?
-  emit_byte(0xC9); // LEAVE
+  emit_int8((unsigned char)0xC9); // LEAVE
 }
 
 void MacroAssembler::lneg(Register hi, Register lo) {
@@ -2112,11 +2112,11 @@ void MacroAssembler::fat_nop() {
   if (UseAddressNop) {
     addr_nop_5();
   } else {
-    emit_byte(0x26); // es:
-    emit_byte(0x2e); // cs:
-    emit_byte(0x64); // fs:
-    emit_byte(0x65); // gs:
-    emit_byte(0x90);
+    emit_int8(0x26); // es:
+    emit_int8(0x2e); // cs:
+    emit_int8(0x64); // fs:
+    emit_int8(0x65); // gs:
+    emit_int8((unsigned char)0x90);
   }
 }
 
@@ -2534,12 +2534,12 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst) {
     int offs = (intptr_t)dst.target() - ((intptr_t)pc());
     if (dst.reloc() == relocInfo::none && is8bit(offs - short_size)) {
       // 0111 tttn #8-bit disp
-      emit_byte(0x70 | cc);
-      emit_byte((offs - short_size) & 0xFF);
+      emit_int8(0x70 | cc);
+      emit_int8((offs - short_size) & 0xFF);
     } else {
       // 0000 1111 1000 tttn #32-bit disp
-      emit_byte(0x0F);
-      emit_byte(0x80 | cc);
+      emit_int8(0x0F);
+      emit_int8((unsigned char)(0x80 | cc));
       emit_long(offs - long_size);
     }
   } else {
