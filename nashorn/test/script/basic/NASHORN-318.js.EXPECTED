@@ -1,0 +1,4 @@
+null == {} ? false
+null != {} ? true
+null == x ? true
+x == null ? true

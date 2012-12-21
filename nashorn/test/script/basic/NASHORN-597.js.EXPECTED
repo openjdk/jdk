@@ -1,0 +1,8 @@
+ok: t1
+ok: Error
+finally run
+ok: Error
+finally run
+ok: true
+finally run
+ok: [object Object]

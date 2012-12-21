@@ -1,0 +1,19 @@
+TypeError: Can not extend final class jdk.nashorn.internal.test.models.FinalClass.
+TypeError: Can not extend class jdk.nashorn.internal.test.models.NoAccessibleConstructorClass as it has no public or protected constructors.
+TypeError: Can not extend/implement non-public class/interface jdk.nashorn.internal.test.models.NonPublicClass.
+abcdabcd
+run-object
+run-fn
+run-fn-autoconvert
+overloaded-sam: x, undefined
+overloaded-sam: x, y
+oo-plain-hashCode: 5
+oo-plain-toString: override-object
+oo-plain-equals  : false
+oo-overridden-hashCode: 6
+oo-overridden-toString: override-object-overriden
+oo-overridden-equals  : true
+oo-proto-overridden-hashCode: 7
+oo-proto-overridden-toString: override-object
+oo-proto-overridden-equals  : true
+cwa-token

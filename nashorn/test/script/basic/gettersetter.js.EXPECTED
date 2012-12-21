@@ -1,0 +1,13 @@
+default
+default
+new value
+new value
+default
+default
+TypeError: Cannot set property "x" of [object Object] that has only a getter
+default
+default
+default
+undefined
+new value
+undefined

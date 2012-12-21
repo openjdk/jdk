@@ -1,0 +1,12 @@
+[JavaPackage ]
+[JavaPackage java]
+[JavaPackage java]
+[JavaPackage java.lang]
+[JavaClass java.lang.String]
+[JavaClass java.lang.System]
+123
+  12    1
+[JavaClass java.lang.StringBuffer]
+abcdef
+3.14
+23428.34
