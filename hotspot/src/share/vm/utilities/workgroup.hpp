@@ -90,7 +90,7 @@ protected:
     NOT_PRODUCT(_name = name);
     _counter = 0;
   }
-  virtual ~AbstractGangTask() { }
+  ~AbstractGangTask() { }
 
 public:
 };
