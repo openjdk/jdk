@@ -26,7 +26,7 @@
  * @bug 6449798 6399404
  * @summary Test basic workings of PackageElement
  * @author  Joseph D. Darcy
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestPackageElement
  * @compile -processor TestPackageElement -proc:only TestPackageElement.java
  */

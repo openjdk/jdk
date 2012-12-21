@@ -25,7 +25,7 @@
  * @test
  * @bug     6519115
  * @summary Verify MirroredTypeException vs MirroredTypesException is thrown
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor
  * @compile Plurality.java
  * @compile -processor Plurality -proc:only Plurality.java
