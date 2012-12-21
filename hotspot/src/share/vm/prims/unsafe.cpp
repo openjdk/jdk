@@ -468,6 +468,21 @@ UNSAFE_ENTRY(void, Unsafe_SetOrderedLong(JNIEnv *env, jobject unsafe, jobject ob
 #endif
 UNSAFE_END
 
+UNSAFE_ENTRY(void, Unsafe_LoadFence(JNIEnv *env, jobject unsafe))
+  UnsafeWrapper("Unsafe_LoadFence");
+  OrderAccess::acquire();
+UNSAFE_END
+
+UNSAFE_ENTRY(void, Unsafe_StoreFence(JNIEnv *env, jobject unsafe))
+  UnsafeWrapper("Unsafe_StoreFence");
+  OrderAccess::release();
+UNSAFE_END
+
+UNSAFE_ENTRY(void, Unsafe_FullFence(JNIEnv *env, jobject unsafe))
+  UnsafeWrapper("Unsafe_FullFence");
+  OrderAccess::fence();
+UNSAFE_END
+
 ////// Data in the C heap.
 
 // Note:  These do not throw NullPointerException for bad pointers.
@@ -1550,6 +1565,9 @@ static JNINativeMethod methods[] = {
     {CC"putOrderedObject",   CC"("OBJ"J"OBJ")V",         FN_PTR(Unsafe_SetOrderedObject)},
     {CC"putOrderedInt",      CC"("OBJ"JI)V",             FN_PTR(Unsafe_SetOrderedInt)},
     {CC"putOrderedLong",     CC"("OBJ"JJ)V",             FN_PTR(Unsafe_SetOrderedLong)},
+    {CC"loadFence",          CC"()V",                    FN_PTR(Unsafe_LoadFence)},
+    {CC"storeFence",         CC"()V",                    FN_PTR(Unsafe_StoreFence)},
+    {CC"fullFence",          CC"()V",                    FN_PTR(Unsafe_FullFence)},
     {CC"park",               CC"(ZJ)V",                  FN_PTR(Unsafe_Park)},
     {CC"unpark",             CC"("OBJ")V",               FN_PTR(Unsafe_Unpark)}
 

@@ -403,7 +403,7 @@ const char* InlineTree::check_can_parse(ciMethod* callee) {
 //------------------------------print_inlining---------------------------------
 // Really, the failure_msg can be a success message also.
 void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci, const char* failure_msg) const {
-  CompileTask::print_inlining(callee_method, inline_level(), caller_bci, failure_msg ? failure_msg : "inline");
+  C->print_inlining(callee_method, inline_level(), caller_bci, failure_msg ? failure_msg : "inline");
   if (callee_method == NULL)  tty->print(" callee not monotonic or profiled");
   if (Verbose && callee_method) {
     const InlineTree *top = this;
