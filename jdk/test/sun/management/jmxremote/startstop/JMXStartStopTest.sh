@@ -61,7 +61,7 @@ _compile(){
 }
 
 _app_start(){
-  ${TESTJAVA}/bin/java -server $* -cp ${_testclasses} JMXStartStopDoSomething  >> ${_logname} 2>&1 &
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} $* -cp ${_testclasses} JMXStartStopDoSomething  >> ${_logname} 2>&1 &
 
   x=0
   while [ ! -f ${_lockFileName} ]
@@ -110,7 +110,7 @@ _exit_on_jtreg(){
 }
 
 _testme(){
-  ${TESTJAVA}/bin/java -cp ${_testclasses} JMXStartStopTest $*
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${_testclasses} JMXStartStopTest $*
 }   
 
   
