@@ -54,7 +54,6 @@ abstract public class TestAESBase {
   String paddingStr = "PKCS5Padding";
   AlgorithmParameters algParams;
   SecretKey key;
-  int ivLen;
 
   static int numThreads = 0;
   int  threadId;
@@ -68,7 +67,7 @@ abstract public class TestAESBase {
 
   public void prepare() {
     try {
-    System.out.println("\nmsgSize=" + msgSize + ", key size=" + keySize + ", reInit=" + !noReinit + ", checkOutput=" + checkOutput);
+    System.out.println("\nalgorithm=" + algorithm + ", mode=" + mode + ", msgSize=" + msgSize + ", keySize=" + keySize + ", noReinit=" + noReinit + ", checkOutput=" + checkOutput);
 
       int keyLenBytes = (keySize == 0 ? 16 : keySize/8);
       byte keyBytes[] = new byte[keyLenBytes];
@@ -90,10 +89,14 @@ abstract public class TestAESBase {
       cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
       dCipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
 
-      ivLen = (algorithm.equals("AES") ? 16 : algorithm.equals("DES") ? 8 : 0);
-      IvParameterSpec initVector = new IvParameterSpec(new byte[ivLen]);
-
-      cipher.init(Cipher.ENCRYPT_MODE, key, initVector);
+      if (mode.equals("CBC")) {
+        int ivLen = (algorithm.equals("AES") ? 16 : algorithm.equals("DES") ? 8 : 0);
+        IvParameterSpec initVector = new IvParameterSpec(new byte[ivLen]);
+        cipher.init(Cipher.ENCRYPT_MODE, key, initVector);
+      } else {
+        algParams = cipher.getParameters();
+        cipher.init(Cipher.ENCRYPT_MODE, key, algParams);
+      }
       algParams = cipher.getParameters();
       dCipher.init(Cipher.DECRYPT_MODE, key, algParams);
       if (threadId == 0) {

@@ -538,6 +538,7 @@ void CompilerOracle::parse_from_line(char* line) {
 
   if (match != NULL) {
     if (!_quiet) {
+      ResourceMark rm;
       tty->print("CompilerOracle: %s ", command_names[command]);
       match->print();
     }
