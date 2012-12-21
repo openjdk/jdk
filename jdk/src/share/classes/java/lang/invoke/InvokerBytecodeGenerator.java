@@ -295,9 +295,6 @@ class InvokerBytecodeGenerator {
 
         String invokerDesc = invokerType.toMethodDescriptorString();
         mv = cw.visitMethod(Opcodes.ACC_STATIC, invokerName, invokerDesc, null, null);
-
-        // Force inlining of this invoker method.
-        mv.visitAnnotation("Ljava/lang/invoke/ForceInline;", true);
     }
 
     /**
@@ -523,6 +520,9 @@ class InvokerBytecodeGenerator {
 
         // Mark this method as a compiled LambdaForm
         mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Compiled;", true);
+
+        // Force inlining of this invoker method.
+        mv.visitAnnotation("Ljava/lang/invoke/ForceInline;", true);
 
         // iterate over the form's names, generating bytecode instructions for each
         // start iterating at the first name following the arguments
@@ -943,6 +943,9 @@ class InvokerBytecodeGenerator {
         // Suppress this method in backtraces displayed to the user.
         mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
 
+        // Don't inline the interpreter entry.
+        mv.visitAnnotation("Ljava/lang/invoke/DontInline;", true);
+
         // create parameter array
         emitIconstInsn(invokerType.parameterCount());
         mv.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
@@ -1004,6 +1007,9 @@ class InvokerBytecodeGenerator {
 
         // Suppress this method in backtraces displayed to the user.
         mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+
+        // Force inlining of this invoker method.
+        mv.visitAnnotation("Ljava/lang/invoke/ForceInline;", true);
 
         // Load receiver
         emitAloadInsn(0);
