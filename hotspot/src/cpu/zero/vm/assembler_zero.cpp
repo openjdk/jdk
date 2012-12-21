@@ -58,7 +58,7 @@ void Assembler::pd_patch_instruction(address branch, address target) {
 
 void MacroAssembler::align(int modulus) {
   while (offset() % modulus != 0)
-    emit_byte(AbstractAssembler::code_fill_byte());
+    emit_int8(AbstractAssembler::code_fill_byte());
 }
 
 void MacroAssembler::bang_stack_with_offset(int offset) {

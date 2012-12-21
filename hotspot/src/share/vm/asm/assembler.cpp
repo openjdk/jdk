@@ -109,17 +109,6 @@ void AbstractAssembler::flush() {
   ICache::invalidate_range(addr_at(0), offset());
 }
 
-
-void AbstractAssembler::a_byte(int x) {
-  emit_byte(x);
-}
-
-
-void AbstractAssembler::a_long(jint x) {
-  emit_long(x);
-}
-
-
 void AbstractAssembler::bind(Label& L) {
   if (L.is_bound()) {
     // Assembler can bind a label more than once to the same place.
