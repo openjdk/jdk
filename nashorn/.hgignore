@@ -1,25 +1,25 @@
 syntax: glob
 
-^build/
-^dist/
 ^.hgtip
+build/*
+dist/*
 /nbproject/private/
+private.xml
+private.properties
 ^webrev/
 webrev.zip
 *.class
+*.clazz
 *.log
 *.orig
-hotspot.log
-private.properties
 genfiles.properties
-private.xml
+hotspot.log
 .DS_Store*
 TEST-*.xml
 TESTS-*.xml
 report.xml
-CC/
-jcov2/
-buildtools/nasgen/nbproject/private/
-buildtools/nasgen/dist/
-buildtools/nasgen/build/
+CC/*
+jcov2/*
 .idea/*
+test/lib/testng.jar
+test/script/external/*
