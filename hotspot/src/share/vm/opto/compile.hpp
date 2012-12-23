@@ -280,6 +280,8 @@ class Compile : public Phase {
   int                   _orig_pc_slot_offset_in_bytes;
 
   int                   _major_progress;        // Count of something big happening
+  bool                  _inlining_progress;     // progress doing incremental inlining?
+  bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _has_loops;             // True if the method _may_ have some loops
   bool                  _has_split_ifs;         // True if the method _may_ have some split-if
   bool                  _has_unsafe_access;     // True if the method _may_ produce faults in unsafe loads or stores.
@@ -367,8 +369,13 @@ class Compile : public Phase {
   Unique_Node_List*     _for_igvn;              // Initial work-list for next round of Iterative GVN
   WarmCallInfo*         _warm_calls;            // Sorted work-list for heat-based inlining.
 
-  GrowableArray<CallGenerator*> _late_inlines;  // List of CallGenerators to be revisited after
-                                                // main parsing has finished.
+  GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after
+                                                      // main parsing has finished.
+  GrowableArray<CallGenerator*> _string_late_inlines; // same but for string operations
+
+  int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
+  uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
+
 
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
@@ -491,6 +498,10 @@ class Compile : public Phase {
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
   int               major_progress() const      { return _major_progress; }
+  void          set_inlining_progress(bool z)   { _inlining_progress = z; }
+  int               inlining_progress() const   { return _inlining_progress; }
+  void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
+  int               inlining_incrementally() const { return _inlining_incrementally; }
   void          set_major_progress()            { _major_progress++; }
   void        clear_major_progress()            { _major_progress = 0; }
   int               num_loop_opts() const       { return _num_loop_opts; }
@@ -729,7 +740,7 @@ class Compile : public Phase {
 
   // Decide how to build a call.
   // The profile factor is a discount to apply to this site's interp. profile.
-  CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual, JVMState* jvms, bool allow_inline, float profile_factor, bool allow_intrinsics = true);
+  CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual, JVMState* jvms, bool allow_inline, float profile_factor, bool allow_intrinsics = true, bool delayed_forbidden = false);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms);
 
   // Report if there were too many traps at a current method and bci.
@@ -765,9 +776,38 @@ class Compile : public Phase {
   WarmCallInfo* pop_warm_call();
 
   // Record this CallGenerator for inlining at the end of parsing.
-  void              add_late_inline(CallGenerator* cg) { _late_inlines.push(cg); }
+  void              add_late_inline(CallGenerator* cg)        {
+    _late_inlines.insert_before(_late_inlines_pos, cg);
+    _late_inlines_pos++;
+  }
+
+  void              prepend_late_inline(CallGenerator* cg)    {
+    _late_inlines.insert_before(0, cg);
+  }
+
+  void              add_string_late_inline(CallGenerator* cg) {
+    _string_late_inlines.push(cg);
+  }
+
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
 
   void dump_inlining();
+
+  bool over_inlining_cutoff() const {
+    if (!inlining_incrementally()) {
+      return unique() > (uint)NodeCountInliningCutoff;
+    } else {
+      return live_nodes() > (uint)LiveNodeCountInliningCutoff;
+    }
+  }
+
+  void inc_number_of_mh_late_inlines() { _number_of_mh_late_inlines++; }
+  void dec_number_of_mh_late_inlines() { assert(_number_of_mh_late_inlines > 0, "_number_of_mh_late_inlines < 0 !"); _number_of_mh_late_inlines--; }
+  bool has_mh_late_inlines() const     { return _number_of_mh_late_inlines > 0; }
+
+  void inline_incrementally_one(PhaseIterGVN& igvn);
+  void inline_incrementally(PhaseIterGVN& igvn);
+  void inline_string_calls(bool parse_time);
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*         cfg()                       { return _cfg; }

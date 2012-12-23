@@ -63,7 +63,7 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
 
 CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool call_is_virtual,
                                        JVMState* jvms, bool allow_inline,
-                                       float prof_factor, bool allow_intrinsics) {
+                                       float prof_factor, bool allow_intrinsics, bool delayed_forbidden) {
   ciMethod*       caller   = jvms->method();
   int             bci      = jvms->bci();
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
@@ -130,7 +130,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // MethodHandle.invoke* are native methods which obviously don't
   // have bytecodes and so normal inlining fails.
   if (callee->is_method_handle_intrinsic()) {
-    return CallGenerator::for_method_handle_call(jvms, caller, callee);
+    CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee, delayed_forbidden);
+    assert (cg == NULL || !delayed_forbidden || !cg->is_late_inline() || cg->is_mh_late_inline(), "unexpected CallGenerator");
+    return cg;
   }
 
   // Do not inline strict fp into non-strict code, or the reverse
@@ -161,20 +163,27 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       WarmCallInfo scratch_ci;
       if (!UseOldInlining)
         scratch_ci.init(jvms, callee, profile, prof_factor);
-      WarmCallInfo* ci = ilt->ok_to_inline(callee, jvms, profile, &scratch_ci);
+      bool should_delay = false;
+      WarmCallInfo* ci = ilt->ok_to_inline(callee, jvms, profile, &scratch_ci, should_delay);
       assert(ci != &scratch_ci, "do not let this pointer escape");
       bool allow_inline   = (ci != NULL && !ci->is_cold());
       bool require_inline = (allow_inline && ci->is_hot());
 
       if (allow_inline) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
-        if (require_inline && cg != NULL && should_delay_inlining(callee, jvms)) {
+
+        if (require_inline && cg != NULL) {
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
           // first.
-          return CallGenerator::for_late_inline(callee, cg);
+          if (should_delay_inlining(callee, jvms)) {
+            assert(!delayed_forbidden, "strange");
+            return CallGenerator::for_string_late_inline(callee, cg);
+          } else if ((should_delay || AlwaysIncrementalInline) && !delayed_forbidden) {
+            return CallGenerator::for_late_inline(callee, cg);
+          }
         }
-        if (cg == NULL) {
+        if (cg == NULL || should_delay) {
           // Fall through.
         } else if (require_inline || !InlineWarmCalls) {
           return cg;

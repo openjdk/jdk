@@ -3291,6 +3291,18 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (!EliminateLocks) {
     EliminateNestedLocks = false;
   }
+  if (!Inline) {
+    IncrementalInline = false;
+  }
+#ifndef PRODUCT
+  if (!IncrementalInline) {
+    AlwaysIncrementalInline = false;
+  }
+#endif
+  if (IncrementalInline && FLAG_IS_DEFAULT(MaxNodeLimit)) {
+    // incremental inlining: bump MaxNodeLimit
+    FLAG_SET_DEFAULT(MaxNodeLimit, (intx)75000);
+  }
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
