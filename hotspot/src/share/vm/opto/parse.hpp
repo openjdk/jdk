@@ -70,7 +70,7 @@ protected:
   InlineTree *build_inline_tree_for_callee(ciMethod* callee_method,
                                            JVMState* caller_jvms,
                                            int caller_bci);
-  const char* try_to_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result);
+  const char* try_to_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result, bool& should_delay);
   const char* should_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const;
   const char* should_not_inline(ciMethod* callee_method, ciMethod* caller_method, WarmCallInfo* wci_result) const;
   void        print_inlining(ciMethod *callee_method, int caller_bci, const char *failure_msg) const;
@@ -107,7 +107,7 @@ public:
   // and may be accessed by find_subtree_from_root.
   // The call_method is the dest_method for a special or static invocation.
   // The call_method is an optimized virtual method candidate otherwise.
-  WarmCallInfo* ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, WarmCallInfo* wci);
+  WarmCallInfo* ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, WarmCallInfo* wci, bool& should_delay);
 
   // Information about inlined method
   JVMState*   caller_jvms()       const { return _caller_jvms; }
