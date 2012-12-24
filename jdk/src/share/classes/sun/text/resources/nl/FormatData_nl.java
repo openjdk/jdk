@@ -104,6 +104,17 @@ public class FormatData_nl extends ListResourceBundle {
                     "za" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "Z",
+                    "M",
+                    "D",
+                    "W",
+                    "D",
+                    "V",
+                    "Z",
+                }
+            },
             { "Eras",
                 new String[] { // era strings for GregorianCalendar
                     "v. Chr.",

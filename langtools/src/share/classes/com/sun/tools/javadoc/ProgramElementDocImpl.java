@@ -29,10 +29,12 @@ import java.lang.reflect.Modifier;
 import java.text.CollationKey;
 
 import com.sun.javadoc.*;
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Position;
 
 /**
@@ -66,16 +68,20 @@ public abstract class ProgramElementDocImpl
     // Cache for getModifiers().
     private int modifiers = -1;
 
-    protected ProgramElementDocImpl(DocEnv env, Symbol sym,
-                                    String doc, JCTree tree, Position.LineMap lineMap) {
-        super(env, doc);
+    protected ProgramElementDocImpl(DocEnv env, Symbol sym, TreePath treePath) {
+        super(env, treePath);
         this.sym = sym;
-        this.tree = tree;
-        this.lineMap = lineMap;
+        if (treePath != null) {
+            tree = (JCTree) treePath.getLeaf();
+            lineMap = ((JCCompilationUnit) treePath.getCompilationUnit()).lineMap;
+        }
     }
 
-    void setTree(JCTree tree) {
-        this.tree = tree;
+    @Override
+    void setTreePath(TreePath treePath) {
+        super.setTreePath(treePath);
+        this.tree = (JCTree) treePath.getLeaf();
+        this.lineMap = ((JCCompilationUnit) treePath.getCompilationUnit()).lineMap;
     }
 
     /**

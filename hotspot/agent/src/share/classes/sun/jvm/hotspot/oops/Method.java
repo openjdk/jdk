@@ -50,8 +50,6 @@ public class Method extends Metadata {
     constMethod                = type.getAddressField("_constMethod");
     methodData                 = type.getAddressField("_method_data");
     methodSize                 = new CIntField(type.getCIntegerField("_method_size"), 0);
-    maxLocals                  = new CIntField(type.getCIntegerField("_max_locals"), 0);
-    sizeOfParameters           = new CIntField(type.getCIntegerField("_size_of_parameters"), 0);
     accessFlags                = new CIntField(type.getCIntegerField("_access_flags"), 0);
     code                       = type.getAddressField("_code");
     vtableIndex                = new CIntField(type.getCIntegerField("_vtable_index"), 0);
@@ -83,8 +81,6 @@ public class Method extends Metadata {
   private static AddressField  constMethod;
   private static AddressField  methodData;
   private static CIntField methodSize;
-  private static CIntField maxLocals;
-  private static CIntField sizeOfParameters;
   private static CIntField accessFlags;
   private static CIntField vtableIndex;
   private static CIntField invocationCounter;
@@ -134,8 +130,8 @@ public class Method extends Metadata {
   /** WARNING: this is in words, not useful in this system; use getObjectSize() instead */
   public long         getMethodSize()                 { return                methodSize.getValue(this);        }
   public long         getMaxStack()                   { return                getConstMethod().getMaxStack();   }
-  public long         getMaxLocals()                  { return                maxLocals.getValue(this);         }
-  public long         getSizeOfParameters()           { return                sizeOfParameters.getValue(this);  }
+  public long         getMaxLocals()                  { return                getConstMethod().getMaxLocals();         }
+  public long         getSizeOfParameters()           { return                getConstMethod().getSizeOfParameters();  }
   public long         getNameIndex()                  { return                getConstMethod().getNameIndex();  }
   public long         getSignatureIndex()             { return            getConstMethod().getSignatureIndex(); }
   public long         getGenericSignatureIndex()      { return     getConstMethod().getGenericSignatureIndex(); }
@@ -282,8 +278,6 @@ public class Method extends Metadata {
 
   public void iterateFields(MetadataVisitor visitor) {
       visitor.doCInt(methodSize, true);
-      visitor.doCInt(maxLocals, true);
-      visitor.doCInt(sizeOfParameters, true);
       visitor.doCInt(accessFlags, true);
     }
 

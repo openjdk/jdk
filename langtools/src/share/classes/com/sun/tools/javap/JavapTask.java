@@ -117,7 +117,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         final String[] aliases;
     }
 
-    static Option[] recognizedOptions = {
+    static final Option[] recognizedOptions = {
 
         new Option(false, "-help", "--help", "-?") {
             void process(JavapTask task, String opt, String arg) {

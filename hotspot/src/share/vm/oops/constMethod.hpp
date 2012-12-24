@@ -46,6 +46,7 @@
 // | interp_kind  | flags    | code_size                  |
 // | name index              | signature index            |
 // | method_idnum            | max_stack                  |
+// | max_locals              | size_of_parameters         |
 // |------------------------------------------------------|
 // |                                                      |
 // | byte codes                                           |
@@ -150,7 +151,8 @@ private:
                                                  // initially corresponds to the index into the methods array.
                                                  // but this may change with redefinition
   u2                _max_stack;                  // Maximum number of entries on the expression stack
-
+  u2                _max_locals;                 // Number of local variables used by this method
+  u2                _size_of_parameters;         // size of the parameter block (receiver + arguments) in words
 
   // Constructor
   ConstMethod(int byte_code_size,
@@ -338,6 +340,11 @@ public:
 
   static ByteSize max_stack_offset()
                             { return byte_offset_of(ConstMethod, _max_stack); }
+  static ByteSize size_of_locals_offset()
+                            { return byte_offset_of(ConstMethod, _max_locals); }
+  static ByteSize size_of_parameters_offset()
+                            { return byte_offset_of(ConstMethod, _size_of_parameters); }
+
 
   // Unique id for the method
   static const u2 MAX_IDNUM;
@@ -348,6 +355,14 @@ public:
   // max stack
   int  max_stack() const                         { return _max_stack; }
   void set_max_stack(int size)                   { _max_stack = size; }
+
+  // max locals
+  int  max_locals() const                        { return _max_locals; }
+  void set_max_locals(int size)                  { _max_locals = size; }
+
+  // size of parameters
+  int  size_of_parameters() const                { return _size_of_parameters; }
+  void set_size_of_parameters(int size)          { _size_of_parameters = size; }
 
   // Deallocation for RedefineClasses
   void deallocate_contents(ClassLoaderData* loader_data);

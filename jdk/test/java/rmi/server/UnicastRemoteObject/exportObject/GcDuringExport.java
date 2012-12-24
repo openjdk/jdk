@@ -30,6 +30,7 @@
  * @bug 6597112
  * @summary GC'ing objects whilst being exported to RMI should not cause exceptions
  * @author Neil Richards <neil.richards@ngmr.net>, <neil_richards@uk.ibm.com>
+ * @run main GcDuringExport
  */
 
 import java.rmi.Remote;

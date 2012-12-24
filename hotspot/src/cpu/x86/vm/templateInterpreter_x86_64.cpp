@@ -369,9 +369,6 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
   // Everything as it was on entry
   // rdx is not restored. Doesn't appear to really be set.
 
-  const Address size_of_parameters(rbx,
-                                   Method::size_of_parameters_offset());
-
   // InterpreterRuntime::frequency_counter_overflow takes two
   // arguments, the first (thread) is passed by call_VM, the second
   // indicates if the counter overflow occurs at a backwards branch
@@ -844,14 +841,17 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   address entry_point = __ pc();
 
-  const Address size_of_parameters(rbx, Method::
-                                        size_of_parameters_offset());
+  const Address constMethod       (rbx, Method::const_offset());
   const Address invocation_counter(rbx, Method::
                                         invocation_counter_offset() +
                                         InvocationCounter::counter_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
+  const Address size_of_parameters(rcx, ConstMethod::
+                                        size_of_parameters_offset());
+
 
   // get parameter size (always needed)
+  __ movptr(rcx, constMethod);
   __ load_unsigned_short(rcx, size_of_parameters);
 
   // native calls don't need the stack size check since they have no
@@ -967,9 +967,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // allocate space for parameters
   __ get_method(method);
-  __ load_unsigned_short(t,
-                         Address(method,
-                                 Method::size_of_parameters_offset()));
+  __ movptr(t, Address(method, Method::const_offset()));
+  __ load_unsigned_short(t, Address(t, ConstMethod::size_of_parameters_offset()));
   __ shll(t, Interpreter::logStackElementSize);
 
   __ subptr(rsp, t);
@@ -1302,15 +1301,18 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // r13: sender sp
   address entry_point = __ pc();
 
-  const Address size_of_parameters(rbx,
-                                   Method::size_of_parameters_offset());
-  const Address size_of_locals(rbx, Method::size_of_locals_offset());
+  const Address constMethod(rbx, Method::const_offset());
   const Address invocation_counter(rbx,
                                    Method::invocation_counter_offset() +
                                    InvocationCounter::counter_offset());
   const Address access_flags(rbx, Method::access_flags_offset());
+  const Address size_of_parameters(rdx,
+                                   ConstMethod::size_of_parameters_offset());
+  const Address size_of_locals(rdx, ConstMethod::size_of_locals_offset());
+
 
   // get parameter size (always needed)
+  __ movptr(rdx, constMethod);
   __ load_unsigned_short(rcx, size_of_parameters);
 
   // rbx: Method*
@@ -1752,7 +1754,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // Compute size of arguments for saving when returning to
     // deoptimized caller
     __ get_method(rax);
-    __ load_unsigned_short(rax, Address(rax, in_bytes(Method::
+    __ movptr(rax, Address(rax, Method::const_offset()));
+    __ load_unsigned_short(rax, Address(rax, in_bytes(ConstMethod::
                                                 size_of_parameters_offset())));
     __ shll(rax, Interpreter::logStackElementSize);
     __ restore_locals(); // XXX do we need this?

@@ -28,11 +28,8 @@
  * @author Laird Dornin; code borrowed from Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build TestSecurityManager
- * @build RegisteringActivatable
- * @build ShutdownGracefully
- * @build ShutdownGracefully_Stub
+ * @build TestLibrary RMID
+ *     TestSecurityManager RegisteringActivatable ShutdownGracefully_Stub
  * @run main/othervm/policy=security.policy/timeout=700 ShutdownGracefully
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,12 +53,13 @@ public class KeyManagerFactory {
 
     /**
      * <p>The default KeyManager can be changed by setting the value of the
-     * "sun.ssl.keymanager.type" security property (in the Java security
-     * properties file) to the desired name.
+     * {@code sun.ssl.keymanager.type} security property to the desired name.
      *
-     * @return the default type as specified in the
-     * Java security properties file, or an implementation-specific default
-     * if no such property exists.
+     * @return the default type as specified by the
+     * {@code sun.ssl.keymanager.type} security property, or an
+     * implementation-specific default if no such property exists.
+     *
+     * @see java.security.Security security properties
      */
     public final static String getDefaultAlgorithm() {
         String type;

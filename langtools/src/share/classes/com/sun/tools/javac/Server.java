@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class Server implements Runnable {
     private final OutputStream out;
     private final boolean isSocket;
     private static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-    private static Logger logger = Logger.getLogger("com.sun.tools.javac");
+    private static final Logger logger = Logger.getLogger("com.sun.tools.javac");
     static class CwdFileManager extends ForwardingJavaFileManager<JavaFileManager> {
         String cwd;
         CwdFileManager(JavaFileManager fileManager) {
@@ -69,7 +69,7 @@ class Server implements Runnable {
 //      }
     }
     // static CwdFileManager fm = new CwdFileManager(tool.getStandardFileManager());
-    static StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
+    static final StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
     static {
         // Use the same file manager for all compilations.  This will
         // cache jar files in the standard file manager.  Use

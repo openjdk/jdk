@@ -104,6 +104,17 @@ public class FormatData_pt extends ListResourceBundle {
                     "S\u00e1b" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "D",
+                    "S",
+                    "T",
+                    "Q",
+                    "Q",
+                    "S",
+                    "S",
+                }
+            },
             { "NumberElements",
                 new String[] {
                     ",", // decimal al separator

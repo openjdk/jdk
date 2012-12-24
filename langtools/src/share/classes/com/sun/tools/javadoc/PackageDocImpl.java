@@ -31,6 +31,7 @@ import java.io.InputStream;
 import javax.tools.FileObject;
 
 import com.sun.javadoc.*;
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -75,17 +76,16 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
      * Constructor
      */
     public PackageDocImpl(DocEnv env, PackageSymbol sym) {
-        this(env, sym, null, null);
+        this(env, sym, null);
     }
 
     /**
      * Constructor
      */
-    public PackageDocImpl(DocEnv env, PackageSymbol sym,
-                          String documentation, JCTree tree) {
-        super(env, documentation);
+    public PackageDocImpl(DocEnv env, PackageSymbol sym, TreePath treePath) {
+        super(env, treePath);
         this.sym = sym;
-        this.tree = (JCCompilationUnit) tree;
+        this.tree = (treePath == null) ? null : (JCCompilationUnit) treePath.getCompilationUnit();
         foundDoc = (documentation != null);
     }
 
@@ -93,8 +93,8 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
         this.tree = (JCCompilationUnit) tree;
     }
 
-    public void setRawCommentText(String rawDocumentation) {
-        super.setRawCommentText(rawDocumentation);
+    public void setTreePath(TreePath treePath) {
+        super.setTreePath(treePath);
         checkDoc();
     }
 
