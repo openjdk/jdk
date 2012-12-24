@@ -51,7 +51,7 @@
 echo "Starting serialization benchmark "
 
 $TESTJAVA/bin/java \
-    -server \
+    ${TESTVMOPTS} \
     -cp $TESTCLASSES \
     bench.serial.Main \
     -c $TESTSRC/bench/serial/jtreg-config &

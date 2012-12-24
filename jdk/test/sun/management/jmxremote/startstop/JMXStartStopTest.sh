@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2011, 2012 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ _compile(){
 }
 
 _app_start(){
-  ${TESTJAVA}/bin/java -server $* -cp ${_testclasses} JMXStartStopDoSomething  >> ${_logname} 2>&1 &
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} $* -cp ${_testclasses} JMXStartStopDoSomething  >> ${_logname} 2>&1 &
 
   npid=`_get_pid`
   if [ "${npid}" = "" ]
@@ -103,7 +103,7 @@ _exit_on_jtreg(){
 }
 
 _testme(){
-  ${TESTJAVA}/bin/java -cp ${_testclasses} JMXStartStopTest $*
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${_testclasses} JMXStartStopTest $*
 }   
 
   

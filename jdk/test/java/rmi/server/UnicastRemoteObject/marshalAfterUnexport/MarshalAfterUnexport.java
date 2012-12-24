@@ -31,8 +31,7 @@
  * IOException (see fix for bugid 4017232).
  * @author Peter Jones
  *
- * @build MarshalAfterUnexport
- * @build MarshalAfterUnexport_Stub
+ * @build MarshalAfterUnexport MarshalAfterUnexport_Stub
  * @run main/othervm MarshalAfterUnexport
  */
 

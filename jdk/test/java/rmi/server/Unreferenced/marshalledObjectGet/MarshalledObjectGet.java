@@ -30,8 +30,6 @@
  * invoked.
  * @author Peter Jones
  *
- * @library ../../../testlibrary
- * @build MarshalledObjectGet
  * @build MarshalledObjectGet_Stub
  * @run main/othervm/timeout=120 MarshalledObjectGet
  */

@@ -31,6 +31,4 @@ import java.lang.annotation.*;
 @ContainerFor(Anno.class)
 @interface Annos { Anno[] value(); String foo(); }
 
-@Anno
-@Anno
 class ContainedByNonDefault { }

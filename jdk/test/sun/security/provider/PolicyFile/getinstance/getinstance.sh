@@ -92,7 +92,7 @@ ${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
 ${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}app \
         ${TESTSRC}${FS}GetInstance.java
 
-${TESTJAVA}${FS}bin${FS}java  \
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS}  \
 -Xbootclasspath/a:"${TESTCLASSES}${FS}boot" \
 -classpath "${TESTCLASSES}${FS}app" -Djava.security.manager \
 -Djava.security.policy=GetInstance.policy \
@@ -106,7 +106,7 @@ if [ $status1 -ne 0 ]; then
      echo "Failed on first test"
 fi
 
-${TESTJAVA}${FS}bin${FS}java  \
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS}  \
 -classpath "${TESTCLASSES}${FS}boot${PS}${TESTCLASSES}${FS}app" \
 -Djava.security.manager \
 -Djava.security.policy=GetInstance.policy \

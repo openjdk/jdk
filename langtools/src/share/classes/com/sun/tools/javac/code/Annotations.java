@@ -74,12 +74,12 @@ public class Annotations {
      */
     private List<Attribute.Compound> attributes = NOT_STARTED;
     /*
-     * The Symbol this Annotatios belong to
+     * The Symbol this Annotations belong to
      */
-    private final Symbol s;
+    private final Symbol sym;
 
-    public Annotations(Symbol s) {
-        this.s = s;
+    public Annotations(Symbol sym) {
+        this.sym = sym;
     }
 
     public List<Attribute.Compound> getAttributes() {
@@ -102,7 +102,7 @@ public class Annotations {
     }
 
     public void setAttributesWithCompletion(final Annotate.AnnotateRepeatedContext ctx) {
-        Assert.check(pendingCompletion() || (!isStarted() && s.kind == PCK));
+        Assert.check(pendingCompletion() || (!isStarted() && sym.kind == PCK));
 
         Map<Symbol.TypeSymbol, ListBuffer<Attribute.Compound>> annotated = ctx.annotated;
         boolean atLeastOneRepeated = false;
@@ -111,7 +111,7 @@ public class Annotations {
             if (lb.size() == 1) {
                 buf = buf.prepend(lb.first());
             } else { // repeated
-                buf = buf.prepend(new Placeholder(lb.toList(), s));
+                buf = buf.prepend(new Placeholder(lb.toList(), sym));
                 atLeastOneRepeated = true;
             }
         }
@@ -141,7 +141,7 @@ public class Annotations {
 
                 @Override
                 public String toString() {
-                    return "repeated annotation pass of: " + s + " in: " + s.owner;
+                    return "repeated annotation pass of: " + sym + " in: " + sym.owner;
                 }
 
                 @Override
@@ -253,7 +253,7 @@ public class Annotations {
 
         // Process repeated annotations
         Attribute.Compound validRepeated =
-                ctx.processRepeatedAnnotations(placeholder.getPlaceholderFor());
+            ctx.processRepeatedAnnotations(placeholder.getPlaceholderFor(), sym);
 
         if (validRepeated != null) {
             // Check that the container isn't manually

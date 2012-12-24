@@ -104,6 +104,17 @@ public class FormatData_sq extends ListResourceBundle {
                     "Sht" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "D",
+                    "H",
+                    "M",
+                    "M",
+                    "E",
+                    "P",
+                    "S",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "PD", // am marker

@@ -135,9 +135,11 @@ public enum TypeTag {
     /** This field will only be used for tags related with numeric types for
      *  optimization reasons.
      */
-    private int order = 0;
+    private final int order;
 
-    private TypeTag() {}
+    private TypeTag() {
+        this(0);
+    }
 
     private TypeTag(int order) {
         this.order = order;
