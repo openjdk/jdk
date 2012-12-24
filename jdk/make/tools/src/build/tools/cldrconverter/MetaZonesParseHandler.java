@@ -46,8 +46,9 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
         return null;
     }
 
+    // metaZone: ID -> metazone
+    // per locale: ID -> names, metazone -> names
     @Override
-    @SuppressWarnings("fallthrough")
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         switch (qName) {
         case "timezone":

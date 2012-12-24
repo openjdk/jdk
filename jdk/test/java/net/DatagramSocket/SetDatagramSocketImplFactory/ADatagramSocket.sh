@@ -49,4 +49,4 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FILESEP}bin${FILESEP}java -Xbootclasspath/p:${TESTCLASSES} ADatagramSocket true
+${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} -Xbootclasspath/p:${TESTCLASSES} ADatagramSocket true

@@ -27,20 +27,20 @@
 #          used to run the test under JTREG.
 #
 # @build bench.BenchInfo bench.HtmlReporter bench.Util bench.Benchmark 
-# @build bench.Reporter bench.XmlReporter bench.ConfigFormatException 
-# @build bench.Harness bench.TextReporter bench.rmi.BenchServer 
-# @build bench.rmi.DoubleArrayCalls bench.rmi.LongCalls bench.rmi.ShortCalls
-# @build bench.rmi.BenchServerImpl bench.rmi.DoubleCalls 
-# @build bench.rmi.Main bench.rmi.SmallObjTreeCalls
-# @build bench.rmi.BooleanArrayCalls bench.rmi.ExceptionCalls 
-# @build bench.rmi.NullCalls bench.rmi.BooleanCalls bench.rmi.ExportObjs 
-# @build bench.rmi.ObjArrayCalls bench.rmi.ByteArrayCalls 
-# @build bench.rmi.FloatArrayCalls bench.rmi.ObjTreeCalls
-# @build bench.rmi.ByteCalls bench.rmi.FloatCalls bench.rmi.ProxyArrayCalls
-# @build bench.rmi.CharArrayCalls bench.rmi.IntArrayCalls 
-# @build bench.rmi.RemoteObjArrayCalls bench.rmi.CharCalls bench.rmi.IntCalls
-# @build bench.rmi.ClassLoading bench.rmi.LongArrayCalls 
-# @build bench.rmi.ShortArrayCalls bench.rmi.altroot.Node
+#     bench.Reporter bench.XmlReporter bench.ConfigFormatException 
+#     bench.Harness bench.TextReporter bench.rmi.BenchServer 
+#     bench.rmi.DoubleArrayCalls bench.rmi.LongCalls bench.rmi.ShortCalls
+#     bench.rmi.BenchServerImpl bench.rmi.DoubleCalls 
+#     bench.rmi.Main bench.rmi.SmallObjTreeCalls
+#     bench.rmi.BooleanArrayCalls bench.rmi.ExceptionCalls 
+#     bench.rmi.NullCalls bench.rmi.BooleanCalls bench.rmi.ExportObjs 
+#     bench.rmi.ObjArrayCalls bench.rmi.ByteArrayCalls 
+#     bench.rmi.FloatArrayCalls bench.rmi.ObjTreeCalls
+#     bench.rmi.ByteCalls bench.rmi.FloatCalls bench.rmi.ProxyArrayCalls
+#     bench.rmi.CharArrayCalls bench.rmi.IntArrayCalls 
+#     bench.rmi.RemoteObjArrayCalls bench.rmi.CharCalls bench.rmi.IntCalls
+#     bench.rmi.ClassLoading bench.rmi.LongArrayCalls 
+#     bench.rmi.ShortArrayCalls bench.rmi.altroot.Node
 #
 # @run shell/timeout=1800 runRmiBench.sh
 #

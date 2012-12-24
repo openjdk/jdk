@@ -2977,6 +2977,16 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_CompareAndSwap(x, longType);
     break;
 
+  case vmIntrinsics::_loadFence :
+    if (os::is_MP()) __ membar_acquire();
+    break;
+  case vmIntrinsics::_storeFence:
+    if (os::is_MP()) __ membar_release();
+    break;
+  case vmIntrinsics::_fullFence :
+    if (os::is_MP()) __ membar();
+    break;
+
   case vmIntrinsics::_Reference_get:
     do_Reference_get(x);
     break;

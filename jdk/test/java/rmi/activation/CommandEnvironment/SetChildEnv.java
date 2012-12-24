@@ -35,9 +35,10 @@
  * @author Adrian Colley
  *
  * @library ../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build Eliza Retireable Doctor Doctor_Stub SetChildEnv
- * @run main/othervm/timeout=240/policy=security.policy -Djava.compiler=NONE  SetChildEnv
+ * @build TestLibrary RMID ActivationLibrary
+ *     Eliza Retireable Doctor Doctor_Stub
+ * @run main/othervm/timeout=240/policy=security.policy
+ *     -Djava.compiler=NONE SetChildEnv
  */
 import java.rmi.*;
 import java.util.Properties;

@@ -2895,6 +2895,36 @@ void os::pd_split_reserved_memory(char *base, size_t size, size_t split,
   }
 }
 
+// Multiple threads can race in this code but it's not possible to unmap small sections of
+// virtual space to get requested alignment, like posix-like os's.
+// Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
+char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
+      "Alignment must be a multiple of allocation granularity (page size)");
+  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+
+  size_t extra_size = size + alignment;
+  assert(extra_size >= size, "overflow, size is too large to allow alignment");
+
+  char* aligned_base = NULL;
+
+  do {
+    char* extra_base = os::reserve_memory(extra_size, NULL, alignment);
+    if (extra_base == NULL) {
+      return NULL;
+    }
+    // Do manual alignment
+    aligned_base = (char*) align_size_up((uintptr_t) extra_base, alignment);
+
+    os::release_memory(extra_base, extra_size);
+
+    aligned_base = os::reserve_memory(size, aligned_base);
+
+  } while (aligned_base == NULL);
+
+  return aligned_base;
+}
+
 char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");

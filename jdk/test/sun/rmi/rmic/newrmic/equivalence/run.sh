@@ -26,22 +26,24 @@
 # @summary This test verifies that the new implementation of rmic
 # generates equivalent classes as the old implementation, for a set
 # of sample input classes.
-# @library ../../../../../java/rmi/testlibrary
-# @build TestLibrary
 # @author Peter Jones
 #
-# @build AgentServerImpl
-# @build AppleImpl
-# @build AppleUserImpl
-# @build ComputeServerImpl
-# @build CountServerImpl
-# @build DayTimeServerImpl
-# @build G1Impl
-# @build MyObjectImpl
-# @build NotActivatableServerImpl
-# @build OrangeEchoImpl
-# @build OrangeImpl
-# @build ServerImpl
+# @library ../../../../../java/rmi/testlibrary
+#
+# @build TestLibrary
+#     AgentServerImpl
+#     AppleImpl
+#     AppleUserImpl
+#     ComputeServerImpl
+#     CountServerImpl
+#     DayTimeServerImpl
+#     G1Impl
+#     MyObjectImpl
+#     NotActivatableServerImpl
+#     OrangeEchoImpl
+#     OrangeImpl
+#     ServerImpl
+#
 # @run shell run.sh
 
 if [ "${TESTJAVA}" = "" ]

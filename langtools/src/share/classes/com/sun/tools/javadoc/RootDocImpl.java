@@ -331,7 +331,6 @@ public class RootDocImpl extends DocImpl implements RootDoc {
     @Override
     protected String documentation() {
         if (documentation == null) {
-            int cnt = options.length();
             JavaFileObject overviewPath = getOverviewPath();
             if (overviewPath == null) {
                 // no doc file to be had

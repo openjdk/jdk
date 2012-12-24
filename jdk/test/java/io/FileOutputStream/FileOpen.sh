@@ -50,20 +50,20 @@ case "$OS" in
 	${TESTJAVA}/bin/javac -d . ${TESTSRC}\\FileOpenNeg.java
 
 	echo "Opening Writable Normal File.."
-	${TESTJAVA}/bin/java FileOpenPos ${hfile}
+	${TESTJAVA}/bin/java ${TESTVMOPTS} FileOpenPos ${hfile}
 
 	echo "Opening Writable Hidden File.."
 	${ATTRIB} +h ${hfile}
-	${TESTJAVA}/bin/java FileOpenNeg ${hfile}
+	${TESTJAVA}/bin/java ${TESTVMOPTS} FileOpenNeg ${hfile}
 
 	echo "Opening Read-Only Normal File.."
 	${ATTRIB} -h ${hfile}
 	${ATTRIB} +r ${hfile}
-	${TESTJAVA}/bin/java FileOpenNeg ${hfile}
+	${TESTJAVA}/bin/java ${TESTVMOPTS} FileOpenNeg ${hfile}
 
 	echo "Opening Read-Only Hidden File.." 
 	${ATTRIB} +h ${hfile}
-	${TESTJAVA}/bin/java FileOpenNeg ${hfile}
+	${TESTJAVA}/bin/java ${TESTVMOPTS} FileOpenNeg ${hfile}
 
         rm -f ${hfile}
 	exit
