@@ -356,20 +356,8 @@ COPY_FILES += $(JVMCFG)
 
 ##########################################################################################
 
-PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security
+PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-$(OPENJDK_TARGET_OS)
 PROPS_DST := $(JDK_OUTPUTDIR)/lib/security/java.security
-
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-solaris
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), windows)
-	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-windows
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-	PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-macosx
-endif
 
 $(PROPS_DST): $(PROPS_SRC)
 	$(MKDIR) -p $(@D)

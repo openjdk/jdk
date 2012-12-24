@@ -1499,13 +1499,12 @@ void Arguments::set_g1_gc_flags() {
                      Abstract_VM_Version::parallel_worker_threads());
   }
 
-  if (FLAG_IS_DEFAULT(MarkStackSize)) {
-    FLAG_SET_DEFAULT(MarkStackSize, 128 * TASKQUEUE_SIZE);
-  }
-  if (PrintGCDetails && Verbose) {
-    tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
-      MarkStackSize / K, MarkStackSizeMax / K);
-    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
+  // MarkStackSize will be set (if it hasn't been set by the user)
+  // when concurrent marking is initialized.
+  // Its value will be based upon the number of parallel marking threads.
+  // But we do set the maximum mark stack size here.
+  if (FLAG_IS_DEFAULT(MarkStackSizeMax)) {
+    FLAG_SET_DEFAULT(MarkStackSizeMax, 128 * TASKQUEUE_SIZE);
   }
 
   if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {
@@ -1516,6 +1515,12 @@ void Arguments::set_g1_gc_flags() {
     // (especially small GC stress tests that the main thing they do
     // is allocation). We might consider increase it further.
     FLAG_SET_DEFAULT(GCTimeRatio, 9);
+  }
+
+  if (PrintGCDetails && Verbose) {
+    tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
+      MarkStackSize / K, MarkStackSizeMax / K);
+    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
   }
 }
 
@@ -1979,6 +1984,9 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_min_value(ClassMetaspaceSize, 1*M,
                                       "ClassMetaspaceSize");
+
+  status = status && verify_interval(MarkStackSizeMax,
+                                  1, (max_jint - 1), "MarkStackSizeMax");
 
 #ifdef SPARC
   if (UseConcMarkSweepGC || UseG1GC) {

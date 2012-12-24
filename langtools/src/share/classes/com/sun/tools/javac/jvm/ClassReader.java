@@ -1360,6 +1360,16 @@ public class ClassReader implements Completer {
     void attachAnnotationDefault(final Symbol sym) {
         final MethodSymbol meth = (MethodSymbol)sym; // only on methods
         final Attribute value = readAttributeValue();
+
+        // The default value is set later during annotation. It might
+        // be the case that the Symbol sym is annotated _after_ the
+        // repeating instances that depend on this default value,
+        // because of this we set an interim value that tells us this
+        // element (most likely) has a default.
+        //
+        // Set interim value for now, reset just before we do this
+        // properly at annotate time.
+        meth.defaultValue = value;
         annotate.normal(new AnnotationDefaultCompleter(meth, value));
     }
 
@@ -1680,6 +1690,9 @@ public class ClassReader implements Completer {
         public void enterAnnotation() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
+                // Reset the interim value set earlier in
+                // attachAnnotationDefault().
+                sym.defaultValue = null;
                 currentClassFile = classFile;
                 sym.defaultValue = deproxy(sym.type.getReturnType(), value);
             } finally {

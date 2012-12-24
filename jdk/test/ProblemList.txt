@@ -263,10 +263,6 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
 
-# 7193792
-sun/security/pkcs11/ec/TestECDSA.java				solaris-all
-sun/security/pkcs11/ec/TestECDSA.java				linux-all
-
 # 7193793
 sun/security/pkcs11/ec/TestECDH.java				linux-all
 
@@ -362,9 +358,6 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
-
-# 8003596
-java/util/logging/CheckLockLocationTest.java			windows-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all

@@ -66,19 +66,19 @@ import javax.lang.model.element.*;
 public class ElementFilter {
     private ElementFilter() {} // Do not instantiate.
 
-    private static Set<ElementKind> CONSTRUCTOR_KIND =
+    private static final Set<ElementKind> CONSTRUCTOR_KIND =
         Collections.unmodifiableSet(EnumSet.of(ElementKind.CONSTRUCTOR));
 
-    private static Set<ElementKind> FIELD_KINDS =
+    private static final Set<ElementKind> FIELD_KINDS =
         Collections.unmodifiableSet(EnumSet.of(ElementKind.FIELD,
                                                ElementKind.ENUM_CONSTANT));
-    private static Set<ElementKind> METHOD_KIND =
+    private static final Set<ElementKind> METHOD_KIND =
         Collections.unmodifiableSet(EnumSet.of(ElementKind.METHOD));
 
-    private static Set<ElementKind> PACKAGE_KIND =
+    private static final Set<ElementKind> PACKAGE_KIND =
         Collections.unmodifiableSet(EnumSet.of(ElementKind.PACKAGE));
 
-    private static Set<ElementKind> TYPE_KINDS =
+    private static final Set<ElementKind> TYPE_KINDS =
         Collections.unmodifiableSet(EnumSet.of(ElementKind.CLASS,
                                                ElementKind.ENUM,
                                                ElementKind.INTERFACE,

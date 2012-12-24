@@ -121,6 +121,28 @@ public class FormatData_iw extends ListResourceBundle {
                     "\u05e9" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u05d0",
+                    "\u05d1",
+                    "\u05d2",
+                    "\u05d3",
+                    "\u05d4",
+                    "\u05d5",
+                    "\u05e9",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "\u05d0",
+                    "\u05d1",
+                    "\u05d2",
+                    "\u05d3",
+                    "\u05d4",
+                    "\u05d5",
+                    "\u05e9",
+                }
+            },
             { "Eras",
                 new String[] { // era strings
                     "\u05dc\u05e1\u05d4\"\u05e0",

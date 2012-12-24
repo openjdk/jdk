@@ -40,7 +40,7 @@ do
     if [ x"$I" != x ]; then
 	D="-Dsun.timezone.ids.oldmapping=${I}"
     fi
-    if ! ${JAVA} ${D} -cp ${TESTCLASSES} OldIDMappingTest -new; then
+    if ! ${JAVA} ${D} ${TESTVMOPTS} -cp ${TESTCLASSES} OldIDMappingTest -new; then
 	STATUS=1
     fi
 done
@@ -51,7 +51,7 @@ do
     if [ "x$I" != x ]; then
 	D="-Dsun.timezone.ids.oldmapping=${I}"
     fi
-    if ! ${JAVA} ${D} -cp ${TESTCLASSES} OldIDMappingTest -old; then
+    if ! ${JAVA} ${D} ${TESTVMOPTS} -cp ${TESTCLASSES} OldIDMappingTest -old; then
 	STATUS=1
     fi
 done

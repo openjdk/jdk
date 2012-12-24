@@ -62,9 +62,9 @@ strictfp class ConstFold {
         syms = Symtab.instance(context);
     }
 
-    static Integer minusOne = -1;
-    static Integer zero     = 0;
-    static Integer one      = 1;
+    static final Integer minusOne = -1;
+    static final Integer zero     = 0;
+    static final Integer one      = 1;
 
    /** Convert boolean to integer (true = 1, false = 0).
     */

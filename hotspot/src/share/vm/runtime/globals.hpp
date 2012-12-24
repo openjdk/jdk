@@ -922,6 +922,9 @@ class CommandLineFlags {
   develop(bool, PrintExceptionHandlers, false,                              \
           "Print exception handler tables for all nmethods when generated") \
                                                                             \
+  develop(bool, StressCompiledExceptionHandlers, false,                     \
+         "Exercise compiled exception handlers")                            \
+                                                                            \
   develop(bool, InterceptOSException, false,                                \
           "Starts debugger when an implicit OS (e.g., NULL) "               \
           "exception happens")                                              \

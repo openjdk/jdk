@@ -35,6 +35,9 @@ import java.util.regex.Pattern;
 import javax.tools.FileObject;
 
 import com.sun.javadoc.*;
+import com.sun.source.util.TreePath;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Position;
 
 /**
@@ -59,6 +62,12 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
      * Doc environment
      */
     protected final DocEnv env;   //### Rename this everywhere to 'docenv' ?
+
+    /**
+     * Back pointer to the tree node for this doc item.
+     * May be null if there is no associated tree.
+     */
+    protected TreePath treePath;
 
     /**
      *  The complex comment object, lazily initialized.
@@ -88,9 +97,19 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
     /**
      * Constructor.
      */
-    DocImpl(DocEnv env, String documentation) {
-        this.documentation = documentation;
+    DocImpl(DocEnv env, TreePath treePath) {
+        this.treePath = treePath;
+        this.documentation = getCommentText(treePath);
         this.env = env;
+    }
+
+    private static String getCommentText(TreePath p) {
+        if (p == null)
+            return null;
+
+        JCCompilationUnit topLevel = (JCCompilationUnit) p.getCompilationUnit();
+        JCTree tree = (JCTree) p.getLeaf();
+        return topLevel.docComments.getCommentText(tree);
     }
 
     /**
@@ -213,7 +232,17 @@ public abstract class DocImpl implements Doc, Comparable<Object> {
      * operations like internalization.
      */
     public void setRawCommentText(String rawDocumentation) {
+        treePath = null;
         documentation = rawDocumentation;
+        comment = null;
+    }
+
+    /**
+     * Set the full unprocessed text of the comment and tree path.
+     */
+    void setTreePath(TreePath treePath) {
+        this.treePath = treePath;
+        documentation = getCommentText(treePath);
         comment = null;
     }
 

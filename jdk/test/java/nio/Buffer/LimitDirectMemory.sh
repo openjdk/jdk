@@ -34,7 +34,7 @@ TMP1=tmp_$$
 
 runTest() {
   echo "Testing: $*"
-  ${TESTJAVA}/bin/java $*
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} $*
   if [ $? -eq 0 ]
   then echo "--- passed as expected"
   else
@@ -43,10 +43,11 @@ runTest() {
   fi
 }
 
+
 launchFail() {
   echo "Testing: -XX:MaxDirectMemorySize=$* -cp ${TESTCLASSES} \
      LimitDirectMemory true DEFAULT DEFAULT+1M"
-  ${TESTJAVA}/bin/java -XX:MaxDirectMemorySize=$* -cp ${TESTCLASSES} \
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} -XX:MaxDirectMemorySize=$* -cp ${TESTCLASSES} \
      LimitDirectMemory true DEFAULT DEFAULT+1M > ${TMP1} 2>&1
   cat ${TMP1}
   cat ${TMP1} | grep -s "Unrecognized VM option: \'MaxDirectMemorySize="
