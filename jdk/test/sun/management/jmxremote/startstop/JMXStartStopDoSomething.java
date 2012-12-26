@@ -41,7 +41,7 @@ public class JMXStartStopDoSomething {
                     System.err.println("Lock is too old. Aborting");
                     return;
                 }
-                Thread.sleep(1);
+                Thread.sleep(500);
             }
 
         } catch (Throwable e) {

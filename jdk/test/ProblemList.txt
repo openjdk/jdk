@@ -141,9 +141,6 @@ java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 
 # jdk_management
 
-# 7158614
-sun/management/jmxremote/startstop/JMXStartStopTest.sh		linux-all
-
 ############################################################################
 
 # jdk_jmx

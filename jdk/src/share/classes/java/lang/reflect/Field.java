@@ -80,6 +80,8 @@ class Field extends AccessibleObject implements Member {
     // currently only two levels deep (i.e., one root Field and
     // potentially many Field objects pointing to it.)
     private Field               root;
+    // This is set by the vm at Field creation
+    private byte[]              typeAnnotations;
 
     // Generics infrastructure
 
@@ -144,6 +146,8 @@ class Field extends AccessibleObject implements Member {
         // Might as well eagerly propagate this if already present
         res.fieldAccessor = fieldAccessor;
         res.overrideFieldAccessor = overrideFieldAccessor;
+
+        res.typeAnnotations = typeAnnotations;
         return res;
     }
 
