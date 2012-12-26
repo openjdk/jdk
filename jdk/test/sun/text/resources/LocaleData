@@ -7657,3 +7657,6 @@ FormatData/zh/DayNarrows/3=\u4e09
 FormatData/zh/DayNarrows/4=\u56db
 FormatData/zh/DayNarrows/5=\u4e94
 FormatData/zh/DayNarrows/6=\u516d
+
+# bug 7195759
+CurrencyNames//ZMW=ZMW
