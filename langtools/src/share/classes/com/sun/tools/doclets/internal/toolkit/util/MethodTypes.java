@@ -36,7 +36,8 @@ public enum MethodTypes {
     INSTANCE(0x2, "Instance Methods", "t2", false),
     ABSTRACT(0x4, "Abstract Methods", "t3", false),
     CONCRETE(0x8, "Concrete Methods", "t4", false),
-    DEPRECATED(0x10, "Deprecated Methods", "t5", false);
+    DEFAULT(0x10, "Default Methods", "t5", false),
+    DEPRECATED(0x20, "Deprecated Methods", "t6", false);
 
     private final int value;
     private final String text;

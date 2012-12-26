@@ -117,6 +117,13 @@ public interface ClassWriter {
     public void addInterfaceUsageInfo(Content classInfoTree);
 
     /**
+     * If this is an functional interface, display appropriate message.
+     *
+     * @param classInfoTree content tree to which the documentation will be added
+     */
+    public void addFunctionalInterfaceInfo(Content classInfoTree);
+
+    /**
      * If this is an inner class or interface, add the enclosing class or
      * interface.
      *
