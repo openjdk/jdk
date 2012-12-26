@@ -90,14 +90,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM,\
 		ARFLAGS:=$(ARFLAGS),\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm))
 
-BUILD_LIBRARIES += $(BUILD_LIBFDLIBM)
-
 else
-#
-# On macosx they do partial (incremental) linking of fdlibm
-#   code it here...rather than add support to NativeCompilation
-#   as this is firt time I see it
-$(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM,\
+
+# On macosx the old build does partial (incremental) linking of fdlibm instead of
+# a plain static library.
+$(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM_MAC,\
                 LIBRARY:=fdlibm,\
                 OUTPUT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm,\
                 SRC:=$(JDK_TOPDIR)/src/share/native/java/lang/fdlibm/src,\
@@ -107,11 +104,12 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM,\
 		LDFLAGS:=-nostdlib -r -arch x86_64,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm))
 
-$(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) : $(BUILD_LIBFDLIBM)
+BUILD_LIBFDLIBM := $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX)
+$(BUILD_LIBFDLIBM) : $(BUILD_LIBFDLIBM_MAC)
 	$(CP) -a $< $@
 
-BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX)
 endif
+BUILD_LIBRARIES += $(BUILD_LIBFDLIBM)
 
 ##########################################################################################
 
