@@ -2084,7 +2084,7 @@ ChunkIndex ChunkManager::list_index(size_t size) {
     case ClassMediumChunk:
       return MediumIndex;
     default:
-      assert(size > MediumChunk && size > ClassMediumChunk,
+      assert(size > MediumChunk || size > ClassMediumChunk,
              "Not a humongous chunk");
       return HumongousIndex;
   }
@@ -2129,7 +2129,7 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
     new_chunk->set_next(chunks_in_use(HumongousIndex));
     set_chunks_in_use(HumongousIndex, new_chunk);
 
-    assert(new_chunk->word_size() > MediumChunk, "List inconsistency");
+    assert(new_chunk->word_size() > medium_chunk_size(), "List inconsistency");
   }
 
   assert(new_chunk->is_empty(), "Not ready for reuse");
