@@ -30,6 +30,9 @@ include Setup.gmk
 
 default: all
 
+# Prepare the find cache. Only used if running on windows.
+$(eval $(call FillCacheFind,$(JDK_OUTPUTDIR)/classes))
+
 include Tools.gmk
 
 #
@@ -275,8 +278,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # Find all files in the classes dir to use as dependencies. This could be more fine granular.
-ALL_FILES_IN_CLASSES := $(shell $(FIND) $(JDK_OUTPUTDIR)/classes -type f \
-			| $(GREP) -v -e '/_the\.*' -e '^_the\.*' -e 'javac_state')
+ALL_FILES_IN_CLASSES := $(call not-containing,_the.,$(filter-out %javac_state,\
+                        $(call CacheFind,$(JDK_OUTPUTDIR)/classes)))
 
 RT_JAR_MANIFEST_FILE := $(IMAGES_OUTPUTDIR)/lib/_the.rt.jar_manifest
 RESOURCE_JAR_MANIFEST_FILE := $(IMAGES_OUTPUTDIR)/lib/_the.resources.jar_manifest
@@ -819,7 +822,7 @@ $(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(IMAGES_OUTPUTDIR)/lib/rt.jar
 	    $(CORE_PKGS) $(NON_CORE_PKGS) $(EXCLUDE_PROPWARN_PKGS) $(EXPORTED_PRIVATE_PKGS)
 	$(TOUCH) $@
 
-$(shell $(MKDIR) -p $(IMAGES_OUTPUTDIR)/symbols)
+$(eval $(call MakeDir,$(IMAGES_OUTPUTDIR)/symbols))
 $(eval $(call SetupArchive,BUILD_CT_SYM,$(IMAGES_OUTPUTDIR)/symbols/_the.symbols,\
 		SRCS:=$(IMAGES_OUTPUTDIR)/symbols,\
 		INCLUDES:=META-INF/sym,\
