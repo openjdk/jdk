@@ -111,9 +111,9 @@ define SetupArchive
         ifeq ($$(word 20,$$($1_GREP_INCLUDE_PATTERNS)),)
             $1_GREP_INCLUDES:=| $(GREP) $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_INCLUDE_PATTERNS))
         else
-            $$(shell $(MKDIR) -p $$($1_BIN) && $(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include)
-            $$(eval $$(call ListPathsSafelyNow,$1_GREP_INCLUDE_PATTERNS,\n, \
-			>> $$($1_BIN)/_the.$$($1_JARNAME)_include))
+            $1_GREP_INCLUDE_OUTPUT:=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include && \
+                                    $$(strip $$(call ListPathsSafely,$1_GREP_INCLUDE_PATTERNS,\n, \
+                                        >> $$($1_BIN)/_the.$$($1_JARNAME)_include))
             $1_GREP_INCLUDES:=| $(GREP) -f $$($1_BIN)/_the.$$($1_JARNAME)_include
         endif
     endif
@@ -124,9 +124,9 @@ define SetupArchive
         ifeq ($$(word 20,$$($1_GREP_EXCLUDE_PATTERNS)),)
             $1_GREP_EXCLUDES:=| $(GREP) -v $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_EXCLUDE_PATTERNS))
         else
-            $$(shell $(MKDIR) -p $$($1_BIN) && $(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude)
-            $$(eval $$(call ListPathsSafelyNow,$1_GREP_EXCLUDE_PATTERNS,\n, \
-			>> $$($1_BIN)/_the.$$($1_JARNAME)_exclude))
+            $1_GREP_EXCLUDE_OUTPUT=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude && \
+                                    $$(strip $$(call ListPathsSafely,$1_GREP_EXCLUDE_PATTERNS,\n, \
+                                        >> $$($1_BIN)/_the.$$($1_JARNAME)_exclude))
             $1_GREP_EXCLUDES:=| $(GREP) -v -f $$($1_BIN)/_the.$$($1_JARNAME)_exclude
         endif
     endif
@@ -137,19 +137,25 @@ define SetupArchive
     else
       $1_JARINDEX = true
     endif
-    # When this macro is run in the same makefile as the java compilation, dependencies are transfered
-    # in make variables. When the macro is run in a different makefile than the java compilation, the 
-    # dependencies need to be found in the filesystem.
+    # When this macro is run in the same makefile as the java compilation, dependencies are 
+    # transfered in make variables. When the macro is run in a different makefile than the 
+    # java compilation, the dependencies need to be found in the filesystem.
     ifneq (,$2)
         $1_DEPS:=$2
     else
+        $1_DEPS:=$$(filter $$(addprefix %,$$($1_FIND_PATTERNS)),\
+                    $$(call CacheFind $$($1_SRCS)))
+        ifneq (,$$($1_GREP_INCLUDE_PATTERNS))
+            $1_DEPS:=$$(filter $$(addsuffix %,$$($1_GREP_INCLUDE_PATTERNS)),$$($1_DEPS))
+        endif
+        ifneq (,$$($1_GREP_EXCLUDE_PATTERNS))
+            $1_DEPS:=$$(filter-out $$(addsuffix %,$$($1_GREP_EXCLUDE_PATTERNS)),$$($1_DEPS))
+        endif
         # The subst of \ is needed because $ has to be escaped with \ in EXTRA_FILES for the command 
         # lines, but not here for use in make dependencies.
-        $1_DEPS:=$$(shell $(FIND) $$($1_SRCS) -type f -a \( $$($1_FIND_PATTERNS) \) \
-			  $$($1_GREP_INCLUDES) $$($1_GREP_EXCLUDES)) \
-		 $$(subst \,,$$(foreach src,$$($1_SRCS),$$(addprefix $$(src)/,$$($1_EXTRA_FILES))))
+        $1_DEPS+=$$(subst \,,$$(foreach src,$$($1_SRCS),$$(addprefix $$(src)/,$$($1_EXTRA_FILES))))
         ifeq (,$$($1_SKIP_METAINF))
-            $1_DEPS+=$$(shell $(FIND) $$(addsuffix /META-INF,$$($1_SRCS)) -type f 2> /dev/null)
+            $1_DEPS+=$$(call CacheFind $$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
         endif
     endif
 
@@ -210,6 +216,8 @@ define SetupArchive
     # Here is the rule that creates/updates the jar file.
     $$($1_JAR) : $$($1_DEPS)
 	$(MKDIR) -p $$($1_BIN)
+	$$($1_GREP_INCLUDE_OUTPUT)
+	$$($1_GREP_EXCLUDE_OUTPUT)
 	$$(if $$($1_MANIFEST),\
 		$(SED) -e "s#@@RELEASE@@#$(RELEASE)#"           \
 		       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" $$($1_MANIFEST) > $$($1_MANIFEST_FILE) \
@@ -248,8 +256,8 @@ define SetupZipArchive
     $(if $(16),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update JavaCompilation.gmk))
 
     # Find all files in the source tree.
-    $1_SUFFIX_FILTER := $$(patsubst %,-o -name $(DQUOTE)*%$(DQUOTE),$$($1_SUFFIXES))
-    $1_ALL_SRCS := $$(foreach i,$$($1_SRC), $$(shell $(FIND) $$i -type f -a ! -name "_the.*" \( -name FALSE_DUMMY  $$($1_SUFFIX_FILTER) \) ))
+    $1_ALL_SRCS := $$(call not-containing,_the.,\
+            $$(filter $$(addprefix %,$$($1_SUFFIXES)),$$(call CacheFind $$($1_SRC))))
 
     ifneq ($$($1_INCLUDES),)
         $1_SRC_INCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_INCLUDES))))
@@ -376,7 +384,7 @@ define SetupJavaCompilation
     $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory $$d)))
     $$(eval $$(call MakeDir,$$($1_BIN)))
     # Find all files in the source trees.
-    $1_ALL_SRCS := $$(filter-out $(OVR_SRCS),$$(shell $(FIND) $$($1_SRC) -type f))
+    $1_ALL_SRCS += $$(filter-out $(OVR_SRCS),$$(call CacheFind,$$($1_SRC)))
     # Extract the java files.
     ifneq ($$($1_EXCLUDE_FILES),)
         $1_EXCLUDE_FILES_PATTERN:=$$(addprefix %,$$($1_EXCLUDE_FILES))
@@ -408,8 +416,6 @@ define SetupJavaCompilation
 
     # Find all files to be copied from source to bin.
     ifneq (,$$($1_COPY))
-        # Rewrite list of patterns into a find statement.
-        $1_COPY_PATTERN:=$(FALSE_FIND_PATTERN) $$(patsubst %,$(SPACE)-o$(SPACE)-name$(SPACE)$(DQUOTE)*%$(DQUOTE),$$($1_COPY))
         # Search for all files to be copied.
         $1_ALL_COPIES := $$(filter $$(addprefix %,$$($1_COPY)),$$($1_ALL_SRCS))
         # Copy these explicitly
@@ -436,8 +442,6 @@ define SetupJavaCompilation
 
     # Find all property files to be copied and cleaned from source to bin.
     ifneq (,$$($1_CLEAN))
-        # Rewrite list of patterns into a find statement.
-        $1_CLEAN_PATTERN:=$(FALSE_FIND_PATTERN) $$(patsubst %,$(SPACE)-o$(SPACE)-name$(SPACE)$(DQUOTE)*%$(DQUOTE),$$($1_CLEAN))
         # Search for all files to be copied.
         $1_ALL_CLEANS := $$(filter $$(addprefix %,$$($1_CLEAN)),$$($1_ALL_SRCS))
         # Copy and clean must also respect filters.
