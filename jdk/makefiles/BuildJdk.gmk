@@ -39,10 +39,7 @@ include NativeCompilation.gmk
 # Setup the java compilers for the JDK build.
 include Setup.gmk
 
-# Setup the build tools.
-include Tools.gmk
-
-import: $(BUILD_TOOLS) import-only
+import: import-only
 import-only:
 #       Import (corba jaxp jaxws langtools hotspot)
 	+$(MAKE) -f Import.gmk

@@ -23,6 +23,11 @@
 # questions.
 #
 
+# Cache all finds needed for this file. Only used on windows.
+$(eval $(call FillCacheFind,$(JDK_TOPDIR)/make/tools \
+    $(JDK_TOPDIR)/src/solaris/classes \
+    $(JDK_TOPDIR)/makefiles/sun))
+
 # The exception handling of swing beaninfo which have the own tool directory
 ifeq (,$(BUILD_TOOLS))
 $(eval $(call SetupJavaCompilation,BUILD_TOOLS,\
