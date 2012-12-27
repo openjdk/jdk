@@ -633,6 +633,18 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
   fi
 ])
 
+# Check that source files have basic read permissions set. This might
+# not be the case in cygwin in certain conditions.
+AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
+[
+  if test x"$OPENJDK_BUILD_OS" = xwindows; then
+    file_to_test="$SRC_ROOT/LICENSE"
+    if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
+      AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])
+    fi
+  fi
+])
+
 AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 [
 
@@ -641,6 +653,8 @@ BASIC_CHECK_DIR_ON_LOCAL_DISK($OUTPUT_ROOT,
   [OUTPUT_DIR_IS_LOCAL="yes"],
   [OUTPUT_DIR_IS_LOCAL="no"])
 AC_MSG_RESULT($OUTPUT_DIR_IS_LOCAL)
+
+BASIC_CHECK_SRC_PERMS
 
 # Check if the user has any old-style ALT_ variables set.
 FOUND_ALT_VARIABLES=`env | grep ^ALT_`
