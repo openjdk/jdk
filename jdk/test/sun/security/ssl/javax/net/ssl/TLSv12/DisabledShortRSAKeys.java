@@ -23,18 +23,23 @@
  * questions.
  */
 
-// This test case relies on updated static security property, no way to re-use
-// security property in samevm/agentvm mode.
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
 
 /*
  * @test
- * @bug 7106773
- * @summary 512 bits RSA key cannot work with SHA384 and SHA512
+ * @bug 7109274
+ * @summary Consider disabling support for X.509 certificates with RSA keys
+ *          less than 1024 bits
  *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
- * @run main/othervm ShortRSAKey512 PKIX
- * @run main/othervm ShortRSAKey512 SunX509
+ * @run main/othervm DisabledShortRSAKeys PKIX TLSv1.2
+ * @run main/othervm DisabledShortRSAKeys SunX509 TLSv1.2
+ * @run main/othervm DisabledShortRSAKeys PKIX TLSv1.1
+ * @run main/othervm DisabledShortRSAKeys SunX509 TLSv1.1
+ * @run main/othervm DisabledShortRSAKeys PKIX TLSv1
+ * @run main/othervm DisabledShortRSAKeys SunX509 TLSv1
+ * @run main/othervm DisabledShortRSAKeys PKIX SSLv3
+ * @run main/othervm DisabledShortRSAKeys SunX509 SSLv3
  */
 
 import java.net.*;
@@ -51,7 +56,7 @@ import java.security.interfaces.*;
 import sun.misc.BASE64Decoder;
 
 
-public class ShortRSAKey512 {
+public class DisabledShortRSAKeys {
 
     /*
      * =============================================================
@@ -64,7 +69,7 @@ public class ShortRSAKey512 {
      * Both sides can throw exceptions, but do you have a preference
      * as to which side should be the main thread.
      */
-    static boolean separateServerThread = false;
+    static boolean separateServerThread = true;
 
     /*
      * Where do we find the keystores?
@@ -146,15 +151,19 @@ public class ShortRSAKey512 {
          */
         serverReady = true;
 
-        SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept();
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
+        try (SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept()) {
+            InputStream sslIS = sslSocket.getInputStream();
+            OutputStream sslOS = sslSocket.getOutputStream();
 
-        sslIS.read();
-        sslOS.write('A');
-        sslOS.flush();
+            sslIS.read();
+            sslOS.write('A');
+            sslOS.flush();
 
-        sslSocket.close();
+            throw new Exception(
+                    "RSA keys shorter than 1024 bits should be disabled");
+        } catch (SSLHandshakeException sslhe) {
+            // the expected exception, ignore
+        }
     }
 
     /*
@@ -175,24 +184,28 @@ public class ShortRSAKey512 {
         SSLContext context = generateSSLContext(trustedCertStr, null, null);
         SSLSocketFactory sslsf = context.getSocketFactory();
 
-        SSLSocket sslSocket =
-            (SSLSocket)sslsf.createSocket("localhost", serverPort);
+        try (SSLSocket sslSocket =
+            (SSLSocket)sslsf.createSocket("localhost", serverPort)) {
 
-        // enable TLSv1.2 only
-        sslSocket.setEnabledProtocols(new String[] {"TLSv1.2"});
+            // only enable the target protocol
+            sslSocket.setEnabledProtocols(new String[] {enabledProtocol});
 
-        // enable a block cipher
-        sslSocket.setEnabledCipherSuites(
-            new String[] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"});
+            // enable a block cipher
+            sslSocket.setEnabledCipherSuites(
+                new String[] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"});
 
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
+            InputStream sslIS = sslSocket.getInputStream();
+            OutputStream sslOS = sslSocket.getOutputStream();
 
-        sslOS.write('B');
-        sslOS.flush();
-        sslIS.read();
+            sslOS.write('B');
+            sslOS.flush();
+            sslIS.read();
 
-        sslSocket.close();
+            throw new Exception(
+                    "RSA keys shorter than 1024 bits should be disabled");
+        } catch (SSLHandshakeException sslhe) {
+            // the expected exception, ignore
+        }
     }
 
     /*
@@ -200,9 +213,11 @@ public class ShortRSAKey512 {
      * The remainder is just support stuff
      */
     private static String tmAlgorithm;        // trust manager
+    private static String enabledProtocol;    // the target protocol
 
     private static void parseArguments(String[] args) {
         tmAlgorithm = args[0];
+        enabledProtocol = args[1];
     }
 
     private static SSLContext generateSSLContext(String trustedCertStr,
@@ -279,10 +294,6 @@ public class ShortRSAKey512 {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        // reset the security property to make sure that the algorithms
-        // and keys used in this test are not disabled.
-        Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
-
         if (debug)
             System.setProperty("javax.net.debug", "all");
 
@@ -294,7 +305,7 @@ public class ShortRSAKey512 {
         /*
          * Start the tests.
          */
-        new ShortRSAKey512();
+        new DisabledShortRSAKeys();
     }
 
     Thread clientThread = null;
@@ -305,7 +316,7 @@ public class ShortRSAKey512 {
      *
      * Fork off the other side, then do your work.
      */
-    ShortRSAKey512() throws Exception {
+    DisabledShortRSAKeys() throws Exception {
         try {
             if (separateServerThread) {
                 startServer(true);
