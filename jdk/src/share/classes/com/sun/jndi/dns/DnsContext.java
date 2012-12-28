@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,8 @@ public class DnsContext extends ComponentDirContext {
         this.domain = new DnsName(domain.endsWith(".")
                                   ? domain
                                   : domain + ".");
-        this.servers = servers.clone();
-        this.environment = (Hashtable<Object,Object>)environment.clone();
+        this.servers = servers;
+        this.environment = (Hashtable<Object,Object>) environment.clone();
         envShared = false;
         parentIsDns = false;
         resolver = null;
@@ -129,11 +129,11 @@ public class DnsContext extends ComponentDirContext {
      * no conflict.
      */
     private DnsContext(DnsContext ctx) {
-        environment = (Hashtable<Object,Object>)environment.clone();
+        environment = ctx.environment;
         envShared = ctx.envShared = true;
         parentIsDns = ctx.parentIsDns;
         domain = ctx.domain;
-        servers = ctx.servers.clone();
+        servers = ctx.servers;
         resolver = ctx.resolver;
         authoritative = ctx.authoritative;
         recursion = ctx.recursion;
