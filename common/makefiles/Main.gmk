@@ -65,7 +65,11 @@ MAKE_ARGS:=$(MAKE_ARGS) -j$(JOBS)
 
 ### Main targets
 
-all: jdk
+default: jdk
+	@$(call CheckIfMakeAtEnd)
+
+all: images docs
+	@$(call CheckIfMakeAtEnd)
 
 start-make:
 	@$(call AtMakeStart)
@@ -124,12 +128,6 @@ overlay-images: source-tips demos overlay-images-only
 overlay-images-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk overlay-images)
-	@$(call TargetExit)
-
-bundles: images bundles-only
-bundles-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk bundles)
 	@$(call TargetExit)
 
 install: images install-only
