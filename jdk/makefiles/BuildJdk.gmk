@@ -88,15 +88,14 @@ demos:
 # into packages, or installed.
 images:
 	+$(MAKE) -f CreateJars.gmk
-	+$(MAKE) -f Images.gmk 
+	+$(MAKE) -f Images.gmk
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+	+$(MAKE) -f Bundles.gmk
+endif
 
 overlay-images:
 	+$(MAKE) -f CompileLaunchers.gmk OVERLAY_IMAGES=true
 	+$(MAKE) -f Images.gmk overlay-images
-
-# Create platform specific image layouts
-bundles:
-	+$(MAKE) -f Bundles.gmk
 
 BINARIES:=$(notdir $(wildcard $(IMAGES_OUTPUTDIR)/j2sdk-image/bin/*))
 INSTALLDIR:=openjdk-$(RELEASE)
