@@ -129,15 +129,6 @@ import sun.net.www.MessageHeader;
  * <a href="http://www.ietf.org/rfc/rfc2616.txt">http://www.ietf.org/rfc/rfc2616.txt</a>
  * </pre></blockquote>
  *
- * Note about <code>fileNameMap</code>: In versions prior to JDK 1.1.6,
- * field <code>fileNameMap</code> of <code>URLConnection</code> was public.
- * In JDK 1.1.6 and later, <code>fileNameMap</code> is private; accessor
- * and mutator methods {@link #getFileNameMap() getFileNameMap} and
- * {@link #setFileNameMap(java.net.FileNameMap) setFileNameMap} are added
- * to access it.  This change is also described on the <a href=
- * "http://java.sun.com/products/jdk/1.2/compatibility.html">
- * Compatibility</a> page.
- *
  * Invoking the <tt>close()</tt> methods on the <tt>InputStream</tt> or <tt>OutputStream</tt> of an
  * <tt>URLConnection</tt> after a request may free network resources associated with this
  * instance, unless particular protocol specifications specify different behaviours
@@ -305,8 +296,7 @@ public abstract class URLConnection {
      * Loads filename map (a mimetable) from a data file. It will
      * first try to load the user-specific table, defined
      * by &quot;content.types.user.table&quot; property. If that fails,
-     * it tries to load the default built-in table at
-     * lib/content-types.properties under java home.
+     * it tries to load the default built-in table.
      *
      * @return the FileNameMap
      * @since 1.2
