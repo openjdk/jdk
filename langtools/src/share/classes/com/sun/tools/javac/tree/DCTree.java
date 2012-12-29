@@ -36,6 +36,8 @@ import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
+import java.io.IOException;
+import java.io.StringWriter;
 import javax.tools.JavaFileObject;
 
 /**
@@ -63,6 +65,21 @@ public abstract class DCTree implements DocTree {
 
     public JCDiagnostic.DiagnosticPosition pos(DCDocComment dc) {
         return new SimpleDiagnosticPosition(dc.comment.getSourcePos(pos));
+    }
+
+    /** Convert a tree to a pretty-printed string. */
+    @Override
+    public String toString() {
+        StringWriter s = new StringWriter();
+        try {
+            new DocPretty(s).print(this);
+        }
+        catch (IOException e) {
+            // should never happen, because StringWriter is defined
+            // never to throw any IOExceptions
+            throw new AssertionError(e);
+        }
+        return s.toString();
     }
 
     public static class DCDocComment extends DCTree implements DocCommentTree {

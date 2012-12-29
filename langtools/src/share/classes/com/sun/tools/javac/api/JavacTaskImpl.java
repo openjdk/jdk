@@ -65,7 +65,6 @@ import com.sun.tools.javac.util.List;
  * @author Jonathan Gibbons
  */
 public class JavacTaskImpl extends BasicJavacTask {
-    private ClientCodeWrapper ccw;
     private Main compilerMain;
     private JavaCompiler compiler;
     private Locale locale;
@@ -85,7 +84,6 @@ public class JavacTaskImpl extends BasicJavacTask {
                 Context context,
                 List<JavaFileObject> fileObjects) {
         super(null, false);
-        this.ccw = ClientCodeWrapper.instance(context);
         this.compilerMain = compilerMain;
         this.args = args;
         this.classNames = classNames;

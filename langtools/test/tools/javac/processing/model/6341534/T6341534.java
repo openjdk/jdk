@@ -27,7 +27,7 @@
  * @summary PackageElement.getEnclosedElements results in NullPointerException from parse(JavaCompiler.java:429)
  * @author  Steve Sides
  * @author  Peter von der Ahe
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile T6341534.java
  * @compile -proc:only -processor T6341534 dir/package-info.java

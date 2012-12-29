@@ -26,7 +26,7 @@
  * @bug 6402506
  * @summary Test that getSourceVersion works properly
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile TestSourceVersion.java
  * @compile -processor TestSourceVersion -proc:only -source 1.2 -AExpectedVersion=RELEASE_2 HelloWorld.java

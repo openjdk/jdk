@@ -25,7 +25,7 @@
  * @test
  * @bug 6639645
  * @summary Modeling type implementing missing interfaces
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @clean MissingGenericClass2
  * @build JavacTestingAbstractProcessor Generator
  * @compile -XprintRounds -processor Generator TestMissingGenericClass2.java
