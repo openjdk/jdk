@@ -25,16 +25,15 @@
 
 package com.sun.jmx.remote.internal;
 
-import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.security.NotificationAccessController;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -291,13 +290,18 @@ public class ServerNotifForwarder {
     // so that we can know too, and remove the corresponding entry from the listenerMap.
     // See 6957378.
     private void snoopOnUnregister(NotificationResult nr) {
-        Set<IdAndFilter> delegateSet = listenerMap.get(MBeanServerDelegate.DELEGATE_NAME);
-        if (delegateSet == null || delegateSet.isEmpty()) {
-            return;
+        List<IdAndFilter> copy = null;
+        synchronized (listenerMap) {
+            Set<IdAndFilter> delegateSet = listenerMap.get(MBeanServerDelegate.DELEGATE_NAME);
+            if (delegateSet == null || delegateSet.isEmpty()) {
+                return;
+            }
+            copy = new ArrayList<>(delegateSet);
         }
+
         for (TargetedNotification tn : nr.getTargetedNotifications()) {
             Integer id = tn.getListenerID();
-            for (IdAndFilter idaf : delegateSet) {
+            for (IdAndFilter idaf : copy) {
                 if (idaf.id == id) {
                     // This is a notification from the MBeanServerDelegate.
                     Notification n = tn.getNotification();
