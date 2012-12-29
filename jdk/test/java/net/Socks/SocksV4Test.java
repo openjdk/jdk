@@ -26,6 +26,7 @@
  * @bug 4727547
  * @summary SocksSocketImpl throws NullPointerException
  * @build SocksServer
+ * @run main SocksV4Test
  */
 
 import java.net.*;
