@@ -33,6 +33,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.jvm.Pool;
@@ -173,7 +174,8 @@ public class CreateSymbols extends AbstractProcessor {
                                    List.<Pair<Symbol.MethodSymbol,Attribute>>nil());
 
         Type.moreInfo = true;
-        Pool pool = new Pool();
+        Types types = Types.instance(task.getContext());
+        Pool pool = new Pool(types);
         for (JavaFileObject file : fm.list(jarLocation, "", EnumSet.of(CLASS), true)) {
             String className = fm.inferBinaryName(jarLocation, file);
             int index = className.lastIndexOf('.');

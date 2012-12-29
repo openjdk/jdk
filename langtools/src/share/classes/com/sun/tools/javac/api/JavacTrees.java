@@ -84,6 +84,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
+import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
@@ -236,18 +237,25 @@ public class JavacTrees extends DocTrees {
     public Element getElement(TreePath path) {
         JCTree tree = (JCTree) path.getLeaf();
         Symbol sym = TreeInfo.symbolFor(tree);
-        if (sym == null && TreeInfo.isDeclaration(tree)) {
-            for (TreePath p = path; p != null; p = p.getParentPath()) {
-                JCTree t = (JCTree) p.getLeaf();
-                if (t.hasTag(JCTree.Tag.CLASSDEF)) {
-                    JCClassDecl ct = (JCClassDecl) t;
-                    if (ct.sym != null) {
-                        if ((ct.sym.flags_field & Flags.UNATTRIBUTED) != 0) {
-                            attr.attribClass(ct.pos(), ct.sym);
-                            sym = TreeInfo.symbolFor(tree);
+        if (sym == null) {
+            if (TreeInfo.isDeclaration(tree)) {
+                for (TreePath p = path; p != null; p = p.getParentPath()) {
+                    JCTree t = (JCTree) p.getLeaf();
+                    if (t.hasTag(JCTree.Tag.CLASSDEF)) {
+                        JCClassDecl ct = (JCClassDecl) t;
+                        if (ct.sym != null) {
+                            if ((ct.sym.flags_field & Flags.UNATTRIBUTED) != 0) {
+                                attr.attribClass(ct.pos(), ct.sym);
+                                sym = TreeInfo.symbolFor(tree);
+                            }
+                            break;
                         }
-                        break;
                     }
+                }
+            } else if (tree.hasTag(Tag.TOPLEVEL)) {
+                JCCompilationUnit cu = (JCCompilationUnit) tree;
+                if (cu.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
+                    sym = cu.packge;
                 }
             }
         }
@@ -332,6 +340,8 @@ public class JavacTrees extends DocTrees {
             } else {
                 return msym;
             }
+        } catch (Abort e) { // may be thrown by Check.completionError in case of bad class file
+            return null;
         } finally {
             log.popDiagnosticHandler(deferredDiagnosticHandler);
         }

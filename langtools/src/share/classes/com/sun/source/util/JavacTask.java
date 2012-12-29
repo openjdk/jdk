@@ -139,6 +139,7 @@ public abstract class JavacTask implements CompilationTask {
      * @see com.sun.source.util.Trees#getTypeMirror
      */
     public abstract TypeMirror getTypeMirror(Iterable<? extends Tree> path);
+
     /**
      * Get a utility object for dealing with program elements.
      */

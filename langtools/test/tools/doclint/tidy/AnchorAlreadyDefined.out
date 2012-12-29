@@ -1,0 +1,7 @@
+AnchorAlreadyDefined.java:14: error: anchor already defined: here
+ * <a name="here">duplicate</a>
+      ^
+AnchorAlreadyDefined.java:15: error: anchor already defined: here
+ * <h1 id="here">duplicate</h1>
+       ^
+2 errors

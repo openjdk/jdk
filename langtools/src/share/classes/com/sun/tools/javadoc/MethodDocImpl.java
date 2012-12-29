@@ -76,6 +76,13 @@ public class MethodDocImpl
     }
 
     /**
+     * Return true if this method is default
+     */
+    public boolean isDefault() {
+        return (sym.flags() & Flags.DEFAULT) != 0;
+    }
+
+    /**
      * Return true if this method is abstract
      */
     public boolean isAbstract() {

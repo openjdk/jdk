@@ -400,6 +400,7 @@ public class Annotate {
             Attribute.Compound c = enterAnnotation(annoTree,
                                                    targetContainerType,
                                                    ctx.env);
+            c.setSynthesized(true);
             return c;
         } else {
             return null; // errors should have been reported elsewhere

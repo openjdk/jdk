@@ -25,7 +25,7 @@
  * @test
  * @bug 7098660
  * @summary Write better overload resolution/inference tests
- * @library ../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor ResolveHarness
  * @run main ResolveHarness
  */
