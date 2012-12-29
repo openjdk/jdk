@@ -142,6 +142,15 @@ public class Dependencies {
     }
 
     /**
+     * Get a finder to do class dependency analysis.
+     *
+     * @return a Class dependency finder
+     */
+    public static Finder getClassDependencyFinder() {
+        return new ClassDependencyFinder();
+    }
+
+    /**
      * Get the finder used to locate the dependencies for a class.
      * @return the finder
      */
@@ -246,8 +255,6 @@ public class Dependencies {
         return results;
     }
 
-
-
     /**
      * Find the dependencies of a class, using the current
      * {@link Dependencies#getFinder finder} and
@@ -306,17 +313,22 @@ public class Dependencies {
      * A location identifying a class.
      */
     static class SimpleLocation implements Location {
-        public SimpleLocation(String className) {
-            this.className = className;
+        public SimpleLocation(String name) {
+            this.name = name;
+            this.className = name.replace('/', '.').replace('$', '.');
         }
 
-        /**
-         * Get the name of the class being depended on. This name will be used to
-         * locate the class file for transitive dependency analysis.
-         * @return the name of the class being depended on
-         */
+        public String getName() {
+            return name;
+        }
+
         public String getClassName() {
             return className;
+        }
+
+        public String getPackageName() {
+            int i = name.lastIndexOf('/');
+            return (i > 0) ? name.substring(0, i).replace('/', '.') : "";
         }
 
         @Override
@@ -325,19 +337,20 @@ public class Dependencies {
                 return true;
             if (!(other instanceof SimpleLocation))
                 return false;
-            return (className.equals(((SimpleLocation) other).className));
+            return (name.equals(((SimpleLocation) other).name));
         }
 
         @Override
         public int hashCode() {
-            return className.hashCode();
+            return name.hashCode();
         }
 
         @Override
         public String toString() {
-            return className;
+            return name;
         }
 
+        private String name;
         private String className;
     }
 
@@ -431,9 +444,7 @@ public class Dependencies {
         }
 
         public boolean accepts(Dependency dependency) {
-            String cn = dependency.getTarget().getClassName();
-            int lastSep = cn.lastIndexOf("/");
-            String pn = (lastSep == -1 ? "" : cn.substring(0, lastSep));
+            String pn = dependency.getTarget().getPackageName();
             if (packageNames.contains(pn))
                 return true;
 
@@ -451,8 +462,6 @@ public class Dependencies {
         private final boolean matchSubpackages;
     }
 
-
-
     /**
      * This class identifies class names directly or indirectly in the constant pool.
      */
@@ -462,6 +471,26 @@ public class Dependencies {
             for (CPInfo cpInfo: classfile.constant_pool.entries()) {
                 v.scan(cpInfo);
             }
+            try {
+                v.addClass(classfile.super_class);
+                v.addClasses(classfile.interfaces);
+                v.scan(classfile.attributes);
+
+                for (Field f : classfile.fields) {
+                    v.scan(f.descriptor, f.attributes);
+                }
+                for (Method m : classfile.methods) {
+                    v.scan(m.descriptor, m.attributes);
+                    Exceptions_attribute e =
+                        (Exceptions_attribute)m.attributes.get(Attribute.Exceptions);
+                    if (e != null) {
+                        v.addClasses(e.exception_index_table);
+                    }
+                }
+            } catch (ConstantPoolException e) {
+                throw new ClassFileError(e);
+            }
+
             return v.deps;
         }
     }
@@ -558,9 +587,7 @@ public class Dependencies {
             void scan(Descriptor d, Attributes attrs) {
                 try {
                     scan(new Signature(d.index).getType(constant_pool));
-                    Signature_attribute sa = (Signature_attribute) attrs.get(Attribute.Signature);
-                    if (sa != null)
-                        scan(new Signature(sa.signature_index).getType(constant_pool));
+                    scan(attrs);
                 } catch (ConstantPoolException e) {
                     throw new ClassFileError(e);
                 }
@@ -572,6 +599,43 @@ public class Dependencies {
 
             void scan(Type t) {
                 t.accept(this, null);
+            }
+
+            void scan(Attributes attrs) {
+                try {
+                    Signature_attribute sa = (Signature_attribute)attrs.get(Attribute.Signature);
+                    if (sa != null)
+                        scan(sa.getParsedSignature().getType(constant_pool));
+
+                    scan((RuntimeVisibleAnnotations_attribute)
+                            attrs.get(Attribute.RuntimeVisibleAnnotations));
+                    scan((RuntimeVisibleParameterAnnotations_attribute)
+                            attrs.get(Attribute.RuntimeVisibleParameterAnnotations));
+                } catch (ConstantPoolException e) {
+                    throw new ClassFileError(e);
+                }
+            }
+
+            private void scan(RuntimeAnnotations_attribute attr) throws ConstantPoolException {
+                if (attr == null) {
+                    return;
+                }
+                for (int i = 0; i < attr.annotations.length; i++) {
+                    int index = attr.annotations[i].type_index;
+                    scan(new Signature(index).getType(constant_pool));
+                }
+            }
+
+            private void scan(RuntimeParameterAnnotations_attribute attr) throws ConstantPoolException {
+                if (attr == null) {
+                    return;
+                }
+                for (int param = 0; param < attr.parameter_annotations.length; param++) {
+                    for (int i = 0; i < attr.parameter_annotations[param].length; i++) {
+                        int index = attr.parameter_annotations[param][i].type_index;
+                        scan(new Signature(index).getType(constant_pool));
+                    }
+                }
             }
 
             void addClass(int index) throws ConstantPoolException {
@@ -698,6 +762,7 @@ public class Dependencies {
                 findDependencies(type.paramTypes);
                 findDependencies(type.returnType);
                 findDependencies(type.throwsTypes);
+                findDependencies(type.typeParamTypes);
                 return null;
             }
 
@@ -709,7 +774,7 @@ public class Dependencies {
 
             public Void visitClassType(ClassType type, Void p) {
                 findDependencies(type.outerType);
-                addDependency(type.name);
+                addDependency(type.getBinaryName());
                 findDependencies(type.typeArgs);
                 return null;
             }
