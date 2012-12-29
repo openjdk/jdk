@@ -516,6 +516,20 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     /**
      * {@inheritDoc}
      */
+    public void addFunctionalInterfaceInfo (Content classInfoTree) {
+        if (classDoc.isFunctionalInterface()) {
+            Content dt = HtmlTree.DT(getResource("doclet.Functional_Interface"));
+            Content dl = HtmlTree.DL(dt);
+            Content dd = new HtmlTree(HtmlTag.DD);
+            dd.addContent(getResource("doclet.Functional_Interface_Message"));
+            dl.addContent(dd);
+            classInfoTree.addContent(dl);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void addClassDeprecationInfo(Content classInfoTree) {
         Content hr = new HtmlTree(HtmlTag.HR);
         classInfoTree.addContent(hr);

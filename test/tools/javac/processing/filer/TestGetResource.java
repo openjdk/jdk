@@ -26,7 +26,7 @@
  * @bug 6380018 6449798
  * @summary Test Filer.getResource
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build  JavacTestingAbstractProcessor TestGetResource
  * @compile -processor TestGetResource -proc:only -Aphase=write TestGetResource.java
  * @compile -processor TestGetResource -proc:only -Aphase=read  TestGetResource.java

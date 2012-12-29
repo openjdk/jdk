@@ -276,6 +276,10 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         return false;
     }
 
+    public boolean isFunctionalInterface() {
+        return env.types.isFunctionalInterface(tsym);
+    }
+
     /**
      * Return the package that this class is contained in.
      */

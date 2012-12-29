@@ -26,7 +26,7 @@
  * @bug     6346453
  * @summary directSupertypes should return empty list if arg has no supertypes
  * @author  Scott Seligman
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor NoSupers
  * @compile -processor NoSupers -proc:only NoSupers.java
  */

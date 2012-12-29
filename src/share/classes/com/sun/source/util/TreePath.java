@@ -60,12 +60,18 @@ public class TreePath implements Iterable<Tree> {
                 this.path = path;
             }
         }
+
         class PathFinder extends TreePathScanner<TreePath,Tree> {
             public TreePath scan(Tree tree, Tree target) {
-                if (tree == target)
+                if (tree == target) {
                     throw new Result(new TreePath(getCurrentPath(), target));
+                }
                 return super.scan(tree, target);
             }
+        }
+
+        if (path.getLeaf() == target) {
+            return path;
         }
 
         try {

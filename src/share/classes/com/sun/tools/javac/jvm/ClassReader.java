@@ -488,20 +488,20 @@ public class ClassReader implements Completer {
         case CONSTANT_Fieldref: {
             ClassSymbol owner = readClassSymbol(getChar(index + 1));
             NameAndType nt = (NameAndType)readPool(getChar(index + 3));
-            poolObj[i] = new VarSymbol(0, nt.name, nt.type, owner);
+            poolObj[i] = new VarSymbol(0, nt.name, nt.uniqueType.type, owner);
             break;
         }
         case CONSTANT_Methodref:
         case CONSTANT_InterfaceMethodref: {
             ClassSymbol owner = readClassSymbol(getChar(index + 1));
             NameAndType nt = (NameAndType)readPool(getChar(index + 3));
-            poolObj[i] = new MethodSymbol(0, nt.name, nt.type, owner);
+            poolObj[i] = new MethodSymbol(0, nt.name, nt.uniqueType.type, owner);
             break;
         }
         case CONSTANT_NameandType:
             poolObj[i] = new NameAndType(
                 readName(getChar(index + 1)),
-                readType(getChar(index + 3)));
+                readType(getChar(index + 3)), types);
             break;
         case CONSTANT_Integer:
             poolObj[i] = getInt(index + 1);
@@ -1224,7 +1224,7 @@ public class ClassReader implements Completer {
         if (nt == null)
             return null;
 
-        MethodType type = nt.type.asMethodType();
+        MethodType type = nt.uniqueType.type.asMethodType();
 
         for (Scope.Entry e = scope.lookup(nt.name); e.scope != null; e = e.next())
             if (e.sym.kind == MTH && isSameBinaryType(e.sym.type.asMethodType(), type))
@@ -1236,16 +1236,16 @@ public class ClassReader implements Completer {
         if ((flags & INTERFACE) != 0)
             // no enclosing instance
             return null;
-        if (nt.type.getParameterTypes().isEmpty())
+        if (nt.uniqueType.type.getParameterTypes().isEmpty())
             // no parameters
             return null;
 
         // A constructor of an inner class.
         // Remove the first argument (the enclosing instance)
-        nt.type = new MethodType(nt.type.getParameterTypes().tail,
-                                 nt.type.getReturnType(),
-                                 nt.type.getThrownTypes(),
-                                 syms.methodClass);
+        nt.setType(new MethodType(nt.uniqueType.type.getParameterTypes().tail,
+                                 nt.uniqueType.type.getReturnType(),
+                                 nt.uniqueType.type.getThrownTypes(),
+                                 syms.methodClass));
         // Try searching again
         return findMethod(nt, scope, flags);
     }
@@ -1959,7 +1959,7 @@ public class ClassReader implements Completer {
 
         if (readAllOfClassFile) {
             for (int i = 1; i < poolObj.length; i++) readPool(i);
-            c.pool = new Pool(poolObj.length, poolObj);
+            c.pool = new Pool(poolObj.length, poolObj, types);
         }
 
         // reset and read rest of classinfo
