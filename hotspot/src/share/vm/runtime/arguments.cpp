@@ -1083,10 +1083,6 @@ static void disable_adaptive_size_policy(const char* collector_name) {
   }
 }
 
-// If the user has chosen ParallelGCThreads > 0, we set UseParNewGC
-// if it's not explictly set or unset. If the user has chosen
-// UseParNewGC and not explicitly set ParallelGCThreads we
-// set it, unless this is a single cpu machine.
 void Arguments::set_parnew_gc_flags() {
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC && !UseG1GC,
          "control point invariant");
@@ -1095,42 +1091,41 @@ void Arguments::set_parnew_gc_flags() {
   // Turn off AdaptiveSizePolicy for parnew until it is complete.
   disable_adaptive_size_policy("UseParNewGC");
 
-  if (ParallelGCThreads == 0) {
-    FLAG_SET_DEFAULT(ParallelGCThreads,
-                     Abstract_VM_Version::parallel_worker_threads());
-    if (ParallelGCThreads == 1) {
-      FLAG_SET_DEFAULT(UseParNewGC, false);
-      FLAG_SET_DEFAULT(ParallelGCThreads, 0);
-    }
+  if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
+    FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
+    assert(ParallelGCThreads > 0, "We should always have at least one thread by default");
+  } else if (ParallelGCThreads == 0) {
+    jio_fprintf(defaultStream::error_stream(),
+        "The ParNew GC can not be combined with -XX:ParallelGCThreads=0\n");
+    vm_exit(1);
   }
-  if (UseParNewGC) {
-    // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 respectively,
-    // these settings are default for Parallel Scavenger. For ParNew+Tenured configuration
-    // we set them to 1024 and 1024.
-    // See CR 6362902.
-    if (FLAG_IS_DEFAULT(YoungPLABSize)) {
-      FLAG_SET_DEFAULT(YoungPLABSize, (intx)1024);
-    }
-    if (FLAG_IS_DEFAULT(OldPLABSize)) {
-      FLAG_SET_DEFAULT(OldPLABSize, (intx)1024);
-    }
 
-    // AlwaysTenure flag should make ParNew promote all at first collection.
-    // See CR 6362902.
-    if (AlwaysTenure) {
-      FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, 0);
-    }
-    // When using compressed oops, we use local overflow stacks,
-    // rather than using a global overflow list chained through
-    // the klass word of the object's pre-image.
-    if (UseCompressedOops && !ParGCUseLocalOverflow) {
-      if (!FLAG_IS_DEFAULT(ParGCUseLocalOverflow)) {
-        warning("Forcing +ParGCUseLocalOverflow: needed if using compressed references");
-      }
-      FLAG_SET_DEFAULT(ParGCUseLocalOverflow, true);
-    }
-    assert(ParGCUseLocalOverflow || !UseCompressedOops, "Error");
+  // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 respectively,
+  // these settings are default for Parallel Scavenger. For ParNew+Tenured configuration
+  // we set them to 1024 and 1024.
+  // See CR 6362902.
+  if (FLAG_IS_DEFAULT(YoungPLABSize)) {
+    FLAG_SET_DEFAULT(YoungPLABSize, (intx)1024);
   }
+  if (FLAG_IS_DEFAULT(OldPLABSize)) {
+    FLAG_SET_DEFAULT(OldPLABSize, (intx)1024);
+  }
+
+  // AlwaysTenure flag should make ParNew promote all at first collection.
+  // See CR 6362902.
+  if (AlwaysTenure) {
+    FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, 0);
+  }
+  // When using compressed oops, we use local overflow stacks,
+  // rather than using a global overflow list chained through
+  // the klass word of the object's pre-image.
+  if (UseCompressedOops && !ParGCUseLocalOverflow) {
+    if (!FLAG_IS_DEFAULT(ParGCUseLocalOverflow)) {
+      warning("Forcing +ParGCUseLocalOverflow: needed if using compressed references");
+    }
+    FLAG_SET_DEFAULT(ParGCUseLocalOverflow, true);
+  }
+  assert(ParGCUseLocalOverflow || !UseCompressedOops, "Error");
 }
 
 // Adjust some sizes to suit CMS and/or ParNew needs; these work well on
