@@ -176,6 +176,8 @@ public enum Option {
 
     PROCESSORPATH("-processorpath", "opt.arg.path", "opt.processorpath", STANDARD, FILEMANAGER),
 
+    PARAMETERS("-parameters","opt.parameters", STANDARD, BASIC),
+
     D("-d", "opt.arg.directory", "opt.d", STANDARD, FILEMANAGER),
 
     S("-s", "opt.arg.directory", "opt.sourceDest", STANDARD, FILEMANAGER),
