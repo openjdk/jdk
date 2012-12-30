@@ -3679,7 +3679,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1356638459
+DATE_WHEN_GENERATED=1356865941
 
 ###############################################################################
 #
@@ -7580,7 +7580,7 @@ HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
 # from configure, but only server is valid anyway. Fix this
 # when hotspot makefiles are rewritten.
 if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_product
+    HOTSPOT_TARGET=universal_${HOTSPOT_EXPORT}
 fi
 
 #####

@@ -235,7 +235,7 @@ HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
 # from configure, but only server is valid anyway. Fix this
 # when hotspot makefiles are rewritten.
 if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_product
+    HOTSPOT_TARGET=universal_${HOTSPOT_EXPORT}
 fi
 
 #####
