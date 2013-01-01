@@ -104,6 +104,17 @@ public class FormatData_es extends ListResourceBundle {
                     "s\u00e1b" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "D",
+                    "L",
+                    "M",
+                    "X",
+                    "J",
+                    "V",
+                    "S",
+                }
+            },
             { "NumberPatterns",
                 new String[] {
                     "#,##0.###;-#,##0.###", // decimal pattern

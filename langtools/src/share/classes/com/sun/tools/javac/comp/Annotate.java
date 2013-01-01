@@ -26,7 +26,6 @@
 package com.sun.tools.javac.comp;
 
 import java.util.Map;
-
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.*;
@@ -171,8 +170,8 @@ public class Annotate {
          * @param repeatingAnnotations a List of repeating annotations
          * @return a new Attribute.Compound that is the container for the repeatingAnnotations
          */
-        public Attribute.Compound processRepeatedAnnotations(List<Attribute.Compound> repeatingAnnotations) {
-            return Annotate.this.processRepeatedAnnotations(repeatingAnnotations, this);
+        public Attribute.Compound processRepeatedAnnotations(List<Attribute.Compound> repeatingAnnotations, Symbol sym) {
+            return Annotate.this.processRepeatedAnnotations(repeatingAnnotations, this, sym);
         }
 
         /**
@@ -339,10 +338,11 @@ public class Annotate {
      * annotation are invalid.  This method reports errors/warnings.
      */
     private Attribute.Compound processRepeatedAnnotations(List<Attribute.Compound> annotations,
-            AnnotateRepeatedContext ctx) {
+                                                          AnnotateRepeatedContext ctx,
+                                                          Symbol on) {
         Attribute.Compound firstOccurrence = annotations.head;
         List<Attribute> repeated = List.nil();
-        Type origAnnoType;
+        Type origAnnoType = null;
         Type arrayOfOrigAnnoType = null;
         Type targetContainerType = null;
         MethodSymbol containerValueSymbol = null;
@@ -390,9 +390,17 @@ public class Annotate {
                                                       new Attribute.Array(arrayOfOrigAnnoType, repeated));
             annoTree = m.Annotation(new Attribute.Compound(targetContainerType,
                     List.of(p)));
+
+            if (!chk.annotationApplicable(annoTree, on))
+                log.error(annoTree.pos(), "invalid.containedby.annotation.incompatible.target", targetContainerType, origAnnoType);
+
+            if (!chk.validateAnnotationDeferErrors(annoTree))
+                log.error(annoTree.pos(), "duplicate.annotation.invalid.repeated", origAnnoType);
+
             Attribute.Compound c = enterAnnotation(annoTree,
                                                    targetContainerType,
                                                    ctx.env);
+            c.setSynthesized(true);
             return c;
         } else {
             return null; // errors should have been reported elsewhere
@@ -410,7 +418,7 @@ public class Annotate {
         // annotation's declaration, or null if it has none
         Attribute.Compound ca = origAnnoDecl.attribute(syms.containedByType.tsym);
         if (ca == null) { // has no ContainedBy annotation
-            log.error(pos, "duplicate.annotation.missing.container", origAnnoType);
+            log.error(pos, "duplicate.annotation.missing.container", origAnnoType, syms.containedByType);
             return null;
         }
 

@@ -26,7 +26,7 @@
  * @bug 6350057 7025809
  * @summary Test that parameters on implicit enum methods have the right kind
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor T6350057
  * @compile -processor T6350057 -proc:only TestEnum.java
  */

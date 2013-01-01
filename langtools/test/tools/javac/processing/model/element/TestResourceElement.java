@@ -26,7 +26,7 @@
  * @bug 6967842
  * @summary Element not returned from tree API for ARM resource variables.
  * @author A. Sundararajan
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestResourceElement
  * @compile -processor TestResourceElement -proc:only TestResourceElement.java
  */

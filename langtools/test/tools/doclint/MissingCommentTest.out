@@ -1,0 +1,14 @@
+MissingCommentTest.java:8: warning: no comment
+public class MissingCommentTest {
+       ^
+MissingCommentTest.java:9: warning: no comment
+    MissingCommentTest() { }
+    ^
+MissingCommentTest.java:11: warning: no comment
+    int missingComment;
+        ^
+MissingCommentTest.java:13: warning: no comment
+    void missingComment() { }
+         ^
+4 warnings
+

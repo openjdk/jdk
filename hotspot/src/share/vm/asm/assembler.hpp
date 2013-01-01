@@ -216,17 +216,6 @@ class AbstractAssembler : public ResourceObj  {
   bool isByte(int x) const             { return 0 <= x && x < 0x100; }
   bool isShiftCount(int x) const       { return 0 <= x && x < 32; }
 
-  void emit_int8(   int8_t  x) { code_section()->emit_int8(   x); }
-  void emit_int16(  int16_t x) { code_section()->emit_int16(  x); }
-  void emit_int32(  int32_t x) { code_section()->emit_int32(  x); }
-  void emit_int64(  int64_t x) { code_section()->emit_int64(  x); }
-
-  void emit_float(  jfloat  x) { code_section()->emit_float(  x); }
-  void emit_double( jdouble x) { code_section()->emit_double( x); }
-  void emit_address(address x) { code_section()->emit_address(x); }
-
-  void emit_byte(int x)  { emit_int8 (x); }  // deprecated
-  void emit_word(int x)  { emit_int16(x); }  // deprecated
   void emit_long(jint x) { emit_int32(x); }  // deprecated
 
   // Instruction boundaries (required when emitting relocatable values).
@@ -277,9 +266,6 @@ class AbstractAssembler : public ResourceObj  {
   };
 #endif
 
-  // Label functions
-  void print(Label& L);
-
  public:
 
   // Creation
@@ -287,6 +273,15 @@ class AbstractAssembler : public ResourceObj  {
 
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
+
+  void emit_int8(   int8_t  x) { code_section()->emit_int8(   x); }
+  void emit_int16(  int16_t x) { code_section()->emit_int16(  x); }
+  void emit_int32(  int32_t x) { code_section()->emit_int32(  x); }
+  void emit_int64(  int64_t x) { code_section()->emit_int64(  x); }
+
+  void emit_float(  jfloat  x) { code_section()->emit_float(  x); }
+  void emit_double( jdouble x) { code_section()->emit_double( x); }
+  void emit_address(address x) { code_section()->emit_address(x); }
 
   // min and max values for signed immediate ranges
   static int min_simm(int nbits) { return -(intptr_t(1) << (nbits - 1))    ; }
@@ -327,8 +322,6 @@ class AbstractAssembler : public ResourceObj  {
   void    clear_inst_mark()       {        code_section()->clear_mark(); }
 
   // Constants in code
-  void a_byte(int x);
-  void a_long(jint x);
   void relocate(RelocationHolder const& rspec, int format = 0) {
     assert(!pd_check_instruction_mark()
         || inst_mark() == NULL || inst_mark() == code_section()->end(),
@@ -441,15 +434,6 @@ class AbstractAssembler : public ResourceObj  {
    */
   void pd_patch_instruction(address branch, address target);
 
-#ifndef PRODUCT
-  /**
-   * Platform-dependent method of printing an instruction that needs to be
-   * patched.
-   *
-   * @param branch the instruction to be patched in the buffer.
-   */
-  static void pd_print_patched_instruction(address branch);
-#endif // PRODUCT
 };
 
 #ifdef TARGET_ARCH_x86

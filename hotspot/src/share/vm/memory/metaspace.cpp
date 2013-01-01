@@ -2192,11 +2192,6 @@ void SpaceManager::mangle_freed_chunks() {
 
 // MetaspaceAux
 
-size_t MetaspaceAux::used_in_bytes() {
-  return (Metaspace::class_space_list()->used_words_sum() +
-          Metaspace::space_list()->used_words_sum()) * BytesPerWord;
-}
-
 size_t MetaspaceAux::used_in_bytes(Metaspace::MetadataType mdtype) {
   size_t used = 0;
   ClassLoaderDataGraphMetaspaceIterator iter;
@@ -2222,14 +2217,6 @@ size_t MetaspaceAux::free_in_bytes(Metaspace::MetadataType mdtype) {
   return free * BytesPerWord;
 }
 
-// The total words available for metadata allocation.  This
-// uses Metaspace capacity_words() which is the total words
-// in chunks allocated for a Metaspace.
-size_t MetaspaceAux::capacity_in_bytes() {
-  return (Metaspace::class_space_list()->capacity_words_sum() +
-          Metaspace::space_list()->capacity_words_sum()) * BytesPerWord;
-}
-
 size_t MetaspaceAux::capacity_in_bytes(Metaspace::MetadataType mdtype) {
   size_t capacity = free_chunks_total(mdtype);
   ClassLoaderDataGraphMetaspaceIterator iter;
@@ -2240,11 +2227,6 @@ size_t MetaspaceAux::capacity_in_bytes(Metaspace::MetadataType mdtype) {
     }
   }
   return capacity * BytesPerWord;
-}
-
-size_t MetaspaceAux::reserved_in_bytes() {
-  return (Metaspace::class_space_list()->virtual_space_total() +
-          Metaspace::space_list()->virtual_space_total()) * BytesPerWord;
 }
 
 size_t MetaspaceAux::reserved_in_bytes(Metaspace::MetadataType mdtype) {

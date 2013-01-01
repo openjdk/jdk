@@ -24,7 +24,7 @@
 /*
  * @test 6403456
  * @summary -Werror should work with annotation processing
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile WErrorGen.java
  * @compile -proc:only -processor WErrorGen WErrorGen.java

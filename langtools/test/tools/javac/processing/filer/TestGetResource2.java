@@ -24,7 +24,7 @@
 /* @test
  * @bug 6929404
  * @summary Filer.getResource(SOURCE_PATH, ...) does not work when -sourcepath contains >1 entry
- * @library ../../lib
+ * @library /tools/javac/lib
  */
 
 import java.io.*;

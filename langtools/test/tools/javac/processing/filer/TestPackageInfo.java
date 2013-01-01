@@ -26,7 +26,7 @@
  * @bug 6380018 6392177 6993311
  * @summary Test the ability to create and process package-info.java files
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile TestPackageInfo.java
  * @compile -processor TestPackageInfo -proc:only foo/bar/package-info.java TestPackageInfo.java

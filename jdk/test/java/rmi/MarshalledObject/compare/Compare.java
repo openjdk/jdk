@@ -29,7 +29,6 @@
  *          not involved in location should be compared.
  * @author Ken Arnold
  *
- * @build Compare
  * @run main Compare 11 annotatedRef
  */
 

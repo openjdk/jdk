@@ -27,8 +27,8 @@
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build RMID ActivationLibrary TestLibrary
- * @build ActivateMe CheckRegisterInLog CheckRegisterInLog_Stub
+ * @build TestLibrary RMID ActivationLibrary
+ *     ActivateMe CheckRegisterInLog_Stub
  * @run main/othervm/policy=security.policy/timeout=240 CheckRegisterInLog
  */
 

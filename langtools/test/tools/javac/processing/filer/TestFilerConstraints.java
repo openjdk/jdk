@@ -26,7 +26,7 @@
  * @bug 6380018 6453386 6457283
  * @summary Test that the constraints guaranteed by the Filer and maintained
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build TestFilerConstraints
  * @compile -encoding iso-8859-1 -processor TestFilerConstraints -proc:only TestFilerConstraints.java
  */

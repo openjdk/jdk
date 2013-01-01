@@ -120,7 +120,7 @@ public class JMXServerErrorTest {
         try {
             cs=JMXConnectorServerFactory.newJMXConnectorServer(jurl,null,kbs);
         } catch (MalformedURLException m) {
-            if ("jmxmp".equals(jurl.getProtocol())) {
+            if ("jmxmp".equals(jurl.getProtocol()) || "iiop".equals(jurl.getProtocol())) {
                 // OK, we may not have this in the classpath...
                 System.out.println("WARNING: Skipping protocol: " + jurl);
                 return;

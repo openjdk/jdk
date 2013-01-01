@@ -1771,11 +1771,21 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
   CallProjections callprojs;
   call->extract_projections(&callprojs, true);
 
-  // Replace all the old call edges with the edges from the inlining result
-  C->gvn_replace_by(callprojs.fallthrough_catchproj, final_state->in(TypeFunc::Control));
-  C->gvn_replace_by(callprojs.fallthrough_memproj,   final_state->in(TypeFunc::Memory));
-  C->gvn_replace_by(callprojs.fallthrough_ioproj,    final_state->in(TypeFunc::I_O));
+  Node* init_mem = call->in(TypeFunc::Memory);
   Node* final_mem = final_state->in(TypeFunc::Memory);
+  Node* final_ctl = final_state->in(TypeFunc::Control);
+  Node* final_io = final_state->in(TypeFunc::I_O);
+
+  // Replace all the old call edges with the edges from the inlining result
+  if (callprojs.fallthrough_catchproj != NULL) {
+    C->gvn_replace_by(callprojs.fallthrough_catchproj, final_ctl);
+  }
+  if (callprojs.fallthrough_memproj != NULL) {
+    C->gvn_replace_by(callprojs.fallthrough_memproj,   final_mem);
+  }
+  if (callprojs.fallthrough_ioproj != NULL) {
+    C->gvn_replace_by(callprojs.fallthrough_ioproj,    final_io);
+  }
 
   // Replace the result with the new result if it exists and is used
   if (callprojs.resproj != NULL && result != NULL) {
@@ -2980,7 +2990,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
   set_control( _gvn.transform(new (C) ProjNode(allocx, TypeFunc::Control) ) );
   // create memory projection for i_o
   set_memory ( _gvn.transform( new (C) ProjNode(allocx, TypeFunc::Memory, true) ), rawidx );
-  make_slow_call_ex(allocx, env()->OutOfMemoryError_klass(), true);
+  make_slow_call_ex(allocx, env()->Throwable_klass(), true);
 
   // create a memory projection as for the normal control path
   Node* malloc = _gvn.transform(new (C) ProjNode(allocx, TypeFunc::Memory));

@@ -25,7 +25,7 @@
  * @test
  * @bug     7029150 7025809
  * @summary Test support for union types
- * @library ../../../lib
+ * @library /tools/javac/lib
  */
 
 import java.net.URI;

@@ -78,5 +78,5 @@ $KT -delete -alias user
 # Check both, one of them might be dropped out of map in old codes.
 
 $JAVAC -d . ${TESTSRC}${FS}CertReplace.java
-$JAVA CertReplace samedn.jks samedn1.certs || exit 1
-$JAVA CertReplace samedn.jks samedn2.certs || exit 2
+$JAVA ${TESTVMOPTS} CertReplace samedn.jks samedn1.certs || exit 1
+$JAVA ${TESTVMOPTS} CertReplace samedn.jks samedn2.certs || exit 2

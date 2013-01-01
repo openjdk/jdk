@@ -30,7 +30,7 @@
  * been used for the RMI class loader instance.
  * @author Peter Jones
  *
- * @build NoSecurityManager Dummy LocalDummy
+ * @build Dummy LocalDummy
  * @run main/othervm/timeout=120 NoSecurityManager
  */
 
