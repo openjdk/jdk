@@ -62,7 +62,7 @@ case "$OS" in
         echo
 	echo "Running the test..."
         ${TESTJAVA}/bin/javac -d . ${TESTSRC}\\PublicKeyInterop.java
-        ${TESTJAVA}/bin/java PublicKeyInterop
+        ${TESTJAVA}/bin/java ${TESTVMOPTS} PublicKeyInterop
 
         rc=$?
 

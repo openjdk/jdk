@@ -26,7 +26,7 @@
  * @bug 6471577 6517779
  * @summary Test Elements.getConstantExpression
  * @author  Joseph D. Darcy
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestGetConstantExpression
  * @compile -processor TestGetConstantExpression Foo.java
  */

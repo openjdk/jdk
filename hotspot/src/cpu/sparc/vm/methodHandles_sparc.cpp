@@ -171,7 +171,8 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
-    __ load_sized_value(Address(method_temp, Method::size_of_parameters_offset()),
+    __ ld_ptr(method_temp, in_bytes(Method::const_offset()), temp2);
+    __ load_sized_value(Address(temp2, ConstMethod::size_of_parameters_offset()),
                         temp2,
                         sizeof(u2), /*is_signed*/ false);
     // assert(sizeof(u2) == sizeof(Method::_size_of_parameters), "");
@@ -233,7 +234,8 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   int ref_kind = signature_polymorphic_intrinsic_ref_kind(iid);
   assert(ref_kind != 0 || iid == vmIntrinsics::_invokeBasic, "must be _invokeBasic or a linkTo intrinsic");
   if (ref_kind == 0 || MethodHandles::ref_kind_has_receiver(ref_kind)) {
-    __ load_sized_value(Address(G5_method, Method::size_of_parameters_offset()),
+    __ ld_ptr(G5_method, in_bytes(Method::const_offset()), O4_param_size);
+    __ load_sized_value(Address(O4_param_size, ConstMethod::size_of_parameters_offset()),
                         O4_param_size,
                         sizeof(u2), /*is_signed*/ false);
     // assert(sizeof(u2) == sizeof(Method::_size_of_parameters), "");

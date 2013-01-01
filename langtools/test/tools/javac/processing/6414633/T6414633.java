@@ -25,7 +25,7 @@
  * @test
  * @bug 6414633 6440109
  * @summary Only the first processor message at a source location is reported
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build    JavacTestingAbstractProcessor A T6414633
  * @run main T6414633
  */

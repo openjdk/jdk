@@ -27,7 +27,8 @@
  * @bug 7184394
  * @summary add intrinsics to use AES instructions
  *
- * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC TestAESMain
+ * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=ECB TestAESMain
  *
  * @author Tom Deneau
  */

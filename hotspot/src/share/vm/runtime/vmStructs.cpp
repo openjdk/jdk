@@ -355,8 +355,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(Method,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,               _vtable_index,                                 int)                                   \
   nonstatic_field(Method,               _method_size,                                  u2)                                    \
-  nonstatic_field(Method,               _max_locals,                                   u2)                                    \
-  nonstatic_field(Method,               _size_of_parameters,                           u2)                                    \
   nonstatic_field(Method,               _interpreter_throwout_count,                   u2)                                    \
   nonstatic_field(Method,               _number_of_breakpoints,                        u2)                                    \
   nonstatic_field(Method,               _invocation_counter,                           InvocationCounter)                     \
@@ -378,6 +376,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(ConstMethod,          _signature_index,                              u2)                                    \
   nonstatic_field(ConstMethod,          _method_idnum,                                 u2)                                    \
   nonstatic_field(ConstMethod,          _max_stack,                                    u2)                                    \
+  nonstatic_field(ConstMethod,          _max_locals,                                   u2)                                    \
+  nonstatic_field(ConstMethod,          _size_of_parameters,                           u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
   volatile_nonstatic_field(Symbol,             _refcount,                                     int)                                   \

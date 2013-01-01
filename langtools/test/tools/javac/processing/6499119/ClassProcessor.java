@@ -32,7 +32,7 @@ import javax.tools.Diagnostic.Kind;
  * @test
  * @bug 6499119
  * @summary Created package-info class file modeled improperly
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile ClassProcessor.java package-info.java
  * @compile/process -cp . -processor ClassProcessor -Akind=java  java.lang.Object

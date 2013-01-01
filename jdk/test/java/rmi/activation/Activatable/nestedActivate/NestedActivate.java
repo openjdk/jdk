@@ -23,15 +23,11 @@
 
 /* @test
  * @bug 4138056
- *
  * @summary synopsis: Activating objects from an Activatable constructor causes deadlock
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID ActivationLibrary
- * @build ActivateMe
- * @build NestedActivate
- * @build NestedActivate_Stub
+ * @build TestLibrary RMID ActivationLibrary ActivateMe NestedActivate_Stub
  * @run main/othervm/policy=security.policy/timeout=240 NestedActivate
  */
 

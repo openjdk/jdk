@@ -26,7 +26,7 @@
  * @bug 6453386
  * @summary Test basic properties of javax.lang.element.Element
  * @author  Joseph D. Darcy
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestElement
  * @compile -processor TestElement -proc:only TestElement.java
  */

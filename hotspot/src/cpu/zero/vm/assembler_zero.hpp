@@ -37,9 +37,6 @@ class Assembler : public AbstractAssembler {
 
  public:
   void pd_patch_instruction(address branch, address target);
-#ifndef PRODUCT
-  static void pd_print_patched_instruction(address branch);
-#endif // PRODUCT
 };
 
 class MacroAssembler : public Assembler {

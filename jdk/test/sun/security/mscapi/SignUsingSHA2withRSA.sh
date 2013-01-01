@@ -61,7 +61,7 @@ case "$OS" in
         echo
 	echo "Running the test..."
         ${TESTJAVA}/bin/javac -d . ${TESTSRC}\\SignUsingSHA2withRSA.java
-        ${TESTJAVA}/bin/java SignUsingSHA2withRSA
+        ${TESTJAVA}/bin/java ${TESTVMOPTS} SignUsingSHA2withRSA
 
         rc=$?
 

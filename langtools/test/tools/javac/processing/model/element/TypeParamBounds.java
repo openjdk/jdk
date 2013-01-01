@@ -26,7 +26,7 @@
  * @bug     6423972
  * @summary Tests TypeParameter.getBounds.
  * @author  Scott Seligman
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TypeParamBounds
  * @compile -processor TypeParamBounds -proc:only TypeParamBounds.java
  */

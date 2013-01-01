@@ -28,12 +28,10 @@ package com.sun.tools.javadoc;
 import java.lang.reflect.Modifier;
 
 import com.sun.javadoc.*;
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-import com.sun.tools.javac.util.Position;
-
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 
 /**
@@ -62,9 +60,8 @@ public class MethodDocImpl
     /**
      * constructor.
      */
-    public MethodDocImpl(DocEnv env, MethodSymbol sym,
-                         String docComment, JCMethodDecl tree, Position.LineMap lineMap) {
-        super(env, sym, docComment, tree, lineMap);
+    public MethodDocImpl(DocEnv env, MethodSymbol sym, TreePath treePath) {
+        super(env, sym, treePath);
     }
 
     /**
@@ -76,6 +73,13 @@ public class MethodDocImpl
      */
     public boolean isMethod() {
         return true;
+    }
+
+    /**
+     * Return true if this method is default
+     */
+    public boolean isDefault() {
+        return (sym.flags() & Flags.DEFAULT) != 0;
     }
 
     /**

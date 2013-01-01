@@ -123,14 +123,15 @@ Java_sun_lwawt_macosx_CCursorManager_nativeGetCursorPosition
     jobject jpt = NULL;
 
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     __block NSPoint pt = NSZeroPoint;
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
-        pt = ConvertNSScreenPoint(env, [NSEvent mouseLocation]);
+    
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+            AWT_ASSERT_APPKIT_THREAD;
+        
+            pt = ConvertNSScreenPoint(env, [NSEvent mouseLocation]);
     }];
+    
     jpt = NSToJavaPoint(env, pt);
 
 JNF_COCOA_EXIT(env);

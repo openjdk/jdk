@@ -35,6 +35,7 @@ IMPORT_TOOLS_PACKAGES +=            \
       com/sun/source                \
       com/sun/tools/classfile       \
       com/sun/tools/doclets         \
+      com/sun/tools/doclint         \
       com/sun/tools/javac           \
       com/sun/tools/javadoc         \
       com/sun/tools/javah           \

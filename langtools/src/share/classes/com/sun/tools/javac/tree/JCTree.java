@@ -340,15 +340,17 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         LETEXPR;                         // ala scheme
 
-        private Tag noAssignTag;
+        private final Tag noAssignTag;
 
-        private static int numberOfOperators = MOD.ordinal() - POS.ordinal() + 1;
+        private static final int numberOfOperators = MOD.ordinal() - POS.ordinal() + 1;
 
         private Tag(Tag noAssignTag) {
             this.noAssignTag = noAssignTag;
         }
 
-        private Tag() { }
+        private Tag() {
+            this(null);
+        }
 
         public static int getNumberOfOperators() {
             return numberOfOperators;
@@ -1838,8 +1840,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             /** Toplevel # new */
             TOPLEVEL(ReferenceMode.NEW, false);
 
-            ReferenceMode mode;
-            boolean unbound;
+            final ReferenceMode mode;
+            final boolean unbound;
 
             private ReferenceKind(ReferenceMode mode, boolean unbound) {
                 this.mode = mode;

@@ -23,16 +23,13 @@
 
 /* @test
  * @bug 4115296
- *
  * @summary synopsis: NoSuchObjectException not thrown for non-existent
  * activatable objects
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
  * @build TestLibrary RMID ActivationLibrary
- * @build ActivateMe
- * @build NonExistentActivatable
- * @build NonExistentActivatable_Stub
+ *     ActivateMe NonExistentActivatable_Stub
  * @run main/othervm/policy=security.policy/timeout=240 NonExistentActivatable
  */
 

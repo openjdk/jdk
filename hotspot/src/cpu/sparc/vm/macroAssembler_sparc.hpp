@@ -603,7 +603,6 @@ class MacroAssembler : public Assembler {
   friend class Label;
 
  protected:
-  static void print_instruction(int inst);
   static int  patched_branch(int dest_pos, int inst, int inst_pos);
   static int  branch_destination(int inst, int pos);
 
@@ -759,9 +758,6 @@ class MacroAssembler : public Assembler {
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
   void pd_patch_instruction(address branch, address target);
-#ifndef PRODUCT
-  static void pd_print_patched_instruction(address branch);
-#endif
 
   // sethi Macro handles optimizations and relocations
 private:

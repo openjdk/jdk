@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,9 @@ package javax.security.auth.callback;
  * can then choose to prompt for a username and password serially,
  * or to prompt for both in a single window.
  *
- * <p> A default <code>CallbackHandler</code> class implementation
- * may be specified in the <i>auth.login.defaultCallbackHandler</i>
- * security property.  The security property can be set
- * in the Java security properties file located in the file named
- * &lt;JAVA_HOME&gt;/lib/security/java.security.
- * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- * and specifies the directory where the JRE is installed.
+ * <p> A default {@code CallbackHandler} class implementation
+ * may be specified by setting the value of the
+ * {@code auth.login.defaultCallbackHandler} security property.
  *
  * <p> If the security property is set to the fully qualified name of a
  * <code>CallbackHandler</code> implementation class,
@@ -67,6 +63,7 @@ package javax.security.auth.callback;
  * <p> All default handler implementations must provide a public
  * zero-argument constructor.
  *
+ * @see java.security.Security security properties
  */
 public interface CallbackHandler {
 

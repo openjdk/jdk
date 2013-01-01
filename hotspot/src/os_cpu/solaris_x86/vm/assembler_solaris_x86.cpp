@@ -116,7 +116,7 @@ void MacroAssembler::get_thread(Register thread) {
   ThreadLocalStorage::pd_tlsAccessMode tlsMode = ThreadLocalStorage::pd_getTlsAccessMode ();
   if (tlsMode == ThreadLocalStorage::pd_tlsAccessIndirect) {            // T1
      // Use thread as a temporary: mov r, gs:[0]; mov r, [r+tlsOffset]
-     emit_byte (segment);
+     emit_int8 (segment);
      // ExternalAddress doesn't work because it can't take NULL
      AddressLiteral null(0, relocInfo::none);
      movptr (thread, null);
@@ -125,7 +125,7 @@ void MacroAssembler::get_thread(Register thread) {
   } else
   if (tlsMode == ThreadLocalStorage::pd_tlsAccessDirect) {              // T2
      // mov r, gs:[tlsOffset]
-     emit_byte (segment);
+     emit_int8 (segment);
      AddressLiteral tls_off((address)ThreadLocalStorage::pd_getTlsOffset(), relocInfo::none);
      movptr (thread, tls_off);
      return ;

@@ -98,6 +98,7 @@ done
 
 # run test
 ${TESTJAVA}${FS}bin${FS}java \
+        ${TESTVMOPTS} \
         -verbose:class -XX:+TraceClassLoading -cp . \
         -Dtest.classes=${TESTCLASSES} \
         Starter cross

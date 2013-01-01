@@ -57,7 +57,7 @@ CLASSPATH=${TESTCLASSES}:${TESTSRC}
 export CLASSPATH
 
 # Probe for IP addresses plumbed to IB interfaces
-$JAVA -Djava.net.preferIPv4Stack=true ProbeIB ${IB_LINKS} > ${IB_ADDRS}
+$JAVA ${TESTVMOPTS} -Djava.net.preferIPv4Stack=true ProbeIB ${IB_LINKS} > ${IB_ADDRS}
 
 # Create sdp.conf
 SDPCONF=sdp.conf
@@ -70,4 +70,4 @@ do
 done
 
 # Sanity check
-$JAVA -Djava.net.preferIPv4Stack=true -Dcom.sun.sdp.conf=${SDPCONF} -Dcom.sun.sdp.debug Sanity
+$JAVA ${TESTVMOPTS} -Djava.net.preferIPv4Stack=true -Dcom.sun.sdp.conf=${SDPCONF} -Dcom.sun.sdp.debug Sanity

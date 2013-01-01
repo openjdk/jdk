@@ -1,0 +1,46 @@
+TrimmingEmptyTag.java:13: warning: empty <b> tag
+ * <b></b>
+      ^
+TrimmingEmptyTag.java:14: warning: empty <table> tag
+ * <table summary=description></table>
+                              ^
+TrimmingEmptyTag.java:15: warning: empty <caption> tag
+ * <table><caption></caption></table>
+                   ^
+TrimmingEmptyTag.java:16: warning: empty <code> tag
+ * <code></code>
+         ^
+TrimmingEmptyTag.java:17: warning: empty <dl> tag
+ * <dl></dl>
+       ^
+TrimmingEmptyTag.java:18: warning: empty <dt> tag
+ * <dl><dt></dt><dd></dd></dl>
+           ^
+TrimmingEmptyTag.java:18: warning: empty <dd> tag
+ * <dl><dt></dt><dd></dd></dl>
+                    ^
+TrimmingEmptyTag.java:19: warning: empty <font> tag
+ * <font></font>
+         ^
+TrimmingEmptyTag.java:20: warning: empty <i> tag
+ * <i></i>
+      ^
+TrimmingEmptyTag.java:21: warning: empty <ol> tag
+ * <ol></ol>
+       ^
+TrimmingEmptyTag.java:22: warning: empty <p> tag
+ * <p></p>
+      ^
+TrimmingEmptyTag.java:23: warning: empty <pre> tag
+ * <pre></pre>
+        ^
+TrimmingEmptyTag.java:24: warning: empty <span> tag
+ * <span></span>
+         ^
+TrimmingEmptyTag.java:25: warning: empty <tt> tag
+ * <tt></tt>
+       ^
+TrimmingEmptyTag.java:26: warning: empty <ul> tag
+ * <ul></ul>
+       ^
+15 warnings

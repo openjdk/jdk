@@ -31,7 +31,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build HandshakeFailure TestLibrary
+ * @build TestLibrary
  * @run main/othervm HandshakeFailure
  */
 

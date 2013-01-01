@@ -358,6 +358,51 @@ public class TestHelper {
         Files.copy(src.toPath(), dst.toPath(), COPY_ATTRIBUTES, REPLACE_EXISTING);
     }
 
+    /**
+     * Attempt to create a file at the given location. If an IOException
+     * occurs then back off for a moment and try again. When a number of
+     * attempts fail, give up and throw an exception.
+     */
+    void createAFile(File aFile, List<String> contents) throws IOException {
+        IOException cause = null;
+        for (int attempts = 0; attempts < 10; attempts++) {
+            try {
+                Files.write(aFile.getAbsoluteFile().toPath(), contents,
+                    Charset.defaultCharset(), CREATE, TRUNCATE_EXISTING, WRITE);
+                if (cause != null) {
+                    /*
+                     * report attempts and errors that were encountered
+                     * for diagnostic purposes
+                     */
+                    System.err.println("Created batch file " +
+                                        aFile + " in " + (attempts + 1) +
+                                        " attempts");
+                    System.err.println("Errors encountered: " + cause);
+                    cause.printStackTrace();
+                }
+                return;
+            } catch (IOException ioe) {
+                if (cause != null) {
+                    // chain the exceptions so they all get reported for diagnostics
+                    cause.addSuppressed(ioe);
+                } else {
+                    cause = ioe;
+                }
+            }
+
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+                if (cause != null) {
+                    // cause should alway be non-null here
+                    ie.addSuppressed(cause);
+                }
+                throw new RuntimeException("Interrupted while creating batch file", ie);
+            }
+        }
+        throw new RuntimeException("Unable to create batch file", cause);
+    }
+
     static void createFile(File outFile, List<String> content) throws IOException {
         Files.write(outFile.getAbsoluteFile().toPath(), content,
                 Charset.defaultCharset(), CREATE_NEW);

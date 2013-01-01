@@ -26,7 +26,7 @@
  * @bug 6380016
  * @summary Test that the constraints guaranteed by the Filer and maintained
  * @author  Joseph D. Darcy
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestNames
  * @compile -processor TestNames -proc:only TestNames.java
  */

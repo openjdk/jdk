@@ -26,7 +26,7 @@
  * @bug     6346251
  * @summary Test Elements.getBinaryName
  * @author  Scott Seligman
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor BinaryName
  * @compile -processor BinaryName -proc:only BinaryName.java
  */

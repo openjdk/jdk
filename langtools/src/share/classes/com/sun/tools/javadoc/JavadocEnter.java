@@ -25,13 +25,14 @@
 
 package com.sun.tools.javadoc;
 
+
 import javax.tools.JavaFileObject;
 
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -85,8 +86,7 @@ public class JavadocEnter extends Enter {
     public void visitTopLevel(JCCompilationUnit tree) {
         super.visitTopLevel(tree);
         if (tree.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
-            String comment = TreeInfo.getCommentText(env, tree);
-            docenv.makePackageDoc(tree.packge, comment, tree);
+            docenv.makePackageDoc(tree.packge, docenv.getTreePath(tree));
         }
     }
 
@@ -95,9 +95,8 @@ public class JavadocEnter extends Enter {
         super.visitClassDef(tree);
         if (tree.sym == null) return;
         if (tree.sym.kind == Kinds.TYP || tree.sym.kind == Kinds.ERR) {
-            String comment = TreeInfo.getCommentText(env, tree);
             ClassSymbol c = tree.sym;
-            docenv.makeClassDoc(c, comment, tree, env.toplevel.lineMap);
+            docenv.makeClassDoc(c, docenv.getTreePath(env.toplevel, tree));
         }
     }
 
