@@ -752,8 +752,7 @@ BOOT_RTJAR
 JAVA_CHECK
 JAVAC_CHECK
 COOKED_BUILD_NUMBER
-FULL_VERSION
-RELEASE
+USER_RELEASE_SUFFIX
 JDK_VERSION
 RUNTIME_NAME
 COPYRIGHT_YEAR
@@ -969,6 +968,8 @@ enable_headful
 enable_hotspot_test_in_build
 with_cacerts_file
 enable_unlimited_crypto
+with_milestone
+with_build_number
 with_boot_jdk
 with_boot_jdk_jvmargs
 with_add_source_root
@@ -1698,6 +1699,8 @@ Optional Packages:
   --with-builddeps-group  chgrp the downloaded build dependencies to this
                           group
   --with-cacerts-file     specify alternative cacerts file
+  --with-milestone        Set milestone value for build [internal]
+  --with-build-number     Set build number value for build [b00]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-boot-jdk-jvmargs specify JVM arguments to be passed to all
                           invocations of the Boot JDK, overriding the default
@@ -3679,7 +3682,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1356865941
+DATE_WHEN_GENERATED=1357045896
 
 ###############################################################################
 #
@@ -10608,6 +10611,33 @@ COMPRESS_JARS=false
 if test "x$OPENJDK" = "xfalse"; then
     . $AUTOCONF_DIR/closed.version.numbers
 fi
+
+
+# Check whether --with-milestone was given.
+if test "${with_milestone+set}" = set; then :
+  withval=$with_milestone;
+fi
+
+if test "x$with_milestone" = xyes; then
+    as_fn_error $? "Milestone must have a value" "$LINENO" 5
+elif test "x$with_milestone" != x; then
+    MILESTONE="$with_milestone"
+else
+    MILESTONE=internal
+fi
+
+
+# Check whether --with-build-number was given.
+if test "${with_build_number+set}" = set; then :
+  withval=$with_build_number;
+fi
+
+if test "x$with_build_number" = xyes; then
+    as_fn_error $? "Build number must have a value" "$LINENO" 5
+elif test "x$with_build_number" != x; then
+    JDK_BUILD_NUMBER="$with_build_number"
+fi
+
 # Now set the JDK version, milestone, build number etc.
 
 
@@ -10636,23 +10666,11 @@ else
 fi
 
 
-if test "x$MILESTONE" != x; then
-    RELEASE="${JDK_VERSION}-${MILESTONE}${BUILD_VARIANT_RELEASE}"
-else
-    RELEASE="${JDK_VERSION}${BUILD_VARIANT_RELEASE}"
-fi
+BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
+# Avoid [:alnum:] since it depends on the locale.
+CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
+USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
 
-
-if test "x$JDK_BUILD_NUMBER" != x; then
-    FULL_VERSION="${RELEASE}-${JDK_BUILD_NUMBER}"
-else
-    JDK_BUILD_NUMBER=b00
-    BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
-    # Avoid [:alnum:] since it depends on the locale.
-    CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
-    USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-    FULL_VERSION="${RELEASE}-${USER_RELEASE_SUFFIX}-${JDK_BUILD_NUMBER}"
-fi
 
 COOKED_BUILD_NUMBER=`$ECHO $JDK_BUILD_NUMBER | $SED -e 's/^b//' -e 's/^0//'`
 
