@@ -97,6 +97,9 @@ overlay-images:
 	+$(MAKE) -f CompileLaunchers.gmk OVERLAY_IMAGES=true
 	+$(MAKE) -f Images.gmk overlay-images
 
+sign-jars:
+	+$(MAKE) -f SignJars.gmk
+
 BINARIES:=$(notdir $(wildcard $(IMAGES_OUTPUTDIR)/j2sdk-image/bin/*))
 INSTALLDIR:=openjdk-$(RELEASE)
 

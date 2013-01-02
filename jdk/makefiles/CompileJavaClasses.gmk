@@ -42,8 +42,7 @@ EXCLUDES +=	com/sun/pept \
 		com/sun/tools/example/trace\
 		com/sun/tools/example/debug/bdi\
 		com/sun/tools/example/debug/event\
-		com/sun/tools/example/debug/gui \
-		com/oracle/security
+		com/sun/tools/example/debug/gui
 
 ifdef OPENJDK
     EXCLUDES+=	sun/dc \
@@ -86,6 +85,8 @@ ifneq ($(OPENJDK_TARGET_OS),solaris)
         sun/nio/ch/SolarisEventPort.java \
 	sun/tools/attach/SolarisAttachProvider.java \
 	sun/tools/attach/SolarisVirtualMachine.java
+
+   EXCLUDES += com/oracle/security
 endif
 
 # In the old build, this isn't excluded on macosx, even though it probably
