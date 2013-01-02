@@ -25,7 +25,7 @@
  * @test
  * @bug 6987384
  * @summary -XprintProcessorRoundsInfo message printed with different timing than previous
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor Test
  * @compile/fail/ref=Test.out -XDrawDiagnostics -XprintProcessorInfo -Werror -proc:only -processor Test Test.java
  */

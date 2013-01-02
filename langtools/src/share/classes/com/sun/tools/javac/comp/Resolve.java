@@ -156,7 +156,7 @@ public class Resolve {
         OBJECT_INIT("object-init"),
         INTERNAL("internal");
 
-        String opt;
+        final String opt;
 
         private VerboseResolutionMode(String opt) {
             this.opt = opt;
@@ -1798,12 +1798,23 @@ public class Resolve {
 
         if ((kind & TYP) != 0) {
             sym = findType(env, name);
+            if (sym.kind==TYP) {
+                 reportDependence(env.enclClass.sym, sym);
+            }
             if (sym.exists()) return sym;
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
 
         if ((kind & PCK) != 0) return reader.enterPackage(name);
         else return bestSoFar;
+    }
+
+    /** Report dependencies.
+     * @param from The enclosing class sym
+     * @param to   The found identifier that the class depends on.
+     */
+    public void reportDependence(Symbol from, Symbol to) {
+        // Override if you want to collect the reported dependencies.
     }
 
     /** Find an identifier in a package which matches a specified kind set.
@@ -3064,16 +3075,20 @@ public class Resolve {
             if (hasLocation) {
                 return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
-                        typeargtypes, argtypes, //type parameters and arguments (if any)
+                        typeargtypes, args(argtypes), //type parameters and arguments (if any)
                         getLocationDiag(location, site)); //location kindname, type
             }
             else {
                 return diags.create(dkind, log.currentSource(), pos,
                         errKey, kindname, idname, //symbol kindname, name
-                        typeargtypes, argtypes); //type parameters and arguments (if any)
+                        typeargtypes, args(argtypes)); //type parameters and arguments (if any)
             }
         }
         //where
+        private Object args(List<Type> args) {
+            return args.isEmpty() ? args : methodArguments(args);
+        }
+
         private String getErrorKey(KindName kindname, boolean hasTypeArgs, boolean hasLocation) {
             String key = "cant.resolve";
             String suffix = hasLocation ? ".location" : "";
@@ -3381,8 +3396,8 @@ public class Resolve {
             }
         };
 
-        boolean isBoxingRequired;
-        boolean isVarargsRequired;
+        final boolean isBoxingRequired;
+        final boolean isVarargsRequired;
 
         MethodResolutionPhase(boolean isBoxingRequired, boolean isVarargsRequired) {
            this.isBoxingRequired = isBoxingRequired;

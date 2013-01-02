@@ -25,7 +25,7 @@
  * @test
  * @bug 7196462
  * @summary JavacProcessingEnvironment should tolerate BasicJavacTask
- * @library ../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor T7196462
  * @compile/process -processor T7196462 T7196462.java
  */

@@ -26,7 +26,7 @@
  * @bug 6449781 6930508
  * @summary Test that reported names of anonymous classes are non-null.
  * @author  Joseph D. Darcy
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestAnonSourceNames
  * @compile -processor TestAnonSourceNames TestAnonClassNames.java
  * @run main TestAnonClassNames

@@ -25,7 +25,7 @@
  * @test
  * @bug 6988407
  * @summary javac crashes running processor on errant code; it used to print error message
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor TestParseErrors
  * @compile/fail/ref=TestParseErrors.out -XDrawDiagnostics -proc:only -processor TestParseErrors ParseErrors.java
  */

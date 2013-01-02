@@ -31,13 +31,14 @@ import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.javadoc.*;
-
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Scope;
@@ -45,22 +46,17 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
-
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
-
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.tree.TreeInfo;
-
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Position;
-
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -100,15 +96,14 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * Constructor
      */
     public ClassDocImpl(DocEnv env, ClassSymbol sym) {
-        this(env, sym, null, null, null);
+        this(env, sym, null);
     }
 
     /**
      * Constructor
      */
-    public ClassDocImpl(DocEnv env, ClassSymbol sym, String documentation,
-                        JCClassDecl tree, Position.LineMap lineMap) {
-        super(env, sym, documentation, tree, lineMap);
+    public ClassDocImpl(DocEnv env, ClassSymbol sym, TreePath treePath) {
+        super(env, sym, treePath);
         this.type = (ClassType)sym.type;
         this.tsym = sym;
     }
@@ -279,6 +274,10 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
             }
         }
         return false;
+    }
+
+    public boolean isFunctionalInterface() {
+        return env.types.isFunctionalInterface(tsym);
     }
 
     /**

@@ -26,7 +26,7 @@
  * @test
  * @bug 7022337
  * @summary repeated warnings about bootclasspath not set
- * @library ../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor T7022337
  * @run main T7022337
  */

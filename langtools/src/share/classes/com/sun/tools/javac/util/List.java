@@ -74,7 +74,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return (List<A>)EMPTY_LIST;
     }
 
-    private static List<?> EMPTY_LIST = new List<Object>(null,null) {
+    private static final List<?> EMPTY_LIST = new List<Object>(null,null) {
         public List<Object> setTail(List<Object> tail) {
             throw new UnsupportedOperationException();
         }
@@ -391,7 +391,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return (List<T>)list;
     }
 
-    private static Iterator<?> EMPTYITERATOR = new Iterator<Object>() {
+    private static final Iterator<?> EMPTYITERATOR = new Iterator<Object>() {
             public boolean hasNext() {
                 return false;
             }

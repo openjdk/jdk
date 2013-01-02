@@ -84,28 +84,31 @@ void NMTDCmd::execute(TRAPS) {
   }
 
   int nopt = 0;
-  if(_summary.is_set()) { ++nopt; }
-  if(_detail.is_set()) { ++nopt; }
-  if(_baseline.is_set()) { ++nopt; }
-  if(_summary_diff.is_set()) { ++nopt; }
-  if(_detail_diff.is_set()) { ++nopt; }
-  if(_shutdown.is_set()) { ++nopt; }
+  if(_summary.is_set() && _summary.value()) { ++nopt; }
+  if(_detail.is_set() && _detail.value()) { ++nopt; }
+  if(_baseline.is_set() && _baseline.value()) { ++nopt; }
+  if(_summary_diff.is_set() && _summary_diff.value()) { ++nopt; }
+  if(_detail_diff.is_set() && _detail_diff.value()) { ++nopt; }
+  if(_shutdown.is_set() && _shutdown.value()) { ++nopt; }
 #ifndef PRODUCT
-  if(_debug.is_set()) { ++nopt; }
+  if(_debug.is_set() && _debug.value()) { ++nopt; }
 #endif
 
   if(nopt > 1) {
       output()->print_cr("At most one of the following option can be specified: " \
         "summary, detail, baseline, summary.diff, detail.diff, shutdown"
 #ifndef PRODUCT
-        " ,debug"
+        ", debug"
 #endif
       );
       return;
-  }
-
-  if(nopt == 0) {
+  } else if (nopt == 0) {
+    if (_summary.is_set()) {
+      output()->print_cr("No command to execute");
+      return;
+    } else {
       _summary.set_value(true);
+    }
   }
 
 #ifndef PRODUCT

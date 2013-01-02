@@ -25,7 +25,7 @@
  * @test
  * @bug 6639645
  * @summary Modeling type implementing missing interfaces
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor Generator
  * @compile -XprintRounds -processor Generator TestMissingInterface.java
  * @run main TestMissingInterface

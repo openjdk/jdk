@@ -25,7 +25,7 @@
  * @test
  * @bug 7018098
  * @summary CacheFSInfo persists too long
- * @library ../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor T7018098
  * @run main T7018098
  */

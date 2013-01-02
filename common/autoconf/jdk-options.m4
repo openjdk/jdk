@@ -60,28 +60,30 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JVM_VARIANTS],
 # Currently we have:
 #    server: normal interpreter and a tiered C1/C2 compiler
 #    client: normal interpreter and C1 (no C2 compiler) (only 32-bit platforms)
+#    minimal1: reduced form of client with optional VM services and features stripped out
 #    kernel: kernel footprint JVM that passes the TCK without major performance problems,
 #             ie normal interpreter and C1, only the serial GC, kernel jvmti etc
 #    zero: no machine code interpreter, no compiler
 #    zeroshark: zero interpreter and shark/llvm compiler backend
 AC_MSG_CHECKING([which variants of the JVM to build])
 AC_ARG_WITH([jvm-variants], [AS_HELP_STRING([--with-jvm-variants],
-	[JVM variants (separated by commas) to build (server, client, kernel, zero, zeroshark) @<:@server@:>@])])
+	[JVM variants (separated by commas) to build (server, client, minimal1, kernel, zero, zeroshark) @<:@server@:>@])])
 
 if test "x$with_jvm_variants" = x; then
      with_jvm_variants="server"
 fi
 
 JVM_VARIANTS=",$with_jvm_variants,"
-TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//'`
+TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//'`
 
 if test "x$TEST_VARIANTS" != "x,"; then
-   AC_MSG_ERROR([The available JVM variants are: server, client, kernel, zero, zeroshark])
+   AC_MSG_ERROR([The available JVM variants are: server, client, minimal1, kernel, zero, zeroshark])
 fi   
 AC_MSG_RESULT([$with_jvm_variants])
 
 JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
 JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'` 
+JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS" | $SED -e '/,minimal1,/!s/.*/false/g' -e '/,minimal1,/s/.*/true/g'`
 JVM_VARIANT_KERNEL=`$ECHO "$JVM_VARIANTS" | $SED -e '/,kernel,/!s/.*/false/g' -e '/,kernel,/s/.*/true/g'`
 JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
 JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
@@ -96,10 +98,15 @@ if test "x$JVM_VARIANT_KERNEL" = xtrue; then
         AC_MSG_ERROR([You cannot build a kernel JVM for a 64-bit machine.])
     fi
 fi
+if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        AC_MSG_ERROR([You cannot build a minimal JVM for a 64-bit machine.])
+    fi
+fi
 
 # Replace the commas with AND for use in the build directory name.
 ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/'`
-COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/'`
+COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/'`
 if test "x$COUNT_VARIANTS" != "x,1"; then
     BUILDING_MULTIPLE_JVM_VARIANTS=yes
 else
@@ -109,6 +116,7 @@ fi
 AC_SUBST(JVM_VARIANTS)
 AC_SUBST(JVM_VARIANT_SERVER)
 AC_SUBST(JVM_VARIANT_CLIENT)
+AC_SUBST(JVM_VARIANT_MINIMAL1)
 AC_SUBST(JVM_VARIANT_KERNEL)
 AC_SUBST(JVM_VARIANT_ZERO)
 AC_SUBST(JVM_VARIANT_ZEROSHARK)
@@ -191,7 +199,9 @@ esac
 #####
 # Generate the legacy makefile targets for hotspot.
 # The hotspot api for selecting the build artifacts, really, needs to be improved.
-#
+# JDK-7195896 will fix this on the hotspot side by using the JVM_VARIANT_* variables to
+# determine what needs to be built. All we will need to set here is all_product, all_fastdebug etc
+# But until then ...
 HOTSPOT_TARGET=""
 
 if test "x$JVM_VARIANT_SERVER" = xtrue; then
@@ -200,6 +210,10 @@ fi
 
 if test "x$JVM_VARIANT_CLIENT" = xtrue; then
     HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}1 "
+fi
+
+if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
 fi
 
 if test "x$JVM_VARIANT_KERNEL" = xtrue; then

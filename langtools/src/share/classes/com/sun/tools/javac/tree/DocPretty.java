@@ -81,7 +81,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     /**
      * Print list.
      */
-    protected void print(List<? extends DocTree> list) throws IOException {
+    public void print(List<? extends DocTree> list) throws IOException {
         for (DocTree t: list) {
             print(t);
         }

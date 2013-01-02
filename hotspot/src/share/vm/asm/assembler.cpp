@@ -109,37 +109,6 @@ void AbstractAssembler::flush() {
   ICache::invalidate_range(addr_at(0), offset());
 }
 
-
-void AbstractAssembler::a_byte(int x) {
-  emit_byte(x);
-}
-
-
-void AbstractAssembler::a_long(jint x) {
-  emit_long(x);
-}
-
-// Labels refer to positions in the (to be) generated code.  There are bound
-// and unbound
-//
-// Bound labels refer to known positions in the already generated code.
-// offset() is the position the label refers to.
-//
-// Unbound labels refer to unknown positions in the code to be generated; it
-// may contain a list of unresolved displacements that refer to it
-#ifndef PRODUCT
-void AbstractAssembler::print(Label& L) {
-  if (L.is_bound()) {
-    tty->print_cr("bound label to %d|%d", L.loc_pos(), L.loc_sect());
-  } else if (L.is_unbound()) {
-    L.print_instructions((MacroAssembler*)this);
-  } else {
-    tty->print_cr("label in inconsistent state (loc = %d)", L.loc());
-  }
-}
-#endif // PRODUCT
-
-
 void AbstractAssembler::bind(Label& L) {
   if (L.is_bound()) {
     // Assembler can bind a label more than once to the same place.
@@ -342,28 +311,3 @@ bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
 #endif
   return offset < 0 || os::vm_page_size() <= offset;
 }
-
-#ifndef PRODUCT
-void Label::print_instructions(MacroAssembler* masm) const {
-  CodeBuffer* cb = masm->code();
-  for (int i = 0; i < _patch_index; ++i) {
-    int branch_loc;
-    if (i >= PatchCacheSize) {
-      branch_loc = _patch_overflow->at(i - PatchCacheSize);
-    } else {
-      branch_loc = _patches[i];
-    }
-    int branch_pos  = CodeBuffer::locator_pos(branch_loc);
-    int branch_sect = CodeBuffer::locator_sect(branch_loc);
-    address branch = cb->locator_address(branch_loc);
-    tty->print_cr("unbound label");
-    tty->print("@ %d|%d ", branch_pos, branch_sect);
-    if (branch_sect == CodeBuffer::SECT_CONSTS) {
-      tty->print_cr(PTR_FORMAT, *(address*)branch);
-      continue;
-    }
-    masm->pd_print_patched_instruction(branch);
-    tty->cr();
-  }
-}
-#endif // ndef PRODUCT

@@ -994,10 +994,7 @@ public class XBaseWindow {
             return;
         }
         int buttonState = 0;
-        final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
-        for (int i = 0; i<buttonsNumber; i++){
-            buttonState |= (xbe.get_state() & XConstants.buttonsMask[i]);
-        }
+        buttonState = xbe.get_state() & XConstants.ALL_BUTTONS_MASK;
         switch (xev.get_type()) {
         case XConstants.ButtonPress:
             if (buttonState == 0) {
@@ -1034,12 +1031,12 @@ public class XBaseWindow {
      * Checks ButtonRelease released all Mouse buttons
      */
     static boolean isFullRelease(int buttonState, int button) {
-        final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+        final int buttonsNumber = XToolkit.getNumberOfButtonsForMask();
 
         if (button < 0 || button > buttonsNumber) {
             return buttonState == 0;
         } else {
-            return buttonState == XConstants.buttonsMask[button - 1];
+            return buttonState == XlibUtil.getButtonMask(button);
         }
     }
 

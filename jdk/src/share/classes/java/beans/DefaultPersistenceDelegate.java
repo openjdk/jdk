@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,8 @@ import sun.reflect.misc.*;
  */
 
 public class DefaultPersistenceDelegate extends PersistenceDelegate {
-    private String[] constructor;
+    private static final String[] EMPTY = {};
+    private final String[] constructor;
     private Boolean definesEquals;
 
     /**
@@ -67,7 +68,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
      * @see #DefaultPersistenceDelegate(java.lang.String[])
      */
     public DefaultPersistenceDelegate() {
-        this(new String[0]);
+        this.constructor = EMPTY;
     }
 
     /**
@@ -92,7 +93,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
      * @see #instantiate
      */
     public DefaultPersistenceDelegate(String[] constructorPropertyNames) {
-        this.constructor = constructorPropertyNames;
+        this.constructor = (constructorPropertyNames == null) ? EMPTY : constructorPropertyNames.clone();
     }
 
     private static boolean definesEquals(Class<?> type) {

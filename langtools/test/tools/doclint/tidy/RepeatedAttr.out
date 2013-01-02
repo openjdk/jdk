@@ -1,0 +1,4 @@
+RepeatedAttr.java:13: error: repeated attribute: alt
+ * <img src="image.gif" alt alt="summary">
+                            ^
+1 error

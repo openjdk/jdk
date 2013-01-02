@@ -39,21 +39,15 @@ else
 
 JVM_DB = libjvm_db
 LIBJVM_DB = libjvm_db.so
-LIBJVM_DB_G = libjvm$(G_SUFFIX)_db.so
 
 LIBJVM_DB_DEBUGINFO   = libjvm_db.debuginfo
 LIBJVM_DB_DIZ         = libjvm_db.diz
-LIBJVM_DB_G_DEBUGINFO = libjvm$(G_SUFFIX)_db.debuginfo
-LIBJVM_DB_G_DIZ       = libjvm$(G_SUFFIX)_db.diz
 
 JVM_DTRACE = jvm_dtrace
 LIBJVM_DTRACE = libjvm_dtrace.so
-LIBJVM_DTRACE_G = libjvm$(G_SUFFIX)_dtrace.so
 
 LIBJVM_DTRACE_DEBUGINFO   = libjvm_dtrace.debuginfo
 LIBJVM_DTRACE_DIZ         = libjvm_dtrace.diz
-LIBJVM_DTRACE_G_DEBUGINFO = libjvm$(G_SUFFIX)_dtrace.debuginfo
-LIBJVM_DTRACE_G_DIZ       = libjvm$(G_SUFFIX)_dtrace.diz
 
 JVMOFFS = JvmOffsets
 JVMOFFS.o = $(JVMOFFS).o
@@ -96,25 +90,18 @@ ifneq ("${ISA}","${BUILDARCH}")
 
 XLIBJVM_DIR = 64
 XLIBJVM_DB = $(XLIBJVM_DIR)/$(LIBJVM_DB)
-XLIBJVM_DB_G = $(XLIBJVM_DIR)/$(LIBJVM_DB_G)
 XLIBJVM_DTRACE = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE)
-XLIBJVM_DTRACE_G = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_G)
 
 XLIBJVM_DB_DEBUGINFO       = $(XLIBJVM_DIR)/$(LIBJVM_DB_DEBUGINFO)
 XLIBJVM_DB_DIZ             = $(XLIBJVM_DIR)/$(LIBJVM_DB_DIZ)
-XLIBJVM_DB_G_DEBUGINFO     = $(XLIBJVM_DIR)/$(LIBJVM_DB_G_DEBUGINFO)
-XLIBJVM_DB_G_DIZ           = $(XLIBJVM_DIR)/$(LIBJVM_DB_G_DIZ)
 XLIBJVM_DTRACE_DEBUGINFO   = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DEBUGINFO)
 XLIBJVM_DTRACE_DIZ         = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DIZ)
-XLIBJVM_DTRACE_G_DEBUGINFO = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_G_DEBUGINFO)
-XLIBJVM_DTRACE_G_DIZ       = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_G_DIZ)
 
 $(XLIBJVM_DB): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
-	[ -f $(XLIBJVM_DB_G) ] || { ln -s $(LIBJVM_DB) $(XLIBJVM_DB_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
 # Clear the SHF_ALLOC flag (if set) from empty section headers.
@@ -137,13 +124,11 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(XLIBJVM_DB_G_DEBUGINFO) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
 # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
 # in the archived name:
-	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO) )
-	$(RM) $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO)
-	[ -f $(XLIBJVM_DB_G_DIZ) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DB_DIZ) $(LIBJVM_DB_G_DIZ); }
+	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO) )
+	$(RM) $(XLIBJVM_DB_DEBUGINFO)
   endif
 endif
 
@@ -152,7 +137,6 @@ $(XLIBJVM_DTRACE): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCD
 	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
-	[ -f $(XLIBJVM_DTRACE_G) ] || { ln -s $(LIBJVM_DTRACE) $(XLIBJVM_DTRACE_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 # Clear the SHF_ALLOC flag (if set) from empty section headers.
 	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
@@ -170,13 +154,11 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(XLIBJVM_DTRACE_G_DEBUGINFO) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
 # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
 # in the archived name:
-	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO) )
-	$(RM) $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO)
-	[ -f $(XLIBJVM_DTRACE_G_DIZ) ] || { cd $(XLIBJVM_DIR) && ln -s $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_G_DIZ); }
+	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO))
+	$(RM) $(XLIBJVM_DTRACE_DEBUGINFO)
   endif
 endif
 
@@ -224,7 +206,6 @@ $(LIBJVM_DB): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
-	[ -f $(LIBJVM_DB_G) ] || { ln -s $@ $(LIBJVM_DB_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 # Clear the SHF_ALLOC flag (if set) from empty section headers.
 	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
@@ -240,11 +221,9 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(LIBJVM_DB_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-	$(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO)
-	$(RM) $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO)
-	[ -f $(LIBJVM_DB_G_DIZ) ] || { ln -s $(LIBJVM_DB_DIZ) $(LIBJVM_DB_G_DIZ); }
+	$(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO)
+	$(RM) $(LIBJVM_DB_DEBUGINFO)
   endif
 endif
 
@@ -252,7 +231,6 @@ $(LIBJVM_DTRACE): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDI
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
-	[ -f $(LIBJVM_DTRACE_G) ] || { ln -s $@ $(LIBJVM_DTRACE_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 # Clear the SHF_ALLOC flag (if set) from empty section headers.
 	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
@@ -268,11 +246,9 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(LIBJVM_DTRACE_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO); }
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-	$(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO)
-	$(RM) $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO)
-	[ -f $(LIBJVM_DTRACE_G_DIZ) ] || { ln -s $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_G_DIZ); }
+	$(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) 
+	$(RM) $(LIBJVM_DTRACE_DEBUGINFO)
   endif
 endif
 

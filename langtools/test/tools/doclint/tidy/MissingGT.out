@@ -1,0 +1,4 @@
+MissingGT.java:13: error: malformed HTML
+ * <img src="image.gif"
+   ^
+1 error

@@ -2174,13 +2174,13 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - K (key) in little endian int array
   //
   address generate_aescrypt_encryptBlock() {
-    assert(UseAES && (UseAVX > 0), "need AES instructions and misaligned SSE support");
+    assert(UseAES, "need AES instructions and misaligned SSE support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
     Label L_doLast;
     address start = __ pc();
 
-    const Register from        = rsi;      // source array address
+    const Register from        = rdx;      // source array address
     const Register to          = rdx;      // destination array address
     const Register key         = rcx;      // key array address
     const Register keylen      = rax;
@@ -2189,47 +2189,74 @@ class StubGenerator: public StubCodeGenerator {
     const Address  key_param (rbp, 8+8);
 
     const XMMRegister xmm_result = xmm0;
-    const XMMRegister xmm_temp   = xmm1;
-    const XMMRegister xmm_key_shuf_mask = xmm2;
+    const XMMRegister xmm_key_shuf_mask = xmm1;
+    const XMMRegister xmm_temp1  = xmm2;
+    const XMMRegister xmm_temp2  = xmm3;
+    const XMMRegister xmm_temp3  = xmm4;
+    const XMMRegister xmm_temp4  = xmm5;
 
-    __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ push(rsi);
-    __ movptr(from , from_param);
-    __ movptr(to   , to_param);
-    __ movptr(key  , key_param);
+    __ enter();   // required for proper stackwalking of RuntimeStub frame
+    __ movptr(from, from_param);
+    __ movptr(key, key_param);
 
+    // keylen could be only {11, 13, 15} * 4 = {44, 52, 60}
     __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    // keylen = # of 32-bit words, convert to 128-bit words
-    __ shrl(keylen, 2);
-    __ subl(keylen, 11);   // every key has at least 11 128-bit words, some have more
 
     __ movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
     __ movdqu(xmm_result, Address(from, 0));  // get 16 bytes of input
+    __ movptr(to, to_param);
 
     // For encryption, the java expanded key ordering is just what we need
 
-    load_key(xmm_temp, key, 0x00, xmm_key_shuf_mask);
-    __ pxor(xmm_result, xmm_temp);
-    for (int offset = 0x10; offset <= 0x90; offset += 0x10) {
-      aes_enc_key(xmm_result, xmm_temp, key, offset, xmm_key_shuf_mask);
-    }
-    load_key  (xmm_temp, key, 0xa0, xmm_key_shuf_mask);
-    __ cmpl(keylen, 0);
-    __ jcc(Assembler::equal, L_doLast);
-    __ aesenc(xmm_result, xmm_temp);                   // only in 192 and 256 bit keys
-    aes_enc_key(xmm_result, xmm_temp, key, 0xb0, xmm_key_shuf_mask);
-    load_key(xmm_temp, key, 0xc0, xmm_key_shuf_mask);
-    __ subl(keylen, 2);
-    __ jcc(Assembler::equal, L_doLast);
-    __ aesenc(xmm_result, xmm_temp);                   // only in 256 bit keys
-    aes_enc_key(xmm_result, xmm_temp, key, 0xd0, xmm_key_shuf_mask);
-    load_key(xmm_temp, key, 0xe0, xmm_key_shuf_mask);
+    load_key(xmm_temp1, key, 0x00, xmm_key_shuf_mask);
+    __ pxor(xmm_result, xmm_temp1);
+
+    load_key(xmm_temp1, key, 0x10, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0x20, xmm_key_shuf_mask);
+    load_key(xmm_temp3, key, 0x30, xmm_key_shuf_mask);
+    load_key(xmm_temp4, key, 0x40, xmm_key_shuf_mask);
+
+    __ aesenc(xmm_result, xmm_temp1);
+    __ aesenc(xmm_result, xmm_temp2);
+    __ aesenc(xmm_result, xmm_temp3);
+    __ aesenc(xmm_result, xmm_temp4);
+
+    load_key(xmm_temp1, key, 0x50, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0x60, xmm_key_shuf_mask);
+    load_key(xmm_temp3, key, 0x70, xmm_key_shuf_mask);
+    load_key(xmm_temp4, key, 0x80, xmm_key_shuf_mask);
+
+    __ aesenc(xmm_result, xmm_temp1);
+    __ aesenc(xmm_result, xmm_temp2);
+    __ aesenc(xmm_result, xmm_temp3);
+    __ aesenc(xmm_result, xmm_temp4);
+
+    load_key(xmm_temp1, key, 0x90, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0xa0, xmm_key_shuf_mask);
+
+    __ cmpl(keylen, 44);
+    __ jccb(Assembler::equal, L_doLast);
+
+    __ aesenc(xmm_result, xmm_temp1);
+    __ aesenc(xmm_result, xmm_temp2);
+
+    load_key(xmm_temp1, key, 0xb0, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0xc0, xmm_key_shuf_mask);
+
+    __ cmpl(keylen, 52);
+    __ jccb(Assembler::equal, L_doLast);
+
+    __ aesenc(xmm_result, xmm_temp1);
+    __ aesenc(xmm_result, xmm_temp2);
+
+    load_key(xmm_temp1, key, 0xd0, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0xe0, xmm_key_shuf_mask);
 
     __ BIND(L_doLast);
-    __ aesenclast(xmm_result, xmm_temp);
+    __ aesenc(xmm_result, xmm_temp1);
+    __ aesenclast(xmm_result, xmm_temp2);
     __ movdqu(Address(to, 0), xmm_result);        // store the result
     __ xorptr(rax, rax); // return 0
-    __ pop(rsi);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -2245,13 +2272,13 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - K (key) in little endian int array
   //
   address generate_aescrypt_decryptBlock() {
-    assert(UseAES && (UseAVX > 0), "need AES instructions and misaligned SSE support");
+    assert(UseAES, "need AES instructions and misaligned SSE support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
     Label L_doLast;
     address start = __ pc();
 
-    const Register from        = rsi;      // source array address
+    const Register from        = rdx;      // source array address
     const Register to          = rdx;      // destination array address
     const Register key         = rcx;      // key array address
     const Register keylen      = rax;
@@ -2260,51 +2287,76 @@ class StubGenerator: public StubCodeGenerator {
     const Address  key_param (rbp, 8+8);
 
     const XMMRegister xmm_result = xmm0;
-    const XMMRegister xmm_temp   = xmm1;
-    const XMMRegister xmm_key_shuf_mask = xmm2;
+    const XMMRegister xmm_key_shuf_mask = xmm1;
+    const XMMRegister xmm_temp1  = xmm2;
+    const XMMRegister xmm_temp2  = xmm3;
+    const XMMRegister xmm_temp3  = xmm4;
+    const XMMRegister xmm_temp4  = xmm5;
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ push(rsi);
-    __ movptr(from , from_param);
-    __ movptr(to   , to_param);
-    __ movptr(key  , key_param);
+    __ movptr(from, from_param);
+    __ movptr(key, key_param);
 
+    // keylen could be only {11, 13, 15} * 4 = {44, 52, 60}
     __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    // keylen = # of 32-bit words, convert to 128-bit words
-    __ shrl(keylen, 2);
-    __ subl(keylen, 11);   // every key has at least 11 128-bit words, some have more
 
     __ movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
     __ movdqu(xmm_result, Address(from, 0));
+    __ movptr(to, to_param);
 
     // for decryption java expanded key ordering is rotated one position from what we want
     // so we start from 0x10 here and hit 0x00 last
     // we don't know if the key is aligned, hence not using load-execute form
-    load_key(xmm_temp, key, 0x10, xmm_key_shuf_mask);
-    __ pxor  (xmm_result, xmm_temp);
-    for (int offset = 0x20; offset <= 0xa0; offset += 0x10) {
-      aes_dec_key(xmm_result, xmm_temp, key, offset, xmm_key_shuf_mask);
-    }
-    __ cmpl(keylen, 0);
-    __ jcc(Assembler::equal, L_doLast);
-    // only in 192 and 256 bit keys
-    aes_dec_key(xmm_result, xmm_temp, key, 0xb0, xmm_key_shuf_mask);
-    aes_dec_key(xmm_result, xmm_temp, key, 0xc0, xmm_key_shuf_mask);
-    __ subl(keylen, 2);
-    __ jcc(Assembler::equal, L_doLast);
-    // only in 256 bit keys
-    aes_dec_key(xmm_result, xmm_temp, key, 0xd0, xmm_key_shuf_mask);
-    aes_dec_key(xmm_result, xmm_temp, key, 0xe0, xmm_key_shuf_mask);
+    load_key(xmm_temp1, key, 0x10, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0x20, xmm_key_shuf_mask);
+    load_key(xmm_temp3, key, 0x30, xmm_key_shuf_mask);
+    load_key(xmm_temp4, key, 0x40, xmm_key_shuf_mask);
+
+    __ pxor  (xmm_result, xmm_temp1);
+    __ aesdec(xmm_result, xmm_temp2);
+    __ aesdec(xmm_result, xmm_temp3);
+    __ aesdec(xmm_result, xmm_temp4);
+
+    load_key(xmm_temp1, key, 0x50, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0x60, xmm_key_shuf_mask);
+    load_key(xmm_temp3, key, 0x70, xmm_key_shuf_mask);
+    load_key(xmm_temp4, key, 0x80, xmm_key_shuf_mask);
+
+    __ aesdec(xmm_result, xmm_temp1);
+    __ aesdec(xmm_result, xmm_temp2);
+    __ aesdec(xmm_result, xmm_temp3);
+    __ aesdec(xmm_result, xmm_temp4);
+
+    load_key(xmm_temp1, key, 0x90, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0xa0, xmm_key_shuf_mask);
+    load_key(xmm_temp3, key, 0x00, xmm_key_shuf_mask);
+
+    __ cmpl(keylen, 44);
+    __ jccb(Assembler::equal, L_doLast);
+
+    __ aesdec(xmm_result, xmm_temp1);
+    __ aesdec(xmm_result, xmm_temp2);
+
+    load_key(xmm_temp1, key, 0xb0, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0xc0, xmm_key_shuf_mask);
+
+    __ cmpl(keylen, 52);
+    __ jccb(Assembler::equal, L_doLast);
+
+    __ aesdec(xmm_result, xmm_temp1);
+    __ aesdec(xmm_result, xmm_temp2);
+
+    load_key(xmm_temp1, key, 0xd0, xmm_key_shuf_mask);
+    load_key(xmm_temp2, key, 0xe0, xmm_key_shuf_mask);
 
     __ BIND(L_doLast);
+    __ aesdec(xmm_result, xmm_temp1);
+    __ aesdec(xmm_result, xmm_temp2);
+
     // for decryption the aesdeclast operation is always on key+0x00
-    load_key(xmm_temp, key, 0x00, xmm_key_shuf_mask);
-    __ aesdeclast(xmm_result, xmm_temp);
-
+    __ aesdeclast(xmm_result, xmm_temp3);
     __ movdqu(Address(to, 0), xmm_result);  // store the result
-
     __ xorptr(rax, rax); // return 0
-    __ pop(rsi);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -2340,7 +2392,7 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - input length
   //
   address generate_cipherBlockChaining_encryptAESCrypt() {
-    assert(UseAES && (UseAVX > 0), "need AES instructions and misaligned SSE support");
+    assert(UseAES, "need AES instructions and misaligned SSE support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_encryptAESCrypt");
     address start = __ pc();
@@ -2393,7 +2445,7 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::notEqual, L_key_192_256);
 
     // 128 bit code follows here
-    __ movptr(pos, 0);
+    __ movl(pos, 0);
     __ align(OptoLoopAlignment);
     __ BIND(L_loopTop_128);
     __ movdqu(xmm_temp, Address(from, pos, Address::times_1, 0));   // get next 16 bytes of input
@@ -2423,15 +2475,15 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();                                  // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
-  __ BIND(L_key_192_256);
-  // here rax = len in ints of AESCrypt.KLE array (52=192, or 60=256)
+    __ BIND(L_key_192_256);
+    // here rax = len in ints of AESCrypt.KLE array (52=192, or 60=256)
     __ cmpl(rax, 52);
     __ jcc(Assembler::notEqual, L_key_256);
 
     // 192-bit code follows here (could be changed to use more xmm registers)
-    __ movptr(pos, 0);
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loopTop_192);
+    __ movl(pos, 0);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_loopTop_192);
     __ movdqu(xmm_temp, Address(from, pos, Address::times_1, 0));   // get next 16 bytes of input
     __ pxor  (xmm_result, xmm_temp);                                // xor with the current r vector
 
@@ -2452,11 +2504,11 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::notEqual, L_loopTop_192);
     __ jmp(L_exit);
 
-  __ BIND(L_key_256);
+    __ BIND(L_key_256);
     // 256-bit code follows here (could be changed to use more xmm registers)
-    __ movptr(pos, 0);
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loopTop_256);
+    __ movl(pos, 0);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_loopTop_256);
     __ movdqu(xmm_temp, Address(from, pos, Address::times_1, 0));   // get next 16 bytes of input
     __ pxor  (xmm_result, xmm_temp);                                // xor with the current r vector
 
@@ -2495,7 +2547,7 @@ class StubGenerator: public StubCodeGenerator {
   //
 
   address generate_cipherBlockChaining_decryptAESCrypt() {
-    assert(UseAES && (UseAVX > 0), "need AES instructions and misaligned SSE support");
+    assert(UseAES, "need AES instructions and misaligned SSE support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
     address start = __ pc();
@@ -2556,9 +2608,9 @@ class StubGenerator: public StubCodeGenerator {
 
 
     // 128-bit code follows here, parallelized
-    __ movptr(pos, 0);
-  __ align(OptoLoopAlignment);
-  __ BIND(L_singleBlock_loopTop_128);
+    __ movl(pos, 0);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_singleBlock_loopTop_128);
     __ cmpptr(len_reg, 0);           // any blocks left??
     __ jcc(Assembler::equal, L_exit);
     __ movdqu(xmm_result, Address(from, pos, Address::times_1, 0));   // get next 16 bytes of cipher input
@@ -2597,7 +2649,7 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::notEqual, L_key_256);
 
     // 192-bit code follows here (could be optimized to use parallelism)
-    __ movptr(pos, 0);
+    __ movl(pos, 0);
     __ align(OptoLoopAlignment);
     __ BIND(L_singleBlock_loopTop_192);
     __ movdqu(xmm_result, Address(from, pos, Address::times_1, 0));   // get next 16 bytes of cipher input
@@ -2622,7 +2674,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_key_256);
     // 256-bit code follows here (could be optimized to use parallelism)
-    __ movptr(pos, 0);
+    __ movl(pos, 0);
     __ align(OptoLoopAlignment);
     __ BIND(L_singleBlock_loopTop_256);
     __ movdqu(xmm_result, Address(from, pos, Address::times_1, 0));   // get next 16 bytes of cipher input
