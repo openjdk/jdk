@@ -298,7 +298,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     for (int i = 0; i < _bytes_to_copy; i++) {
       address ptr = (address)(_pc_start + i);
       int a_byte = (*ptr) & 0xFF;
-      __ a_byte (a_byte);
+      __ emit_int8 (a_byte);
     }
   }
 
@@ -340,10 +340,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   int being_initialized_entry_offset = __ offset() - being_initialized_entry + sizeof_patch_record;
 
   // Emit the patch record.  We need to emit a full word, so emit an extra empty byte
-  __ a_byte(0);
-  __ a_byte(being_initialized_entry_offset);
-  __ a_byte(bytes_to_skip);
-  __ a_byte(_bytes_to_copy);
+  __ emit_int8(0);
+  __ emit_int8(being_initialized_entry_offset);
+  __ emit_int8(bytes_to_skip);
+  __ emit_int8(_bytes_to_copy);
   address patch_info_pc = __ pc();
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 

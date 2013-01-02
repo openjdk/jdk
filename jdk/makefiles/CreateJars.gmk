@@ -729,6 +729,7 @@ TOOLS_JAR_INCLUDES := \
 	com/sun/source          \
 	com/sun/tools/classfile \
 	com/sun/tools/doclets   \
+	com/sun/tools/doclint   \
 	com/sun/tools/example/debug/expr \
 	com/sun/tools/example/debug/tty  \
 	com/sun/tools/extcheck  \

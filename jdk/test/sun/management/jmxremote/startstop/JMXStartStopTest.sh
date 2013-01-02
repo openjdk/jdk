@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2011, 2012 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ _lockFileName="JMXStartStop.lck"
 
 _compile(){
 
-    if [ ! -e ${_testclasses} ]
+    if [ ! -d ${_testclasses} ]
     then
       mkdir -p ${_testclasses} 
     fi   
@@ -53,7 +53,7 @@ _compile(){
     # Compile testcase
     ${TESTJAVA}/bin/javac -d ${_testclasses} JMXStartStopDoSomething.java JMXStartStopTest.java 
 
-    if [ ! -e ${_testclasses}/JMXStartStopTest.class ]
+    if [ ! -f ${_testclasses}/JMXStartStopTest.class ]
     then
       echo "ERROR: Can't compile"
       exit -1
@@ -63,15 +63,22 @@ _compile(){
 _app_start(){
   ${TESTJAVA}/bin/java ${TESTVMOPTS} $* -cp ${_testclasses} JMXStartStopDoSomething  >> ${_logname} 2>&1 &
 
-  npid=`_get_pid`
-  if [ "${npid}" = "" ]
-  then
-     echo "ERROR: Test app not started"
-     if [ "${_jtreg}" = "yes" ]
+  x=0
+  while [ ! -f ${_lockFileName} ]
+  do
+     if [ $x -gt 20 ]
      then
-       exit -1
-     fi  
-  fi
+        echo "ERROR: Test app not started"
+        if [ "${_jtreg}" = "yes" ]
+        then
+           exit -1
+        fi   
+     fi    
+        
+     echo "Waiting JMXStartStopDoSomething to start: $x"
+     x=`expr $x + 1`
+     sleep 1
+  done
 }
 
 _get_pid(){

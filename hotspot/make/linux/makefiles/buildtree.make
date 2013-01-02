@@ -442,12 +442,7 @@ test_gamma:  $(BUILDTREE_MAKE) $(GAMMADIR)/make/test/Queens.java
 	echo "  exit 0"; \
 	echo "fi"; \
 	echo ""; \
-	echo "# Use gamma_g if it exists"; \
-	echo ""; \
 	echo "GAMMA_PROG=gamma"; \
-	echo "if [ -f gamma_g ]; then "; \
-	echo "  GAMMA_PROG=gamma_g"; \
-	echo "fi"; \
 	echo ""; \
 	echo "if [ \"$(OS_VENDOR)\" = \"Darwin\" ]; then "; \
 	echo "  # Ensure architecture for gamma and JAVA_HOME is the same."; \
