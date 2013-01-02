@@ -25,15 +25,12 @@
 
 package com.sun.tools.javac.parser;
 
-import com.sun.tools.javac.util.Filter;
 import java.text.BreakIterator;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
@@ -52,7 +49,6 @@ import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.DiagnosticSource;
-import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -736,7 +732,9 @@ public class DocCommentParser {
             nextChar();
             return m.at(p).Entity(names.fromChars(buf, namep, bp - namep - 1));
         } else {
-            String code = checkSemi ? "dc.missing.semicolon" : "dc.bad.entity";
+            String code = checkSemi
+                    ? "dc.missing.semicolon"
+                    : "dc.bad.entity";
             return erroneous(code, p);
         }
     }
@@ -888,8 +886,10 @@ public class DocCommentParser {
     }
 
     protected void addPendingText(ListBuffer<DCTree> list, int textEnd) {
-        if (textStart != -1 && textStart <= textEnd) {
-            list.add(m.at(textStart).Text(newString(textStart, textEnd + 1)));
+        if (textStart != -1) {
+            if (textStart <= textEnd) {
+                list.add(m.at(textStart).Text(newString(textStart, textEnd + 1)));
+            }
             textStart = -1;
         }
     }
@@ -1194,6 +1194,16 @@ public class DocCommentParser {
                             List<DCTree> html = blockContent();
                             if (html != null)
                                 return m.at(pos).See(html);
+                            break;
+
+                        case '@':
+                            if (newline)
+                                throw new ParseException("dc.no.content");
+                            break;
+
+                        case EOI:
+                            if (bp == buf.length - 1)
+                                throw new ParseException("dc.no.content");
                             break;
 
                         default:

@@ -147,7 +147,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         }
     }
 
-    static Option[] recognizedOptions = {
+    static final Option[] recognizedOptions = {
         new Option(true, "-o") {
             void process(JavahTask task, String opt, String arg) {
                 task.ofile = new File(arg);

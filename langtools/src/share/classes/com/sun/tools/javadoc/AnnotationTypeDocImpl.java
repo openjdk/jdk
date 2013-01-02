@@ -27,13 +27,13 @@ package com.sun.tools.javadoc;
 
 import com.sun.javadoc.*;
 
+import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Names;
-import com.sun.tools.javac.util.Position;
 
 /**
  * Represents an annotation type.
@@ -51,12 +51,11 @@ public class AnnotationTypeDocImpl
         extends ClassDocImpl implements AnnotationTypeDoc {
 
     public AnnotationTypeDocImpl(DocEnv env, ClassSymbol sym) {
-        this(env, sym, null, null, null);
+        this(env, sym, null);
     }
 
-    public AnnotationTypeDocImpl(DocEnv env, ClassSymbol sym,
-                          String doc, JCClassDecl tree, Position.LineMap lineMap) {
-        super(env, sym, doc, tree, lineMap);
+    public AnnotationTypeDocImpl(DocEnv env, ClassSymbol sym, TreePath treePath) {
+        super(env, sym, treePath);
     }
 
     /**

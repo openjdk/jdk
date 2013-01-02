@@ -45,9 +45,7 @@ public abstract class DocTrees extends Trees {
      * @throws IllegalArgumentException if the task does not support the Trees API.
      */
     public static DocTrees instance(CompilationTask task) {
-        if (!task.getClass().getName().equals("com.sun.tools.javac.api.JavacTaskImpl"))
-            throw new IllegalArgumentException();
-        return (DocTrees) getJavacTrees(CompilationTask.class, task);
+        return (DocTrees) Trees.instance(task);
     }
 
     /**

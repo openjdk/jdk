@@ -64,7 +64,7 @@ go() {
   ecs="$1"; shift
 
   echo -n "$L: "
-  cs="`LC_ALL=$L $JAVA -cp $TESTCLASSES Default`"
+  cs="`LC_ALL=$L $JAVA ${TESTVMOPTS} -cp $TESTCLASSES Default`"
   if [ $? != 0 ]; then
     exit 1
   elif [ "`tolower $cs`" != "`tolower $ecs`" ]; then

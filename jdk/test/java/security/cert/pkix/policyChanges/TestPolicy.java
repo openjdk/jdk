@@ -21,16 +21,22 @@
  * questions.
  */
 
+// This test case relies on updated static security property, no way to re-use
+// security property in samevm/agentvm mode.
+
 /**
  * @test
  * @bug 4684793
- * @summary verify that the RFC3280 policy processing changes are implemented correctly
+ * @summary verify that the RFC3280 policy processing changes are
+ *          implemented correctly
+ * @run main/othervm TestPolicy
  * @author Andreas Sterbenz
  */
 
 import java.io.*;
 import java.util.*;
 
+import java.security.Security;
 import java.security.cert.*;
 
 public class TestPolicy {
@@ -72,6 +78,10 @@ public class TestPolicy {
     };
 
     public static void main(String[] args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
+
         factory = CertificateFactory.getInstance("X.509");
 
         X509Certificate anchor = loadCertificate("anchor.cer");

@@ -81,7 +81,7 @@ EXIT_STATUS=0
 
 if [ "${NATIVE}" = "true" ] ; then
     echo "Testing native provider"
-    ${TESTJAVA}${FILESEP}bin${FILESEP}java \
+    ${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} \
         -classpath ${TESTCLASSES} \
         -Dsun.security.jgss.native=true \
         ${TEST}
@@ -92,7 +92,7 @@ if [ "${NATIVE}" = "true" ] ; then
 fi
 
 echo "Testing java provider"
-${TESTJAVA}${FILESEP}bin${FILESEP}java \
+${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} \
         -classpath ${TESTCLASSES} \
         -Djava.security.krb5.realm=R \
         -Djava.security.krb5.kdc=127.0.0.1 \

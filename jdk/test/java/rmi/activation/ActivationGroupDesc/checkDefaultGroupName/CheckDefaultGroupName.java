@@ -21,16 +21,15 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4252236
  * @summary ActivationGroupDesc should not do early binding of default classname
- * @library ../../../testlibrary
- *
- * @build CheckDefaultGroupName
- *
- * @run main CheckDefaultGroupName
  * @author Laird Dornin
+ *
+ * @library ../../../testlibrary
+ * @build TestLibrary
+ * @run main CheckDefaultGroupName
  */
 
 import java.rmi.activation.*;

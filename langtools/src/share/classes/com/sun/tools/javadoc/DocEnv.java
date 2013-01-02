@@ -27,18 +27,20 @@ package com.sun.tools.javadoc;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
+
 import javax.tools.JavaFileManager;
 
 import com.sun.javadoc.*;
-
+import com.sun.source.util.TreePath;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.comp.Check;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
-import com.sun.tools.javac.util.Position;
 
 /**
  * Holds the environment for a run of javadoc.
@@ -103,6 +105,8 @@ public class DocEnv {
     Types types;
     JavaFileManager fileManager;
     Context context;
+
+    WeakHashMap<JCTree, TreePath> treePaths = new WeakHashMap<JCTree, TreePath>();
 
     /** Allow documenting from class files? */
     boolean docClasses = false;
@@ -540,13 +544,12 @@ public class DocEnv {
     /**
      * Create the PackageDoc (or a subtype) for a package symbol.
      */
-    void makePackageDoc(PackageSymbol pack, String docComment, JCCompilationUnit tree) {
+    void makePackageDoc(PackageSymbol pack, TreePath treePath) {
         PackageDocImpl result = packageMap.get(pack);
         if (result != null) {
-            if (docComment != null) result.setRawCommentText(docComment);
-            if (tree != null) result.setTree(tree);
+            if (treePath != null) result.setTreePath(treePath);
         } else {
-            result = new PackageDocImpl(this, pack, docComment, tree);
+            result = new PackageDocImpl(this, pack, treePath);
             packageMap.put(pack, result);
         }
     }
@@ -572,17 +575,16 @@ public class DocEnv {
     /**
      * Create the ClassDoc (or a subtype) for a class symbol.
      */
-    protected void makeClassDoc(ClassSymbol clazz, String docComment, JCClassDecl tree, Position.LineMap lineMap) {
+    protected void makeClassDoc(ClassSymbol clazz, TreePath treePath) {
         ClassDocImpl result = classMap.get(clazz);
         if (result != null) {
-            if (docComment != null) result.setRawCommentText(docComment);
-            if (tree != null) result.setTree(tree);
+            if (treePath != null) result.setTreePath(treePath);
             return;
         }
-        if (isAnnotationType(tree)) {   // flags of clazz may not yet be set
-            result = new AnnotationTypeDocImpl(this, clazz, docComment, tree, lineMap);
+        if (isAnnotationType((JCClassDecl) treePath.getLeaf())) {   // flags of clazz may not yet be set
+            result = new AnnotationTypeDocImpl(this, clazz, treePath);
         } else {
-            result = new ClassDocImpl(this, clazz, docComment, tree, lineMap);
+            result = new ClassDocImpl(this, clazz, treePath);
         }
         classMap.put(clazz, result);
     }
@@ -610,13 +612,12 @@ public class DocEnv {
     /**
      * Create a FieldDoc for a var symbol.
      */
-    protected void makeFieldDoc(VarSymbol var, String docComment, JCVariableDecl tree, Position.LineMap lineMap) {
+    protected void makeFieldDoc(VarSymbol var, TreePath treePath) {
         FieldDocImpl result = fieldMap.get(var);
         if (result != null) {
-            if (docComment != null) result.setRawCommentText(docComment);
-            if (tree != null) result.setTree(tree);
+            if (treePath != null) result.setTreePath(treePath);
         } else {
-            result = new FieldDocImpl(this, var, docComment, tree, lineMap);
+            result = new FieldDocImpl(this, var, treePath);
             fieldMap.put(var, result);
         }
     }
@@ -627,14 +628,12 @@ public class DocEnv {
      * Create a MethodDoc for this MethodSymbol.
      * Should be called only on symbols representing methods.
      */
-    protected void makeMethodDoc(MethodSymbol meth, String docComment,
-                       JCMethodDecl tree, Position.LineMap lineMap) {
+    protected void makeMethodDoc(MethodSymbol meth, TreePath treePath) {
         MethodDocImpl result = (MethodDocImpl)methodMap.get(meth);
         if (result != null) {
-            if (docComment != null) result.setRawCommentText(docComment);
-            if (tree != null) result.setTree(tree);
+            if (treePath != null) result.setTreePath(treePath);
         } else {
-            result = new MethodDocImpl(this, meth, docComment, tree, lineMap);
+            result = new MethodDocImpl(this, meth, treePath);
             methodMap.put(meth, result);
         }
     }
@@ -656,14 +655,12 @@ public class DocEnv {
      * Create the ConstructorDoc for a MethodSymbol.
      * Should be called only on symbols representing constructors.
      */
-    protected void makeConstructorDoc(MethodSymbol meth, String docComment,
-                            JCMethodDecl tree, Position.LineMap lineMap) {
+    protected void makeConstructorDoc(MethodSymbol meth, TreePath treePath) {
         ConstructorDocImpl result = (ConstructorDocImpl)methodMap.get(meth);
         if (result != null) {
-            if (docComment != null) result.setRawCommentText(docComment);
-            if (tree != null) result.setTree(tree);
+            if (treePath != null) result.setTreePath(treePath);
         } else {
-            result = new ConstructorDocImpl(this, meth, docComment, tree, lineMap);
+            result = new ConstructorDocImpl(this, meth, treePath);
             methodMap.put(meth, result);
         }
     }
@@ -685,16 +682,14 @@ public class DocEnv {
      * Create the AnnotationTypeElementDoc for a MethodSymbol.
      * Should be called only on symbols representing annotation type elements.
      */
-    protected void makeAnnotationTypeElementDoc(MethodSymbol meth,
-                                      String docComment, JCMethodDecl tree, Position.LineMap lineMap) {
+    protected void makeAnnotationTypeElementDoc(MethodSymbol meth, TreePath treePath) {
         AnnotationTypeElementDocImpl result =
             (AnnotationTypeElementDocImpl)methodMap.get(meth);
         if (result != null) {
-            if (docComment != null) result.setRawCommentText(docComment);
-            if (tree != null) result.setTree(tree);
+            if (treePath != null) result.setTreePath(treePath);
         } else {
             result =
-                new AnnotationTypeElementDocImpl(this, meth, docComment, tree, lineMap);
+                new AnnotationTypeElementDocImpl(this, meth, treePath);
             methodMap.put(meth, result);
         }
     }
@@ -728,6 +723,18 @@ public class DocEnv {
 //      result = new ParameterizedTypeImpl(this, t);
 //      parameterizedTypeMap.put(t, result);
 //      return result;
+    }
+
+    TreePath getTreePath(JCCompilationUnit tree) {
+        TreePath p = treePaths.get(tree);
+        if (p == null)
+            treePaths.put(tree, p = new TreePath(tree));
+        return p;
+    }
+
+    TreePath getTreePath(JCCompilationUnit toplevel, JCTree tree) {
+        // don't bother to cache paths for classes and members
+        return new TreePath(getTreePath(toplevel), tree);
     }
 
     /**
