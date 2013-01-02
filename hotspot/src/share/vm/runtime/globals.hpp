@@ -1101,13 +1101,6 @@ class CommandLineFlags {
   product(bool, ReduceSignalUsage, false,                                   \
           "Reduce the use of OS signals in Java and/or the VM")             \
                                                                             \
-  notproduct(bool, ValidateMarkSweep, false,                                \
-          "Do extra validation during MarkSweep collection")                \
-                                                                            \
-  notproduct(bool, RecordMarkSweepCompaction, false,                        \
-          "Enable GC-to-GC recording and querying of compaction during "    \
-          "MarkSweep")                                                      \
-                                                                            \
   develop_pd(bool, ShareVtableStubs,                                        \
           "Share vtable stubs (smaller code but worse branch prediction")   \
                                                                             \
