@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,9 @@ BASIC_REQUIRE_PROG(BASH, bash)
 BASIC_REQUIRE_PROG(CAT, cat)
 BASIC_REQUIRE_PROG(CHMOD, chmod)
 BASIC_REQUIRE_PROG(CMP, cmp)
+BASIC_REQUIRE_PROG(COMM, comm)
 BASIC_REQUIRE_PROG(CP, cp)
+BASIC_REQUIRE_PROG(CPIO, cpio)
 BASIC_REQUIRE_PROG(CUT, cut)
 BASIC_REQUIRE_PROG(DATE, date)
 BASIC_REQUIRE_PROG(DIFF, [gdiff diff])

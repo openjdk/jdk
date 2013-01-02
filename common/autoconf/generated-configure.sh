@@ -754,7 +754,6 @@ JAVAC_CHECK
 COOKED_BUILD_NUMBER
 USER_RELEASE_SUFFIX
 JDK_VERSION
-RUNTIME_NAME
 COPYRIGHT_YEAR
 MACOSX_BUNDLE_ID_BASE
 MACOSX_BUNDLE_NAME_BASE
@@ -783,7 +782,6 @@ OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
 PKG_CONFIG
-COMM
 TIME
 STAT
 HG
@@ -899,7 +897,9 @@ DIRNAME
 DIFF
 DATE
 CUT
+CPIO
 CP
+COMM
 CMP
 CHMOD
 CAT
@@ -2986,7 +2986,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # Include these first...
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3401,7 +3401,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3433,6 +3433,10 @@ pkgadd_help() {
 
 
 
+###############################################################################
+#
+# Setup version numbers
+#
 
 
 
@@ -3682,7 +3686,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1357045896
+DATE_WHEN_GENERATED=1357120071
 
 ###############################################################################
 #
@@ -4009,6 +4013,65 @@ $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
 
 
 
+    for ac_prog in comm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_COMM+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $COMM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+COMM=$ac_cv_path_COMM
+if test -n "$COMM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
+$as_echo "$COMM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$COMM" && break
+done
+
+
+    if test "x$COMM" = x; then
+        if test "xcomm" = x; then
+          PROG_NAME=comm
+        else
+          PROG_NAME=comm
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
     for ac_prog in cp
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -4060,6 +4123,65 @@ done
           PROG_NAME=cp
         else
           PROG_NAME=cp
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in cpio
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CPIO+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CPIO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CPIO="$CPIO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CPIO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CPIO=$ac_cv_path_CPIO
+if test -n "$CPIO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CPIO" >&5
+$as_echo "$CPIO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CPIO" && break
+done
+
+
+    if test "x$CPIO" = x; then
+        if test "xcpio" = x; then
+          PROG_NAME=cpio
+        else
+          PROG_NAME=cpio
         fi
         { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
 $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
@@ -10607,11 +10729,9 @@ COMPRESS_JARS=false
 
 
 # Source the version numbers
-. $AUTOCONF_DIR/version.numbers
-if test "x$OPENJDK" = "xfalse"; then
-    . $AUTOCONF_DIR/closed.version.numbers
-fi
+. $AUTOCONF_DIR/version-numbers
 
+# Get the settings from parameters
 
 # Check whether --with-milestone was given.
 if test "${with_milestone+set}" = set; then :
@@ -10637,6 +10757,9 @@ if test "x$with_build_number" = xyes; then
 elif test "x$with_build_number" != x; then
     JDK_BUILD_NUMBER="$with_build_number"
 fi
+if test "x$JDK_BUILD_NUMBER" = x; then
+    JDK_BUILD_NUMBER=b00
+fi
 
 # Now set the JDK version, milestone, build number etc.
 
@@ -10654,9 +10777,6 @@ fi
 
 
 COPYRIGHT_YEAR=`date +'%Y'`
-
-
-RUNTIME_NAME="$PRODUCT_NAME $PRODUCT_SUFFIX"
 
 
 if test "x$JDK_UPDATE_VERSION" != x; then

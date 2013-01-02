@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -369,14 +369,16 @@ COMPRESS_JARS=false
 AC_SUBST(COMPRESS_JARS)
 ])
 
+###############################################################################
+#
+# Setup version numbers
+#
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
 [
 # Source the version numbers
-. $AUTOCONF_DIR/version.numbers
-if test "x$OPENJDK" = "xfalse"; then
-    . $AUTOCONF_DIR/closed.version.numbers
-fi
+. $AUTOCONF_DIR/version-numbers
 
+# Get the settings from parameters
 AC_ARG_WITH(milestone, [AS_HELP_STRING([--with-milestone], 
                        [Set milestone value for build @<:@internal@:>@])])
 if test "x$with_milestone" = xyes; then
@@ -393,6 +395,9 @@ if test "x$with_build_number" = xyes; then
     AC_MSG_ERROR([Build number must have a value])
 elif test "x$with_build_number" != x; then
     JDK_BUILD_NUMBER="$with_build_number"
+fi
+if test "x$JDK_BUILD_NUMBER" = x; then
+    JDK_BUILD_NUMBER=b00
 fi
 
 # Now set the JDK version, milestone, build number etc.
@@ -412,9 +417,6 @@ AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 
 COPYRIGHT_YEAR=`date +'%Y'`
 AC_SUBST(COPYRIGHT_YEAR)
-
-RUNTIME_NAME="$PRODUCT_NAME $PRODUCT_SUFFIX"
-AC_SUBST(RUNTIME_NAME)
 
 if test "x$JDK_UPDATE_VERSION" != x; then
     JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}_${JDK_UPDATE_VERSION}"
