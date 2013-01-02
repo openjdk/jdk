@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ interface Member {
      *
      * @return true if and only if this member was introduced by
      * the compiler.
+     * @jls 13.1 The Form of a Binary
      * @since 1.5
      */
     public boolean isSynthetic();

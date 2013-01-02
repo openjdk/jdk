@@ -496,21 +496,9 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   dest->verify_section_allocation();
 }
 
-// Anonymous classes need mirror to keep the metadata alive but
-// for regular classes, the class_loader is sufficient.
+// Append an oop reference that keeps the class alive.
 static void append_oop_references(GrowableArray<oop>* oops, Klass* k) {
-  if (k->oop_is_instance()) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    if (ik->is_anonymous()) {
-      oop o = ik->java_mirror();
-      assert (o != NULL, "should have a mirror");
-      if (!oops->contains(o)) {
-        oops->append(o);
-      }
-      return;  // only need the mirror
-    }
-  }
-  oop cl = k->class_loader();
+  oop cl = k->klass_holder();
   if (cl != NULL && !oops->contains(cl)) {
     oops->append(cl);
   }

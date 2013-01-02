@@ -269,12 +269,10 @@ void CompileTask::initialize(int compile_id,
                              const char* comment,
                              bool is_blocking) {
   assert(!_lock->is_locked(), "bad locking");
-  InstanceKlass* holder = method->method_holder();
 
   _compile_id = compile_id;
   _method = method();
-  _method_holder = JNIHandles::make_global(
-        holder->is_anonymous() ? holder->java_mirror(): holder->class_loader());
+  _method_holder = JNIHandles::make_global(method->method_holder()->klass_holder());
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   _comp_level = comp_level;
@@ -298,10 +296,7 @@ void CompileTask::initialize(int compile_id,
       } else {
         _hot_method = hot_method();
         // only add loader or mirror if different from _method_holder
-        InstanceKlass* hot_holder = hot_method->method_holder();
-        _hot_method_holder = JNIHandles::make_global(
-               hot_holder->is_anonymous() ? hot_holder->java_mirror() :
-                                            hot_holder->class_loader());
+        _hot_method_holder = JNIHandles::make_global(hot_method->method_holder()->klass_holder());
       }
     }
   }
