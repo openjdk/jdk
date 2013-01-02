@@ -32,14 +32,8 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build JavaVM
- * @build KeepAliveDuringCall
- * @build KeepAliveDuringCall_Stub
- * @build ShutdownMonitor
- * @build Shutdown
- * @build ShutdownImpl
- * @build ShutdownImpl_Stub
+ * @build TestLibrary JavaVM KeepAliveDuringCall_Stub
+ *     ShutdownMonitor Shutdown ShutdownImpl ShutdownImpl_Stub
  * @run main/othervm KeepAliveDuringCall
  */
 

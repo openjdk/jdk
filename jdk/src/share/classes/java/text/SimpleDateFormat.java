@@ -48,12 +48,13 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SimpleTimeZone;
+import java.util.SortedMap;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.calendar.CalendarUtils;
 import sun.util.calendar.ZoneInfoFile;
+import sun.util.locale.provider.LocaleProviderAdapter;
 
 /**
  * <code>SimpleDateFormat</code> is a concrete class for formatting and
@@ -1593,6 +1594,17 @@ public class SimpleDateFormat extends DateFormat {
     private int matchString(String text, int start, int field,
                             Map<String,Integer> data, CalendarBuilder calb) {
         if (data != null) {
+            // TODO: make this default when it's in the spec.
+            if (data instanceof SortedMap) {
+                for (String name : data.keySet()) {
+                    if (text.regionMatches(true, start, name, 0, name.length())) {
+                        calb.set(field, data.get(name));
+                        return start + name.length();
+                    }
+                }
+                return -start;
+            }
+
             String bestMatch = null;
 
             for (String name : data.keySet()) {
@@ -1803,7 +1815,7 @@ public class SimpleDateFormat extends DateFormat {
                          boolean obeyCount, boolean[] ambiguousYear,
                          ParsePosition origPos,
                          boolean useFollowingMinusSignAsDelimiter, CalendarBuilder calb) {
-        Number number = null;
+        Number number;
         int value = 0;
         ParsePosition pos = new ParsePosition(0);
         pos.index = start;
@@ -1876,9 +1888,7 @@ public class SimpleDateFormat extends DateFormat {
                         return index;
                     }
                 } else {
-                    Map<String, Integer> map = calendar.getDisplayNames(field,
-                                                                        Calendar.ALL_STYLES,
-                                                                        locale);
+                    Map<String, Integer> map = getDisplayNamesMap(field, locale);
                     if ((index = matchString(text, start, field, map, calb)) > 0) {
                         return index;
                     }
@@ -1940,7 +1950,7 @@ public class SimpleDateFormat extends DateFormat {
                     // count >= 3 // i.e., MMM or MMMM
                     // Want to be able to parse both short and long forms.
                     // Try count == 4 first:
-                    int newStart = 0;
+                    int newStart;
                     if ((newStart = matchString(text, start, Calendar.MONTH,
                                                 formatData.getMonths(), calb)) > 0) {
                         return newStart;
@@ -1951,9 +1961,7 @@ public class SimpleDateFormat extends DateFormat {
                         return index;
                     }
                 } else {
-                    Map<String, Integer> map = calendar.getDisplayNames(field,
-                                                                        Calendar.ALL_STYLES,
-                                                                        locale);
+                    Map<String, Integer> map = getDisplayNamesMap(field, locale);
                     if ((index = matchString(text, start, field, map, calb)) > 0) {
                         return index;
                     }
@@ -1979,7 +1987,7 @@ public class SimpleDateFormat extends DateFormat {
                     if (useDateFormatSymbols) {
                         // Want to be able to parse both short and long forms.
                         // Try count == 4 (DDDD) first:
-                        int newStart = 0;
+                        int newStart;
                         if ((newStart=matchString(text, start, Calendar.DAY_OF_WEEK,
                                                   formatData.getWeekdays(), calb)) > 0) {
                             return newStart;
@@ -2008,7 +2016,7 @@ public class SimpleDateFormat extends DateFormat {
                         return index;
                     }
                 } else {
-                    Map<String,Integer> map = calendar.getDisplayNames(field, Calendar.ALL_STYLES, locale);
+                    Map<String,Integer> map = getDisplayNamesMap(field, locale);
                     if ((index = matchString(text, start, field, map, calb)) > 0) {
                         return index;
                     }
@@ -2098,7 +2106,7 @@ public class SimpleDateFormat extends DateFormat {
                         break parsing;
                     }
 
-                    int sign = 0;
+                    int sign;
                     char c = text.charAt(pos.index);
                     if (c == 'Z') {
                         calb.set(Calendar.ZONE_OFFSET, 0).set(Calendar.DST_OFFSET, 0);
@@ -2338,6 +2346,21 @@ public class SimpleDateFormat extends DateFormat {
         SimpleDateFormat that = (SimpleDateFormat) obj;
         return (pattern.equals(that.pattern)
                 && formatData.equals(that.formatData));
+    }
+
+    private static final int[] REST_OF_STYLES = {
+        Calendar.SHORT_STANDALONE, Calendar.LONG_FORMAT, Calendar.LONG_STANDALONE,
+    };
+    private Map<String, Integer> getDisplayNamesMap(int field, Locale locale) {
+        Map<String, Integer> map = calendar.getDisplayNames(field, Calendar.SHORT_FORMAT, locale);
+        // Get all SHORT and LONG styles (avoid NARROW styles).
+        for (int style : REST_OF_STYLES) {
+            Map<String, Integer> m = calendar.getDisplayNames(field, style, locale);
+            if (m != null) {
+                map.putAll(m);
+            }
+        }
+        return map;
     }
 
     /**

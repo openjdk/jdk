@@ -49,8 +49,8 @@ then
   exit 1
 fi
 
-JAVAEXE="$TESTJAVA/bin/java"
-JAVA="$TESTJAVA/bin/java -classpath $TESTCLASSES"
+JAVAEXE="$TESTJAVA/bin/java ${TESTVMOPTS}"
+JAVA="$TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES"
 JAR="$TESTJAVA/bin/jar"
 OS=`uname -s`;
 

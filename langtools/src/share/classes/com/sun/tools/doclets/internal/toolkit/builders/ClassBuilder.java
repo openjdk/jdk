@@ -236,6 +236,16 @@ public class ClassBuilder extends AbstractBuilder {
     }
 
     /**
+     * If this is an functional interface, display appropriate message.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param classInfoTree the content tree to which the documentation will be added
+     */
+    public void buildFunctionalInterfaceInfo(XMLNode node, Content classInfoTree) {
+        writer.addFunctionalInterfaceInfo(classInfoTree);
+    }
+
+    /**
      * If this class is deprecated, build the appropriate information.
      *
      * @param node the XML element that specifies which components to document

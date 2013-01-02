@@ -55,8 +55,10 @@ import sun.java2d.cmm.lcms.*;
 
 public class LCMSTransform implements ColorTransform {
     long ID;
-    private int inFormatter;
-    private int outFormatter;
+    private int inFormatter = 0;
+    private boolean isInIntPacked = false;
+    private int outFormatter = 0;
+    private boolean isOutIntPacked = false;
 
     ICC_Profile[] profiles;
     long [] profileIDs;
@@ -135,18 +137,23 @@ public class LCMSTransform implements ColorTransform {
                                           LCMSImageLayout out) {
         // update native transfrom if needed
         if (ID == 0L ||
-            inFormatter != in.pixelType ||
-            outFormatter != out.pixelType) {
+            inFormatter != in.pixelType || isInIntPacked != in.isIntPacked ||
+            outFormatter != out.pixelType || isOutIntPacked != out.isIntPacked)
+        {
 
             if (ID != 0L) {
                 // Disposer will destroy forgotten transform
                 disposerReferent = new Object();
             }
             inFormatter = in.pixelType;
+            isInIntPacked = in.isIntPacked;
+
             outFormatter = out.pixelType;
+            isOutIntPacked = out.isIntPacked;
 
             ID = LCMS.createNativeTransform(profileIDs, renderType,
-                                            inFormatter, outFormatter,
+                                            inFormatter, isInIntPacked,
+                                            outFormatter, isOutIntPacked,
                                             disposerReferent);
         }
 

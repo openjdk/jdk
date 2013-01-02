@@ -26,7 +26,7 @@
  * @bug     6424358 7025809
  * @summary Synthesized static enum method values() is final
  * @author  Peter von der Ah\u00e9
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor T6424358
  * @compile -processor T6424358 -proc:only T6424358.java
  */

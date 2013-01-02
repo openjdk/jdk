@@ -78,6 +78,16 @@ public interface ExecutableElement extends Element, Parameterizable {
     boolean isVarArgs();
 
     /**
+     * Returns {@code true} if this method is a default method and
+     * returns {@code false} otherwise.
+     *
+     * @return {@code true} if this method is a default method and
+     * {@code false} otherwise
+     * @since 1.8
+     */
+    boolean isDefault();
+
+    /**
      * Returns the exceptions and other throwables listed in this
      * method or constructor's {@code throws} clause in declaration
      * order.

@@ -818,9 +818,7 @@ public class JavacParser implements Parser {
      *                  | "*" | "/" | "%"
      */
     JCExpression term2Rest(JCExpression t, int minprec) {
-        List<JCExpression[]> savedOd = odStackSupply.elems;
         JCExpression[] odStack = newOdStack();
-        List<Token[]> savedOp = opStackSupply.elems;
         Token[] opStack = newOpStack();
 
         // optimization, was odStack = new Tree[...]; opStack = new Tree[...];
@@ -851,8 +849,8 @@ public class JavacParser implements Parser {
             }
         }
 
-        odStackSupply.elems = savedOd; // optimization
-        opStackSupply.elems = savedOp; // optimization
+        odStackSupply.add(odStack);
+        opStackSupply.add(opStack);
         return t;
     }
 //where
@@ -906,23 +904,19 @@ public class JavacParser implements Parser {
         /** optimization: To save allocating a new operand/operator stack
          *  for every binary operation, we use supplys.
          */
-        ListBuffer<JCExpression[]> odStackSupply = new ListBuffer<JCExpression[]>();
-        ListBuffer<Token[]> opStackSupply = new ListBuffer<Token[]>();
+        ArrayList<JCExpression[]> odStackSupply = new ArrayList<JCExpression[]>();
+        ArrayList<Token[]> opStackSupply = new ArrayList<Token[]>();
 
         private JCExpression[] newOdStack() {
-            if (odStackSupply.elems == odStackSupply.last)
-                odStackSupply.append(new JCExpression[infixPrecedenceLevels + 1]);
-            JCExpression[] odStack = odStackSupply.elems.head;
-            odStackSupply.elems = odStackSupply.elems.tail;
-            return odStack;
+            if (odStackSupply.isEmpty())
+                return new JCExpression[infixPrecedenceLevels + 1];
+            return odStackSupply.remove(odStackSupply.size() - 1);
         }
 
         private Token[] newOpStack() {
-            if (opStackSupply.elems == opStackSupply.last)
-                opStackSupply.append(new Token[infixPrecedenceLevels + 1]);
-            Token[] opStack = opStackSupply.elems.head;
-            opStackSupply.elems = opStackSupply.elems.tail;
-            return opStack;
+            if (opStackSupply.isEmpty())
+                return new Token[infixPrecedenceLevels + 1];
+            return opStackSupply.remove(opStackSupply.size() - 1);
         }
 
     /**
@@ -2001,7 +1995,7 @@ public class JavacParser implements Parser {
                 ListBuffer<JCStatement> stats =
                         variableDeclarators(mods, t, new ListBuffer<JCStatement>());
                 // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
-                storeEnd(stats.elems.last(), token.endPos);
+                storeEnd(stats.last(), token.endPos);
                 accept(SEMI);
                 return stats.toList();
             }
@@ -2042,7 +2036,7 @@ public class JavacParser implements Parser {
                 ListBuffer<JCStatement> stats =
                         variableDeclarators(mods, t, new ListBuffer<JCStatement>());
                 // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
-                storeEnd(stats.elems.last(), token.endPos);
+                storeEnd(stats.last(), token.endPos);
                 accept(SEMI);
                 return stats.toList();
             } else {
@@ -2577,7 +2571,7 @@ public class JavacParser implements Parser {
         vdefs.append(variableDeclaratorRest(pos, mods, type, name, reqInit, dc));
         while (token.kind == COMMA) {
             // All but last of multiple declarators subsume a comma
-            storeEnd((JCTree)vdefs.elems.last(), token.endPos);
+            storeEnd((JCTree)vdefs.last(), token.endPos);
             nextToken();
             vdefs.append(variableDeclarator(mods, type, reqInit, dc));
         }
@@ -2632,7 +2626,7 @@ public class JavacParser implements Parser {
         defs.append(resource());
         while (token.kind == SEMI) {
             // All but last of multiple declarators must subsume a semicolon
-            storeEnd(defs.elems.last(), token.endPos);
+            storeEnd(defs.last(), token.endPos);
             int semiColonPos = token.pos;
             nextToken();
             if (token.kind == RPAREN) { // Optional trailing semicolon
@@ -2710,7 +2704,7 @@ public class JavacParser implements Parser {
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(packageAnnotations, pid, defs.toList());
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
-        if (defs.elems.isEmpty())
+        if (defs.isEmpty())
             storeEnd(toplevel, S.prevToken().endPos);
         if (keepDocComments)
             toplevel.docComments = docComments;

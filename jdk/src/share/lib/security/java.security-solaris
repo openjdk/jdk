@@ -373,7 +373,7 @@ krb5.kdc.bad.policy = tryLast
 #   jdk.certpath.disabledAlgorithms=MD2, DSA, RSA keySize < 2048
 #
 #
-jdk.certpath.disabledAlgorithms=MD2
+jdk.certpath.disabledAlgorithms=MD2, RSA keySize < 1024
 
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
 # (SSL/TLS) processing

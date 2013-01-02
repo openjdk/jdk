@@ -43,8 +43,8 @@ doTest()
     rm -f ${outputfile}
 
     # Start VM with given options
-    echo "+ $JAVA $1 Test"
-    $JAVA $1 TestApplication > ${outputfile}&
+    echo "+ $JAVA ${TESTVMOPTS} $1 Test"
+    $JAVA ${TESTVMOPTS} $1 TestApplication > ${outputfile}&
     pid=$!
  
     # Wait for managed VM to startup
@@ -64,7 +64,7 @@ doTest()
     done
 
     # Start the manager - this should connect to VM
-    sh -xc "$JAVA -classpath ${TESTCLASSES}:${TESTJAVA}/lib/tools.jar \
+    sh -xc "$JAVA ${TESTVMOPTS} -classpath ${TESTCLASSES}:${TESTJAVA}/lib/tools.jar \
         TestManager $pid $port"  2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
@@ -112,7 +112,7 @@ doTest " "
 
 # Test 4 - sanity check arguments to management-agent.jar
 echo ' '
-sh -xc "${JAVA} -javaagent:${AGENT}=com.sun.management.jmxremote.port=7775,\
+sh -xc "${JAVA} ${TESTVMOPTS} -javaagent:${AGENT}=com.sun.management.jmxremote.port=7775,\
 com.sun.management.jmxremote.authenticate=false,com.sun.management.jmxremote.ssl=false \
   TestApplication -exit" 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi

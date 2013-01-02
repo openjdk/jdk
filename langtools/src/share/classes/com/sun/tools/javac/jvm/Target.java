@@ -86,17 +86,15 @@ public enum Target {
         return instance;
     }
 
-    private static Target MIN;
+    private static final Target MIN = values()[0];
     public static Target MIN() { return MIN; }
 
-    private static Target MAX;
+    private static final Target MAX = values()[values().length - 1];
     public static Target MAX() { return MAX; }
 
-    private static Map<String,Target> tab = new HashMap<String,Target>();
+    private static final Map<String,Target> tab = new HashMap<String,Target>();
     static {
         for (Target t : values()) {
-            if (MIN == null) MIN = t;
-            MAX = t;
             tab.put(t.name, t);
         }
         tab.put("5", JDK1_5);

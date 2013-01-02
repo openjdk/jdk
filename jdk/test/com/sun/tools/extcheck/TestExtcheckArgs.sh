@@ -39,7 +39,7 @@ if [ $rc != 0 ]; then
     exit $rc
 fi
 
-${TESTJAVA}/bin/java -classpath ${TESTJAVA}/lib/tools.jar${PS}${TESTCLASSES} TestExtcheckArgs
+${TESTJAVA}/bin/java ${TESTVMOPTS} -classpath ${TESTJAVA}/lib/tools.jar${PS}${TESTCLASSES} TestExtcheckArgs
 rc=$?
 if [ $rc != 0 ]; then
     echo Execution failure with exit status $rc

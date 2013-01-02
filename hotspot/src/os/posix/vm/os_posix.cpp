@@ -93,6 +93,47 @@ void os::wait_for_keypress_at_exit(void) {
   return;
 }
 
+// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
+// so on posix, unmap the section at the start and at the end of the chunk that we mapped
+// rather than unmapping and remapping the whole chunk to get requested alignment.
+char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
+      "Alignment must be a multiple of allocation granularity (page size)");
+  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+
+  size_t extra_size = size + alignment;
+  assert(extra_size >= size, "overflow, size is too large to allow alignment");
+
+  char* extra_base = os::reserve_memory(extra_size, NULL, alignment);
+
+  if (extra_base == NULL) {
+    return NULL;
+  }
+
+  // Do manual alignment
+  char* aligned_base = (char*) align_size_up((uintptr_t) extra_base, alignment);
+
+  // [  |                                       |  ]
+  // ^ extra_base
+  //    ^ extra_base + begin_offset == aligned_base
+  //     extra_base + begin_offset + size       ^
+  //                       extra_base + extra_size ^
+  // |<>| == begin_offset
+  //                              end_offset == |<>|
+  size_t begin_offset = aligned_base - extra_base;
+  size_t end_offset = (extra_base + extra_size) - (aligned_base + size);
+
+  if (begin_offset > 0) {
+      os::release_memory(extra_base, begin_offset);
+  }
+
+  if (end_offset > 0) {
+      os::release_memory(extra_base + begin_offset + size, end_offset);
+  }
+
+  return aligned_base;
+}
+
 void os::Posix::print_load_average(outputStream* st) {
   st->print("load average:");
   double loadavg[3];

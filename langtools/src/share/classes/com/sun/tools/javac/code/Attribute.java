@@ -60,6 +60,9 @@ public abstract class Attribute implements AnnotationValue {
         throw new UnsupportedOperationException();
     }
 
+    public boolean isSynthesized() {
+        return false;
+    }
 
     /** The value for an annotation element of primitive type or String. */
     public static class Constant extends Attribute {
@@ -136,6 +139,18 @@ public abstract class Attribute implements AnnotationValue {
          *  access this attribute.
          */
         public final List<Pair<MethodSymbol,Attribute>> values;
+
+        private boolean synthesized = false;
+
+        @Override
+        public boolean isSynthesized() {
+            return synthesized;
+        }
+
+        public void setSynthesized(boolean synthesized) {
+            this.synthesized = synthesized;
+        }
+
         public Compound(Type type,
                         List<Pair<MethodSymbol,Attribute>> values) {
             super(type);

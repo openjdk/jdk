@@ -24,7 +24,7 @@
 /*
  * @test 6966604
  * @summary JavacFiler not correctly notified of lastRound
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile TestLastRound.java
  * @compile/fail/ref=TestLastRound.out -XDrawDiagnostics -Werror -proc:only -processor TestLastRound TestLastRound.java

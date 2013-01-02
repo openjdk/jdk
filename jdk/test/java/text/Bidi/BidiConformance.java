@@ -656,7 +656,6 @@ public class BidiConformance {
                        baseIsLTR4Constructor1[textNo][testNo],
                        isLTR_isRTL4Constructor1[textNo][0][testNo],
                        isLTR_isRTL4Constructor1[textNo][1][testNo]);
-System.out.println(bidi.toString());
     }
 
     private void callTestEachMethod4Constructor2(int textNo,
@@ -668,7 +667,6 @@ System.out.println(bidi.toString());
                        baseIsLTR4Constructor2[textNo][flagNo],
                        isLTR_isRTL4Constructor2[textNo][0][flagNo],
                        isLTR_isRTL4Constructor2[textNo][1][flagNo]);
-System.out.println(bidi.toString());
     }
 
     private void callTestEachMethod4Constructor3(int textNo,
@@ -680,7 +678,6 @@ System.out.println(bidi.toString());
                        baseIsLTR4Constructor3[textNo][dataNo],
                        isLTR_isRTL4Constructor3[textNo][0][dataNo],
                        isLTR_isRTL4Constructor3[textNo][1][dataNo]);
-System.out.println(bidi.toString());
     }
 
     private StringBuilder sb = new StringBuilder();
@@ -934,59 +931,145 @@ System.out.println(bidi.toString());
         System.out.println("*** Test getRunLevel()");
 
         String str = "ABC 123";
-        int length = str.length();
         Bidi bidi = new Bidi(str, Bidi.DIRECTION_LEFT_TO_RIGHT);
-
         try {
-            if (bidi.getRunLevel(-1) != 0 ||  // runCount - 2
+            if (bidi.getRunLevel(-1) != 0 ||  // runCount - 2 (out of range)
                 bidi.getRunLevel(0) != 0 ||   // runCount - 1
-                bidi.getRunLevel(1) != 0 ||   // runCount
-                bidi.getRunLevel(2) != 0) {   // runCount + 1
-                errorHandling("getRunLevel() should return 0" +
-                    " when getRunCount() is 1.");
+                bidi.getRunLevel(1) != 0 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 0) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
             }
         }
         catch (Exception e) {
-            errorHandling("getRunLevel() should not throw an exception " +
-                "when getRunCount() is 1.");
+            errorHandling("getRunLevel() should not throw an exception: " + e);
         }
 
         str = "ABC " + HebrewABC + " 123";
-        length = str.length();
         bidi = new Bidi(str, Bidi.DIRECTION_LEFT_TO_RIGHT);
-
         try {
-            bidi.getRunLevel(-1);
-            errorHandling("getRunLevel() should throw an AIOoBE " +
-                "when run is -1(too small).");
-        }
-        catch (ArrayIndexOutOfBoundsException e) {
-        }
-        catch (IllegalArgumentException e) {
-            errorHandling("getRunLevel() should not throw an IAE " +
-                "but an AIOoBE when run is -1(too small).");
-        }
-
-        try {
-            bidi.getRunLevel(0);
-            bidi.getRunLevel(1);
-            bidi.getRunLevel(2);
+            if (bidi.getRunLevel(-1) != 0 ||  // runCount - 4 (out of range)
+                bidi.getRunLevel(0) != 0 ||   // runCount - 3
+                bidi.getRunLevel(1) != 1 ||   // runCount - 2
+                bidi.getRunLevel(2) != 2 ||   // runCount - 1
+                bidi.getRunLevel(3) != 0 ||   // runCount     (out of range)
+                bidi.getRunLevel(4) != 0) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
         }
         catch (Exception e) {
-            errorHandling("getRunLevel() should not throw an exception" +
-                " when run is from 0 to 2(runCount-1).");
+            errorHandling("getRunLevel() should not throw an exception: " + e);
         }
 
+        str = "ABC";
+        bidi = new Bidi(str, Bidi.DIRECTION_LEFT_TO_RIGHT);
         try {
-            bidi.getRunLevel(3);
-            errorHandling("getRunLevel() should throw an AIOoBE" +
-                " when run is 3(same as runCount).");
+            if (bidi.getRunLevel(-1) != 0 ||  // runCount - 2 (out of range)
+                bidi.getRunLevel(0) != 0 ||   // runCount - 1
+                bidi.getRunLevel(1) != 0 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 0) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
         }
-        catch (ArrayIndexOutOfBoundsException e) {
+        catch (Exception e) {
+            errorHandling("getRunLevel() should not throw an exception: " + e);
         }
-        catch (IllegalArgumentException e) {
-            errorHandling("getRunLevel() should not throw an IAE " +
-                "but an AIOoBE when run is 3(same as runCount).");
+
+        str = "ABC";
+        bidi = new Bidi(str, Bidi.DIRECTION_RIGHT_TO_LEFT);
+        try {
+            if (bidi.getRunLevel(-1) != 1 ||  // runCount - 2 (out of range)
+                bidi.getRunLevel(0) != 2 ||   // runCount - 1
+                bidi.getRunLevel(1) != 1 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 1) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
+        }
+        catch (Exception e) {
+            errorHandling("getRunLevel() should not throw an exception: " + e);
+        }
+
+        str = "ABC";
+        bidi = new Bidi(str, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+        try {
+            if (bidi.getRunLevel(-1) != 0 ||  // runCount - 2 (out of range)
+                bidi.getRunLevel(0) != 0 ||   // runCount - 1
+                bidi.getRunLevel(1) != 0 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 0) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
+        }
+        catch (Exception e) {
+            errorHandling("getRunLevel() should not throw an exception: " + e);
+        }
+
+        str = "ABC";
+        bidi = new Bidi(str, Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT);
+        try {
+            if (bidi.getRunLevel(-1) != 0 ||  // runCount - 2 (out of range)
+                bidi.getRunLevel(0) != 0 ||   // runCount - 1
+                bidi.getRunLevel(1) != 0 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 0) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
+        }
+        catch (Exception e) {
+            errorHandling("getRunLevel() should not throw an exception: " + e);
+        }
+
+        str = HebrewABC;
+        bidi = new Bidi(str, Bidi.DIRECTION_LEFT_TO_RIGHT);
+        try {
+            if (bidi.getRunLevel(-1) != 0 ||  // runCount - 2 (out of range)
+                bidi.getRunLevel(0) != 1 ||   // runCount - 1
+                bidi.getRunLevel(1) != 0 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 0) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
+        }
+        catch (Exception e) {
+            errorHandling("getRunLevel() should not throw an exception: " + e);
+        }
+
+        str = HebrewABC;
+        bidi = new Bidi(str, Bidi.DIRECTION_RIGHT_TO_LEFT);
+        try {
+            if (bidi.getRunLevel(-1) != 1 ||  // runCount - 2 (out of range)
+                bidi.getRunLevel(0) != 1 ||   // runCount - 1
+                bidi.getRunLevel(1) != 1 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 1) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
+        }
+        catch (Exception e) {
+            errorHandling("getRunLevel() should not throw an exception: " + e);
+        }
+
+        str = HebrewABC;
+        bidi = new Bidi(str, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+        try {
+            if (bidi.getRunLevel(-1) != 1 ||  // runCount - 2 (out of range)
+                bidi.getRunLevel(0) != 1 ||   // runCount - 1
+                bidi.getRunLevel(1) != 1 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 1) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
+        }
+        catch (Exception e) {
+            errorHandling("getRunLevel() should not throw an exception: " + e);
+        }
+
+        str = HebrewABC;
+        bidi = new Bidi(str, Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT);
+        try {
+            if (bidi.getRunLevel(-1) != 1 ||  // runCount - 2 (out of range)
+                bidi.getRunLevel(0) != 1 ||   // runCount - 1
+                bidi.getRunLevel(1) != 1 ||   // runCount     (out of range)
+                bidi.getRunLevel(2) != 1) {   // runCount + 1 (out of range)
+                errorHandling("Incorrect getRunLevel() value(s).");
+            }
+        }
+        catch (Exception e) {
+            errorHandling("getRunLevel() should not throw an exception: " + e);
         }
     }
 

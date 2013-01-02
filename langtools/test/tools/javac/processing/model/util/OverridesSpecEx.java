@@ -26,7 +26,7 @@
  * @bug     6453386
  * @summary Verify that example code in Elements.overrides works as spec'ed.
  * @author  Scott Seligman
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor
  * @compile -g OverridesSpecEx.java
  * @compile -processor OverridesSpecEx -proc:only OverridesSpecEx.java

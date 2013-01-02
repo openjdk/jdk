@@ -26,7 +26,7 @@
  * @bug 6634138
  * @author  Joseph D. Darcy
  * @summary Verify source files output after processing is over are compiled
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile T6634138.java
  * @compile -processor T6634138 Dummy.java

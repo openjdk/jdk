@@ -94,6 +94,10 @@ public class Gen extends JCTree.Visitor {
         return instance;
     }
 
+    /* Constant pool, reset by genClass.
+     */
+    private Pool pool;
+
     protected Gen(Context context) {
         context.put(genKey, this);
 
@@ -126,6 +130,7 @@ public class Gen extends JCTree.Visitor {
         genCrt = options.isSet(XJCOV);
         debugCode = options.isSet("debugcode");
         allowInvokedynamic = target.hasInvokedynamic() || options.isSet("invokedynamic");
+        pool = new Pool(types);
 
         generateIproxies =
             target.requiresIproxy() ||
@@ -173,10 +178,6 @@ public class Gen extends JCTree.Visitor {
     /** True if jsr is used.
      */
     private boolean useJsrLocally;
-
-    /* Constant pool, reset by genClass.
-     */
-    private Pool pool = new Pool();
 
     /** Code buffer, set by genMethod.
      */
@@ -705,7 +706,7 @@ public class Gen extends JCTree.Visitor {
         }
         int startpc = code.curPc();
         genStat(tree, env);
-        if (tree.hasTag(BLOCK)) crtFlags |= CRT_BLOCK;
+        if (tree.hasTag(Tag.BLOCK)) crtFlags |= CRT_BLOCK;
         code.crt.put(tree, crtFlags, startpc, code.curPc());
     }
 
