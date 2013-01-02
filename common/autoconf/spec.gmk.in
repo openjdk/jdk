@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -163,8 +163,7 @@ MACOSX_BUNDLE_ID_BASE=@MACOSX_BUNDLE_ID_BASE@
 
 # Different version strings generated from the above information.
 JDK_VERSION:=@JDK_VERSION@
-RUNTIME_NAME:=@RUNTIME_NAME@
-JRE_RELEASE_VERSION:=@FULL_VERSION@
+RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 COOKED_BUILD_NUMBER:=@COOKED_BUILD_NUMBER@
 # These variables need to be generated here so that MILESTONE and
 # JDK_BUILD_NUMBER can be overridden on the make command line.
@@ -179,6 +178,7 @@ ifeq ($(JDK_BUILD_NUMBER),b00)
 else
   FULL_VERSION=$(RELEASE)-$(JDK_BUILD_NUMBER)
 endif
+JRE_RELEASE_VERSION:=$(FULL_VERSION)
 
 # How to compile the code: release, fastdebug or slowdebug
 DEBUG_LEVEL:=@DEBUG_LEVEL@
@@ -451,10 +451,13 @@ CCACHE:=@CCACHE@
 # CD is going away, but remains to cater for legacy makefiles.
 CD:=cd
 CHMOD:=@CHMOD@
+COMM:=@COMM@
 CP:=@CP@
+CPIO:=@CPIO@
 CUT:=@CUT@
 DATE:=@DATE@
 DIFF:=@DIFF@
+DIRNAME:=@DIRNAME@
 FIND:=@FIND@
 FIND_DELETE:=@FIND_DELETE@
 ECHO:=@ECHO@
@@ -479,6 +482,7 @@ TEE:=@TEE@
 TIME:=@TIME@
 TR:=@TR@
 TOUCH:=@TOUCH@
+UNIQ:=@UNIQ@
 WC:=@WC@
 XARGS:=@XARGS@
 ZIPEXE:=@ZIP@
