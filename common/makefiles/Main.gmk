@@ -142,6 +142,12 @@ docs-only: start-make
 	@($(CD) $(SRC_ROOT)/common/makefiles/javadoc && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs)
 	@$(call TargetExit)
 
+sign-jars: jdk sign-jars-only
+sign-jars-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk sign-jars)
+	@$(call TargetExit)
+
 bootcycle-images:
 	@$(ECHO) Boot cycle build step 1: Building the JDK image normally
 	@($(CD) $(SRC_ROOT)/common/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) SPEC=$(SPEC) images)
