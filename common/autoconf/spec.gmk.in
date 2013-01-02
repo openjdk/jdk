@@ -231,6 +231,7 @@ JAXWS_OUTPUTDIR=$(BUILD_OUTPUT)/jaxws
 HOTSPOT_OUTPUTDIR=$(BUILD_OUTPUT)/hotspot
 JDK_OUTPUTDIR=$(BUILD_OUTPUT)/jdk
 IMAGES_OUTPUTDIR=$(BUILD_OUTPUT)/images
+JCE_OUTPUTDIR=$(BUILD_OUTPUT)/jce-release
 
 LANGTOOLS_DIST=$(LANGTOOLS_OUTPUTDIR)/dist
 CORBA_DIST=$(CORBA_OUTPUTDIR)/dist
@@ -430,6 +431,8 @@ JAR=@FIXPATH@ $(BOOT_JDK)/bin/jar
 RMIC=@FIXPATH@ $(BOOT_JDK)/bin/rmic
 
 NATIVE2ASCII=@FIXPATH@ $(BOOT_JDK)/bin/native2ascii
+
+JARSIGNER=@FIXPATH@ $(BOOT_JDK)/bin/jarsigner
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple
