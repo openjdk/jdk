@@ -26,7 +26,7 @@
  * @bug     6418666 6423973 6453386 7025809
  * @summary Test the NoTypes: VOID, PACKAGE, NONE
  * @author  Scott Seligman
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor
  * @compile -g NoTypes.java
  * @compile -processor NoTypes -proc:only NoTypes.java

@@ -26,7 +26,7 @@
  * @bug     6413690 6380018
  * @summary JavacProcessingEnvironment does not enter trees from preceding rounds
  * @author  Peter von der Ah\u00e9
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile T6413690.java
  * @compile -XDfatalEnterError -verbose -processor T6413690 src/Super.java TestMe.java

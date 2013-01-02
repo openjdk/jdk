@@ -10224,7 +10224,7 @@ instruct array_equals(o0RegP ary1, o1RegP ary2, g3RegI tmp1, notemp_iRegI result
 
 //---------- Zeros Count Instructions ------------------------------------------
 
-instruct countLeadingZerosI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
+instruct countLeadingZerosI(iRegIsafe dst, iRegI src, iRegI tmp, flagsReg cr) %{
   predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
   match(Set dst (CountLeadingZerosI src));
   effect(TEMP dst, TEMP tmp, KILL cr);
@@ -10321,7 +10321,7 @@ instruct countLeadingZerosL(iRegIsafe dst, iRegL src, iRegL tmp, flagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosI(iRegI dst, iRegI src, flagsReg cr) %{
+instruct countTrailingZerosI(iRegIsafe dst, iRegI src, flagsReg cr) %{
   predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
   match(Set dst (CountTrailingZerosI src));
   effect(TEMP dst, KILL cr);
@@ -10364,19 +10364,21 @@ instruct countTrailingZerosL(iRegIsafe dst, iRegL src, flagsReg cr) %{
 
 //---------- Population Count Instructions -------------------------------------
 
-instruct popCountI(iRegI dst, iRegI src) %{
+instruct popCountI(iRegIsafe dst, iRegI src) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
 
-  format %{ "POPC   $src, $dst" %}
+  format %{ "SRL    $src, G0, $dst\t! clear upper word for 64 bit POPC\n\t"
+            "POPC   $dst, $dst" %}
   ins_encode %{
-    __ popc($src$$Register, $dst$$Register);
+    __ srl($src$$Register, G0, $dst$$Register);
+    __ popc($dst$$Register, $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
 
 // Note: Long.bitCount(long) returns an int.
-instruct popCountL(iRegI dst, iRegL src) %{
+instruct popCountL(iRegIsafe dst, iRegL src) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
 

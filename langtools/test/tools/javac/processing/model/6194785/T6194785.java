@@ -26,7 +26,7 @@
  * @bug     6194785
  * @summary ParameterDeclaration.getSimpleName does not return actual name from class files
  * @author  Peter von der Ah\u00e9
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile -g T6194785.java T6194785a.java
  * @compile -processor T6194785 foo.T6194785a T6194785.java

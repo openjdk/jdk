@@ -25,7 +25,7 @@
  * @test
  * @bug 6505047
  * @summary javax.lang.model.element.Element.getEnclosingElement() doesn't return null for type parameter
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor TestTypeParameter
  * @compile -processor TestTypeParameter -proc:only TestTypeParameter.java
  */

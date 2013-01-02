@@ -307,7 +307,7 @@ public class Flags {
     }
 
     // Cache of modifier sets.
-    private static Map<Long, Set<Modifier>> modifierSets =
+    private static final Map<Long, Set<Modifier>> modifierSets =
         new java.util.concurrent.ConcurrentHashMap<Long, Set<Modifier>>(64);
 
     public static boolean isStatic(Symbol symbol) {
@@ -356,7 +356,7 @@ public class Flags {
         VARARGS("varargs"),
         PACKAGE("package");
 
-        String name;
+        private final String name;
 
         Flag(String name) {
             this.name = name;

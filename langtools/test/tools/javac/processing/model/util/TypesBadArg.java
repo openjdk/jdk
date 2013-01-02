@@ -26,7 +26,7 @@
  * @bug     6345812
  * @summary Validate argument kinds in Types utilities
  * @author  Scott Seligman
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TypesBadArg
  * @compile -processor TypesBadArg -proc:only TypesBadArg.java
  */

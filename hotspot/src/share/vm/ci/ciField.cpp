@@ -366,10 +366,12 @@ bool ciField::will_link(ciInstanceKlass* accessing_klass,
 // ------------------------------------------------------------------
 // ciField::print
 void ciField::print() {
-  tty->print("<ciField ");
+  tty->print("<ciField name=");
   _holder->print_name();
   tty->print(".");
   _name->print_symbol();
+  tty->print(" signature=");
+  _signature->print_symbol();
   tty->print(" offset=%d type=", _offset);
   if (_type != NULL) _type->print_name();
   else               tty->print("(reference)");

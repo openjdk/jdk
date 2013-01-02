@@ -26,7 +26,7 @@
  * @bug 6403468
  * @summary Test that an erroneous return code results from raising an error.
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor CompileFail
  * @compile TestReturnCode.java
  *

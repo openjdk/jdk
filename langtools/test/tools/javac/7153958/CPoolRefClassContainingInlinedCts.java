@@ -27,7 +27,7 @@
  * @test
  * @bug 7153958
  * @summary add constant pool reference to class containing inlined constants
- * @compile pkg/ClassToBeStaticallyImported.java
+ * @compile pkg/ClassToBeStaticallyImported.java CPoolRefClassContainingInlinedCts.java
  * @run main CPoolRefClassContainingInlinedCts
  */
 

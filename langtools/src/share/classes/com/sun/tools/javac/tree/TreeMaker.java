@@ -684,7 +684,7 @@ public class TreeMaker implements JCTree.Factory {
     public JCVariableDecl VarDef(VarSymbol v, JCExpression init) {
         return (JCVariableDecl)
             new JCVariableDecl(
-                Modifiers(v.flags(), Annotations(v.getAnnotationMirrors())),
+                Modifiers(v.flags(), Annotations(v.getRawAttributes())),
                 v.name,
                 Type(v.type),
                 init,
@@ -800,7 +800,7 @@ public class TreeMaker implements JCTree.Factory {
     public JCMethodDecl MethodDef(MethodSymbol m, Type mtype, JCBlock body) {
         return (JCMethodDecl)
             new JCMethodDecl(
-                Modifiers(m.flags(), Annotations(m.getAnnotationMirrors())),
+                Modifiers(m.flags(), Annotations(m.getRawAttributes())),
                 m.name,
                 Type(mtype.getReturnType()),
                 TypeParams(mtype.getTypeArguments()),

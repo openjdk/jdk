@@ -26,7 +26,7 @@
  * @bug 6406212
  * @summary Test that annotation processor options with illegal syntax are rejected
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor CompileFail
  * @compile TestOptionSyntaxErrors.java
  * @run main CompileFail CMDERR -A TestOptionSyntaxErrors.java

@@ -509,6 +509,7 @@ void Parse::do_multianewarray() {
                           makecon(TypeKlassPtr::make(array_klass)),
                           dims);
   }
+  make_slow_call_ex(c, env()->Throwable_klass(), false);
 
   Node* res = _gvn.transform(new (C) ProjNode(c, TypeFunc::Parms));
 

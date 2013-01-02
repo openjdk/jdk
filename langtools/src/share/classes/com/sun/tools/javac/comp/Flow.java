@@ -246,8 +246,8 @@ public class Flow {
          */
         SPECULATIVE_LOOP("var.might.be.assigned.in.loop", true);
 
-        String errKey;
-        boolean isFinal;
+        final String errKey;
+        final boolean isFinal;
 
         FlowKind(String errKey, boolean isFinal) {
             this.errKey = errKey;
@@ -295,7 +295,7 @@ public class Flow {
                 }
             };
 
-            JCTree.Tag treeTag;
+            final JCTree.Tag treeTag;
 
             private JumpKind(Tag treeTag) {
                 this.treeTag = treeTag;
