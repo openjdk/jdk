@@ -2544,12 +2544,18 @@ void Assembler::rep_mov() {
   emit_int8((unsigned char)0xA5);
 }
 
+// sets rcx bytes with rax, value at [edi]
+void Assembler::rep_stosb() {
+  emit_int8((unsigned char)0xF3); // REP
+  LP64_ONLY(prefix(REX_W));
+  emit_int8((unsigned char)0xAA); // STOSB
+}
+
 // sets rcx pointer sized words with rax, value at [edi]
 // generic
-void Assembler::rep_set() { // rep_set
-  emit_int8((unsigned char)0xF3);
-  // STOSQ
-  LP64_ONLY(prefix(REX_W));
+void Assembler::rep_stos() {
+  emit_int8((unsigned char)0xF3); // REP
+  LP64_ONLY(prefix(REX_W));       // LP64:STOSQ, LP32:STOSD
   emit_int8((unsigned char)0xAB);
 }
 

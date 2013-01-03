@@ -832,7 +832,8 @@ private:
 
   // These do register sized moves/scans
   void rep_mov();
-  void rep_set();
+  void rep_stos();
+  void rep_stosb();
   void repne_scan();
 #ifdef _LP64
   void repne_scanl();
