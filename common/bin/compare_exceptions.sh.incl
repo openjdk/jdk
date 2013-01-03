@@ -815,6 +815,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/bin/attach.dll
 ./jre/bin/java_crw_demo.dll
 ./jre/bin/jsoundds.dll
+./jre/bin/server/jvm.dll
 ./bin/appletviewer.exe
 ./bin/extcheck.exe
 ./bin/idlj.exe
