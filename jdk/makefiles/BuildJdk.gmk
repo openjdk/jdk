@@ -100,7 +100,7 @@ overlay-images:
 sign-jars:
 	+$(MAKE) -f SignJars.gmk
 
-BINARIES:=$(notdir $(wildcard $(IMAGES_OUTPUTDIR)/j2sdk-image/bin/*))
+BINARIES:=$(notdir $(wildcard $(JDK_IMAGE_DIR)/bin/*))
 INSTALLDIR:=openjdk-$(RELEASE)
 
 # Install the jdk image, in a very crude way. Not taking into
@@ -110,7 +110,7 @@ install:
 	echo and creating $(words $(BINARIES)) links from $(INSTALL_PREFIX)/bin into the jdk.
 	$(MKDIR) -p $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)
 	$(RM) -r $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)/*
-	$(CP) -rp $(IMAGES_OUTPUTDIR)/j2sdk-image/* $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)
+	$(CP) -rp $(JDK_IMAGE_DIR)/* $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)
 	$(MKDIR) -p $(INSTALL_PREFIX)/bin
 	$(RM) $(addprefix $(INSTALL_PREFIX)/bin/,$(BINARIES))
 	$(foreach b,$(BINARIES),$(LN) -s $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)/bin/$b $(INSTALL_PREFIX)/bin/$b &&) true

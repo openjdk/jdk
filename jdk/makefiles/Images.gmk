@@ -77,12 +77,6 @@ define AddFileToCopy
   $4 += $2/$$($2_$3_FILE)
 endef
 
-JDK_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2sdk-image
-JRE_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2re-image
-
-JDK_OVERLAY_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2sdk-overlay-image
-JRE_OVERLAY_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2re-overlay-image
-
 ################################################################################
 #
 # JRE and JDK build rules
