@@ -131,7 +131,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   LinearAllocBlock _smallLinearAllocBlock;
 
   FreeBlockDictionary<FreeChunk>::DictionaryChoice _dictionaryChoice;
-  FreeBlockDictionary<FreeChunk>* _dictionary;    // ptr to dictionary for large size blocks
+  AFLBinaryTreeDictionary* _dictionary;    // ptr to dictionary for large size blocks
 
   AdaptiveFreeList<FreeChunk> _indexedFreeList[IndexSetSize];
                                        // indexed array for small size blocks
