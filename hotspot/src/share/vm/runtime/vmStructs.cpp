@@ -2087,8 +2087,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(FreeBlockDictionary<Metablock>*)                  \
   declare_toplevel_type(FreeList<Metablock>*)                             \
   declare_toplevel_type(FreeList<Metablock>)                              \
-  declare_toplevel_type(MetablockTreeDictionary*)                         \
-           declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
+  declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
 
 
 //--------------------------------------------------------------------------------
