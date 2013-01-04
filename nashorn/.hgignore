@@ -6,7 +6,7 @@ dist/*
 /nbproject/private/
 private.xml
 private.properties
-^webrev/
+webrev/*
 webrev.zip
 *.class
 *.clazz
