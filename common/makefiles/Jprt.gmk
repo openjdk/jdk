@@ -42,6 +42,24 @@ endef
 
 BUILD_DIR_ROOT:=$(root_dir)/build
 
+# Appears to be an open build
+OPEN_BUILD := \
+$(shell \
+  if [    -d $(root_dir)/jdk/src/closed      \
+       -o -d $(root_dir)/jdk/make/closed     \
+       -o -d $(root_dir)/jdk/test/closed     \
+       -o -d $(root_dir)/hotspot/src/closed  \
+       -o -d $(root_dir)/hotspot/make/closed \
+       -o -d $(root_dir)/hotspot/test/closed ] ; then \
+    echo "false"; \
+  else \
+    echo "true"; \
+  fi \
+ )
+ifdef OPENJDK
+  OPEN_BUILD=true
+endif
+
 ###########################################################################
 # To help in adoption of the new configure&&make build process, a bridge
 #   build will use the old settings to run configure and do the build.
@@ -84,30 +102,31 @@ endif
 ifdef ALT_FREETYPE_HEADERS_PATH
 	@$(ECHO) " --with-freetype=$(call UnixPath,$(ALT_FREETYPE_HEADERS_PATH)/..) " >> $@.tmp
 endif
-ifdef OPENJDK
+ifeq ($(OPEN_BUILD),true)
 	@$(ECHO) " --enable-openjdk-only " >> $@.tmp
-endif
-# Todo: move to closed?
-ifdef ALT_MOZILLA_HEADERS_PATH
+else
+  # Todo: move to closed?
+  ifdef ALT_MOZILLA_HEADERS_PATH
 	@$(ECHO) " --with-mozilla-headers=$(call UnixPath,$(ALT_MOZILLA_HEADERS_PATH)) " >> $@.tmp
-endif
-ifdef ALT_JUNIT_DIR
+  endif
+  ifdef ALT_JUNIT_DIR
 	@$(ECHO) " --with-junit-dir=$(call UnixPath,$(ALT_JUNIT_DIR)) " >> $@.tmp
-endif
-ifdef ANT_HOME
+  endif
+  ifdef ANT_HOME
 	@$(ECHO) " --with-ant-home=$(call UnixPath,$(ANT_HOME)) " >> $@.tmp
-endif
-ifdef ALT_JAVAFX_ZIP_DIR
+  endif
+  ifdef ALT_JAVAFX_ZIP_DIR
 	@$(ECHO) " --with-javafx-zip-dir=$(call UnixPath,$(ALT_JAVAFX_ZIP_DIR)) " >> $@.tmp
-endif
-ifdef ALT_WIXDIR
+  endif
+  ifdef ALT_WIXDIR
 	@$(ECHO) " --with-wix=$(call UnixPath,$(ALT_WIXDIR)) " >> $@.tmp
-endif
-ifdef ALT_CCSS_SIGNING_DIR
+  endif
+  ifdef ALT_CCSS_SIGNING_DIR
 	@$(ECHO) " --with-ccss-signing=$(call UnixPath,$(ALT_CCSS_SIGNING_DIR)) " >> $@.tmp
-endif
-ifdef ALT_SLASH_JAVA
+  endif
+  ifdef ALT_SLASH_JAVA
 	@$(ECHO) " --with-java-devtools=$(call UnixPath,$(ALT_SLASH_JAVA)/devtools) " >> $@.tmp
+  endif
 endif
 	@if [ -f $@ ] ; then \
           if ! $(CMP) $@ $@.tmp > /dev/null ; then \
