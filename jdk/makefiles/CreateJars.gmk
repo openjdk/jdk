@@ -978,9 +978,8 @@ JARS += $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
 
 ##########################################################################################
 #
-# files under $(JDK_OUTPUTDIR) that need to go into sec-bin.zip for builds
-# where the corresponding sources are not available
-
+# sec-bin.zip is used by builds where the corresponding sources are not available
+#
 $(eval $(call SetupZipArchive,BUILD_SEC_BIN_ZIP,\
 		SRC:=$(JDK_OUTPUTDIR),\
 		INCLUDES:=classes/javax/net \
@@ -998,9 +997,40 @@ $(eval $(call SetupZipArchive,BUILD_SEC_BIN_ZIP,\
 			  classes/sun/security/krb5/internal/rcache \
 			  classes/sun/security/krb5/internal/util,\
 		INCLUDE_FILES:=classes/sun/security/jgss/spi/GSSContextSpi.class,\
+		EXCLUDES:=classes/sun/security/krb5/internal/tools,\
 		ZIP:=$(IMAGES_OUTPUTDIR)/sec-bin.zip))
 
 JARS += $(IMAGES_OUTPUTDIR)/sec-bin.zip
+
+##########################################################################################
+#
+# Windows specific binary security packages.
+#
+ifeq ($(OPENJDK_TARGET_OS),windows)
+    # sec-windows-bin.zip is used by builds where the corresponding sources are not available
+    $(eval $(call SetupZipArchive,BUILD_SEC_WINDOWS_BIN_ZIP,\
+		SRC:=$(JDK_OUTPUTDIR),\
+		INCLUDES:=classes/sun/security/krb5/internal/tools,\
+		ZIP:=$(IMAGES_OUTPUTDIR)/sec-windows-bin.zip))
+
+    JARS += $(IMAGES_OUTPUTDIR)/sec-windows-bin.zip
+
+    # JGSS files contain the native Kerberos library
+    ifeq ($(OPENJDK_TARGET_CPU),x86_64)
+        JGSS_ZIP_NAME=jgss-windows-x64-bin.zip
+    else
+        JGSS_ZIP_NAME=jgss-windows-i586-bin.zip
+    endif
+
+    $(eval $(call SetupZipArchive,BUILD_JGSS_BIN_ZIP,\
+		SRC:=$(JDK_OUTPUTDIR),\
+		INCLUDE_FILES:=bin/w2k_lsa_auth.dll \
+			       bin/w2k_lsa_auth.map \
+			       bin/w2k_lsa_auth.pdb,\
+		ZIP:=$(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME)))
+
+    JARS += $(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME)
+endif
 
 ##########################################################################################
 
