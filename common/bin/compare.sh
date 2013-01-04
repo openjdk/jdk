@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2013 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -113,12 +113,15 @@ diff_text() {
         fi
     fi
     if test "x$SUFFIX" = "xproperties"; then
-        $CAT $OTHER_FILE | $SED -e 's/\([^\\]\):/\1\\:/g' -e  's/\([^\\]\)=/\1\\=/g' -e 's/#.*/#/g' \
-            | $SED -f "$SRC_ROOT/common/makefiles/support/unicode2x.sed" \
-  	    | $SED -e '/^#/d' -e '/^$/d' \
-            -e :a -e '/\\$/N; s/\\\n//; ta' \
-  	    -e 's/^[ \t]*//;s/[ \t]*$//' \
-	    -e 's/\\=/=/' | LANG=C $SORT > $OTHER_FILE.cleaned
+        # Run through nawk to add possibly missing newline at end of file.
+        $CAT $OTHER_FILE | $NAWK '{ print }' > $OTHER_FILE.cleaned
+# Disable this exception since we aren't changing the properties cleaning method yet.
+#        $CAT $OTHER_FILE | $SED -e 's/\([^\\]\):/\1\\:/g' -e  's/\([^\\]\)=/\1\\=/g' -e 's/#.*/#/g' \
+#            | $SED -f "$SRC_ROOT/common/makefiles/support/unicode2x.sed" \
+#  	    | $SED -e '/^#/d' -e '/^$/d' \
+#            -e :a -e '/\\$/N; s/\\\n//; ta' \
+#  	    -e 's/^[ \t]*//;s/[ \t]*$//' \
+#	    -e 's/\\=/=/' | LANG=C $SORT > $OTHER_FILE.cleaned
         TMP=$(LANG=C $DIFF $OTHER_FILE.cleaned $THIS_FILE)
     fi
     if test -n "$TMP"; then
