@@ -1790,6 +1790,10 @@ void Arguments::check_deprecated_gcs() {
     warning("Using the ParNew young collector with the Serial old collector is deprecated "
         "and will likely be removed in a future release");
   }
+
+  if (CMSIncrementalMode) {
+    warning("Using incremental CMS is deprecated and will likely be removed in a future release");
+  }
 }
 
 // Check stack pages settings
