@@ -6011,29 +6011,53 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     {
       assert( UseSSE >= 2, "supported cpu only" );
       Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
-      // Fill 32-byte chunks
       movdl(xtmp, value);
-      pshufd(xtmp, xtmp, 0);
+      if (UseAVX >= 2 && UseUnalignedLoadStores) {
+        // Fill 64-byte chunks
+        Label L_fill_64_bytes_loop, L_check_fill_32_bytes;
+        vpbroadcastd(xtmp, xtmp);
 
-      subl(count, 8 << shift);
-      jcc(Assembler::less, L_check_fill_8_bytes);
-      align(16);
+        subl(count, 16 << shift);
+        jcc(Assembler::less, L_check_fill_32_bytes);
+        align(16);
 
-      BIND(L_fill_32_bytes_loop);
+        BIND(L_fill_64_bytes_loop);
+        vmovdqu(Address(to, 0), xtmp);
+        vmovdqu(Address(to, 32), xtmp);
+        addptr(to, 64);
+        subl(count, 16 << shift);
+        jcc(Assembler::greaterEqual, L_fill_64_bytes_loop);
 
-      if (UseUnalignedLoadStores) {
-        movdqu(Address(to, 0), xtmp);
-        movdqu(Address(to, 16), xtmp);
+        BIND(L_check_fill_32_bytes);
+        addl(count, 8 << shift);
+        jccb(Assembler::less, L_check_fill_8_bytes);
+        vmovdqu(Address(to, 0), xtmp);
+        addptr(to, 32);
+        subl(count, 8 << shift);
       } else {
-        movq(Address(to, 0), xtmp);
-        movq(Address(to, 8), xtmp);
-        movq(Address(to, 16), xtmp);
-        movq(Address(to, 24), xtmp);
-      }
+        // Fill 32-byte chunks
+        pshufd(xtmp, xtmp, 0);
 
-      addptr(to, 32);
-      subl(count, 8 << shift);
-      jcc(Assembler::greaterEqual, L_fill_32_bytes_loop);
+        subl(count, 8 << shift);
+        jcc(Assembler::less, L_check_fill_8_bytes);
+        align(16);
+
+        BIND(L_fill_32_bytes_loop);
+
+        if (UseUnalignedLoadStores) {
+          movdqu(Address(to, 0), xtmp);
+          movdqu(Address(to, 16), xtmp);
+        } else {
+          movq(Address(to, 0), xtmp);
+          movq(Address(to, 8), xtmp);
+          movq(Address(to, 16), xtmp);
+          movq(Address(to, 24), xtmp);
+        }
+
+        addptr(to, 32);
+        subl(count, 8 << shift);
+        jcc(Assembler::greaterEqual, L_fill_32_bytes_loop);
+      }
       BIND(L_check_fill_8_bytes);
       addl(count, 8 << shift);
       jccb(Assembler::zero, L_exit);

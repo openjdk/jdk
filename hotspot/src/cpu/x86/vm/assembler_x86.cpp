@@ -3656,6 +3656,15 @@ void Assembler::vextracti128h(Address dst, XMMRegister src) {
   emit_int8(0x01);
 }
 
+// duplicate 4-bytes integer data from src into 8 locations in dest
+void Assembler::vpbroadcastd(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  bool vector256 = true;
+  int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_38);
+  emit_int8(0x58);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::vzeroupper() {
   assert(VM_Version::supports_avx(), "");
   (void)vex_prefix_and_encode(xmm0, xmm0, xmm0, VEX_SIMD_NONE);

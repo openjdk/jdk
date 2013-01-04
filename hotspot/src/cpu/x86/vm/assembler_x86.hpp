@@ -1754,6 +1754,9 @@ private:
   void vextractf128h(Address dst, XMMRegister src);
   void vextracti128h(Address dst, XMMRegister src);
 
+  // duplicate 4-bytes integer data from src into 8 locations in dest
+  void vpbroadcastd(XMMRegister dst, XMMRegister src);
+
   // AVX instruction which is used to clear upper 128 bits of YMM registers and
   // to avoid transaction penalty between AVX and SSE states. There is no
   // penalty if legacy SSE instructions are encoded using VEX prefix because
