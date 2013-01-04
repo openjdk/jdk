@@ -1166,6 +1166,15 @@ if [ -z "$OTHER_DOCS" ]; then
     echo "WARNING! Other build doesn't contain docs, skipping doc compare."
 fi
 
+if [ -f "$OTHER/tmp/sec-bin.zip" ]; then
+    OTHER_SEC_BIN="$OTHER/tmp/sec-bin.zip"
+elif [ -f "$OTHER/images/sec-bin.zip" ]; then
+    OTHER_SEC_BIN="$OTHER/tmp/sec-bin.zip"
+else
+    echo "WARNING! No sec-bin.zip found in other."
+fi
+THIS_SEC_BIN="$THIS/images/sec-bin.zip"
+
 ##########################################################################################
 # Do the work
 
@@ -1281,6 +1290,12 @@ fi
 if [ "$CMP_ZIPS" = "true" ]; then
     if [ -n "$THIS_J2SDK" ] && [ -n "$OTHER_J2SDK" ]; then
         compare_all_zip_files $THIS_J2SDK $OTHER_J2SDK $COMPARE_ROOT/j2sdk
+    fi
+    if [ -n "$THIS_SEC_BIN" ] && [ -n "$OTHER_SEC_BIN" ]; then
+        if [ -n "$(echo $THIS_SEC_BIN | $FILTER)" ]; then
+            echo "sec-bin.zip..."
+            compare_zip_file $(dirname $THIS_SEC_BIN) $(dirname $OTHER_SEC_BIN) $COMPARE_ROOT/sec-bin sec-bin.zip
+        fi
     fi
 fi
 
