@@ -1778,6 +1778,20 @@ bool Arguments::check_gc_consistency() {
   return status;
 }
 
+void Arguments::check_deprecated_gcs() {
+  if (UseConcMarkSweepGC && !UseParNewGC) {
+    warning("Using the DefNew young collector with the CMS collector is deprecated "
+        "and will likely be removed in a future release");
+  }
+
+  if (UseParNewGC && !UseConcMarkSweepGC) {
+    // !UseConcMarkSweepGC means that we are using serial old gc. Unfortunately we don't
+    // set up UseSerialGC properly, so that can't be used in the check here.
+    warning("Using the ParNew young collector with the Serial old collector is deprecated "
+        "and will likely be removed in a future release");
+  }
+}
+
 // Check stack pages settings
 bool Arguments::check_stack_pages()
 {
@@ -3242,6 +3256,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   } else if (UseG1GC) {
     set_g1_gc_flags();
   }
+  check_deprecated_gcs();
 #endif // INCLUDE_ALTERNATE_GCS
 
 #ifdef SERIALGC
