@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,13 +159,11 @@ void ConcurrentMarkThread::run() {
           VM_CGC_Operation op(&final_cl, verbose_str, true /* needs_pll */);
           VMThread::execute(&op);
         }
-        if (cm()->restart_for_overflow() &&
-            G1TraceMarkStackOverflow) {
-          gclog_or_tty->print_cr("Restarting conc marking because of MS overflow "
-                                 "in remark (restart #%d).", iter);
-        }
-
         if (cm()->restart_for_overflow()) {
+          if (G1TraceMarkStackOverflow) {
+            gclog_or_tty->print_cr("Restarting conc marking because of MS overflow "
+                                   "in remark (restart #%d).", iter);
+          }
           if (G1Log::fine()) {
             gclog_or_tty->date_stamp(PrintGCDateStamps);
             gclog_or_tty->stamp(PrintGCTimeStamps);
