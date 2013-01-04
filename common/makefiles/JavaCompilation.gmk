@@ -250,7 +250,7 @@ endef
 define SetupZipArchive
     # param 1 is for example ZIP_MYSOURCE
     # param 2,3,4,5,6,7,8,9 are named args.
-    #    SRC,ZIP,INCLUDES,EXCLUDES,EXCLUDE_FILES,SUFFIXES,EXTRA_DEPS
+    #    SRC,ZIP,INCLUDES,INCLUDE_FILES,EXCLUDES,EXCLUDE_FILES,SUFFIXES,EXTRA_DEPS
     $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
     $(call LogSetupMacroEntry,SetupZipArchive($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
     $(if $(16),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update JavaCompilation.gmk))
@@ -267,6 +267,12 @@ define SetupZipArchive
         else
             $1_ZIP_INCLUDES := $$(addprefix -i$(SPACE)$(DQUOTE),$$(addsuffix /*$(DQUOTE),$$($1_INCLUDES)))
         endif
+    endif
+    ifneq ($$($1_INCLUDE_FILES),)
+        $1_SRC_INCLUDES += $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
+        $1_ZIP_INCLUDES += $$(addprefix -i$(SPACE),$$($1_INCLUDE_FILES))
+    endif
+    ifneq ($$($1_SRC_INCLUDES),)
         $1_ALL_SRCS     := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_SRCS))
     endif
     ifneq ($$($1_EXCLUDES),)
