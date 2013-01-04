@@ -807,6 +807,10 @@ fi
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
 
+ACCEPTED_JARZIP_CONTENTS="
+/bin/w2k_lsa_auth.dll
+"
+
 # Probably should add all libs here
 ACCEPTED_SMALL_SIZE_DIFF="
 ./demo/jvmti/gctest/lib/gctest.dll
