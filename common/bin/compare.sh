@@ -1166,14 +1166,25 @@ if [ -z "$OTHER_DOCS" ]; then
     echo "WARNING! Other build doesn't contain docs, skipping doc compare."
 fi
 
-if [ -f "$OTHER/tmp/sec-bin.zip" ]; then
-    OTHER_SEC_BIN="$OTHER/tmp/sec-bin.zip"
-elif [ -f "$OTHER/images/sec-bin.zip" ]; then
-    OTHER_SEC_BIN="$OTHER/tmp/sec-bin.zip"
+if [ -d "$OTHER/images" ]; then
+    OTHER_SEC_DIR="$OTHER/images"
 else
-    echo "WARNING! No sec-bin.zip found in other."
+    OTHER_SEC_DIR="$OTHER/tmp"
 fi
-THIS_SEC_BIN="$THIS/images/sec-bin.zip"
+OTHER_SEC_BIN="$OTHER_SEC_DIR/sec-bin.zip"
+THIS_SEC_DIR="$THIS/images"
+THIS_SEC_BIN="$THIS_SEC_DIR/sec-bin.zip"
+if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+    if [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
+        JGSS_WINDOWS_BIN="jgss-windows-x64-bin.zip"
+    else
+        JGSS_WINDOWS_BIN="jgss-windows-i586-bin.zip"
+    fi
+    OTHER_SEC_WINDOWS_BIN="$OTHER_SEC_DIR/sec-windows-bin.zip"
+    OTHER_JGSS_WINDOWS_BIN="$OTHER_SEC_DIR/$JGSS_WINDOWS_BIN"
+    THIS_SEC_WINDOWS_BIN="$THIS_SEC_DIR/sec-windows-bin.zip"
+    THIS_JGSS_WINDOWS_BIN="$THIS_SEC_DIR/$JGSS_WINDOWS_BIN"
+fi
 
 ##########################################################################################
 # Do the work
