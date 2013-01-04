@@ -977,6 +977,32 @@ $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar: $(JDK_OUTPUTDIR)/lib/sa-jdi.jar
 JARS += $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
 
 ##########################################################################################
+#
+# files under $(JDK_OUTPUTDIR) that need to go into sec-bin.zip for builds
+# where the corresponding sources are not available
+
+$(eval $(call SetupZipArchive,BUILD_SEC_BIN_ZIP,\
+		SRC:=$(JDK_OUTPUTDIR),\
+		INCLUDES:=classes/javax/net \
+			  classes/javax/security/cert \
+			  classes/com/sun/net/ssl \
+			  classes/com/sun/security/cert \
+			  classes/sun/net/www/protocol/https \
+			  classes/sun/security/pkcs12 \
+			  classes/sun/security/ssl \
+			  classes/sun/security/krb5 \
+			  classes/sun/security/krb5/internal \
+			  classes/sun/security/krb5/internal/ccache \
+			  classes/sun/security/krb5/internal/crypto \
+			  classes/sun/security/krb5/internal/ktab \
+			  classes/sun/security/krb5/internal/rcache \
+			  classes/sun/security/krb5/internal/util,\
+		INCLUDE_FILES:=classes/sun/security/jgss/spi/GSSContextSpi.class,\
+		ZIP:=$(IMAGES_OUTPUTDIR)/sec-bin.zip))
+
+JARS += $(IMAGES_OUTPUTDIR)/sec-bin.zip
+
+##########################################################################################
 
 -include $(CUSTOM_MAKE_DIR)/CreateJars.gmk
 
