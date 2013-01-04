@@ -143,7 +143,7 @@
   </target>
 
   <target name="javadoc" depends="compile-asm">
-    <javadoc destdir="${dist.javadoc.dir}" private="yes" use="yes" overview="src/overview.html" windowtitle="${nashorn.product.name} ${nashorn.version}">
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" windowtitle="${nashorn.product.name} ${nashorn.version}">
       <classpath>
         <pathelement location="${build.classes.dir}"/>
         <pathelement location="${dynalink.jar}"/>
