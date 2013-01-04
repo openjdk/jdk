@@ -130,81 +130,21 @@ JARS+=$(IMAGES_OUTPUTDIR)/lib/ext/localedata.jar
 # Exclude list for rt.jar and resources.jar
 RT_JAR_EXCLUDES := \
 	com/oracle/security \
+	com/sun/codemodel \
+	com/sun/crypto/provider \
+	com/sun/istack/internal/tools \
+	com/sun/jarsigner \
 	com/sun/javadoc \
 	com/sun/jdi \
-	com/sun/jarsigner \
-	com/sun/source \
-	com/sun/istack/internal/tools \
-	META-INF/services/com.sun.jdi.connect.Connector \
-	META-INF/services/com.sun.jdi.connect.spi.TransportService \
-	META-INF/services/com.sun.tools.xjc.Plugin \
-	com/sun/tools \
-	sun/jvmstat \
-	sun/nio/cs/ext \
-	sun/awt/HKSCS.class \
-	sun/awt/motif/X11GB2312\$$$$Decoder.class \
-	sun/awt/motif/X11GB2312\$$$$Encoder.class \
-	sun/awt/motif/X11GB2312.class \
-	sun/awt/motif/X11GBK\$$$$Encoder.class \
-	sun/awt/motif/X11GBK.class \
-	sun/awt/motif/X11KSC5601\$$$$Decoder.class \
-	sun/awt/motif/X11KSC5601\$$$$Encoder.class \
-	sun/awt/motif/X11KSC5601.class \
-	META-INF/services/java.nio.charset.spi.CharsetProvider \
-	sun/rmi/rmic \
-	sun/tools/asm \
-	sun/tools/java \
-	sun/tools/javac \
-	com/sun/tools/classfile \
-	com/sun/tools/javap \
-	sun/tools/jcmd \
-	sun/tools/jconsole \
-	sun/tools/jps \
-	sun/tools/jstat \
-	sun/tools/jstatd \
-	sun/tools/native2ascii \
-	sun/tools/serialver \
-	sun/tools/tree \
-	sun/tools/util \
-	sun/security/tools/jarsigner \
-	sun/security/provider/Sun.class \
-	sun/security/rsa/SunRsaSign.class \
-	sun/security/ssl \
-	sun/security/ec/ECDHKeyAgreement.class \
-	sun/security/ec/ECDSASignature\$$$$Raw.class \
-	sun/security/ec/ECDSASignature\$$$$SHA1.class \
-	sun/security/ec/ECDSASignature\$$$$SHA224.class \
-	sun/security/ec/ECDSASignature\$$$$SHA256.class \
-	sun/security/ec/ECDSASignature\$$$$SHA384.class \
-	sun/security/ec/ECDSASignature\$$$$SHA512.class \
-	sun/security/ec/ECDSASignature.class \
-	sun/security/ec/ECKeyFactory.class \
-	sun/security/ec/ECKeyPairGenerator.class \
-	sun/security/ec/SunEC\$$$$1.class \
-	sun/security/ec/SunEC.class \
-	sun/security/ec/SunECEntries.class \
-	sun/security/mscapi \
-	sun/security/pkcs11 \
 	com/sun/net/ssl/internal/ssl \
-	javax/crypto \
-	sun/security/internal \
-	com/sun/crypto/provider \
-	META-INF/services/com.sun.tools.attach.spi.AttachProvider \
-	com/sun/tools/attach \
-	org/relaxng/datatype \
-	com/sun/codemodel \
+	com/sun/source \
+	com/sun/tools \
 	com/sun/xml/internal/dtdparser \
 	com/sun/xml/internal/rngom \
 	com/sun/xml/internal/xsom \
-	com/sun/tools/script/shell \
-	sun/tools/attach \
-	sun/tools/jstack \
-	sun/tools/jinfo \
-	sun/tools/jmap \
-	sun/net/spi/nameservice/dns \
-	META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor \
-	javax/swing/beaninfo \
+	javax/crypto \
 	javax/swing/AbstractButtonBeanInfo.class \
+	javax/swing/beaninfo \
 	javax/swing/BoxBeanInfo.class \
 	javax/swing/JAppletBeanInfo.class \
 	javax/swing/JButtonBeanInfo.class \
@@ -250,11 +190,67 @@ RT_JAR_EXCLUDES := \
 	javax/swing/JWindowBeanInfo.class \
 	javax/swing/SwingBeanInfoBase.class \
 	javax/swing/text/JTextComponentBeanInfo.class \
+	META-INF/services/com.sun.jdi.connect.Connector \
+	META-INF/services/com.sun.jdi.connect.spi.TransportService \
+	META-INF/services/com.sun.tools.attach.spi.AttachProvider \
+	META-INF/services/com.sun.tools.xjc.Plugin \
+	META-INF/services/java.nio.charset.spi.CharsetProvider \
+	META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor \
+	org/relaxng/datatype \
+	sun/awt/HKSCS.class \
+	sun/awt/motif/X11GB2312.class \
+	sun/awt/motif/X11GB2312\$$$$Decoder.class \
+	sun/awt/motif/X11GB2312\$$$$Encoder.class \
+	sun/awt/motif/X11GBK.class \
+	sun/awt/motif/X11GBK\$$$$Encoder.class \
+	sun/awt/motif/X11KSC5601.class \
+	sun/awt/motif/X11KSC5601\$$$$Decoder.class \
+	sun/awt/motif/X11KSC5601\$$$$Encoder.class \
+	sun/jvmstat \
+	sun/net/spi/nameservice/dns \
+	sun/nio/cs/ext \
+	sun/rmi/rmic \
+	sun/security/ec/ECDHKeyAgreement.class \
+	sun/security/ec/ECDSASignature.class \
+	sun/security/ec/ECDSASignature\$$$$Raw.class \
+	sun/security/ec/ECDSASignature\$$$$SHA1.class \
+	sun/security/ec/ECDSASignature\$$$$SHA224.class \
+	sun/security/ec/ECDSASignature\$$$$SHA256.class \
+	sun/security/ec/ECDSASignature\$$$$SHA384.class \
+	sun/security/ec/ECDSASignature\$$$$SHA512.class \
+	sun/security/ec/ECKeyFactory.class \
+	sun/security/ec/ECKeyPairGenerator.class \
+	sun/security/ec/SunEC\$$$$1.class \
+	sun/security/ec/SunEC.class \
+	sun/security/ec/SunECEntries.class \
+	sun/security/internal \
+	sun/security/mscapi \
+	sun/security/pkcs11 \
+	sun/security/provider/Sun.class \
+	sun/security/rsa/SunRsaSign.class \
+	sun/security/ssl \
+	sun/security/tools/jarsigner \
 	sun/swing/BeanInfoUtils.class \
-	$(LOCALEDATA_INCLUDES) \
 	sun/text/resources/cldr \
+	sun/tools/asm \
+	sun/tools/attach \
+	sun/tools/java \
+	sun/tools/javac \
+	sun/tools/jcmd \
+	sun/tools/jconsole \
+	sun/tools/jinfo \
+	sun/tools/jmap \
+	sun/tools/jps \
+	sun/tools/jstack \
+	sun/tools/jstat \
+	sun/tools/jstatd \
+	sun/tools/native2ascii \
+	sun/tools/serialver \
+	sun/tools/tree \
+	sun/tools/util \
+	sun/util/cldr/CLDRLocaleDataMetaInfo.class \
 	sun/util/resources/cldr \
-	sun/util/cldr/CLDRLocaleDataMetaInfo.class
+	$(LOCALEDATA_INCLUDES)
 
 # These files should never be put into rt.jar
 # but due to a misstake...some are put there if embedded
@@ -724,55 +720,55 @@ JARS += $(CLDRDATA_JAR_DST)
 ##########################################################################################
 
 TOOLS_JAR_INCLUDES := \
-	sun/tools/asm		\
-	sun/tools/jar		\
-	sun/tools/java		\
-	sun/tools/javac		\
-	sun/tools/jcmd		\
-	sun/tools/jps		\
-	sun/tools/jstat		\
-	sun/tools/jstatd	\
-	sun/tools/native2ascii	\
-	sun/tools/serialver	\
-	sun/tools/tree		\
-	sun/tools/util		\
-	sun/security/tools/jarsigner \
-	sun/rmi/rmic		\
-	sun/applet		\
-	sun/jvmstat		\
+        com/sun/codemodel       \
+	com/sun/istack/internal/tools       \
+	com/sun/jarsigner	\
 	com/sun/javadoc		\
 	com/sun/jdi		\
-	com/sun/jarsigner	\
 	com/sun/source          \
+	com/sun/tools/attach	\
 	com/sun/tools/classfile \
+	com/sun/tools/corba     \
 	com/sun/tools/doclets   \
 	com/sun/tools/example/debug/expr \
 	com/sun/tools/example/debug/tty  \
 	com/sun/tools/extcheck  \
 	com/sun/tools/hat       \
+        com/sun/tools/internal/jxc             \
+	com/sun/tools/internal/jxc/ap   \
+	com/sun/tools/internal/ws       \
+	com/sun/tools/internal/ws/wscompile/plugin/at_generated \
+	com/sun/tools/internal/xjc       \
 	com/sun/tools/javac     \
 	com/sun/tools/javadoc   \
 	com/sun/tools/javah     \
 	com/sun/tools/javap     \
-	com/sun/tools/corba     \
-	com/sun/tools/internal/xjc       \
-	com/sun/tools/internal/ws       \
-	com/sun/istack/internal/tools       \
-	com/sun/tools/internal/jxc/ap   \
-	com/sun/tools/internal/ws/wscompile/plugin/at_generated \
-        com/sun/codemodel       \
-        com/sun/tools/internal/jxc             \
+	com/sun/tools/jdi	\
+	com/sun/tools/script/shell	\
+	com/sun/xml/internal/dtdparser \
         com/sun/xml/internal/rngom       \
         com/sun/xml/internal/xsom       \
         org/relaxng/datatype   \
-	com/sun/xml/internal/dtdparser \
-	com/sun/tools/jdi	\
-	com/sun/tools/script/shell	\
-	com/sun/tools/attach	\
+	sun/applet		\
+	sun/jvmstat		\
+	sun/rmi/rmic		\
+	sun/security/tools/jarsigner \
+	sun/tools/asm		\
 	sun/tools/attach	\
-	sun/tools/jstack        \
+	sun/tools/jar		\
+	sun/tools/java		\
+	sun/tools/javac		\
+	sun/tools/jcmd		\
 	sun/tools/jinfo         \
-	sun/tools/jmap
+	sun/tools/jmap		\
+	sun/tools/jps		\
+	sun/tools/jstack        \
+	sun/tools/jstat		\
+	sun/tools/jstatd	\
+	sun/tools/native2ascii	\
+	sun/tools/serialver	\
+	sun/tools/tree		\
+	sun/tools/util
 
 # The sjavac tools is not ready for public consumption.
 TOOLS_JAR_EXCLUDES=com/sun/tools/sjavac
@@ -848,6 +844,19 @@ JARS+=$(IMAGES_OUTPUTDIR)/lib/ct.sym
 ##########################################################################################
 
 SRC_ZIP_INCLUDES = \
+	com/sun/corba			\
+	com/sun/image/codec/jpeg	\
+	com/sun/imageio                 \
+	com/sun/java_cup		\
+	com/sun/javadoc			\
+	com/sun/java/swing		\
+	com/sun/jlex	        	\
+	com/sun/jmx			\
+	com/sun/naming			\
+	com/sun/org/apache		\
+	com/sun/security/auth		\
+	com/sun/security/jgss		\
+	com/sun/source			\
 	java/applet			\
 	java/awt			\
 	java/beans			\
@@ -861,34 +870,21 @@ SRC_ZIP_INCLUDES = \
 	java/sql			\
 	java/text			\
 	java/util			\
-	com/sun/corba			\
-	com/sun/image/codec/jpeg	\
-	com/sun/imageio                 \
-	com/sun/java/swing		\
-	com/sun/javadoc			\
-	com/sun/jmx			\
-	com/sun/source			\
-	com/sun/naming			\
-	com/sun/security/auth		\
-	com/sun/security/jgss		\
 	javax/accessibility		\
 	javax/annotation		\
-	javax/script			\
 	javax/imageio			\
 	javax/lang			\
 	javax/management		\
 	javax/naming			\
 	javax/print			\
 	javax/rmi			\
+	javax/script			\
 	javax/security			\
 	javax/sound			\
 	javax/sql			\
 	javax/swing			\
 	javax/tools			\
 	javax/xml			\
-	com/sun/org/apache		\
-	com/sun/java_cup		\
-	com/sun/jlex	        	\
 	org/ietf			\
 	org/omg				\
 	org/w3c/dom			\
