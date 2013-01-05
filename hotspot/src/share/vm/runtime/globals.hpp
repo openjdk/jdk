@@ -1599,7 +1599,7 @@ class CommandLineFlags {
   develop(bool, CMSTraceThreadState, false,                                 \
           "Trace the CMS thread state (enable the trace_state() method)")   \
                                                                             \
-  product(bool, CMSClassUnloadingEnabled, false,                            \
+  product(bool, CMSClassUnloadingEnabled, true,                             \
           "Whether class unloading enabled when using CMS GC")              \
                                                                             \
   product(uintx, CMSClassUnloadingMaxInterval, 0,                           \
