@@ -122,9 +122,6 @@
 
 # jdk_lang
 
-# 7194607
-java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.sh generic-all
-
 # 6944188
 java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 
@@ -147,6 +144,9 @@ java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 
 # 6959636
 javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
+
+# 8005472
+com/sun/jmx/remote/NotificationMarshalVersions/TestSerializationMismatch.sh windows-all
 
 ############################################################################
 
