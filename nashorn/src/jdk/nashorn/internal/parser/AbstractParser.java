@@ -429,6 +429,8 @@ public abstract class AbstractParser {
 
         // Create literal node.
         final Object value = getValue();
+        // Advance to have a correct finish
+        next();
 
         LiteralNode<?> node = null;
 
@@ -452,7 +454,6 @@ public abstract class AbstractParser {
             assert false : "unknown type for LiteralNode: " + value.getClass();
         }
 
-        next();
         return node;
     }
 }
