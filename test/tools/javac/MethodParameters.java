@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8004727
  * @summary javac should generate method parameters correctly.
  */
 // key: opt.arg.parameters
