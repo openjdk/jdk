@@ -185,6 +185,9 @@ public class Block extends Node {
     public void addStatement(final Node statement) {
         if (statement != null) {
             statements.add(statement);
+            if (getFinish() < statement.getFinish()) {
+                setFinish(statement.getFinish());
+            }
         }
     }
 

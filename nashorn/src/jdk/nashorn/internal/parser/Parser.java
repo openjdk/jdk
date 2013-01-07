@@ -938,7 +938,11 @@ loop:
 
         // If is a statement then handle end of line.
         if (isStatement) {
+            boolean semicolon = type == SEMICOLON;
             endOfLine();
+            if (semicolon) {
+                block.setFinish(finish);
+            }
         }
 
         return vars;
@@ -954,7 +958,8 @@ loop:
      */
     private void emptyStatement() {
         if (context._empty_statements) {
-            block.addStatement(new EmptyNode(source, token, Token.descPosition(token)));
+            block.addStatement(new EmptyNode(source, token,
+                    Token.descPosition(token) + Token.descLength(token)));
         }
 
         // SEMICOLON checked in caller.
@@ -988,6 +993,7 @@ loop:
 
         if (executeNode != null) {
             executeNode.setFinish(finish);
+            block.setFinish(finish);
         }
     }
 
@@ -1571,6 +1577,7 @@ loop:
                 // Get CASE body.
                 final Block statements = getBlock(false);
                 final CaseNode caseNode = new CaseNode(source, caseToken, finish, caseExpression, statements);
+                statements.setFinish(finish);
 
                 if (caseExpression == null) {
                     defaultCase = caseNode;
