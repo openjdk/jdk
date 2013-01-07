@@ -130,12 +130,10 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  * keeps track of the contents of the byte code stack. This way we avoid a large
  * number of special cases on the form
  * <pre>
- * {@code
  * if (type == INT) {
  *     visitInsn(ILOAD, slot);
  * } else if (type == DOUBLE) {
  *     visitInsn(DOUBLE, slot);
- * }
  * }
  * </pre>
  * This quickly became apparent when the code generator was generalized to work

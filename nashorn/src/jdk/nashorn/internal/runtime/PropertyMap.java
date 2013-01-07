@@ -176,9 +176,10 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
     /**
      * Return a sharable empty map.
      *
+     * @param  context the context
      * @return New empty {@link PropertyMap}.
      */
-    public static PropertyMap newEmptyMap(Context context) {
+    public static PropertyMap newEmptyMap(final Context context) {
         return new PropertyMap(jdk.nashorn.internal.scripts.JO$.class, context, EMPTY_MAP);
     }
 
