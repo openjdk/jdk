@@ -182,7 +182,7 @@ int AbstractAssembler::code_fill_byte() {
 // make this go away someday
 void Assembler::emit_data(jint data, relocInfo::relocType rtype, int format) {
   if (rtype == relocInfo::none)
-        emit_long(data);
+        emit_int32(data);
   else  emit_data(data, Relocation::spec_simple(rtype), format);
 }
 
@@ -202,7 +202,7 @@ void Assembler::emit_data(jint data, RelocationHolder const& rspec, int format) 
     else
       code_section()->relocate(inst_mark(), rspec, format);
   }
-  emit_long(data);
+  emit_int32(data);
 }
 
 static int encode(Register r) {
@@ -243,7 +243,7 @@ void Assembler::emit_arith(int op1, int op2, Register dst, int32_t imm32) {
   } else {
     emit_int8(op1);
     emit_int8(op2 | encode(dst));
-    emit_long(imm32);
+    emit_int32(imm32);
   }
 }
 
@@ -254,7 +254,7 @@ void Assembler::emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32) 
   assert((op1 & 0x02) == 0, "sign-extension bit should not be set");
   emit_int8(op1);
   emit_int8(op2 | encode(dst));
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 // immediate-to-memory forms
@@ -268,7 +268,7 @@ void Assembler::emit_arith_operand(int op1, Register rm, Address adr, int32_t im
   } else {
     emit_int8(op1);
     emit_operand(rm, adr, 4);
-    emit_long(imm32);
+    emit_int32(imm32);
   }
 }
 
@@ -976,7 +976,7 @@ void Assembler::addr_nop_7() {
   emit_int8(0x1F);
   emit_int8((unsigned char)0x80);
                    // emit_rm(cbuf, 0x2, EAX_enc, EAX_enc);
-  emit_long(0);    // 32-bits offset (4 bytes)
+  emit_int32(0);   // 32-bits offset (4 bytes)
 }
 
 void Assembler::addr_nop_8() {
@@ -987,7 +987,7 @@ void Assembler::addr_nop_8() {
   emit_int8((unsigned char)0x84);
                    // emit_rm(cbuf, 0x2, EAX_enc, 0x4);
   emit_int8(0x00); // emit_rm(cbuf, 0x0, EAX_enc, EAX_enc);
-  emit_long(0);    // 32-bits offset (4 bytes)
+  emit_int32(0);   // 32-bits offset (4 bytes)
 }
 
 void Assembler::addsd(XMMRegister dst, XMMRegister src) {
@@ -1076,7 +1076,7 @@ void Assembler::andl(Address dst, int32_t imm32) {
   prefix(dst);
   emit_int8((unsigned char)0x81);
   emit_operand(rsp, dst, 4);
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::andl(Register dst, int32_t imm32) {
@@ -1204,7 +1204,7 @@ void Assembler::cmpl(Address dst, int32_t imm32) {
   prefix(dst);
   emit_int8((unsigned char)0x81);
   emit_operand(rdi, dst, 4);
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::cmpl(Register dst, int32_t imm32) {
@@ -1408,7 +1408,7 @@ void Assembler::imull(Register dst, Register src, int value) {
   } else {
     emit_int8(0x69);
     emit_int8((unsigned char)(0xC0 | encode));
-    emit_long(value);
+    emit_int32(value);
   }
 }
 
@@ -1440,7 +1440,7 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
              "must be 32bit offset (call4)");
       emit_int8(0x0F);
       emit_int8((unsigned char)(0x80 | cc));
-      emit_long(offs - long_size);
+      emit_int32(offs - long_size);
     }
   } else {
     // Note: could eliminate cond. jumps to this jump if condition
@@ -1450,7 +1450,7 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
     L.add_patch_at(code(), locator());
     emit_int8(0x0F);
     emit_int8((unsigned char)(0x80 | cc));
-    emit_long(0);
+    emit_int32(0);
   }
 }
 
@@ -1498,7 +1498,7 @@ void Assembler::jmp(Label& L, bool maybe_short) {
       emit_int8((offs - short_size) & 0xFF);
     } else {
       emit_int8((unsigned char)0xE9);
-      emit_long(offs - long_size);
+      emit_int32(offs - long_size);
     }
   } else {
     // By default, forward jumps are always 32-bit displacements, since
@@ -1508,7 +1508,7 @@ void Assembler::jmp(Label& L, bool maybe_short) {
     InstructionMark im(this);
     L.add_patch_at(code(), locator());
     emit_int8((unsigned char)0xE9);
-    emit_long(0);
+    emit_int32(0);
   }
 }
 
@@ -1732,7 +1732,7 @@ void Assembler::vmovdqu(Address dst, XMMRegister src) {
 void Assembler::movl(Register dst, int32_t imm32) {
   int encode = prefix_and_encode(dst->encoding());
   emit_int8((unsigned char)(0xB8 | encode));
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::movl(Register dst, Register src) {
@@ -1753,7 +1753,7 @@ void Assembler::movl(Address dst, int32_t imm32) {
   prefix(dst);
   emit_int8((unsigned char)0xC7);
   emit_operand(rax, dst, 4);
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::movl(Address dst, Register src) {
@@ -2499,7 +2499,7 @@ void Assembler::push(int32_t imm32) {
   // in 64bits we push 64bits onto the stack but only
   // take a 32bit immediate
   emit_int8(0x68);
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::push(Register src) {
@@ -2791,7 +2791,7 @@ void Assembler::testl(Register dst, int32_t imm32) {
     emit_int8((unsigned char)0xF7);
     emit_int8((unsigned char)(0xC0 | encode));
   }
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::testl(Register dst, Register src) {
@@ -4735,7 +4735,7 @@ void Assembler::andq(Address dst, int32_t imm32) {
   prefixq(dst);
   emit_int8((unsigned char)0x81);
   emit_operand(rsp, dst, 4);
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::andq(Register dst, int32_t imm32) {
@@ -4808,7 +4808,7 @@ void Assembler::cmpq(Address dst, int32_t imm32) {
   prefixq(dst);
   emit_int8((unsigned char)0x81);
   emit_operand(rdi, dst, 4);
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::cmpq(Register dst, int32_t imm32) {
@@ -4947,7 +4947,7 @@ void Assembler::imulq(Register dst, Register src, int value) {
   } else {
     emit_int8(0x69);
     emit_int8((unsigned char)(0xC0 | encode));
-    emit_long(value);
+    emit_int32(value);
   }
 }
 
@@ -5100,7 +5100,7 @@ void Assembler::movslq(Register dst, int32_t imm32) {
   InstructionMark im(this);
   int encode = prefixq_and_encode(dst->encoding());
   emit_int8((unsigned char)(0xC7 | encode));
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::movslq(Address dst, int32_t imm32) {
@@ -5109,7 +5109,7 @@ void Assembler::movslq(Address dst, int32_t imm32) {
   prefixq(dst);
   emit_int8((unsigned char)0xC7);
   emit_operand(rax, dst, 4);
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::movslq(Register dst, Address src) {
@@ -5187,7 +5187,7 @@ void Assembler::orq(Address dst, int32_t imm32) {
   prefixq(dst);
   emit_int8((unsigned char)0x81);
   emit_operand(rcx, dst, 4);
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::orq(Register dst, int32_t imm32) {
@@ -5422,7 +5422,7 @@ void Assembler::testq(Register dst, int32_t imm32) {
     emit_int8((unsigned char)0xF7);
     emit_int8((unsigned char)(0xC0 | encode));
   }
-  emit_long(imm32);
+  emit_int32(imm32);
 }
 
 void Assembler::testq(Register dst, Register src) {
