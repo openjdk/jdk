@@ -2540,7 +2540,7 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst) {
       // 0000 1111 1000 tttn #32-bit disp
       emit_int8(0x0F);
       emit_int8((unsigned char)(0x80 | cc));
-      emit_long(offs - long_size);
+      emit_int32(offs - long_size);
     }
   } else {
 #ifdef ASSERT
