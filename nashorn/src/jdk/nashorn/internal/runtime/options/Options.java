@@ -493,7 +493,7 @@ public final class Options {
             return new Option<>(value != null && Boolean.parseBoolean(value));
         case "integer":
             try {
-                return new Option<>((Integer)((value == null)? 0 : Integer.parseInt(value)));
+                return new Option<>((value == null) ? 0 : Integer.parseInt(value));
             } catch (final NumberFormatException nfe) {
                 throw new IllegalOptionException(t);
             }

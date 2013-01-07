@@ -73,13 +73,14 @@ public class Splitter extends NodeVisitor {
     /**
      * Constructor.
      *
-     * @param compiler     the compiler
-     * @param functionNode function node to split
+     * @param compiler           the compiler
+     * @param functionNode       function node to split
+     * @param scriptCompileUnit  script compile unit
      */
-    public Splitter(final Compiler compiler, final FunctionNode functionNode, final CompileUnit compileUnit) {
+    public Splitter(final Compiler compiler, final FunctionNode functionNode, final CompileUnit scriptCompileUnit) {
         this.compiler     = compiler;
         this.functionNode = functionNode;
-        this.scriptCompileUnit = compileUnit;
+        this.scriptCompileUnit = scriptCompileUnit;
     }
 
     /**

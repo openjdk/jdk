@@ -13,6 +13,15 @@ properties described herein are subject to change without notice.
 This documentation of the system property flags assume that the
 default value of the flag is false, unless otherwise specified.
 
+SYSTEM PROPERTY: -Dnashorn.unstable.relink.threshold=x
+
+This property controls how many call site misses are allowed before a 
+callsite is relinked with "apply" semantics to never change again. 
+In the case of megamorphic callsites, this is necessary, or the 
+program would spend all its time swapping out callsite targets. Dynalink 
+has a default value (currently 8 relinks) for this property if it 
+is not explicitly set.
+
 
 SYSTEM PROPERTY: -Dnashorn.callsiteaccess.debug
 
