@@ -2255,6 +2255,66 @@ void sun_reflect_ConstantPool::compute_offsets() {
   }
 }
 
+void java_lang_reflect_Parameter::compute_offsets() {
+  Klass* k = SystemDictionary::reflect_Parameter_klass();
+  if(NULL != k) {
+    compute_offset(name_offset,        k, vmSymbols::name_name(),        vmSymbols::string_signature());
+    compute_offset(modifiers_offset,   k, vmSymbols::modifiers_name(),   vmSymbols::int_signature());
+    compute_offset(index_offset,       k, vmSymbols::index_name(),       vmSymbols::int_signature());
+    compute_offset(executable_offset,  k, vmSymbols::executable_name(),  vmSymbols::executable_signature());
+  }
+}
+
+Handle java_lang_reflect_Parameter::create(TRAPS) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  Symbol* name = vmSymbols::java_lang_reflect_Parameter();
+  Klass* k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
+  instanceKlassHandle klass (THREAD, k);
+  // Ensure it is initialized
+  klass->initialize(CHECK_NH);
+  return klass->allocate_instance_handle(CHECK_NH);
+}
+
+oop java_lang_reflect_Parameter::name(oop param) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  return param->obj_field(name_offset);
+}
+
+void java_lang_reflect_Parameter::set_name(oop param, oop value) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  param->obj_field_put(name_offset, value);
+}
+
+int java_lang_reflect_Parameter::modifiers(oop param) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  return param->int_field(modifiers_offset);
+}
+
+void java_lang_reflect_Parameter::set_modifiers(oop param, int value) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  param->int_field_put(modifiers_offset, value);
+}
+
+int java_lang_reflect_Parameter::index(oop param) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  return param->int_field(index_offset);
+}
+
+void java_lang_reflect_Parameter::set_index(oop param, int value) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  param->int_field_put(index_offset, value);
+}
+
+oop java_lang_reflect_Parameter::executable(oop param) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  return param->obj_field(executable_offset);
+}
+
+void java_lang_reflect_Parameter::set_executable(oop param, oop value) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  param->obj_field_put(executable_offset, value);
+}
+
 
 Handle sun_reflect_ConstantPool::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
@@ -2928,6 +2988,10 @@ int java_lang_reflect_Field::modifiers_offset;
 int java_lang_reflect_Field::signature_offset;
 int java_lang_reflect_Field::annotations_offset;
 int java_lang_reflect_Field::type_annotations_offset;
+int java_lang_reflect_Parameter::name_offset;
+int java_lang_reflect_Parameter::modifiers_offset;
+int java_lang_reflect_Parameter::index_offset;
+int java_lang_reflect_Parameter::executable_offset;
 int java_lang_boxing_object::value_offset;
 int java_lang_boxing_object::long_value_offset;
 int java_lang_ref_Reference::referent_offset;
@@ -3112,6 +3176,8 @@ void JavaClasses::compute_offsets() {
     sun_reflect_ConstantPool::compute_offsets();
     sun_reflect_UnsafeStaticFieldAccessorImpl::compute_offsets();
   }
+  if (JDK_Version::is_jdk18x_version())
+    java_lang_reflect_Parameter::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:
   AbstractAssembler::update_delayed_values();
