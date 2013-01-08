@@ -40,19 +40,24 @@
 #include "prims/nativeLookup.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
+void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
   if (TraceTypeProfile || PrintInlining NOT_PRODUCT(|| PrintOptoInlining)) {
+    outputStream* out = tty;
     if (!PrintInlining) {
       if (NOT_PRODUCT(!PrintOpto &&) !PrintCompilation) {
         method->print_short_name();
         tty->cr();
       }
       CompileTask::print_inlining(prof_method, depth, bci);
+    } else {
+      out = C->print_inlining_stream();
     }
-    CompileTask::print_inline_indent(depth);
-    tty->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
-    prof_klass->name()->print_symbol();
-    tty->cr();
+    CompileTask::print_inline_indent(depth, out);
+    out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
+    stringStream ss;
+    prof_klass->name()->print_symbol_on(&ss);
+    out->print(ss.as_string());
+    out->cr();
   }
 }
 
@@ -233,13 +238,13 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           }
           if (miss_cg != NULL) {
             if (next_hit_cg != NULL) {
-              trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));
+              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));
               // We don't need to record dependency on a receiver here and below.
               // Whenever we inline, the dependency is added by Parse::Parse().
               miss_cg = CallGenerator::for_predicted_call(profile.receiver(1), miss_cg, next_hit_cg, PROB_MAX);
             }
             if (miss_cg != NULL) {
-              trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count);
+              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count);
               CallGenerator* cg = CallGenerator::for_predicted_call(profile.receiver(0), miss_cg, hit_cg, profile.receiver_prob(0));
               if (cg != NULL)  return cg;
             }

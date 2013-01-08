@@ -147,9 +147,9 @@ class CallGenerator : public ResourceObj {
                                                 CallGenerator* cg);
   virtual Node* generate_predicate(JVMState* jvms) { return NULL; };
 
-  static void print_inlining(ciMethod* callee, int inline_level, int bci, const char* msg) {
+  static void print_inlining(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
     if (PrintInlining)
-      CompileTask::print_inlining(callee, inline_level, bci, msg);
+      C->print_inlining(callee, inline_level, bci, msg);
   }
 };
 

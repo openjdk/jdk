@@ -31,9 +31,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build TestLibrary
- * @build DGCImplInsulation
- * @build DGCImplInsulation_Stub
+ * @build TestLibrary DGCImplInsulation_Stub
  * @run main/othervm/policy=security.policy DGCImplInsulation
  */
 

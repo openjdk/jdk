@@ -37,5 +37,5 @@ cp ${TESTCLASSES}/SetCwd.class .
 cp ${TESTCLASSES}/SetCwd.class foo
 
 # now start the test
-${TESTJAVA}/bin/java SetCwd
+${TESTJAVA}/bin/java ${TESTVMOPTS} SetCwd
 

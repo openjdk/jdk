@@ -32,11 +32,7 @@
  *
  * @library ../../../testlibrary
  * @build TestLibrary RMID ActivationLibrary
- * @build DownloadParameterClass
- * @build Foo
- * @build FooReceiverImpl
- * @build FooReceiverImpl_Stub
- * @build Bar
+ *     Foo FooReceiverImpl FooReceiverImpl_Stub Bar
  * @run main/othervm/policy=security.policy/timeout=240 DownloadParameterClass
  */
 

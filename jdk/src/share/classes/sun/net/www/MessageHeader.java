@@ -137,6 +137,43 @@ class MessageHeader {
         return null;
     }
 
+    /**
+     * Removes bare Negotiate and Kerberos headers when an "NTLM ..."
+     * appears. All Performed on headers with key being k.
+     * @return true if there is a change
+     */
+    public boolean filterNTLMResponses(String k) {
+        boolean found = false;
+        for (int i=0; i<nkeys; i++) {
+            if (k.equalsIgnoreCase(keys[i])
+                    && values[i] != null && values[i].length() > 5
+                    && values[i].substring(0, 5).equalsIgnoreCase("NTLM ")) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            int j = 0;
+            for (int i=0; i<nkeys; i++) {
+                if (k.equalsIgnoreCase(keys[i]) && (
+                        "Negotiate".equalsIgnoreCase(values[i]) ||
+                        "Kerberos".equalsIgnoreCase(values[i]))) {
+                    continue;
+                }
+                if (i != j) {
+                    keys[j] = keys[i];
+                    values[j] = values[i];
+                }
+                j++;
+            }
+            if (j != nkeys) {
+                nkeys = j;
+                return true;
+            }
+        }
+        return false;
+    }
+
     class HeaderIterator implements Iterator<String> {
         int index = 0;
         int next = -1;

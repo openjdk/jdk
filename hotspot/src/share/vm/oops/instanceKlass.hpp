@@ -460,7 +460,7 @@ class InstanceKlass: public Klass {
   bool link_class_or_fail(TRAPS); // returns false on failure
   void unlink_class();
   void rewrite_class(TRAPS);
-  void relocate_and_link_methods(TRAPS);
+  void link_methods(TRAPS);
   Method* class_initializer();
 
   // set the class to initialized if no static initializer is present
@@ -542,6 +542,12 @@ class InstanceKlass: public Klass {
     } else {
       _misc_flags &= ~_misc_is_anonymous;
     }
+  }
+
+  // Oop that keeps the metadata for this class from being unloaded
+  // in places where the metadata is stored in other places, like nmethods
+  oop klass_holder() const {
+    return is_anonymous() ? java_mirror() : class_loader();
   }
 
   // signers
@@ -656,6 +662,10 @@ class InstanceKlass: public Klass {
   Array<AnnotationArray*>* fields_annotations() const {
     if (annotations() == NULL) return NULL;
     return annotations()->fields_annotations();
+  }
+  Annotations* type_annotations() const {
+    if (annotations() == NULL) return NULL;
+    return annotations()->type_annotations();
   }
 
   // allocation

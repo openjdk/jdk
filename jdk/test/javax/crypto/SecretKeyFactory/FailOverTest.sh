@@ -82,6 +82,7 @@ if [ $? -ne 0 ]; then
 fi
 
 ${TESTJAVA}${FS}bin${FS}java \
+    ${TESTVMOPTS} \
     -classpath "${TESTSRC}${FS}P1.jar${PS}${TESTSRC}${FS}P2.jar${PS}." \
     FailOverTest
 result=$?

@@ -136,6 +136,8 @@
   template(tag_runtime_visible_parameter_annotations, "RuntimeVisibleParameterAnnotations")       \
   template(tag_runtime_invisible_parameter_annotations,"RuntimeInvisibleParameterAnnotations")    \
   template(tag_annotation_default,                    "AnnotationDefault")                        \
+  template(tag_runtime_visible_type_annotations,      "RuntimeVisibleTypeAnnotations")            \
+  template(tag_runtime_invisible_type_annotations,    "RuntimeInvisibleTypeAnnotations")          \
   template(tag_enclosing_method,                      "EnclosingMethod")                          \
   template(tag_bootstrap_methods,                     "BootstrapMethods")                         \
                                                                                                   \
@@ -239,6 +241,9 @@
   template(ConstantPool_name,                         "constantPoolOop")                          \
   template(sun_reflect_UnsafeStaticFieldAccessorImpl, "sun/reflect/UnsafeStaticFieldAccessorImpl")\
   template(base_name,                                 "base")                                     \
+  /* Type Annotations (JDK 8 and above) */                                                        \
+  template(type_annotations_name,                     "typeAnnotations")                          \
+                                                                                                  \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
@@ -756,6 +761,15 @@
   do_intrinsic(_unpark,                   sun_misc_Unsafe,        unpark_name, unpark_signature,                 F_RN)  \
    do_name(     unpark_name,                                     "unpark")                                              \
    do_alias(    unpark_signature,                               /*(LObject;)V*/ object_void_signature)                  \
+  do_intrinsic(_loadFence,                sun_misc_Unsafe,        loadFence_name, loadFence_signature,           F_RN)  \
+   do_name(     loadFence_name,                                  "loadFence")                                           \
+   do_alias(    loadFence_signature,                              void_method_signature)                                \
+  do_intrinsic(_storeFence,               sun_misc_Unsafe,        storeFence_name, storeFence_signature,         F_RN)  \
+   do_name(     storeFence_name,                                 "storeFence")                                          \
+   do_alias(    storeFence_signature,                             void_method_signature)                                \
+  do_intrinsic(_fullFence,                sun_misc_Unsafe,        fullFence_name, fullFence_signature,           F_RN)  \
+   do_name(     fullFence_name,                                  "fullFence")                                           \
+   do_alias(    fullFence_signature,                              void_method_signature)                                \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getObject_signature,       "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -897,12 +911,14 @@
   do_intrinsic(_getAndAddLong,            sun_misc_Unsafe,        getAndAddLong_name, getAndAddLong_signature, F_R)     \
    do_name(     getAndAddLong_name,                               "getAndAddLong")                                      \
    do_signature(getAndAddLong_signature,                          "(Ljava/lang/Object;JJ)J" )                           \
-  do_intrinsic(_getAndSetInt,             sun_misc_Unsafe,        getAndSet_name, getAndSetInt_signature, F_R)          \
-   do_name(     getAndSet_name,                                   "getAndSet")                                          \
+  do_intrinsic(_getAndSetInt,             sun_misc_Unsafe,        getAndSetInt_name, getAndSetInt_signature, F_R)       \
+   do_name(     getAndSetInt_name,                                "getAndSetInt")                                       \
    do_alias(    getAndSetInt_signature,                         /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature)   \
-  do_intrinsic(_getAndSetLong,            sun_misc_Unsafe,        getAndSet_name, getAndSetLong_signature, F_R)         \
+  do_intrinsic(_getAndSetLong,            sun_misc_Unsafe,        getAndSetLong_name, getAndSetLong_signature, F_R)     \
+   do_name(     getAndSetLong_name,                               "getAndSetLong")                                      \
    do_alias(    getAndSetLong_signature,                        /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)  \
-  do_intrinsic(_getAndSetObject,          sun_misc_Unsafe,        getAndSet_name, getAndSetObject_signature,  F_R)      \
+  do_intrinsic(_getAndSetObject,          sun_misc_Unsafe,        getAndSetObject_name, getAndSetObject_signature,  F_R)\
+   do_name(     getAndSetObject_name,                             "getAndSetObject")                                    \
    do_signature(getAndSetObject_signature,                        "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
                                                                                                                         \
   /* prefetch_signature is shared by all prefetch variants */                                                           \

@@ -82,6 +82,23 @@ public class FormatData_zh extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "1\u6708",
+                    "2\u6708",
+                    "3\u6708",
+                    "4\u6708",
+                    "5\u6708",
+                    "6\u6708",
+                    "7\u6708",
+                    "8\u6708",
+                    "9\u6708",
+                    "10\u6708",
+                    "11\u6708",
+                    "12\u6708",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "\u661f\u671f\u65e5", // Sunday
@@ -102,6 +119,17 @@ public class FormatData_zh extends ListResourceBundle {
                     "\u661f\u671f\u56db", // abb Thursday
                     "\u661f\u671f\u4e94", // abb Friday
                     "\u661f\u671f\u516d" // abb Saturday
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "\u65e5",
+                    "\u4e00",
+                    "\u4e8c",
+                    "\u4e09",
+                    "\u56db",
+                    "\u4e94",
+                    "\u516d",
                 }
             },
             { "AmPmMarkers",

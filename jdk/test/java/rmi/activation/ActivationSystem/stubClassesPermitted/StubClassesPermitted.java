@@ -24,14 +24,11 @@
 /* @test
  * @bug 4179055
  * @summary Some java apps need to have access to read "accessClassInPackage.sun.rmi.server"
- *
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe ActivationLibrary
- * @build CanCreateStubs
- * @build StubClassesPermitted
- * @build StubClassesPermitted_Stub
+ * @build TestLibrary RMID ActivationLibrary
+ *     CanCreateStubs StubClassesPermitted_Stub
  * @run main/othervm/policy=security.policy/secure=java.lang.SecurityManager/timeout=240 StubClassesPermitted
  */
 
