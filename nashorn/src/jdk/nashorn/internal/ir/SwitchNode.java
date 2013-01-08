@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.codegen.MethodEmitter.Label;
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -48,7 +47,7 @@ public class SwitchNode extends BreakableNode {
     private List<CaseNode> cases;
 
     /** Switch default. */
-    @Reference @Ignore //points to one of the members in the list above, don't traverse twice
+    @Ignore //points to one of the members in the list above, don't traverse twice
     private CaseNode defaultCase;
 
     /**

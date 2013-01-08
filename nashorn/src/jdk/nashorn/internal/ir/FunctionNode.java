@@ -46,7 +46,6 @@ import jdk.nashorn.internal.codegen.Splitter;
 import jdk.nashorn.internal.codegen.Transform;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Source;
@@ -142,11 +141,11 @@ public class FunctionNode extends Block {
     private final List<VarNode> declarations;
 
     /** VarNode for this function statement */
-    @Reference @Ignore //this is explicit code anyway and should not be traverseda after lower
+    @Ignore //this is explicit code anyway and should not be traversed after lower
     private VarNode funcVarNode;
 
     /** Line number for function declaration */
-    @Reference @Ignore
+    @Ignore
     private LineNumberNode funcVarLineNumberNode;
 
     /** Function flags. */

@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
@@ -39,11 +38,11 @@ public abstract class LabeledNode extends Node {
     protected final LabelNode labelNode;
 
     /** Target control node. */
-    @Reference @Ignore
+    @Ignore
     protected final Node targetNode;
 
     /** Try chain. */
-    @Reference
+    @Ignore
     protected final TryNode tryChain;
 
     /** scope nesting level */

@@ -44,7 +44,6 @@ import jdk.nashorn.internal.codegen.Frame;
 import jdk.nashorn.internal.codegen.MethodEmitter.Label;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.ParentNode;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -55,11 +54,11 @@ import jdk.nashorn.internal.runtime.Source;
  */
 public class Block extends Node {
     /** Parent context */
-    @ParentNode @Reference
+    @ParentNode @Ignore
     private Block parent;
 
     /** Owning function. */
-    @Ignore @Reference
+    @Ignore //don't print it, it is apparent in the tree
     protected FunctionNode function;
 
     /** List of statements */
