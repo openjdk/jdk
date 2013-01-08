@@ -72,6 +72,12 @@ public final class Context {
         };
 
     /**
+     * Get the error stream if applicable and initialized, otherwise stderr
+     * Usually this is the error stream given the context, but for testing and
+     * certain bootstrapping situations we need a default stream
+     */
+
+    /**
      * Return the current global scope
      * @return current global scope
      */
@@ -119,20 +125,14 @@ public final class Context {
      * @param str  text to write
      * @param crlf write a carriage return/new line after text
      */
+    @SuppressWarnings("resource")
     public static void err(final String str, final boolean crlf) {
-        try (final PrintWriter err = Context.getContext().getErr()) {
-            if (err != null) {
-                if (crlf) {
-                    err.println(str);
-                } else {
-                    err.print(str);
-                }
+        final PrintWriter err = Context.getContext().getErr();
+        if (err != null) {
+            if (crlf) {
+                err.println(str);
             } else {
-                if (crlf) {
-                    System.err.println(str);
-                } else {
-                    System.err.println();
-                }
+                err.print(str);
             }
         }
     }
@@ -680,13 +680,11 @@ public final class Context {
      * Hook to print stack trace for a {@link Throwable} that occurred during
      * execution
      *
-     * TODO: use Context.err
-     * .
      * @param t throwable for which to dump stack
      */
     public static void printStackTrace(final Throwable t) {
         if (Context.DEBUG) {
-            t.printStackTrace();
+            t.printStackTrace(Context.getContext().getErr());
         }
     }
 

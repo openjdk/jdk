@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 
 import java.io.PrintWriter;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -549,12 +550,7 @@ public final class Symbol implements Comparable<Symbol> {
      * @param slot valid bytecode slot, or -1 if not available
      */
     public void setSlot(final int slot) {
-        if (TRACE_SYMBOL != null) {
-            if (TRACE_SYMBOL.equals(name)) {
-                System.err.println(name + " gets slot " + slot);
-                new Throwable().printStackTrace();
-            }
-        }
+        trace("SET SLOT " + slot);
         this.slot = slot;
     }
 
@@ -574,18 +570,7 @@ public final class Symbol implements Comparable<Symbol> {
      * @param type the type
      */
     public void setType(final Type type) {
-        if (TRACE_SYMBOL == null) {
-            setTypeOverride(Type.widest(this.type, type));
-        } else {
-            final boolean check = TRACE_SYMBOL.equals(getName());
-            final Type from = this.type;
-            setTypeOverride(Type.widest(this.type, type));
-
-            if (check) {
-                System.err.println(getName() + " " + from + "=>" + type + " == " + this.type);
-                new Throwable().printStackTrace();
-            }
-        }
+        setTypeOverride(Type.widest(this.type, type));
     }
 
     /**
@@ -596,7 +581,11 @@ public final class Symbol implements Comparable<Symbol> {
      * @param type  the type
      */
     public void setTypeOverride(final Type type) {
-        this.type = type;
+        final Type old = this.type;
+        if (old != type) {
+            trace("TYPE CHANGE: " + old + "=>" + type + " == " + type);
+            this.type = type;
+        }
     }
 
     /**
@@ -606,5 +595,12 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public boolean isTopLevel() {
         return block instanceof FunctionNode && ((FunctionNode) block).isScript();
+    }
+
+    private void trace(final String desc) {
+        if (TRACE_SYMBOL != null && TRACE_SYMBOL.equals(name)) {
+            Context.err("SYMBOL: '" + name + "' " + desc);
+            new Throwable().printStackTrace(Context.getContext().getErr());
+        }
     }
 }

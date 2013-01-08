@@ -29,8 +29,7 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -275,24 +274,35 @@ public class LinkerCallSite extends ChainedCallSite {
         }
 
         static class ProfileDumper implements Runnable {
+            @SuppressWarnings("resource")
             @Override
             public void run() {
-                OutputStream out;
+                PrintWriter out = null;
+                boolean fileOutput = false;
 
                 try {
-                    out = new FileOutputStream(PROFILEFILE);
-                } catch (final FileNotFoundException e) {
-                    out = new PrintStream(System.err); //TODO abstraction break- why is this hard coded to System.err when everything else uses the context
-                }
-
-                try (PrintStream stream = new PrintStream(out)) {
-                    int index = 0;
-                    for (final ProfilingLinkerCallSite callSite : profileCallSites) {
-                       stream.println("" + (index++) + '\t' +
-                                      callSite.getDescriptor().getName() + '\t' +
-                                      callSite.totalTime + '\t' +
-                                      callSite.hitCount);
+                    try {
+                        out = new PrintWriter(new FileOutputStream(PROFILEFILE));
+                        fileOutput = true;
+                    } catch (final FileNotFoundException e) {
+                        out = Context.getContext().getErr();
                     }
+
+                    dump(out);
+                } finally {
+                    if (out != null && fileOutput) {
+                        out.close();
+                    }
+                }
+            }
+
+            private static void dump(final PrintWriter out) {
+                int index = 0;
+                for (final ProfilingLinkerCallSite callSite : profileCallSites) {
+                   out.println("" + (index++) + '\t' +
+                                  callSite.getDescriptor().getName() + '\t' +
+                                  callSite.totalTime + '\t' +
+                                  callSite.hitCount);
                 }
             }
         }
@@ -307,11 +317,7 @@ public class LinkerCallSite extends ChainedCallSite {
         private static final MethodHandle TRACEVOID   = findOwnMH("traceVoid", void.class, MethodHandle.class, Object[].class);
         private static final MethodHandle TRACEMISS   = findOwnMH("traceMiss", void.class, Object[].class);
 
-        private static final PrintStream out = System.err; //TODO abstraction break- why is this hard coded to System.err when everything else uses the context
-
-        /*
-         * Constructor
-         */
+        private static final PrintWriter out = Context.getContext().getErr();
 
         TracingLinkerCallSite(final NashornCallSiteDescriptor desc) {
            super(desc);
@@ -522,7 +528,7 @@ public class LinkerCallSite extends ChainedCallSite {
      * Dump the miss counts collected so far to a given output stream
      * @param out print stream
      */
-    public static void getMissCounts(final PrintStream out) {
+    public static void getMissCounts(final PrintWriter out) {
         final ArrayList<Entry<String, AtomicInteger>> entries = new ArrayList<>(missCounts.entrySet());
 
         Collections.sort(entries, new Comparator<Map.Entry<String, AtomicInteger>>() {

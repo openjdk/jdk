@@ -59,8 +59,12 @@ public class DebugLogger {
      * @param property   system property activating the logger on {@code info} level
      */
     public DebugLogger(final String loggerName, final String property) {
-        this.logger    = Logging.getLogger(loggerName);
-        this.isEnabled = logger.getLevel() != Level.OFF || (property != null && Options.getBooleanProperty(property));
+        if (property != null && Options.getBooleanProperty(property)) {
+            this.logger = Logging.getOrCreateLogger(loggerName, Level.INFO);
+        } else {
+            this.logger = Logging.getLogger(loggerName);
+        }
+        this.isEnabled = logger.getLevel() != Level.OFF;
     }
 
     /**

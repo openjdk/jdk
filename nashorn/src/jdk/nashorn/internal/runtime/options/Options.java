@@ -44,19 +44,19 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
 import jdk.nashorn.internal.runtime.Logging;
 import jdk.nashorn.internal.runtime.QuotedStringTokenizer;
 
 /**
  * Manages global runtime options.
- *
  */
 public final class Options {
     /** Resource tag. */
     private final String resource;
 
     /** Error writer. */
-    private final PrintWriter errors;
+    private final PrintWriter err;
 
     /** File list. */
     private final List<String> files;
@@ -68,14 +68,25 @@ public final class Options {
     private final TreeMap<String, Option<?>> options;
 
     /**
-     * Constructor.
+     * Constructor
+     *
+     * Options will use System.err as the output stream for any errors
      *
      * @param resource resource prefix for options e.g. "nashorn"
-     * @param errors   error stream for reporting parse errors
      */
-    public Options(final String resource, final PrintWriter errors) {
+    public Options(final String resource) {
+        this(resource, new PrintWriter(System.err, true));
+    }
+
+    /**
+     * Constructor
+     *
+     * @param resource resource prefix for options e.g. "nashorn"
+     * @param err      error stream for reporting parse errors
+     */
+    public Options(final String resource, final PrintWriter err) {
         this.resource  = resource;
-        this.errors    = errors;
+        this.err       = err;
         this.files     = new ArrayList<>();
         this.arguments = new ArrayList<>();
         this.options   = new TreeMap<>();
@@ -88,19 +99,10 @@ public final class Options {
                 if (v != null) {
                     set(t.getKey(), createOption(t, v));
                 } else if (t.getDefaultValue() != null) {
-                     set(t.getKey(), createOption(t, t.getDefaultValue()));
+                    set(t.getKey(), createOption(t, t.getDefaultValue()));
                  }
             }
         }
-    }
-
-    /**
-     * Constructor
-     *
-     * @param resource  e.g. "nashorn"
-     */
-    public Options(final String resource) {
-        this(resource, new PrintWriter(System.err, true));
     }
 
     /**
@@ -343,17 +345,17 @@ public final class Options {
                 // display extended help information
                 displayHelp(true);
             } else {
-                errors.println(((IllegalOptionException)e).getTemplate());
+                err.println(((IllegalOptionException)e).getTemplate());
             }
             return;
         }
 
         if (e != null && e.getMessage() != null) {
-            errors.println(getMsg("option.error.invalid.option",
+            err.println(getMsg("option.error.invalid.option",
                     e.getMessage(),
                     helpOptionTemplate.getShortName(),
                     helpOptionTemplate.getName()));
-            errors.println();
+            err.println();
             return;
         }
 
@@ -368,8 +370,8 @@ public final class Options {
     public void displayHelp(final boolean extended) {
         for (final OptionTemplate t : Options.validOptions) {
             if ((extended || !t.isUndocumented()) && t.getResource().equals(resource)) {
-                errors.println(t);
-                errors.println();
+                err.println(t);
+                err.println();
             }
         }
     }
