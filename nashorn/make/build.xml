@@ -63,7 +63,7 @@
 
   <!-- do it only if ASM is not available -->
   <target name="compile-asm" depends="prepare" unless="asm.available">
-    <javac srcdir="${asm.src.dir}"
+    <javac srcdir="${jdk.asm.src.dir}"
            destdir="${build.classes.dir}"
            excludes="**/optimizer/* **/xml/* **/attrs/*"
            source="${javac.source}"
@@ -142,15 +142,20 @@
     </jar>
   </target>
 
-  <target name="javadoc" depends="compile-asm">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" windowtitle="${nashorn.product.name} ${nashorn.version}">
+  <target name="javadoc" depends="prepare">
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" windowtitle="${nashorn.product.name} ${nashorn.version}" additionalparam="-quiet" failonerror="true">
       <classpath>
         <pathelement location="${build.classes.dir}"/>
         <pathelement location="${dynalink.jar}"/>
       </classpath>
       <fileset dir="${src.dir}" includes="**/*.java"/>
-      <link href="http://docs.oracle.com/javase/7/docs/api"/>
-      <link href="http://szegedi.github.com/dynalink/0.4/javadoc"/>
+      <fileset dir="${jdk.asm.src.dir}" includes="**/*.java"/>
+      <link href="http://docs.oracle.com/javase/7/docs/api/"/>
+      <link href="http://szegedi.github.com/dynalink/0.4/javadoc/"/>
+      <!-- The following tags are used only in ASM sources - just ignore these -->
+      <tag name="label" description="label tag in ASM sources" enabled="false"/>
+      <tag name="linked" description="linked tag in ASM sources" enabled="false"/>
+      <tag name="associates" description="associates tag in ASM sources" enabled="false"/>
     </javadoc>
   </target>
 

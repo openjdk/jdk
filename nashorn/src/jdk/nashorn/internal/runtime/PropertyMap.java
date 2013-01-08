@@ -417,8 +417,8 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
     /**
      * Prevents properties in map from being modified.
      *
-     * @return New map with {@link NOT_EXTENSIBLE} flag set and properties with
-     * {@link Property.NOT_CONFIGURABLE} set.
+     * @return New map with {@link #NOT_EXTENSIBLE} flag set and properties with
+     * {@link Property#NOT_CONFIGURABLE} set.
      */
     PropertyMap seal() {
         PropertyHashMap newProperties = EMPTY_MAP;
@@ -437,7 +437,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * Prevents properties in map from being modified or written to.
      *
      * @return New map with {@link #NOT_EXTENSIBLE} flag set and properties with
-     * {@link Property.NOT_CONFIGURABLE} and {@link Property.NOT_WRITABLE} set.
+     * {@link Property#NOT_CONFIGURABLE} and {@link Property#NOT_WRITABLE} set.
      */
     PropertyMap freeze() {
         PropertyHashMap newProperties = EMPTY_MAP;
