@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6894072
+ * @compile -XDignore.symbol.file DynamicKeytab.java
  * @run main/othervm DynamicKeytab
  * @summary always refresh keytab
  */
