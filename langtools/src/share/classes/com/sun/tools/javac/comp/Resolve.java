@@ -506,6 +506,7 @@ public class Resolve {
                         List<Type> typeargtypes,
                         boolean allowBoxing,
                         boolean useVarargs,
+                        MethodCheck methodCheck,
                         Warner warn) throws Infer.InferenceException {
 
         Type mt = types.memberType(site, m);
@@ -558,10 +559,11 @@ public class Resolve {
                                     allowBoxing,
                                     useVarargs,
                                     currentResolutionContext,
+                                    methodCheck,
                                     warn);
 
-        checkRawArgumentsAcceptable(env, m, argtypes, mt.getParameterTypes(),
-                                allowBoxing, useVarargs, warn);
+        methodCheck.argumentsAcceptable(env, currentResolutionContext.deferredAttrContext(m, infer.emptyContext),
+                                argtypes, mt.getParameterTypes(), warn);
         return mt;
     }
 
@@ -578,7 +580,7 @@ public class Resolve {
             currentResolutionContext.attrMode = DeferredAttr.AttrMode.CHECK;
             MethodResolutionPhase step = currentResolutionContext.step = env.info.pendingResolutionPhase;
             return rawInstantiate(env, site, m, resultInfo, argtypes, typeargtypes,
-                    step.isBoxingRequired(), step.isVarargsRequired(), warn);
+                    step.isBoxingRequired(), step.isVarargsRequired(), resolveMethodCheck, warn);
         }
         finally {
             currentResolutionContext = prevContext;
@@ -595,80 +597,65 @@ public class Resolve {
                      List<Type> typeargtypes,
                      boolean allowBoxing,
                      boolean useVarargs,
+                     MethodCheck methodCheck,
                      Warner warn) {
         try {
             return rawInstantiate(env, site, m, resultInfo, argtypes, typeargtypes,
-                                  allowBoxing, useVarargs, warn);
+                                  allowBoxing, useVarargs, methodCheck, warn);
         } catch (InapplicableMethodException ex) {
             return null;
         }
     }
 
-    /** Check if a parameter list accepts a list of args.
+    /**
+     * This interface defines an entry point that should be used to perform a
+     * method check. A method check usually consist in determining as to whether
+     * a set of types (actuals) is compatible with another set of types (formals).
+     * Since the notion of compatibility can vary depending on the circumstances,
+     * this interfaces allows to easily add new pluggable method check routines.
      */
-    boolean argumentsAcceptable(Env<AttrContext> env,
-                                Symbol msym,
+    interface MethodCheck {
+        /**
+         * Main method check routine. A method check usually consist in determining
+         * as to whether a set of types (actuals) is compatible with another set of
+         * types (formals). If an incompatibility is found, an unchecked exception
+         * is assumed to be thrown.
+         */
+        void argumentsAcceptable(Env<AttrContext> env,
+                                DeferredAttrContext deferredAttrContext,
                                 List<Type> argtypes,
                                 List<Type> formals,
-                                boolean allowBoxing,
-                                boolean useVarargs,
-                                Warner warn) {
-        try {
-            checkRawArgumentsAcceptable(env, msym, argtypes, formals, allowBoxing, useVarargs, warn);
-            return true;
-        } catch (InapplicableMethodException ex) {
-            return false;
+                                Warner warn);
+    }
+
+    /**
+     * Helper enum defining all method check diagnostics (used by resolveMethodCheck).
+     */
+    enum MethodCheckDiag {
+        /**
+         * Actuals and formals differs in length.
+         */
+        ARITY_MISMATCH("arg.length.mismatch", "infer.arg.length.mismatch"),
+        /**
+         * An actual is incompatible with a formal.
+         */
+        ARG_MISMATCH("no.conforming.assignment.exists", "infer.no.conforming.assignment.exists"),
+        /**
+         * An actual is incompatible with the varargs element type.
+         */
+        VARARG_MISMATCH("varargs.argument.mismatch", "infer.varargs.argument.mismatch"),
+        /**
+         * The varargs element type is inaccessible.
+         */
+        INACCESSIBLE_VARARGS("inaccessible.varargs.type", "inaccessible.varargs.type");
+
+        final String basicKey;
+        final String inferKey;
+
+        MethodCheckDiag(String basicKey, String inferKey) {
+            this.basicKey = basicKey;
+            this.inferKey = inferKey;
         }
-    }
-    /**
-     * A check handler is used by the main method applicability routine in order
-     * to handle specific method applicability failures. It is assumed that a class
-     * implementing this interface should throw exceptions that are a subtype of
-     * InapplicableMethodException (see below). Such exception will terminate the
-     * method applicability check and propagate important info outwards (for the
-     * purpose of generating better diagnostics).
-     */
-    interface MethodCheckHandler {
-        /* The number of actuals and formals differ */
-        InapplicableMethodException arityMismatch();
-        /* An actual argument type does not conform to the corresponding formal type */
-        InapplicableMethodException argumentMismatch(boolean varargs, JCDiagnostic details);
-        /* The element type of a varargs is not accessible in the current context */
-        InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected);
-    }
-
-    /**
-     * Basic method check handler used within Resolve - all methods end up
-     * throwing InapplicableMethodException; a diagnostic fragment that describes
-     * the cause as to why the method is not applicable is set on the exception
-     * before it is thrown.
-     */
-    MethodCheckHandler resolveHandler = new MethodCheckHandler() {
-            public InapplicableMethodException arityMismatch() {
-                return inapplicableMethodException.setMessage("arg.length.mismatch");
-            }
-            public InapplicableMethodException argumentMismatch(boolean varargs, JCDiagnostic details) {
-                String key = varargs ?
-                        "varargs.argument.mismatch" :
-                        "no.conforming.assignment.exists";
-                return inapplicableMethodException.setMessage(key,
-                        details);
-            }
-            public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
-                return inapplicableMethodException.setMessage("inaccessible.varargs.type",
-                        expected, Kinds.kindName(location), location);
-            }
-    };
-
-    void checkRawArgumentsAcceptable(Env<AttrContext> env,
-                                Symbol msym,
-                                List<Type> argtypes,
-                                List<Type> formals,
-                                boolean allowBoxing,
-                                boolean useVarargs,
-                                Warner warn) {
-        checkRawArgumentsAcceptable(env, msym, currentResolutionContext.attrMode(), infer.emptyContext, argtypes, formals,
-                allowBoxing, useVarargs, warn, resolveHandler);
     }
 
     /**
@@ -689,68 +676,94 @@ public class Resolve {
      *
      * A method check handler (see above) is used in order to report errors.
      */
-    void checkRawArgumentsAcceptable(final Env<AttrContext> env,
-                                Symbol msym,
-                                DeferredAttr.AttrMode mode,
-                                final Infer.InferenceContext inferenceContext,
-                                List<Type> argtypes,
-                                List<Type> formals,
-                                boolean allowBoxing,
-                                boolean useVarargs,
-                                Warner warn,
-                                final MethodCheckHandler handler) {
-        Type varargsFormal = useVarargs ? formals.last() : null;
+    MethodCheck resolveMethodCheck = new MethodCheck() {
+        @Override
+        public void argumentsAcceptable(final Env<AttrContext> env,
+                                    DeferredAttrContext deferredAttrContext,
+                                    List<Type> argtypes,
+                                    List<Type> formals,
+                                    Warner warn) {
+            //should we expand formals?
+            boolean useVarargs = deferredAttrContext.phase.isVarargsRequired();
 
-        if (varargsFormal == null &&
-                argtypes.size() != formals.size()) {
-            throw handler.arityMismatch(); // not enough args
-        }
+            //inference context used during this method check
+            InferenceContext inferenceContext = deferredAttrContext.inferenceContext;
 
-        DeferredAttr.DeferredAttrContext deferredAttrContext =
-                deferredAttr.new DeferredAttrContext(mode, msym, currentResolutionContext.step, inferenceContext);
+            Type varargsFormal = useVarargs ? formals.last() : null;
 
-        while (argtypes.nonEmpty() && formals.head != varargsFormal) {
-            ResultInfo mresult = methodCheckResult(formals.head, allowBoxing, false, inferenceContext, deferredAttrContext, handler, warn);
-            mresult.check(null, argtypes.head);
-            argtypes = argtypes.tail;
-            formals = formals.tail;
-        }
+            if (varargsFormal == null &&
+                    argtypes.size() != formals.size()) {
+                report(MethodCheckDiag.ARITY_MISMATCH, inferenceContext); // not enough args
+            }
 
-        if (formals.head != varargsFormal) {
-            throw handler.arityMismatch(); // not enough args
-        }
-
-        if (useVarargs) {
-            //note: if applicability check is triggered by most specific test,
-            //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
-            final Type elt = types.elemtype(varargsFormal);
-            ResultInfo mresult = methodCheckResult(elt, allowBoxing, true, inferenceContext, deferredAttrContext, handler, warn);
-            while (argtypes.nonEmpty()) {
+            while (argtypes.nonEmpty() && formals.head != varargsFormal) {
+                ResultInfo mresult = methodCheckResult(false, formals.head, deferredAttrContext, warn);
                 mresult.check(null, argtypes.head);
                 argtypes = argtypes.tail;
+                formals = formals.tail;
             }
-            //check varargs element type accessibility
-            varargsAccessible(env, elt, handler, inferenceContext);
-        }
 
-        deferredAttrContext.complete();
-    }
+            if (formals.head != varargsFormal) {
+                report(MethodCheckDiag.ARITY_MISMATCH, inferenceContext); // not enough args
+            }
 
-    void varargsAccessible(final Env<AttrContext> env, final Type t, final Resolve.MethodCheckHandler handler, final InferenceContext inferenceContext) {
-        if (inferenceContext.free(t)) {
-            inferenceContext.addFreeTypeListener(List.of(t), new FreeTypeListener() {
-                @Override
-                public void typesInferred(InferenceContext inferenceContext) {
-                    varargsAccessible(env, inferenceContext.asInstType(t, types), handler, inferenceContext);
+            if (useVarargs) {
+                //note: if applicability check is triggered by most specific test,
+                //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
+                final Type elt = types.elemtype(varargsFormal);
+                ResultInfo mresult = methodCheckResult(true, elt, deferredAttrContext, warn);
+                while (argtypes.nonEmpty()) {
+                    mresult.check(null, argtypes.head);
+                    argtypes = argtypes.tail;
                 }
-            });
-        } else {
-            if (!isAccessible(env, t)) {
-                Symbol location = env.enclClass.sym;
-                throw handler.inaccessibleVarargs(location, t);
+                //check varargs element type accessibility
+                varargsAccessible(env, elt, inferenceContext);
             }
         }
-    }
+
+        private void report(MethodCheckDiag diag, InferenceContext inferenceContext, Object... args) {
+            boolean inferDiag = inferenceContext != infer.emptyContext;
+            InapplicableMethodException ex = inferDiag ?
+                    infer.inferenceException : inapplicableMethodException;
+            if (inferDiag && (!diag.inferKey.equals(diag.basicKey))) {
+                Object[] args2 = new Object[args.length + 1];
+                System.arraycopy(args, 0, args2, 1, args.length);
+                args2[0] = inferenceContext.inferenceVars();
+                args = args2;
+            }
+            throw ex.setMessage(inferDiag ? diag.inferKey : diag.basicKey, args);
+        }
+
+        private void varargsAccessible(final Env<AttrContext> env, final Type t, final InferenceContext inferenceContext) {
+            if (inferenceContext.free(t)) {
+                inferenceContext.addFreeTypeListener(List.of(t), new FreeTypeListener() {
+                    @Override
+                    public void typesInferred(InferenceContext inferenceContext) {
+                        varargsAccessible(env, inferenceContext.asInstType(t, types), inferenceContext);
+                    }
+                });
+            } else {
+                if (!isAccessible(env, t)) {
+                    Symbol location = env.enclClass.sym;
+                    report(MethodCheckDiag.INACCESSIBLE_VARARGS, inferenceContext, t, Kinds.kindName(location), location);
+                }
+            }
+        }
+
+        private ResultInfo methodCheckResult(final boolean varargsCheck, Type to,
+                final DeferredAttr.DeferredAttrContext deferredAttrContext, Warner rsWarner) {
+            CheckContext checkContext = new MethodCheckContext(!deferredAttrContext.phase.isBoxingRequired(), deferredAttrContext, rsWarner) {
+                MethodCheckDiag methodDiag = varargsCheck ?
+                                 MethodCheckDiag.VARARG_MISMATCH : MethodCheckDiag.ARG_MISMATCH;
+
+                @Override
+                public void report(DiagnosticPosition pos, JCDiagnostic details) {
+                    report(methodDiag, deferredAttrContext.inferenceContext, details);
+                }
+            };
+            return new MethodResultInfo(to, checkContext);
+        }
+    };
 
     /**
      * Check context to be used during method applicability checks. A method check
@@ -758,23 +771,24 @@ public class Resolve {
      */
     abstract class MethodCheckContext implements CheckContext {
 
-        MethodCheckHandler handler;
-        boolean useVarargs;
-        Infer.InferenceContext inferenceContext;
+        boolean strict;
         DeferredAttrContext deferredAttrContext;
         Warner rsWarner;
 
-        public MethodCheckContext(MethodCheckHandler handler, boolean useVarargs,
-                Infer.InferenceContext inferenceContext, DeferredAttrContext deferredAttrContext, Warner rsWarner) {
-            this.handler = handler;
-            this.useVarargs = useVarargs;
-            this.inferenceContext = inferenceContext;
-            this.deferredAttrContext = deferredAttrContext;
-            this.rsWarner = rsWarner;
+        public MethodCheckContext(boolean strict, DeferredAttrContext deferredAttrContext, Warner rsWarner) {
+           this.strict = strict;
+           this.deferredAttrContext = deferredAttrContext;
+           this.rsWarner = rsWarner;
+        }
+
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return strict ?
+                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asFree(req, types), warn) :
+                    types.isConvertible(found, deferredAttrContext.inferenceContext.asFree(req, types), warn);
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
-            throw handler.argumentMismatch(useVarargs, details);
+            throw inapplicableMethodException.setMessage(details);
         }
 
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
@@ -782,7 +796,7 @@ public class Resolve {
         }
 
         public InferenceContext inferenceContext() {
-            return inferenceContext;
+            return deferredAttrContext.inferenceContext;
         }
 
         public DeferredAttrContext deferredAttrContext() {
@@ -791,56 +805,13 @@ public class Resolve {
     }
 
     /**
-     * Subclass of method check context class that implements strict method conversion.
-     * Strict method conversion checks compatibility between types using subtyping tests.
+     * ResultInfo class to be used during method applicability checks. Check
+     * for deferred types goes through special path.
      */
-    class StrictMethodContext extends MethodCheckContext {
-
-        public StrictMethodContext(MethodCheckHandler handler, boolean useVarargs,
-                Infer.InferenceContext inferenceContext, DeferredAttrContext deferredAttrContext, Warner rsWarner) {
-            super(handler, useVarargs, inferenceContext, deferredAttrContext, rsWarner);
-        }
-
-        public boolean compatible(Type found, Type req, Warner warn) {
-            return types.isSubtypeUnchecked(found, inferenceContext.asFree(req, types), warn);
-        }
-    }
-
-    /**
-     * Subclass of method check context class that implements loose method conversion.
-     * Loose method conversion checks compatibility between types using method conversion tests.
-     */
-    class LooseMethodContext extends MethodCheckContext {
-
-        public LooseMethodContext(MethodCheckHandler handler, boolean useVarargs,
-                Infer.InferenceContext inferenceContext, DeferredAttrContext deferredAttrContext, Warner rsWarner) {
-            super(handler, useVarargs, inferenceContext, deferredAttrContext, rsWarner);
-        }
-
-        public boolean compatible(Type found, Type req, Warner warn) {
-            return types.isConvertible(found, inferenceContext.asFree(req, types), warn);
-        }
-    }
-
-    /**
-     * Create a method check context to be used during method applicability check
-     */
-    ResultInfo methodCheckResult(Type to, boolean allowBoxing, boolean useVarargs,
-            Infer.InferenceContext inferenceContext, DeferredAttr.DeferredAttrContext deferredAttrContext,
-            MethodCheckHandler methodHandler, Warner rsWarner) {
-        MethodCheckContext checkContext = allowBoxing ?
-                new LooseMethodContext(methodHandler, useVarargs, inferenceContext, deferredAttrContext, rsWarner) :
-                new StrictMethodContext(methodHandler, useVarargs, inferenceContext, deferredAttrContext, rsWarner);
-        return new MethodResultInfo(to, checkContext, deferredAttrContext);
-    }
-
     class MethodResultInfo extends ResultInfo {
 
-        DeferredAttr.DeferredAttrContext deferredAttrContext;
-
-        public MethodResultInfo(Type pt, CheckContext checkContext, DeferredAttr.DeferredAttrContext deferredAttrContext) {
+        public MethodResultInfo(Type pt, CheckContext checkContext) {
             attr.super(VAL, pt, checkContext);
-            this.deferredAttrContext = deferredAttrContext;
         }
 
         @Override
@@ -855,12 +826,12 @@ public class Resolve {
 
         @Override
         protected MethodResultInfo dup(Type newPt) {
-            return new MethodResultInfo(newPt, checkContext, deferredAttrContext);
+            return new MethodResultInfo(newPt, checkContext);
         }
 
         @Override
         protected ResultInfo dup(CheckContext newContext) {
-            return new MethodResultInfo(pt, newContext, deferredAttrContext);
+            return new MethodResultInfo(pt, newContext);
         }
     }
 
@@ -1071,7 +1042,7 @@ public class Resolve {
         Assert.check(sym.kind < AMBIGUOUS);
         try {
             Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
-                               allowBoxing, useVarargs, types.noWarnings);
+                               allowBoxing, useVarargs, resolveMethodCheck, types.noWarnings);
             if (!operator)
                 currentResolutionContext.addApplicableCandidate(sym, mt);
         } catch (InapplicableMethodException ex) {
@@ -1274,12 +1245,19 @@ public class Resolve {
     }
     //where
     private boolean invocationMoreSpecific(Env<AttrContext> env, Type site, Symbol m2, List<Type> argtypes1, boolean allowBoxing, boolean useVarargs) {
-        noteWarner.clear();
-        Type mst = instantiate(env, site, m2, null,
-                types.lowerBounds(argtypes1), null,
-                allowBoxing, false, noteWarner);
-        return mst != null &&
-                !noteWarner.hasLint(Lint.LintCategory.UNCHECKED);
+        MethodResolutionContext prevContext = currentResolutionContext;
+        try {
+            currentResolutionContext = new MethodResolutionContext();
+            currentResolutionContext.step = allowBoxing ? BOX : BASIC;
+            noteWarner.clear();
+            Type mst = instantiate(env, site, m2, null,
+                    types.lowerBounds(argtypes1), null,
+                    allowBoxing, false, resolveMethodCheck, noteWarner);
+            return mst != null &&
+                    !noteWarner.hasLint(Lint.LintCategory.UNCHECKED);
+        } finally {
+            currentResolutionContext = prevContext;
+        }
     }
     //where
     private Symbol adjustVarargs(Symbol to, Symbol from, boolean useVarargs) {
@@ -2366,9 +2344,11 @@ public class Resolve {
         try {
             currentResolutionContext = new MethodResolutionContext();
             Name name = treeinfo.operatorName(optag);
+            env.info.pendingResolutionPhase = currentResolutionContext.step = BASIC;
             Symbol sym = findMethod(env, syms.predefClass.type, name, argtypes,
                                     null, false, false, true);
             if (boxingEnabled && sym.kind >= WRONG_MTHS)
+                env.info.pendingResolutionPhase = currentResolutionContext.step = BOX;
                 sym = findMethod(env, syms.predefClass.type, name, argtypes,
                                  null, true, false, true);
             return accessMethod(sym, pos, env.enclClass.sym.type, name,
@@ -3448,6 +3428,10 @@ public class Resolve {
         void addApplicableCandidate(Symbol sym, Type mtype) {
             Candidate c = new Candidate(currentResolutionContext.step, sym, null, mtype);
             candidates = candidates.append(c);
+        }
+
+        DeferredAttrContext deferredAttrContext(Symbol sym, InferenceContext inferenceContext) {
+            return deferredAttr.new DeferredAttrContext(attrMode, sym, step, inferenceContext);
         }
 
         /**
