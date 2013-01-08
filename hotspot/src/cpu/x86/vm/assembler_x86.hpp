@@ -1444,9 +1444,12 @@ private:
   // Shift Right by bytes Logical DoubleQuadword Immediate
   void psrldq(XMMRegister dst, int shift);
 
-  // Logical Compare Double Quadword
+  // Logical Compare 128bit
   void ptest(XMMRegister dst, XMMRegister src);
   void ptest(XMMRegister dst, Address src);
+  // Logical Compare 256bit
+  void vptest(XMMRegister dst, XMMRegister src);
+  void vptest(XMMRegister dst, Address src);
 
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);
