@@ -651,6 +651,26 @@ JNF_COCOA_EXIT(env);
 }
 
 /*
+ * Class:     sun_lwawt_macosx_CWrapper$NSView
+ * Method:    setHidden
+ * Signature: (JZ)V
+ */
+JNIEXPORT jlong JNICALL
+Java_sun_lwawt_macosx_CWrapper_00024NSView_setHidden
+(JNIEnv *env, jclass cls, jlong viewPtr, jboolean toHide)
+{    
+    JNF_COCOA_ENTER(env);
+    
+    NSView *view = (NSView *)jlong_to_ptr(viewPtr);
+    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+        [view setHidden:(BOOL)toHide];
+    }];
+    
+    JNF_COCOA_EXIT(env);
+}
+
+
+/*
  * Class:     sun_lwawt_macosx_CWrapper$NSScreen
  * Method:    frame
  * Signature: (J)Ljava/awt/Rectangle;

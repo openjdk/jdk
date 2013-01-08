@@ -52,5 +52,5 @@ esac
 
 ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}OriginServer.java \
     ${TESTSRC}${FS}ProxyTunnelServer.java ${TESTSRC}${FS}PostThruProxy.java
-${TESTJAVA}${FS}bin${FS}java PostThruProxy ${HOSTNAME} ${TESTSRC}
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} PostThruProxy ${HOSTNAME} ${TESTSRC}
 exit

@@ -26,20 +26,26 @@
  * @bug 4727547
  * @summary SocksSocketImpl throws NullPointerException
  * @build SocksServer
- * @run main SocksV4Test
  */
 
 import java.net.*;
 
 public class SocksV4Test {
+
+    // An unresolvable host
+    static final String HOSTNAME = "doesnot.exist.invalid";
+
     public static void main(String[] args) throws Exception {
+        // sanity before running the test
+        assertUnresolvableHost(HOSTNAME);
+
         // Create a SOCKS V4 proxy
         SocksServer srvr = new SocksServer(0, true);
         srvr.start();
         Proxy sp = new Proxy(Proxy.Type.SOCKS,
                              new InetSocketAddress("localhost", srvr.getPort()));
         // Let's create an unresolved address
-        InetSocketAddress ad = new InetSocketAddress("doesnt.exist.name", 1234);
+        InetSocketAddress ad = new InetSocketAddress(HOSTNAME, 1234);
         try (Socket s = new Socket(sp)) {
             s.connect(ad, 10000);
         } catch (UnknownHostException ex) {
@@ -50,5 +56,16 @@ public class SocksV4Test {
         } finally {
             srvr.terminate();
         }
+    }
+
+    static void assertUnresolvableHost(String host) {
+        InetAddress addr = null;
+        try {
+            addr = InetAddress.getByName(host);
+        } catch (UnknownHostException x) {
+            // OK, expected
+        }
+        if (addr != null)
+            throw new RuntimeException("Test cannot run. resolvable address:" + addr);
     }
 }

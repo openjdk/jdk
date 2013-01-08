@@ -327,14 +327,14 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length) {
   return result;
 }
 
-unsigned int java_lang_String::to_hash(oop java_string) {
+unsigned int java_lang_String::hash_code(oop java_string) {
   int          length = java_lang_String::length(java_string);
-  // Zero length string will hash to zero with String.toHash() function.
+  // Zero length string will hash to zero with String.hashCode() function.
   if (length == 0) return 0;
 
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);
-  return java_lang_String::to_hash(value->char_at_addr(offset), length);
+  return java_lang_String::hash_code(value->char_at_addr(offset), length);
 }
 
 char* java_lang_String::as_quoted_ascii(oop java_string) {
@@ -1813,10 +1813,12 @@ void java_lang_reflect_Method::compute_offsets() {
   annotations_offset = -1;
   parameter_annotations_offset = -1;
   annotation_default_offset = -1;
+  type_annotations_offset = -1;
   compute_optional_offset(signature_offset,             k, vmSymbols::signature_name(),             vmSymbols::string_signature());
   compute_optional_offset(annotations_offset,           k, vmSymbols::annotations_name(),           vmSymbols::byte_array_signature());
   compute_optional_offset(parameter_annotations_offset, k, vmSymbols::parameter_annotations_name(), vmSymbols::byte_array_signature());
   compute_optional_offset(annotation_default_offset,    k, vmSymbols::annotation_default_name(),    vmSymbols::byte_array_signature());
+  compute_optional_offset(type_annotations_offset,      k, vmSymbols::type_annotations_name(),      vmSymbols::byte_array_signature());
 }
 
 Handle java_lang_reflect_Method::create(TRAPS) {
@@ -1962,6 +1964,22 @@ void java_lang_reflect_Method::set_annotation_default(oop method, oop value) {
   method->obj_field_put(annotation_default_offset, value);
 }
 
+bool java_lang_reflect_Method::has_type_annotations_field() {
+  return (type_annotations_offset >= 0);
+}
+
+oop java_lang_reflect_Method::type_annotations(oop method) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  assert(has_type_annotations_field(), "type_annotations field must be present");
+  return method->obj_field(type_annotations_offset);
+}
+
+void java_lang_reflect_Method::set_type_annotations(oop method, oop value) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  assert(has_type_annotations_field(), "type_annotations field must be present");
+  method->obj_field_put(type_annotations_offset, value);
+}
+
 void java_lang_reflect_Constructor::compute_offsets() {
   Klass* k = SystemDictionary::reflect_Constructor_klass();
   compute_offset(clazz_offset,          k, vmSymbols::clazz_name(),          vmSymbols::class_signature());
@@ -1973,9 +1991,11 @@ void java_lang_reflect_Constructor::compute_offsets() {
   signature_offset = -1;
   annotations_offset = -1;
   parameter_annotations_offset = -1;
+  type_annotations_offset = -1;
   compute_optional_offset(signature_offset,             k, vmSymbols::signature_name(),             vmSymbols::string_signature());
   compute_optional_offset(annotations_offset,           k, vmSymbols::annotations_name(),           vmSymbols::byte_array_signature());
   compute_optional_offset(parameter_annotations_offset, k, vmSymbols::parameter_annotations_name(), vmSymbols::byte_array_signature());
+  compute_optional_offset(type_annotations_offset,      k, vmSymbols::type_annotations_name(),      vmSymbols::byte_array_signature());
 }
 
 Handle java_lang_reflect_Constructor::create(TRAPS) {
@@ -2086,6 +2106,22 @@ void java_lang_reflect_Constructor::set_parameter_annotations(oop method, oop va
   method->obj_field_put(parameter_annotations_offset, value);
 }
 
+bool java_lang_reflect_Constructor::has_type_annotations_field() {
+  return (type_annotations_offset >= 0);
+}
+
+oop java_lang_reflect_Constructor::type_annotations(oop constructor) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  assert(has_type_annotations_field(), "type_annotations field must be present");
+  return constructor->obj_field(type_annotations_offset);
+}
+
+void java_lang_reflect_Constructor::set_type_annotations(oop constructor, oop value) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  assert(has_type_annotations_field(), "type_annotations field must be present");
+  constructor->obj_field_put(type_annotations_offset, value);
+}
+
 void java_lang_reflect_Field::compute_offsets() {
   Klass* k = SystemDictionary::reflect_Field_klass();
   compute_offset(clazz_offset,     k, vmSymbols::clazz_name(),     vmSymbols::class_signature());
@@ -2096,8 +2132,10 @@ void java_lang_reflect_Field::compute_offsets() {
   // The generic signature and annotations fields are only present in 1.5
   signature_offset = -1;
   annotations_offset = -1;
+  type_annotations_offset = -1;
   compute_optional_offset(signature_offset, k, vmSymbols::signature_name(), vmSymbols::string_signature());
   compute_optional_offset(annotations_offset,  k, vmSymbols::annotations_name(),  vmSymbols::byte_array_signature());
+  compute_optional_offset(type_annotations_offset,  k, vmSymbols::type_annotations_name(),  vmSymbols::byte_array_signature());
 }
 
 Handle java_lang_reflect_Field::create(TRAPS) {
@@ -2192,6 +2230,21 @@ void java_lang_reflect_Field::set_annotations(oop field, oop value) {
   field->obj_field_put(annotations_offset, value);
 }
 
+bool java_lang_reflect_Field::has_type_annotations_field() {
+  return (type_annotations_offset >= 0);
+}
+
+oop java_lang_reflect_Field::type_annotations(oop field) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  assert(has_type_annotations_field(), "type_annotations field must be present");
+  return field->obj_field(type_annotations_offset);
+}
+
+void java_lang_reflect_Field::set_type_annotations(oop field, oop value) {
+  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
+  assert(has_type_annotations_field(), "type_annotations field must be present");
+  field->obj_field_put(type_annotations_offset, value);
+}
 
 void sun_reflect_ConstantPool::compute_offsets() {
   Klass* k = SystemDictionary::reflect_ConstantPool_klass();
@@ -2857,6 +2910,7 @@ int java_lang_reflect_Method::signature_offset;
 int java_lang_reflect_Method::annotations_offset;
 int java_lang_reflect_Method::parameter_annotations_offset;
 int java_lang_reflect_Method::annotation_default_offset;
+int java_lang_reflect_Method::type_annotations_offset;
 int java_lang_reflect_Constructor::clazz_offset;
 int java_lang_reflect_Constructor::parameterTypes_offset;
 int java_lang_reflect_Constructor::exceptionTypes_offset;
@@ -2865,6 +2919,7 @@ int java_lang_reflect_Constructor::modifiers_offset;
 int java_lang_reflect_Constructor::signature_offset;
 int java_lang_reflect_Constructor::annotations_offset;
 int java_lang_reflect_Constructor::parameter_annotations_offset;
+int java_lang_reflect_Constructor::type_annotations_offset;
 int java_lang_reflect_Field::clazz_offset;
 int java_lang_reflect_Field::name_offset;
 int java_lang_reflect_Field::type_offset;
@@ -2872,6 +2927,7 @@ int java_lang_reflect_Field::slot_offset;
 int java_lang_reflect_Field::modifiers_offset;
 int java_lang_reflect_Field::signature_offset;
 int java_lang_reflect_Field::annotations_offset;
+int java_lang_reflect_Field::type_annotations_offset;
 int java_lang_boxing_object::value_offset;
 int java_lang_boxing_object::long_value_offset;
 int java_lang_ref_Reference::referent_offset;

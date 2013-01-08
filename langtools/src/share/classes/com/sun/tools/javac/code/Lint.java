@@ -28,11 +28,14 @@ package com.sun.tools.javac.code;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import javax.lang.model.element.Modifier;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
+
 import static com.sun.tools.javac.code.Flags.*;
 
 
@@ -95,7 +98,8 @@ public class Lint
     private final EnumSet<LintCategory> values;
     private final EnumSet<LintCategory> suppressedValues;
 
-    private static Map<String, LintCategory> map = new HashMap<String,LintCategory>();
+    private static final Map<String, LintCategory> map =
+            new java.util.concurrent.ConcurrentHashMap<String, LintCategory>(20);
 
 
     protected Lint(Context context) {

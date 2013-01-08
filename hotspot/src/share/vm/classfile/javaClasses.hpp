@@ -166,8 +166,8 @@ class java_lang_String : AllStatic {
   // objects in the shared archive file.
   // hash P(31) from Kernighan & Ritchie
   //
-  // For this reason, THIS ALGORITHM MUST MATCH String.toHash().
-  template <typename T> static unsigned int to_hash(T* s, int len) {
+  // For this reason, THIS ALGORITHM MUST MATCH String.hashCode().
+  template <typename T> static unsigned int hash_code(T* s, int len) {
     unsigned int h = 0;
     while (len-- > 0) {
       h = 31*h + (unsigned int) *s;
@@ -175,10 +175,10 @@ class java_lang_String : AllStatic {
     }
     return h;
   }
-  static unsigned int to_hash(oop java_string);
+  static unsigned int hash_code(oop java_string);
 
   // This is the string hash code used by the StringTable, which may be
-  // the same as String.toHash or an alternate hash code.
+  // the same as String.hashCode or an alternate hash code.
   static unsigned int hash_string(oop java_string);
 
   static bool equals(oop java_string, jchar* chars, int len);
@@ -554,6 +554,7 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static int annotations_offset;
   static int parameter_annotations_offset;
   static int annotation_default_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -599,6 +600,10 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop method);
+  static void set_type_annotations(oop method, oop value);
+
   // Debugging
   friend class JavaClasses;
 };
@@ -618,6 +623,7 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static int signature_offset;
   static int annotations_offset;
   static int parameter_annotations_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -653,6 +659,10 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static oop parameter_annotations(oop method);
   static void set_parameter_annotations(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop constructor);
+  static void set_type_annotations(oop constructor, oop value);
+
   // Debugging
   friend class JavaClasses;
 };
@@ -671,6 +681,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int modifiers_offset;
   static int signature_offset;
   static int annotations_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -709,6 +720,10 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static bool has_annotation_default_field();
   static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
+
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop field);
+  static void set_type_annotations(oop field, oop value);
 
   // Debugging
   friend class JavaClasses;

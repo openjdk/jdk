@@ -1573,6 +1573,23 @@ JVM_ENTRY(jbyteArray, JVM_GetMethodParameterAnnotations(JNIEnv *env, jobject met
     Annotations::make_java_array(m->parameter_annotations(), THREAD));
 JVM_END
 
+/* Type use annotations support (JDK 1.8) */
+
+JVM_ENTRY(jbyteArray, JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls))
+  assert (cls != NULL, "illegal class");
+  JVMWrapper("JVM_GetClassTypeAnnotations");
+  ResourceMark rm(THREAD);
+  // Return null for arrays and primitives
+  if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
+    Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
+    if (k->oop_is_instance()) {
+      typeArrayOop a = Annotations::make_java_array(InstanceKlass::cast(k)->type_annotations()->class_annotations(), CHECK_NULL);
+      return (jbyteArray) JNIHandles::make_local(env, a);
+    }
+  }
+  return NULL;
+JVM_END
+
 
 // New (JDK 1.4) reflection implementation /////////////////////////////////////
 

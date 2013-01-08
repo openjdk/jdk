@@ -20,4 +20,3 @@ import java.lang.annotation.ContainerFor;
 
 @Foo @Foo
 public class MissingDefaultCase1 {}
-

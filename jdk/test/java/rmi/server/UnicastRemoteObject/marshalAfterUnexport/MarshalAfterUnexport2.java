@@ -33,8 +33,7 @@
  * @author Peter Jones
  * @author Ann Wollrath
  *
- * @build MarshalAfterUnexport2
- * @build MarshalAfterUnexport2_Stub
+ * @build MarshalAfterUnexport2 MarshalAfterUnexport2_Stub
  * @run main/othervm MarshalAfterUnexport2
  */
 
