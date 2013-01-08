@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public final class AESKeyGenerator extends KeyGeneratorSpi {
         SecretKeySpec aesKey = null;
 
         if (this.random == null) {
-            this.random = SunJCE.RANDOM;
+            this.random = SunJCE.getRandom();
         }
 
         byte[] keyBytes = new byte[keySize];
