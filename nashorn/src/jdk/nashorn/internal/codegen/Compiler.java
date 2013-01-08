@@ -55,8 +55,8 @@ import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.Source;
-import jdk.nashorn.internal.runtime.linker.Mangler;
 import jdk.nashorn.internal.runtime.options.Options;
+import org.dynalang.dynalink.support.NameCodec;
 
 /**
  * Responsible for converting JavaScripts to java byte code. Main entry
@@ -511,7 +511,7 @@ public final class Compiler {
         }
 
         baseName = baseName.replace('.', '_').replace('-', '_');
-        final String mangled = Mangler.mangle(baseName);
+        final String mangled = NameCodec.encode(baseName);
 
         baseName = mangled != null ? mangled : baseName;
         return baseName;
