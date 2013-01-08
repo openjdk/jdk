@@ -631,9 +631,34 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return FindPropertyData or null if not found.
      */
     public final FindProperty findProperty(final String key, final boolean deep) {
+        return findProperty(key, deep, false);
+    }
+
+    /**
+     * Low level property API (not using property descriptors)
+     * <p>
+     * Find a property in the prototype hierarchy. Note: this is final and not
+     * a good idea to override. If you have to, use
+     * {jdk.nashorn.internal.objects.NativeArray{@link #getProperty(String)} or
+     * {jdk.nashorn.internal.objects.NativeArray{@link #getPropertyDescriptor(String)} as the
+     * overriding way to find array properties
+     *
+     * @see jdk.nashorn.internal.objects.NativeArray
+     *
+     * @param key  Property key.
+     * @param deep Whether the search should look up proto chain.
+     * @param stopOnNonScope should a deep search stop on the first non-scope object?
+     *
+     * @return FindPropertyData or null if not found.
+     */
+    public final FindProperty findProperty(final String key, final boolean deep, final boolean stopOnNonScope) {
         int depth = 0;
 
         for (ScriptObject self = this; self != null; self = self.getProto()) {
+            // if doing deep search, stop search on the first non-scope object if asked to do so
+            if (stopOnNonScope && depth != 0 && !self.isScope()) {
+                break;
+            }
             final PropertyMap selfMap  = self.getMap();
             final Property    property = selfMap.findProperty(key);
 
@@ -1731,9 +1756,17 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return findMegaMorphicSetMethod(desc, name);
         }
 
-        FindProperty find = findProperty(name, true);
+        final boolean scope = isScope();
+        /*
+         * If doing property set on a scope object, we should stop proto search on the first
+         * non-scope object. Without this, for exmaple, when assigning "toString" on global scope,
+         * we'll end up assigning it on it's proto - which is Object.prototype.toString !!
+         *
+         * toString = function() { print("global toString"); } // don't affect Object.prototype.toString
+         */
+        FindProperty find = findProperty(name, true, scope);
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
-        if (!isScope() && find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
+        if (!scope && find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
             // We should still check if inherited data property is not writable
             if (isExtensible() && !find.isWritable()) {
                 return createEmptySetMethod(desc, "property.not.writable", false);
