@@ -192,16 +192,16 @@ char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol
   return buf;
 }
 
-int  Method::fast_exception_handler_bci_for(KlassHandle ex_klass, int throw_bci, TRAPS) {
+int Method::fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS) {
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table
-  ExceptionTable table(this);
+  ExceptionTable table(mh());
   int length = table.length();
   // iterate through all entries sequentially
-  constantPoolHandle pool(THREAD, constants());
+  constantPoolHandle pool(THREAD, mh->constants());
   for (int i = 0; i < length; i ++) {
     //reacquire the table in case a GC happened
-    ExceptionTable table(this);
+    ExceptionTable table(mh());
     int beg_bci = table.start_pc(i);
     int end_bci = table.end_pc(i);
     assert(beg_bci <= end_bci, "inconsistent exception table");
