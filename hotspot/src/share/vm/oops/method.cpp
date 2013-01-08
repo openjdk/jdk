@@ -64,6 +64,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                          int localvariable_table_length,
                          int exception_table_length,
                          int checked_exceptions_length,
+                         int method_parameters_length,
                          u2  generic_signature_index,
                          ConstMethod::MethodType method_type,
                          TRAPS) {
@@ -75,6 +76,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                                           localvariable_table_length,
                                           exception_table_length,
                                           checked_exceptions_length,
+                                          method_parameters_length,
                                           generic_signature_index,
                                           method_type,
                                           CHECK_NULL);
@@ -1035,8 +1037,10 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 
   methodHandle m;
   {
-    Method* m_oop = Method::allocate(loader_data, 0, accessFlags_from(flags_bits),
-             0, 0, 0, 0, 0, ConstMethod::NORMAL, CHECK_(empty));
+    Method* m_oop = Method::allocate(loader_data, 0,
+                                     accessFlags_from(flags_bits),
+                                     0, 0, 0, 0, 0, 0,
+                                     ConstMethod::NORMAL, CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
   m->set_constants(cp());
@@ -1088,6 +1092,7 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   int checked_exceptions_len = m->checked_exceptions_length();
   int localvariable_len = m->localvariable_table_length();
   int exception_table_len = m->exception_table_length();
+  int method_parameters_len = m->method_parameters_length();
 
   ClassLoaderData* loader_data = m->method_holder()->class_loader_data();
   Method* newm_oop = Method::allocate(loader_data,
@@ -1097,6 +1102,7 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
                                       localvariable_len,
                                       exception_table_len,
                                       checked_exceptions_len,
+                                      method_parameters_len,
                                       generic_signature_index,
                                       m->method_type(),
                                       CHECK_(methodHandle()));

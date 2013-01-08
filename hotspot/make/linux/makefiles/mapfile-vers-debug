@@ -151,6 +151,7 @@ SUNWprivate_1.1 {
                 JVM_GetMethodIxNameUTF;
                 JVM_GetMethodIxSignatureUTF;
                 JVM_GetMethodParameterAnnotations;
+                JVM_GetMethodParameters;
                 JVM_GetPrimitiveArrayElement;
                 JVM_GetProtectionDomain;
                 JVM_GetSockName;

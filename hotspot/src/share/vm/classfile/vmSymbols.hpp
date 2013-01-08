@@ -86,6 +86,7 @@
   template(java_lang_reflect_Method,                  "java/lang/reflect/Method")                 \
   template(java_lang_reflect_Constructor,             "java/lang/reflect/Constructor")            \
   template(java_lang_reflect_Field,                   "java/lang/reflect/Field")                  \
+  template(java_lang_reflect_Parameter,               "java/lang/reflect/Parameter")              \
   template(java_lang_reflect_Array,                   "java/lang/reflect/Array")                  \
   template(java_lang_StringBuffer,                    "java/lang/StringBuffer")                   \
   template(java_lang_StringBuilder,                   "java/lang/StringBuilder")                  \
@@ -126,6 +127,7 @@
   template(tag_line_number_table,                     "LineNumberTable")                          \
   template(tag_local_variable_table,                  "LocalVariableTable")                       \
   template(tag_local_variable_type_table,             "LocalVariableTypeTable")                   \
+  template(tag_method_parameters,                     "MethodParameters")                         \
   template(tag_stack_map_table,                       "StackMapTable")                            \
   template(tag_synthetic,                             "Synthetic")                                \
   template(tag_deprecated,                            "Deprecated")                               \
@@ -235,6 +237,8 @@
   /* Support for annotations (JDK 1.5 and above) */                                               \
                                                                                                   \
   template(annotations_name,                          "annotations")                              \
+  template(index_name,                                "index")                                    \
+  template(executable_name,                           "executable")                               \
   template(parameter_annotations_name,                "parameterAnnotations")                     \
   template(annotation_default_name,                   "annotationDefault")                        \
   template(sun_reflect_ConstantPool,                  "sun/reflect/ConstantPool")                 \
@@ -475,6 +479,7 @@
   template(class_signature,                           "Ljava/lang/Class;")                                        \
   template(string_signature,                          "Ljava/lang/String;")                                       \
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
+  template(executable_signature,                      "Ljava/lang/reflect/Executable;")                           \
   template(concurrenthashmap_signature,               "Ljava/util/concurrent/ConcurrentHashMap;")                 \
   template(String_StringBuilder_signature,            "(Ljava/lang/String;)Ljava/lang/StringBuilder;")            \
   template(int_StringBuilder_signature,               "(I)Ljava/lang/StringBuilder;")                             \

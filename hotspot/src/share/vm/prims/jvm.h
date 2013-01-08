@@ -86,6 +86,8 @@ extern "C" {
 
 #define JVM_INTERFACE_VERSION 4
 
+JNIEXPORT jobjectArray JNICALL
+JVM_GetMethodParameters(JNIEnv *env, jobject method);
 
 JNIEXPORT jint JNICALL
 JVM_GetInterfaceVersion(void);
