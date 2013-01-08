@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.parser.TokenType.RETURN;
 import static jdk.nashorn.internal.parser.TokenType.YIELD;
 
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -42,7 +41,7 @@ public class ReturnNode extends Node {
     private Node expression;
 
     /** Try chain. */
-    @Reference @Ignore
+    @Ignore
     private final TryNode tryChain;
 
     /**

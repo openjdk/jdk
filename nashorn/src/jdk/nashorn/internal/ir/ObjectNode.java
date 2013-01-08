@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -38,7 +37,7 @@ import jdk.nashorn.internal.runtime.Source;
  */
 public class ObjectNode extends Node {
     /** Literal context. */
-    @Reference @Ignore
+    @Ignore
     private Block context;
 
     /** Literal elements. */

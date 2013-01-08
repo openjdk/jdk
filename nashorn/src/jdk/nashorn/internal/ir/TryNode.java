@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.codegen.MethodEmitter.Label;
-import jdk.nashorn.internal.ir.annotations.Reference;
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -38,7 +38,7 @@ import jdk.nashorn.internal.runtime.Source;
  */
 public class TryNode extends Node {
     /** Try chain. */
-    @Reference
+    @Ignore //don't print, will be apparent from the AST
     private TryNode next;
 
     /** Try statements. */

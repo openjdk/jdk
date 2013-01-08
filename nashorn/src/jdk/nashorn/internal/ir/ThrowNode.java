@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -38,7 +37,7 @@ public class ThrowNode extends Node {
     private Node expression;
 
     /** Try chain. */
-    @Reference @Ignore
+    @Ignore
     private final TryNode tryChain;
 
     /**

@@ -30,6 +30,8 @@ import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.MethodEmitter;
+import jdk.nashorn.internal.ir.annotations.Ignore;
+import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
 
@@ -50,15 +52,18 @@ public class SplitNode extends Node {
     private MethodEmitter caller;
 
     /** Containing function. */
+    @Reference
     private final FunctionNode functionNode;
 
     /** A list of target labels in parent methods this split node may encounter. */
+    @Ignore
     private final List<MethodEmitter.Label> externalTargets;
 
     /** True if this split node or any of its children contain a return statement. */
     private boolean hasReturn;
 
     /** Body of split code. */
+    @Ignore
     private Node body;
 
     /**

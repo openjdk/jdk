@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
@@ -35,7 +34,7 @@ import jdk.nashorn.internal.runtime.Source;
  */
 public class ReferenceNode extends Node {
     /** Node referenced. */
-    @Reference @Ignore
+    @Reference
     private final FunctionNode reference;
 
     /**

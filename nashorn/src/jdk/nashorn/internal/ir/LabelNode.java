@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.ir.annotations.Reference;
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -42,11 +42,11 @@ public class LabelNode extends Node {
     private Block body;
 
     /** Node to break from. */
-    @Reference
+    @Ignore
     private Node breakNode;
 
     /** Node to continue. */
-    @Reference
+    @Ignore
     private Node continueNode;
 
     /**
