@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ final class PBECipherCore {
         AlgorithmParameters params = null;
         if (salt == null) {
             salt = new byte[8];
-            SunJCE.RANDOM.nextBytes(salt);
+            SunJCE.getRandom().nextBytes(salt);
         }
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount);
         try {

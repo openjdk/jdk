@@ -410,7 +410,7 @@ final class CipherCore {
             } else {
                 iv = new byte[blockSize];
             }
-            SunJCE.RANDOM.nextBytes(iv);
+            SunJCE.getRandom().nextBytes(iv);
         }
         if (cipherMode == GCM_MODE) {
             algName = "GCM";
@@ -564,7 +564,7 @@ final class CipherCore {
             }
 
             if (random == null) {
-                random = SunJCE.RANDOM;
+                random = SunJCE.getRandom();
             }
             if (cipherMode == GCM_MODE) {
                 ivBytes = new byte[GaloisCounterMode.DEFAULT_IV_LEN];
