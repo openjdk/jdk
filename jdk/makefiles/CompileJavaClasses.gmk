@@ -42,8 +42,7 @@ EXCLUDES +=	com/sun/pept \
 		com/sun/tools/example/trace\
 		com/sun/tools/example/debug/bdi\
 		com/sun/tools/example/debug/event\
-		com/sun/tools/example/debug/gui \
-		com/oracle/security
+		com/sun/tools/example/debug/gui
 
 ifdef OPENJDK
     EXCLUDES+=	sun/dc \
@@ -86,6 +85,8 @@ ifneq ($(OPENJDK_TARGET_OS),solaris)
         sun/nio/ch/SolarisEventPort.java \
 	sun/tools/attach/SolarisAttachProvider.java \
 	sun/tools/attach/SolarisVirtualMachine.java
+
+   EXCLUDES += com/oracle/security
 endif
 
 # In the old build, this isn't excluded on macosx, even though it probably
@@ -227,14 +228,20 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 	sun/nio/ch/SimpleAsynchronousFileChannelImpl.java
 endif
 
-# Exclude nimbus files from rt.jar
+# These files do not appear in the build result of the old build. This
+# is because they are generated sources, but the AUTO_JAVA_FILES won't
+# pick them up since they aren't generated when the source dirs are 
+# searched and they aren't referenced by any other classes so they won't
+# be picked up by implicit compilation. On a rebuild, they are picked up
+# and compiled. Exclude them here to produce the same rt.jar as the old 
+# build does when building just once.
 EXFILES+=javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
-				 javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
-				 javax/swing/plaf/nimbus/ScrollBarPainter.java \
-				 javax/swing/plaf/nimbus/SliderPainter.java \
-				 javax/swing/plaf/nimbus/SpinnerPainter.java \
-				 javax/swing/plaf/nimbus/SplitPanePainter.java \
-				 javax/swing/plaf/nimbus/TabbedPanePainter.java
+	 javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
+	 javax/swing/plaf/nimbus/ScrollBarPainter.java \
+	 javax/swing/plaf/nimbus/SliderPainter.java \
+	 javax/swing/plaf/nimbus/SpinnerPainter.java \
+	 javax/swing/plaf/nimbus/SplitPanePainter.java \
+	 javax/swing/plaf/nimbus/TabbedPanePainter.java
 
 # Acquire a list of files that should be copied straight over to the classes.
 include CopyIntoClasses.gmk
