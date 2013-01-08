@@ -1935,6 +1935,8 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   u2** localvariable_table_start;
   u2* localvariable_type_table_length;
   u2** localvariable_type_table_start;
+  u2 method_parameters_length = 0;
+  u1* method_parameters_data = NULL;
   bool parsed_code_attribute = false;
   bool parsed_checked_exceptions_attribute = false;
   bool parsed_stackmap_attribute = false;
@@ -2144,6 +2146,14 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
             parse_checked_exceptions(&checked_exceptions_length,
                                      method_attribute_length,
                                      cp, CHECK_(nullHandle));
+    } else if (method_attribute_name == vmSymbols::tag_method_parameters()) {
+      method_parameters_length = cfs->get_u1_fast();
+      method_parameters_data = cfs->get_u1_buffer();
+      cfs->skip_u2_fast(method_parameters_length);
+      cfs->skip_u4_fast(method_parameters_length);
+      // ignore this attribute if it cannot be reflected
+      if (!SystemDictionary::Parameter_klass_loaded())
+        method_parameters_length = 0;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
         classfile_parse_error(
@@ -2231,7 +2241,8 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   Method* m = Method::allocate(
       loader_data, code_length, access_flags, linenumber_table_length,
       total_lvt_length, exception_table_length, checked_exceptions_length,
-      generic_signature_index, ConstMethod::NORMAL, CHECK_(nullHandle));
+      method_parameters_length, generic_signature_index,
+      ConstMethod::NORMAL, CHECK_(nullHandle));
 
   ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
 
@@ -2277,6 +2288,18 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
       exception_table_length * sizeof(ExceptionTableElement) / sizeof(u2);
     copy_u2_with_conversion((u2*) m->exception_table_start(),
                              exception_table_start, size);
+  }
+
+  // Copy method parameters
+  if (method_parameters_length > 0) {
+    MethodParametersElement* elem = m->constMethod()->method_parameters_start();
+    for(int i = 0; i < method_parameters_length; i++) {
+      elem[i].name_cp_index =
+        Bytes::get_Java_u2(method_parameters_data);
+      method_parameters_data += 2;
+      elem[i].flags = Bytes::get_Java_u4(method_parameters_data);
+      method_parameters_data += 4;
+    }
   }
 
   // Copy checked exceptions
@@ -3042,6 +3065,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                     TempNewSymbol& parsed_name,
                                                     bool verify,
                                                     TRAPS) {
+
   // When a retransformable agent is attached, JVMTI caches the
   // class bytes that existed before the first retransformation.
   // If RedefineClasses() was used before the retransformable

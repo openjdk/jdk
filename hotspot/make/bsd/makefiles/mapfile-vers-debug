@@ -1,5 +1,5 @@
 #
-# @(#)mapfile-vers-debug	1.18 07/10/25 16:47:35
+# @(#)mapfile-vers-debug        1.18 07/10/25 16:47:35
 #
 
 #
@@ -126,7 +126,7 @@ SUNWprivate_1.1 {
                 JVM_GetClassModifiers;
                 JVM_GetClassName;
                 JVM_GetClassNameUTF;
-		        JVM_GetClassSignature;
+                        JVM_GetClassSignature;
                 JVM_GetClassSigners;
                 JVM_GetClassTypeAnnotations;
                 JVM_GetComponentType;
@@ -155,6 +155,7 @@ SUNWprivate_1.1 {
                 JVM_GetMethodIxNameUTF;
                 JVM_GetMethodIxSignatureUTF;
                 JVM_GetMethodParameterAnnotations;
+                JVM_GetMethodParameters;
                 JVM_GetPrimitiveArrayElement;
                 JVM_GetProtectionDomain;
                 JVM_GetSockName;
@@ -284,7 +285,7 @@ SUNWprivate_1.1 {
                 # This is for Forte Analyzer profiling support.
                 AsyncGetCallTrace;
 
-		# INSERT VTABLE SYMBOLS HERE
+                # INSERT VTABLE SYMBOLS HERE
 
         local:
                 *;

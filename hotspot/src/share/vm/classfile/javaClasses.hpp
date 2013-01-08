@@ -729,6 +729,37 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   friend class JavaClasses;
 };
 
+class java_lang_reflect_Parameter {
+ private:
+  // Note that to reduce dependencies on the JDK we compute these
+  // offsets at run-time.
+  static int name_offset;
+  static int modifiers_offset;
+  static int index_offset;
+  static int executable_offset;
+
+  static void compute_offsets();
+
+ public:
+  // Allocation
+  static Handle create(TRAPS);
+
+  // Accessors
+  static oop name(oop field);
+  static void set_name(oop field, oop value);
+
+  static int index(oop reflect);
+  static void set_index(oop reflect, int value);
+
+  static int modifiers(oop reflect);
+  static void set_modifiers(oop reflect, int value);
+
+  static oop executable(oop constructor);
+  static void set_executable(oop constructor, oop value);
+
+  friend class JavaClasses;
+};
+
 // Interface to sun.reflect.ConstantPool objects
 class sun_reflect_ConstantPool {
  private:
