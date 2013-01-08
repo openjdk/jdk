@@ -43,7 +43,7 @@ public final class SpillProperty extends AccessorProperty {
     private static final MethodHandle SPILLGETTER = MH.asType(MH.getter(MethodHandles.lookup(), ScriptObject.class, "spill", Object[].class), Lookup.GET_OBJECT_TYPE);
 
     /** Property slot in spill */
-    int slot;
+    private final int slot;
 
     /**
      * Constructor

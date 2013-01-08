@@ -132,10 +132,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /** Indexed array data. */
     private ArrayData arrayData;
 
-    private static final MethodHandle SETEMBED           = findOwnMH("setEmbed",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, MethodHandle.class, int.class, Object.class, Object.class);
-    private static final MethodHandle SETSPILL           = findOwnMH("setSpill",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, Object.class, Object.class);
-    private static final MethodHandle SETSPILLWITHNEW    = findOwnMH("setSpillWithNew",  void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, Object.class, Object.class);
-    private static final MethodHandle SETSPILLWITHGROW   = findOwnMH("setSpillWithGrow", void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, int.class, Object.class, Object.class);
+    static final MethodHandle SETEMBED           = findOwnMH("setEmbed",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, MethodHandle.class, int.class, Object.class, Object.class);
+    static final MethodHandle SETSPILL           = findOwnMH("setSpill",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, Object.class, Object.class);
+    static final MethodHandle SETSPILLWITHNEW    = findOwnMH("setSpillWithNew",  void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, Object.class, Object.class);
+    static final MethodHandle SETSPILLWITHGROW   = findOwnMH("setSpillWithGrow", void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, int.class, Object.class, Object.class);
+
     private static final MethodHandle TRUNCATINGFILTER   = findOwnMH("truncatingFilter", Object[].class, int.class, Object[].class);
     private static final MethodHandle KNOWNFUNCPROPGUARD = findOwnMH("knownFunctionPropertyGuard", boolean.class, Object.class, PropertyMap.class, MethodHandle.class, Object.class, ScriptFunction.class);
 
@@ -218,13 +219,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
-     * Bind the method handle to the specified receiver.
+     * Bind the method handle to the specified receiver, while preserving its original type (it will just ignore the
+     * first argument in lieu of the bound argument).
      * @param methodHandle Method handle to bind to.
      * @param receiver     Object to bind.
      * @return Bound method handle.
      */
-    private static MethodHandle bindTo(final MethodHandle methodHandle, final Object receiver) {
-        return MH.dropArguments(MH.bindTo(methodHandle, receiver), 0, Object.class);
+    static MethodHandle bindTo(final MethodHandle methodHandle, final Object receiver) {
+        return MH.dropArguments(MH.bindTo(methodHandle, receiver), 0, methodHandle.type().parameterType(0));
     }
 
     /**
@@ -1724,138 +1726,43 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final boolean megaMorphic) {
-        final String      name     = desc.getNameToken(2);
+        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         if(megaMorphic) {
             return findMegaMorphicSetMethod(desc, name);
         }
 
-        final MethodType  callType = desc.getMethodType();
-        final PropertyMap oldMap   = getMap();
-        final Class<?>    type     = callType.parameterType(1);
-
         FindProperty find = findProperty(name, true);
-        if (!isScope()) {
-            // not a scope search. We don't want any inherited a property
-            // unless it happens to be a user defined accessor property.
-            if (find != null && find.isInherited()) {
-               final Property inherited = find.getProperty();
-               if (!(inherited instanceof UserAccessorProperty)) {
-                   // we should only use inherited user accessor property
-                   find = null;
-                   // but we should still check if inherited data property is not writable!
-                   if (isExtensible() && !inherited.isWritable()) {
-                       if (NashornCallSiteDescriptor.isStrict(desc)) {
-                           typeError(Context.getGlobal(), "property.not.writable", name, ScriptRuntime.safeToString((this)));
-                       }
-                       assert !NashornCallSiteDescriptor.isFastScope(desc);
-                       return new GuardedInvocation(Lookup.EMPTY_SETTER, oldMap.getProtoGetSwitchPoint(name),
-                               NashornGuards.getMapGuard(oldMap));
-                   }
-               }
+        // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
+        if (!isScope() && find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
+            // We should still check if inherited data property is not writable
+            if (isExtensible() && !find.isWritable()) {
+                return createEmptySetMethod(desc, "property.not.writable", false);
             }
+            // Otherwise, forget the found property
+            find = null;
         }
-
-        MethodHandle methodHandle = null;
-        Property     property     = null;
-        int          invokeFlags  = 0;
 
         if (find != null) {
-            if (!find.isWritable()) {
-                if (NashornCallSiteDescriptor.isStrict(desc)) {
-                    typeError(Context.getGlobal(), "property.not.writable", name, ScriptRuntime.safeToString(this));
-                }
-
-                return new GuardedInvocation(Lookup.EMPTY_SETTER, oldMap.getProtoGetSwitchPoint(name),
-                        NashornGuards.getMapGuard(oldMap));
-            }
-
-            property     = find.getProperty();
-            methodHandle = find.getSetter(type, NashornCallSiteDescriptor.isStrict(desc));
-
-            assert methodHandle != null;
-            assert property     != null;
-
-            final ScriptFunction setter = find.getSetterFunction();
-
-            invokeFlags = 0;
-            if (setter != null && setter.isStrict()) {
-                invokeFlags = NashornCallSiteDescriptor.CALLSITE_STRICT;
-            }
-
-            if (!property.hasSetterFunction() && find.isInherited()) {
-                methodHandle = bindTo(methodHandle, find.getOwner());
+            if(!find.isWritable()) {
+                // Existing, non-writable property
+                return createEmptySetMethod(desc, "property.not.writable", true);
             }
         } else if (!isExtensible()) {
-            if (NashornCallSiteDescriptor.isStrict(desc)) {
-                typeError(Context.getGlobal(), "object.non.extensible", name, ScriptRuntime.safeToString(this));
-            }
-
-            assert !NashornCallSiteDescriptor.isFastScope(desc);
-            return new GuardedInvocation(Lookup.EMPTY_SETTER, oldMap.getProtoGetSwitchPoint(name), NashornGuards.getMapGuard(oldMap));
+            // Non-existing property on a non-extensible object
+            return createEmptySetMethod(desc, "object.non.extensible", false);
         }
 
-        if (methodHandle == null) {
-            // In strict mode, assignment can not create a new variable.
-            // See also ECMA Annex C item 4. ReferenceError is thrown.
-            if (NashornCallSiteDescriptor.isScope(desc) && NashornCallSiteDescriptor.isStrict(desc)) {
-                referenceError(Context.getGlobal(), "not.defined", name);
-            }
+        return new SetMethodCreator(this, find, desc).createGuardedInvocation();
+    }
 
-            if (isScope()) {
-                final ScriptObject global = Context.getGlobal();
-                methodHandle = global.addSpill(name);
-                methodHandle = bindTo(methodHandle, global);
-            } else {
-                int i = findEmbed();
-
-                if (i >= EMBED_SIZE) {
-                    i = oldMap.getSpillLength();
-
-                    final MethodHandle getter =
-                        MH.asType(
-                            MH.insertArguments(
-                                MH.arrayElementGetter(Object[].class),
-                                1,
-                                i),
-                            Lookup.GET_OBJECT_TYPE);
-                    final MethodHandle setter =
-                        MH.asType(
-                            MH.insertArguments(
-                            MH.arrayElementSetter(Object[].class),
-                            1,
-                            i),
-                            Lookup.SET_OBJECT_TYPE);
-
-                    property = new SpillProperty(name, Property.IS_SPILL, i, getter, setter);
-
-                    final PropertyMap newMap = oldMap.addProperty(property);
-
-                    i = property.getSlot();
-
-                    if (spill == null) {
-                        methodHandle = MH.insertArguments(SETSPILLWITHNEW,  0, desc, oldMap, newMap, i);
-                    } else if (i < spill.length) {
-                        methodHandle = MH.insertArguments(SETSPILL,         0, desc, oldMap, newMap, i);
-                    } else {
-                        final int newLength = (i + SPILL_RATE) / SPILL_RATE * SPILL_RATE;
-                        methodHandle = MH.insertArguments(SETSPILLWITHGROW, 0, desc, oldMap, newMap, i, newLength);
-                    }
-                } else {
-                    useEmbed(i);
-                    property = new SpillProperty(name, 0, i, GET_EMBED[i], SET_EMBED[i]);
-                    final PropertyMap newMap = oldMap.addProperty(property);
-                    //TODO specfields
-                    methodHandle = MH.insertArguments(SETEMBED, 0, desc, oldMap, newMap, property.getSetter(Object.class, getMap()), i);
-                }
-
-                notifyPropertyAdded(this, property);
-            }
-        }
-
-        // the guard has to use old map because the setter is valid only for incoming object with this map
-        return new NashornGuardedInvocation(methodHandle, null, ObjectClassGenerator.OBJECT_FIELDS_ONLY &&
-                NashornCallSiteDescriptor.isFastScope(desc) && (property == null || !property.canChangeType()) ?
-                    null : NashornGuards.getMapGuard(oldMap), invokeFlags);
+    private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, String strictErrorMessage, boolean canBeFastScope) {
+        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        if (NashornCallSiteDescriptor.isStrict(desc)) {
+               typeError(Context.getGlobal(), strictErrorMessage, name, ScriptRuntime.safeToString((this)));
+           }
+           assert canBeFastScope || !NashornCallSiteDescriptor.isFastScope(desc);
+           final PropertyMap map = getMap();
+           return new GuardedInvocation(Lookup.EMPTY_SETTER, map.getProtoGetSwitchPoint(name), NashornGuards.getMapGuard(map));
     }
 
     @SuppressWarnings("unused")
@@ -2169,7 +2076,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return spillProperty.getSetter(type, getMap()); //TODO specfields
     }
 
-    private MethodHandle addSpill(final String key) {
+    MethodHandle addSpill(final String key) {
         return addSpill(key, 0);
     }
 
@@ -3216,8 +3123,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /** Embed offset */
     public static final int EMBED_OFFSET = 32 - EMBED_SIZE;
 
-    private static final MethodHandle[] GET_EMBED;
-    private static final MethodHandle[] SET_EMBED;
+    static final MethodHandle[] GET_EMBED;
+    static final MethodHandle[] SET_EMBED;
 
     static {
         GET_EMBED = new MethodHandle[EMBED_SIZE];
@@ -3230,11 +3137,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
     }
 
-    private void useEmbed(final int i) {
+    void useEmbed(final int i) {
         flags |= 1 << (EMBED_OFFSET + i);
     }
 
-    private int findEmbed() {
+    int findEmbed() {
         final int bits  = ~(flags >>> EMBED_OFFSET);
         final int least = bits ^ -bits;
         final int index = Integer.numberOfTrailingZeros(least) - 1;
