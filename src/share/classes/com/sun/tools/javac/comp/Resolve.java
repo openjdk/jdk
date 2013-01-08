@@ -1122,52 +1122,20 @@ public class Resolve {
                 if (m1Abstract && !m2Abstract) return m2;
                 if (m2Abstract && !m1Abstract) return m1;
                 // both abstract or both concrete
-                if (!m1Abstract && !m2Abstract)
-                    return ambiguityError(m1, m2);
-                // check that both signatures have the same erasure
-                if (!types.isSameTypes(m1.erasure(types).getParameterTypes(),
-                                       m2.erasure(types).getParameterTypes()))
-                    return ambiguityError(m1, m2);
-                // both abstract, neither overridden; merge throws clause and result type
-                Type mst = mostSpecificReturnType(mt1, mt2);
-                if (mst == null) {
-                    // Theoretically, this can't happen, but it is possible
-                    // due to error recovery or mixing incompatible class files
-                    return ambiguityError(m1, m2);
-                }
-                Symbol mostSpecific = mst == mt1 ? m1 : m2;
-                List<Type> allThrown = chk.intersect(mt1.getThrownTypes(), mt2.getThrownTypes());
-                Type newSig = types.createMethodTypeWithThrown(mostSpecific.type, allThrown);
-                MethodSymbol result = new MethodSymbol(
-                        mostSpecific.flags(),
-                        mostSpecific.name,
-                        newSig,
-                        mostSpecific.owner) {
-                    @Override
-                    public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult) {
-                        if (origin == site.tsym)
-                            return this;
-                        else
-                            return super.implementation(origin, types, checkResult);
-                        }
-                    };
-                return result;
+                return ambiguityError(m1, m2);
             }
             if (m1SignatureMoreSpecific) return m1;
             if (m2SignatureMoreSpecific) return m2;
             return ambiguityError(m1, m2);
         case AMBIGUOUS:
+            //check if m1 is more specific than all ambiguous methods in m2
             AmbiguityError e = (AmbiguityError)m2;
-            Symbol err1 = mostSpecific(argtypes, m1, e.sym, env, site, allowBoxing, useVarargs);
-            Symbol err2 = mostSpecific(argtypes, m1, e.sym2, env, site, allowBoxing, useVarargs);
-            if (err1 == err2) return err1;
-            if (err1 == e.sym && err2 == e.sym2) return m2;
-            if (err1 instanceof AmbiguityError &&
-                err2 instanceof AmbiguityError &&
-                ((AmbiguityError)err1).sym == ((AmbiguityError)err2).sym)
-                return ambiguityError(m1, m2);
-            else
-                return ambiguityError(err1, err2);
+            for (Symbol s : e.ambiguousSyms) {
+                if (mostSpecific(argtypes, m1, s, env, site, allowBoxing, useVarargs) != m1) {
+                    return e.addAmbiguousSymbol(m1);
+                }
+            }
+            return m1;
         default:
             throw new AssertionError();
         }
@@ -2504,6 +2472,10 @@ public class Resolve {
 
         @Override
         Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+            if (sym.kind == AMBIGUOUS) {
+                AmbiguityError a_err = (AmbiguityError)sym;
+                sym = a_err.mergeAbstracts(site);
+            }
             if (sym.kind >= AMBIGUOUS) {
                 //if nothing is found return the 'first' error
                 sym = accessMethod(sym, pos, location, site, name, true, argtypes, typeargtypes);
@@ -2559,6 +2531,10 @@ public class Resolve {
         abstract JCMemberReference.ReferenceKind referenceKind(Symbol sym);
 
         Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+            if (sym.kind == AMBIGUOUS) {
+                AmbiguityError a_err = (AmbiguityError)sym;
+                sym = a_err.mergeAbstracts(site);
+            }
             //skip error reporting
             return sym;
         }
@@ -2994,9 +2970,7 @@ public class Resolve {
 
         @Override
         public Symbol access(Name name, TypeSymbol location) {
-            if (sym.kind >= AMBIGUOUS)
-                return ((ResolveError)sym).access(name, location);
-            else if ((sym.kind & ERRONEOUS) == 0 && (sym.kind & TYP) != 0)
+            if ((sym.kind & ERRONEOUS) == 0 && (sym.kind & TYP) != 0)
                 return types.createErrorType(name, location, sym.type).tsym;
             else
                 return sym;
@@ -3318,14 +3292,32 @@ public class Resolve {
      * (either methods, constructors or operands) are ambiguous
      * given an actual arguments/type argument list.
      */
-    class AmbiguityError extends InvalidSymbolError {
+    class AmbiguityError extends ResolveError {
 
         /** The other maximally specific symbol */
-        Symbol sym2;
+        List<Symbol> ambiguousSyms = List.nil();
+
+        @Override
+        public boolean exists() {
+            return true;
+        }
 
         AmbiguityError(Symbol sym1, Symbol sym2) {
-            super(AMBIGUOUS, sym1, "ambiguity error");
-            this.sym2 = sym2;
+            super(AMBIGUOUS, "ambiguity error");
+            ambiguousSyms = flatten(sym2).appendList(flatten(sym1));
+        }
+
+        private List<Symbol> flatten(Symbol sym) {
+            if (sym.kind == AMBIGUOUS) {
+                return ((AmbiguityError)sym).ambiguousSyms;
+            } else {
+                return List.of(sym);
+            }
+        }
+
+        AmbiguityError addAmbiguousSymbol(Symbol s) {
+            ambiguousSyms = ambiguousSyms.prepend(s);
+            return this;
         }
 
         @Override
@@ -3336,24 +3328,60 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            AmbiguityError pair = this;
-            while (true) {
-                if (pair.sym.kind == AMBIGUOUS)
-                    pair = (AmbiguityError)pair.sym;
-                else if (pair.sym2.kind == AMBIGUOUS)
-                    pair = (AmbiguityError)pair.sym2;
-                else break;
-            }
-            Name sname = pair.sym.name;
-            if (sname == names.init) sname = pair.sym.owner.name;
+            List<Symbol> diagSyms = ambiguousSyms.reverse();
+            Symbol s1 = diagSyms.head;
+            Symbol s2 = diagSyms.tail.head;
+            Name sname = s1.name;
+            if (sname == names.init) sname = s1.owner.name;
             return diags.create(dkind, log.currentSource(),
                       pos, "ref.ambiguous", sname,
-                      kindName(pair.sym),
-                      pair.sym,
-                      pair.sym.location(site, types),
-                      kindName(pair.sym2),
-                      pair.sym2,
-                      pair.sym2.location(site, types));
+                      kindName(s1),
+                      s1,
+                      s1.location(site, types),
+                      kindName(s2),
+                      s2,
+                      s2.location(site, types));
+        }
+
+        /**
+         * If multiple applicable methods are found during overload and none of them
+         * is more specific than the others, attempt to merge their signatures.
+         */
+        Symbol mergeAbstracts(Type site) {
+            Symbol fst = ambiguousSyms.last();
+            Symbol res = fst;
+            for (Symbol s : ambiguousSyms.reverse()) {
+                Type mt1 = types.memberType(site, res);
+                Type mt2 = types.memberType(site, s);
+                if ((s.flags() & ABSTRACT) == 0 ||
+                        !types.overrideEquivalent(mt1, mt2) ||
+                        !types.isSameTypes(fst.erasure(types).getParameterTypes(),
+                                       s.erasure(types).getParameterTypes())) {
+                    //ambiguity cannot be resolved
+                    return this;
+                } else {
+                    Type mst = mostSpecificReturnType(mt1, mt2);
+                    if (mst == null) {
+                        // Theoretically, this can't happen, but it is possible
+                        // due to error recovery or mixing incompatible class files
+                        return this;
+                    }
+                    Symbol mostSpecific = mst == mt1 ? res : s;
+                    List<Type> allThrown = chk.intersect(mt1.getThrownTypes(), mt2.getThrownTypes());
+                    Type newSig = types.createMethodTypeWithThrown(mostSpecific.type, allThrown);
+                    res = new MethodSymbol(
+                            mostSpecific.flags(),
+                            mostSpecific.name,
+                            newSig,
+                            mostSpecific.owner);
+                }
+            }
+            return res;
+        }
+
+        @Override
+        protected Symbol access(Name name, TypeSymbol location) {
+            return ambiguousSyms.last();
         }
     }
 
