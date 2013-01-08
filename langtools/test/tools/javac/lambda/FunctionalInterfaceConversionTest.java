@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,24 @@
  * @summary Add lambda tests
  *  perform several automated checks in lambda conversion, esp. around accessibility
  * @author  Maurizio Cimadamore
+ * @library ../lib
+ * @build JavacTestingAbstractThreadedTest
  * @run main FunctionalInterfaceConversionTest
  */
 
-import com.sun.source.util.JavacTask;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+import com.sun.source.util.JavacTask;
 
-public class FunctionalInterfaceConversionTest {
+public class FunctionalInterfaceConversionTest
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum PackageKind {
         NO_PKG(""),
@@ -139,8 +143,6 @@ public class FunctionalInterfaceConversionTest {
     }
 
     public static void main(String[] args) throws Exception {
-        final JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
         for (PackageKind samPkg : PackageKind.values()) {
             for (ModifierKind modKind : ModifierKind.values()) {
                 for (SamKind samKind : SamKind.values()) {
@@ -150,8 +152,11 @@ public class FunctionalInterfaceConversionTest {
                                 for (TypeKind argType : TypeKind.values()) {
                                     for (TypeKind thrownType : TypeKind.values()) {
                                         for (ExprKind exprKind : ExprKind.values()) {
-                                            new FunctionalInterfaceConversionTest(samPkg, modKind, samKind,
-                                                    samMeth, clientMeth, retType, argType, thrownType, exprKind).test(comp, fm);
+                                            pool.execute(
+                                                new FunctionalInterfaceConversionTest(
+                                                    samPkg, modKind, samKind,
+                                                    samMeth, clientMeth, retType,
+                                                    argType, thrownType, exprKind));
                                         }
                                     }
                                 }
@@ -161,6 +166,8 @@ public class FunctionalInterfaceConversionTest {
                 }
             }
         }
+
+        checkAfterExec(false);
     }
 
     PackageKind samPkg;
@@ -175,24 +182,30 @@ public class FunctionalInterfaceConversionTest {
     DiagnosticChecker dc;
 
     SourceFile samSourceFile = new SourceFile("Sam.java", "#P \n #C") {
+        @Override
         public String toString() {
             return template.replaceAll("#P", samPkg.getPkgDecl()).
-                    replaceAll("#C", samKind.getSam(samMeth.getMethod(retType, argType, thrownType)));
+                    replaceAll("#C", samKind.getSam(
+                    samMeth.getMethod(retType, argType, thrownType)));
         }
     };
 
-    SourceFile pkgClassSourceFile = new SourceFile("PackageClass.java",
-                                                   "#P\n #M class PackageClass extends Exception { }") {
+    SourceFile pkgClassSourceFile =
+            new SourceFile("PackageClass.java",
+                           "#P\n #M class PackageClass extends Exception { }") {
+        @Override
         public String toString() {
             return template.replaceAll("#P", samPkg.getPkgDecl()).
                     replaceAll("#M", modKind.modifier_str);
         }
     };
 
-    SourceFile clientSourceFile = new SourceFile("Client.java",
-                                                 "#I\n abstract class Client { \n" +
-                                                 "  Sam s = #E;\n" +
-                                                 "  #M \n }") {
+    SourceFile clientSourceFile =
+            new SourceFile("Client.java",
+                           "#I\n abstract class Client { \n" +
+                           "  Sam s = #E;\n" +
+                           "  #M \n }") {
+        @Override
         public String toString() {
             return template.replaceAll("#I", samPkg.getImportStat())
                     .replaceAll("#E", exprKind.exprStr)
@@ -200,9 +213,10 @@ public class FunctionalInterfaceConversionTest {
         }
     };
 
-    FunctionalInterfaceConversionTest(PackageKind samPkg, ModifierKind modKind, SamKind samKind,
-            MethodKind samMeth, MethodKind clientMeth, TypeKind retType, TypeKind argType,
-            TypeKind thrownType, ExprKind exprKind) {
+    FunctionalInterfaceConversionTest(PackageKind samPkg, ModifierKind modKind,
+            SamKind samKind, MethodKind samMeth, MethodKind clientMeth,
+            TypeKind retType, TypeKind argType, TypeKind thrownType,
+            ExprKind exprKind) {
         this.samPkg = samPkg;
         this.modKind = modKind;
         this.samKind = samKind;
@@ -215,12 +229,20 @@ public class FunctionalInterfaceConversionTest {
         this.dc = new DiagnosticChecker();
     }
 
-    void test(JavaCompiler comp, StandardJavaFileManager fm) throws Exception {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm, dc,
-                null, null, Arrays.asList(samSourceFile, pkgClassSourceFile, clientSourceFile));
-        ct.analyze();
+    @Override
+    public void run() {
+        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+
+        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), dc, null, null,
+                Arrays.asList(samSourceFile, pkgClassSourceFile, clientSourceFile));
+        try {
+            ct.analyze();
+        } catch (IOException ex) {
+            throw new AssertionError("Test failing with cause", ex.getCause());
+        }
         if (dc.errorFound == checkSamConversion()) {
-            throw new AssertionError(samSourceFile + "\n\n" + pkgClassSourceFile + "\n\n" + clientSourceFile);
+            throw new AssertionError(samSourceFile + "\n\n" +
+                pkgClassSourceFile + "\n\n" + clientSourceFile);
         }
     }
 
@@ -264,13 +286,16 @@ public class FunctionalInterfaceConversionTest {
             return toString();
         }
 
+        @Override
         public abstract String toString();
     }
 
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         boolean errorFound = false;
 
+        @Override
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
                 errorFound = true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,21 @@
  * @test
  * @bug 7046778
  * @summary Project Coin: problem with diamond and member inner classes
+ * @library ../../../lib
+ * @build JavacTestingAbstractThreadedTest
+ * @run main DiamondAndInnerClassTest
  */
 
 import com.sun.source.util.JavacTask;
 import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 
-public class DiamondAndInnerClassTest {
-
-    static int checkCount = 0;
+public class DiamondAndInnerClassTest
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum TypeArgumentKind {
         NONE(""),
@@ -151,11 +151,6 @@ public class DiamondAndInnerClassTest {
     }
 
     public static void main(String... args) throws Exception {
-
-        //create default shared JavaCompiler - reused across multiple compilations
-        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-
         for (InnerClassDeclArity innerClassDeclArity : InnerClassDeclArity.values()) {
             for (TypeQualifierArity declType : TypeQualifierArity.values()) {
                 if (!declType.matches(innerClassDeclArity)) continue;
@@ -168,53 +163,79 @@ public class DiamondAndInnerClassTest {
                             //no diamond on decl site
                             if (taDecl1 == TypeArgumentKind.DIAMOND) continue;
                             for (TypeArgumentKind taSite1 : TypeArgumentKind.values()) {
-                                boolean isSiteRaw = taSite1 == TypeArgumentKind.NONE;
+                                boolean isSiteRaw =
+                                        taSite1 == TypeArgumentKind.NONE;
                                 //diamond only allowed on the last type qualifier
                                 if (taSite1 == TypeArgumentKind.DIAMOND &&
-                                        innerClassDeclArity != InnerClassDeclArity.ONE) continue;
+                                        innerClassDeclArity !=
+                                        InnerClassDeclArity.ONE)
+                                    continue;
                                 for (ArgumentKind arg1 : ArgumentKind.values()) {
                                     if (innerClassDeclArity == innerClassDeclArity.ONE) {
-                                        new DiamondAndInnerClassTest(innerClassDeclArity, declType, newClassType,
-                                                argList, new TypeArgumentKind[] {taDecl1},
-                                                new TypeArgumentKind[] {taSite1}, new ArgumentKind[] {arg1}).run(comp, fm);
+                                        pool.execute(
+                                                new DiamondAndInnerClassTest(
+                                                innerClassDeclArity, declType,
+                                                newClassType, argList,
+                                                new TypeArgumentKind[] {taDecl1},
+                                                new TypeArgumentKind[] {taSite1},
+                                                new ArgumentKind[] {arg1}));
                                         continue;
                                     }
                                     for (TypeArgumentKind taDecl2 : TypeArgumentKind.values()) {
                                         //no rare types
-                                        if (isDeclRaw != (taDecl2 == TypeArgumentKind.NONE)) continue;
+                                        if (isDeclRaw != (taDecl2 == TypeArgumentKind.NONE))
+                                            continue;
                                         //no diamond on decl site
-                                        if (taDecl2 == TypeArgumentKind.DIAMOND) continue;
+                                        if (taDecl2 == TypeArgumentKind.DIAMOND)
+                                            continue;
                                         for (TypeArgumentKind taSite2 : TypeArgumentKind.values()) {
                                             //no rare types
-                                            if (isSiteRaw != (taSite2 == TypeArgumentKind.NONE)) continue;
+                                            if (isSiteRaw != (taSite2 == TypeArgumentKind.NONE))
+                                                continue;
                                             //diamond only allowed on the last type qualifier
                                             if (taSite2 == TypeArgumentKind.DIAMOND &&
-                                                    innerClassDeclArity != InnerClassDeclArity.TWO) continue;
+                                                    innerClassDeclArity != InnerClassDeclArity.TWO)
+                                                continue;
                                             for (ArgumentKind arg2 : ArgumentKind.values()) {
                                                 if (innerClassDeclArity == innerClassDeclArity.TWO) {
-                                                    new DiamondAndInnerClassTest(innerClassDeclArity, declType, newClassType,
-                                                            argList, new TypeArgumentKind[] {taDecl1, taDecl2},
+                                                    pool.execute(
+                                                            new DiamondAndInnerClassTest(
+                                                            innerClassDeclArity,
+                                                            declType,
+                                                            newClassType,
+                                                            argList,
+                                                            new TypeArgumentKind[] {taDecl1, taDecl2},
                                                             new TypeArgumentKind[] {taSite1, taSite2},
-                                                            new ArgumentKind[] {arg1, arg2}).run(comp, fm);
+                                                            new ArgumentKind[] {arg1, arg2}));
                                                     continue;
                                                 }
                                                 for (TypeArgumentKind taDecl3 : TypeArgumentKind.values()) {
                                                     //no rare types
-                                                    if (isDeclRaw != (taDecl3 == TypeArgumentKind.NONE)) continue;
+                                                    if (isDeclRaw != (taDecl3 == TypeArgumentKind.NONE))
+                                                        continue;
                                                     //no diamond on decl site
-                                                    if (taDecl3 == TypeArgumentKind.DIAMOND) continue;
+                                                    if (taDecl3 == TypeArgumentKind.DIAMOND)
+                                                        continue;
                                                     for (TypeArgumentKind taSite3 : TypeArgumentKind.values()) {
                                                         //no rare types
-                                                        if (isSiteRaw != (taSite3 == TypeArgumentKind.NONE)) continue;
+                                                        if (isSiteRaw != (taSite3 == TypeArgumentKind.NONE))
+                                                            continue;
                                                         //diamond only allowed on the last type qualifier
                                                         if (taSite3 == TypeArgumentKind.DIAMOND &&
-                                                                innerClassDeclArity != InnerClassDeclArity.THREE) continue;
+                                                            innerClassDeclArity != InnerClassDeclArity.THREE)
+                                                            continue;
                                                         for (ArgumentKind arg3 : ArgumentKind.values()) {
-                                                            if (innerClassDeclArity == innerClassDeclArity.THREE) {
-                                                                new DiamondAndInnerClassTest(innerClassDeclArity, declType, newClassType,
-                                                                        argList, new TypeArgumentKind[] {taDecl1, taDecl2, taDecl3},
+                                                            if (innerClassDeclArity ==
+                                                                    innerClassDeclArity.THREE) {
+                                                                pool.execute(
+                                                                        new DiamondAndInnerClassTest(
+                                                                        innerClassDeclArity,
+                                                                        declType,
+                                                                        newClassType,
+                                                                        argList,
+                                                                        new TypeArgumentKind[] {taDecl1, taDecl2, taDecl3},
                                                                         new TypeArgumentKind[] {taSite1, taSite2, taSite3},
-                                                                        new ArgumentKind[] {arg1, arg2, arg3}).run(comp, fm);
+                                                                        new ArgumentKind[] {arg1, arg2, arg3}));
                                                                 continue;
                                                             }
                                                         }
@@ -230,7 +251,8 @@ public class DiamondAndInnerClassTest {
                 }
             }
         }
-        System.out.println("Total check executed: " + checkCount);
+
+        checkAfterExec();
     }
 
     InnerClassDeclArity innerClassDeclArity;
@@ -244,9 +266,9 @@ public class DiamondAndInnerClassTest {
     DiagnosticChecker diagChecker;
 
     DiamondAndInnerClassTest(InnerClassDeclArity innerClassDeclArity,
-            TypeQualifierArity declType, TypeQualifierArity siteType, ArgumentListArity argList,
-            TypeArgumentKind[] declTypeArgumentKinds, TypeArgumentKind[] siteTypeArgumentKinds,
-            ArgumentKind[] argumentKinds) {
+            TypeQualifierArity declType, TypeQualifierArity siteType,
+            ArgumentListArity argList, TypeArgumentKind[] declTypeArgumentKinds,
+            TypeArgumentKind[] siteTypeArgumentKinds, ArgumentKind[] argumentKinds) {
         this.innerClassDeclArity = innerClassDeclArity;
         this.declType = declType;
         this.siteType = siteType;
@@ -267,9 +289,9 @@ public class DiamondAndInnerClassTest {
         public JavaSource() {
             super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
             source = innerClassDeclArity.classDeclStr.replace("#B", bodyTemplate)
-                             .replace("#D", declType.getType(declTypeArgumentKinds))
-                             .replace("#S", siteType.getType(siteTypeArgumentKinds))
-                             .replace("#AL", argList.getArgs(argumentKinds));
+                    .replace("#D", declType.getType(declTypeArgumentKinds))
+                    .replace("#S", siteType.getType(siteTypeArgumentKinds))
+                    .replace("#AL", argList.getArgs(argumentKinds));
         }
 
         @Override
@@ -278,36 +300,39 @@ public class DiamondAndInnerClassTest {
         }
     }
 
-    void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
+    @Override
+    public void run() {
+        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
                 null, null, Arrays.asList(source));
         try {
             ct.analyze();
         } catch (Throwable ex) {
-            throw new AssertionError("Error thrown when compiling the following code:\n" + source.getCharContent(true));
+            throw new AssertionError("Error thrown when compiling the following code:\n" +
+                    source.getCharContent(true));
         }
         check();
     }
 
     void check() {
-        checkCount++;
+        checkCount.incrementAndGet();
 
         boolean errorExpected = false;
 
-        TypeArgumentKind[] expectedArgKinds = new TypeArgumentKind[innerClassDeclArity.n];
+        TypeArgumentKind[] expectedArgKinds =
+                new TypeArgumentKind[innerClassDeclArity.n];
 
         for (int i = 0 ; i < innerClassDeclArity.n ; i++) {
             if (!declTypeArgumentKinds[i].compatible(siteTypeArgumentKinds[i])) {
                 errorExpected = true;
                 break;
             }
-            expectedArgKinds[i] = siteTypeArgumentKinds[i] == TypeArgumentKind.DIAMOND ?
+            expectedArgKinds[i] = siteTypeArgumentKinds[i] ==
+                    TypeArgumentKind.DIAMOND ?
                 declTypeArgumentKinds[i] : siteTypeArgumentKinds[i];
         }
 
         if (!errorExpected) {
             for (int i = 0 ; i < innerClassDeclArity.n ; i++) {
-                //System.out.println("check " + expectedArgKinds[i] + " against " + argumentKinds[i]);
                 if (!expectedArgKinds[i].compatible(argumentKinds[i])) {
                     errorExpected = true;
                     break;
@@ -323,7 +348,8 @@ public class DiamondAndInnerClassTest {
         }
     }
 
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         boolean errorFound;
 
@@ -333,4 +359,5 @@ public class DiamondAndInnerClassTest {
             }
         }
     }
+
 }

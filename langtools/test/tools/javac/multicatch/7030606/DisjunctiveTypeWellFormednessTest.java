@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,21 @@
  * @test
  * @bug 7030606
  * @summary Project-coin: multi-catch types should be pairwise disjoint
+ * @library ../../lib
+ * @build JavacTestingAbstractThreadedTest
+ * @run main DisjunctiveTypeWellFormednessTest
  */
 
-import com.sun.source.util.JavacTask;
 import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
+import com.sun.source.util.JavacTask;
 
-public class DisjunctiveTypeWellFormednessTest {
+public class DisjunctiveTypeWellFormednessTest
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum Alternative {
         EXCEPTION("Exception"),
@@ -92,40 +94,37 @@ public class DisjunctiveTypeWellFormednessTest {
     }
 
     public static void main(String... args) throws Exception {
-
-        //create default shared JavaCompiler - reused across multiple compilations
-        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-
         for (Arity arity : Arity.values()) {
             for (Alternative a1 : Alternative.values()) {
                 if (arity == Arity.ONE) {
-                    new DisjunctiveTypeWellFormednessTest(a1).run(comp, fm);
+                    pool.execute(new DisjunctiveTypeWellFormednessTest(a1));
                     continue;
                 }
                 for (Alternative a2 : Alternative.values()) {
                     if (arity == Arity.TWO) {
-                        new DisjunctiveTypeWellFormednessTest(a1, a2).run(comp, fm);
+                        pool.execute(new DisjunctiveTypeWellFormednessTest(a1, a2));
                         continue;
                     }
                     for (Alternative a3 : Alternative.values()) {
                         if (arity == Arity.THREE) {
-                            new DisjunctiveTypeWellFormednessTest(a1, a2, a3).run(comp, fm);
+                            pool.execute(new DisjunctiveTypeWellFormednessTest(a1, a2, a3));
                             continue;
                         }
                         for (Alternative a4 : Alternative.values()) {
                             if (arity == Arity.FOUR) {
-                                new DisjunctiveTypeWellFormednessTest(a1, a2, a3, a4).run(comp, fm);
+                                pool.execute(new DisjunctiveTypeWellFormednessTest(a1, a2, a3, a4));
                                 continue;
                             }
                             for (Alternative a5 : Alternative.values()) {
-                                new DisjunctiveTypeWellFormednessTest(a1, a2, a3, a4, a5).run(comp, fm);
+                                pool.execute(new DisjunctiveTypeWellFormednessTest(a1, a2, a3, a4, a5));
                             }
                         }
                     }
                 }
             }
         }
+
+        checkAfterExec(false);
     }
 
     Alternative[] alternatives;
@@ -159,10 +158,16 @@ public class DisjunctiveTypeWellFormednessTest {
         }
     }
 
-    void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
+    @Override
+    public void run() {
+        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
                 null, null, Arrays.asList(source));
-        ct.analyze();
+        try {
+            ct.analyze();
+        } catch (Throwable t) {
+            processException(t);
+            return;
+        }
         check();
     }
 
@@ -202,4 +207,5 @@ public class DisjunctiveTypeWellFormednessTest {
             }
         }
     }
+
 }
