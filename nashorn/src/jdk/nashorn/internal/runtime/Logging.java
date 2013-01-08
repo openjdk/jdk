@@ -72,17 +72,7 @@ public class Logging {
      * Get a logger for a given class, generating a logger name based on the
      * class name
      *
-     * @param clazz the class
-     * @return the logger
-     */
-    public static Logger getLogger0(final Class<?> clazz) {
-        return Logging.getLogger(Logging.lastPart(clazz.getPackage().getName()));
-    }
-
-    /**
-     * Get a logger for a given name
-     *
-     * @param name the name to use as key
+     * @param name the name to use as key for the logger
      * @return the logger
      */
     public static Logger getLogger(final String name) {
@@ -91,6 +81,23 @@ public class Logging {
             return logger;
         }
         return Logging.disabledLogger;
+    }
+
+    /**
+     * Get a logger for a given name or create it if not already there, typically
+     * used for mapping system properties to loggers
+     *
+     * @param name the name to use as key
+     * @param level log lever to reset existing logger with, or create new logger with
+     * @return the logger
+     */
+    public static Logger getOrCreateLogger(final String name, final Level level) {
+        final Logger logger = Logging.loggers.get(name);
+        if (logger == null) {
+            return instantiateLogger(name, level);
+        }
+        logger.setLevel(level);
+        return logger;
     }
 
     /**
@@ -114,38 +121,43 @@ public class Logging {
                 }
 
                 final String name = Logging.lastPart(key);
-
-                final Logger logger = java.util.logging.Logger.getLogger(name);
-                for (final Handler h : logger.getHandlers()) {
-                    logger.removeHandler(h);
-                }
-
-                logger.setLevel(level);
-                logger.setUseParentHandlers(false);
-                final Handler c = new ConsoleHandler();
-
-                c.setFormatter(new Formatter() {
-                    @Override
-                    public String format(final LogRecord record) {
-                        final StringBuilder sb = new StringBuilder();
-
-                        sb.append('[')
-                           .append(record.getLoggerName())
-                           .append("] ")
-                           .append(record.getMessage())
-                           .append('\n');
-
-                        return sb.toString();
-                    }
-                });
-                logger.addHandler(c);
-                c.setLevel(level);
+                final Logger logger = instantiateLogger(name, level);
 
                 Logging.loggers.put(name, logger);
             }
         } catch (final IllegalArgumentException | SecurityException e) {
             throw e;
         }
+    }
+
+    private static Logger instantiateLogger(final String name, final Level level) {
+        final Logger logger = java.util.logging.Logger.getLogger(name);
+        for (final Handler h : logger.getHandlers()) {
+            logger.removeHandler(h);
+        }
+
+        logger.setLevel(level);
+        logger.setUseParentHandlers(false);
+        final Handler c = new ConsoleHandler();
+
+        c.setFormatter(new Formatter() {
+            @Override
+            public String format(final LogRecord record) {
+                final StringBuilder sb = new StringBuilder();
+
+                sb.append('[')
+                   .append(record.getLoggerName())
+                   .append("] ")
+                   .append(record.getMessage())
+                   .append('\n');
+
+                return sb.toString();
+            }
+        });
+        logger.addHandler(c);
+        c.setLevel(level);
+
+        return logger;
     }
 
 }

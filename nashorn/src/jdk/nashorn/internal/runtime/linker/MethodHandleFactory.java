@@ -25,6 +25,13 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import jdk.nashorn.internal.runtime.ConsString;
+import jdk.nashorn.internal.runtime.Debug;
+import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.options.Options;
+
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -35,29 +42,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
-import jdk.nashorn.internal.runtime.ConsString;
-import jdk.nashorn.internal.runtime.Debug;
-import jdk.nashorn.internal.runtime.DebugLogger;
-import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * This class is abstraction for all method handle, switchpoint and method type
  * operations. This enables the functionality interface to be subclassed and
- * instrumented, as it has been proven vital to keep the number of method
+ * intrumensted, as it has been proven vital to keep the number of method
  * handles in the system down.
- * <p>
+ *
  * All operations of the above type should go through this class, and not
  * directly into java.lang.invoke
+ *
  */
 public final class MethodHandleFactory {
 
     private static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
     private static final MethodHandles.Lookup LOOKUP        = MethodHandles.lookup();
 
-    private static PrintStream ERR = System.err;
-
-    private static final Level TRACE_LEVEL = Level.FINEST;
+    private static final Level TRACE_LEVEL = Level.INFO;
 
     private MethodHandleFactory() {
     }
@@ -97,14 +98,25 @@ public final class MethodHandleFactory {
     }
 
     private static final MethodHandleFunctionality STANDARD = new StandardMethodHandleFunctionality();
-    private static final MethodHandleFunctionality FUNC     =
-        Options.getBooleanProperty("nashorn.methodhandles.debug") ?
-            (Options.getStringProperty("nashorn.methodhandles.debug","").equals("create") ?
-                new TraceCreateMethodHandleFunctionality() :
-                new TraceMethodHandleFunctionality())
-            : STANDARD;
+    private static final MethodHandleFunctionality FUNC;
+
+    private static final String DEBUG_PROPERTY = "nashorn.methodhandles.debug";
+    private static final DebugLogger LOG = new DebugLogger("methodhandles", DEBUG_PROPERTY);
+
+    static {
+        if (LOG.isEnabled() || Options.getBooleanProperty(DEBUG_PROPERTY)) {
+            if (Options.getStringProperty(DEBUG_PROPERTY, "").equals("create")) {
+                FUNC = new TraceCreateMethodHandleFunctionality();
+            } else {
+                FUNC = new TraceMethodHandleFunctionality();
+            }
+        } else {
+            FUNC  = STANDARD;
+        }
+    }
 
     private static final boolean PRINT_STACKTRACE = Options.getBooleanProperty("nashorn.methodhandles.debug.stacktrace");
+
 
     /**
      * Return the method handle functionality used for all method handle operations
@@ -126,11 +138,7 @@ public final class MethodHandleFactory {
      */
     static Object traceReturn(final DebugLogger logger, final Object value) {
         final String str = "\treturn: " + stripName(value) + " [type=" + (value == null ? "null" : stripName(value.getClass()) + ']');
-        if (logger != null) {
-            logger.log(str, TRACE_LEVEL);
-        } else {
-            ERR.println(str);
-        }
+        logger.log(str, TRACE_LEVEL);
         return value;
     }
 
@@ -165,14 +173,19 @@ public final class MethodHandleFactory {
             }
         }
 
-        if (logger != null) {
-            logger.log(sb.toString(), TRACE_LEVEL);
-        } else {
-            ERR.print(sb);
-            if (PRINT_STACKTRACE) {
-                new Throwable().printStackTrace(ERR);
-            }
+        assert logger != null;
+        logger.log(sb.toString(), TRACE_LEVEL);
+        stacktrace(logger);
+    }
+
+    private static void stacktrace(final DebugLogger logger) {
+        if (!PRINT_STACKTRACE) {
+            return;
         }
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final PrintStream ps = new PrintStream(baos);
+        new Throwable().printStackTrace(ps);
+        logger.log(baos.toString(), TRACE_LEVEL);
     }
 
     private static String argString(final Object arg) {
@@ -196,18 +209,6 @@ public final class MethodHandleFactory {
         }
 
         return arg.toString();
-    }
-
-    /**
-     * Add a debug printout to a method handle, tracing parameters and return values. Output
-     * will be written to stderr.
-     *
-     * @param mh  method handle to trace
-     * @param tag start of trace message
-     * @return traced method handle
-     */
-    public static MethodHandle addDebugPrintout0(final MethodHandle mh, final Object tag) {
-        return addDebugPrintout(null, mh, 0, true, tag);
     }
 
     /**
@@ -240,6 +241,7 @@ public final class MethodHandleFactory {
             return mh;
         }
 
+        assert logger != null;
         assert TRACE != null;
 
         MethodHandle trace = MethodHandles.insertArguments(TRACE, 0, logger, tag, paramStart);
@@ -263,7 +265,7 @@ public final class MethodHandleFactory {
     }
 
     /**
-     * The standard class that marshals all method handle operations to the java.lang.invoke
+     * The standard class that marshalls all method handle operations to the java.lang.invoke
      * package. This exists only so that it can be subclassed and method handles created from
      * Nashorn made possible to instrument.
      *
@@ -464,7 +466,7 @@ public final class MethodHandleFactory {
         }
 
         public MethodHandle debug(final MethodHandle master, final String str, final Object... args) {
-            return addDebugPrintout(null, master, Integer.MAX_VALUE, false, str + ' ' + describe(args));
+            return addDebugPrintout(LOG, master, Integer.MAX_VALUE, false, str + ' ' + describe(args));
         }
 
         @Override
@@ -602,7 +604,7 @@ public final class MethodHandleFactory {
         @Override
         public SwitchPoint createSwitchPoint() {
             final SwitchPoint sp = super.createSwitchPoint();
-            ERR.println("createSwitchPoint " + sp);
+            LOG.log("createSwitchPoint " + sp, TRACE_LEVEL);
             return sp;
         }
 
@@ -615,7 +617,7 @@ public final class MethodHandleFactory {
         @Override
         public MethodType type(final Class<?> returnType, final Class<?>... paramTypes) {
             final MethodType mt = super.type(returnType, paramTypes);
-            ERR.println("methodType " + returnType + ' ' + Arrays.toString(paramTypes) + ' ' + mt);
+            LOG.log("methodType " + returnType + ' ' + Arrays.toString(paramTypes) + ' ' + mt, TRACE_LEVEL);
             return mt;
         }
     }
@@ -626,7 +628,8 @@ public final class MethodHandleFactory {
     private static class TraceCreateMethodHandleFunctionality extends TraceMethodHandleFunctionality {
         @Override
         public MethodHandle debug(final MethodHandle master, final String str, final Object... args) {
-            ERR.println(str + ' ' + describe(args));
+            LOG.log(str + ' ' + describe(args), TRACE_LEVEL);
+            stacktrace(LOG);
             return master;
         }
     }

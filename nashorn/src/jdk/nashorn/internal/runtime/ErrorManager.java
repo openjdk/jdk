@@ -55,7 +55,7 @@ public class ErrorManager {
      * Constructor
      */
     public ErrorManager() {
-        this(new PrintWriter(System.err, true));
+        this(new PrintWriter(System.err, true)); //bootstrapping, context may not be initialized
     }
 
     /**

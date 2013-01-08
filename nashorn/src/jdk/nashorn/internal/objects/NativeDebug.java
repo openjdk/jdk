@@ -27,12 +27,13 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.Objects;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyListenerManager;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -248,9 +249,11 @@ public class NativeDebug extends ScriptObject {
      * @param self self reference
      * @return undefined
      */
+    @SuppressWarnings("resource")
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object dumpCounters(final Object self) {
-        final PrintStream out = System.err;
+        final PrintWriter out = Context.getContext().getErr();
+
         out.println("ScriptObject count " + ScriptObject.getCount());
         out.println("Scope count " + ScriptObject.getScopeCount());
         out.println("ScriptObject listeners added " + PropertyListenerManager.getListenersAdded());
@@ -268,7 +271,9 @@ public class NativeDebug extends ScriptObject {
         out.println("Callsite count " + LinkerCallSite.getCount());
         out.println("Callsite misses " + LinkerCallSite.getMissCount());
         out.println("Callsite misses by site at " + LinkerCallSite.getMissSamplingPercentage() + "%");
+
         LinkerCallSite.getMissCounts(out);
+
         return UNDEFINED;
     }
 }

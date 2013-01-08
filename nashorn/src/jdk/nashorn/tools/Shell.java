@@ -114,7 +114,7 @@ public class Shell {
         try {
             System.exit(main(System.in, System.out, System.err, args));
         } catch (final IOException e) {
-            System.err.println(e);
+            System.err.println(e); //bootstrapping, Context.err may not exist
             System.exit(IO_ERROR);
         }
     }
