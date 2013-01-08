@@ -1297,7 +1297,10 @@ final class Lower extends NodeOperatorVisitor {
                     final List<Block> lookupBlocks = findLookupBlocksHelper(getCurrentFunctionNode(), symbol.findFunction());
                     for (final Block lookupBlock : lookupBlocks) {
                         final Symbol refSymbol = lookupBlock.findSymbol(name);
-                        refSymbol.setIsScope();
+                        if (refSymbol != null) { // See NASHORN-837, function declaration in lexical scope: try {} catch (x){ function f() { use(x) } } f()
+                            LOG.finest("Found a ref symbol that must be scope " + refSymbol);
+                            refSymbol.setIsScope();
+                        }
                     }
                 }
             }
