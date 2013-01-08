@@ -155,7 +155,7 @@ public class MethodEmitter implements Emitter {
 
     /**
      * Constructor - internal use from ClassEmitter only
-     * @see ClassEmitter.method
+     * @see ClassEmitter#method
      *
      * @param classEmitter the class emitter weaving the class this method is in
      * @param method       a method visitor
@@ -166,7 +166,7 @@ public class MethodEmitter implements Emitter {
 
     /**
      * Constructor - internal use from ClassEmitter only
-     * @see ClassEmitter.method
+     * @see ClassEmitter#method
      *
      * @param classEmitter the class emitter weaving the class this method is in
      * @param method       a method visitor
