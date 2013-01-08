@@ -31,6 +31,7 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klassVtable.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
 #include "utilities/accessFlags.hpp"
@@ -169,6 +170,11 @@ class InstanceKlass: public Klass {
     fully_initialized,                  // initialized (successfull final state)
     initialization_error                // error happened during initialization
   };
+
+  static int number_of_instance_classes() { return _total_instanceKlass_count; }
+
+ private:
+  static volatile int _total_instanceKlass_count;
 
  protected:
   // Protection domain.

@@ -160,6 +160,8 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
 
 #endif //  ndef DTRACE_ENABLED
 
+volatile int InstanceKlass::_total_instanceKlass_count = 0;
+
 Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
                                                 int vtable_len,
                                                 int itable_len,
@@ -203,6 +205,7 @@ Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
         access_flags, !host_klass.is_null());
   }
 
+  Atomic::inc(&_total_instanceKlass_count);
   return ik;
 }
 
@@ -2306,6 +2309,9 @@ void InstanceKlass::release_C_heap_structures() {
   if (_array_name != NULL)  _array_name->decrement_refcount();
   if (_source_file_name != NULL) _source_file_name->decrement_refcount();
   if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension, mtClass);
+
+  assert(_total_instanceKlass_count >= 1, "Sanity check");
+  Atomic::dec(&_total_instanceKlass_count);
 }
 
 void InstanceKlass::set_source_file_name(Symbol* n) {
