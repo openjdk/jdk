@@ -1331,14 +1331,14 @@ bool verify_object_alignment() {
   // then a saved space from compressed oops.
   if ((int)ObjectAlignmentInBytes > 256) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must not be greater then 256\n",
+                "error: ObjectAlignmentInBytes=%d must not be greater than 256\n",
                 (int)ObjectAlignmentInBytes);
     return false;
   }
   // In case page size is very small.
   if ((int)ObjectAlignmentInBytes >= os::vm_page_size()) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must be less then page size %d\n",
+                "error: ObjectAlignmentInBytes=%d must be less than page size %d\n",
                 (int)ObjectAlignmentInBytes, os::vm_page_size());
     return false;
   }
@@ -2995,11 +2995,6 @@ void Arguments::set_shared_spaces_flags() {
     // Disable large pages to allow shared spaces.  This is sub-optimal, since
     // there may not even be a shared archive to use.
     FLAG_SET_DEFAULT(UseLargePages, false);
-  }
-
-  // Add 2M to any size for SharedReadOnlySize to get around the JPRT setting
-  if (DumpSharedSpaces && !FLAG_IS_DEFAULT(SharedReadOnlySize)) {
-    SharedReadOnlySize = 14*M;
   }
 
   if (DumpSharedSpaces) {

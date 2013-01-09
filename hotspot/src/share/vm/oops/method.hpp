@@ -160,6 +160,7 @@ class Method : public Metadata {
                           int localvariable_table_length,
                           int exception_table_length,
                           int checked_exceptions_length,
+                          int method_parameters_length,
                           u2 generic_signature_index,
                           ConstMethod::MethodType method_type,
                           TRAPS);
@@ -479,6 +480,12 @@ class Method : public Metadata {
   void print_codes() const            { print_codes_on(tty); }
   void print_codes_on(outputStream* st) const                      PRODUCT_RETURN;
   void print_codes_on(int from, int to, outputStream* st) const    PRODUCT_RETURN;
+
+  // method parameters
+  int method_parameters_length() const
+                         { return constMethod()->method_parameters_length(); }
+  MethodParametersElement* method_parameters_start() const
+                          { return constMethod()->method_parameters_start(); }
 
   // checked exceptions
   int checked_exceptions_length() const

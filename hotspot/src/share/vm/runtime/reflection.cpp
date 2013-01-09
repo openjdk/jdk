@@ -860,6 +860,17 @@ oop Reflection::new_field(fieldDescriptor* fd, bool intern_name, TRAPS) {
   return rh();
 }
 
+oop Reflection::new_parameter(Handle method, int index, Symbol* sym,
+                              int flags, TRAPS) {
+  Handle name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
+  Handle rh = java_lang_reflect_Parameter::create(CHECK_NULL);
+  java_lang_reflect_Parameter::set_name(rh(), name());
+  java_lang_reflect_Parameter::set_modifiers(rh(), flags);
+  java_lang_reflect_Parameter::set_executable(rh(), method());
+  java_lang_reflect_Parameter::set_index(rh(), index);
+  return rh();
+}
+
 
 methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, methodHandle method,
                                                 KlassHandle recv_klass, Handle receiver, TRAPS) {
