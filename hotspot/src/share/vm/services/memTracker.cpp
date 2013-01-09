@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 
+#include "oops/instanceKlass.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -485,7 +486,7 @@ void MemTracker::sync() {
       }
       // check _worker_thread with lock to avoid racing condition
       if (_worker_thread != NULL) {
-        _worker_thread->at_sync_point(pending_recorders);
+        _worker_thread->at_sync_point(pending_recorders, InstanceKlass::number_of_instance_classes());
       }
 
       assert(SequenceGenerator::peek() == 1, "Should not have memory activities during sync-point");
