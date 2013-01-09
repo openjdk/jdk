@@ -1326,14 +1326,14 @@ bool verify_object_alignment() {
   // then a saved space from compressed oops.
   if ((int)ObjectAlignmentInBytes > 256) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must not be greater then 256\n",
+                "error: ObjectAlignmentInBytes=%d must not be greater than 256\n",
                 (int)ObjectAlignmentInBytes);
     return false;
   }
   // In case page size is very small.
   if ((int)ObjectAlignmentInBytes >= os::vm_page_size()) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must be less then page size %d\n",
+                "error: ObjectAlignmentInBytes=%d must be less than page size %d\n",
                 (int)ObjectAlignmentInBytes, os::vm_page_size());
     return false;
   }
@@ -3010,11 +3010,6 @@ void Arguments::set_shared_spaces_flags() {
     FLAG_SET_DEFAULT(UseLargePages, false);
   }
 
-  // Add 2M to any size for SharedReadOnlySize to get around the JPRT setting
-  if (DumpSharedSpaces && !FLAG_IS_DEFAULT(SharedReadOnlySize)) {
-    SharedReadOnlySize = 14*M;
-  }
-
   if (DumpSharedSpaces) {
     if (RequireSharedSpaces) {
       warning("cannot dump shared archive while using shared archive");
@@ -3051,7 +3046,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   strcpy(shared_archive_path, jvm_path);
   strcat(shared_archive_path, os::file_separator());
   strcat(shared_archive_path, "classes");
-  DEBUG_ONLY(strcat(shared_archive_path, "_g");)
   strcat(shared_archive_path, ".jsa");
   SharedArchivePath = shared_archive_path;
 

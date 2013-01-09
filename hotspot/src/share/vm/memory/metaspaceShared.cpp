@@ -689,9 +689,15 @@ void MetaspaceShared::print_shared_spaces() {
 bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
   size_t image_alignment = mapinfo->alignment();
 
-  // Map in the shared memory and then map the regions on top of it
+#ifndef _WINDOWS
+  // Map in the shared memory and then map the regions on top of it.
+  // On Windows, don't map the memory here because it will cause the
+  // mappings of the regions to fail.
   ReservedSpace shared_rs = mapinfo->reserve_shared_memory();
   if (!shared_rs.is_reserved()) return false;
+#endif
+
+  assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
 
   // Map each shared region
   if ((_ro_base = mapinfo->map_region(ro)) != NULL &&
@@ -708,8 +714,10 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
     if (_rw_base != NULL) mapinfo->unmap_region(rw);
     if (_md_base != NULL) mapinfo->unmap_region(md);
     if (_mc_base != NULL) mapinfo->unmap_region(mc);
+#ifndef _WINDOWS
     // Release the entire mapped region
     shared_rs.release();
+#endif
     // If -Xshare:on is specified, print out the error message and exit VM,
     // otherwise, set UseSharedSpaces to false and continue.
     if (RequireSharedSpaces) {
