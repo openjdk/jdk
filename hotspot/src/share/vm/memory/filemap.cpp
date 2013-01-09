@@ -119,6 +119,7 @@ void FileMapInfo::populate_header(size_t alignment) {
   _header._magic = 0xf00baba2;
   _header._version = _current_version;
   _header._alignment = alignment;
+  _header._obj_alignment = ObjectAlignmentInBytes;
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -471,6 +472,12 @@ bool FileMapInfo::validate() {
   if (strncmp(_header._jvm_ident, header_version, JVM_IDENT_MAX-1) != 0) {
     fail_continue("The shared archive file was created by a different"
                   " version or build of HotSpot.");
+    return false;
+  }
+  if (_header._obj_alignment != ObjectAlignmentInBytes) {
+    fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
+                  " does not equal the current ObjectAlignmentInBytes of %d.",
+                  _header._obj_alignment, ObjectAlignmentInBytes);
     return false;
   }
 
