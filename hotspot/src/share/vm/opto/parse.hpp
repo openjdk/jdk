@@ -469,10 +469,6 @@ class Parse : public GraphKit {
   // Helper function to uncommon-trap or bailout for non-compilable call-sites
   bool can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass *klass);
 
-  // Helper function to identify inlining potential at call-site
-  ciMethod* optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
-                              ciMethod *dest_method, const TypeOopPtr* receiver_type);
-
   // Helper function to setup for type-profile based inlining
   bool prepare_type_profile_inline(ciInstanceKlass* prof_klass, ciMethod* prof_method);
 

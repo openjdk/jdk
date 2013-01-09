@@ -717,6 +717,7 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
       (input_not_const || !C->inlining_incrementally() || C->over_inlining_cutoff())) {
     return CallGenerator::for_mh_late_inline(caller, callee, input_not_const);
   } else {
+    // Out-of-line call.
     return CallGenerator::for_direct_call(callee);
   }
 }
@@ -739,7 +740,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         guarantee(!target->is_method_handle_intrinsic(), "should not happen");  // XXX remove
         const int vtable_index = Method::invalid_vtable_index;
         CallGenerator* cg = C->call_generator(target, vtable_index, false, jvms, true, PROB_ALWAYS, true, true);
-        assert (!cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
+        assert(!cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
         if (cg != NULL && cg->is_inline())
           return cg;
       }
@@ -787,10 +788,25 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             }
           }
         }
-        const int vtable_index = Method::invalid_vtable_index;
-        const bool call_is_virtual = target->is_abstract();  // FIXME workaround
-        CallGenerator* cg = C->call_generator(target, vtable_index, call_is_virtual, jvms, true, PROB_ALWAYS, true, true);
-        assert (!cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
+
+        // Try to get the most accurate receiver type
+        const bool is_virtual              = (iid == vmIntrinsics::_linkToVirtual);
+        const bool is_virtual_or_interface = (is_virtual || iid == vmIntrinsics::_linkToInterface);
+        int  vtable_index       = Method::invalid_vtable_index;
+        bool call_does_dispatch = false;
+
+        if (is_virtual_or_interface) {
+          ciInstanceKlass* klass = target->holder();
+          Node*             receiver_node = kit.argument(0);
+          const TypeOopPtr* receiver_type = gvn.type(receiver_node)->isa_oopptr();
+          // call_does_dispatch and vtable_index are out-parameters.  They might be changed.
+          target = C->optimize_virtual_call(caller, jvms->bci(), klass, target, receiver_type,
+                                            is_virtual,
+                                            call_does_dispatch, vtable_index);  // out-parameters
+        }
+
+        CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms, true, PROB_ALWAYS, true, true);
+        assert(!cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
         if (cg != NULL && cg->is_inline())
           return cg;
       }
