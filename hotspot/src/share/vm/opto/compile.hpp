@@ -72,6 +72,7 @@ class SafePointNode;
 class JVMState;
 class TypeData;
 class TypePtr;
+class TypeOopPtr;
 class TypeFunc;
 class Unique_Node_List;
 class nmethod;
@@ -740,8 +741,16 @@ class Compile : public Phase {
 
   // Decide how to build a call.
   // The profile factor is a discount to apply to this site's interp. profile.
-  CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual, JVMState* jvms, bool allow_inline, float profile_factor, bool allow_intrinsics = true, bool delayed_forbidden = false);
+  CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_does_dispatch, JVMState* jvms, bool allow_inline, float profile_factor, bool allow_intrinsics = true, bool delayed_forbidden = false);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms);
+
+  // Helper functions to identify inlining potential at call-site
+  ciMethod* optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
+                                  ciMethod* callee, const TypeOopPtr* receiver_type,
+                                  bool is_virtual,
+                                  bool &call_does_dispatch, int &vtable_index);
+  ciMethod* optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
+                              ciMethod* callee, const TypeOopPtr* receiver_type);
 
   // Report if there were too many traps at a current method and bci.
   // Report if a trap was recorded, and/or PerMethodTrapLimit was exceeded.
