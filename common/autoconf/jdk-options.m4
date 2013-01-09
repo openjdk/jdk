@@ -382,23 +382,37 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
 AC_ARG_WITH(milestone, [AS_HELP_STRING([--with-milestone], 
                        [Set milestone value for build @<:@internal@:>@])])
 if test "x$with_milestone" = xyes; then
-    AC_MSG_ERROR([Milestone must have a value])
+  AC_MSG_ERROR([Milestone must have a value])
 elif test "x$with_milestone" != x; then
     MILESTONE="$with_milestone"
 else
-    MILESTONE=internal
+  MILESTONE=internal
 fi
 
 AC_ARG_WITH(build-number, [AS_HELP_STRING([--with-build-number], 
                           [Set build number value for build @<:@b00@:>@])])
 if test "x$with_build_number" = xyes; then
-    AC_MSG_ERROR([Build number must have a value])
+  AC_MSG_ERROR([Build number must have a value])
 elif test "x$with_build_number" != x; then
-    JDK_BUILD_NUMBER="$with_build_number"
+  JDK_BUILD_NUMBER="$with_build_number"
 fi
 if test "x$JDK_BUILD_NUMBER" = x; then
-    JDK_BUILD_NUMBER=b00
+  JDK_BUILD_NUMBER=b00
 fi
+
+AC_ARG_WITH(user-release-suffix, [AS_HELP_STRING([--with-user-release-suffix], 
+        [Add a custom string to the version string if build number isn't set.@<:@username_builddateb00@:>@])])
+if test "x$with_user_release_suffix" = xyes; then
+  AC_MSG_ERROR([Release suffix must have a value])
+elif test "x$with_user_release_suffix" != x; then
+  USER_RELEASE_SUFFIX="$with_user_release_suffix"
+else
+  BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
+  # Avoid [:alnum:] since it depends on the locale.
+  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
+  USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+fi
+AC_SUBST(USER_RELEASE_SUFFIX)
 
 # Now set the JDK version, milestone, build number etc.
 AC_SUBST(JDK_MAJOR_VERSION)
@@ -419,17 +433,11 @@ COPYRIGHT_YEAR=`date +'%Y'`
 AC_SUBST(COPYRIGHT_YEAR)
 
 if test "x$JDK_UPDATE_VERSION" != x; then
-    JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}_${JDK_UPDATE_VERSION}"
+  JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}_${JDK_UPDATE_VERSION}"
 else
-    JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}"
+  JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}"
 fi
 AC_SUBST(JDK_VERSION)
-
-BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
-# Avoid [:alnum:] since it depends on the locale.
-CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
-USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-AC_SUBST(USER_RELEASE_SUFFIX)
 
 COOKED_BUILD_NUMBER=`$ECHO $JDK_BUILD_NUMBER | $SED -e 's/^b//' -e 's/^0//'`
 AC_SUBST(COOKED_BUILD_NUMBER)
@@ -443,7 +451,7 @@ AC_SUBST(HOTSPOT_MAKE_ARGS)
 # The name of the Service Agent jar.
 SALIB_NAME="${LIBRARY_PREFIX}saproc${SHARED_LIBRARY_SUFFIX}"
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
+  SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
 fi
 AC_SUBST(SALIB_NAME)
 
