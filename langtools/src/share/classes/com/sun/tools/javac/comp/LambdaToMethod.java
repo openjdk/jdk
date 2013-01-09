@@ -288,21 +288,20 @@ public class LambdaToMethod extends TreeTranslator {
         JCExpression init;
         switch(tree.kind) {
 
-            case IMPLICIT_INNER:    /** Inner # new */
-            case SUPER:             /** super # instMethod */
+            case IMPLICIT_INNER:    /** Inner :: new */
+            case SUPER:             /** super :: instMethod */
                 init = makeThis(
                     localContext.owner.owner.asType(),
                     localContext.owner);
                 break;
 
-            case BOUND:             /** Expr # instMethod */
+            case BOUND:             /** Expr :: instMethod */
                 init = tree.getQualifierExpression();
                 break;
 
-            case STATIC_EVAL:       /** Expr # staticMethod */
-            case UNBOUND:           /** Type # instMethod */
-            case STATIC:            /** Type # staticMethod */
-            case TOPLEVEL:          /** Top level # new */
+            case UNBOUND:           /** Type :: instMethod */
+            case STATIC:            /** Type :: staticMethod */
+            case TOPLEVEL:          /** Top level :: new */
                 init = null;
                 break;
 
@@ -315,14 +314,6 @@ public class LambdaToMethod extends TreeTranslator {
 
         //build a sam instance using an indy call to the meta-factory
         result = makeMetaFactoryIndyCall(tree, tree.targetType, localContext.referenceKind(), refSym, indy_args);
-
-        //if we had a static reference with non-static qualifier, add a let
-        //expression to force the evaluation of the qualifier expr
-        if (tree.hasKind(ReferenceKind.STATIC_EVAL)) {
-            VarSymbol rec = new VarSymbol(0, names.fromString("rec$"), tree.getQualifierExpression().type, localContext.owner);
-            JCVariableDecl recDef = make.VarDef(rec, tree.getQualifierExpression());
-            result = make.LetExpr(recDef, result).setType(tree.type);
-        }
     }
 
     /**
@@ -1120,10 +1111,10 @@ public class LambdaToMethod extends TreeTranslator {
             if (context != null
                     && tree.encl == null
                     && tree.def == null
-                    && tree.type.getEnclosingType().hasTag(NONE)) {
+                    && !tree.type.getEnclosingType().hasTag(NONE)) {
                 Type encl = tree.type.getEnclosingType();
                 Type current = context.owner.enclClass().type;
-                while (current.hasTag(NONE)) {
+                while (!current.hasTag(NONE)) {
                     if (current.tsym.isSubClass(encl.tsym, types)) {
                         return true;
                     }

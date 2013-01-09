@@ -53,7 +53,7 @@ failures=0
 
 go() {
     echo ""
-    ${TESTJAVA}/bin/java $1 $2 $3 2>&1
+    ${TESTJAVA}/bin/java ${TESTVMOPTS} $1 $2 $3 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 

@@ -25,7 +25,7 @@
  * @test
  * @summary test for explicit resolution of ambiguous default methods
  * @author  Maurizio Cimadamore
- * @compile -XDallowDefaultMethods Pos02.java
+ * @compile Pos02.java
  */
 
 class Pos02 {

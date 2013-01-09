@@ -215,6 +215,9 @@ public enum Source {
     public boolean allowRepeatedAnnotations() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowIntersectionTypesInCast() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:

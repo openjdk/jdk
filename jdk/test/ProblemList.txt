@@ -162,6 +162,9 @@ javax/management/remote/mandatory/notif/DiffHBTest.java 	generic-all
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
+# 7027502
+demo/jvmti/hprof/MonitorTest.java                               generic-all
+
 ############################################################################
 
 # jdk_net
@@ -204,6 +207,9 @@ java/net/CookieHandler/CookieManagerTest.java                   macosx-all
 
 # jdk_io
 
+# 7160013
+java/io/File/MaxPathLength.java                                 windows-all
+
 ############################################################################
 
 # jdk_nio
@@ -225,6 +231,9 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
 # 7132677
 java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
+# 8003895
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java       windows-amd64
+
 ############################################################################
 
 # jdk_rmi
@@ -242,7 +251,7 @@ java/rmi/reliability/benchmark/runRmiBench.sh                   generic-all
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       generic-all
 
 # 7195095
-sun/rmi/transport/proxy/EagerHttpFallback.java                  linux-all
+sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 
 ############################################################################
 
@@ -250,10 +259,6 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  linux-all
 
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
-
-# 7193792
-sun/security/pkcs11/ec/TestECDSA.java				solaris-all
-sun/security/pkcs11/ec/TestECDSA.java				linux-all
 
 # 7193793
 sun/security/pkcs11/ec/TestECDH.java				linux-all
@@ -282,6 +287,12 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 # 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
 sun/security/krb5/auto/MaxRetries.java                          solaris-sparcv9
+
+# 7194428
+sun/security/mscapi/ShortRSAKey1024.sh                          windows-all
+
+# 8000897, vm crash
+sun/security/provider/DSA/TestAlgParameterGenerator.java        generic-all
 
 ############################################################################
 
@@ -344,9 +355,6 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
-
-# 8003596
-java/util/logging/CheckLockLocationTest.java			windows-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all

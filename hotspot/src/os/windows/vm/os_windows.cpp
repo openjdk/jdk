@@ -32,6 +32,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm_windows.h"
 #include "memory/allocation.inline.hpp"
@@ -55,20 +56,16 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
-#include "thread_windows.inline.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
-#ifdef TARGET_ARCH_x86
-# include "assembler_x86.inline.hpp"
-# include "nativeInst_x86.hpp"
-#endif
 
 #ifdef _DEBUG
 #include <crtdbg.h>
@@ -1132,21 +1129,23 @@ static bool file_exists(const char* filename) {
   return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
 }
 
-void os::dll_build_name(char *buffer, size_t buflen,
+bool os::dll_build_name(char *buffer, size_t buflen,
                         const char* pname, const char* fname) {
+  bool retval = false;
   const size_t pnamelen = pname ? strlen(pname) : 0;
   const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
 
-  // Quietly truncates on buffer overflow. Should be an error.
+  // Return error on buffer overflow.
   if (pnamelen + strlen(fname) + 10 > buflen) {
-    *buffer = '\0';
-    return;
+    return retval;
   }
 
   if (pnamelen == 0) {
     jio_snprintf(buffer, buflen, "%s.dll", fname);
+    retval = true;
   } else if (c == ':' || c == '\\') {
     jio_snprintf(buffer, buflen, "%s%s.dll", pname, fname);
+    retval = true;
   } else if (strchr(pname, *os::path_separator()) != NULL) {
     int n;
     char** pelements = split_path(pname, &n);
@@ -1164,6 +1163,7 @@ void os::dll_build_name(char *buffer, size_t buflen,
         jio_snprintf(buffer, buflen, "%s\\%s.dll", path, fname);
       }
       if (file_exists(buffer)) {
+        retval = true;
         break;
       }
     }
@@ -1178,7 +1178,9 @@ void os::dll_build_name(char *buffer, size_t buflen,
     }
   } else {
     jio_snprintf(buffer, buflen, "%s\\%s.dll", pname, fname);
+    retval = true;
   }
+  return retval;
 }
 
 // Needs to be in os specific directory because windows requires another

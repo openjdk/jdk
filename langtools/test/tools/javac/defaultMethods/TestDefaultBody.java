@@ -23,10 +23,7 @@
 
 /*
  * @test
- * @ignore awaits for VM support
  * @summary  check that code attributed for default methods is correctly generated
- * @compile -XDallowDefaultMethods TestDefaultBody.java
- * @run main TestDefaultBody
  */
 
 import com.sun.tools.classfile.AccessFlags;

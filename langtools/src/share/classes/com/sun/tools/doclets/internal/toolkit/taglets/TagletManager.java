@@ -30,6 +30,9 @@ import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 
+import javax.tools.DocumentationTool;
+import javax.tools.JavaFileManager;
+
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -48,16 +51,16 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 public class TagletManager {
 
     /**
-     * The default seperator for the simple tag option.
+     * The default separator for the simple tag option.
      */
-    public static final char SIMPLE_TAGLET_OPT_SEPERATOR = ':';
+    public static final char SIMPLE_TAGLET_OPT_SEPARATOR = ':';
 
     /**
-     * The alternate seperator for simple tag options.  Use this
-     * with you want the default seperator to be in the name of the
+     * The alternate separator for simple tag options.  Use this
+     * when you want the default separator to be in the name of the
      * custom tag.
      */
-    public static final String ALT_SIMPLE_TAGLET_OPT_SEPERATOR = "-";
+    public static final String ALT_SIMPLE_TAGLET_OPT_SEPARATOR = "-";
 
     /**
      * The map of custom tags.
@@ -200,18 +203,24 @@ public class TagletManager {
      * @param classname  the name of the class representing the custom tag.
      * @param tagletPath  the path to the class representing the custom tag.
      */
-    public void addCustomTag(String classname, String tagletPath) {
+    public void addCustomTag(String classname, JavaFileManager fileManager, String tagletPath) {
         try {
             Class<?> customTagClass = null;
             // construct class loader
             String cpString = null;   // make sure env.class.path defaults to dot
 
-            // do prepends to get correct ordering
-            cpString = appendPath(System.getProperty("env.class.path"), cpString);
-            cpString = appendPath(System.getProperty("java.class.path"), cpString);
-            cpString = appendPath(tagletPath, cpString);
-            URLClassLoader appClassLoader = new URLClassLoader(pathToURLs(cpString));
-            customTagClass = appClassLoader.loadClass(classname);
+            ClassLoader tagClassLoader;
+            if (fileManager != null && fileManager.hasLocation(DocumentationTool.Location.TAGLET_PATH)) {
+                tagClassLoader = fileManager.getClassLoader(DocumentationTool.Location.TAGLET_PATH);
+            } else {
+                // do prepends to get correct ordering
+                cpString = appendPath(System.getProperty("env.class.path"), cpString);
+                cpString = appendPath(System.getProperty("java.class.path"), cpString);
+                cpString = appendPath(tagletPath, cpString);
+                tagClassLoader = new URLClassLoader(pathToURLs(cpString));
+            }
+
+            customTagClass = tagClassLoader.loadClass(classname);
             Method meth = customTagClass.getMethod("register",
                                                    new Class<?>[] {java.util.Map.class});
             Object[] list = customTags.values().toArray();

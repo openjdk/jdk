@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that default overrides are properly type-checked
- * @compile/fail/ref=Neg07.out -XDallowDefaultMethods -XDrawDiagnostics Neg07.java
+ * @compile/fail/ref=Neg07.out -XDrawDiagnostics Neg07.java
  */
 
 class Neg07 {

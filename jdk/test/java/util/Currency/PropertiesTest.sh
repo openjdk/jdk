@@ -1,7 +1,29 @@
 #!/bin/sh
+
+# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
 # @test
-# @bug 6332666 7180362
+# @bug 6332666 7180362 8003846
 # @summary tests the capability of replacing the currency data with user
 #     specified currency properties file
 # @build PropertiesTest
@@ -36,7 +58,7 @@ case "$OS" in
     ;;
   Windows* | CYGWIN* )
     PS=";"
-    FS="\\"
+    FS="/"
     ;;
   * )
     echo "Unrecognized system!"
@@ -44,23 +66,31 @@ case "$OS" in
     ;;
 esac
 
-# Currency dump path #1.  Just dump currencies with the bare JRE
+failures=0
 
-# run
-RUNCMD="${TESTJAVA}${FS}bin${FS}java -classpath ${TESTCLASSES} PropertiesTest -d dump1"
+run() {
+    echo ''
+    sh -xc "${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} $*" 2>&1
+    if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
+}
 
-echo ${RUNCMD}
-${RUNCMD}
-result=$?
+PROPS=${TESTSRC}${FS}currency.properties
 
-if [ $result -eq 0 ]
-then
-  echo "Execution successful"
-else
-  echo "Execution of the test case failed."
-fi
 
-# Currency dump path #2.  Dump currencies using the JRE with replacement currencies
+# Dump built-in currency data
+
+run PropertiesTest -d dump1
+
+
+# Dump built-in currency data + overrides in properties file specified
+# by system property.
+
+run -Djava.util.currency.data=${PROPS} PropertiesTest -d dump2
+run PropertiesTest -c dump1 dump2 ${PROPS}
+
+
+# Dump built-in currency data + overrides in properties file copied into
+# JRE image.
 
 # copy the test properties file
 COPIED=0
@@ -79,44 +109,27 @@ then
 else
   PROPLOCATION=${WRITABLEJDK}${FS}lib
 fi
-cp ${TESTSRC}${FS}currency.properties $PROPLOCATION
+cp ${PROPS} $PROPLOCATION
 
 # run
-RUNCMD="${WRITABLEJDK}${FS}bin${FS}java -classpath ${TESTCLASSES} PropertiesTest -d dump2"
-
-echo ${RUNCMD}
-${RUNCMD}
-result=$?
-
-if [ $result -eq 0 ]
-then
-  echo "Execution successful"
-else
-  echo "Execution of the test case failed."
-fi
-
-# Now compare the two dump files
-
-RUNCMD="${WRITABLEJDK}${FS}bin${FS}java -classpath ${TESTCLASSES} PropertiesTest -c dump1 dump2"
-
-echo ${RUNCMD}
-${RUNCMD}
-result=$?
-
-if [ $result -eq 0 ]
-then
-  echo "Execution successful"
-else
-  echo "Execution of the test case failed."
-fi
+echo ''
+sh -xc "${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest -d dump3"
+if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # Cleanup
-rm -f dump1
-rm -f dump2
 rm -f ${PROPLOCATION}${FS}currency.properties
 if [ $COPIED -eq 1 ]
 then
   rm -rf $WRITABLEJDK
 fi
 
-exit $result
+# compare the two dump files
+run PropertiesTest -c dump1 dump3 ${PROPS}
+
+
+# Results
+echo ''
+if [ $failures -gt 0 ];
+  then echo "$failures tests failed";
+  else echo "All tests passed"; fi
+exit $failures

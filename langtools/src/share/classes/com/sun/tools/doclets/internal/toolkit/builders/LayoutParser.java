@@ -55,14 +55,10 @@ public class LayoutParser extends DefaultHandler {
      */
     private Map<String,XMLNode> xmlElementsMap;
     private XMLNode currentNode;
-    private Configuration configuration;
-    private static LayoutParser instance;
+    private final Configuration configuration;
     private String currentRoot;
     private boolean isParsing;
 
-    /**
-     * This class is a singleton.
-     */
     private LayoutParser(Configuration configuration) {
         xmlElementsMap = new HashMap<String,XMLNode>();
         this.configuration = configuration;
@@ -75,10 +71,7 @@ public class LayoutParser extends DefaultHandler {
      * @return an instance of the BuilderXML.
      */
     public static LayoutParser getInstance(Configuration configuration) {
-        if (instance == null) {
-            instance = new LayoutParser(configuration);
-        }
-        return instance;
+        return new LayoutParser(configuration);
     }
 
     /**

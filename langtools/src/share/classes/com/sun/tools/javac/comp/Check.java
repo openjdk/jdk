@@ -120,8 +120,7 @@ public class Check {
         allowCovariantReturns = source.allowCovariantReturns();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowDefaultMethods = source.allowDefaultMethods();
-        allowStrictMethodClashCheck = source.allowStrictMethodClashCheck() &&
-                options.isSet("strictMethodClashCheck"); //pre-lambda guard
+        allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
         complexInference = options.isSet("complexinference");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
@@ -451,8 +450,6 @@ public class Check {
         public Infer.InferenceContext inferenceContext();
 
         public DeferredAttr.DeferredAttrContext deferredAttrContext();
-
-        public boolean allowBoxing();
     }
 
     /**
@@ -487,10 +484,6 @@ public class Check {
         public DeferredAttrContext deferredAttrContext() {
             return enclosingContext.deferredAttrContext();
         }
-
-        public boolean allowBoxing() {
-            return enclosingContext.allowBoxing();
-        }
     }
 
     /**
@@ -514,10 +507,6 @@ public class Check {
 
         public DeferredAttrContext deferredAttrContext() {
             return deferredAttr.emptyDeferredAttrContext;
-        }
-
-        public boolean allowBoxing() {
-            return true;
         }
     };
 
@@ -625,7 +614,7 @@ public class Check {
              a = types.upperBound(a);
              return types.isSubtype(a, bound);
          } else if (a.isExtendsBound()) {
-             return types.isCastable(bound, types.upperBound(a), Warner.noWarnings);
+             return types.isCastable(bound, types.upperBound(a), types.noWarnings);
          } else if (a.isSuperBound()) {
              return !types.notSoftSubtype(types.lowerBound(a), bound);
          }
@@ -909,19 +898,21 @@ public class Check {
                                   "unchecked.generic.array.creation",
                                   argtype);
             }
-            Type elemtype = types.elemtype(argtype);
-            switch (tree.getTag()) {
-                case APPLY:
-                    ((JCMethodInvocation) tree).varargsElement = elemtype;
-                    break;
-                case NEWCLASS:
-                    ((JCNewClass) tree).varargsElement = elemtype;
-                    break;
-                case REFERENCE:
-                    ((JCMemberReference) tree).varargsElement = elemtype;
-                    break;
-                default:
-                    throw new AssertionError(""+tree);
+            if (!((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types)) {
+                Type elemtype = types.elemtype(argtype);
+                switch (tree.getTag()) {
+                    case APPLY:
+                        ((JCMethodInvocation) tree).varargsElement = elemtype;
+                        break;
+                    case NEWCLASS:
+                        ((JCNewClass) tree).varargsElement = elemtype;
+                        break;
+                    case REFERENCE:
+                        ((JCMemberReference) tree).varargsElement = elemtype;
+                        break;
+                    default:
+                        throw new AssertionError(""+tree);
+                }
             }
          }
          return owntype;
@@ -937,65 +928,6 @@ public class Check {
                 return;
         }
 
-        void checkAccessibleFunctionalDescriptor(DiagnosticPosition pos, Env<AttrContext> env, Type desc) {
-            AccessChecker accessChecker = new AccessChecker(env);
-            //check args accessibility (only if implicit parameter types)
-            for (Type arg : desc.getParameterTypes()) {
-                if (!accessChecker.visit(arg)) {
-                    log.error(pos, "cant.access.arg.type.in.functional.desc", arg);
-                    return;
-                }
-            }
-            //check return type accessibility
-            if (!accessChecker.visit(desc.getReturnType())) {
-                log.error(pos, "cant.access.return.in.functional.desc", desc.getReturnType());
-                return;
-            }
-            //check thrown types accessibility
-            for (Type thrown : desc.getThrownTypes()) {
-                if (!accessChecker.visit(thrown)) {
-                    log.error(pos, "cant.access.thrown.in.functional.desc", thrown);
-                    return;
-                }
-            }
-        }
-
-        class AccessChecker extends Types.UnaryVisitor<Boolean> {
-
-            Env<AttrContext> env;
-
-            AccessChecker(Env<AttrContext> env) {
-                this.env = env;
-            }
-
-            Boolean visit(List<Type> ts) {
-                for (Type t : ts) {
-                    if (!visit(t))
-                        return false;
-                }
-                return true;
-            }
-
-            public Boolean visitType(Type t, Void s) {
-                return true;
-            }
-
-            @Override
-            public Boolean visitArrayType(ArrayType t, Void s) {
-                return visit(t.elemtype);
-            }
-
-            @Override
-            public Boolean visitClassType(ClassType t, Void s) {
-                return rs.isAccessible(env, t, true) &&
-                        visit(t.getTypeArguments());
-            }
-
-            @Override
-            public Boolean visitWildcardType(WildcardType t, Void s) {
-                return visit(t.type);
-            }
-        };
     /**
      * Check that type 't' is a valid instantiation of a generic class
      * (see JLS 4.5)
@@ -1919,8 +1851,8 @@ public class Check {
                         types.isSameType(rt1, rt2) ||
                         !rt1.isPrimitiveOrVoid() &&
                         !rt2.isPrimitiveOrVoid() &&
-                        (types.covariantReturnType(rt1, rt2, Warner.noWarnings) ||
-                         types.covariantReturnType(rt2, rt1, Warner.noWarnings)) ||
+                        (types.covariantReturnType(rt1, rt2, types.noWarnings) ||
+                         types.covariantReturnType(rt2, rt1, types.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
                     if (!compat) {
                         log.error(pos, "types.incompatible.diff.ret",
@@ -1965,8 +1897,8 @@ public class Check {
                     boolean compat =
                         !rt13.isPrimitiveOrVoid() &&
                         !rt23.isPrimitiveOrVoid() &&
-                        (types.covariantReturnType(rt13, rt1, Warner.noWarnings) &&
-                         types.covariantReturnType(rt23, rt2, Warner.noWarnings));
+                        (types.covariantReturnType(rt13, rt1, types.noWarnings) &&
+                         types.covariantReturnType(rt23, rt2, types.noWarnings));
                     if (compat)
                         return true;
                 }
@@ -2280,19 +2212,33 @@ public class Check {
         c.flags_field |= ACYCLIC;
     }
 
+    /**
+     * Check that functional interface methods would make sense when seen
+     * from the perspective of the implementing class
+     */
+    void checkFunctionalInterface(JCTree tree, Type funcInterface) {
+        ClassType c = new ClassType(Type.noType, List.<Type>nil(), null);
+        ClassSymbol csym = new ClassSymbol(0, names.empty, c, syms.noSymbol);
+        c.interfaces_field = List.of(funcInterface);
+        c.supertype_field = syms.objectType;
+        c.tsym = csym;
+        csym.members_field = new Scope(csym);
+        csym.completer = null;
+        checkImplementations(tree, csym, csym);
+    }
+
     /** Check that all methods which implement some
      *  method conform to the method they implement.
      *  @param tree         The class definition whose members are checked.
      */
     void checkImplementations(JCClassDecl tree) {
-        checkImplementations(tree, tree.sym);
+        checkImplementations(tree, tree.sym, tree.sym);
     }
 //where
         /** Check that all methods which implement some
          *  method in `ic' conform to the method they implement.
          */
-        void checkImplementations(JCClassDecl tree, ClassSymbol ic) {
-            ClassSymbol origin = tree.sym;
+        void checkImplementations(JCTree tree, ClassSymbol origin, ClassSymbol ic) {
             for (List<Type> l = types.closure(ic.type); l.nonEmpty(); l = l.tail) {
                 ClassSymbol lc = (ClassSymbol)l.head.tsym;
                 if ((allowGenerics || origin != lc) && (lc.flags() & ABSTRACT) != 0) {

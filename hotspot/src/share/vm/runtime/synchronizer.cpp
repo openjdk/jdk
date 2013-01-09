@@ -36,24 +36,21 @@
 #include "runtime/osThread.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
-# include "thread_linux.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_solaris
 # include "os_solaris.inline.hpp"
-# include "thread_solaris.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
-# include "thread_windows.inline.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_bsd.inline.hpp"
-# include "thread_bsd.inline.hpp"
 #endif
 
 #if defined(__GNUC__) && !defined(IA64)
@@ -1323,7 +1320,7 @@ ObjectMonitor * ATTR ObjectSynchronizer::inflate (Thread * Self, oop object) {
               ResourceMark rm;
               tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
                 (intptr_t) object, (intptr_t) object->mark(),
-                Klass::cast(object->klass())->external_name());
+                object->klass()->external_name());
             }
           }
           return m ;
@@ -1373,7 +1370,7 @@ ObjectMonitor * ATTR ObjectSynchronizer::inflate (Thread * Self, oop object) {
           ResourceMark rm;
           tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
             (intptr_t) object, (intptr_t) object->mark(),
-            Klass::cast(object->klass())->external_name());
+            object->klass()->external_name());
         }
       }
       return m ;
@@ -1440,7 +1437,7 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
        if (obj->is_instance()) {
          ResourceMark rm;
            tty->print_cr("Deflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                (intptr_t) obj, (intptr_t) obj->mark(), Klass::cast(obj->klass())->external_name());
+                (intptr_t) obj, (intptr_t) obj->mark(), obj->klass()->external_name());
        }
      }
 

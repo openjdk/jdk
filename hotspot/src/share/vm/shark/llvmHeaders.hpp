@@ -35,6 +35,7 @@
   #undef DEBUG
 #endif
 
+#include <llvm/Analysis/Verifier.h>
 #include <llvm/Argument.h>
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
@@ -42,29 +43,21 @@
 #include <llvm/Instructions.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
-#if SHARK_LLVM_VERSION < 27
-#include <llvm/ModuleProvider.h>
-#endif
+#if SHARK_LLVM_VERSION <= 31
 #include <llvm/Support/IRBuilder.h>
-#if SHARK_LLVM_VERSION >= 29
-#include <llvm/Support/Threading.h>
 #else
-#include <llvm/System/Threading.h>
+#include <llvm/IRBuilder.h>
 #endif
-#include <llvm/Target/TargetSelect.h>
+#include <llvm/Support/Threading.h>
+#include <llvm/Support/TargetSelect.h>
 #include <llvm/Type.h>
 #include <llvm/ExecutionEngine/JITMemoryManager.h>
 #include <llvm/Support/CommandLine.h>
-#if SHARK_LLVM_VERSION >= 27
+#include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/Support/Debug.h>
-#if SHARK_LLVM_VERSION >= 29
 #include <llvm/Support/Host.h>
-#else
-#include <llvm/System/Host.h>
-#endif
-#endif
 
 #include <map>
 

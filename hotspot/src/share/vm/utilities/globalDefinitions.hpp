@@ -328,6 +328,12 @@ const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (
 
 
 //----------------------------------------------------------------------------------------------------
+// Minimum StringTableSize value
+
+const int defaultStringTableSize=1009;
+
+
+//----------------------------------------------------------------------------------------------------
 // HotSwap - for JVMTI   aka Class File Replacement and PopFrame
 //
 // Determines whether on-the-fly class replacement and frame popping are enabled.
@@ -1273,5 +1279,13 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 # endif /* ASSERT */
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
+
+// Dereference vptr
+// All C++ compilers that we know of have the vtbl pointer in the first
+// word.  If there are exceptions, this function needs to be made compiler
+// specific.
+static inline void* dereference_vptr(void* addr) {
+  return *(void**)addr;
+}
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP

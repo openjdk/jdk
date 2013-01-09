@@ -70,8 +70,8 @@ static void trace_class_resolution(Klass* to_class) {
     }
   }
   if (caller != NULL) {
-    const char * from = Klass::cast(caller)->external_name();
-    const char * to = Klass::cast(to_class)->external_name();
+    const char * from = caller->external_name();
+    const char * to = to_class->external_name();
     // print in a single call to reduce interleaving between threads
     if (source_file != NULL) {
       tty->print("RESOLVE %s %s %s:%d (reflection)\n", from, to, source_file, line_number);
@@ -330,7 +330,7 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
     return TypeArrayKlass::cast(tak)->allocate(length, THREAD);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
-    if (Klass::cast(k)->oop_is_array() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
+    if (k->oop_is_array() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
       THROW_0(vmSymbols::java_lang_IllegalArgumentException());
     }
     return oopFactory::new_objArray(k, length, THREAD);
@@ -366,7 +366,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
     klass = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
   } else {
     klass = java_lang_Class::as_Klass(element_mirror);
-    if (Klass::cast(klass)->oop_is_array()) {
+    if (klass->oop_is_array()) {
       int k_dim = ArrayKlass::cast(klass)->dimension();
       if (k_dim + len > MAX_DIM) {
         THROW_0(vmSymbols::java_lang_IllegalArgumentException());
@@ -374,7 +374,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
       dim += k_dim;
     }
   }
-  klass = Klass::cast(klass)->array_klass(dim, CHECK_NULL);
+  klass = klass->array_klass(dim, CHECK_NULL);
   oop obj = ArrayKlass::cast(klass)->multi_allocate(len, dimensions, THREAD);
   assert(obj->is_array(), "just checking");
   return arrayOop(obj);
@@ -387,7 +387,7 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
   }
 
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (!Klass::cast(klass)->oop_is_array()) {
+  if (!klass->oop_is_array()) {
     return NULL;
   }
 
@@ -395,15 +395,15 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
 #ifdef ASSERT
   oop result2 = NULL;
   if (ArrayKlass::cast(klass)->dimension() == 1) {
-    if (Klass::cast(klass)->oop_is_typeArray()) {
+    if (klass->oop_is_typeArray()) {
       result2 = basic_type_arrayklass_to_mirror(klass, CHECK_NULL);
     } else {
-      result2 = Klass::cast(ObjArrayKlass::cast(klass)->element_klass())->java_mirror();
+      result2 = ObjArrayKlass::cast(klass)->element_klass()->java_mirror();
     }
   } else {
     Klass* lower_dim = ArrayKlass::cast(klass)->lower_dimension();
-    assert(Klass::cast(lower_dim)->oop_is_array(), "just checking");
-    result2 = Klass::cast(lower_dim)->java_mirror();
+    assert(lower_dim->oop_is_array(), "just checking");
+    result2 = lower_dim->java_mirror();
   }
   assert(result == result2, "results must be consistent");
 #endif //ASSERT
@@ -442,7 +442,7 @@ bool Reflection::reflect_check_access(Klass* field_class, AccessFlags acc, Klass
   if (acc.is_protected()) {
     if (target_class != client_class) {
       if (!is_same_class_package(client_class, field_class)) {
-        if (!Klass::cast(target_class)->is_subclass_of(client_class)) {
+        if (!target_class->is_subclass_of(client_class)) {
           THROW_(vmSymbols::java_lang_IllegalAccessException(), false);
         }
       }
@@ -468,7 +468,7 @@ bool Reflection::verify_class_access(Klass* current_class, Klass* new_class, boo
   // sun/reflect/MagicAccessorImpl subclasses to succeed trivially.
   if (   JDK_Version::is_gte_jdk14x_version()
       && UseNewReflection
-      && Klass::cast(current_class)->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
+      && current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return true;
   }
 
@@ -546,12 +546,12 @@ bool Reflection::verify_field_access(Klass* current_class,
   if (access.is_protected()) {
     if (!protected_restriction) {
       // See if current_class is a subclass of field_class
-      if (Klass::cast(current_class)->is_subclass_of(field_class)) {
+      if (current_class->is_subclass_of(field_class)) {
         if (access.is_static() || // static fields are ok, see 6622385
             current_class == resolved_class ||
             field_class == resolved_class ||
-            Klass::cast(current_class)->is_subclass_of(resolved_class) ||
-            Klass::cast(resolved_class)->is_subclass_of(current_class)) {
+            current_class->is_subclass_of(resolved_class) ||
+            resolved_class->is_subclass_of(current_class)) {
           return true;
         }
       }
@@ -566,7 +566,7 @@ bool Reflection::verify_field_access(Klass* current_class,
   // sun/reflect/MagicAccessorImpl subclasses to succeed trivially.
   if (   JDK_Version::is_gte_jdk14x_version()
       && UseNewReflection
-      && Klass::cast(current_class)->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
+      && current_class->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return true;
   }
 
@@ -693,7 +693,7 @@ Handle Reflection::new_type(Symbol* signature, KlassHandle k, TRAPS) {
   }
 
   oop loader = InstanceKlass::cast(k())->class_loader();
-  oop protection_domain = Klass::cast(k())->protection_domain();
+  oop protection_domain = k()->protection_domain();
   Klass* result = SystemDictionary::resolve_or_fail(signature,
                                     Handle(THREAD, loader),
                                     Handle(THREAD, protection_domain),
@@ -703,7 +703,7 @@ Handle Reflection::new_type(Symbol* signature, KlassHandle k, TRAPS) {
     trace_class_resolution(result);
   }
 
-  oop nt = Klass::cast(result)->java_mirror();
+  oop nt = result->java_mirror();
   return Handle(THREAD, nt);
 }
 
@@ -937,7 +937,7 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
               ResourceMark rm(THREAD);
               Handle h_origexception = Exceptions::new_exception(THREAD,
                      vmSymbols::java_lang_AbstractMethodError(),
-                     Method::name_and_sig_as_C_string(Klass::cast(target_klass()),
+                     Method::name_and_sig_as_C_string(target_klass(),
                      method->name(),
                      method->signature()));
               JavaCallArguments args(h_origexception);
@@ -947,7 +947,7 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
             } else {
               ResourceMark rm(THREAD);
               THROW_MSG_0(vmSymbols::java_lang_AbstractMethodError(),
-                        Method::name_and_sig_as_C_string(Klass::cast(target_klass()),
+                        Method::name_and_sig_as_C_string(target_klass(),
                                                                 method->name(),
                                                                 method->signature()));
             }
@@ -962,7 +962,7 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
   if (method.is_null()) {
     ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(),
-                Method::name_and_sig_as_C_string(Klass::cast(klass()),
+                Method::name_and_sig_as_C_string(klass(),
                                                         reflected_method->name(),
                                                         reflected_method->signature()));
   }

@@ -55,13 +55,8 @@ class MacroAssembler : public Assembler {
  public:
   void advance(int bytes);
   void store_oop(jobject obj);
+  void store_Metadata(Metadata* obj);
 };
-
-#ifdef ASSERT
-inline bool AbstractAssembler::pd_check_instruction_mark() {
-  ShouldNotCallThis();
-}
-#endif
 
 address ShouldNotCallThisStub();
 address ShouldNotCallThisEntry();

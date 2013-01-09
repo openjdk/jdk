@@ -27,11 +27,8 @@
  * @summary RMI blocks in HttpAwareServerSocket.accept() if you telnet to it
  * @author Adrian Colley
  *
- * @library ../../../../../java/rmi/testlibrary/
- * @build TestIface
- * @build TestImpl
- * @build TestImpl_Stub
- * @build BlockAcceptTest
+ * @library ../../../../../java/rmi/testlibrary
+ * @build TestIface TestImpl TestImpl_Stub
  * @run main/othervm/policy=security.policy/timeout=60 BlockAcceptTest
  */
 

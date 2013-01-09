@@ -264,7 +264,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
  *         <code>false</code> otherwise
  */
     public boolean writeData(RowSetInternal caller) throws SQLException {
-        boolean conflict = false;
+        long conflicts = 0;
         boolean showDel = false;
         PreparedStatement pstmtIns = null;
         iChangedValsInDbAndCRS = 0;
@@ -337,8 +337,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         while (crs.next()) {
             if (crs.rowDeleted()) {
                 // The row has been deleted.
-                if (conflict = (deleteOriginalRow(crs, this.crsResolve)) == true) {
+                if (deleteOriginalRow(crs, this.crsResolve)) {
                        status.add(rows, SyncResolver.DELETE_ROW_CONFLICT);
+                       conflicts++;
                 } else {
                       // delete happened without any occurrence of conflicts
                       // so update status accordingly
@@ -349,8 +350,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                 // The row has been inserted.
 
                 pstmtIns = con.prepareStatement(insertCmd);
-                if ( (conflict = insertNewRow(crs, pstmtIns, this.crsResolve)) == true) {
+                if (insertNewRow(crs, pstmtIns, this.crsResolve)) {
                           status.add(rows, SyncResolver.INSERT_ROW_CONFLICT);
+                          conflicts++;
                 } else {
                       // insert happened without any occurrence of conflicts
                       // so update status accordingly
@@ -358,8 +360,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                 }
             } else  if (crs.rowUpdated()) {
                   // The row has been updated.
-                       if ( conflict = (updateOriginalRow(crs)) == true) {
+                       if (updateOriginalRow(crs)) {
                              status.add(rows, SyncResolver.UPDATE_ROW_CONFLICT);
+                             conflicts++;
                } else {
                       // update happened without any occurrence of conflicts
                       // so update status accordingly
@@ -395,21 +398,12 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         // reset
         crs.setShowDeleted(showDel);
 
-      boolean boolConf = false;
-      for (int j=1;j<status.size();j++){
-          // ignore status for index = 0 which is set to null
-          if(! ((status.get(j)).equals(SyncResolver.NO_ROW_CONFLICT))) {
-              // there is at least one conflict which needs to be resolved
-              boolConf = true;
-             break;
-          }
-      }
-
         crs.beforeFirst();
         this.crsResolve.beforeFirst();
 
-    if(boolConf) {
-        SyncProviderException spe = new SyncProviderException(status.size() - 1+resBundle.handleGetObject("crswriter.conflictsno").toString());
+    if(conflicts != 0) {
+        SyncProviderException spe = new SyncProviderException(conflicts + " " +
+                resBundle.handleGetObject("crswriter.conflictsno").toString());
         //SyncResolver syncRes = spe.getSyncResolver();
 
          SyncResolverImpl syncResImpl = (SyncResolverImpl) spe.getSyncResolver();

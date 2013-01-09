@@ -57,7 +57,7 @@ void Node::verify_construction() {
   int new_debug_idx = old_debug_idx+1;
   if (new_debug_idx > 0) {
     // Arrange that the lowest five decimal digits of _debug_idx
-    // will repeat thos of _idx.  In case this is somehow pathological,
+    // will repeat those of _idx. In case this is somehow pathological,
     // we continue to assign negative numbers (!) consecutively.
     const int mod = 100000;
     int bump = (int)(_idx - new_debug_idx) % mod;
@@ -67,7 +67,7 @@ void Node::verify_construction() {
   }
   Compile::set_debug_idx(new_debug_idx);
   set_debug_idx( new_debug_idx );
-  assert(Compile::current()->unique() < (uint)MaxNodeLimit, "Node limit exceeded");
+  assert(Compile::current()->unique() < (UINT_MAX - 1), "Node limit exceeded UINT_MAX");
   if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (int)_idx == BreakAtNode)) {
     tty->print_cr("BreakAtNode: _idx=%d _debug_idx=%d", _idx, _debug_idx);
     BREAKPOINT;
@@ -802,7 +802,7 @@ int Node::replace_edge(Node* old, Node* neww) {
 //-------------------------disconnect_inputs-----------------------------------
 // NULL out all inputs to eliminate incoming Def-Use edges.
 // Return the number of edges between 'n' and 'this'
-int Node::disconnect_inputs(Node *n) {
+int Node::disconnect_inputs(Node *n, Compile* C) {
   int edges_to_n = 0;
 
   uint cnt = req();
@@ -824,6 +824,9 @@ int Node::disconnect_inputs(Node *n) {
 
   // Node::destruct requires all out edges be deleted first
   // debug_only(destruct();)   // no reuse benefit expected
+  if (edges_to_n == 0) {
+    C->record_dead_node(_idx);
+  }
   return edges_to_n;
 }
 

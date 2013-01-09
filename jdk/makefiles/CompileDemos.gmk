@@ -166,9 +166,9 @@ $(eval $(call SetupDemo,SampleTree,jfc,,SampleTree,,,README*))
 $(eval $(call SetupDemo,SwingApplet,jfc,,SwingApplet,,,README* *.html))
 $(eval $(call SetupDemo,TableExample,jfc,,TableExample,,,README*))
 $(eval $(call SetupDemo,TransparentRuler,jfc,,transparentruler.Ruler,,,README*))
-$(eval $(call SetupDemo,jconsole-plugin,scripting,-cp $(JDK_OUTPUTDIR)/lib/jconsole.jar,,,,*.xml *.txt,,,,Main-Class: \n))
+$(eval $(call SetupDemo,jconsole-plugin,scripting,,,,,*.xml *.txt,,,,Main-Class: \n))
 $(eval $(call SetupDemo,FullThreadDump,management,,FullThreadDump,,,README*))
-$(eval $(call SetupDemo,JTop,management,-cp $(JDK_OUTPUTDIR)/lib/jconsole.jar,JTop,,,README*))
+$(eval $(call SetupDemo,JTop,management,,JTop,,,README*))
 $(eval $(call SetupDemo,MemoryMonitor,management,,MemoryMonitor,,,README*))
 $(eval $(call SetupDemo,VerboseGC,management,,VerboseGC,,,README*))
 $(eval $(call SetupDemo,zipfs,nio,,,,,README* *.java,,,,Main-Class: \n))
@@ -191,15 +191,6 @@ ifndef OPENJDK
 		$(CP) $< $@
 		$(CHMOD) -f ug+w $@
 endif
-
-##################################################################################################
-
-# Why do we install a demo jar into the main jre/lib/ext????????????????
-$(JDK_OUTPUTDIR)/lib/ext/zipfs.jar : $(JDK_OUTPUTDIR)/demo/nio/zipfs/zipfs.jar
-		$(MKDIR) -p $(@D)
-		$(CP) $< $@
-
-BUILD_DEMOS += $(JDK_OUTPUTDIR)/lib/ext/zipfs.jar
 
 ##################################################################################################
 

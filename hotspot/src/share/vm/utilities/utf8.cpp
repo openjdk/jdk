@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ static u_char* utf8_write(u_char* base, jchar ch) {
 
 void UTF8::convert_to_unicode(const char* utf8_str, jchar* unicode_str, int unicode_length) {
   unsigned char ch;
-  const char *ptr = (const char *)utf8_str;
+  const char *ptr = utf8_str;
   int index = 0;
 
   /* ASCII case loop optimization */
@@ -161,6 +161,119 @@ void UTF8::convert_to_unicode(const char* utf8_str, jchar* unicode_str, int unic
     ptr = UTF8::next(ptr, &unicode_str[index]);
   }
 }
+
+// returns the quoted ascii length of a 0-terminated utf8 string
+int UTF8::quoted_ascii_length(const char* utf8_str, int utf8_length) {
+  const char *ptr = utf8_str;
+  const char* end = ptr + utf8_length;
+  int result = 0;
+  while (ptr < end) {
+    jchar c;
+    ptr = UTF8::next(ptr, &c);
+    if (c >= 32 && c < 127) {
+      result++;
+    } else {
+      result += 6;
+    }
+  }
+  return result;
+}
+
+// converts a utf8 string to quoted ascii
+void UTF8::as_quoted_ascii(const char* utf8_str, char* buf, int buflen) {
+  const char *ptr = utf8_str;
+  char* p = buf;
+  char* end = buf + buflen;
+  while (*ptr != '\0') {
+    jchar c;
+    ptr = UTF8::next(ptr, &c);
+    if (c >= 32 && c < 127) {
+      if (p + 1 >= end) break;      // string is truncated
+      *p++ = (char)c;
+    } else {
+      if (p + 6 >= end) break;      // string is truncated
+      sprintf(p, "\\u%04x", c);
+      p += 6;
+    }
+  }
+  *p = '\0';
+}
+
+
+const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
+  const char *ptr = quoted_ascii_str;
+  char* result = NULL;
+  while (*ptr != '\0') {
+    char c = *ptr;
+    if (c < 32 || c >= 127) break;
+  }
+  if (*ptr == '\0') {
+    // nothing to do so return original string
+    return quoted_ascii_str;
+  }
+  // everything up to this point was ok.
+  int length = ptr - quoted_ascii_str;
+  char* buffer = NULL;
+  for (int round = 0; round < 2; round++) {
+    while (*ptr != '\0') {
+      if (*ptr != '\\') {
+        if (buffer != NULL) {
+          buffer[length] = *ptr;
+        }
+        length++;
+      } else {
+        switch (ptr[1]) {
+          case 'u': {
+            ptr += 2;
+            jchar value=0;
+            for (int i=0; i<4; i++) {
+              char c = *ptr++;
+              switch (c) {
+                case '0': case '1': case '2': case '3': case '4':
+                case '5': case '6': case '7': case '8': case '9':
+                  value = (value << 4) + c - '0';
+                  break;
+                case 'a': case 'b': case 'c':
+                case 'd': case 'e': case 'f':
+                  value = (value << 4) + 10 + c - 'a';
+                  break;
+                case 'A': case 'B': case 'C':
+                case 'D': case 'E': case 'F':
+                  value = (value << 4) + 10 + c - 'A';
+                  break;
+                default:
+                  ShouldNotReachHere();
+              }
+            }
+            if (buffer == NULL) {
+              char utf8_buffer[4];
+              char* next = (char*)utf8_write((u_char*)utf8_buffer, value);
+              length += next - utf8_buffer;
+            } else {
+              char* next = (char*)utf8_write((u_char*)&buffer[length], value);
+              length += next - &buffer[length];
+            }
+            break;
+          }
+          case 't': if (buffer != NULL) buffer[length] = '\t'; ptr += 2; length++; break;
+          case 'n': if (buffer != NULL) buffer[length] = '\n'; ptr += 2; length++; break;
+          case 'r': if (buffer != NULL) buffer[length] = '\r'; ptr += 2; length++; break;
+          case 'f': if (buffer != NULL) buffer[length] = '\f'; ptr += 2; length++; break;
+          default:
+            ShouldNotReachHere();
+        }
+      }
+    }
+    if (round == 0) {
+      buffer = NEW_RESOURCE_ARRAY(char, length + 1);
+      ptr = quoted_ascii_str;
+    } else {
+      buffer[length] = '\0';
+    }
+  }
+  return buffer;
+}
+
 
 // Returns NULL if 'c' it not found. This only works as long
 // as 'c' is an ASCII character
@@ -241,4 +354,36 @@ void UNICODE::convert_to_utf8(const jchar* base, int length, char* utf8_buffer) 
     utf8_buffer = (char*)utf8_write((u_char*)utf8_buffer, base[index]);
   }
   *utf8_buffer = '\0';
+}
+
+// returns the quoted ascii length of a unicode string
+int UNICODE::quoted_ascii_length(jchar* base, int length) {
+  int result = 0;
+  for (int i = 0; i < length; i++) {
+    jchar c = base[i];
+    if (c >= 32 && c < 127) {
+      result++;
+    } else {
+      result += 6;
+    }
+  }
+  return result;
+}
+
+// converts a utf8 string to quoted ascii
+void UNICODE::as_quoted_ascii(const jchar* base, int length, char* buf, int buflen) {
+  char* p = buf;
+  char* end = buf + buflen;
+  for (int index = 0; index < length; index++) {
+    jchar c = base[index];
+    if (c >= 32 && c < 127) {
+      if (p + 1 >= end) break;      // string is truncated
+      *p++ = (char)c;
+    } else {
+      if (p + 6 >= end) break;      // string is truncated
+      sprintf(p, "\\u%04x", c);
+      p += 6;
+    }
+  }
+  *p = '\0';
 }

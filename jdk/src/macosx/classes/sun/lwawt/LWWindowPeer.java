@@ -27,7 +27,6 @@ package sun.lwawt;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
 import java.awt.peer.*;
 import java.util.List;
 
@@ -48,7 +47,8 @@ public class LWWindowPeer
         SIMPLEWINDOW,
         FRAME,
         DIALOG,
-        EMBEDDEDFRAME
+        EMBEDDED_FRAME,
+        VIEW_EMBEDDED_FRAME
     }
 
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.lwawt.focus.LWWindowPeer");
@@ -74,17 +74,6 @@ public class LWWindowPeer
 
     private SurfaceData surfaceData;
     private final Object surfaceDataLock = new Object();
-
-    private int backBufferCount;
-    private BufferCapabilities backBufferCaps;
-
-    // The back buffer is used for two purposes:
-    // 1. To render all the lightweight peers
-    // 2. To provide user with a BufferStrategy
-    // Need to check if a single back buffer can be used for both
-// TODO: VolatileImage
-//    private VolatileImage backBuffer;
-    private volatile BufferedImage backBuffer;
 
     private volatile int windowState = Frame.NORMAL;
 
@@ -120,6 +109,8 @@ public class LWWindowPeer
 
     private volatile boolean textured;
 
+    private final PeerType peerType;
+
     /**
      * Current modal blocker or null.
      *
@@ -128,10 +119,11 @@ public class LWWindowPeer
     private LWWindowPeer blocker;
 
     public LWWindowPeer(Window target, PlatformComponent platformComponent,
-                        PlatformWindow platformWindow)
+                        PlatformWindow platformWindow, PeerType peerType)
     {
         super(target, platformComponent);
         this.platformWindow = platformWindow;
+        this.peerType = peerType;
 
         Window owner = target.getOwner();
         LWWindowPeer ownerPeer = (owner != null) ? (LWWindowPeer)owner.getPeer() : null;
@@ -227,7 +219,6 @@ public class LWWindowPeer
         if (isGrabbing()) {
             ungrab();
         }
-        destroyBuffers();
         platformWindow.dispose();
         super.disposeImpl();
     }
@@ -258,8 +249,10 @@ public class LWWindowPeer
     }
 
     @Override
-    public GraphicsConfiguration getGraphicsConfiguration() {
-        return graphicsConfig;
+    public final GraphicsConfiguration getGraphicsConfiguration() {
+        synchronized (getStateLock()) {
+            return graphicsConfig;
+        }
     }
 
     @Override
@@ -285,49 +278,12 @@ public class LWWindowPeer
     }
 
     @Override
-    public void createBuffers(int numBuffers, BufferCapabilities caps)
-        throws AWTException
-    {
-        try {
-            // Assume this method is never called with numBuffers <= 1, as 0 is
-            // unsupported, and 1 corresponds to a SingleBufferStrategy which
-            // doesn't depend on the peer. Screen is considered as a separate
-            // "buffer", that's why numBuffers - 1
-            assert numBuffers > 1;
-
-            replaceSurfaceData(numBuffers - 1, caps, false);
-        } catch (InvalidPipeException z) {
-            throw new AWTException(z.toString());
-        }
-    }
-
-    @Override
-    public final Image getBackBuffer() {
-        synchronized (getStateLock()) {
-            return backBuffer;
-        }
-    }
-
-    @Override
-    public void flip(int x1, int y1, int x2, int y2,
-                     BufferCapabilities.FlipContents flipAction)
-    {
-        platformWindow.flip(x1, y1, x2, y2, flipAction);
-    }
-
-    @Override
-    public final void destroyBuffers() {
-        final Image oldBB = getBackBuffer();
-        synchronized (getStateLock()) {
-            backBuffer = null;
-        }
-        if (oldBB != null) {
-            oldBB.flush();
-        }
-    }
-
-    @Override
     public void setBounds(int x, int y, int w, int h, int op) {
+
+        if((op & NO_EMBEDDED_CHECK) == 0 && getPeerType() == PeerType.VIEW_EMBEDDED_FRAME) {
+            return;
+        }
+
         if ((op & SET_CLIENT_SIZE) != 0) {
             // SET_CLIENT_SIZE is only applicable to window peers, so handle it here
             // instead of pulling 'insets' field up to LWComponentPeer
@@ -343,16 +299,14 @@ public class LWWindowPeer
             h = MINIMUM_HEIGHT;
         }
 
-        if (graphicsConfig instanceof TextureSizeConstraining) {
-            final int maxW = ((TextureSizeConstraining)graphicsConfig).getMaxTextureWidth();
-            final int maxH = ((TextureSizeConstraining)graphicsConfig).getMaxTextureHeight();
+        final int maxW = getLWGC().getMaxTextureWidth();
+        final int maxH = getLWGC().getMaxTextureHeight();
 
-            if (w > maxW) {
-                w = maxW;
-            }
-            if (h > maxH) {
-                h = maxH;
-            }
+        if (w > maxW) {
+            w = maxW;
+        }
+        if (h > maxH) {
+            h = maxH;
         }
 
         // Don't post ComponentMoved/Resized and Paint events
@@ -431,21 +385,14 @@ public class LWWindowPeer
             min = new Dimension(MINIMUM_WIDTH, MINIMUM_HEIGHT);
         }
 
-        final int maxW, maxH;
-        if (graphicsConfig instanceof TextureSizeConstraining) {
-            maxW = ((TextureSizeConstraining)graphicsConfig).getMaxTextureWidth();
-            maxH = ((TextureSizeConstraining)graphicsConfig).getMaxTextureHeight();
-        } else {
-            maxW = maxH = Integer.MAX_VALUE;
-        }
-
         final Dimension max;
         if (getTarget().isMaximumSizeSet()) {
             max = getTarget().getMaximumSize();
-            max.width = Math.min(max.width, maxW);
-            max.height = Math.min(max.height, maxH);
+            max.width = Math.min(max.width, getLWGC().getMaxTextureWidth());
+            max.height = Math.min(max.height, getLWGC().getMaxTextureHeight());
         } else {
-            max = new Dimension(maxW, maxH);
+            max = new Dimension(getLWGC().getMaxTextureWidth(),
+                                getLWGC().getMaxTextureHeight());
         }
 
         platformWindow.setSizeConstraints(min.width, min.height, max.width, max.height);
@@ -1014,21 +961,10 @@ public class LWWindowPeer
         replaceSurfaceData(true);
     }
 
-    private void replaceSurfaceData(boolean blit) {
-        replaceSurfaceData(backBufferCount, backBufferCaps, blit);
-    }
-
-    private void replaceSurfaceData(int newBackBufferCount,
-                                    BufferCapabilities newBackBufferCaps,
-                                    boolean blit) {
+    private void replaceSurfaceData(final boolean blit) {
         synchronized (surfaceDataLock) {
             final SurfaceData oldData = getSurfaceData();
             surfaceData = platformWindow.replaceSurfaceData();
-            // TODO: volatile image
-    //        VolatileImage oldBB = backBuffer;
-            BufferedImage oldBB = backBuffer;
-            backBufferCount = newBackBufferCount;
-            backBufferCaps = newBackBufferCaps;
             final Rectangle size = getSize();
             if (getSurfaceData() != null && oldData != getSurfaceData()) {
                 clearBackground(size.width, size.height);
@@ -1042,35 +978,6 @@ public class LWWindowPeer
                 // TODO: drop oldData for D3D/WGL pipelines
                 // This can only happen when this peer is being created
                 oldData.flush();
-            }
-
-            // TODO: volatile image
-    //        backBuffer = (VolatileImage)delegate.createBackBuffer();
-            backBuffer = (BufferedImage) platformWindow.createBackBuffer();
-            if (backBuffer != null) {
-                Graphics g = backBuffer.getGraphics();
-                try {
-                    Rectangle r = getBounds();
-                    if (g instanceof Graphics2D) {
-                        ((Graphics2D) g).setComposite(AlphaComposite.Src);
-                    }
-                    g.setColor(nonOpaqueBackground);
-                    g.fillRect(0, 0, r.width, r.height);
-                    if (g instanceof SunGraphics2D) {
-                        SG2DConstraint((SunGraphics2D) g, getRegion());
-                    }
-                    if (!isTextured()) {
-                        g.setColor(getBackground());
-                        g.fillRect(0, 0, r.width, r.height);
-                    }
-                    if (oldBB != null) {
-                        // Draw the old back buffer to the new one
-                        g.drawImage(oldBB, 0, 0, null);
-                        oldBB.flush();
-                    }
-                } finally {
-                    g.dispose();
-                }
             }
         }
     }
@@ -1090,14 +997,6 @@ public class LWWindowPeer
                           getRegion(), 0, 0, 0, 0, size.width, size.height);
             }
         }
-    }
-
-    public int getBackBufferCount() {
-        return backBufferCount;
-    }
-
-    public BufferCapabilities getBackBufferCaps() {
-        return backBufferCaps;
     }
 
     /*
@@ -1318,6 +1217,10 @@ public class LWWindowPeer
 
     private boolean isGrabbing() {
         return this == grabbingWindow;
+    }
+
+    public PeerType getPeerType() {
+        return peerType;
     }
 
     @Override

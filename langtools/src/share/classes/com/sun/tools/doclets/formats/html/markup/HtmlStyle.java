@@ -37,6 +37,7 @@ package com.sun.tools.doclets.formats.html.markup;
  */
 public enum HtmlStyle {
     aboutLanguage,
+    activeTableTab,
     altColor,
     bar,
     block,
@@ -75,6 +76,7 @@ public enum HtmlStyle {
     summary,
     deprecatedContent,
     tabEnd,
+    tableTab,
     title,
     topNav;
 }

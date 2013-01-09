@@ -138,6 +138,10 @@ public class Lower extends TreeTranslator {
      */
     Map<ClassSymbol, JCClassDecl> classdefs;
 
+    /** A hash table mapping local classes to a list of pruned trees.
+     */
+    public Map<ClassSymbol, List<JCTree>> prunedTree = new WeakHashMap<ClassSymbol, List<JCTree>>();
+
     /** A hash table mapping virtual accessed symbols in outer subclasses
      *  to the actually referred symbol in superclasses.
      */
@@ -682,7 +686,7 @@ public class Lower extends TreeTranslator {
     /** Look up a method in a given scope.
      */
     private MethodSymbol lookupMethod(DiagnosticPosition pos, Name name, Type qual, List<Type> args) {
-        return rs.resolveInternalMethod(pos, attrEnv, qual, name, args, null);
+        return rs.resolveInternalMethod(pos, attrEnv, qual, name, args, List.<Type>nil());
     }
 
     /** Look up a constructor.
@@ -1039,6 +1043,12 @@ public class Lower extends TreeTranslator {
         }
     }
 
+    private void addPrunedInfo(JCTree tree) {
+        List<JCTree> infoList = prunedTree.get(currentClass);
+        infoList = (infoList == null) ? List.of(tree) : infoList.prepend(tree);
+        prunedTree.put(currentClass, infoList);
+    }
+
     /** Ensure that identifier is accessible, return tree accessing the identifier.
      *  @param sym      The accessed symbol.
      *  @param tree     The tree referring to the symbol.
@@ -1111,7 +1121,10 @@ public class Lower extends TreeTranslator {
                     // Constants are replaced by their constant value.
                     if (sym.kind == VAR) {
                         Object cv = ((VarSymbol)sym).getConstValue();
-                        if (cv != null) return makeLit(sym.type, cv);
+                        if (cv != null) {
+                            addPrunedInfo(tree);
+                            return makeLit(sym.type, cv);
+                        }
                     }
 
                     // Private variables and methods are replaced by calls
@@ -2746,12 +2759,15 @@ public class Lower extends TreeTranslator {
 
     /** Visitor method for conditional expressions.
      */
+    @Override
     public void visitConditional(JCConditional tree) {
         JCTree cond = tree.cond = translate(tree.cond, syms.booleanType);
         if (cond.type.isTrue()) {
             result = convert(translate(tree.truepart, tree.type), tree.type);
+            addPrunedInfo(cond);
         } else if (cond.type.isFalse()) {
             result = convert(translate(tree.falsepart, tree.type), tree.type);
+            addPrunedInfo(cond);
         } else {
             // Condition is not a compile-time constant.
             tree.truepart = translate(tree.truepart, tree.type);
@@ -2760,14 +2776,14 @@ public class Lower extends TreeTranslator {
         }
     }
 //where
-        private JCTree convert(JCTree tree, Type pt) {
-            if (tree.type == pt || tree.type.hasTag(BOT))
-                return tree;
-            JCTree result = make_at(tree.pos()).TypeCast(make.Type(pt), (JCExpression)tree);
-            result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
-                                                           : pt;
-            return result;
-        }
+    private JCTree convert(JCTree tree, Type pt) {
+        if (tree.type == pt || tree.type.hasTag(BOT))
+            return tree;
+        JCTree result = make_at(tree.pos()).TypeCast(make.Type(pt), (JCExpression)tree);
+        result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
+                                                       : pt;
+        return result;
+    }
 
     /** Visitor method for if statements.
      */
@@ -2775,12 +2791,14 @@ public class Lower extends TreeTranslator {
         JCTree cond = tree.cond = translate(tree.cond, syms.booleanType);
         if (cond.type.isTrue()) {
             result = translate(tree.thenpart);
+            addPrunedInfo(cond);
         } else if (cond.type.isFalse()) {
             if (tree.elsepart != null) {
                 result = translate(tree.elsepart);
             } else {
                 result = make.Skip();
             }
+            addPrunedInfo(cond);
         } else {
             // Condition is not a compile-time constant.
             tree.thenpart = translate(tree.thenpart);
@@ -3636,13 +3654,13 @@ public class Lower extends TreeTranslator {
         boolean qualifiedSuperAccess =
             tree.selected.hasTag(SELECT) &&
             TreeInfo.name(tree.selected) == names._super &&
-            !types.isDirectSuperInterface(((JCFieldAccess)tree.selected).selected.type, currentClass);
+            !types.isDirectSuperInterface(((JCFieldAccess)tree.selected).selected.type.tsym, currentClass);
         tree.selected = translate(tree.selected);
         if (tree.name == names._class) {
             result = classOf(tree.selected);
         }
         else if (tree.name == names._super &&
-                types.isDirectSuperInterface(tree.selected.type, currentClass)) {
+                types.isDirectSuperInterface(tree.selected.type.tsym, currentClass)) {
             //default super call!! Not a classic qualified super call
             TypeSymbol supSym = tree.selected.type.tsym;
             Assert.checkNonNull(types.asSuper(currentClass.type, supSym));

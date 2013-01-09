@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "classfile/symbolTable.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableRS.hpp"
@@ -1484,14 +1485,6 @@ void Arguments::set_parallel_gc_flags() {
       }
     }
   }
-  if (UseNUMA) {
-    if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
-      FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
-    }
-    // For those collectors or operating systems (eg, Windows) that do
-    // not support full UseNUMA, we will map to UseNUMAInterleaving for now
-    UseNUMAInterleaving = true;
-  }
 }
 
 void Arguments::set_g1_gc_flags() {
@@ -1843,6 +1836,11 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_percentage(ThresholdTolerance, "ThresholdTolerance");
   status = status && verify_percentage(MinHeapFreeRatio, "MinHeapFreeRatio");
   status = status && verify_percentage(MaxHeapFreeRatio, "MaxHeapFreeRatio");
+
+  // Divide by bucket size to prevent a large size from causing rollover when
+  // calculating amount of memory needed to be allocated for the String table.
+  status = status && verify_interval(StringTableSize, defaultStringTableSize,
+    (max_uintx / StringTable::bucket_size()), "StringTable size");
 
   if (MinHeapFreeRatio > MaxHeapFreeRatio) {
     jio_fprintf(defaultStream::error_stream(),
@@ -3323,6 +3321,22 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
   }
 
+  return JNI_OK;
+}
+
+jint Arguments::adjust_after_os() {
+#if INCLUDE_ALTERNATE_GCS
+  if (UseParallelGC || UseParallelOldGC) {
+    if (UseNUMA) {
+      if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
+        FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
+      }
+      // For those collectors or operating systems (eg, Windows) that do
+      // not support full UseNUMA, we will map to UseNUMAInterleaving for now
+      UseNUMAInterleaving = true;
+    }
+  }
+#endif
   return JNI_OK;
 }
 

@@ -108,8 +108,8 @@ import javax.annotation.processing.Processor;
  *     example a recommended coding pattern:
  *
  *     <pre>
- *       Files[] files1 = ... ; // input for first compilation task
- *       Files[] files2 = ... ; // input for second compilation task
+ *       File[] files1 = ... ; // input for first compilation task
+ *       File[] files2 = ... ; // input for second compilation task
  *
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  *       StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
@@ -165,7 +165,7 @@ import javax.annotation.processing.Processor;
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  *       StandardJavaFileManager stdFileManager = compiler.getStandardFileManager(null, null, null);
  *       JavaFileManager fileManager = new ForwardingJavaFileManager(stdFileManager) {
- *           public void flush() {
+ *           public void flush() throws IOException {
  *               logger.entering(StandardJavaFileManager.class.getName(), "flush");
  *               super.flush();
  *               logger.exiting(StandardJavaFileManager.class.getName(), "flush");
@@ -266,7 +266,7 @@ public interface JavaCompiler extends Tool, OptionChecker {
      * Gets a new instance of the standard file manager implementation
      * for this tool.  The file manager will use the given diagnostic
      * listener for producing any non-fatal diagnostics.  Fatal errors
-     * will be signalled with the appropriate exceptions.
+     * will be signaled with the appropriate exceptions.
      *
      * <p>The standard file manager will be automatically reopened if
      * it is accessed after calls to {@code flush} or {@code close}.
