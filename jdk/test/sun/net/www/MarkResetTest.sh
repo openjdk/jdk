@@ -52,4 +52,4 @@ ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}MarkResetTest.java
 # in this directory
 cp ${TESTSRC}${FS}EncDec.doc .
 
-${TESTJAVA}${FS}bin${FS}java MarkResetTest
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} MarkResetTest

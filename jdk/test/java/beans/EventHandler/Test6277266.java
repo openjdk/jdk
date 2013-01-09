@@ -51,9 +51,11 @@ public class Test6277266 {
                     )
             );
             throw new Error("SecurityException expected");
+        } catch (SecurityException exception) {
+            return; // expected security exception in JDK 7
         } catch (InvocationTargetException exception) {
             if (exception.getCause() instanceof SecurityException){
-                return; // expected security exception
+                return; // expected security exception in JDK 8
             }
             throw new Error("unexpected exception", exception);
         } catch (InterruptedException exception) {

@@ -95,10 +95,7 @@ public class Pool {
      *  package.  Return the object's index in the pool.
      */
     public int put(Object value) {
-        if (value instanceof MethodSymbol)
-            value = new Method((MethodSymbol)value);
-        else if (value instanceof VarSymbol)
-            value = new Variable((VarSymbol)value);
+        value = makePoolValue(value);
 //      assert !(value instanceof Type.TypeVar);
         Integer index = indices.get(value);
         if (index == null) {
@@ -113,6 +110,18 @@ public class Pool {
             }
         }
         return index.intValue();
+    }
+
+    Object makePoolValue(Object o) {
+        if (o instanceof DynamicMethodSymbol) {
+            return new DynamicMethod((DynamicMethodSymbol)o);
+        } else if (o instanceof MethodSymbol) {
+            return new Method((MethodSymbol)o);
+        } else if (o instanceof VarSymbol) {
+            return new Variable((VarSymbol)o);
+        } else {
+            return o;
+        }
     }
 
     /** Return the given object's index in the pool,
@@ -142,6 +151,36 @@ public class Pool {
                 m.name.hashCode() * 33 +
                 m.owner.hashCode() * 9 +
                 m.type.hashCode();
+        }
+    }
+
+    static class DynamicMethod extends Method {
+
+        DynamicMethod(DynamicMethodSymbol m) {
+            super(m);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!super.equals(other)) return false;
+            if (!(other instanceof DynamicMethod)) return false;
+            DynamicMethodSymbol dm1 = (DynamicMethodSymbol)m;
+            DynamicMethodSymbol dm2 = (DynamicMethodSymbol)((DynamicMethod)other).m;
+            return dm1.bsm == dm2.bsm &&
+                        dm1.bsmKind == dm2.bsmKind &&
+                        Arrays.equals(dm1.staticArgs, dm2.staticArgs);
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = super.hashCode();
+            DynamicMethodSymbol dm = (DynamicMethodSymbol)m;
+            hash += dm.bsmKind * 7 +
+                    dm.bsm.hashCode() * 11;
+            for (int i = 0; i < dm.staticArgs.length; i++) {
+                hash += (dm.staticArgs[i].hashCode() * 23);
+            }
+            return hash;
         }
     }
 

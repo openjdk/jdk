@@ -25,14 +25,9 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -40,10 +35,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
 
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
@@ -61,46 +52,36 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  *
  * @since 8
  */
-public class DocFile {
+public abstract class DocFile {
 
-    /**
-     * The doclet configuration.
-     * Provides access to options such as docencoding, output directory, etc.
-     */
+    /** Create a DocFile for a directory. */
+    public static DocFile createFileForDirectory(Configuration configuration, String file) {
+        return DocFileFactory.getFactory(configuration).createFileForDirectory(file);
+    }
+
+    /** Create a DocFile for a file that will be opened for reading. */
+    public static DocFile createFileForInput(Configuration configuration, String file) {
+        return DocFileFactory.getFactory(configuration).createFileForInput(file);
+    }
+
+    /** Create a DocFile for a file that will be opened for writing. */
+    public static DocFile createFileForOutput(Configuration configuration, DocPath path) {
+        return DocFileFactory.getFactory(configuration).createFileForOutput(path);
+    }
+
     private final Configuration configuration;
 
     /**
      * The location for this file. Maybe null if the file was created without
      * a location or path.
      */
-    private final Location location;
+    protected final Location location;
 
     /**
      * The path relative to the (output) location. Maybe null if the file was
      * created without a location or path.
      */
-    private final DocPath path;
-
-    /**
-     * The file object itself.
-     * This is temporary, until we create different subtypes of DocFile.
-     */
-    private final File file;
-
-    /** Create a DocFile for a directory. */
-    public static DocFile createFileForDirectory(Configuration configuration, String file) {
-        return new DocFile(configuration, new File(file));
-    }
-
-    /** Create a DocFile for a file that will be opened for reading. */
-    public static DocFile createFileForInput(Configuration configuration, String file) {
-        return new DocFile(configuration, new File(file));
-    }
-
-    /** Create a DocFile for a file that will be opened for writing. */
-    public static DocFile createFileForOutput(Configuration configuration, DocPath path) {
-        return new DocFile(configuration, StandardLocation.CLASS_OUTPUT, path);
-    }
+    protected final DocPath path;
 
     /**
      * List the directories and files found in subdirectories along the
@@ -111,85 +92,46 @@ public class DocFile {
      *  list files
      */
     public static Iterable<DocFile> list(Configuration configuration, Location location, DocPath path) {
-        if (location != StandardLocation.SOURCE_PATH)
-            throw new IllegalArgumentException();
-
-        Set<DocFile> files = new LinkedHashSet<DocFile>();
-        for (String s : configuration.sourcepath.split(File.pathSeparator)) {
-            if (s.isEmpty())
-                continue;
-            File f = new File(s);
-            if (f.isDirectory()) {
-                f = new File(f, path.getPath());
-                if (f.exists())
-                    files.add(new DocFile(configuration, f));
-            }
-        }
-        return files;
+        return DocFileFactory.getFactory(configuration).list(location, path);
     }
 
-    /** Create a DocFile for a given file. */
-    private DocFile(Configuration configuration, File file) {
+    /** Create a DocFile without a location or path */
+    protected DocFile(Configuration configuration) {
         this.configuration = configuration;
         this.location = null;
         this.path = null;
-        this.file = file;
     }
 
     /** Create a DocFile for a given location and relative path. */
-    private DocFile(Configuration configuration, Location location, DocPath path) {
+    protected DocFile(Configuration configuration, Location location, DocPath path) {
         this.configuration = configuration;
         this.location = location;
         this.path = path;
-        this.file = path.resolveAgainst(configuration.destDirName);
     }
 
     /** Open an input stream for the file. */
-    public InputStream openInputStream() throws FileNotFoundException {
-        return new BufferedInputStream(new FileInputStream(file));
-    }
+    public abstract InputStream openInputStream() throws IOException;
 
     /**
      * Open an output stream for the file.
      * The file must have been created with a location of
-     * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+     * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT}
+     * and a corresponding relative path.
      */
-    public OutputStream openOutputStream() throws IOException, UnsupportedEncodingException {
-        if (location != StandardLocation.CLASS_OUTPUT)
-            throw new IllegalStateException();
-
-        createDirectoryForFile(file);
-        return new BufferedOutputStream(new FileOutputStream(file));
-    }
+    public abstract OutputStream openOutputStream() throws IOException, UnsupportedEncodingException;
 
     /**
      * Open an writer for the file, using the encoding (if any) given in the
      * doclet configuration.
      * The file must have been created with a location of
-     * {@link StandardLocation#CLASS_OUTPUT} and a corresponding relative path.
+     * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} and a corresponding relative path.
      */
-    public Writer openWriter() throws IOException, UnsupportedEncodingException {
-        if (location != StandardLocation.CLASS_OUTPUT)
-            throw new IllegalStateException();
-
-        createDirectoryForFile(file);
-        FileOutputStream fos = new FileOutputStream(file);
-        if (configuration.docencoding == null) {
-            return new BufferedWriter(new OutputStreamWriter(fos));
-        } else {
-            return new BufferedWriter(new OutputStreamWriter(fos, configuration.docencoding));
-        }
-    }
+    public abstract Writer openWriter() throws IOException, UnsupportedEncodingException;
 
     /**
      * Copy the contents of another file directly to this file.
      */
     public void copyFile(DocFile fromFile) throws IOException {
-        if (location != StandardLocation.CLASS_OUTPUT)
-            throw new IllegalStateException();
-
-        createDirectoryForFile(file);
-
         InputStream input = fromFile.openInputStream();
         OutputStream output = openOutputStream();
         try {
@@ -215,20 +157,15 @@ public class DocFile {
      *     separator
      */
     public void copyResource(DocPath resource, boolean overwrite, boolean replaceNewLine) {
-        if (location != StandardLocation.CLASS_OUTPUT)
-            throw new IllegalStateException();
-
-        if (file.exists() && !overwrite)
+        if (exists() && !overwrite)
             return;
-
-        createDirectoryForFile(file);
 
         try {
             InputStream in = Configuration.class.getResourceAsStream(resource.getPath());
             if (in == null)
                 return;
 
-            OutputStream out = new FileOutputStream(file);
+            OutputStream out = openOutputStream();
             try {
                 if (!replaceNewLine) {
                     byte[] buf = new byte[2048];
@@ -265,68 +202,37 @@ public class DocFile {
     }
 
     /** Return true if the file can be read. */
-    public boolean canRead() {
-        return file.canRead();
-    }
+    public abstract boolean canRead();
 
     /** Return true if the file can be written. */
-    public boolean canWrite() {
-        return file.canRead();
-    }
+    public abstract boolean canWrite();
 
     /** Return true if the file exists. */
-    public boolean exists() {
-        return file.exists();
-    }
+    public abstract boolean exists();
 
     /** Return the base name (last component) of the file name. */
-    public String getName() {
-        return file.getName();
-    }
+    public abstract String getName();
 
     /** Return the file system path for this file. */
-    public String getPath() {
-        return file.getPath();
-    }
+    public abstract String getPath();
 
-    /** Return true is file has an absolute path name. */
-    boolean isAbsolute() {
-        return file.isAbsolute();
-    }
+    /** Return true if file has an absolute path name. */
+    public abstract boolean isAbsolute();
 
-    /** Return true is file identifies a directory. */
-    public boolean isDirectory() {
-        return file.isDirectory();
-    }
+    /** Return true if file identifies a directory. */
+    public abstract boolean isDirectory();
 
-    /** Return true is file identifies a file. */
-    public boolean isFile() {
-        return file.isFile();
-    }
+    /** Return true if file identifies a file. */
+    public abstract boolean isFile();
 
     /** Return true if this file is the same as another. */
-    public boolean isSameFile(DocFile other) {
-        try {
-            return file.exists()
-                    && file.getCanonicalFile().equals(other.file.getCanonicalFile());
-        } catch (IOException e) {
-            return false;
-        }
-    }
+    public abstract boolean isSameFile(DocFile other);
 
     /** If the file is a directory, list its contents. */
-    public Iterable<DocFile> list() {
-        List<DocFile> files = new ArrayList<DocFile>();
-        for (File f: file.listFiles()) {
-            files.add(new DocFile(configuration, f));
-        }
-        return files;
-    }
+    public abstract Iterable<DocFile> list() throws IOException;
 
     /** Create the file as a directory, including any parent directories. */
-    public boolean mkdirs() {
-        return file.mkdirs();
-    }
+    public abstract boolean mkdirs();
 
     /**
      * Derive a new file by resolving a relative path against this file.
@@ -334,9 +240,7 @@ public class DocFile {
      * If this file has a path set, the new file will have a corresponding
      * new path.
      */
-    public DocFile resolve(DocPath p) {
-        return resolve(p.getPath());
-    }
+    public abstract DocFile resolve(DocPath p);
 
     /**
      * Derive a new file by resolving a relative path against this file.
@@ -344,56 +248,12 @@ public class DocFile {
      * If this file has a path set, the new file will have a corresponding
      * new path.
      */
-    public DocFile resolve(String p) {
-        if (location == null && path == null) {
-            return new DocFile(configuration, new File(file, p));
-        } else {
-            return new DocFile(configuration, location, path.resolve(p));
-        }
-    }
+    public abstract DocFile resolve(String p);
 
     /**
      * Resolve a relative file against the given output location.
-     * @param locn Currently, only SOURCE_OUTPUT is supported.
+     * @param locn Currently, only
+     * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} is supported.
      */
-    public DocFile resolveAgainst(StandardLocation locn) {
-        if (locn != StandardLocation.CLASS_OUTPUT)
-            throw new IllegalArgumentException();
-        return new DocFile(configuration,
-                new File(configuration.destDirName, file.getPath()));
-    }
-
-    /**
-     * Given a path string create all the directories in the path. For example,
-     * if the path string is "java/applet", the method will create directory
-     * "java" and then "java/applet" if they don't exist. The file separator
-     * string "/" is platform dependent system property.
-     *
-     * @param path Directory path string.
-     */
-    private void createDirectoryForFile(File file) {
-        File dir = file.getParentFile();
-        if (dir == null || dir.exists() || dir.mkdirs())
-            return;
-
-        configuration.message.error(
-               "doclet.Unable_to_create_directory_0", dir.getPath());
-        throw new DocletAbortException();
-    }
-
-    /** Return a string to identify the contents of this object,
-     * for debugging purposes.
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("DocFile[");
-        if (location != null)
-            sb.append("locn:").append(location).append(",");
-        if (path != null)
-            sb.append("path:").append(path.getPath()).append(",");
-        sb.append("file:").append(file);
-        sb.append("]");
-        return sb.toString();
-    }
+    public abstract DocFile resolveAgainst(Location locn);
 }

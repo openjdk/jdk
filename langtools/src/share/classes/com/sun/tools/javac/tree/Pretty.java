@@ -1110,7 +1110,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitReference(JCMemberReference tree) {
         try {
             printExpr(tree.expr);
-            print("#");
+            print("::");
             if (tree.typeargs != null) {
                 print("<");
                 printExprs(tree.typeargs);
@@ -1244,6 +1244,14 @@ public class Pretty extends JCTree.Visitor {
     public void visitTypeUnion(JCTypeUnion tree) {
         try {
             printExprs(tree.alternatives, " | ");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitTypeIntersection(JCTypeIntersection tree) {
+        try {
+            printExprs(tree.bounds, " & ");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

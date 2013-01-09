@@ -50,7 +50,6 @@ public class Method extends Metadata {
     constMethod                = type.getAddressField("_constMethod");
     methodData                 = type.getAddressField("_method_data");
     methodSize                 = new CIntField(type.getCIntegerField("_method_size"), 0);
-    maxStack                   = new CIntField(type.getCIntegerField("_max_stack"), 0);
     maxLocals                  = new CIntField(type.getCIntegerField("_max_locals"), 0);
     sizeOfParameters           = new CIntField(type.getCIntegerField("_size_of_parameters"), 0);
     accessFlags                = new CIntField(type.getCIntegerField("_access_flags"), 0);
@@ -84,7 +83,6 @@ public class Method extends Metadata {
   private static AddressField  constMethod;
   private static AddressField  methodData;
   private static CIntField methodSize;
-  private static CIntField maxStack;
   private static CIntField maxLocals;
   private static CIntField sizeOfParameters;
   private static CIntField accessFlags;
@@ -135,7 +133,7 @@ public class Method extends Metadata {
   }
   /** WARNING: this is in words, not useful in this system; use getObjectSize() instead */
   public long         getMethodSize()                 { return                methodSize.getValue(this);        }
-  public long         getMaxStack()                   { return                maxStack.getValue(this);          }
+  public long         getMaxStack()                   { return                getConstMethod().getMaxStack();   }
   public long         getMaxLocals()                  { return                maxLocals.getValue(this);         }
   public long         getSizeOfParameters()           { return                sizeOfParameters.getValue(this);  }
   public long         getNameIndex()                  { return                getConstMethod().getNameIndex();  }
@@ -284,7 +282,6 @@ public class Method extends Metadata {
 
   public void iterateFields(MetadataVisitor visitor) {
       visitor.doCInt(methodSize, true);
-      visitor.doCInt(maxStack, true);
       visitor.doCInt(maxLocals, true);
       visitor.doCInt(sizeOfParameters, true);
       visitor.doCInt(accessFlags, true);
@@ -358,6 +355,25 @@ public class Method extends Metadata {
     buf.append(")");
     return buf.toString().replace('/', '.');
   }
+
+  public void dumpReplayData(PrintStream out) {
+      NMethod nm = getNativeMethod();
+      int code_size = 0;
+      if (nm != null) {
+        code_size = (int)nm.codeEnd().minus(nm.getVerifiedEntryPoint());
+      }
+      Klass holder = getMethodHolder();
+      out.println("ciMethod " +
+                  holder.getName().asString() + " " +
+                  OopUtilities.escapeString(getName().asString()) + " " +
+                  getSignature().asString() + " " +
+                  getInvocationCounter() + " " +
+                  getBackedgeCounter() + " " +
+                  interpreterInvocationCount() + " " +
+                  interpreterThrowoutCount() + " " +
+                  code_size);
+  }
+
   public int interpreterThrowoutCount() {
     return (int) interpreterThrowoutCountField.getValue(this);
   }

@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @summary check that abstract methods are compatible with inherited defaults
- * @compile/fail/ref=Neg05.out -XDallowDefaultMethods -XDrawDiagnostics Neg05.java
+ * @compile/fail/ref=Neg05.out -XDrawDiagnostics Neg05.java
  */
 
 class Neg05 {

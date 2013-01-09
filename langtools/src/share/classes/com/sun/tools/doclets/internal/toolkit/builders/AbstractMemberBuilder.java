@@ -25,6 +25,8 @@
 
 package com.sun.tools.doclets.internal.toolkit.builders;
 
+import java.util.Set;
+
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -48,8 +50,8 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      * @param configuration the configuration used in this run
      *        of the doclet.
      */
-    public AbstractMemberBuilder(Configuration configuration) {
-        super(configuration);
+    public AbstractMemberBuilder(Context context) {
+        super(context);
     }
 
     /**

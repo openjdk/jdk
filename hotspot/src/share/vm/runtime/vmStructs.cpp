@@ -95,6 +95,7 @@
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/virtualspace.hpp"
 #include "runtime/vmStructs.hpp"
 #include "utilities/array.hpp"
@@ -114,18 +115,6 @@
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "vmStructs_ppc.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "vmStructs_linux_x86.hpp"
@@ -366,7 +355,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(Method,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,               _vtable_index,                                 int)                                   \
   nonstatic_field(Method,               _method_size,                                  u2)                                    \
-  nonstatic_field(Method,               _max_stack,                                    u2)                                    \
   nonstatic_field(Method,               _max_locals,                                   u2)                                    \
   nonstatic_field(Method,               _size_of_parameters,                           u2)                                    \
   nonstatic_field(Method,               _interpreter_throwout_count,                   u2)                                    \
@@ -389,7 +377,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(ConstMethod,          _name_index,                                   u2)                                    \
   nonstatic_field(ConstMethod,          _signature_index,                              u2)                                    \
   nonstatic_field(ConstMethod,          _method_idnum,                                 u2)                                    \
-  nonstatic_field(ConstMethod,          _generic_signature_index,                      u2)                                    \
+  nonstatic_field(ConstMethod,          _max_stack,                                    u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
   volatile_nonstatic_field(Symbol,             _refcount,                                     int)                                   \
@@ -993,6 +981,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
                                                                                                                                      \
  nonstatic_field(ciMethod,     _interpreter_invocation_count, int)                                                                   \
  nonstatic_field(ciMethod,     _interpreter_throwout_count, int)                                                                     \
+ nonstatic_field(ciMethod,     _instructions_size, int)                                                                              \
                                                                                                                                      \
  nonstatic_field(ciMethodData, _data_size, int)                                                                                      \
  nonstatic_field(ciMethodData, _state, u_char)                                                                                       \
@@ -2106,8 +2095,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(FreeList<Metablock>*)                             \
   declare_toplevel_type(FreeList<Metablock>)                              \
   declare_toplevel_type(MetablockTreeDictionary*)                         \
-  declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)   \
-              declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
+           declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
 
 
   /* NOTE that we do not use the last_entry() macro here; it is used  */
@@ -2291,6 +2279,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(ConstMethod::_has_checked_exceptions)           \
   declare_constant(ConstMethod::_has_localvariable_table)          \
   declare_constant(ConstMethod::_has_exception_table)              \
+  declare_constant(ConstMethod::_has_generic_signature)            \
                                                                           \
   /*************************************/                                 \
   /* InstanceKlass enum                */                                 \
@@ -3214,3 +3203,17 @@ VMStructs::findType(const char* typeName) {
 void vmStructs_init() {
   debug_only(VMStructs::init());
 }
+
+#ifndef PRODUCT
+void VMStructs::test() {
+  // Check for duplicate entries in type array
+  for (int i = 0; localHotSpotVMTypes[i].typeName != NULL; i++) {
+    for (int j = i + 1; localHotSpotVMTypes[j].typeName != NULL; j++) {
+      if (strcmp(localHotSpotVMTypes[i].typeName, localHotSpotVMTypes[j].typeName) == 0) {
+        tty->print_cr("Duplicate entries for '%s'", localHotSpotVMTypes[i].typeName);
+        assert(false, "Duplicate types in localHotSpotVMTypes array");
+      }
+    }
+  }
+}
+#endif

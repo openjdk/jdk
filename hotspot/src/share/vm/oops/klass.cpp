@@ -56,7 +56,7 @@ bool Klass::is_subclass_of(Klass* k) const {
 
   while (t != NULL) {
     if (t == k) return true;
-    t = Klass::cast(t)->super();
+    t = t->super();
   }
   return false;
 }
@@ -243,16 +243,16 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
       juint j = super_depth();
       assert(j == my_depth, "computed accessor gets right answer");
       Klass* t = this;
-      while (!Klass::cast(t)->can_be_primary_super()) {
-        t = Klass::cast(t)->super();
-        j = Klass::cast(t)->super_depth();
+      while (!t->can_be_primary_super()) {
+        t = t->super();
+        j = t->super_depth();
       }
       for (juint j1 = j+1; j1 < primary_super_limit(); j1++) {
         assert(primary_super_of_depth(j1) == NULL, "super list padding");
       }
       while (t != NULL) {
         assert(primary_super_of_depth(j) == t, "super list initialization");
-        t = Klass::cast(t)->super();
+        t = t->super();
         --j;
       }
       assert(j == (juint)-1, "correct depth count");
@@ -333,7 +333,7 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots) {
 
 
 Klass* Klass::subklass() const {
-  return _subklass == NULL ? NULL : Klass::cast(_subklass);
+  return _subklass == NULL ? NULL : _subklass;
 }
 
 InstanceKlass* Klass::superklass() const {
@@ -342,7 +342,7 @@ InstanceKlass* Klass::superklass() const {
 }
 
 Klass* Klass::next_sibling() const {
-  return _next_sibling == NULL ? NULL : Klass::cast(_next_sibling);
+  return _next_sibling == NULL ? NULL : _next_sibling;
 }
 
 void Klass::set_subklass(Klass* s) {
@@ -373,29 +373,22 @@ void Klass::append_to_sibling_list() {
   debug_only(verify();)
 }
 
-void Klass::remove_from_sibling_list() {
-  // remove receiver from sibling list
-  InstanceKlass* super = superklass();
-  assert(super != NULL || this == SystemDictionary::Object_klass(), "should have super");
-  if (super == NULL) return;        // special case: class Object
-  if (super->subklass() == this) {
-    // first subklass
-    super->set_subklass(_next_sibling);
-  } else {
-    Klass* sib = super->subklass();
-    while (sib->next_sibling() != this) {
-      sib = sib->next_sibling();
-    };
-    sib->set_next_sibling(_next_sibling);
-  }
-}
-
 bool Klass::is_loader_alive(BoolObjectClosure* is_alive) {
   assert(is_metadata(), "p is not meta-data");
   assert(ClassLoaderDataGraph::contains((address)this), "is in the metaspace");
+
+#ifdef ASSERT
   // The class is alive iff the class loader is alive.
   oop loader = class_loader();
-  return (loader == NULL) || is_alive->do_object_b(loader);
+  bool loader_alive = (loader == NULL) || is_alive->do_object_b(loader);
+#endif // ASSERT
+
+  // The class is alive if it's mirror is alive (which should be marked if the
+  // loader is alive) unless it's an anoymous class.
+  bool mirror_alive = is_alive->do_object_b(java_mirror());
+  assert(!mirror_alive || loader_alive, "loader must be alive if the mirror is"
+                        " but not the other way around with anonymous classes");
+  return mirror_alive;
 }
 
 void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
@@ -416,10 +409,10 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     Klass* sub = current->subklass_oop();
     while (sub != NULL && !sub->is_loader_alive(is_alive)) {
 #ifndef PRODUCT
-        if (TraceClassUnloading && WizardMode) {
-          ResourceMark rm;
+      if (TraceClassUnloading && WizardMode) {
+        ResourceMark rm;
         tty->print_cr("[Unlinking class (subclass) %s]", sub->external_name());
-        }
+      }
 #endif
       sub = sub->next_sibling_oop();
     }
@@ -431,16 +424,16 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     // Find and set the first alive sibling
     Klass* sibling = current->next_sibling_oop();
     while (sibling != NULL && !sibling->is_loader_alive(is_alive)) {
-          if (TraceClassUnloading && WizardMode) {
-            ResourceMark rm;
+      if (TraceClassUnloading && WizardMode) {
+        ResourceMark rm;
         tty->print_cr("[Unlinking class (sibling) %s]", sibling->external_name());
-          }
-      sibling = sibling->next_sibling_oop();
       }
+      sibling = sibling->next_sibling_oop();
+    }
     current->set_next_sibling(sibling);
     if (sibling != NULL) {
       stack.push(sibling);
-}
+    }
 
     // Clean the implementors list and method data.
     if (current->oop_is_instance()) {
@@ -554,7 +547,11 @@ const char* Klass::external_name() const {
     InstanceKlass* ik = (InstanceKlass*) this;
     if (ik->is_anonymous()) {
       assert(EnableInvokeDynamic, "");
-      intptr_t hash = ik->java_mirror()->identity_hash();
+      intptr_t hash = 0;
+      if (ik->java_mirror() != NULL) {
+        // java_mirror might not be created yet, return 0 as hash.
+        hash = ik->java_mirror()->identity_hash();
+      }
       char     hash_buf[40];
       sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
       size_t   hash_len = strlen(hash_buf);

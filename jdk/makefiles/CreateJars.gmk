@@ -420,6 +420,23 @@ $(eval $(call SetupArchive,BUILD_JSSE_JAR,,\
 JARS+=$(IMAGES_OUTPUTDIR)/lib/jsse.jar
 
 ##########################################################################################
+# Create manifest for security jars
+
+#
+# Include these extra attributes for now, should probably take out.
+#
+JCE_MANIFEST := $(IMAGES_OUTPUTDIR)/lib/_the.security.manifest.mf
+$(JCE_MANIFEST): $(MAINMANIFEST)
+	$(MKDIR) -p $(@D)
+	$(RM) $@ $@.tmp
+	$(SED) -e "s#@@RELEASE@@#$(JDK_VERSION)#"       \
+               -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+               $(MAINMANIFEST) >> $@.tmp
+	$(ECHO) "Extension-Name: javax.crypto" >> $@.tmp
+	$(ECHO) "Implementation-Vendor-Id: com.sun" >> $@.tmp
+	$(MV) $@.tmp $@
+
+##########################################################################################
 
 SUNPKCS11_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunpkcs11.jar
 
@@ -429,9 +446,7 @@ ifndef OPENJDK
 
     $(SUNPKCS11_JAR_DST) : $(SUNPKCS11_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunPKCS11 provider..."
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(install-file)
 
 else
 
@@ -440,7 +455,10 @@ else
 	SUFFIXES:=.class,\
 	INCLUDES:=sun/security/pkcs11,\
 	JAR:=$(SUNPKCS11_JAR_DST), \
+        MANIFEST:=$(JCE_MANIFEST), \
 	SKIP_METAINF := true))
+
+    $(SUNPKCS11_JAR_DST): $(JCE_MANIFEST)
 
 endif
 
@@ -452,22 +470,23 @@ SUNEC_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunec.jar
 
 ifndef OPENJDK
 
-SUNEC_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ec/sunec.jar
+    SUNEC_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ec/sunec.jar
 
-$(SUNEC_JAR_DST) : $(SUNEC_JAR_SRC)
+    $(SUNEC_JAR_DST) : $(SUNEC_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunEC provider..."
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(install-file)
 
 else
 
-$(eval $(call SetupArchive,BUILD_SUNEC_JAR,,\
+    $(eval $(call SetupArchive,BUILD_SUNEC_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:=sun/security/ec,\
 		JAR:=$(SUNEC_JAR_DST), \
+                MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
+
+    $(SUNEC_JAR_DST): $(JCE_MANIFEST)
 
 endif
 
@@ -495,9 +514,8 @@ ifndef OPENJDK
 
     $(SUNJCE_PROVIDER_JAR_DST) : $(SUNJCE_PROVIDER_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunJCE provider..."
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(install-file)
+
 else
 
     $(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR,,\
@@ -505,9 +523,11 @@ else
 		SUFFIXES:=.class,\
 		INCLUDES:= com/sun/crypto/provider,\
 		JAR:=$(SUNJCE_PROVIDER_JAR_DST), \
-		MANIFEST := $(JDK_TOPDIR)/make/tools/manifest.mf, \
-		EXTRA_MANIFEST_ATTR := Extension-Name: javax.crypto\nImplementation-Vendor-Id: com.sun, \
+                MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
+
+    $(SUNJCE_PROVIDER_JAR_DST): $(JCE_MANIFEST)
+
 endif
 
 JARS += $(SUNJCE_PROVIDER_JAR_DST)
@@ -516,99 +536,109 @@ JCE_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/jce.jar
 
 ifndef OPENJDK
 
-JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
+    JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
 
-$(JCE_JAR_DST) : $(JCE_JAR_SRC)
+    $(JCE_JAR_DST) : $(JCE_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt jce.jar..."
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(install-file)
 
 else
 
-$(eval $(call SetupArchive,BUILD_JCE_JAR,,\
+    $(eval $(call SetupArchive,BUILD_JCE_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= javax/crypto sun/security/internal,\
 		JAR:=$(JCE_JAR_DST), \
-		MANIFEST := $(JDK_TOPDIR)/make/tools/manifest.mf, \
-		EXTRA_MANIFEST_ATTR := Extension-Name: javax.crypto\nImplementation-Vendor-Id: com.sun, \
+                MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
+
+    $(JCE_JAR_DST): $(JCE_MANIFEST)
+
 endif
 
 JARS += $(JCE_JAR_DST)
 
 ##########################################################################################
 
-ifdef OPENJDK
-
-#
-# TODO fix so that SetupArchive does not write files into SRCS
-#   then we don't need this extra copying
-#
-# NOTE:  We currently do not place restrictions on our limited export
-# policy.  This was not a typo.
-#
 US_EXPORT_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/US_export_policy.jar
-US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
-US_EXPORT_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/US_export_policy_jar.tmp
 
-$(US_EXPORT_POLICY_JAR_TMP)/% : $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+ifndef OPENJDK
 
-US_EXPORT_POLICY_JAR_DEPS := $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
 
-$(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR,$(US_EXPORT_POLICY_JAR_DEPS),\
+    $(US_EXPORT_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
+	$(ECHO) $(LOG_INFO) Copying $(@F)
+	$(install-file)
+
+else
+
+    #
+    # TODO fix so that SetupArchive does not write files into SRCS
+    #   then we don't need this extra copying
+    #
+    # NOTE:  We currently do not place restrictions on our limited export
+    # policy.  This was not a typo.
+    #
+    US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
+    US_EXPORT_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/US_export_policy_jar.tmp
+
+    $(US_EXPORT_POLICY_JAR_TMP)/% : $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
+	$(install-file)
+
+    US_EXPORT_POLICY_JAR_DEPS := $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
+
+    $(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR,$(US_EXPORT_POLICY_JAR_DEPS),\
 		SRCS:=$(US_EXPORT_POLICY_JAR_TMP), \
 		SUFFIXES:= .policy,\
 		JAR:=$(US_EXPORT_POLICY_JAR_DST), \
 		EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
 		SKIP_METAINF := true))
 
-JARS += $(US_EXPORT_POLICY_JAR_DST)
-
 endif
+
+JARS += $(US_EXPORT_POLICY_JAR_DST)
 
 ##########################################################################################
 
-
-ifdef OPENJDK
-
-#
-# TODO fix so that SetupArchive does not write files into SRCS
-#   then we don't need this extra copying
-#
 LOCAL_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/local_policy.jar
-LOCAL_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/local_policy_jar.tmp
 
-ifeq ($(UNLIMITED_CRYPTO), true)
-    LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
-    LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/default_local.policy
-    LOCAL_POLICY_JAR_ATTR := Crypto-Strength: unlimited
+ifndef OPENJDK
+
+    $(LOCAL_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
+	$(ECHO) $(LOG_INFO) Copying $(@F)
+	$(install-file)
+
 else
-    LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/limited
-    LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy \
-			 $(LOCAL_POLICY_JAR_TMP)/default_local.policy
-    LOCAL_POLICY_JAR_ATTR := Crypto-Strength: limited
-endif
 
-$(LOCAL_POLICY_JAR_TMP)/% : $(LOCAL_POLICY_JAR_SRC_DIR)/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+    #
+    # TODO fix so that SetupArchive does not write files into SRCS
+    #   then we don't need this extra copying
+    #
+    LOCAL_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/local_policy_jar.tmp
 
-$(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR,$(LOCAL_POLICY_JAR_DEPS),\
+    ifeq ($(UNLIMITED_CRYPTO), true)
+        LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
+        LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/default_local.policy
+        LOCAL_POLICY_JAR_ATTR := Crypto-Strength: unlimited
+    else
+        LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/limited
+        LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy \
+                                 $(LOCAL_POLICY_JAR_TMP)/default_local.policy
+        LOCAL_POLICY_JAR_ATTR := Crypto-Strength: limited
+    endif
+
+    $(LOCAL_POLICY_JAR_TMP)/% : $(LOCAL_POLICY_JAR_SRC_DIR)/%
+	$(install-file)
+
+    $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR,$(LOCAL_POLICY_JAR_DEPS),\
 		SRCS:=$(LOCAL_POLICY_JAR_TMP),\
 		SUFFIXES:= .policy,\
 		JAR:=$(LOCAL_POLICY_JAR_DST), \
 		EXTRA_MANIFEST_ATTR := $(LOCAL_POLICY_JAR_ATTR), \
 		SKIP_METAINF := true))
 
-JARS += $(LOCAL_POLICY_JAR_DST)
-
 endif
+
+JARS += $(LOCAL_POLICY_JAR_DST)
 
 ##########################################################################################
 
@@ -621,9 +651,7 @@ SUNMSCAPI_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/mscapi/sunmscapi.jar
 
 $(SUNMSCAPI_JAR_DST) : $(SUNMSCAPI_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunMSCAPI provider..."
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(install-file)
 
 else
 
@@ -649,9 +677,7 @@ UCRYPTO_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ucrypto/ucrypto.jar
 
 $(UCRYPTO_JAR_DST) : $(UCRYPTO_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt OracleUcrypto provider..."
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(install-file)
 
 JARS += $(UCRYPTO_JAR_DST)
 
@@ -703,6 +729,7 @@ TOOLS_JAR_INCLUDES := \
 	com/sun/source          \
 	com/sun/tools/classfile \
 	com/sun/tools/doclets   \
+	com/sun/tools/doclint   \
 	com/sun/tools/example/debug/expr \
 	com/sun/tools/example/debug/tty  \
 	com/sun/tools/extcheck  \
@@ -870,14 +897,10 @@ LAUNCHER_ZIP_SRC := $(patsubst $(JDK_TOPDIR)/src/share/bin/%,$(IMAGES_OUTPUTDIR)
 			$(LAUNCHER_SRC_FILES)))
 
 $(IMAGES_OUTPUTDIR)/src/launcher/%: $(JDK_TOPDIR)/src/share/bin/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(install-file)
 
 $(IMAGES_OUTPUTDIR)/src/launcher/%: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/bin/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(install-file)
 
 $(IMAGES_OUTPUTDIR)/src.zip: $(LAUNCHER_ZIP_SRC)
 
@@ -892,6 +915,55 @@ $(eval $(call SetupZipArchive,BUILD_SRC_ZIP,\
 		EXTRA_DEPS:=$(LAUNCHER_ZIP_SRC)))
 
 JARS+=$(IMAGES_OUTPUTDIR)/src.zip
+
+##########################################################################################
+
+#
+# This is an empty jar (only contains manifest) and fits poorly into framework...
+#   create simple rule instead
+#
+$(IMAGES_OUTPUTDIR)/lib/management-agent.jar : $(JDK_TOPDIR)/src/share/classes/sun/management/manifest
+	$(JAR) cfm $@ $<
+
+JARS += $(IMAGES_OUTPUTDIR)/lib/management-agent.jar
+
+##########################################################################################
+
+$(IMAGES_OUTPUTDIR)/lib/ext/zipfs.jar : $(JDK_OUTPUTDIR)/demo/nio/zipfs/zipfs.jar
+	$(install-file)
+
+JARS += $(IMAGES_OUTPUTDIR)/lib/ext/zipfs.jar
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+    $(eval $(call SetupArchive,BUILD_JOBJC_JAR,,\
+		SRCS:=$(JDK_OUTPUTDIR)/jobjc_classes,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/JObjC.jar, \
+		JARINDEX:=true))
+
+    JARS += $(IMAGES_OUTPUTDIR)/lib/JObjC.jar
+endif
+
+##########################################################################################
+
+ifndef OPENJDK
+    $(eval $(call SetupArchive,BUILD_ALT_RT_JAR,,\
+		SRCS:=$(JDK_OUTPUTDIR)/altclasses_classes,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/alt-rt.jar))
+
+    JARS += $(IMAGES_OUTPUTDIR)/lib/alt-rt.jar
+endif
+
+##########################################################################################
+
+# This file is imported from hotspot in Import.gmk. Copying it into images/lib so that
+# all jars can be found in one place when creating images in Images.gmk. It needs to be
+# done here so that clean targets can be simple and accurate.
+$(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar: $(JDK_OUTPUTDIR)/lib/sa-jdi.jar
+	$(install-file)
+
+JARS += $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
 
 ##########################################################################################
 

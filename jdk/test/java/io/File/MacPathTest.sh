@@ -36,4 +36,4 @@ if [ "x$TESTJAVA" = x ]; then
   TESTCLASSES=.
 fi
 
-export LC_ALL=en_US.UTF-8 ;${TESTJAVA}/bin/java -cp ${TESTCLASSES} MacPathTest
+export LC_ALL=en_US.UTF-8 ;${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTCLASSES} MacPathTest

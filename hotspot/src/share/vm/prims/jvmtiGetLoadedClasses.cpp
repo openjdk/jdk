@@ -169,7 +169,7 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
   static void increment(Klass* k) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     if (that->get_initiatingLoader() == NULL) {
-      for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+      for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
         that->set_count(that->get_count() + 1);
       }
     } else if (k != NULL) {
@@ -182,7 +182,7 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     oop class_loader = loader_data->class_loader();
     if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
-      for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+      for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
         that->set_count(that->get_count() + 1);
       }
     }
@@ -200,14 +200,14 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     if (that->available()) {
       if (that->get_initiatingLoader() == NULL) {
-        for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
-          oop mirror = Klass::cast(l)->java_mirror();
+        for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
+          oop mirror = l->java_mirror();
           that->set_element(that->get_index(), mirror);
           that->set_index(that->get_index() + 1);
         }
       } else if (k != NULL) {
         // if initiating loader not null, just include the instance with 1 dimension
-        oop mirror = Klass::cast(k)->java_mirror();
+        oop mirror = k->java_mirror();
         that->set_element(that->get_index(), mirror);
         that->set_index(that->get_index() + 1);
       }
@@ -219,8 +219,8 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     if (that->available()) {
       oop class_loader = loader_data->class_loader();
       if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
-        for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
-          oop mirror = Klass::cast(l)->java_mirror();
+        for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
+          oop mirror = l->java_mirror();
           that->set_element(that->get_index(), mirror);
           that->set_index(that->get_index() + 1);
         }
@@ -234,7 +234,7 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
   static void increment_for_basic_type_arrays(Klass* k) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     assert(that != NULL, "no JvmtiGetLoadedClassesClosure");
-    for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+    for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
       that->set_count(that->get_count() + 1);
     }
   }
@@ -244,8 +244,8 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     assert(that != NULL, "no JvmtiGetLoadedClassesClosure");
     assert(that->available(), "no list");
-    for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
-      oop mirror = Klass::cast(l)->java_mirror();
+    for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
+      oop mirror = l->java_mirror();
       that->set_element(that->get_index(), mirror);
       that->set_index(that->get_index() + 1);
     }

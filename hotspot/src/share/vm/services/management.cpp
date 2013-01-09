@@ -1417,7 +1417,7 @@ JVM_ENTRY(jobjectArray, jmm_GetLoadedClasses(JNIEnv *env))
 
   for (int i = 0; i < num_classes; i++) {
     KlassHandle kh = lce.get_klass(i);
-    oop mirror = Klass::cast(kh())->java_mirror();
+    oop mirror = kh()->java_mirror();
     classes_ah->obj_at_put(i, mirror);
   }
 

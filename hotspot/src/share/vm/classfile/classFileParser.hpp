@@ -363,16 +363,16 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // "parsed_name" is updated by this method, and is the name found
   // while parsing the stream.
   instanceKlassHandle parseClassFile(Symbol* name,
-                                     Handle class_loader,
+                                     ClassLoaderData* loader_data,
                                      Handle protection_domain,
                                      TempNewSymbol& parsed_name,
                                      bool verify,
                                      TRAPS) {
     KlassHandle no_host_klass;
-    return parseClassFile(name, class_loader, protection_domain, no_host_klass, NULL, parsed_name, verify, THREAD);
+    return parseClassFile(name, loader_data, protection_domain, no_host_klass, NULL, parsed_name, verify, THREAD);
   }
   instanceKlassHandle parseClassFile(Symbol* name,
-                                     Handle class_loader,
+                                     ClassLoaderData* loader_data,
                                      Handle protection_domain,
                                      KlassHandle host_klass,
                                      GrowableArray<Handle>* cp_patches,

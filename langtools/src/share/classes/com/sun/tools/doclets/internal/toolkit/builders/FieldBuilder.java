@@ -48,22 +48,22 @@ public class FieldBuilder extends AbstractMemberBuilder {
     /**
      * The class whose fields are being documented.
      */
-    private ClassDoc classDoc;
+    private final ClassDoc classDoc;
 
     /**
      * The visible fields for the given class.
      */
-    private VisibleMemberMap visibleMemberMap;
+    private final VisibleMemberMap visibleMemberMap;
 
     /**
      * The writer to output the field documentation.
      */
-    private FieldWriter writer;
+    private final FieldWriter writer;
 
     /**
      * The list of fields being documented.
      */
-    private List<ProgramElementDoc> fields;
+    private final List<ProgramElementDoc> fields;
 
     /**
      * The index of the current field that is being documented at this point
@@ -74,41 +74,40 @@ public class FieldBuilder extends AbstractMemberBuilder {
     /**
      * Construct a new FieldBuilder.
      *
-     * @param configuration the current configuration of the
-     *                      doclet.
+     * @param context  the build context.
+     * @param classDoc the class whoses members are being documented.
+     * @param writer the doclet specific writer.
      */
-    private FieldBuilder(Configuration configuration) {
-        super(configuration);
+    private FieldBuilder(Context context,
+            ClassDoc classDoc,
+            FieldWriter writer) {
+        super(context);
+        this.classDoc = classDoc;
+        this.writer = writer;
+        visibleMemberMap =
+                new VisibleMemberMap(
+                classDoc,
+                VisibleMemberMap.FIELDS,
+                configuration.nodeprecated);
+        fields =
+                new ArrayList<ProgramElementDoc>(visibleMemberMap.getLeafClassMembers(
+                configuration));
+        if (configuration.getMemberComparator() != null) {
+            Collections.sort(fields, configuration.getMemberComparator());
+        }
     }
 
     /**
      * Construct a new FieldBuilder.
      *
-     * @param configuration the current configuration of the doclet.
+     * @param context  the build context.
      * @param classDoc the class whoses members are being documented.
      * @param writer the doclet specific writer.
      */
-    public static FieldBuilder getInstance(
-            Configuration configuration,
+    public static FieldBuilder getInstance(Context context,
             ClassDoc classDoc,
             FieldWriter writer) {
-        FieldBuilder builder = new FieldBuilder(configuration);
-        builder.classDoc = classDoc;
-        builder.writer = writer;
-        builder.visibleMemberMap =
-                new VisibleMemberMap(
-                classDoc,
-                VisibleMemberMap.FIELDS,
-                configuration.nodeprecated);
-        builder.fields =
-                new ArrayList<ProgramElementDoc>(builder.visibleMemberMap.getLeafClassMembers(
-                configuration));
-        if (configuration.getMemberComparator() != null) {
-            Collections.sort(
-                    builder.fields,
-                    configuration.getMemberComparator());
-        }
-        return builder;
+        return new FieldBuilder(context, classDoc, writer);
     }
 
     /**

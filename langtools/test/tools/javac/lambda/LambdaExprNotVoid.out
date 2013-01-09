@@ -1,0 +1,3 @@
+LambdaExprNotVoid.java:14:21: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: int, void))
+LambdaExprNotVoid.java:15:21: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: int, void))
+2 errors

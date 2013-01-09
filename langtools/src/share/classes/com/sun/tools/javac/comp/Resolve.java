@@ -427,6 +427,60 @@ public class Resolve {
             return c != null;
         }
 
+    /**
+     * Performs a recursive scan of a type looking for accessibility problems
+     * from current attribution environment
+     */
+    void checkAccessibleType(Env<AttrContext> env, Type t) {
+        accessibilityChecker.visit(t, env);
+    }
+
+    /**
+     * Accessibility type-visitor
+     */
+    Types.SimpleVisitor<Void, Env<AttrContext>> accessibilityChecker =
+            new Types.SimpleVisitor<Void, Env<AttrContext>>() {
+
+        void visit(List<Type> ts, Env<AttrContext> env) {
+            for (Type t : ts) {
+                visit(t, env);
+            }
+        }
+
+        public Void visitType(Type t, Env<AttrContext> env) {
+            return null;
+        }
+
+        @Override
+        public Void visitArrayType(ArrayType t, Env<AttrContext> env) {
+            visit(t.elemtype, env);
+            return null;
+        }
+
+        @Override
+        public Void visitClassType(ClassType t, Env<AttrContext> env) {
+            visit(t.getTypeArguments(), env);
+            if (!isAccessible(env, t, true)) {
+                accessBase(new AccessError(t.tsym), env.tree.pos(), env.enclClass.sym, t, t.tsym.name, true);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitWildcardType(WildcardType t, Env<AttrContext> env) {
+            visit(t.type, env);
+            return null;
+        }
+
+        @Override
+        public Void visitMethodType(MethodType t, Env<AttrContext> env) {
+            visit(t.getParameterTypes(), env);
+            visit(t.getReturnType(), env);
+            visit(t.getThrownTypes(), env);
+            return null;
+        }
+    };
+
     /** Try to instantiate the type of a method so that it fits
      *  given type arguments and argument types. If succesful, return
      *  the method's instantiated type, else return null.
@@ -750,10 +804,6 @@ public class Resolve {
         public boolean compatible(Type found, Type req, Warner warn) {
             return types.isSubtypeUnchecked(found, inferenceContext.asFree(req, types), warn);
         }
-
-        public boolean allowBoxing() {
-            return false;
-        }
     }
 
     /**
@@ -769,10 +819,6 @@ public class Resolve {
 
         public boolean compatible(Type found, Type req, Warner warn) {
             return types.isConvertible(found, inferenceContext.asFree(req, types), warn);
-        }
-
-        public boolean allowBoxing() {
-            return true;
         }
     }
 
@@ -792,7 +838,7 @@ public class Resolve {
 
         DeferredAttr.DeferredAttrContext deferredAttrContext;
 
-        public MethodResultInfo(Type pt, MethodCheckContext checkContext, DeferredAttr.DeferredAttrContext deferredAttrContext) {
+        public MethodResultInfo(Type pt, CheckContext checkContext, DeferredAttr.DeferredAttrContext deferredAttrContext) {
             attr.super(VAL, pt, checkContext);
             this.deferredAttrContext = deferredAttrContext;
         }
@@ -809,7 +855,12 @@ public class Resolve {
 
         @Override
         protected MethodResultInfo dup(Type newPt) {
-            return new MethodResultInfo(newPt, (MethodCheckContext)checkContext, deferredAttrContext);
+            return new MethodResultInfo(newPt, checkContext, deferredAttrContext);
+        }
+
+        @Override
+        protected ResultInfo dup(CheckContext newContext) {
+            return new MethodResultInfo(pt, newContext, deferredAttrContext);
         }
     }
 
@@ -1020,7 +1071,7 @@ public class Resolve {
         Assert.check(sym.kind < AMBIGUOUS);
         try {
             Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
-                               allowBoxing, useVarargs, Warner.noWarnings);
+                               allowBoxing, useVarargs, types.noWarnings);
             if (!operator)
                 currentResolutionContext.addApplicableCandidate(sym, mt);
         } catch (InapplicableMethodException ex) {
@@ -1731,7 +1782,7 @@ public class Resolve {
 
     /** Find an unqualified identifier which matches a specified kind set.
      *  @param env       The current environment.
-     *  @param name      The indentifier's name.
+     *  @param name      The identifier's name.
      *  @param kind      Indicates the possible symbol kinds
      *                   (a subset of VAL, TYP, PCK).
      */
@@ -1921,28 +1972,31 @@ public class Resolve {
                         (typeargtypes == null || !Type.isErroneous(typeargtypes));
         }
         public List<Type> getArgumentTypes(ResolveError errSym, Symbol accessedSym, Name name, List<Type> argtypes) {
-            if (syms.operatorNames.contains(name)) {
-                return argtypes;
-            } else {
-                Symbol msym = errSym.kind == WRONG_MTH ?
-                        ((InapplicableSymbolError)errSym).errCandidate().sym : accessedSym;
+            return (syms.operatorNames.contains(name)) ?
+                    argtypes :
+                    Type.map(argtypes, new ResolveDeferredRecoveryMap(accessedSym));
+        }
 
-                List<Type> argtypes2 = Type.map(argtypes,
-                        deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, msym, currentResolutionContext.step));
+        class ResolveDeferredRecoveryMap extends DeferredAttr.RecoveryDeferredTypeMap {
 
-                if (msym != accessedSym) {
-                    //fixup deferred type caches - this 'hack' is required because the symbol
-                    //returned by InapplicableSymbolError.access() will hide the candidate
-                    //method symbol that can be used for lookups in the speculative cache,
-                    //causing problems in Attr.checkId()
-                    for (Type t : argtypes) {
-                        if (t.hasTag(DEFERRED)) {
-                            DeferredType dt = (DeferredType)t;
-                            dt.speculativeCache.dupAllTo(msym, accessedSym);
-                        }
+            public ResolveDeferredRecoveryMap(Symbol msym) {
+                deferredAttr.super(AttrMode.SPECULATIVE, msym, currentResolutionContext.step);
+            }
+
+            @Override
+            protected Type typeOf(DeferredType dt) {
+                Type res = super.typeOf(dt);
+                if (!res.isErroneous()) {
+                    switch (TreeInfo.skipParens(dt.tree).getTag()) {
+                        case LAMBDA:
+                        case REFERENCE:
+                            return dt;
+                        case CONDEXPR:
+                            return res == Type.recoveryType ?
+                                    dt : res;
                     }
                 }
-                return argtypes2;
+                return res;
             }
         }
     };
@@ -2069,7 +2123,6 @@ public class Resolve {
                 } else if (allowMethodHandles) {
                     MethodSymbol msym = (MethodSymbol)sym;
                     if (msym.isSignaturePolymorphic(types)) {
-                        env.info.pendingResolutionPhase = BASIC;
                         return findPolymorphicSignatureInstance(env, sym, argtypes);
                     }
                 }
@@ -2086,7 +2139,7 @@ public class Resolve {
      *  @param argtypes  The required argument types
      */
     Symbol findPolymorphicSignatureInstance(Env<AttrContext> env,
-                                            Symbol spMethod,
+                                            final Symbol spMethod,
                                             List<Type> argtypes) {
         Type mtype = infer.instantiatePolymorphicSignatureInstance(env,
                 (MethodSymbol)spMethod, currentResolutionContext, argtypes);
@@ -2098,7 +2151,12 @@ public class Resolve {
 
         // create the desired method
         long flags = ABSTRACT | HYPOTHETICAL | spMethod.flags() & Flags.AccessFlags;
-        Symbol msym = new MethodSymbol(flags, spMethod.name, mtype, spMethod.owner);
+        Symbol msym = new MethodSymbol(flags, spMethod.name, mtype, spMethod.owner) {
+            @Override
+            public Symbol baseSymbol() {
+                return spMethod;
+            }
+        };
         polymorphicSignatureScope.enter(msym);
         return msym;
     }
@@ -2559,8 +2617,7 @@ public class Resolve {
         @Override
         ReferenceKind referenceKind(Symbol sym) {
             if (sym.isStatic()) {
-                return TreeInfo.isStaticSelector(referenceTree.expr, names) ?
-                        ReferenceKind.STATIC : ReferenceKind.STATIC_EVAL;
+                return ReferenceKind.STATIC;
             } else {
                 Name selName = TreeInfo.name(referenceTree.getQualifierExpression());
                 return selName != null && selName == names._super ?
@@ -2707,7 +2764,7 @@ public class Resolve {
         }
         if (allowDefaultMethods && c.isInterface() &&
                 name == names._super && !isStatic(env) &&
-                types.isDirectSuperInterface(c.type, env.enclClass.sym)) {
+                types.isDirectSuperInterface(c, env.enclClass.sym)) {
             //this might be a default super call if one of the superinterfaces is 'c'
             for (Type t : pruneInterfaces(env.enclClass.type)) {
                 if (t.tsym == c) {
@@ -3150,7 +3207,7 @@ public class Resolve {
                         "cant.apply.symbols",
                         name == names.init ? KindName.CONSTRUCTOR : absentKind(kind),
                         name == names.init ? site.tsym.name : name,
-                        argtypes);
+                        methodArguments(argtypes));
                 return new JCDiagnostic.MultilineDiagnostic(err, candidateDetails(site));
             } else {
                 return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind, pos,

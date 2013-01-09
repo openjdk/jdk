@@ -25,6 +25,7 @@
 
 package sun.java2d.opengl;
 
+import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
@@ -98,6 +99,8 @@ class OGLBlitLoops {
             new OGLGeneralBlit(OGLSurfaceData.OpenGLSurface,
                                CompositeType.AnyAlpha,
                                blitIntArgbPreToSurface),
+
+            new OGLAnyCompositeBlit(OGLSurfaceData.OpenGLSurface),
 
             new OGLSwToSurfaceScale(SurfaceType.IntRgb,
                                     OGLSurfaceData.PF_INT_RGB),
@@ -175,6 +178,9 @@ class OGLBlitLoops {
             new OGLGeneralBlit(OGLSurfaceData.OpenGLTexture,
                                CompositeType.SrcNoEa,
                                blitIntArgbPreToTexture),
+
+            new OGLAnyCompositeBlit(OGLSurfaceData.OpenGLTexture),
+
         };
         GraphicsPrimitiveMgr.register(primitives);
     }
@@ -761,5 +767,51 @@ class OGLGeneralBlit extends Blit {
             // cache the intermediate surface
             srcTmp = new WeakReference(src);
         }
+    }
+}
+
+class OGLAnyCompositeBlit extends Blit {
+    private WeakReference<SurfaceData> dstTmp;
+
+    public OGLAnyCompositeBlit(SurfaceType dstType) {
+        super(SurfaceType.Any, CompositeType.Any, dstType);
+    }
+    public synchronized void Blit(SurfaceData src, SurfaceData dst,
+                                  Composite comp, Region clip,
+                                  int sx, int sy, int dx, int dy,
+                                  int w, int h)
+    {
+        Blit convertdst = Blit.getFromCache(dst.getSurfaceType(),
+                                            CompositeType.SrcNoEa,
+                                            SurfaceType.IntArgbPre);
+
+        SurfaceData cachedDst = null;
+
+        if (dstTmp != null) {
+            // use cached intermediate surface, if available
+            cachedDst = dstTmp.get();
+        }
+
+        // convert source to IntArgbPre
+        SurfaceData dstBuffer = convertFrom(convertdst, dst, dx, dy, w, h,
+                          cachedDst, BufferedImage.TYPE_INT_ARGB_PRE);
+
+        Blit performop = Blit.getFromCache(src.getSurfaceType(),
+                CompositeType.Any, dstBuffer.getSurfaceType());
+
+        performop.Blit(src, dstBuffer, comp, clip,
+                       sx, sy, 0, 0, w, h);
+
+        if (dstBuffer != cachedDst) {
+            // cache the intermediate surface
+            dstTmp = new WeakReference(dstBuffer);
+        }
+
+        // now blit the buffer back to the destination
+        convertdst = Blit.getFromCache(dstBuffer.getSurfaceType(),
+                                            CompositeType.SrcNoEa,
+                                            dst.getSurfaceType());
+        convertdst.Blit(dstBuffer, dst, AlphaComposite.Src,
+                 clip, 0, 0, dx, dy, w, h);
     }
 }

@@ -23,7 +23,6 @@
 
 // key: compiler.err.illegal.default.super.call
 // key: compiler.misc.overridden.default
-// options: -XDallowDefaultMethods
 
 class OverriddenDefault {
     interface I { default void m() {  } }

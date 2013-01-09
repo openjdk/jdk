@@ -23,15 +23,11 @@
 
 /* @test
  * @bug 4095165 4321151
-
  * @summary synopsis: activator should restart daemon services
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID ActivationLibrary
- * @build ActivateMe
- * @build RestartService
- * @build RestartService_Stub
+ * @build TestLibrary RMID ActivationLibrary ActivateMe RestartService_Stub
  * @run main/othervm/policy=security.policy/timeout=240 RestartService
  */
 

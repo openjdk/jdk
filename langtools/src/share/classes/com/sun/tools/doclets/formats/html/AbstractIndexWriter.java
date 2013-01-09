@@ -140,7 +140,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected void addDescription(ClassDoc cd, Content dlTree) {
         Content link = new RawHtml(
-                getLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_INDEX, cd, true)));
+                getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.CONTEXT_INDEX, cd, true)));
         Content dt = HtmlTree.DT(link);
         dt.addContent(" - ");
         addClassInfo(cd, dt);

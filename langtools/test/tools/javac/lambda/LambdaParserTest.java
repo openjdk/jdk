@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 7115050
- * @summary Add parser support for lambda expressions
+ * @bug 8003280
+ * @summary Add lambda tests
+ *  Add parser support for lambda expressions
  */
 
 import com.sun.source.util.JavacTask;
@@ -88,9 +90,14 @@ public class LambdaParserTest {
     enum LambdaParameterKind {
         IMPLICIT(""),
         EXPLIICT_SIMPLE("A"),
+        EXPLIICT_SIMPLE_ARR1("A[]"),
+        EXPLIICT_SIMPLE_ARR2("A[][]"),
         EXPLICIT_VARARGS("A..."),
         EXPLICIT_GENERIC1("A<X>"),
-        EXPLICIT_GENERIC3("A<? extends X, ? super Y>");
+        EXPLICIT_GENERIC2("A<? extends X, ? super Y>"),
+        EXPLICIT_GENERIC2_VARARGS("A<? extends X, ? super Y>..."),
+        EXPLICIT_GENERIC2_ARR1("A<? extends X, ? super Y>[]"),
+        EXPLICIT_GENERIC2_ARR2("A<? extends X, ? super Y>[][]");
 
         String parameterType;
 
@@ -100,6 +107,11 @@ public class LambdaParserTest {
 
         boolean explicit() {
             return this != IMPLICIT;
+        }
+
+        boolean isVarargs() {
+            return this == EXPLICIT_VARARGS ||
+                    this == EXPLICIT_GENERIC2_VARARGS;
         }
     }
 
@@ -234,7 +246,7 @@ public class LambdaParserTest {
 
     void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
         JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
-                Arrays.asList("-XDallowLambda"), null, Arrays.asList(source));
+                null, null, Arrays.asList(source));
         try {
             ct.parse();
         } catch (Throwable ex) {
@@ -251,7 +263,7 @@ public class LambdaParserTest {
 
         if (lk.arity() == 2 &&
                 (pk1.explicit() != pk2.explicit() ||
-                pk1 == LambdaParameterKind.EXPLICIT_VARARGS)) {
+                pk1.isVarargs())) {
             errorExpected = true;
         }
 

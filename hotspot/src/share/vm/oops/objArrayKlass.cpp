@@ -81,18 +81,13 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
       Array<Klass*>* element_supers = element_klass->secondary_supers();
       for( int i = element_supers->length()-1; i >= 0; i-- ) {
         Klass* elem_super = element_supers->at(i);
-        if (Klass::cast(elem_super)->array_klass_or_null() == NULL) {
+        if (elem_super->array_klass_or_null() == NULL) {
           supers_exist = false;
           break;
         }
       }
       if (!supers_exist) {
         // Oops.  Not allocated yet.  Back out, allocate it, and retry.
-#ifndef PRODUCT
-        if (WizardMode) {
-          tty->print_cr("Must retry array klass creation for depth %d",n);
-        }
-#endif
         KlassHandle ek;
         {
           MutexUnlocker mu(MultiArray_lock);
@@ -172,7 +167,7 @@ ObjArrayKlass::ObjArrayKlass(int n, KlassHandle element_klass, Symbol* name) : A
   } else {
     bk = element_klass();
   }
-  assert(bk != NULL && (Klass::cast(bk)->oop_is_instance() || Klass::cast(bk)->oop_is_typeArray()), "invalid bottom klass");
+  assert(bk != NULL && (bk->oop_is_instance() || bk->oop_is_typeArray()), "invalid bottom klass");
   this->set_bottom_klass(bk);
   this->set_class_loader_data(bk->class_loader_data());
 
@@ -254,7 +249,7 @@ template <class T> void ObjArrayKlass::do_copy(arrayOop s, T* src,
     // We have to make sure all elements conform to the destination array
     Klass* bound = ObjArrayKlass::cast(d->klass())->element_klass();
     Klass* stype = ObjArrayKlass::cast(s->klass())->element_klass();
-    if (stype == bound || Klass::cast(stype)->is_subtype_of(bound)) {
+    if (stype == bound || stype->is_subtype_of(bound)) {
       // elements are guaranteed to be subtypes, so no check necessary
       bs->write_ref_array_pre(dst, length);
       Copy::conjoint_oops_atomic(src, dst, length);
@@ -271,7 +266,7 @@ template <class T> void ObjArrayKlass::do_copy(arrayOop s, T* src,
         oop new_val = element_is_null ? oop(NULL)
                                       : oopDesc::decode_heap_oop_not_null(element);
         if (element_is_null ||
-            Klass::cast((new_val->klass()))->is_subtype_of(bound)) {
+            (new_val->klass())->is_subtype_of(bound)) {
           bs->write_ref_field_pre(p, new_val);
           *p = *from;
         } else {
@@ -381,7 +376,7 @@ bool ObjArrayKlass::can_be_primary_super_slow() const {
 
 GrowableArray<Klass*>* ObjArrayKlass::compute_secondary_supers(int num_extra_slots) {
   // interfaces = { cloneable_klass, serializable_klass, elemSuper[], ... };
-  Array<Klass*>* elem_supers = Klass::cast(element_klass())->secondary_supers();
+  Array<Klass*>* elem_supers = element_klass()->secondary_supers();
   int num_elem_supers = elem_supers == NULL ? 0 : elem_supers->length();
   int num_secondaries = num_extra_slots + 2 + num_elem_supers;
   if (num_secondaries == 2) {
@@ -411,7 +406,7 @@ bool ObjArrayKlass::compute_is_subtype_of(Klass* k) {
 }
 
 void ObjArrayKlass::initialize(TRAPS) {
-  Klass::cast(bottom_klass())->initialize(THREAD);  // dispatches to either InstanceKlass or TypeArrayKlass
+  bottom_klass()->initialize(THREAD);  // dispatches to either InstanceKlass or TypeArrayKlass
 }
 
 #define ObjArrayKlass_SPECIALIZED_OOP_ITERATE(T, a, p, do_oop) \
@@ -607,7 +602,7 @@ jint ObjArrayKlass::compute_modifier_flags(TRAPS) const {
     return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
   }
   // Return the flags of the bottom element type.
-  jint element_flags = Klass::cast(bottom_klass())->compute_modifier_flags(CHECK_0);
+  jint element_flags = bottom_klass()->compute_modifier_flags(CHECK_0);
 
   return (element_flags & (JVM_ACC_PUBLIC | JVM_ACC_PRIVATE | JVM_ACC_PROTECTED))
                         | (JVM_ACC_ABSTRACT | JVM_ACC_FINAL);
@@ -686,7 +681,7 @@ void ObjArrayKlass::verify_on(outputStream* st) {
   guarantee(element_klass()->is_klass(), "should be klass");
   guarantee(bottom_klass()->is_metadata(), "should be in metaspace");
   guarantee(bottom_klass()->is_klass(), "should be klass");
-  Klass* bk = Klass::cast(bottom_klass());
+  Klass* bk = bottom_klass();
   guarantee(bk->oop_is_instance() || bk->oop_is_typeArray(),  "invalid bottom klass");
 }
 

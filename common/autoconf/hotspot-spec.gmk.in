@@ -95,6 +95,26 @@ EXTRA_CFLAGS=@LEGACY_EXTRA_CFLAGS@
 EXTRA_CXXFLAGS=@LEGACY_EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS=@LEGACY_EXTRA_LDFLAGS@
 
+USE_PRECOMPILED_HEADER=@USE_PRECOMPILED_HEADER@
+
+# Hotspot expects the variable FULL_DEBUG_SYMBOLS=1/0 to control debug symbols
+# creation. 
+ifeq ($(ENABLE_DEBUG_SYMBOLS), true) 
+  FULL_DEBUG_SYMBOLS=1
+  # Ensure hotspot uses the objcopy that configure located 
+  ALT_OBJCOPY:=$(OBJCOPY) 
+else 
+  FULL_DEBUG_SYMBOLS=0
+endif
+
+# Hotspot expects the variable ZIP_DEBUGINFO_FILES=1/0 and not true/false.
+ifeq ($(ZIP_DEBUGINFO_FILES)$(ENABLE_DEBUG_SYMBOLS), truetrue)
+  ZIP_DEBUGINFO_FILES:=1
+endif
+ifeq ($(ZIP_DEBUGINFO_FILES), false)
+  ZIP_DEBUGINFO_FILES:=0
+endif
+
 # Sneak this in via the spec.gmk file, since we don't want to mess around too much with the Hotspot make files.
 # This is needed to get the LOG setting to work properly.
 include $(SRC_ROOT)/common/makefiles/MakeBase.gmk

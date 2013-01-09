@@ -27,8 +27,7 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
- * @build StreamPipe TestParams TestLibrary JavaVM RMID
- * @build AltSecurityManager TestSecurityManager
+ * @build TestLibrary JavaVM RMID TestSecurityManager
  * @run main/othervm AltSecurityManager
  */
 

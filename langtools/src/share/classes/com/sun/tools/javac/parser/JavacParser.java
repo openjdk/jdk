@@ -47,8 +47,8 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
-import static com.sun.tools.javac.util.ListBuffer.lb;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import static com.sun.tools.javac.util.ListBuffer.lb;
 
 /** The parser maps a token sequence into an abstract syntax
  *  tree. It operates by recursive descent, with code derived
@@ -121,14 +121,14 @@ public class JavacParser implements Parser {
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
-        this.allowLambda = source.allowLambda() &&
-                fac.options.isSet("allowLambda"); //pre-lambda guard
-        this.allowMethodReferences = source.allowMethodReferences() &&
-                fac.options.isSet("allowMethodReferences"); //pre-lambda guard
-        this.allowDefaultMethods = source.allowDefaultMethods() &&
-                fac.options.isSet("allowDefaultMethods"); //pre-lambda guard
+        this.allowLambda = source.allowLambda();
+        this.allowMethodReferences = source.allowMethodReferences();
+        this.allowDefaultMethods = source.allowDefaultMethods();
+        this.allowIntersectionTypesInCast =
+                source.allowIntersectionTypesInCast() &&
+                fac.options.isSet("allowIntersectionTypes");
         this.keepDocComments = keepDocComments;
-        docComments = newDocCommentTable(keepDocComments);
+        docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
         endPosTable = newEndPosTable(keepEndPositions);
@@ -140,8 +140,8 @@ public class JavacParser implements Parser {
                 : new EmptyEndPosTable();
     }
 
-    protected DocCommentTable newDocCommentTable(boolean keepDocComments) {
-        return keepDocComments ? new SimpleDocCommentTable() : null;
+    protected DocCommentTable newDocCommentTable(boolean keepDocComments, ParserFactory fac) {
+        return keepDocComments ? new LazyDocCommentTable(fac) : null;
     }
 
     /** Switch: Should generics be recognized?
@@ -200,6 +200,10 @@ public class JavacParser implements Parser {
      */
     boolean allowDefaultMethods;
 
+    /** Switch: should we allow intersection types in cast?
+     */
+    boolean allowIntersectionTypesInCast;
+
     /** Switch: should we keep docComments?
      */
     boolean keepDocComments;
@@ -232,28 +236,48 @@ public class JavacParser implements Parser {
 
     protected Token token;
 
-    protected void nextToken() {
+    public Token token() {
+        return token;
+    }
+
+    public void nextToken() {
         S.nextToken();
         token = S.token();
     }
 
     protected boolean peekToken(TokenKind tk) {
-        return S.token(1).kind == tk;
+        return peekToken(0, tk);
+    }
+
+    protected boolean peekToken(int lookahead, TokenKind tk) {
+        return S.token(lookahead + 1).kind == tk;
     }
 
     protected boolean peekToken(TokenKind tk1, TokenKind tk2) {
-        return S.token(1).kind == tk1 &&
-                S.token(2).kind == tk2;
+        return peekToken(0, tk1, tk2);
+    }
+
+    protected boolean peekToken(int lookahead, TokenKind tk1, TokenKind tk2) {
+        return S.token(lookahead + 1).kind == tk1 &&
+                S.token(lookahead + 2).kind == tk2;
     }
 
     protected boolean peekToken(TokenKind tk1, TokenKind tk2, TokenKind tk3) {
-        return S.token(1).kind == tk1 &&
-                S.token(2).kind == tk2 &&
-                S.token(3).kind == tk3;
+        return peekToken(0, tk1, tk2, tk3);
+    }
+
+    protected boolean peekToken(int lookahead, TokenKind tk1, TokenKind tk2, TokenKind tk3) {
+        return S.token(lookahead + 1).kind == tk1 &&
+                S.token(lookahead + 2).kind == tk2 &&
+                S.token(lookahead + 3).kind == tk3;
     }
 
     protected boolean peekToken(TokenKind... kinds) {
-        for (int lookahead = 0 ; lookahead < kinds.length ; lookahead++) {
+        return peekToken(0, kinds);
+    }
+
+    protected boolean peekToken(int lookahead, TokenKind... kinds) {
+        for (; lookahead < kinds.length ; lookahead++) {
             if (S.token(lookahead + 1).kind != kinds[lookahead]) {
                 return false;
             }
@@ -965,102 +989,40 @@ public class JavacParser implements Parser {
             break;
         case LPAREN:
             if (typeArgs == null && (mode & EXPR) != 0) {
-                if (peekToken(MONKEYS_AT) ||
-                        peekToken(FINAL) ||
-                        peekToken(RPAREN) ||
-                        peekToken(IDENTIFIER, COMMA) ||
-                        peekToken(IDENTIFIER, RPAREN, ARROW)) {
-                    //implicit n-ary lambda
-                    t = lambdaExpressionOrStatement(true, peekToken(MONKEYS_AT) || peekToken(FINAL), pos);
-                    break;
-                } else {
-                    nextToken();
-                    mode = EXPR | TYPE | NOPARAMS;
-                    t = term3();
-                    if ((mode & TYPE) != 0 && token.kind == LT) {
-                        // Could be a cast to a parameterized type
-                        JCTree.Tag op = JCTree.Tag.LT;
-                        int pos1 = token.pos;
-                        nextToken();
-                        mode &= (EXPR | TYPE);
-                        mode |= TYPEARG;
-                        JCExpression t1 = term3();
-                        if ((mode & TYPE) != 0 &&
-                            (token.kind == COMMA || token.kind == GT)) {
-                            mode = TYPE;
-                            ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
-                            args.append(t1);
-                            while (token.kind == COMMA) {
-                                nextToken();
-                                args.append(typeArgument());
-                            }
-                            accept(GT);
-                            t = toP(F.at(pos1).TypeApply(t, args.toList()));
-                            checkGenerics();
-                            mode = EXPR | TYPE; //could be a lambda or a method ref or a cast to a type
-                            t = term3Rest(t, typeArgs);
-                            if (token.kind == IDENTIFIER || token.kind == ELLIPSIS) {
-                                //explicit lambda (w/ generic type)
-                                mode = EXPR;
-                                JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
-                                if (token.kind == ELLIPSIS) {
-                                    mods.flags = Flags.VARARGS;
-                                    t = to(F.at(token.pos).TypeArray(t));
-                                    nextToken();
-                                }
-                                t = lambdaExpressionOrStatement(variableDeclaratorId(mods, t), pos);
-                                break;
-                            }
-                        } else if ((mode & EXPR) != 0) {
-                            mode = EXPR;
-                            JCExpression e = term2Rest(t1, TreeInfo.shiftPrec);
-                            t = F.at(pos1).Binary(op, t, e);
-                            t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
-                        } else {
-                            accept(GT);
-                        }
-                    } else if ((mode & TYPE) != 0 &&
-                            (token.kind == IDENTIFIER || token.kind == ELLIPSIS)) {
-                        //explicit lambda (w/ non-generic type)
-                        mode = EXPR;
-                        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
-                        if (token.kind == ELLIPSIS) {
-                            mods.flags = Flags.VARARGS;
-                            t = to(F.at(token.pos).TypeArray(t));
-                            nextToken();
-                        }
-                        t = lambdaExpressionOrStatement(variableDeclaratorId(mods, t), pos);
+                ParensResult pres = analyzeParens();
+                switch (pres) {
+                    case CAST:
+                       accept(LPAREN);
+                       mode = TYPE;
+                       int pos1 = pos;
+                       List<JCExpression> targets = List.of(t = term3());
+                       while (token.kind == AMP) {
+                           checkIntersectionTypesInCast();
+                           accept(AMP);
+                           targets = targets.prepend(term3());
+                       }
+                       if (targets.length() > 1) {
+                           t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
+                       }
+                       accept(RPAREN);
+                       mode = EXPR;
+                       JCExpression t1 = term3();
+                       return F.at(pos).TypeCast(t, t1);
+                    case IMPLICIT_LAMBDA:
+                    case EXPLICIT_LAMBDA:
+                        t = lambdaExpressionOrStatement(true, pres == ParensResult.EXPLICIT_LAMBDA, pos);
                         break;
-                    } else {
-                        t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
-                    }
-                }
-
-                accept(RPAREN);
-                lastmode = mode;
-                mode = EXPR;
-                if ((lastmode & EXPR) == 0) {
-                    JCExpression t1 = term3();
-                    return F.at(pos).TypeCast(t, t1);
-                } else if ((lastmode & TYPE) != 0) {
-                    switch (token.kind) {
-                    /*case PLUSPLUS: case SUBSUB: */
-                    case BANG: case TILDE:
-                    case LPAREN: case THIS: case SUPER:
-                    case INTLITERAL: case LONGLITERAL: case FLOATLITERAL:
-                    case DOUBLELITERAL: case CHARLITERAL: case STRINGLITERAL:
-                    case TRUE: case FALSE: case NULL:
-                        case NEW: case IDENTIFIER: case ASSERT: case ENUM:
-                    case BYTE: case SHORT: case CHAR: case INT:
-                    case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
-                        JCExpression t1 = term3();
-                        return F.at(pos).TypeCast(t, t1);
-                    }
+                    default: //PARENS
+                        accept(LPAREN);
+                        mode = EXPR;
+                        t = termRest(term1Rest(term2Rest(term3(), TreeInfo.orPrec)));
+                        accept(RPAREN);
+                        t = toP(F.at(pos).Parens(t));
+                        break;
                 }
             } else {
                 return illegal();
             }
-            t = toP(F.at(pos).Parens(t));
             break;
         case THIS:
             if ((mode & EXPR) != 0) {
@@ -1343,6 +1305,138 @@ public class JavacParser implements Parser {
                     return false;
             }
         }
+    }
+
+    /**
+     * If we see an identifier followed by a '&lt;' it could be an unbound
+     * method reference or a binary expression. To disambiguate, look for a
+     * matching '&gt;' and see if the subsequent terminal is either '.' or '#'.
+     */
+    @SuppressWarnings("fallthrough")
+    ParensResult analyzeParens() {
+        int depth = 0;
+        boolean type = false;
+        for (int lookahead = 0 ; ; lookahead++) {
+            TokenKind tk = S.token(lookahead).kind;
+            switch (tk) {
+                case EXTENDS: case SUPER: case COMMA:
+                    type = true;
+                case QUES: case DOT: case AMP:
+                    //skip
+                    break;
+                case BYTE: case SHORT: case INT: case LONG: case FLOAT:
+                case DOUBLE: case BOOLEAN: case CHAR:
+                    if (peekToken(lookahead, RPAREN)) {
+                        //Type, ')' -> cast
+                        return ParensResult.CAST;
+                    } else if (peekToken(lookahead, IDENTIFIER)) {
+                        //Type, 'Identifier -> explicit lambda
+                        return ParensResult.EXPLICIT_LAMBDA;
+                    }
+                    break;
+                case LPAREN:
+                    if (lookahead != 0) {
+                        // '(' in a non-starting position -> parens
+                        return ParensResult.PARENS;
+                    } else if (peekToken(lookahead, RPAREN)) {
+                        // '(', ')' -> explicit lambda
+                        return ParensResult.EXPLICIT_LAMBDA;
+                    }
+                    break;
+                case RPAREN:
+                    // if we have seen something that looks like a type,
+                    // then it's a cast expression
+                    if (type) return ParensResult.CAST;
+                    // otherwise, disambiguate cast vs. parenthesized expression
+                    // based on subsequent token.
+                    switch (S.token(lookahead + 1).kind) {
+                        /*case PLUSPLUS: case SUBSUB: */
+                        case BANG: case TILDE:
+                        case LPAREN: case THIS: case SUPER:
+                        case INTLITERAL: case LONGLITERAL: case FLOATLITERAL:
+                        case DOUBLELITERAL: case CHARLITERAL: case STRINGLITERAL:
+                        case TRUE: case FALSE: case NULL:
+                            case NEW: case IDENTIFIER: case ASSERT: case ENUM:
+                        case BYTE: case SHORT: case CHAR: case INT:
+                        case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
+                            return ParensResult.CAST;
+                        default:
+                            return ParensResult.PARENS;
+                    }
+                case IDENTIFIER:
+                    if (peekToken(lookahead, IDENTIFIER)) {
+                        // Identifier, Identifier -> explicit lambda
+                        return ParensResult.EXPLICIT_LAMBDA;
+                    } else if (peekToken(lookahead, RPAREN, ARROW)) {
+                        // Identifier, ')' '->' -> implicit lambda
+                        return ParensResult.IMPLICIT_LAMBDA;
+                    }
+                    break;
+                case FINAL:
+                case ELLIPSIS:
+                case MONKEYS_AT:
+                    //those can only appear in explicit lambdas
+                    return ParensResult.EXPLICIT_LAMBDA;
+                case LBRACKET:
+                    if (peekToken(lookahead, RBRACKET, IDENTIFIER)) {
+                        // '[', ']', Identifier -> explicit lambda
+                        return ParensResult.EXPLICIT_LAMBDA;
+                    } else if (peekToken(lookahead, RBRACKET, RPAREN) ||
+                            peekToken(lookahead, RBRACKET, AMP)) {
+                        // '[', ']', ')' -> cast
+                        // '[', ']', '&' -> cast (intersection type)
+                        return ParensResult.CAST;
+                    } else if (peekToken(lookahead, RBRACKET)) {
+                        //consume the ']' and skip
+                        type = true;
+                        lookahead++;
+                        break;
+                    } else {
+                        return ParensResult.PARENS;
+                    }
+                case LT:
+                    depth++; break;
+                case GTGTGT:
+                    depth--;
+                case GTGT:
+                    depth--;
+                case GT:
+                    depth--;
+                    if (depth == 0) {
+                        if (peekToken(lookahead, RPAREN) ||
+                                peekToken(lookahead, AMP)) {
+                            // '>', ')' -> cast
+                            // '>', '&' -> cast
+                            return ParensResult.CAST;
+                        } else if (peekToken(lookahead, IDENTIFIER, COMMA) ||
+                                peekToken(lookahead, IDENTIFIER, RPAREN, ARROW) ||
+                                peekToken(lookahead, ELLIPSIS)) {
+                            // '>', Identifier, ',' -> explicit lambda
+                            // '>', Identifier, ')', '->' -> explicit lambda
+                            // '>', '...' -> explicit lambda
+                            return ParensResult.EXPLICIT_LAMBDA;
+                        }
+                        //it looks a type, but could still be (i) a cast to generic type,
+                        //(ii) an unbound method reference or (iii) an explicit lambda
+                        type = true;
+                        break;
+                    } else if (depth < 0) {
+                        //unbalanced '<', '>' - not a generic type
+                        return ParensResult.PARENS;
+                    }
+                    break;
+                default:
+                    //this includes EOF
+                    return ParensResult.PARENS;
+            }
+        }
+    }
+
+    enum ParensResult {
+        CAST,
+        EXPLICIT_LAMBDA,
+        IMPLICIT_LAMBDA,
+        PARENS;
     }
 
     JCExpression lambdaExpressionOrStatement(JCVariableDecl firstParam, int pos) {
@@ -3170,21 +3264,12 @@ public class JavacParser implements Parser {
     /** Check that given tree is a legal expression statement.
      */
     protected JCExpression checkExprStat(JCExpression t) {
-        switch(t.getTag()) {
-        case PREINC: case PREDEC:
-        case POSTINC: case POSTDEC:
-        case ASSIGN:
-        case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
-        case SL_ASG: case SR_ASG: case USR_ASG:
-        case PLUS_ASG: case MINUS_ASG:
-        case MUL_ASG: case DIV_ASG: case MOD_ASG:
-        case APPLY: case NEWCLASS:
-        case ERRONEOUS:
-            return t;
-        default:
+        if (!TreeInfo.isExpressionStatement(t)) {
             JCExpression ret = F.at(t.pos).Erroneous(List.<JCTree>of(t));
             error(ret, "not.stmt");
             return ret;
+        } else {
+            return t;
         }
     }
 
@@ -3392,6 +3477,12 @@ public class JavacParser implements Parser {
         if (!allowDefaultMethods) {
             log.error(token.pos, "default.methods.not.supported.in.source", source.name);
             allowDefaultMethods = true;
+        }
+    }
+    void checkIntersectionTypesInCast() {
+        if (!allowIntersectionTypesInCast) {
+            log.error(token.pos, "intersection.types.in.cast.not.supported.in.source", source.name);
+            allowIntersectionTypesInCast = true;
         }
     }
 

@@ -41,7 +41,7 @@ rm -f ${OUTPUTFILE}
 startApplication() 
 {
   # put all output from the app into ${OUTPUTFILE}
-  ${JAVA} $1 $2 $3 -jar "${TESTCLASSES}"/Application.jar > ${OUTPUTFILE} 2>&1 &
+  ${JAVA} ${TESTVMOPTS} $1 $2 $3 -jar "${TESTCLASSES}"/Application.jar > ${OUTPUTFILE} 2>&1 &
   pid="$!"
 
   # MKS creates an intermediate shell to launch ${JAVA} so
@@ -78,6 +78,6 @@ startApplication()
 
 stopApplication() 
 {
-  $JAVA -classpath "${TESTCLASSES}" Shutdown $1
+  $JAVA ${TESTVMOPTS} -classpath "${TESTCLASSES}" Shutdown $1
 }
 

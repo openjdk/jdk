@@ -133,7 +133,7 @@ public class TransTypes extends TreeTranslator {
     JCExpression coerce(JCExpression tree, Type target) {
         Type btarget = target.baseType();
         if (tree.type.isPrimitive() == target.isPrimitive()) {
-            return types.isAssignable(tree.type, btarget, Warner.noWarnings)
+            return types.isAssignable(tree.type, btarget, types.noWarnings)
                 ? tree
                 : cast(tree, btarget);
         }
@@ -551,6 +551,7 @@ public class TransTypes extends TreeTranslator {
             tree.body = translate(tree.body, null);
             //save non-erased target
             tree.targetType = tree.type;
+            Assert.check(!tree.targetType.isCompound(), "Intersection-type targets not supported yet!");
             tree.type = erasure(tree.type);
             result = tree;
         }
@@ -786,6 +787,7 @@ public class TransTypes extends TreeTranslator {
         tree.expr = translate(tree.expr, null);
         //save non-erased target
         tree.targetType = tree.type;
+        Assert.check(!tree.targetType.isCompound(), "Intersection-type targets not supported yet!");
         tree.type = erasure(tree.type);
         result = tree;
     }
@@ -801,6 +803,12 @@ public class TransTypes extends TreeTranslator {
     public void visitTypeApply(JCTypeApply tree) {
         JCTree clazz = translate(tree.clazz, null);
         result = clazz;
+    }
+
+    public void visitTypeIntersection(JCTypeIntersection tree) {
+        tree.bounds = translate(tree.bounds, null);
+        tree.type = erasure(tree.type);
+        result = tree;
     }
 
 /**************************************************************************

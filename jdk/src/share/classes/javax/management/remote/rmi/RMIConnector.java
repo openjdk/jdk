@@ -238,10 +238,21 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     //--------------------------------------------------------------------
     // implements JMXConnector interface
     //--------------------------------------------------------------------
+
+    /**
+     * @throws IOException if the connection could not be made because of a
+     *   communication problem, or in the case of the {@code iiop} protocol,
+     *   that RMI/IIOP is not supported
+     */
     public void connect() throws IOException {
         connect(null);
     }
 
+    /**
+     * @throws IOException if the connection could not be made because of a
+     *   communication problem, or in the case of the {@code iiop} protocol,
+     *   that RMI/IIOP is not supported
+     */
     public synchronized void connect(Map<String,?> environment)
     throws IOException {
         final boolean tracing = logger.traceOn();

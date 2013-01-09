@@ -36,6 +36,13 @@ import java.util.*;
  * The <code>SerialRef</code> class provides a constructor  for
  * creating a <code>SerialRef</code> instance from a <code>Ref</code>
  * object and provides methods for getting and setting the <code>Ref</code> object.
+ *
+ * <h4> Thread safety </h4>
+ *
+ * A SerialRef is not safe for use by multiple concurrent threads.  If a
+ * SerialRef is to be used by more than one thread then access to the SerialRef
+ * should be controlled by appropriate synchronization.
+ *
  */
 public class SerialRef implements Ref, Serializable, Cloneable {
 
