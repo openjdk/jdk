@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.provider.PolicyFile;
-import com.sun.security.auth.PrincipalComparator;
 import com.sun.security.auth.UnixPrincipal;
 import com.sun.security.auth.NTUserPrincipal;
 import com.sun.security.auth.SolarisPrincipal;
@@ -90,7 +89,7 @@ public class Comparator {
     private static final Principal[] badP = new Principal[] {
                                 new SolarisPrincipal("bad") };
 
-    public static class PCompare1 implements PrincipalComparator {
+    public static class PCompare1 implements Principal {
 
         private String name;
 
@@ -98,6 +97,12 @@ public class Comparator {
             this.name = name;
         }
 
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
         public boolean implies (Subject subject) {
             if (subject.getPrincipals().contains(p1[0])) {
                 return true;
@@ -106,13 +111,19 @@ public class Comparator {
         }
     }
 
-    public static class PCompare2 implements PrincipalComparator {
+    public static class PCompare2 implements Principal {
         private String name;
 
         public PCompare2(String name) {
             this.name = name;
         }
 
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
         public boolean implies (Subject subject) {
             if (subject.getPrincipals().contains(p2[0]) &&
                 subject.getPrincipals().contains(p2[1])) {
@@ -122,13 +133,19 @@ public class Comparator {
         }
     }
 
-    public static class PCompare3 implements PrincipalComparator {
+    public static class PCompare3 implements Principal {
         private String name;
 
         public PCompare3(String name) {
             this.name = name;
         }
 
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
         public boolean implies (Subject subject) {
             return false;
         }
