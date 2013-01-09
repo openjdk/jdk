@@ -292,6 +292,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
 		     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
 		     $(MACOSX_SRC_DIRS) \
 		     $(JDK_OUTPUTDIR)/gensrc \
+		     $(JDK_OUTPUTDIR)/gensrc_no_srczip \
 		     $(CLOSED_SRC_DIRS),\
 		INCLUDES:=$(JDK_USER_DEFINED_FILTER),\
 		EXCLUDES:=$(EXCLUDES),\
