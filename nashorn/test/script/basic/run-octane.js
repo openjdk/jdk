@@ -52,7 +52,7 @@ var ignoreTeardown = [
 var dir = (typeof(__DIR__) == 'undefined') ? "test/script/basic/" : __DIR__;
 
 // TODO: why is this path hard coded when it's defined in project properties?
-var path = dir + "../external/octane/benchmarks/";
+var path = dir + "../external/octane/";
 
 var runtime = "";
 var verbose = false;

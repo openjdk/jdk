@@ -121,30 +121,29 @@ if (typeof $ARGS !== 'undefined') {
 } 
 
 var tests = [
-	     'check-3d-cube.js',
-	     'check-access-nsieve.js',
-	     'check-crypto-aes.js',   
-	     'check-math-spectral-norm.js',
-	     'check-3d-morph.js',
-	     'check-bitops-3bit-bits-in-byte.js',
-	     'check-crypto-md5.js',
-	     'check-mont.js',
-	     'check-3d-raytrace.js',
-	     'check-bitops-bits-in-byte.js',
-	     'check-crypto-sha1.js',
-	     'check-regexp-dna.js',
-	     'check-access-binary-trees.js',
-	     'check-bitops-bitwise-and.js',
-	     'check-date-format-tofte.js',
-	     'check-string-fasta.js',
-	     'check-access-fannkuch.js',
-	     'check-bitops-nsieve-bits.js',
-	     'check-math-cordic.js',
-	     'check-string-tagcloud.js',
-	     'check-access-nbody.js',
-	     'check-controlflow-recursive.js',
-	     'check-math-partial-sums.js',
-	     'check-string-unpack-code.js'
+	     '3d-cube.js',
+	     'access-nsieve.js',
+	     'crypto-aes.js',   
+	     'math-spectral-norm.js',
+	     '3d-morph.js',
+	     'bitops-3bit-bits-in-byte.js',
+	     'crypto-md5.js',
+	     '3d-raytrace.js',
+	     'bitops-bits-in-byte.js',
+	     'crypto-sha1.js',
+	     'regexp-dna.js',
+	     'access-binary-trees.js',
+	     'bitops-bitwise-and.js',
+	     'date-format-tofte.js',
+	     'string-fasta.js',
+	     'access-fannkuch.js',
+	     'bitops-nsieve-bits.js',
+	     'math-cordic.js',
+	     'string-tagcloud.js',
+	     'access-nbody.js',
+	     'controlflow-recursive.js',
+	     'math-partial-sums.js',
+	     'string-unpack-code.js'
 	     ];
 
 // handle the case this script may be run by a JS engine that doesn't
@@ -152,7 +151,7 @@ var tests = [
 var dir = (typeof(__DIR__) == 'undefined')? "test/script/basic/" : __DIR__;
 
 for (i in tests) {
-    tests[i] = dir + '../external/sunspider/' + tests[i];
+    tests[i] = dir + '../external/sunspider/tests/sunspider-1.0/' + tests[i];
 }
 
 var verbose_run = false;

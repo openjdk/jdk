@@ -44,16 +44,16 @@ if %errorlevel% equ 0 (
   set CMD=%1 %JVM_FLAGS%
 )
 
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/box2d.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/code-load.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/crypto.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/deltablue.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/gbemu.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/navier-stokes.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/pdfjs.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/raytrace.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/regexp.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/richards.js %OCTANE_ARGS%
-%CMD% test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/splay.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/box2d.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/code-load.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/crypto.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/deltablue.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/gbemu.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/navier-stokes.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/pdfjs.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/raytrace.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/regexp.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/richards.js %OCTANE_ARGS%
+%CMD% test/script/basic/run-octane.js -- test/script/external/octane/splay.js %OCTANE_ARGS%
 endlocal
 goto :EOF

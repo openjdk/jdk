@@ -43,8 +43,6 @@ import org.testng.annotations.Test;
 public class CompilerTest {
     private static final boolean VERBOSE  = Boolean.valueOf(System.getProperty("compilertest.verbose"));
     private static final boolean TEST262  = Boolean.valueOf(System.getProperty("compilertest.test262"));
-
-    private static final String ES5CONFORM_DIR    = System.getProperty("es5conform.testcases.dir");
     private static final String TEST_BASIC_DIR  = System.getProperty("test.basic.dir");
     private static final String TEST262_SUITE_DIR = System.getProperty("test262.suite.dir");
 
@@ -90,7 +88,6 @@ public class CompilerTest {
                 }
             });
         }
-        compileTestSet(ES5CONFORM_DIR, null);
         compileTestSet(TEST_BASIC_DIR, null);
     }
 

@@ -190,7 +190,7 @@ all: test
 clobber: clean
 
 # All ant targets of interest
-ANT_TARGETS = clean jar javadoc shelldoc docs test test262 test262parallel # for now
+ANT_TARGETS = clean externals update-externals jar javadoc shelldoc docs test test262 test262parallel # for now
 
 # Create diagnostics log (careful, ant 1.8.0 -diagnostics always does an exit 1)
 $(OUTPUTDIR)/build/ant-diagnostics.log:

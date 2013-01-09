@@ -245,7 +245,6 @@
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs.octane}"/>
       <arg value="${octane-test-sys-prop.test.js.framework}"/>
@@ -277,7 +276,6 @@
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs.octane}"/>
       <arg value="${octane-test-sys-prop.test.js.framework}"/>
       <arg value="${octane-tests}"/>
@@ -312,7 +310,6 @@
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs}"/>
       <arg value="-timezone=PST"/>
@@ -338,7 +335,6 @@
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs}"/>
       <arg value="${sunspider-test-sys-prop.test.js.framework}"/>
       <arg value="${sunspider-tests}/"/>
