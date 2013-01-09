@@ -37,7 +37,7 @@ if [ ! -z $JAVA7_HOME ]; then
     echo "running ${ITERS} iterations with java7 using JAVA_HOME=${JAVA7_HOME}..."
     for BENCHMARK in "${BENCHMARKS[@]}"
     do 
-	CMD="${JAVA8_HOME}/bin/java ${JVM_FLAGS} test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/${BENCHMARK} ${OCTANE_ARGS}"
+	CMD="${JAVA8_HOME}/bin/java ${JVM_FLAGS} test/script/basic/run-octane.js -- test/script/external/octane/${BENCHMARK} ${OCTANE_ARGS}"
 	$CMD
     done
 else
@@ -48,7 +48,7 @@ if [ ! -z $JAVA8_HOME ]; then
     echo "running ${ITERS} iterations with java8 using JAVA_HOME=${JAVA8_HOME}..."   
     for BENCHMARK in "${BENCHMARKS[@]}"
     do 
-	CMD="${JAVA8_HOME}/bin/java ${JVM_FLAGS} test/script/basic/run-octane.js -- test/script/external/octane/benchmarks/${BENCHMARK} ${OCTANE_ARGS}"
+	CMD="${JAVA8_HOME}/bin/java ${JVM_FLAGS} test/script/basic/run-octane.js -- test/script/external/octane/${BENCHMARK} ${OCTANE_ARGS}"
 	$CMD
     done
 else 

@@ -31,6 +31,12 @@
       <pathelement location="${dist.dir}"/>
     </path>
     <property name="ext.class.path" value="-Djava.ext.dirs=&quot;${toString:nashorn.ext.path}&quot;"/>
+    <condition property="svn.executable" value="/usr/local/bin/svn" else="svn">
+      <available file="/usr/local/bin/svn"/>
+    </condition>
+    <condition property="hg.executable" value="/usr/local/bin/hg" else="hg">
+      <available file="/usr/local/bin/hg"/>
+    </condition>
   </target>
 
   <target name="prepare" depends="init">
@@ -357,4 +363,93 @@
         <arg value="test.js"/>
     </java>
   </target>
+
+  <!-- targets to get external script tests -->
+
+  <!-- test262 test suite -->
+  <target name="get-test262" depends="init" unless="${test-sys-prop.external.test262}">
+    <!-- clone test262 mercurial repo -->
+    <exec executable="${hg.executable}">
+       <arg value="clone"/>
+       <arg value="http://hg.ecmascript.org/tests/test262"/>
+       <arg value="${test.external.dir}/test262"/>
+    </exec>
+  </target>
+  <target name="update-test262" depends="init" if="${test-sys-prop.external.test262}">
+    <!-- update test262 mercurial repo -->
+    <exec executable="${hg.executable}" dir="${test.external.dir}/test262">
+       <arg value="pull"/>
+       <arg value="-u"/>
+    </exec>
+  </target>
+
+  <!-- octane benchmark -->
+  <target name="get-octane" depends="init" unless="${test-sys-prop.external.octane}">
+    <!-- checkout octane benchmarks -->
+    <exec executable="${svn.executable}">
+       <arg value="--non-interactive"/>
+       <arg value="--trust-server-cert"/>
+       <arg value="checkout"/>
+       <arg value="http://octane-benchmark.googlecode.com/svn/trunk/"/>
+       <arg value="${test.external.dir}/octane"/>
+    </exec>
+  </target>
+  <target name="update-octane" depends="init" if="${test-sys-prop.external.octane}">
+    <!-- update octane benchmarks -->
+    <exec executable="${svn.executable}" dir="${test.external.dir}/octane">
+       <arg value="--non-interactive"/>
+       <arg value="--trust-server-cert"/>
+       <arg value="update"/>
+    </exec>
+  </target>
+
+  <!-- sunspider benchmark -->
+  <target name="get-sunspider" depends="init" unless="${test-sys-prop.external.sunspider}">
+    <!-- checkout sunspider -->
+    <exec executable="${svn.executable}">
+       <arg value="--non-interactive"/>
+       <arg value="--trust-server-cert"/>
+       <arg value="checkout"/>
+       <arg value="http://svn.webkit.org/repository/webkit/trunk/PerformanceTests/SunSpider"/>
+       <arg value="${test.external.dir}/sunspider"/>
+    </exec>
+  </target>
+  <target name="update-sunspider" depends="init" if="${test-sys-prop.external.sunspider}">
+    <!-- update sunspider -->
+    <exec executable="${svn.executable}" dir="${test.external.dir}/sunspider">
+       <arg value="--non-interactive"/>
+       <arg value="--trust-server-cert"/>
+       <arg value="update"/>
+    </exec>
+  </target>
+
+  <!-- get all external test scripts -->
+  <target name="externals" depends="prepare, check-external-tests, get-test262, get-octane, get-sunspider">
+    <!-- make external test dir -->
+    <mkdir dir="${test.external.dir}"/> 
+
+    <!-- jquery -->
+    <mkdir dir="${test.external.dir}/jquery"/>    
+    <get src="http://code.jquery.com/jquery-1.7.2.js" dest="${test.external.dir}/jquery" skipexisting="true" ignoreerrors="true"/>
+    <get src="http://code.jquery.com/jquery-1.7.2.min.js" dest="${test.external.dir}/jquery" skipexisting="true" ignoreerrors="true"/>
+
+    <!-- prototype -->
+    <mkdir dir="${test.external.dir}/prototype"/>    
+    <get src="http://ajax.googleapis.com/ajax/libs/prototype/1.7.0/prototype.js" dest="${test.external.dir}/prototype" usetimestamp="true" skipexisting="true" ignoreerrors="true"/>
+
+    <!-- underscorejs -->
+    <mkdir dir="${test.external.dir}/underscore"/> 
+    <get src="http://underscorejs.org/underscore.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
+    <get src="http://underscorejs.org/underscore-min.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
+
+    <!-- yui -->
+    <mkdir dir="${test.external.dir}/yui"/> 
+    <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
+    <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui-min.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
+
+  </target>
+
+  <!-- update external test suites that are pulled from source control systems -->
+  <target name="update-externals" depends="prepare, check-external-tests, update-test262, update-octane, update-sunspider"/>
+
 </project>
