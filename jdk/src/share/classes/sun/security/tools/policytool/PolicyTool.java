@@ -604,7 +604,7 @@ public class PolicyTool {
                InstantiationException
     {
         if (type.equals(PolicyParser.PrincipalEntry.WILDCARD_CLASS) ||
-            type.equals(PolicyParser.REPLACE_NAME)) {
+            type.equals(PolicyParser.PrincipalEntry.REPLACE_NAME)) {
             return;
         }
         Class<?> PRIN = Class.forName("java.security.Principal");
@@ -2094,7 +2094,7 @@ class ToolDialog extends Dialog {
         } else if (pclass.equals("")) {
             // make this consistent with what PolicyParser does
             // when it sees an empty principal class
-            pclass = PolicyParser.REPLACE_NAME;
+            pclass = PolicyParser.PrincipalEntry.REPLACE_NAME;
             tool.warnings.addElement(
                         "Warning: Principal name '" + pname +
                                 "' specified without a Principal class.\n" +
