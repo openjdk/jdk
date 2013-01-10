@@ -22,12 +22,20 @@
  */
 
 /**
- * NASHORN-71 :  Global functions decodeURI, decodeURICompondet are not implemdeted.
+ * NASHORN-71 :  Global functions decodeURI, decodeURICompondet are not implemented.
  *
  * @test
  * @run
  */
 
-print(decodeURI("It's%20me!!"));
-print(decodeURI("http://en.wikipedia.org/wiki/%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B5%D0%B9"));
-print(decodeURIComponent("Sk%C3%A5l"));
+if (decodeURI("It's%20me!!") != "It's me!!") {
+    fail("#1 decodeURI failed");
+}
+
+if (decodeURI("http://en.wikipedia.org/wiki/%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B5%D0%B9") != "http://en.wikipedia.org/wiki/\u0410\u043B\u0435\u043A\u0441\u0435\u0439") {
+    fail("#2 decodeURI failed");
+}
+
+if (decodeURIComponent("Sk%C3%A5l") != "Sk\u00E5l") {
+    fail("decodeURIComponent failed");
+}
