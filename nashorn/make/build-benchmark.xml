@@ -27,7 +27,7 @@
     <fileset id="octane-set"
 	     dir="${octane-test-sys-prop.test.js.roots}"
 	     excludes="${octane-test-sys-prop.test.js.exclude.list}">
-      <include name="**/*.js"/>
+      <include name="*.js"/>
     </fileset>
     <pathconvert pathsep=" " property="octane-tests" refid="octane-set"/>
     <property name="extra-arg" value=""/>
