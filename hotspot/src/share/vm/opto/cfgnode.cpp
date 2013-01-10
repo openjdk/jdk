@@ -363,6 +363,49 @@ bool RegionNode::is_unreachable_region(PhaseGVN *phase) const {
   return true; // The Region node is unreachable - it is dead.
 }
 
+bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
+  // Incremental inlining + PhaseStringOpts sometimes produce:
+  //
+  // cmpP with 1 top input
+  //           |
+  //          If
+  //         /  \
+  //   IfFalse  IfTrue  /- Some Node
+  //         \  /      /    /
+  //        Region    / /-MergeMem
+  //             \---Phi
+  //
+  //
+  // It's expected by PhaseStringOpts that the Region goes away and is
+  // replaced by If's control input but because there's still a Phi,
+  // the Region stays in the graph. The top input from the cmpP is
+  // propagated forward and a subgraph that is useful goes away. The
+  // code below replaces the Phi with the MergeMem so that the Region
+  // is simplified.
+
+  PhiNode* phi = has_unique_phi();
+  if (phi && phi->type() == Type::MEMORY && req() == 3 && phi->is_diamond_phi(true)) {
+    MergeMemNode* m = NULL;
+    assert(phi->req() == 3, "same as region");
+    for (uint i = 1; i < 3; ++i) {
+      Node *mem = phi->in(i);
+      if (mem && mem->is_MergeMem() && in(i)->outcnt() == 1) {
+        // Nothing is control-dependent on path #i except the region itself.
+        m = mem->as_MergeMem();
+        uint j = 3 - i;
+        Node* other = phi->in(j);
+        if (other && other == m->base_memory()) {
+          // m is a successor memory to other, and is not pinned inside the diamond, so push it out.
+          // This will allow the diamond to collapse completely.
+          phase->is_IterGVN()->replace_node(phi, m);
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
@@ -375,6 +418,10 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   bool has_phis = false;
   if (can_reshape) {            // Need DU info to check for Phi users
     has_phis = (has_phi() != NULL);       // Cache result
+    if (has_phis && try_clean_mem_phi(phase)) {
+      has_phis = false;
+    }
+
     if (!has_phis) {            // No Phi users?  Nothing merging?
       for (uint i = 1; i < req()-1; i++) {
         Node *if1 = in(i);
@@ -1005,7 +1052,9 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
 //------------------------------is_diamond_phi---------------------------------
 // Does this Phi represent a simple well-shaped diamond merge?  Return the
 // index of the true path or 0 otherwise.
-int PhiNode::is_diamond_phi() const {
+// If check_control_only is true, do not inspect the If node at the
+// top, and return -1 (not an edge number) on success.
+int PhiNode::is_diamond_phi(bool check_control_only) const {
   // Check for a 2-path merge
   Node *region = in(0);
   if( !region ) return 0;
@@ -1018,6 +1067,7 @@ int PhiNode::is_diamond_phi() const {
   Node *iff = ifp1->in(0);
   if( !iff || !iff->is_If() ) return 0;
   if( iff != ifp2->in(0) ) return 0;
+  if (check_control_only)  return -1;
   // Check for a proper bool/cmp
   const Node *b = iff->in(1);
   if( !b->is_Bool() ) return 0;
