@@ -303,35 +303,6 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
 		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers))
 
 ##########################################################################################
-# Special handling of header file generation for classes in the jigsaw base module which
-# currently can't add the annotaion GenerateNativeHeaders. For these specific classes the
-# java file and the class have the same names which enables shortcutting the dependencies.
-
-JDK_BASE_HEADER_CLASSES:=java.lang.Integer \
-			 java.lang.Long \
-			 java.net.SocketOptions \
-			 sun.nio.ch.IOStatus \
-			 java.io.FileSystem
-
-JDK_BASE_HEADER_JAVA_FILES:=$(patsubst %,$(JDK_TOPDIR)/src/share/classes/%.java,\
-				$(subst .,/,$(JDK_BASE_HEADER_CLASSES)))
-
-ifeq ($(OPENJDK_TARGET_OS),windows)
-    JDK_BASE_HEADER_CLASSES_WINDOWS:=sun.nio.ch.PollArrayWrapper
-    JDK_BASE_HEADER_CLASSES+=$(JDK_BASE_HEADER_CLASSES_WINDOWS)
-    JDK_BASE_HEADER_JAVA_FILES+=$(patsubst %,$(JDK_TOPDIR)/src/windows/classes/%.java,\
-				$(subst .,/,$(JDK_BASE_HEADER_CLASSES_WINDOWS)))
-endif
-
-# Set prereqs to the java files since make doesn't know about the class files. Add BUILD_JDK
-# as an order only dependency to avoid race with the java compilation.
-$(JDK_OUTPUTDIR)/gensrc_headers/_the.jdk.base.headers: $(JDK_BASE_HEADER_JAVA_FILES) | $(BUILD_JDK)
-	$(ECHO) Generating headers for jdk base classes
-	$(JAVAH) -bootclasspath $(JDK_OUTPUTDIR)/classes -d $(JDK_OUTPUTDIR)/gensrc_headers \
-		$(JDK_BASE_HEADER_CLASSES)
-	$(TOUCH) $@
-
-##########################################################################################
 
 ifndef OPENJDK
 
@@ -395,7 +366,6 @@ endif
 
 # copy with -a to preserve timestamps so dependencies down the line aren't messed up
 all: $(BUILD_JDK) $(BUILD_ALTCLASSES) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
-	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
-	$(JDK_OUTPUTDIR)/gensrc_headers/_the.jdk.base.headers
+	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin
 
 .PHONY: all
