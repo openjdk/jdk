@@ -98,5 +98,9 @@ print("oo-proto-overridden-equals  : " + (new oo(new Proto())).equals({}))
 // additional constructor arguments (a token). Also demonstrates how can
 // you access the Java adapter instance from the script (just store it in the
 // scope, in this example, "cwa") to retrieve the token later on.
-var cwa = new (Java.extend(model("ConstructorWithArgument")))(function() { print(cwa.token) }, "cwa-token")
+var cwa = new (Java.extend(model("ConstructorWithArgument")))("cwa-token", function() { print(cwa.token) })
 cwa.doSomething()
+
+// Do the same thing with proprietary syntax and object literal
+var cwa2 = new (model("ConstructorWithArgument"))("cwa2-token") { doSomething: function() { print("cwa2-" + cwa2.token ) } }
+cwa2.doSomething()

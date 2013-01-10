@@ -85,24 +85,49 @@ public class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
     @Override
     public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+        final GuardedInvocation gi = convertToTypeNoCast(sourceType, targetType);
+        return gi == null ? null : gi.asType(MH.type(targetType, sourceType));
+    }
+
+    /**
+     * Main part of the implementation of {@link GuardingTypeConverterFactory#convertToType(Class, Class)} that doesn't
+     * care about adapting the method signature; that's done by the invoking method. Returns either a built-in
+     * conversion to primitive (or primitive wrapper) Java types or to String, or a just-in-time generated converter to
+     * a SAM type (if the target type is a SAM type).
+     * @param sourceType the source type
+     * @param targetType the target type
+     * @return a guarded invocation that converts from the source type to the target type.
+     * @throws Exception if something goes wrong
+     */
+    private static GuardedInvocation convertToTypeNoCast(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final MethodHandle mh = JavaArgumentConverters.getConverter(targetType);
-        final GuardedInvocation gi;
         if (mh != null) {
-            gi = new GuardedInvocation(mh, canLinkTypeStatic(sourceType) ? null : IS_NASHORN_OR_UNDEFINED_TYPE);
-        } else if (isAutoConvertibleFromFunction(targetType)) {
-            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType);
-            assert ctor != null; // if JavaAdapterFactory.isAutoConvertible() returned true, then ctor must exist.
-            if(ScriptFunction.class.isAssignableFrom(sourceType)) {
-                gi = new GuardedInvocation(ctor, null);
-            } else if(sourceType == Object.class) {
-                gi = new GuardedInvocation(ctor, IS_SCRIPT_FUNCTION);
-            } else {
-                return null;
-            }
-        } else {
-            return null;
+            return new GuardedInvocation(mh, canLinkTypeStatic(sourceType) ? null : IS_NASHORN_OR_UNDEFINED_TYPE);
         }
-        return gi.asType(MH.type(targetType, sourceType));
+        return getSamTypeConverter(sourceType, targetType);
+    }
+
+    /**
+     * Returns a guarded invocation that converts from a source type that is ScriptFunction, or a subclass or a
+     * superclass of it) to a SAM type.
+     * @param sourceType the source type (presumably ScriptFunction or a subclass or a superclass of it)
+     * @param targetType the target type (presumably a SAM type)
+     * @return a guarded invocation that converts from the source type to the target SAM type. null is returned if
+     * either the source type is neither ScriptFunction, nor a subclass, nor a superclass of it, or if the target type
+     * is not a SAM type.
+     * @throws Exception if something goes wrong; generally, if there's an issue with creation of the SAM proxy type
+     * constructor.
+     */
+    private static GuardedInvocation getSamTypeConverter(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+        // If source type is more generic than ScriptFunction class, we'll need to use a guard
+        final boolean isSourceTypeGeneric = sourceType.isAssignableFrom(ScriptFunction.class);
+
+        if ((isSourceTypeGeneric || ScriptFunction.class.isAssignableFrom(sourceType)) && isAutoConvertibleFromFunction(targetType)) {
+            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType);
+            assert ctor != null; // if isAutoConvertibleFromFunction() returned true, then ctor must exist.
+            return new GuardedInvocation(ctor, isSourceTypeGeneric ? IS_SCRIPT_FUNCTION : null);
+        }
+        return null;
     }
 
     private static boolean isAutoConvertibleFromFunction(final Class<?> clazz) {
