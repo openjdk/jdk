@@ -91,7 +91,7 @@ import org.dynalang.dynalink.support.LinkRequestImpl;
  * For every protected or public constructor in the extended class (which is either the original class, or Object when
  * an interface is implemented), the adapter class will have one or two public constructors (visibility of protected
  * constructors in the extended class is promoted to public). In every case, for every original constructor, a new
- * constructor taking an initial ScriptObject argument followed by original constructor arguments is present on the
+ * constructor taking a trailing ScriptObject argument preceded by original constructor arguments is present on the
  * adapter class. When such a constructor is invoked, the passed ScriptObject's member functions are used to implement
  * and/or override methods on the original class, dispatched by name. A single JavaScript function will act as the
  * implementation for all overloaded methods of the same name. When methods on an adapter instance are invoked, the
@@ -106,16 +106,23 @@ import org.dynalang.dynalink.support.LinkRequestImpl;
  * </p><p>
  * For abstract classes or interfaces that only have one abstract method, or have several of them, but all share the
  * same name, an additional constructor is provided for every original constructor; this one takes a ScriptFunction as
- * its first argument followed by original constructor arguments. This constructor will use the passed function as the
+ * its last argument preceded by original constructor arguments. This constructor will use the passed function as the
  * implementation for all abstract methods. For consistency, any concrete methods sharing the single abstract method
  * name will also be overridden by the function. When methods on the adapter instance are invoked, the ScriptFunction is
  * invoked with {@code null} as its "this".
- * </p><p>If the superclass has a protected or public default constructor, then a generated constructor that only takes
- * a ScriptFunction is also implicitly used as an automatic conversion whenever a ScriptFunction is passed in an
+ * </p><p>
+ * If the superclass has a protected or public default constructor, then a generated constructor that only takes a
+ * ScriptFunction is also implicitly used as an automatic conversion whenever a ScriptFunction is passed in an
  * invocation of any Java method that expects such SAM type.
  * </p><p>
  * For adapter methods that return values, all the JavaScript-to-Java conversions supported by Nashorn will be in effect
  * to coerce the JavaScript function return value to the expected Java return type.
+ * </p><p>
+ * Since we are adding a trailing argument to the generated constructors in the adapter class, they will never be
+ * declared as variable arity, even if the original constructor in the superclass was declared as variable arity. The
+ * reason we are passing the additional argument at the end of the argument list instead at the front is that the
+ * source-level script expression <code>new X(a, b) { ... }</code> (which is a proprietary syntax extension Nashorn uses
+ * to resemble Java anonymous classes) is actually equivalent to <code>new X(a, b, { ... })</code>.
  * </p><p>
  * You normally don't use this class directly, but rather either create adapters from script using
  * {@link NativeJava#extend(Object, Object)}, using the {@code new} operator on abstract classes and interfaces (see
@@ -504,12 +511,15 @@ public class JavaAdapterFactory {
      * {@link #getHandle(ScriptFunction, MethodType, boolean)} or {@link #getHandle(ScriptObject, String, MethodType,
      * boolean)} to obtain the method handles; these methods make sure to add the necessary conversions and arity
      * adjustments so that the resulting method handles can be invoked from generated methods using {@code invokeExact}.
-     * The constructor that takes a script function will only initialize the abstract methods
-     * The constructor will also store the Nashorn global that was current at the constructor invocation time in a
-     * field named "global". The generated constructor will be public, regardless of whether the supertype constructor
-     * was public or protected.
+     * The constructor that takes a script function will only initialize the methods with the same name as the single
+     * abstract method. The constructor will also store the Nashorn global that was current at the constructor
+     * invocation time in a field named "global". The generated constructor will be public, regardless of whether the
+     * supertype constructor was public or protected. The generated constructor will not be variable arity, even if the
+     * supertype constructor was.
      * @param ctor the supertype constructor that is serving as the base for the generated constructor.
-     * @param fromFunction true if a
+     * @param fromFunction true if we're generating a constructor that initializes SAM types from a single
+     * ScriptFunction passed to it, false if we're generating a constructor that initializes an arbitrary type from a
+     * ScriptObject passed to it.
      */
     private void generateConstructor(final Constructor<?> ctor, final boolean fromFunction) {
         final Type originalCtorType = Type.getType(ctor);
@@ -517,23 +527,22 @@ public class JavaAdapterFactory {
         final int argLen = originalArgTypes.length;
         final Type[] newArgTypes = new Type[argLen + 1];
 
-        // Insert ScriptFunction|ScriptObject as the frontmost argument to the constructor
+        // Insert ScriptFunction|ScriptObject as the last argument to the constructor
         final Type extraArgumentType = fromFunction ? SCRIPT_FUNCTION_TYPE : SCRIPT_OBJECT_TYPE;
-        newArgTypes[0] = extraArgumentType;
-        System.arraycopy(originalArgTypes, 0, newArgTypes, 1, argLen);
+        newArgTypes[argLen] = extraArgumentType;
+        System.arraycopy(originalArgTypes, 0, newArgTypes, 0, argLen);
 
         // All constructors must be public, even if in the superclass they were protected.
         // Existing super constructor <init>(this, args...) triggers generating <init>(this, scriptObj, args...).
-        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC | (ctor.isVarArgs() ?
-                ACC_VARARGS : 0), INIT, Type.getMethodDescriptor(originalCtorType.getReturnType(), newArgTypes),
-                null, null));
+        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC, INIT,
+                Type.getMethodDescriptor(originalCtorType.getReturnType(), newArgTypes), null, null));
 
         mv.visitCode();
-        // First, invoke super constructor with shifted arguments. If the form of the constructor we're generating is
-        // <init>(this, scriptFn, args...), then we're invoking super.<init>(this, args...).
+        // First, invoke super constructor with original arguments. If the form of the constructor we're generating is
+        // <init>(this, args..., scriptFn), then we're invoking super.<init>(this, args...).
         mv.visitVarInsn(ALOAD, 0);
         final Class<?>[] argTypes = ctor.getParameterTypes();
-        int offset = 2; // First arg is at position 2, after this and scriptFn.
+        int offset = 1; // First arg is at position 1, after this.
         for (int i = 0; i < argLen; ++i) {
             final Type argType = Type.getType(argTypes[i]);
             mv.load(offset, argType);
@@ -553,7 +562,7 @@ public class JavaAdapterFactory {
                 // is a deliberate design choice. All other method handles are initialized to null.
                 mv.visitInsn(ACONST_NULL);
             } else {
-                mv.visitVarInsn(ALOAD, 1);
+                mv.visitVarInsn(ALOAD, offset);
                 if(!fromFunction) {
                     mv.aconst(mi.getName());
                 }
