@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,7 +311,7 @@ public enum Option {
 
     // This option exists only for the purpose of documenting itself.
     // It's actually implemented by the launcher.
-    J("-J", "opt.arg.flag", "opt.J", STANDARD, INFO) {
+    J("-J", "opt.arg.flag", "opt.J", STANDARD, INFO, true) {
         @Override
         public boolean process(OptionHelper helper, String option) {
             throw new AssertionError
@@ -416,7 +416,7 @@ public enum Option {
 
     // This option exists only for the purpose of documenting itself.
     // It's actually implemented by the CommandLine class.
-    AT("@", "opt.arg.file", "opt.AT", STANDARD, INFO) {
+    AT("@", "opt.arg.file", "opt.AT", STANDARD, INFO, true) {
         @Override
         public boolean process(OptionHelper helper, String option) {
             throw new AssertionError("the @ flag should be caught by CommandLine.");
