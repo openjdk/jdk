@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,12 @@
  * {@linkplain java.lang.annotation.RetentionPolicy#SOURCE source}
  * {@linkplain java.lang.annotation.Retention retention} cannot be
  * recovered from class files and class files might not be able to
- * provide source position information.  The {@linkplain
- * javax.lang.model.element.Modifier modifiers} on an element may
- * differ in some cases including
+ * provide source position information.
+ *
+ * Names of parameters may not be recoverable from class files.
+ *
+ * The {@linkplain javax.lang.model.element.Modifier modifiers} on an
+ * element may differ in some cases including:
  *
  * <ul>
  * <li> {@code strictfp} on a class or interface

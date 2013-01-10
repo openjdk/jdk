@@ -52,6 +52,12 @@ public interface AnnotationDesc {
      */
     ElementValuePair[] elementValues();
 
+    /**
+     * Check for the synthesized bit on the annotation.
+     *
+     * @return true if the annotation is synthesized.
+     */
+    boolean isSynthesized();
 
     /**
      * Represents an association between an annotation type element

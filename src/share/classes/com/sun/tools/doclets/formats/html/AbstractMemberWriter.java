@@ -321,7 +321,8 @@ public abstract class AbstractMemberWriter {
             code.addContent(" ");
         }
         if (member.isMethod()) {
-            if (((MethodDoc)member).isAbstract()) {
+            if (!(member.containingClass().isInterface()) &&
+                    ((MethodDoc)member).isAbstract()) {
                 code.addContent("abstract ");
             }
             // This check for isDefault() and the default modifier needs to be
@@ -329,7 +330,7 @@ public abstract class AbstractMemberWriter {
             // method summary section. Once the default modifier is added
             // to the Modifier list on DocEnv and once it is updated to use the
             // javax.lang.model.element.Modifier, we will need to remove this.
-            else if (((MethodDoc)member).isDefault()) {
+            if (((MethodDoc)member).isDefault()) {
                 code.addContent("default ");
             }
         }
@@ -561,11 +562,14 @@ public abstract class AbstractMemberWriter {
         if (member instanceof MethodDoc && !member.isAnnotationTypeElement()) {
             int methodType = (member.isStatic()) ? MethodTypes.STATIC.value() :
                     MethodTypes.INSTANCE.value();
-            methodType = (classdoc.isInterface() || ((MethodDoc)member).isAbstract()) ?
-                    methodType | MethodTypes.ABSTRACT.value() :
-                    methodType | MethodTypes.CONCRETE.value();
-            if (((MethodDoc)member).isDefault()) {
-                methodType = methodType | MethodTypes.DEFAULT.value();
+            if (member.containingClass().isInterface()) {
+                methodType = (((MethodDoc) member).isAbstract())
+                        ? methodType | MethodTypes.ABSTRACT.value()
+                        : methodType | MethodTypes.DEFAULT.value();
+            } else {
+                methodType = (((MethodDoc) member).isAbstract())
+                        ? methodType | MethodTypes.ABSTRACT.value()
+                        : methodType | MethodTypes.CONCRETE.value();
             }
             if (Util.isDeprecated(member) || Util.isDeprecated(classdoc)) {
                 methodType = methodType | MethodTypes.DEPRECATED.value();

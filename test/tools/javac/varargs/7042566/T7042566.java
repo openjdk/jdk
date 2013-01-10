@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,21 @@
  * @test
  * @bug 7042566
  * @summary Unambiguous varargs method calls flagged as ambiguous
+ * @library ../../lib
+ * @build JavacTestingAbstractThreadedTest
+ * @run main T7042566
  */
+
+import java.io.File;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.tools.Diagnostic;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.classfile.Instruction;
@@ -34,44 +48,36 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool.*;
 import com.sun.tools.classfile.Method;
-import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.List;
 
-import java.io.File;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Locale;
-import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
-
-public class T7042566 {
+public class T7042566
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     VarargsMethod m1;
     VarargsMethod m2;
     TypeConfiguration actuals;
 
-    T7042566(TypeConfiguration m1_conf, TypeConfiguration m2_conf, TypeConfiguration actuals) {
+    T7042566(TypeConfiguration m1_conf, TypeConfiguration m2_conf,
+            TypeConfiguration actuals) {
         this.m1 = new VarargsMethod(m1_conf);
         this.m2 = new VarargsMethod(m2_conf);
         this.actuals = actuals;
     }
 
-    void compileAndCheck() throws Exception {
+    @Override
+    public void run() {
+        int id = checkCount.incrementAndGet();
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavaSource source = new JavaSource();
+        JavaSource source = new JavaSource(id);
         ErrorChecker ec = new ErrorChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, ec,
+        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), ec,
                 null, null, Arrays.asList(source));
         ct.call();
-        check(source, ec);
+        check(source, ec, id);
     }
 
-    void check(JavaSource source, ErrorChecker ec) {
-        checkCount++;
+    void check(JavaSource source, ErrorChecker ec, int id) {
         boolean resolutionError = false;
         VarargsMethod selectedMethod = null;
 
@@ -99,13 +105,13 @@ public class T7042566 {
                     "\nFound error: " + ec.errorFound +
                     "\nCompiler diagnostics:\n" + ec.printDiags());
         } else if (!resolutionError) {
-            verifyBytecode(selectedMethod, source);
+            verifyBytecode(selectedMethod, source, id);
         }
     }
 
-    void verifyBytecode(VarargsMethod selected, JavaSource source) {
-        bytecodeCheckCount++;
-        File compiledTest = new File("Test.class");
+    void verifyBytecode(VarargsMethod selected, JavaSource source, int id) {
+        bytecodeCheckCount.incrementAndGet();
+        File compiledTest = new File(String.format("Test%d.class", id));
         try {
             ClassFile cf = ClassFile.read(compiledTest);
             Method testMethod = null;
@@ -118,7 +124,8 @@ public class T7042566 {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            Code_attribute ea = (Code_attribute)testMethod.attributes.get(Attribute.Code);
+            Code_attribute ea =
+                (Code_attribute)testMethod.attributes.get(Attribute.Code);
             if (testMethod == null) {
                 throw new Error("Code attribute for test() method not found");
             }
@@ -127,11 +134,12 @@ public class T7042566 {
                 if (i.getMnemonic().equals("invokevirtual")) {
                     int cp_entry = i.getUnsignedShort(1);
                     CONSTANT_Methodref_info methRef =
-                            (CONSTANT_Methodref_info)cf.constant_pool.get(cp_entry);
+                        (CONSTANT_Methodref_info)cf.constant_pool.get(cp_entry);
                     String type = methRef.getNameAndTypeInfo().getType();
                     String sig = selected.parameterTypes.bytecodeSigStr;
                     if (!type.contains(sig)) {
-                        throw new Error("Unexpected type method call: " + type + "" +
+                        throw new Error("Unexpected type method call: " +
+                                        type + "" +
                                         "\nfound: " + sig +
                                         "\n" + source.getCharContent(true));
                     }
@@ -146,7 +154,7 @@ public class T7042566 {
 
     class JavaSource extends SimpleJavaFileObject {
 
-        static final String source_template = "class Test {\n" +
+        static final String source_template = "class Test#ID {\n" +
                 "   #V1\n" +
                 "   #V2\n" +
                 "   void test() { m(#E); }\n" +
@@ -154,11 +162,13 @@ public class T7042566 {
 
         String source;
 
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = source_template.replaceAll("#V1", m1.toString()).
-                    replaceAll("#V2", m2.toString()).
-                    replaceAll("#E", actuals.expressionListStr);
+        public JavaSource(int id) {
+            super(URI.create(String.format("myfo:/Test%d.java", id)),
+                    JavaFileObject.Kind.SOURCE);
+            source = source_template.replaceAll("#V1", m1.toString())
+                    .replaceAll("#V2", m2.toString())
+                    .replaceAll("#E", actuals.expressionListStr)
+                    .replaceAll("#ID", String.valueOf(id));
         }
 
         @Override
@@ -167,26 +177,17 @@ public class T7042566 {
         }
     }
 
-    /** global decls ***/
-
-    // Create a single file manager and reuse it for each compile to save time.
-    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
-
-    //statistics
-    static int checkCount = 0;
-    static int bytecodeCheckCount = 0;
-
     public static void main(String... args) throws Exception {
         for (TypeConfiguration tconf1 : TypeConfiguration.values()) {
             for (TypeConfiguration tconf2 : TypeConfiguration.values()) {
                 for (TypeConfiguration tconf3 : TypeConfiguration.values()) {
-                    new T7042566(tconf1, tconf2, tconf3).compileAndCheck();
+                    pool.execute(new T7042566(tconf1, tconf2, tconf3));
                 }
             }
         }
 
-        System.out.println("Total checks made: " + checkCount);
-        System.out.println("Bytecode checks made: " + bytecodeCheckCount);
+        outWriter.println("Bytecode checks made: " + bytecodeCheckCount.get());
+        checkAfterExec();
     }
 
     enum TypeKind {
@@ -326,14 +327,16 @@ public class T7042566 {
         }
     }
 
-    static class ErrorChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class ErrorChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         boolean errorFound;
         List<String> errDiags = List.nil();
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errDiags = errDiags.append(diagnostic.getMessage(Locale.getDefault()));
+                errDiags = errDiags
+                        .append(diagnostic.getMessage(Locale.getDefault()));
                 errorFound = true;
             }
         }
@@ -347,4 +350,8 @@ public class T7042566 {
             return buf.toString();
         }
     }
+
+    //number of bytecode checks made while running combo tests
+    static AtomicInteger bytecodeCheckCount = new AtomicInteger();
+
 }
