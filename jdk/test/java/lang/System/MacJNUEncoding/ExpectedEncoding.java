@@ -31,6 +31,7 @@ public class ExpectedEncoding {
         if (args.length != 2) {
             System.out.println("Usage:");
             System.out.println("$ java ExpectedEncoding <expected file.encoding> <expected sun.jnu.encoding>");
+            System.exit(1);
         }
         String expectFileEnc = args[0];
         String expectSunJnuEnc = args[1];
@@ -49,8 +50,7 @@ public class ExpectedEncoding {
             failed = true;
         }
         if (failed) {
-            System.err.println("Test Failed");
-            System.exit(1);
+            throw new RuntimeException("Test Failed");
         }
     }
 }

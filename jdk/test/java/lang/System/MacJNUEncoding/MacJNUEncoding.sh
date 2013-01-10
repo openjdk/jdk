@@ -63,14 +63,16 @@ echo "Building test classes..."
 "$JAVAC" -d "${TESTCLASSES}" "${TESTSRC}"/ExpectedEncoding.java 
 
 echo ""
-echo "Running test for LANG=C"
+echo "Running test for C locale"
 export LANG=C
+export LC_ALL=C
 "${JAVA}" ${TESTVMOPTS} -classpath "${TESTCLASSES}" ExpectedEncoding US-ASCII UTF-8
 result1=$?
 
 echo ""
-echo "Running test for LANG=en_US.UTF-8"
+echo "Running test for en_US.UTF-8 locale"
 export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 "${JAVA}" ${TESTVMOPTS} -classpath "${TESTCLASSES}" ExpectedEncoding UTF-8 UTF-8
 result2=$?
 
@@ -79,11 +81,15 @@ echo "Cleanup"
 rm ${TESTCLASSES}/ExpectedEncoding.class
 
 if [ ${result1} -ne 0 ] ; then
-    echo "Test failed for LANG=C"
+    echo "Test failed for C locale"
+    echo "  LANG=\"${LANG}\""
+    echo "  LC_ALL=\"${LC_ALL}\""
     exit ${result1}
 fi
 if [ ${result2} -ne 0 ] ; then
-    echo "Test failed for LANG=en_US.UTF-8"
+    echo "Test failed for en_US.UTF-8 locale"
+    echo "  LANG=\"${LANG}\""
+    echo "  LC_ALL=\"${LC_ALL}\""
     exit ${result2}
 fi
 exit 0
