@@ -725,6 +725,28 @@ public class ClassWriter extends ClassFile {
         return acount;
     }
 
+    /**
+     * Write method parameter names attribute.
+     */
+    int writeMethodParametersAttr(MethodSymbol m) {
+        if (m.params != null && 0 != m.params.length()) {
+            int attrIndex = writeAttr(names.MethodParameters);
+            databuf.appendByte(m.params.length());
+            for (VarSymbol s : m.params) {
+                // TODO: expand to cover synthesized, once we figure out
+                // how to represent that.
+                final int flags = (int) s.flags() & (FINAL | SYNTHETIC);
+                // output parameter info
+                databuf.appendChar(pool.put(s.name));
+                databuf.appendInt(flags);
+            }
+            endAttr(attrIndex);
+            return 1;
+        } else
+            return 0;
+    }
+
+
     /** Write method parameter annotations;
      *  return number of attributes written.
      */
@@ -1034,6 +1056,8 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
+        if (options.isSet(PARAMETERS))
+            acount += writeMethodParametersAttr(m);
         acount += writeMemberAttrs(m);
         acount += writeParameterAttrs(m);
         endAttrs(acountIdx, acount);

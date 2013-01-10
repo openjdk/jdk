@@ -1283,8 +1283,9 @@ public abstract class Symbol implements Element {
                 List<Name> paramNames = savedParameterNames;
                 savedParameterNames = null;
                 // discard the provided names if the list of names is the wrong size.
-                if (paramNames == null || paramNames.size() != type.getParameterTypes().size())
+                if (paramNames == null || paramNames.size() != type.getParameterTypes().size()) {
                     paramNames = List.nil();
+                }
                 ListBuffer<VarSymbol> buf = new ListBuffer<VarSymbol>();
                 List<Name> remaining = paramNames;
                 // assert: remaining and paramNames are both empty or both

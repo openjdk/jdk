@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,16 +131,6 @@ public class Messager extends Log implements DocErrorReporter {
         messages.add("com.sun.tools.javadoc.resources.javadoc");
         javadocDiags = new JCDiagnostic.Factory(messages, "javadoc");
         this.programName = programName;
-    }
-
-    @Override
-    protected int getDefaultMaxErrors() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-    protected int getDefaultMaxWarnings() {
-        return Integer.MAX_VALUE;
     }
 
     public void setLocale(Locale locale) {
