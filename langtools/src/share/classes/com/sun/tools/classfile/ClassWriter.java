@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -477,6 +477,15 @@ public class ClassWriter {
             out.writeShort(entry.name_index);
             out.writeShort(entry.signature_index);
             out.writeShort(entry.index);
+        }
+
+        public Void visitMethodParameters(MethodParameters_attribute attr, ClassOutputStream out) {
+            out.writeByte(attr.method_parameter_table.length);
+            for (MethodParameters_attribute.Entry e : attr.method_parameter_table) {
+                out.writeShort(e.name_index);
+                out.writeInt(e.flags);
+            }
+            return null;
         }
 
         public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, ClassOutputStream out) {
