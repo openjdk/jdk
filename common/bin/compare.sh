@@ -1305,7 +1305,19 @@ if [ "$CMP_ZIPS" = "true" ]; then
     if [ -n "$THIS_SEC_BIN" ] && [ -n "$OTHER_SEC_BIN" ]; then
         if [ -n "$(echo $THIS_SEC_BIN | $FILTER)" ]; then
             echo "sec-bin.zip..."
-            compare_zip_file $(dirname $THIS_SEC_BIN) $(dirname $OTHER_SEC_BIN) $COMPARE_ROOT/sec-bin sec-bin.zip
+            compare_zip_file $THIS_SEC_DIR $OTHER_SEC_DIR $COMPARE_ROOT/sec-bin sec-bin.zip
+        fi
+    fi
+    if [ -n "$THIS_SEC_WINDOWS_BIN" ] && [ -n "$OTHER_SEC_WINDOWS_BIN" ]; then
+        if [ -n "$(echo $THIS_SEC_WINDOWS_BIN | $FILTER)" ]; then
+            echo "sec-windows-bin.zip..."
+            compare_zip_file $THIS_SEC_DIR $OTHER_SEC_DIR $COMPARE_ROOT/sec-bin sec-windows-bin.zip
+        fi
+    fi
+    if [ -n "$THIS_JGSS_WINDOWS_BIN" ] && [ -n "$OTHER_JGSS_WINDOWS_BIN" ]; then
+        if [ -n "$(echo $THIS_JGSS_WINDOWS_BIN | $FILTER)" ]; then
+            echo "$JGSS_WINDOWS_BIN..."
+            compare_zip_file $THIS_SEC_DIR $OTHER_SEC_DIR $COMPARE_ROOT/sec-bin $JGSS_WINDOWS_BIN
         fi
     fi
 fi
