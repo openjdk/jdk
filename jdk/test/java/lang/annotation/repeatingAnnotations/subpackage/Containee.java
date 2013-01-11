@@ -27,6 +27,7 @@ import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
 @ContainedBy(Container.class)
+@Repeatable(Container.class)
 public @interface Containee {
     int value();
 }
