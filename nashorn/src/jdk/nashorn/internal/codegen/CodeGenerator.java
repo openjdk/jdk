@@ -845,16 +845,12 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         return null;
     }
 
-    private void initLocals(final Block block) {
-        initLocals(block, null);
-    }
-
     /**
      * Initialize the slots in a frame to undefined.
      *
      * @param block block with local vars.
      */
-    private void initLocals(final Block block, final AccessSpecializer accessSpecializer) {
+    private void initLocals(final Block block) {
         final FunctionNode function       = block.getFunction();
         final boolean      isFunctionNode = block == function;
 
@@ -885,14 +881,6 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             final List<String> nameList = new ArrayList<>();
             final List<Symbol> locals   = new ArrayList<>();
 
-            // note that in the case of a varargs vector the arguments in the vector should NOT have local slots
-            // this was a bug: see NASHORN-21
-            if (isVarArg) {
-                for (final IdentNode param : function.getParameters()) {
-                    param.getSymbol().setNeedsSlot(false);
-                }
-            }
-
             // If there are variable arguments, we need to load them (functions only).
             if (isFunctionNode && isVarArg) {
                 method.loadVarArgs();
@@ -915,8 +903,8 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                     nameList.add(symbol.getName());
                     newSymbols.add(symbol);
                     values.add(null);
-                    symbol.setIsScope();
-                    symbol.setNeedsSlot(false);
+                    assert symbol.isScope()   : "scope for " + symbol + " should have been set in Lower already " + function.getName();
+                    assert !symbol.hasSlot()  : "slot for " + symbol + " should have been removed in Lower already" + function.getName();
                 } else if (symbol.isVar()) {
                     assert symbol.hasSlot() : symbol + " should have a slot only, no scope";
                     locals.add(symbol);
@@ -924,10 +912,8 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                     nameList.add(symbol.getName());
                     newSymbols.add(symbol);
                     values.add(isVarArg ? null : symbol);
-                    symbol.setIsScope();
-                    if (isVarArg) {
-                        symbol.setNeedsSlot(false);
-                    }
+                    assert symbol.isScope()   : "scope for " + symbol + " should have been set in Lower already " + function.getName() + " varsInScope="+varsInScope+" isVarArg="+isVarArg+" symbol.isScope()=" + symbol.isScope();
+                    assert !(isVarArg && symbol.hasSlot())  : "slot for " + symbol + " should have been removed in Lower already " + function.getName();
                 }
             }
 
@@ -939,10 +925,6 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
             if (isFunctionNode) {
                 initScope();
-            }
-
-            if (accessSpecializer != null) {
-                ((FunctionNode)block).accept(accessSpecializer);
             }
 
             /*
@@ -1001,7 +983,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         method.begin();
         method.label(functionNode.getEntryLabel());
 
-        initLocals(functionNode, new AccessSpecializer());
+        initLocals(functionNode);
 
         return functionNode;
     }

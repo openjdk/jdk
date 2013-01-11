@@ -31,7 +31,6 @@ import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.Assignment;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.CallNode;
-import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.Node;
@@ -64,26 +63,11 @@ import jdk.nashorn.internal.runtime.DebugLogger;
  * @see TypeOverride
  */
 
-final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
+final class AccessSpecializer extends NodeOperatorVisitor {
     /** Debug logger for access specialization. Enable it with --log=access:level
-        or -Dnashorn.specializations.debug */
+        or -Dnashorn.callsiteaccess.debug */
     private static final DebugLogger LOG   = new DebugLogger("access", "nashorn.callsiteaccess.debug");
     private static final boolean     DEBUG = LOG.isEnabled();
-
-    @Override
-    public Node enter(final FunctionNode node) {
-        if (node.isTransformApplied(AccessSpecializer.class)) {
-            return null;
-        }
-
-        return node;
-    }
-
-    @Override
-    public Node leave(final FunctionNode node) {
-        node.registerTransform(AccessSpecializer.class);
-        return node;
-    }
 
     @Override
     public Node leave(final VarNode varNode) {
@@ -191,7 +175,7 @@ final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
              * getter/setter is selected, which will do the conversion for us
              */
             changeType(rhs, castTo);
-            fine("*** cast: converting " + debugNode(unaryNode) + " to " + debugNode(rhs));
+            LOG.fine("*** cast: converting " + debugNode(unaryNode) + " to " + debugNode(rhs));
 
             return rhs;
         }
@@ -270,17 +254,17 @@ final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
         final Symbol lhsSymbol = lhs.getSymbol();
 
         if (lhsSymbol.hasSlot() && !lhsSymbol.isScope()) {
-            finest(lhs.getSymbol() + " has slot!");
+            LOG.finest(lhs.getSymbol() + " has slot!");
             if (!lhs.getType().isEquivalentTo(rhs.getType())) {
-                finest("\tslot assignment: " +lhs.getType()+ " " +rhs.getType() + " " + debugNode(node));
+                LOG.finest("\tslot assignment: " +lhs.getType()+ " " +rhs.getType() + " " + debugNode(node));
 
                 final Node c = convert(rhs);
                 c.setSymbol(lhsSymbol);
                 ((Assignment<?>)node).setAssignmentSource(c);
 
-                fine("*** slot assignment turned to : " + debugNode(node));
+                LOG.fine("*** slot assignment turned to : " + debugNode(node));
             } else {
-                finest("aborted - type equivalence between lhs and rhs");
+                LOG.finest("aborted - type equivalence between lhs and rhs");
             }
 
             return node;
@@ -310,10 +294,10 @@ final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
 
         // If castTo is wider than widestOperationType, castTo can be further slowed down
         final Type widestOperationType = node.getWidestOperationType();
-        finest("node wants to be " + castTo + " and its widest operation is " + widestOperationType);
+        LOG.finest("node wants to be " + castTo + " and its widest operation is " + widestOperationType);
 
         if (widestOperationType != castTo && Type.widest(castTo, widestOperationType) == castTo) {
-            info("###" + node + " castTo was " + castTo + " but could be downgraded to " + node.getWidestOperationType());
+            LOG.info("###" + node + " castTo was " + castTo + " but could be downgraded to " + node.getWidestOperationType());
             castTo = node.getWidestOperationType();
             if (rhs instanceof TypeOverride) {
                 changeType(rhs, castTo);
@@ -331,16 +315,16 @@ final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
         // We only specialize for numerics, not for booleans.
         if (isSupportedCallSiteType(castTo)) {
             if (rhs.getType() != castTo) {
-                finest("cast was necessary, abort: " + node + " " + rhs.getType() + " != " + castTo);
+                LOG.finest("cast was necessary, abort: " + node + " " + rhs.getType() + " != " + castTo);
                 return node;
             }
 
-            finest("assign: " + debugNode(node));
+            LOG.finest("assign: " + debugNode(node));
 
             changeTypeInAssignment(lhs, castTo);
             ((Assignment<?>)node).setAssignmentSource(rhs);
 
-            info("### modified to " + debugNode(node) + " (given type override " + castTo + ")");
+            LOG.info("### modified to " + debugNode(node) + " (given type override " + castTo + ")");
 
             propagateResultType(node, castTo);
         }
@@ -352,9 +336,9 @@ final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
         //warning! this CANNOT be done for non temporaries as they are used in other computations
         if (isSupportedCallSiteType(type)) {
             if (node.getSymbol().isTemp()) {
-                finest("changing temporary type: " + debugNode(node) + " to " + type);
+                LOG.finest("changing temporary type: " + debugNode(node) + " to " + type);
                 node.getSymbol().setTypeOverride(type);
-                info("### node modified to " + debugNode(node) + " (given type override " + type + ")");
+                LOG.info("### node modified to " + debugNode(node) + " (given type override " + type + ")");
             }
         }
         return node;
@@ -362,7 +346,7 @@ final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
 
     private static void changeTypeInAssignment(final Node dest, final Type newType) {
         if (changeType(dest, newType)) {
-            finest("changed assignment " + dest + " " + dest.getSymbol());
+            LOG.finest("changed assignment " + dest + " " + dest.getSymbol());
             assert !newType.isObject();
 
             final HashSet<Node> exclude = new HashSet<>();
@@ -370,7 +354,7 @@ final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
             dest.accept(new NodeVisitor() {
 
                 private void setCanBePrimitive(final Symbol symbol) {
-                    fine("*** can be primitive symbol " + symbol + " " + Debug.id(symbol));
+                    LOG.fine("*** can be primitive symbol " + symbol + " " + Debug.id(symbol));
                     symbol.setCanBePrimitive(newType);
                 }
 
@@ -412,17 +396,4 @@ final class AccessSpecializer extends NodeOperatorVisitor implements Transform {
         }
         return "";
     }
-
-    private static void info(final String str) {
-        LOG.info(str);
-    }
-
-    private static void fine(final String str) {
-        LOG.fine(str);
-    }
-
-    private static void finest(final String str) {
-        LOG.finest(str);
-    }
-
 }

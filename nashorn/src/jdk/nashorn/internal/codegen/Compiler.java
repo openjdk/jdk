@@ -298,6 +298,8 @@ public final class Compiler {
 
         /** do we need to parse source? */
         if (!state.contains(State.PARSED)) {
+            LOG.info("Parsing '" + source + "'");
+
             assert this.functionNode == null;
             this.functionNode = new Parser(this, strict).parse(RUN_SCRIPT.tag());
 
@@ -338,6 +340,7 @@ public final class Compiler {
 
             if (!state.contains(State.LOWERED)) {
                 debugPrintAST();
+                LOG.info("Lowering '" + functionNode.getName() + "'");
                 functionNode.accept(new Lower(this));
                 state.add(State.LOWERED);
 
@@ -352,6 +355,7 @@ public final class Compiler {
             // and add script code last this class may end up slightly larger than others, but reserving one class
             // just for the main script seems wasteful.
             final CompileUnit scriptCompileUnit = addCompileUnit(firstCompileUnitName(), 0l);
+            LOG.info("Splitting '" + functionNode.getName() + "'");
             new Splitter(this, functionNode, scriptCompileUnit).split();
             assert functionNode.getCompileUnit() == scriptCompileUnit;
 
@@ -361,7 +365,14 @@ public final class Compiler {
                 strict = true;
             }
 
+            LOG.info("Adjusting slot and scope information for symbols for '" + functionNode.getName() + "'");
+            functionNode.accept(new Lower.FinalizeSymbols());
+
+            LOG.info("Specializing callsite types for '" + functionNode.getName() + "'");
+            functionNode.accept(new AccessSpecializer());
+
             try {
+                LOG.info("Emitting bytecode for '" + functionNode.getName() + "'");
                 final CodeGenerator codegen = new CodeGenerator(this);
                 functionNode.accept(codegen);
                 codegen.generateScopeCalls();
@@ -408,6 +419,7 @@ public final class Compiler {
             return true;
         } finally {
             strict = oldStrict;
+            LOG.info("Done with '" + functionNode.getName() + "'");
         }
     }
 

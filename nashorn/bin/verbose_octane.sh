@@ -26,18 +26,18 @@ if [ -z $ITERS ]; then
     ITERS=7
 fi
 NASHORN_JAR=dist/nashorn.jar
-JVM_FLAGS="-XX:+UnlockDiagnosticVMOptions -Dnashorn.unstable.relink.threshold=8 -Xms2G -Xmx2G -XX:-TieredCompilation -server -jar ${NASHORN_JAR}"
+JVM_FLAGS="-XX:+UnlockDiagnosticVMOptions -Dnashorn.unstable.relink.threshold=8 -Xms2G -Xmx2G -XX:+TieredCompilation -server -jar ${NASHORN_JAR}"
 JVM_FLAGS7="-Xbootclasspath/p:${NASHORN_JAR} ${JVM_FLAGS}"
 OCTANE_ARGS="--verbose --iterations ${ITERS}"
 
-BENCHMARKS=( "box2d.js" "code-load.js" "crypto.js" "deltablue.js" "earley-boyer.js" "gbemu.js" "navier-stokes.js" "raytrace.js" "regexp.js" "richards.js" "splay.js" )
+BENCHMARKS=( "box2d.js" "code-load.js" "crypto.js" "deltablue.js" "earley-boyer.js" "gbemu.js" "navier-stokes.js" "pdfjs.js" "raytrace.js" "regexp.js" "richards.js" "splay.js" )
 # TODO mandreel.js has metaspace issues
 
 if [ ! -z $JAVA7_HOME ]; then	
     echo "running ${ITERS} iterations with java7 using JAVA_HOME=${JAVA7_HOME}..."
     for BENCHMARK in "${BENCHMARKS[@]}"
     do 
-	CMD="${JAVA8_HOME}/bin/java ${JVM_FLAGS} test/script/basic/run-octane.js -- test/script/external/octane/${BENCHMARK} ${OCTANE_ARGS}"
+	CMD="${JAVA7_HOME}/bin/java ${JVM_FLAGS} test/script/basic/run-octane.js -- test/script/external/octane/${BENCHMARK} ${OCTANE_ARGS}"
 	$CMD
     done
 else
@@ -52,7 +52,7 @@ if [ ! -z $JAVA8_HOME ]; then
 	$CMD
     done
 else 
-    echo "no JAVA8_HOME set"
+    echo "no JAVA8_HOME set."
 fi
 
 echo "Done"
