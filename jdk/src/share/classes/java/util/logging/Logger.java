@@ -31,7 +31,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.security.*;
 import java.lang.ref.WeakReference;
 import java.util.function.Supplier;
-import java.util.logging.LogManager.LoggerContext;
 
 /**
  * A Logger object is used to log messages for a specific
@@ -321,18 +320,32 @@ public class Logger {
     //
     // As an interim solution, if the immediate caller whose caller loader is
     // null, we assume it's a system logger and add it to the system context.
-    private static LoggerContext getLoggerContext() {
+    // These system loggers only set the resource bundle to the given
+    // resource bundle name (rather than the default system resource bundle).
+    private static class SystemLoggerHelper {
+        static boolean disableCallerCheck = getBooleanProperty("sun.util.logging.disableCallerCheck");
+        private static boolean getBooleanProperty(final String key) {
+            String s = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                public String run() {
+                    return System.getProperty(key);
+                }
+            });
+            return Boolean.valueOf(s);
+        }
+    }
+
+    private static Logger demandLogger(String name, String resourceBundleName) {
         LogManager manager = LogManager.getLogManager();
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            // 0: Reflection 1: Logger.getLoggerContext 2: Logger.getLogger 3: caller
+        if (sm != null && !SystemLoggerHelper.disableCallerCheck) {
+            // 0: Reflection 1: Logger.demandLogger 2: Logger.getLogger 3: caller
             final int SKIP_FRAMES = 3;
             Class<?> caller = sun.reflect.Reflection.getCallerClass(SKIP_FRAMES);
             if (caller.getClassLoader() == null) {
-                return manager.getSystemContext();
+                return manager.demandSystemLogger(name, resourceBundleName);
             }
         }
-        return manager.getUserContext();
+        return manager.demandLogger(name, resourceBundleName);
     }
 
     /**
@@ -376,8 +389,7 @@ public class Logger {
         // would throw an IllegalArgumentException in the second call
         // because the wrapper would result in an attempt to replace
         // the existing "resourceBundleForFoo" with null.
-        LoggerContext context = getLoggerContext();
-        return context.demandLogger(name);
+        return demandLogger(name, null);
     }
 
     /**
@@ -424,8 +436,7 @@ public class Logger {
     // Synchronization is not required here. All synchronization for
     // adding a new Logger object is handled by LogManager.addLogger().
     public static Logger getLogger(String name, String resourceBundleName) {
-        LoggerContext context = getLoggerContext();
-        Logger result = context.demandLogger(name, resourceBundleName);
+        Logger result = demandLogger(name, resourceBundleName);
 
         // MissingResourceException or IllegalArgumentException can be
         // thrown by setupResourceInfo().
@@ -438,11 +449,10 @@ public class Logger {
     // i.e. caller of sun.util.logging.PlatformLogger.getLogger
     static Logger getPlatformLogger(String name) {
         LogManager manager = LogManager.getLogManager();
-        LoggerContext context = manager.getSystemContext();
 
         // all loggers in the system context will default to
         // the system logger's resource bundle
-        Logger result = context.demandLogger(name);
+        Logger result = manager.demandSystemLogger(name, SYSTEM_LOGGER_RB_NAME);
         return result;
     }
 
@@ -1588,7 +1598,8 @@ public class Logger {
             public ResourceBundle run() {
                 try {
                     return ResourceBundle.getBundle(SYSTEM_LOGGER_RB_NAME,
-                                                    locale);
+                                                    locale,
+                                                    ClassLoader.getSystemClassLoader());
                 } catch (MissingResourceException e) {
                     throw new InternalError(e.toString());
                 }
