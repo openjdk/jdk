@@ -3668,7 +3668,7 @@ void G1CollectedHeap::log_gc_header() {
   gclog_or_tty->stamp(PrintGCTimeStamps);
 
   GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
-    .append(g1_policy()->gcs_are_young() ? " (young)" : " (mixed)")
+    .append(g1_policy()->gcs_are_young() ? "(young)" : "(mixed)")
     .append(g1_policy()->during_initial_mark_pause() ? " (initial-mark)" : "");
 
   gclog_or_tty->print("[%s", (const char*)gc_cause_str);
