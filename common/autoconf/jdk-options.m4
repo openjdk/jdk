@@ -247,46 +247,50 @@ AC_SUBST(DEBUG_CLASSFILES)
 AC_SUBST(BUILD_VARIANT_RELEASE)
 ])
 
-AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
-[
 
 ###############################################################################
 #
 # Should we build only OpenJDK even if closed sources are present?
 #
-AC_ARG_ENABLE([openjdk-only], [AS_HELP_STRING([--enable-openjdk-only],
-    [supress building closed source even if present @<:@disabled@:>@])],,[enable_openjdk_only="no"])
+AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
+[
+  AC_ARG_ENABLE([openjdk-only], [AS_HELP_STRING([--enable-openjdk-only],
+    [suppress building custom source even if present @<:@disabled@:>@])],,[enable_openjdk_only="no"])
 
-AC_MSG_CHECKING([for presence of closed sources])
-if test -d "$SRC_ROOT/jdk/src/closed"; then
+  AC_MSG_CHECKING([for presence of closed sources])
+  if test -d "$SRC_ROOT/jdk/src/closed"; then
     CLOSED_SOURCE_PRESENT=yes
-else
-    CLOSED_SOURCE_PRESENT=no
-fi
-AC_MSG_RESULT([$CLOSED_SOURCE_PRESENT])
-
-AC_MSG_CHECKING([if closed source is supressed (openjdk-only)])
-SUPRESS_CLOSED_SOURCE="$enable_openjdk_only"
-AC_MSG_RESULT([$SUPRESS_CLOSED_SOURCE])
-
-if test "x$CLOSED_SOURCE_PRESENT" = xno; then
-  OPENJDK=true
-  if test "x$SUPRESS_CLOSED_SOURCE" = "xyes"; then
-    AC_MSG_WARN([No closed source present, --enable-openjdk-only makes no sense])
-  fi
-else
-  if test "x$SUPRESS_CLOSED_SOURCE" = "xyes"; then
-    OPENJDK=true
   else
-    OPENJDK=false
+    CLOSED_SOURCE_PRESENT=no
   fi
-fi
+  AC_MSG_RESULT([$CLOSED_SOURCE_PRESENT])
 
-if test "x$OPENJDK" = "xtrue"; then
+  AC_MSG_CHECKING([if closed source is suppressed (openjdk-only)])
+  SUPPRESS_CLOSED_SOURCE="$enable_openjdk_only"
+  AC_MSG_RESULT([$SUPPRESS_CLOSED_SOURCE])
+
+  if test "x$CLOSED_SOURCE_PRESENT" = xno; then
+    OPENJDK=true
+    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
+      AC_MSG_WARN([No closed source present, --enable-openjdk-only makes no sense])
+    fi
+  else
+    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
+      OPENJDK=true
+    else
+      OPENJDK=false
+    fi
+  fi
+
+  if test "x$OPENJDK" = "xtrue"; then
     SET_OPENJDK="OPENJDK=true"
-fi
+  fi
 
-AC_SUBST(SET_OPENJDK)
+  AC_SUBST(SET_OPENJDK)
+])
+
+AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
+[
 
 ###############################################################################
 #
