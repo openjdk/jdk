@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3912,7 +3912,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
     // check that if this class is an interface then it doesn't have static methods
     if (this_klass->is_interface()) {
-      check_illegal_static_method(this_klass, CHECK_(nullHandle));
+      /* An interface in a JAVA 8 classfile can be static */
+      if (_major_version < JAVA_8_VERSION) {
+        check_illegal_static_method(this_klass, CHECK_(nullHandle));
+      }
     }
 
 
@@ -4466,6 +4469,7 @@ void ClassFileParser::verify_legal_method_modifiers(
   const bool is_bridge       = (flags & JVM_ACC_BRIDGE)       != 0;
   const bool is_strict       = (flags & JVM_ACC_STRICT)       != 0;
   const bool is_synchronized = (flags & JVM_ACC_SYNCHRONIZED) != 0;
+  const bool is_protected    = (flags & JVM_ACC_PROTECTED)    != 0;
   const bool major_gte_15    = _major_version >= JAVA_1_5_VERSION;
   const bool major_gte_8     = _major_version >= JAVA_8_VERSION;
   const bool is_initializer  = (name == vmSymbols::object_initializer_name());
@@ -4473,11 +4477,33 @@ void ClassFileParser::verify_legal_method_modifiers(
   bool is_illegal = false;
 
   if (is_interface) {
-    if (!is_public || is_static || is_final || is_native ||
-        ((is_synchronized || is_strict) && major_gte_15 &&
-            (!major_gte_8 || is_abstract)) ||
-        (!major_gte_8 && !is_abstract)) {
-      is_illegal = true;
+    if (major_gte_8) {
+      // Class file version is JAVA_8_VERSION or later Methods of
+      // interfaces may set any of the flags except ACC_PROTECTED,
+      // ACC_FINAL, ACC_NATIVE, and ACC_SYNCHRONIZED; they must
+      // have exactly one of the ACC_PUBLIC or ACC_PRIVATE flags set.
+      if ((is_public == is_private) || /* Only one of private and public should be true - XNOR */
+          (is_native || is_protected || is_final || is_synchronized) ||
+          // If a specific method of a class or interface has its
+          // ACC_ABSTRACT flag set, it must not have any of its
+          // ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC,
+          // ACC_STRICT, or ACC_SYNCHRONIZED flags set.  No need to
+          // check for ACC_FINAL, ACC_NATIVE or ACC_SYNCHRONIZED as
+          // those flags are illegal irrespective of ACC_ABSTRACT being set or not.
+          (is_abstract && (is_private || is_static || is_strict))) {
+        is_illegal = true;
+      }
+    } else if (major_gte_15) {
+      // Class file version in the interval [JAVA_1_5_VERSION, JAVA_8_VERSION)
+      if (!is_public || is_static || is_final || is_synchronized ||
+          is_native || !is_abstract || is_strict) {
+        is_illegal = true;
+      }
+    } else {
+      // Class file version is pre-JAVA_1_5_VERSION
+      if (!is_public || is_static || is_final || is_native || !is_abstract) {
+        is_illegal = true;
+      }
     }
   } else { // not interface
     if (is_initializer) {
