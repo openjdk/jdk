@@ -181,16 +181,13 @@ else
 endif
 
 # Default target and expected 'do everything' target
-# comments docs to avoid too many ASM warnings
-# all: test docs
-
-all: test
+all: test docs
 
 # Standard make clobber target
 clobber: clean
 
 # All ant targets of interest
-ANT_TARGETS = clean externals update-externals jar javadoc shelldoc docs test test262 test262parallel # for now
+ANT_TARGETS = clean externals update-externals jar javadoc shelldoc docs test test262 test262parallel octane sunspider perf alltests
 
 # Create diagnostics log (careful, ant 1.8.0 -diagnostics always does an exit 1)
 $(OUTPUTDIR)/build/ant-diagnostics.log:

@@ -37,6 +37,10 @@
     <condition property="hg.executable" value="/usr/local/bin/hg" else="hg">
       <available file="/usr/local/bin/hg"/>
     </condition>
+    <!-- check if JDK already has ASM classes -->
+    <available property="asm.available" classname="jdk.internal.org.objectweb.asm.Type"/>
+    <!-- check if testng.jar is avaiable -->
+    <available property="testng.available" file="${file.reference.testng.jar}"/>
   </target>
 
   <target name="prepare" depends="init">
@@ -46,10 +50,6 @@
     <mkdir dir="${build.test.classes.dir}"/>
     <mkdir dir="${dist.dir}"/>
     <mkdir dir="${dist.javadoc.dir}"/>
-    <!-- check if JDK already has ASM classes -->
-    <available property="asm.available" classname="jdk.internal.org.objectweb.asm.Type"/>
-    <!-- check if testng.jar is avaiable -->
-    <available property="testng.available" file="${file.reference.testng.jar}"/>
   </target>
 
   <target name="clean" depends="init, clean-nasgen">
@@ -424,7 +424,7 @@
   </target>
 
   <!-- get all external test scripts -->
-  <target name="externals" depends="prepare, check-external-tests, get-test262, get-octane, get-sunspider">
+  <target name="externals" depends="init, check-external-tests, get-test262, get-octane, get-sunspider">
     <!-- make external test dir -->
     <mkdir dir="${test.external.dir}"/> 
 
@@ -450,6 +450,16 @@
   </target>
 
   <!-- update external test suites that are pulled from source control systems -->
-  <target name="update-externals" depends="prepare, check-external-tests, update-test262, update-octane, update-sunspider"/>
+  <target name="update-externals" depends="init, check-external-tests, update-test262, update-octane, update-sunspider"/>
+
+  <!-- run all perf tests -->
+  <target name="perf" depends="externals, update-externals, sunspider, octane"/>
+
+  <!-- run all tests -->
+  <target name="exit-if-no-testng" depends="init, check-testng" unless="${testng.available}">
+     <fail message="Exiting.."/>
+  </target>
+
+  <target name="alltests" depends="exit-if-no-testng, externals, update-externals, test, test262parallel, perf"/>
 
 </project>
