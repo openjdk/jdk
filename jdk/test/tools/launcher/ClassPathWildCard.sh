@@ -43,6 +43,10 @@ if [ "${TESTJAVA}" = "" ]; then
   exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+
 if [ "${TESTSRC}" = "" ]; then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
   exit 1
@@ -54,8 +58,8 @@ if [ "${TESTCLASSES}" = "" ]; then
 fi
 
 JAVA=$TESTJAVA/bin/java
-JAVAC=$TESTJAVA/bin/javac
-JAR=$TESTJAVA/bin/jar
+JAVAC=$COMPILEJAVA/bin/javac
+JAR=$COMPILEJAVA/bin/jar
 
 OUTEXT=".out"
 
@@ -91,14 +95,14 @@ CreateClassFiles() {
   Exp=$1
   [ -d Test${Exp} ] || mkdir Test${Exp} 
   EmitJavaFile Test${Exp}/Test${Exp}.java
-  $JAVAC  -d Test${Exp} Test${Exp}/Test${Exp}.java || exit 1
+  $JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d Test${Exp} Test${Exp}/Test${Exp}.java || exit 1
 }
 
 CreateJarFiles() {
   Exp=$1
   [ -d JarDir ] || mkdir JarDir
   CreateClassFiles $Exp
-  $JAR -cvf JarDir/Test${Exp}.jar -C Test${Exp} . || exit 1
+  $JAR ${TESTTOOLVMOPTS} -cvf JarDir/Test${Exp}.jar -C Test${Exp} . || exit 1
 }
 
 CheckFail() {

@@ -33,6 +33,7 @@ fi
 if [ "${TESTJAVA}" = "" ] ; then
   JAVAC_CMD=`which javac`
   TESTJAVA=`dirname $JAVAC_CMD`/..
+  COMPILEJAVA="${TESTJAVA}"
 fi
 
 # set platform-dependent variables
@@ -48,7 +49,7 @@ esac
 
 KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit \
     -keypass changeit -keystore certreplace.jks"
-JAVAC=$TESTJAVA${FS}bin${FS}javac
+JAVAC=$COMPILEJAVA${FS}bin${FS}javac
 JAVA=$TESTJAVA${FS}bin${FS}java
 
 rm -rf certreplace.jks 2> /dev/null
@@ -81,5 +82,5 @@ $KT -delete -alias user
 
 # 5. Build and run test
 
-$JAVAC -d . ${TESTSRC}${FS}CertReplace.java
+$JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}CertReplace.java
 $JAVA ${TESTVMOPTS} CertReplace certreplace.jks certreplace.certs
