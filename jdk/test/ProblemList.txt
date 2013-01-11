@@ -347,6 +347,9 @@ com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
 # jdk_util
 
+# 8006090
+java/util/Formatter/Basic.java					generic-all
+
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
