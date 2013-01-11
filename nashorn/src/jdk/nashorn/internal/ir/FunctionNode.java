@@ -43,7 +43,6 @@ import jdk.nashorn.internal.codegen.Frame;
 import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.codegen.Splitter;
-import jdk.nashorn.internal.codegen.Transform;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -189,13 +188,8 @@ public class FunctionNode extends Block {
     /** Does this function need a scope object? */
     private static final int NEEDS_SCOPE           = HAS_ALL_VARS_IN_SCOPE | IS_VAR_ARG;
 
-
     /** What is the return type of this function? */
     private Type returnType = Type.OBJECT;
-
-    /** Transforms that have been applied to this function, a list as some transforms conceivably can run many times */
-    @Ignore
-    private final List<Class<? extends Transform>> appliedTransforms;
 
     /**
      * Used to keep track of a function's parent blocks.
@@ -232,7 +226,6 @@ public class FunctionNode extends Block {
         this.labelStack        = new Stack<>();
         this.controlStack      = new Stack<>();
         this.declarations      = new ArrayList<>();
-        this.appliedTransforms = new ArrayList<>();
         // my block -> function is this. We added @SuppressWarnings("LeakingThisInConstructor") as NetBeans identifies
         // it as such a leak - this is a false positive as we're setting this into a field of the object being
         // constructed, so it can't be seen from other threads.
@@ -266,7 +259,6 @@ public class FunctionNode extends Block {
         this.labelStack        = new Stack<>();
         this.controlStack      = new Stack<>();
         this.declarations      = new ArrayList<>();
-        this.appliedTransforms = new ArrayList<>();
 
         for (final VarNode decl : functionNode.getDeclarations()) {
             declarations.add((VarNode) cs.existingOrCopy(decl)); //TODO same?
@@ -790,23 +782,6 @@ public class FunctionNode extends Block {
      */
     public boolean varsInScope() {
         return isScript() || (flags & HAS_ALL_VARS_IN_SCOPE) != 0;
-    }
-
-    /**
-     * Check if a {@link Transform} has been taken place to this method.
-     * @param transform to check for
-     * @return true if transform has been applied
-     */
-    public boolean isTransformApplied(final Class<? extends Transform> transform) {
-        return appliedTransforms.contains(transform);
-    }
-
-    /**
-     * Tag this function with an applied transform
-     * @param transform the transform
-     */
-    public void registerTransform(final Class<? extends Transform> transform) {
-        appliedTransforms.add(transform);
     }
 
     /**

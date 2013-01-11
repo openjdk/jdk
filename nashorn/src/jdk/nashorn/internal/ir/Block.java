@@ -582,12 +582,10 @@ public class Block extends Node {
     }
 
     /**
-     * Reset the needs scope flag.
-     *
-     * @param needsScope  new needs scope flag
+     * Set the needs scope flag.
      */
-    public void setNeedsScope(final boolean needsScope) {
-        this.needsScope = needsScope;
+    public void setNeedsScope() {
+        this.needsScope = true;
     }
 
 }

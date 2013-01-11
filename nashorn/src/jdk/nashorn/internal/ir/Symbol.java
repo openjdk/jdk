@@ -331,8 +331,11 @@ public final class Symbol implements Comparable<Symbol> {
      * Flag this symbol as scope as described in {@link Symbol#isScope()}
      */
     public void setIsScope() {
+        if (!isScope()) {
+            trace("SET IS SCOPE");
+        }
         flags |= IS_SCOPE;
-        getBlock().setNeedsScope(true);
+        getBlock().setNeedsScope();
     }
 
     /**
@@ -550,8 +553,10 @@ public final class Symbol implements Comparable<Symbol> {
      * @param slot valid bytecode slot, or -1 if not available
      */
     public void setSlot(final int slot) {
-        trace("SET SLOT " + slot);
-        this.slot = slot;
+        if (slot != this.slot) {
+            trace("SET SLOT " + slot);
+            this.slot = slot;
+        }
     }
 
     /**

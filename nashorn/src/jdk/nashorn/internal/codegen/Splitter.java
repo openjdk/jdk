@@ -50,6 +50,7 @@ import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * Split the IR into smaller compile units.
@@ -68,7 +69,7 @@ public class Splitter extends NodeVisitor {
     private final Map<Node, Long> weightCache = new HashMap<>();
 
     /** Weight threshold for when to start a split. */
-    public static final long SPLIT_THRESHOLD  = 32 * 1024;
+    public static final long SPLIT_THRESHOLD = Options.getIntProperty("nashorn.compiler.splitter.threshold", 32 * 1024);
 
     /**
      * Constructor.
@@ -90,6 +91,7 @@ public class Splitter extends NodeVisitor {
         long weight = WeighNodes.weigh(functionNode);
 
         if (weight >= SPLIT_THRESHOLD) {
+            Compiler.LOG.info("Splitting '" + functionNode.getName() + "' as its weight " + weight + " exceeds split threshold " + SPLIT_THRESHOLD);
 
             functionNode.accept(this);
 

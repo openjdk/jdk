@@ -1794,14 +1794,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                typeError(Context.getGlobal(), strictErrorMessage, name, ScriptRuntime.safeToString((this)));
            }
            assert canBeFastScope || !NashornCallSiteDescriptor.isFastScope(desc);
-           final PropertyMap map = getMap();
-           return new GuardedInvocation(Lookup.EMPTY_SETTER, map.getProtoGetSwitchPoint(name), NashornGuards.getMapGuard(map));
+           final PropertyMap myMap = getMap();
+           return new GuardedInvocation(Lookup.EMPTY_SETTER, myMap.getProtoGetSwitchPoint(name), NashornGuards.getMapGuard(myMap));
     }
 
     @SuppressWarnings("unused")
     private static void setEmbed(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final MethodHandle setter, final int i, final Object self, final Object value) throws Throwable {
         final ScriptObject obj = (ScriptObject)self;
-        if(obj.trySetEmbedOrSpill(desc, oldMap, newMap, value)) {
+        if (obj.trySetEmbedOrSpill(desc, oldMap, newMap, value)) {
             obj.useEmbed(i);
             setter.invokeExact(self, value);
         }
@@ -1810,7 +1810,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     @SuppressWarnings("unused")
     private static void setSpill(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final int index, final Object self, final Object value) {
         final ScriptObject obj = (ScriptObject)self;
-        if(obj.trySetEmbedOrSpill(desc, oldMap, newMap, value)) {
+        if (obj.trySetEmbedOrSpill(desc, oldMap, newMap, value)) {
             obj.spill[index] = value;
         }
     }

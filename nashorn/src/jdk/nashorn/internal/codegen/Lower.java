@@ -916,6 +916,13 @@ final class Lower extends NodeOperatorVisitor {
         } else {
             LOG.info("parameter specialization possible: " + functionNode.getName() + " " + paramSpecializations);
         }
+
+        // parameters should not be slots for a vararg function, make sure this is the case
+        if (functionNode.isVarArg()) {
+            for (final IdentNode param : functionNode.getParameters()) {
+                param.getSymbol().setNeedsSlot(false);
+            }
+        }
     }
 
     private LiteralNode<Undefined> undefined() {
@@ -1086,6 +1093,7 @@ final class Lower extends NodeOperatorVisitor {
 
     @Override
     public Node enter(final FunctionNode functionNode) {
+        LOG.info("START FunctionNode: " + functionNode.getName());
 
         Node initialEvalResult = undefined();
 
@@ -1254,6 +1262,8 @@ final class Lower extends NodeOperatorVisitor {
          */
         functionNode.setIsLowered(true);
         functionNode.popFrame();
+
+        LOG.info("END FunctionNode: " + functionNode.getName());
 
         return null;
     }
@@ -1482,9 +1492,9 @@ final class Lower extends NodeOperatorVisitor {
 
     @Override
     public Node enter(final ReferenceNode referenceNode) {
-        final FunctionNode fn = referenceNode.getReference();
-        if (fn != null) {
-            fn.addReferencingParentBlock(getCurrentBlock());
+        final FunctionNode functionNode = referenceNode.getReference();
+        if (functionNode != null) {
+            functionNode.addReferencingParentBlock(getCurrentBlock());
         }
         return referenceNode;
     }
@@ -2866,6 +2876,74 @@ final class Lower extends NodeOperatorVisitor {
             symbol.setType(Type.OBJECT);
             symbol.setCanBeUndefined();
          }
+    }
+
+    /**
+     * A simple node visitor that ensure that scope and slot information is correct.
+     * This is run as a post pass after we know all scope changing information about
+     * the Lowering. This is also called after potential mutations like splitting
+     * have taken place, as splitting forces scope.
+     *
+     * This was previously done on a per functionNode basis in {@link CodeGenerator},
+     * but this is too late for type information to be used in {@link AccessSpecializer}
+     */
+    static class FinalizeSymbols extends NodeVisitor {
+        @Override
+        public Node leave(final Block block) {
+            return updateSymbols(block);
+        }
+
+        @Override
+        public Node leave(final FunctionNode function) {
+            return updateSymbols(function);
+        }
+
+        private static void updateSymbolsLog(final FunctionNode functionNode, final Symbol symbol, final boolean loseSlot) {
+            if (!symbol.isScope()) {
+                LOG.finest("updateSymbols: " + symbol + " => scope, because all vars in " + functionNode.getName() + " are in scope");
+            }
+            if (loseSlot && symbol.hasSlot()) {
+                LOG.finest("updateSymbols: " + symbol + " => no slot, because all vars in " + functionNode.getName() + " are in scope");
+            }
+        }
+
+        // called after a block or function node (subclass of block) is finished
+        // to correct scope and slot assignment for variables
+        private static Block updateSymbols(final Block block) {
+
+            if (!block.needsScope()) {
+                return block; // nothing to do
+            }
+
+            assert !(block instanceof FunctionNode) || block.getFunction() == block;
+
+            final FunctionNode functionNode   = block.getFunction();
+            final List<Symbol> symbols        = block.getFrame().getSymbols();
+            final boolean      allVarsInScope = functionNode.varsInScope();
+            final boolean      isVarArg       = functionNode.isVarArg();
+
+            for (final Symbol symbol : symbols) {
+                if (symbol.isInternal() || symbol.isThis()) {
+                    continue;
+                }
+
+                if (symbol.isVar()) {
+                    if (allVarsInScope || symbol.isScope()) {
+                        updateSymbolsLog(functionNode, symbol, true);
+                        symbol.setIsScope();
+                        symbol.setNeedsSlot(false);
+                    } else {
+                        assert symbol.hasSlot() : symbol + " should have a slot only, no scope";
+                    }
+                } else if (symbol.isParam() && (allVarsInScope || isVarArg || symbol.isScope())) {
+                    updateSymbolsLog(functionNode, symbol, isVarArg);
+                    symbol.setIsScope();
+                    symbol.setNeedsSlot(!isVarArg);
+                }
+            }
+
+            return block;
+        }
     }
 
     /**
