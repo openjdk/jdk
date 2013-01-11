@@ -4011,10 +4011,6 @@ bool Threads::destroy_vm() {
                          Mutex::_as_suspend_equivalent_flag);
   }
 
-  // Shutdown NMT before exit. Otherwise,
-  // it will run into trouble when system destroys static variables.
-  MemTracker::shutdown(MemTracker::NMT_normal);
-
   // Hang forever on exit if we are reporting an error.
   if (ShowMessageBoxOnError && is_error_reported()) {
     os::infinite_sleep();
