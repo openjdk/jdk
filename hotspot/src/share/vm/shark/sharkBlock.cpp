@@ -1032,7 +1032,7 @@ void SharkBlock::do_field_access(bool is_get, bool is_field) {
     check_null(value);
     object = value->generic_value();
   }
-  if (is_get && field->is_constant()) {
+  if (is_get && field->is_constant() && field->is_static()) {
     SharkConstant *constant = SharkConstant::for_field(iter());
     if (constant->is_loaded())
       value = constant->value(builder());

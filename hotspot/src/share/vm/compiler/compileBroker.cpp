@@ -1218,7 +1218,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
 
-  if (compiler(comp_level) == NULL || compilation_is_prohibited(method, osr_bci, comp_level)) {
+  if (compiler(comp_level) == NULL || !compiler(comp_level)->can_compile_method(method) || compilation_is_prohibited(method, osr_bci, comp_level)) {
     return NULL;
   }
 
