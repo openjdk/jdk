@@ -51,11 +51,13 @@ esac
 
 
 if [ x"$TESTJAVA" = x ]; then TESTJAVA=$1; fi
+if [ x"$COMPILEJAVA" = x ]; then COMPILEJAVA=$1; fi
 if [ x"$TESTSRC" = x ]; then TESTSRC=.; fi
 
 CLASSPATH=".${PS}${TESTSRC}${FS}a${PS}${TESTSRC}${FS}b.jar"
 
-${TESTJAVA}${FS}bin${FS}javac -classpath "${CLASSPATH}" -d . ${TESTSRC}${FS}CheckSealed.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -classpath "${CLASSPATH}" -d . \
+    ${TESTSRC}${FS}CheckSealed.java
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp "${CLASSPATH}" CheckSealed 1
 if [ $? != 0 ]; then exit 1; fi
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp "${CLASSPATH}" CheckSealed 2

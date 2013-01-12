@@ -70,6 +70,12 @@ then
   exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
@@ -83,6 +89,6 @@ then
 fi
 
 JAVA="${TESTJAVA}/bin/java"
-JAVAC="${TESTJAVA}/bin/javac"
-JAR="${TESTJAVA}/bin/jar"
+JAVAC="${COMPILEJAVA}/bin/javac"
+JAR="${COMPILEJAVA}/bin/jar"
 
