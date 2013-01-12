@@ -113,7 +113,19 @@ void SharkTopLevelBlock::scan_for_traps() {
       ciSignature* sig;
       method = iter()->get_method(will_link, &sig);
       assert(will_link, "typeflow responsibility");
-
+      // We can't compile calls to method handle intrinsics, because we use
+      // the interpreter entry points and they expect the top frame to be an
+      // interpreter frame. We need to implement the intrinsics for Shark.
+      if (method->is_method_handle_intrinsic() || method->is_compiled_lambda_form()) {
+        if (SharkPerformanceWarnings) {
+          warning("JSR292 optimization not yet implemented in Shark");
+        }
+        set_trap(
+          Deoptimization::make_trap_request(
+            Deoptimization::Reason_unhandled,
+            Deoptimization::Action_make_not_compilable), bci());
+          return;
+      }
       if (!method->holder()->is_linked()) {
         set_trap(
           Deoptimization::make_trap_request(
@@ -158,6 +170,16 @@ void SharkTopLevelBlock::scan_for_traps() {
         return;
       }
       break;
+    case Bytecodes::_invokedynamic:
+    case Bytecodes::_invokehandle:
+      if (SharkPerformanceWarnings) {
+        warning("JSR292 optimization not yet implemented in Shark");
+      }
+      set_trap(
+        Deoptimization::make_trap_request(
+          Deoptimization::Reason_unhandled,
+          Deoptimization::Action_make_not_compilable), bci());
+      return;
     }
   }
 
