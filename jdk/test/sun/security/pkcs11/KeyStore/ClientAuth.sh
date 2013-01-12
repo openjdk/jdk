@@ -40,9 +40,13 @@ fi
 if [ "${TESTJAVA}" = "" ] ; then
     TESTJAVA="/net/radiant/export1/charlie/mustang/build/solaris-sparc"
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
+echo COMPILEJAVA=${COMPILEJAVA}
 echo ""
 
 OS=`uname -s`
@@ -121,7 +125,7 @@ ${CP} ${TESTSRC}${FS}ClientAuthData${FS}key3.db ${TESTCLASSES}
 ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 
 # compile test
-${TESTJAVA}${FS}bin${FS}javac \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
 	-classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
 	-d ${TESTCLASSES} \
 	${TESTSRC}${FS}ClientAuth.java

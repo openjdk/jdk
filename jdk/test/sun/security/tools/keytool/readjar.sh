@@ -29,6 +29,7 @@
 if [ "${TESTJAVA}" = "" ] ; then
   JAVAC_CMD=`which javac`
   TESTJAVA=`dirname $JAVAC_CMD`/..
+  COMPILEJAVA=${TESTJAVA}
 fi
 
 # set platform-dependent variables
@@ -44,13 +45,13 @@ esac
 
 KS=readjar.jks
 rm $KS
-$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS \
+$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS}  -storepass changeit -keypass changeit -keystore $KS \
         -alias x -dname CN=X -genkeypair
-$TESTJAVA${FS}bin${FS}jar cvf readjar.jar $KS
-$TESTJAVA${FS}bin${FS}jarsigner -storepass changeit -keystore $KS readjar.jar x
+$COMPILEJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS} cvf readjar.jar $KS
+$COMPILEJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -storepass changeit -keystore $KS readjar.jar x
 
-$TESTJAVA${FS}bin${FS}keytool -printcert -jarfile readjar.jar || exit 1
-$TESTJAVA${FS}bin${FS}keytool -printcert -jarfile readjar.jar -rfc || exit 1
+$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -printcert -jarfile readjar.jar || exit 1
+$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -printcert -jarfile readjar.jar -rfc || exit 1
 
 exit 0
 
