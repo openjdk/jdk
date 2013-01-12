@@ -68,7 +68,7 @@ class SharkCompileInvariants : public ResourceObj {
   //
   // Accessing this directly is kind of ugly, so it's private.  Add
   // new accessors below if you need something from it.
- private:
+ protected:
   ciEnv* env() const {
     assert(_env != NULL, "env not available");
     return _env;
