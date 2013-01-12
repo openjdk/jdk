@@ -3559,7 +3559,6 @@ bool LibraryCallKit::inline_native_getLength() {
 // public static <T,U> T[] java.util.Arrays.copyOf(     U[] original, int newLength,         Class<? extends T[]> newType);
 // public static <T,U> T[] java.util.Arrays.copyOfRange(U[] original, int from,      int to, Class<? extends T[]> newType);
 bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
-  tty->print_cr("LibraryCallKit::inline_array_copyOf: %d", is_copyOfRange);
   if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
 
   // Get the arguments.
