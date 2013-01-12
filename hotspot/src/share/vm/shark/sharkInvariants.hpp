@@ -99,11 +99,13 @@ class SharkCompileInvariants : public ResourceObj {
   DebugInformationRecorder* debug_info() const {
     return env()->debug_info();
   }
-  Dependencies* dependencies() const {
-    return env()->dependencies();
-  }
   SharkCodeBuffer* code_buffer() const {
     return builder()->code_buffer();
+  }
+
+ public:
+  Dependencies* dependencies() const {
+    return env()->dependencies();
   }
 
   // Commonly used classes
