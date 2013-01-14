@@ -321,9 +321,6 @@ tools/pack200/Pack200Test.java                                  generic-all
 # 7150569
 tools/launcher/UnicodeTest.java                                 macosx-all
 
-# 8005252
-tools/pack200/AttributeTests.java                               generic-all
-
 ############################################################################
 
 # jdk_jdi
