@@ -194,7 +194,10 @@
   template(java_lang_VirtualMachineError,             "java/lang/VirtualMachineError")            \
   template(java_lang_StackOverflowError,              "java/lang/StackOverflowError")             \
   template(java_lang_StackTraceElement,               "java/lang/StackTraceElement")              \
+                                                                                                  \
+  /* Concurrency support */                                                                       \
   template(java_util_concurrent_locks_AbstractOwnableSynchronizer,   "java/util/concurrent/locks/AbstractOwnableSynchronizer") \
+  template(sun_misc_Contended_signature,              "Lsun/misc/Contended;")                     \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, template, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -284,7 +287,7 @@
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
   template(selectAlternative_signature, "(ZLjava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;") \
-                                                                                                  \
+                                                                      \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
   template(class_initializer_name,                    "<clinit>")                                 \

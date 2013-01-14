@@ -2284,9 +2284,16 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(FieldInfo::name_index_offset)                          \
   declare_constant(FieldInfo::signature_index_offset)                     \
   declare_constant(FieldInfo::initval_index_offset)                       \
-  declare_constant(FieldInfo::low_offset)                                 \
-  declare_constant(FieldInfo::high_offset)                                \
+  declare_constant(FieldInfo::low_packed_offset)                          \
+  declare_constant(FieldInfo::high_packed_offset)                         \
   declare_constant(FieldInfo::field_slots)                                \
+                                                                          \
+  /*************************************/                                 \
+  /* FieldInfo tag constants           */                                 \
+  /*************************************/                                 \
+                                                                          \
+  declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
+  declare_preprocessor_constant("FIELDINFO_TAG_OFFSET", FIELDINFO_TAG_OFFSET) \
                                                                           \
   /************************************************/                      \
   /* InstanceKlass InnerClassAttributeOffset enum */                      \
