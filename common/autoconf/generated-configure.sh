@@ -3697,7 +3697,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1357897535
+DATE_WHEN_GENERATED=1358165331
 
 ###############################################################################
 #
@@ -8164,7 +8164,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -8180,7 +8180,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -8521,7 +8521,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -8537,7 +8537,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -8875,7 +8875,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -8891,7 +8891,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -9234,7 +9234,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -9250,7 +9250,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -9587,7 +9587,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -9603,7 +9603,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -16404,7 +16404,7 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -16420,7 +16420,7 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -17004,7 +17004,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -17020,7 +17020,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -17315,7 +17315,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -17331,7 +17331,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -17621,7 +17621,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -17637,7 +17637,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -18219,7 +18219,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -18235,7 +18235,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -18655,7 +18655,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -18671,7 +18671,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -19788,7 +19788,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -19804,7 +19804,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -20224,7 +20224,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -20240,7 +20240,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -21125,7 +21125,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -21141,7 +21141,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -21506,7 +21506,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -21522,7 +21522,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -21853,7 +21853,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -21869,7 +21869,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -22190,7 +22190,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -22206,7 +22206,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -22511,7 +22511,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -22527,7 +22527,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -22885,7 +22885,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -22901,7 +22901,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -23191,7 +23191,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -23207,7 +23207,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -23602,7 +23602,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -23618,7 +23618,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -24002,7 +24002,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -24018,7 +24018,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -24331,7 +24331,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -24347,7 +24347,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -24648,7 +24648,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -24664,7 +24664,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -24954,7 +24954,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -24970,7 +24970,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -25260,7 +25260,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -25276,7 +25276,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -25619,7 +25619,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -25635,7 +25635,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -25977,7 +25977,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -25993,7 +25993,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -26350,7 +26350,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -26366,7 +26366,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -26721,7 +26721,7 @@ if test "x$OBJDUMP" != x; then
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -26737,7 +26737,7 @@ if test "x$OBJDUMP" != x; then
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -27030,7 +27030,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -27046,7 +27046,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
