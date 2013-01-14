@@ -59,6 +59,7 @@
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
 #include "utilities/array.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -2148,9 +2149,21 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
                                      cp, CHECK_(nullHandle));
     } else if (method_attribute_name == vmSymbols::tag_method_parameters()) {
       method_parameters_length = cfs->get_u1_fast();
+      // Track the actual size (note: this is written for clarity; a
+      // decent compiler will CSE and constant-fold this into a single
+      // expression)
+      u2 actual_size = 1;
       method_parameters_data = cfs->get_u1_buffer();
+      actual_size += 2 * method_parameters_length;
       cfs->skip_u2_fast(method_parameters_length);
+      actual_size += 4 * method_parameters_length;
       cfs->skip_u4_fast(method_parameters_length);
+      // Enforce attribute length
+      if (method_attribute_length != actual_size) {
+        classfile_parse_error(
+          "Invalid MethodParameters method attribute length %u in class file %s",
+          method_attribute_length, CHECK_(nullHandle));
+      }
       // ignore this attribute if it cannot be reflected
       if (!SystemDictionary::Parameter_klass_loaded())
         method_parameters_length = 0;
@@ -2297,7 +2310,10 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
       elem[i].name_cp_index =
         Bytes::get_Java_u2(method_parameters_data);
       method_parameters_data += 2;
-      elem[i].flags = Bytes::get_Java_u4(method_parameters_data);
+      u4 flags = Bytes::get_Java_u4(method_parameters_data);
+      // This caused an alignment fault on Sparc, if flags was a u4
+      elem[i].flags_lo = extract_low_short_from_int(flags);
+      elem[i].flags_hi = extract_high_short_from_int(flags);
       method_parameters_data += 4;
     }
   }
