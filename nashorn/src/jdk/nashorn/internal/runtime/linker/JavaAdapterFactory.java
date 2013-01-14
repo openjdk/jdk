@@ -57,9 +57,17 @@ import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import jdk.internal.org.objectweb.asm.ClassWriter;
@@ -69,6 +77,7 @@ import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
 import jdk.nashorn.internal.objects.NativeJava;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -78,42 +87,37 @@ import org.dynalang.dynalink.support.LinkRequestImpl;
 
 /**
  * A factory class that generates adapter classes. Adapter classes allow implementation of Java interfaces and
- * extending of Java classes from JavaScript. For every original Class object, exactly one adapter Class is generated
- * that either extends the original class or - if the original Class represents an interface - extends Object and
- * implements the interface represented by the original Class.
+ * extending of Java classes from JavaScript. For every combination of a superclass to extend and interfaces to
+ * implement (collectively: "original types"), exactly one adapter class is generated that extends the specified
+ * superclass and implements the specified interfaces.
  * </p><p>
  * The adapter class is generated in a new secure class loader that inherits Nashorn's protection domain, and has either
- * the original Class' class loader or the Nashorn's class loader as its parent - the parent class loader is chosen so
- * that both the original Class and the Nashorn core classes are visible from it (as the adapter will have constant pool
- * references to ScriptObject and ScriptFunction classes). In case neither candidate class loader has visibility into
- * the other set of classes, an error is thrown.
+ * one of the original types' class loader or the Nashorn's class loader as its parent - the parent class loader
+ * is chosen so that all the original types and the Nashorn core classes are visible from it (as the adapter will have
+ * constant pool references to ScriptObject and ScriptFunction classes). In case none of the candidate class loaders has
+ * visibility of all the required types, an error is thrown.
  * </p><p>
- * For every protected or public constructor in the extended class (which is either the original class, or Object when
- * an interface is implemented), the adapter class will have one or two public constructors (visibility of protected
- * constructors in the extended class is promoted to public). In every case, for every original constructor, a new
- * constructor taking a trailing ScriptObject argument preceded by original constructor arguments is present on the
- * adapter class. When such a constructor is invoked, the passed ScriptObject's member functions are used to implement
- * and/or override methods on the original class, dispatched by name. A single JavaScript function will act as the
- * implementation for all overloaded methods of the same name. When methods on an adapter instance are invoked, the
- * functions are invoked having the ScriptObject passed in the instance constructor as their "this". Subsequent changes
- * to the ScriptObject (reassignment or removal of its functions) are not reflected in the adapter instance; the method
- * implementations are bound to functions at constructor invocation time. {@code java.lang.Object} methods
- * {@code equals}, {@code hashCode}, and {@code toString} can also be overridden (from interface implementations too).
- * The only restriction is that since every JavaScript object already has a {@code toString} function through the
+ * For every protected or public constructor in the extended class, the adapter class will have one or two public
+ * constructors (visibility of protected constructors in the extended class is promoted to public). In every case, for
+ * every original constructor, a new constructor taking a trailing ScriptObject argument preceded by original
+ * constructor arguments is present on the adapter class. When such a constructor is invoked, the passed ScriptObject's
+ * member functions are used to implement and/or override methods on the original class, dispatched by name. A single
+ * JavaScript function will act as the implementation for all overloaded methods of the same name. When methods on an
+ * adapter instance are invoked, the functions are invoked having the ScriptObject passed in the instance constructor as
+ * their "this". Subsequent changes to the ScriptObject (reassignment or removal of its functions) are not reflected in
+ * the adapter instance; the method implementations are bound to functions at constructor invocation time.
+ * {@code java.lang.Object} methods {@code equals}, {@code hashCode}, and {@code toString} can also be overridden. The
+ * only restriction is that since every JavaScript object already has a {@code toString} function through the
  * {@code Object.prototype}, the {@code toString} in the adapter is only overridden if the passed ScriptObject has a
  * {@code toString} function as its own property, and not inherited from a prototype. All other adapter methods can be
  * implemented or overridden through a prototype-inherited function of the ScriptObject passed to the constructor too.
  * </p><p>
- * For abstract classes or interfaces that only have one abstract method, or have several of them, but all share the
+ * If the original types collectively have only one abstract method, or have several of them, but all share the
  * same name, an additional constructor is provided for every original constructor; this one takes a ScriptFunction as
  * its last argument preceded by original constructor arguments. This constructor will use the passed function as the
  * implementation for all abstract methods. For consistency, any concrete methods sharing the single abstract method
  * name will also be overridden by the function. When methods on the adapter instance are invoked, the ScriptFunction is
  * invoked with {@code null} as its "this".
- * </p><p>
- * If the superclass has a protected or public default constructor, then a generated constructor that only takes a
- * ScriptFunction is also implicitly used as an automatic conversion whenever a ScriptFunction is passed in an
- * invocation of any Java method that expects such SAM type.
  * </p><p>
  * For adapter methods that return values, all the JavaScript-to-Java conversions supported by Nashorn will be in effect
  * to coerce the JavaScript function return value to the expected Java return type.
@@ -125,7 +129,7 @@ import org.dynalang.dynalink.support.LinkRequestImpl;
  * to resemble Java anonymous classes) is actually equivalent to <code>new X(a, b, { ... })</code>.
  * </p><p>
  * You normally don't use this class directly, but rather either create adapters from script using
- * {@link NativeJava#extend(Object, Object)}, using the {@code new} operator on abstract classes and interfaces (see
+ * {@link NativeJava#extend(Object, Object...)}, using the {@code new} operator on abstract classes and interfaces (see
  * {@link NativeJava#type(Object, Object)}), or implicitly when passing script functions to Java methods expecting SAM
  * types.
  * </p>
@@ -169,25 +173,28 @@ public class JavaAdapterFactory {
     private static final String ADAPTER_PACKAGE_PREFIX = "jdk/nashorn/internal/javaadapters/";
     // Class name suffix used to append to the adaptee class name, when it can be defined in the adaptee's package.
     private static final String ADAPTER_CLASS_NAME_SUFFIX = "$$NashornJavaAdapter";
-
     private static final String JAVA_PACKAGE_PREFIX = "java/";
+    private static final int MAX_GENERATED_TYPE_NAME_LENGTH = 238; //255 - 17; 17 is the maximum possible length for the global setter inner class suffix
+
     private static final String INIT = "<init>";
     private static final String VOID_NOARG = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String GLOBAL_FIELD_NAME = "global";
 
     /**
      * Contains various outcomes for attempting to generate an adapter class. These are stored in AdapterInfo instances.
-     * We have a successful outcome (adapter class was generated) and three possible error outcomes: a class is final,
-     * a class is not public, and the class has no public or protected constructor. We don't throw exceptions when we
-     * try to generate the adapter, but rather just record these error conditions as they are still useful as partial
-     * outcomes, as Nashorn's linker can still successfully check whether the class can be autoconverted from a script
-     * function even when it is not possible to generate an adapter for it.
+     * We have a successful outcome (adapter class was generated) and four possible error outcomes: superclass is final,
+     * superclass is not public, superclass has no public or protected constructor, more than one superclass was
+     * specified. We don't throw exceptions when we try to generate the adapter, but rather just record these error
+     * conditions as they are still useful as partial outcomes, as Nashorn's linker can still successfully check whether
+     * the class can be autoconverted from a script function even when it is not possible to generate an adapter for it.
      */
     private enum AdaptationOutcome {
         SUCCESS,
         ERROR_FINAL_CLASS,
         ERROR_NON_PUBLIC_CLASS,
-        ERROR_NO_ACCESSIBLE_CONSTRUCTOR
+        ERROR_NO_ACCESSIBLE_CONSTRUCTOR,
+        ERROR_MULTIPLE_SUPERCLASSES,
+        ERROR_NO_COMMON_LOADER
     }
 
     /**
@@ -198,27 +205,28 @@ public class JavaAdapterFactory {
     /**
      * A mapping from an original Class object to AdapterInfo representing the adapter for the class it represents.
      */
-    private static final ClassValue<AdapterInfo> ADAPTER_INFOS = new ClassValue<AdapterInfo>() {
+    private static final ClassValue<Map<List<Class<?>>, AdapterInfo>> ADAPTER_INFO_MAPS = new ClassValue<Map<List<Class<?>>, AdapterInfo>>() {
         @Override
-        protected AdapterInfo computeValue(final Class<?> type) {
-            return createAdapterInfo(type);
+        protected Map<List<Class<?>>, AdapterInfo> computeValue(final Class<?> type) {
+            return new HashMap<>();
         }
     };
 
     private static final Random random = new SecureRandom();
     private static final ProtectionDomain GENERATED_PROTECTION_DOMAIN = createGeneratedProtectionDomain();
 
-    // This is the supertype for our generated adapter. It's either Object if we're implementing an interface, or same
-    // as originalType if we're extending a class.
-    private final Class<?> superType;
+    // This is the superclass for our generated adapter.
+    private final Class<?> superClass;
     // Class loader used as the parent for the class loader we'll create to load the generated class. It will be a class
-    // loader that has the visibility of both the original type and of the Nashorn classes.
+    // loader that has the visibility of all original types (class to extend and interfaces to implement) and of the
+    // Nashorn classes.
     private final ClassLoader commonLoader;
 
-    // Binary name of the superType
-    private final String superTypeName;
+    // Binary name of the superClass
+    private final String superClassName;
     // Binary name of the generated class.
-    private final String generatedTypeName;
+    private final String generatedClassName;
+    // Binary name of the PrivilegedAction inner class that is used to
     private final String globalSetterClassName;
     private final Set<String> usedFieldNames = new HashSet<>();
     private final Set<String> abstractMethodNames = new HashSet<>();
@@ -232,10 +240,16 @@ public class JavaAdapterFactory {
     /**
      * Creates a factory that will produce the adapter type for the specified original type.
      * @param originalType the type for which this factory will generate the adapter type.
+     * @param definingClassAndLoader the class in whose ClassValue we'll store the generated adapter, and its class loader.
      * @throws AdaptationException if the adapter can not be generated for some reason.
      */
-    private JavaAdapterFactory(final Class<?> originalType) throws AdaptationException {
-        this.commonLoader = findCommonLoader(originalType);
+    private JavaAdapterFactory(final Class<?> superType, final List<Class<?>> interfaces, final ClassAndLoader definingClassAndLoader) throws AdaptationException {
+        assert superType != null && !superType.isInterface();
+        assert interfaces != null;
+        assert definingClassAndLoader != null;
+
+        this.superClass = superType;
+        this.commonLoader = findCommonLoader(definingClassAndLoader);
         cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
             @Override
             protected String getCommonSuperClass(final String type1, final String type2) {
@@ -244,45 +258,68 @@ public class JavaAdapterFactory {
                 return JavaAdapterFactory.this.getCommonSuperClass(type1, type2);
             }
         };
-        final String originalTypeName = Type.getInternalName(originalType);
-        final String[] interfaces;
-        final boolean isInterface = originalType.isInterface();
-        if (isInterface) {
-            superType = Object.class;
-            interfaces = new String[] { originalTypeName };
-        } else {
-            superType = originalType;
-            interfaces = null;
-        }
-        superTypeName = Type.getInternalName(superType);
-        final Package pkg = originalType.getPackage();
-        if (originalTypeName.startsWith(JAVA_PACKAGE_PREFIX) || pkg == null || pkg.isSealed()) {
-            // Can't define new classes in java.* packages
-            generatedTypeName = ADAPTER_PACKAGE_PREFIX + originalTypeName;
-        } else {
-            generatedTypeName = originalTypeName + ADAPTER_CLASS_NAME_SUFFIX;
-        }
+        superClassName = Type.getInternalName(superType);
+        generatedClassName = getGeneratedClassName(superType, interfaces);
+
         // Randomize the name of the privileged global setter, to make it non-feasible to find.
         final long l;
         synchronized(random) {
             l = random.nextLong();
         }
-        globalSetterClassName = generatedTypeName.concat("$" + Long.toHexString(l & Long.MAX_VALUE));
-        cw.visit(Opcodes.V1_7, ACC_PUBLIC | ACC_SUPER | ACC_FINAL, generatedTypeName, null, superTypeName, interfaces);
+        // NOTE: they way this class name is calculated affects the value of MAX_GENERATED_TYPE_NAME_LENGTH constant. If
+        // you change the calculation of globalSetterClassName, adjust the constant too.
+        globalSetterClassName = generatedClassName.concat("$" + Long.toHexString(l & Long.MAX_VALUE));
+        cw.visit(Opcodes.V1_7, ACC_PUBLIC | ACC_SUPER | ACC_FINAL, generatedClassName, null, superClassName, getInternalTypeNames(interfaces));
         cw.visitField(ACC_PRIVATE | ACC_FINAL, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR, null, null).visitEnd();
         usedFieldNames.add(GLOBAL_FIELD_NAME);
 
-        gatherMethods(originalType);
-        if (isInterface) {
-            // Add ability to override Object methods if implementing an interface
-            gatherMethods(Object.class);
-        }
+        gatherMethods(superType);
+        gatherMethods(interfaces);
         samName = abstractMethodNames.size() == 1 ? abstractMethodNames.iterator().next() : null;
         generateFields();
         generateConstructors();
         generateMethods();
         // }
         cw.visitEnd();
+    }
+
+    private static String getGeneratedClassName(final Class<?> superType, final List<Class<?>> interfaces) {
+        // The class we use to primarily name our adapter is either the superclass, or if it is Object (meaning we're
+        // just implementing interfaces), then the first implemented interface.
+        final Class<?> namingType = superType == Object.class ? interfaces.get(0) : superType;
+        final Package pkg = namingType.getPackage();
+        final String namingTypeName = Type.getInternalName(namingType);
+        final StringBuilder buf = new StringBuilder();
+        if (namingTypeName.startsWith(JAVA_PACKAGE_PREFIX) || pkg == null || pkg.isSealed()) {
+            // Can't define new classes in java.* packages
+            buf.append(ADAPTER_PACKAGE_PREFIX).append(namingTypeName);
+        } else {
+            buf.append(namingTypeName).append(ADAPTER_CLASS_NAME_SUFFIX);
+        }
+        final Iterator<Class<?>> it = interfaces.iterator();
+        if(superType == Object.class && it.hasNext()) {
+            it.next(); // Skip first interface, it was used to primarily name the adapter
+        }
+        // Append interface names to the adapter name
+        while(it.hasNext()) {
+            buf.append("$$").append(it.next().getSimpleName());
+        }
+        return buf.toString().substring(0, Math.min(MAX_GENERATED_TYPE_NAME_LENGTH, buf.length()));
+    }
+
+    /**
+     * Given a list of class objects, return an array with their binary names. Used to generate the array of interface
+     * names to implement.
+     * @param classes the classes
+     * @return an array of names
+     */
+    private static String[] getInternalTypeNames(final List<Class<?>> classes) {
+        final int interfaceCount = classes.size();
+        final String[] interfaceNames = new String[interfaceCount];
+        for(int i = 0; i < interfaceCount; ++i) {
+            interfaceNames[i] = Type.getInternalName(classes.get(i));
+        }
+        return interfaceNames;
     }
 
     /**
@@ -297,27 +334,52 @@ public class JavaAdapterFactory {
     }
 
     /**
-     * Returns an adapter class for the specified original class. The adapter class extends/implements the original
-     * class/interface.
-     * @param originalClass the original class/interface to extend/implement.
+     * Returns an adapter class for the specified original types. The adapter class extends/implements the original
+     * class/interfaces.
+     * @param types the original types. The caller must pass at least one Java type representing either a public
+     * interface or a non-final public class with at least one public or protected constructor. If more than one type is
+     * specified, at most one can be a class and the rest have to be interfaces. The class can be in any position in the
+     * array. Invoking the method twice with exactly the same types in the same order will return the same adapter
+     * class, any reordering of types or even addition or removal of redundant types (i.e. interfaces that other types
+     * in the list already implement/extend, or {@code java.lang.Object} in a list of types consisting purely of
+     * interfaces) will result in a different adapter class, even though those adapter classes are functionally
+     * identical; we deliberately don't want to incur the additional processing cost of canonicalizing type lists.
      * @return an adapter class. See this class' documentation for details on the generated adapter class.
      * @throws ECMAException with a TypeError if the adapter class can not be generated because the original class is
      * final, non-public, or has no public or protected constructors.
      */
-    public static StaticClass getAdapterClassFor(final StaticClass originalClass) {
-        return getAdapterClassFor(originalClass.getRepresentedClass());
-    }
+    public static StaticClass getAdapterClassFor(final Class<?>[] types) {
+        assert types != null && types.length > 0;
+        final AdapterInfo adapterInfo = getAdapterInfo(types);
 
-    static StaticClass getAdapterClassFor(final Class<?> originalClass) {
-        final AdapterInfo adapterInfo = ADAPTER_INFOS.get(originalClass);
         final StaticClass clazz = adapterInfo.adapterClass;
         if (clazz != null) {
             return clazz;
         }
-        assert adapterInfo.adaptationOutcome != AdaptationOutcome.SUCCESS;
-        typeError(Context.getGlobal(), "extend." + adapterInfo.adaptationOutcome, originalClass.getName());
+        adapterInfo.adaptationOutcome.typeError();
 
         throw new AssertionError();
+    }
+
+    private static AdapterInfo getAdapterInfo(final Class<?>[] types) {
+        final ClassAndLoader definingClassAndLoader = getDefiningClassAndLoader(types);
+
+        final Map<List<Class<?>>, AdapterInfo> adapterInfoMap = ADAPTER_INFO_MAPS.get(definingClassAndLoader.clazz);
+        final List<Class<?>> typeList = types.length == 1 ? getSingletonClassList(types[0]) : Arrays.asList(types.clone());
+        AdapterInfo adapterInfo;
+        synchronized(adapterInfoMap) {
+            adapterInfo = adapterInfoMap.get(typeList);
+            if(adapterInfo == null) {
+                adapterInfo = createAdapterInfo(types, definingClassAndLoader);
+                adapterInfoMap.put(typeList, adapterInfo);
+            }
+        }
+        return adapterInfo;
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static List<Class<?>> getSingletonClassList(final Class<?> clazz) {
+        return (List)Collections.singletonList(clazz);
     }
 
     /**
@@ -330,7 +392,7 @@ public class JavaAdapterFactory {
      * @return true iff an instance of the specified class/interface can be generated from a ScriptFunction.
      */
     static boolean isAutoConvertibleFromFunction(final Class<?> clazz) {
-        return ADAPTER_INFOS.get(clazz).autoConvertibleFromFunction;
+        return getAdapterInfo(new Class<?>[] { clazz }).autoConvertibleFromFunction;
     }
 
     /**
@@ -346,7 +408,7 @@ public class JavaAdapterFactory {
      * @throws Exception if anything goes wrong
      */
     public static MethodHandle getConstructor(final Class<?> sourceType, final Class<?> targetType) throws Exception {
-        final StaticClass adapterClass = getAdapterClassFor(targetType);
+        final StaticClass adapterClass = getAdapterClassFor(new Class<?>[] { targetType });
         return MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(NashornCallSiteDescriptor.get(
                 "dyn:new", MethodType.methodType(targetType, StaticClass.class, sourceType), 0), false,
                 adapterClass, null)).getInvocation(), adapterClass);
@@ -358,7 +420,7 @@ public class JavaAdapterFactory {
      * @return the generated adapter class
      */
     private Class<?> generateClass() {
-        final String binaryName = generatedTypeName.replace('/', '.');
+        final String binaryName = generatedClassName.replace('/', '.');
         try {
             return Class.forName(binaryName, true, createClassLoader(commonLoader, binaryName, cw.toByteArray(),
                     globalSetterClassName.replace('/', '.')));
@@ -467,7 +529,7 @@ public class JavaAdapterFactory {
 
     private void generateConstructors() throws AdaptationException {
         boolean gotCtor = false;
-        for (final Constructor<?> ctor: superType.getDeclaredConstructors()) {
+        for (final Constructor<?> ctor: superClass.getDeclaredConstructors()) {
             final int modifier = ctor.getModifiers();
             if((modifier & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0) {
                 generateConstructor(ctor);
@@ -475,7 +537,7 @@ public class JavaAdapterFactory {
             }
         }
         if(!gotCtor) {
-            throw new AdaptationException(AdaptationOutcome.ERROR_NO_ACCESSIBLE_CONSTRUCTOR);
+            throw new AdaptationException(AdaptationOutcome.ERROR_NO_ACCESSIBLE_CONSTRUCTOR, superClass.getCanonicalName());
         }
     }
 
@@ -548,7 +610,7 @@ public class JavaAdapterFactory {
             mv.load(offset, argType);
             offset += argType.getSize();
         }
-        mv.invokespecial(superTypeName, INIT, originalCtorType.getDescriptor());
+        mv.invokespecial(superClassName, INIT, originalCtorType.getDescriptor());
 
         // Get a descriptor to the appropriate "JavaAdapterFactory.getHandle" method.
         final String getHandleDescriptor = fromFunction ? GET_HANDLE_FUNCTION_DESCRIPTOR : GET_HANDLE_OBJECT_DESCRIPTOR;
@@ -570,7 +632,7 @@ public class JavaAdapterFactory {
                 mv.iconst(mi.method.isVarArgs() ? 1 : 0);
                 mv.invokestatic(THIS_CLASS_TYPE_NAME, "getHandle", getHandleDescriptor);
             }
-            mv.putfield(generatedTypeName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
+            mv.putfield(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
 
         // Assign "this.global = Context.getGlobal()"
@@ -579,7 +641,7 @@ public class JavaAdapterFactory {
         mv.dup();
         mv.invokevirtual(OBJECT_TYPE_NAME, "getClass", GET_CLASS_METHOD_DESCRIPTOR); // check against null Context
         mv.pop();
-        mv.putfield(generatedTypeName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+        mv.putfield(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
 
         // Wrap up
         mv.visitInsn(RETURN);
@@ -747,7 +809,7 @@ public class JavaAdapterFactory {
 
         // Get the method handle
         mv.visitVarInsn(ALOAD, 0);
-        mv.getfield(generatedTypeName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
+        mv.getfield(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         mv.visitInsn(DUP); // It'll remain on the stack all the way until the invocation
         // Check if the method handle is null
         mv.visitJumpInsn(IFNONNULL, methodHandleNotNull);
@@ -765,7 +827,7 @@ public class JavaAdapterFactory {
                 mv.load(nextParam, t);
                 nextParam += t.getSize();
             }
-            mv.invokespecial(superTypeName, name, methodDesc);
+            mv.invokespecial(superClassName, name, methodDesc);
             mv.areturn(returnType);
         }
 
@@ -872,7 +934,7 @@ public class JavaAdapterFactory {
 
     private void loadGlobalOnStack(final InstructionAdapter mv) {
         mv.visitVarInsn(ALOAD, 0);
-        mv.getfield(generatedTypeName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+        mv.getfield(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
     }
 
     private static boolean isThrowableDeclared(final Class<?>[] exceptions) {
@@ -909,7 +971,7 @@ public class JavaAdapterFactory {
                         if (Modifier.isAbstract(m)) {
                             abstractMethodNames.add(mi.getName());
                         }
-                        mi.setIsCanonical (usedFieldNames);
+                        mi.setIsCanonical(usedFieldNames);
                     }
                 }
             }
@@ -920,13 +982,19 @@ public class JavaAdapterFactory {
         // superclass. For interfaces, we used Class.getMethods(), as we're only interested in public ones there, and
         // getMethods() does provide those declared in a superinterface.
         if (!type.isInterface()) {
-            final Class<?> superClass = type.getSuperclass();
-            if (superClass != null) {
-                gatherMethods(superClass);
+            final Class<?> superType = type.getSuperclass();
+            if (superType != null) {
+                gatherMethods(superType);
             }
             for (final Class<?> itf: type.getInterfaces()) {
                 gatherMethods(itf);
             }
+        }
+    }
+
+    private void gatherMethods(final List<Class<?>> classes) {
+        for(final Class<?> c: classes) {
+            gatherMethods(c);
         }
     }
 
@@ -965,18 +1033,43 @@ public class JavaAdapterFactory {
     private static class AdapterInfo {
         final StaticClass adapterClass;
         final boolean autoConvertibleFromFunction;
-        final AdaptationOutcome adaptationOutcome;
+        final AnnotatedAdaptationOutcome adaptationOutcome;
 
         AdapterInfo(final StaticClass adapterClass, final boolean autoConvertibleFromFunction) {
             this.adapterClass = adapterClass;
             this.autoConvertibleFromFunction = autoConvertibleFromFunction;
-            this.adaptationOutcome = AdaptationOutcome.SUCCESS;
+            this.adaptationOutcome = AnnotatedAdaptationOutcome.SUCCESS;
         }
 
-        AdapterInfo(final AdaptationOutcome outcome) {
+        AdapterInfo(final AdaptationOutcome outcome, final String classList) {
+            this(new AnnotatedAdaptationOutcome(outcome, classList));
+        }
+
+        AdapterInfo(final AnnotatedAdaptationOutcome adaptationOutcome) {
             this.adapterClass = null;
             this.autoConvertibleFromFunction = false;
-            this.adaptationOutcome = outcome;
+            this.adaptationOutcome = adaptationOutcome;
+        }
+    }
+
+    /**
+     * An adaptation outcome accompanied with a name of a class (or a list of multiple class names) that are the reason
+     * an adapter could not be generated.
+     */
+    private static class AnnotatedAdaptationOutcome {
+        static final AnnotatedAdaptationOutcome SUCCESS = new AnnotatedAdaptationOutcome(AdaptationOutcome.SUCCESS, "");
+
+        private final AdaptationOutcome adaptationOutcome;
+        private final String classList;
+
+        AnnotatedAdaptationOutcome(final AdaptationOutcome adaptationOutcome, final String classList) {
+            this.adaptationOutcome = adaptationOutcome;
+            this.classList = classList;
+        }
+
+        void typeError() {
+            assert adaptationOutcome != AdaptationOutcome.SUCCESS;
+            ECMAErrors.typeError(Context.getGlobal(), "extend." + adaptationOutcome, classList);
         }
     }
 
@@ -985,19 +1078,32 @@ public class JavaAdapterFactory {
      * @param type the class for which the adapter is created
      * @return the adapter info for the class.
      */
-    private static AdapterInfo createAdapterInfo(final Class<?> type) {
-        final int mod = type.getModifiers();
-        if (Modifier.isFinal(mod)) {
-            return new AdapterInfo(AdaptationOutcome.ERROR_FINAL_CLASS);
+    private static AdapterInfo createAdapterInfo(final Class<?>[] types, final ClassAndLoader definingClassAndLoader) {
+        Class<?> superClass = null;
+        final List<Class<?>> interfaces = new ArrayList<>(types.length);
+        for(final Class<?> t: types) {
+            final int mod = t.getModifiers();
+            if(!t.isInterface()) {
+                if(superClass != null) {
+                    return new AdapterInfo(AdaptationOutcome.ERROR_MULTIPLE_SUPERCLASSES, t.getCanonicalName() + " and " + superClass.getCanonicalName());
+                }
+                if (Modifier.isFinal(mod)) {
+                    return new AdapterInfo(AdaptationOutcome.ERROR_FINAL_CLASS, t.getCanonicalName());
+                }
+                superClass = t;
+            } else {
+                interfaces.add(t);
+            }
+            if(!Modifier.isPublic(mod)) {
+                return new AdapterInfo(AdaptationOutcome.ERROR_NON_PUBLIC_CLASS, t.getCanonicalName());
+            }
         }
-        if (!Modifier.isPublic(mod)) {
-            return new AdapterInfo(AdaptationOutcome.ERROR_NON_PUBLIC_CLASS);
-        }
+        final Class<?> effectiveSuperClass = superClass == null ? Object.class : superClass;
         return AccessController.doPrivileged(new PrivilegedAction<AdapterInfo>() {
             @Override
             public AdapterInfo run() {
                 try {
-                    final JavaAdapterFactory factory = new JavaAdapterFactory(type);
+                    final JavaAdapterFactory factory = new JavaAdapterFactory(effectiveSuperClass, interfaces, definingClassAndLoader);
                     return new AdapterInfo(StaticClass.forClass(factory.generateClass()),
                             factory.isAutoConvertibleFromFunction());
                 } catch (final AdaptationException e) {
@@ -1009,9 +1115,9 @@ public class JavaAdapterFactory {
 
     @SuppressWarnings("serial")
     private static class AdaptationException extends Exception {
-        private final AdaptationOutcome outcome;
-        AdaptationException(final AdaptationOutcome outcome) {
-            this.outcome = outcome;
+        private final AnnotatedAdaptationOutcome outcome;
+        AdaptationException(final AdaptationOutcome outcome, final String classList) {
+            this.outcome = new AnnotatedAdaptationOutcome(outcome, classList);
         }
     }
 
@@ -1040,24 +1146,25 @@ public class JavaAdapterFactory {
     }
 
     /**
-     * Finds a class loader that sees both the specified class and Nashorn classes.
-     * @param clazz the class that needs to be visible from the found class loader.
+     * Choose between the passed class loader and the class loader that defines the ScriptObject class, based on which
+     * of the two can see the classes in both.
+     * @param classAndLoader the loader and a representative class from it that will be used to add the generated
+     * adapter to its ADAPTER_INFO_MAPS.
      * @return the class loader that sees both the specified class and Nashorn classes.
      * @throws IllegalStateException if no such class loader is found.
      */
-    private static ClassLoader findCommonLoader(final Class<?> clazz) {
-        final ClassLoader clazzLoader = clazz.getClassLoader();
-        if (canSeeClass(clazzLoader, ScriptObject.class)) {
-            return clazzLoader;
+    private static ClassLoader findCommonLoader(final ClassAndLoader classAndLoader) throws AdaptationException {
+        final ClassLoader loader = classAndLoader.getLoader();
+        if (canSeeClass(loader, ScriptObject.class)) {
+            return loader;
         }
 
         final ClassLoader nashornLoader = ScriptObject.class.getClassLoader();
-        if(canSeeClass(nashornLoader, clazz)) {
+        if(canSeeClass(nashornLoader, classAndLoader.clazz)) {
             return nashornLoader;
         }
 
-        throw new IllegalStateException("Can't find a common class loader for ScriptObject and " +
-                    clazz.getName());
+        throw new AdaptationException(AdaptationOutcome.ERROR_NO_COMMON_LOADER, classAndLoader.clazz.getCanonicalName());
     }
 
     private static boolean canSeeClass(final ClassLoader cl, final Class<?> clazz) {
@@ -1065,6 +1172,143 @@ public class JavaAdapterFactory {
             return Class.forName(clazz.getName(), false, cl) == clazz;
         } catch (final ClassNotFoundException e) {
             return false;
+        }
+    }
+
+    /**
+     * Given a list of types that define the superclass/interfaces for an adapter class, returns a single type from the
+     * list that will be used to attach the adapter to its ClassValue. The first type in the array that is defined in a
+     * class loader that can also see all other types is returned. If there is no such loader, an exception is thrown.
+     * @param types the input types
+     * @return the first type from the array that is defined in a class loader that can also see all other types.
+     */
+    private static ClassAndLoader getDefiningClassAndLoader(final Class<?>[] types) {
+        // Short circuit the cheap case
+        if(types.length == 1) {
+            return new ClassAndLoader(types[0], false);
+        }
+
+        return AccessController.doPrivileged(new PrivilegedAction<ClassAndLoader>() {
+            @Override
+            public ClassAndLoader run() {
+                return getDefiningClassAndLoaderPrivileged(types);
+            }
+        });
+    }
+
+    private static ClassAndLoader getDefiningClassAndLoaderPrivileged(final Class<?>[] types) {
+        final Collection<ClassAndLoader> maximumVisibilityLoaders = getMaximumVisibilityLoaders(types);
+
+        final Iterator<ClassAndLoader> it = maximumVisibilityLoaders.iterator();
+        if(maximumVisibilityLoaders.size() == 1) {
+            // Fortunate case - single maximally specific class loader; return its representative class.
+            return it.next();
+        }
+
+        // Ambiguity; throw an error.
+        assert maximumVisibilityLoaders.size() > 1; // basically, can't be zero
+        final StringBuilder b = new StringBuilder();
+        b.append(it.next().clazz.getCanonicalName());
+        while(it.hasNext()) {
+            b.append(", ").append(it.next().clazz.getCanonicalName());
+        }
+        typeError(Context.getGlobal(), "extend.ambiguous.defining.class", b.toString());
+        throw new AssertionError(); // never reached
+    }
+
+    /**
+     * Given an array of types, return a subset of their class loaders that are maximal according to the
+     * "can see other loaders' classes" relation, which is presumed to be a partial ordering.
+     * @param types types
+     * @return a collection of maximum visibility class loaders. It is guaranteed to have at least one element.
+     */
+    private static Collection<ClassAndLoader> getMaximumVisibilityLoaders(final Class<?>[] types) {
+        final List<ClassAndLoader> maximumVisibilityLoaders = new LinkedList<>();
+        outer:  for(final ClassAndLoader maxCandidate: getClassLoadersForTypes(types)) {
+            final Iterator<ClassAndLoader> it = maximumVisibilityLoaders.iterator();
+            while(it.hasNext()) {
+                final ClassAndLoader existingMax = it.next();
+                final boolean candidateSeesExisting = canSeeClass(maxCandidate.getRetrievedLoader(), existingMax.clazz);
+                final boolean exitingSeesCandidate = canSeeClass(existingMax.getRetrievedLoader(), maxCandidate.clazz);
+                if(candidateSeesExisting) {
+                    if(!exitingSeesCandidate) {
+                        // The candidate sees the the existing maximum, so drop the existing one as it's no longer maximal.
+                        it.remove();
+                    }
+                    // NOTE: there's also the anomalous case where both loaders see each other. Not sure what to do
+                    // about that one, as two distinct class loaders both seeing each other's classes is weird and
+                    // violates the assumption that the relation "sees others' classes" is a partial ordering. We'll
+                    // just not do anything, and treat them as incomparable; hopefully some later class loader that
+                    // comes along can eliminate both of them, if it can not, we'll end up with ambiguity anyway and
+                    // throw an error at the end.
+                } else if(exitingSeesCandidate) {
+                    // Existing sees the candidate, so drop the candidate.
+                    continue outer;
+                }
+            }
+            // If we get here, no existing maximum visibility loader could see the candidate, so the candidate is a new
+            // maximum.
+            maximumVisibilityLoaders.add(maxCandidate);
+        }
+        return maximumVisibilityLoaders;
+    }
+
+    private static Collection<ClassAndLoader> getClassLoadersForTypes(final Class<?>[] types) {
+        final Map<ClassAndLoader, ClassAndLoader> classesAndLoaders = new LinkedHashMap<>();
+        for(final Class<?> c: types) {
+            final ClassAndLoader cl = new ClassAndLoader(c, true);
+            if(!classesAndLoaders.containsKey(cl)) {
+                classesAndLoaders.put(cl, cl);
+            }
+        }
+        return classesAndLoaders.keySet();
+    }
+
+    /**
+     * A tuple of a class loader and a single class representative of the classes that can be loaded through it. Its
+     * equals/hashCode is defined in terms of the identity of the class loader.
+     */
+    private static final class ClassAndLoader {
+        private final Class<?> clazz;
+        // Don't access this directly; most of the time, use getRetrievedLoader(), or if you know what you're doing,
+        // getLoader().
+        private ClassLoader loader;
+        // We have mild affinity against eagerly retrieving the loader, as we need to do it in a privileged block. For
+        // the most basic case of looking up an already-generated adapter info for a single type, we avoid it.
+        private boolean loaderRetrieved;
+
+        ClassAndLoader(final Class<?> clazz, final boolean retrieveLoader) {
+            this.clazz = clazz;
+            if(retrieveLoader) {
+                retrieveLoader();
+            }
+        }
+
+        ClassLoader getLoader() {
+            if(!loaderRetrieved) {
+                retrieveLoader();
+            }
+            return getRetrievedLoader();
+        }
+
+        ClassLoader getRetrievedLoader() {
+            assert loaderRetrieved;
+            return loader;
+        }
+
+        private void retrieveLoader() {
+            loader = clazz.getClassLoader();
+            loaderRetrieved = true;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            return obj instanceof ClassAndLoader && ((ClassAndLoader)obj).getRetrievedLoader() == getRetrievedLoader();
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(getRetrievedLoader());
         }
     }
 }
