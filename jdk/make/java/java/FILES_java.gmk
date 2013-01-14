@@ -227,6 +227,7 @@ JAVA_JAVA_java = \
             sun/util/locale/provider/LocaleResources.java \
             sun/util/locale/provider/NumberFormatProviderImpl.java \
             sun/util/locale/provider/RuleBasedBreakIterator.java \
+            sun/util/locale/provider/ResourceBundleBasedAdapter.java \
             sun/util/locale/provider/SPILocaleProviderAdapter.java \
             sun/util/locale/provider/TimeZoneNameProviderImpl.java \
             sun/util/locale/provider/TimeZoneNameUtility.java \

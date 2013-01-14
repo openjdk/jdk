@@ -25,14 +25,10 @@
 
 package sun.util.locale.provider;
 
-import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.spi.TimeZoneNameProvider;
-import sun.util.calendar.ZoneInfo;
-import sun.util.resources.TimeZoneNamesBundle;
 
 /**
  * Concrete implementation of the
@@ -123,9 +119,7 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
         if (id == null || locale == null) {
             throw new NullPointerException();
         }
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
-        TimeZoneNamesBundle rb = adapter.getLocaleResources(locale).getTimeZoneNames();
-        return rb.containsKey(id) ? rb.getStringArray(id, n) : null;
+        return LocaleProviderAdapter.forType(type).getLocaleResources(locale).getTimeZoneNames(id, n);
     }
 
     /**
@@ -136,30 +130,6 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
      * @return an array of time zone names arrays
      */
     String[][] getZoneStrings(Locale locale) {
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
-        TimeZoneNamesBundle rb = adapter.getLocaleResources(locale).getTimeZoneNames();
-        Set<String> keyset = rb.keySet();
-        // Use a LinkedHashSet to preseve the order
-        Set<String[]> value = new LinkedHashSet<>();
-        for (String key : keyset) {
-            value.add(rb.getStringArray(key));
-        }
-
-        // Add aliases data for CLDR
-        if (type == LocaleProviderAdapter.Type.CLDR) {
-            // Note: TimeZoneNamesBundle creates a String[] on each getStringArray call.
-            Map<String, String> aliases = ZoneInfo.getAliasTable();
-            for (String alias : aliases.keySet()) {
-                if (!keyset.contains(alias)) {
-                    String tzid = aliases.get(alias);
-                    if (keyset.contains(tzid)) {
-                        String[] val = rb.getStringArray(tzid);
-                        val[0] = alias;
-                        value.add(val);
-                    }
-                }
-            }
-        }
-        return value.toArray(new String[0][]);
+        return LocaleProviderAdapter.forType(type).getLocaleResources(locale).getZoneStrings();
     }
 }
