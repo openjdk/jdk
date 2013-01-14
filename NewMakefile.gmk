@@ -50,8 +50,6 @@ else
 endif
 root_dir:=$(dir $(makefile_path))
 
-include $(root_dir)/common/makefiles/Jprt.gmk
-
 # ... and then we can include our helper functions
 include $(root_dir)/common/makefiles/MakeHelpers.gmk
 
@@ -79,6 +77,10 @@ $(all_phony_targets):
 
     endif
 endif
+
+# Include this after a potential spec file has been included so that the bundles target
+# has access to the spec variables.
+include $(root_dir)/common/makefiles/Jprt.gmk
 
 # Here are "global" targets, i.e. targets that can be executed without specifying a single configuration.
 # If you addd more global targets, please update the variable global_targets in MakeHelpers.
