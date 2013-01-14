@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,15 @@
  * questions.
  */
 
-package sun.util.resources.zh;
+package sun.util.locale.provider;
 
-import java.util.Locale;
-import java.util.ResourceBundle;
-import sun.util.locale.provider.LocaleProviderAdapter;
-import sun.util.locale.provider.ResourceBundleBasedAdapter;
-import sun.util.resources.OpenListResourceBundle;
+import sun.util.resources.LocaleData;
 
-public final class CurrencyNames_zh_SG extends OpenListResourceBundle {
-
-    // reparent to zh_CN for simplified Chinese names
-    public CurrencyNames_zh_SG() {
-        ResourceBundle bundle = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getCurrencyNames(Locale.CHINA);
-        setParent(bundle);
-    }
-
-    @Override
-    protected Object[][] getContents() {
-        return new Object[][] {
-            {"CNY", "CNY"},
-            {"SGD", "S$"},
-        };
-    }
+/**
+ * Accessor for LocaleData
+ *
+ * @author Naoto Sato
+ */
+public interface ResourceBundleBasedAdapter {
+    public LocaleData getLocaleData();
 }
