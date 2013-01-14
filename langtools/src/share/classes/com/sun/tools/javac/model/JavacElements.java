@@ -261,13 +261,13 @@ public class JavacElements implements Elements {
     }
 
     // Needed to unpack the runtime view of containing annotations
-    private static final Class<? extends Annotation> CONTAINED_BY_CLASS = initContainedBy();
+    private static final Class<? extends Annotation> REPEATABLE_CLASS = initRepeatable();
     private static final Method VALUE_ELEMENT_METHOD = initValueElementMethod();
 
-    private static Class<? extends Annotation> initContainedBy() {
+    private static Class<? extends Annotation> initRepeatable() {
         try {
-            @SuppressWarnings("unchecked") // java.lang.annotation.ContainedBy extends Annotation by being an annotation type
-            Class<? extends Annotation> c = (Class)Class.forName("java.lang.annotation.ContainedBy");
+            @SuppressWarnings("unchecked") // java.lang.annotation.Repeatable extends Annotation by being an annotation type
+            Class<? extends Annotation> c = (Class)Class.forName("java.lang.annotation.Repeatable");
             return c;
         } catch (ClassNotFoundException e) {
             return null;
@@ -276,12 +276,12 @@ public class JavacElements implements Elements {
         }
     }
     private static Method initValueElementMethod() {
-        if (CONTAINED_BY_CLASS == null)
+        if (REPEATABLE_CLASS == null)
             return null;
 
         Method m = null;
         try {
-            m = CONTAINED_BY_CLASS.getMethod("value");
+            m = REPEATABLE_CLASS.getMethod("value");
             if (m != null)
                 m.setAccessible(true);
             return m;
@@ -292,19 +292,19 @@ public class JavacElements implements Elements {
 
     // Helper to getAnnotations
     private static Class<? extends Annotation> getContainer(Class<? extends Annotation> annoType) {
-        // Since we can not refer to java.lang.annotation.ContainedBy until we are
-        // bootstrapping with java 8 we need to get the ContainedBy annotation using
+        // Since we can not refer to java.lang.annotation.Repeatable until we are
+        // bootstrapping with java 8 we need to get the Repeatable annotation using
         // reflective invocations instead of just using its type and element method.
-        if (CONTAINED_BY_CLASS != null &&
+        if (REPEATABLE_CLASS != null &&
             VALUE_ELEMENT_METHOD != null) {
-            // Get the ContainedBy instance on the annotations declaration
-            Annotation containedBy = (Annotation)annoType.getAnnotation(CONTAINED_BY_CLASS);
-            if (containedBy != null) {
+            // Get the Repeatable instance on the annotations declaration
+            Annotation repeatable = (Annotation)annoType.getAnnotation(REPEATABLE_CLASS);
+            if (repeatable != null) {
                 try {
                     // Get the value element, it should be a class
                     // indicating the containing annotation type
                     @SuppressWarnings("unchecked")
-                    Class<? extends Annotation> containerType = (Class)VALUE_ELEMENT_METHOD.invoke(containedBy);
+                    Class<? extends Annotation> containerType = (Class)VALUE_ELEMENT_METHOD.invoke(repeatable);
                     if (containerType == null)
                         return null;
 

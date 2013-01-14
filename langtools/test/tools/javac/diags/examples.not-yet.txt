@@ -5,9 +5,9 @@ compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
 compiler.err.dc.unterminated.string                     # cannot happen
 compiler.err.illegal.char.for.encoding
-compiler.err.invalid.containedby.annotation             # should not happen
-compiler.err.invalid.containedby.annotation.invalid.value # "can't" happen
-compiler.err.invalid.containedby.annotation.multiple.values # can't happen
+compiler.err.invalid.repeatable.annotation              # should not happen
+compiler.err.invalid.repeatable.annotation.invalid.value # "can't" happen
+compiler.err.invalid.repeatable.annotation.multiple.values # can't happen
 compiler.err.io.exception                               # (javah.JavahTask?)
 compiler.err.limit.code                                 # Code
 compiler.err.limit.code.too.large.for.try.stmt          # Gen

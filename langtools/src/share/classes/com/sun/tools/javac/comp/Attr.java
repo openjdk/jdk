@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3844,24 +3844,14 @@ public class Attr extends JCTree.Visitor {
                 log.error(tree.typarams.head.pos(),
                           "intf.annotation.cant.have.type.params");
 
-            // If this annotation has a @ContainedBy, validate
-            Attribute.Compound containedBy = c.attribute(syms.containedByType.tsym);
-            if (containedBy != null) {
-                // get diagnositc position for error reporting
-                DiagnosticPosition cbPos = getDiagnosticPosition(tree, containedBy.type);
+            // If this annotation has a @Repeatable, validate
+            Attribute.Compound repeatable = c.attribute(syms.repeatableType.tsym);
+            if (repeatable != null) {
+                // get diagnostic position for error reporting
+                DiagnosticPosition cbPos = getDiagnosticPosition(tree, repeatable.type);
                 Assert.checkNonNull(cbPos);
 
-                chk.validateContainedBy(c, containedBy, cbPos);
-            }
-
-            // If this annotation has a @ContainerFor, validate
-            Attribute.Compound containerFor = c.attribute(syms.containerForType.tsym);
-            if (containerFor != null) {
-                // get diagnositc position for error reporting
-                DiagnosticPosition cfPos = getDiagnosticPosition(tree, containerFor.type);
-                Assert.checkNonNull(cfPos);
-
-                chk.validateContainerFor(c, containerFor, cfPos);
+                chk.validateRepeatable(c, repeatable, cbPos);
             }
         } else {
             // Check that all extended classes and interfaces

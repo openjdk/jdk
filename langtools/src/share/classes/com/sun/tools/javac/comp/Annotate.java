@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,7 +392,7 @@ public class Annotate {
                     List.of(p)));
 
             if (!chk.annotationApplicable(annoTree, on))
-                log.error(annoTree.pos(), "invalid.containedby.annotation.incompatible.target", targetContainerType, origAnnoType);
+                log.error(annoTree.pos(), "invalid.repeatable.annotation.incompatible.target", targetContainerType, origAnnoType);
 
             if (!chk.validateAnnotationDeferErrors(annoTree))
                 log.error(annoTree.pos(), "duplicate.annotation.invalid.repeated", origAnnoType);
@@ -414,11 +414,11 @@ public class Annotate {
         Type origAnnoType = currentAnno.type;
         TypeSymbol origAnnoDecl = origAnnoType.tsym;
 
-        // Fetch the ContainedBy annotation from the current
+        // Fetch the Repeatable annotation from the current
         // annotation's declaration, or null if it has none
-        Attribute.Compound ca = origAnnoDecl.attribute(syms.containedByType.tsym);
-        if (ca == null) { // has no ContainedBy annotation
-            log.error(pos, "duplicate.annotation.missing.container", origAnnoType, syms.containedByType);
+        Attribute.Compound ca = origAnnoDecl.attribute(syms.repeatableType.tsym);
+        if (ca == null) { // has no Repeatable annotation
+            log.error(pos, "duplicate.annotation.missing.container", origAnnoType, syms.repeatableType);
             return null;
         }
 
@@ -440,23 +440,23 @@ public class Annotate {
             DiagnosticPosition pos,
             TypeSymbol annoDecl)
     {
-        // The next three checks check that the ContainedBy annotation
+        // The next three checks check that the Repeatable annotation
         // on the declaration of the annotation type that is repeating is
         // valid.
 
-        // ContainedBy must have at least one element
+        // Repeatable must have at least one element
         if (ca.values.isEmpty()) {
-            log.error(pos, "invalid.containedby.annotation", annoDecl);
+            log.error(pos, "invalid.repeatable.annotation", annoDecl);
             return null;
         }
         Pair<MethodSymbol,Attribute> p = ca.values.head;
         Name name = p.fst.name;
         if (name != names.value) { // should contain only one element, named "value"
-            log.error(pos, "invalid.containedby.annotation", annoDecl);
+            log.error(pos, "invalid.repeatable.annotation", annoDecl);
             return null;
         }
         if (!(p.snd instanceof Attribute.Class)) { // check that the value of "value" is an Attribute.Class
-            log.error(pos, "invalid.containedby.annotation", annoDecl);
+            log.error(pos, "invalid.repeatable.annotation", annoDecl);
             return null;
         }
 
@@ -491,13 +491,13 @@ public class Annotate {
         }
         if (error) {
             log.error(pos,
-                      "invalid.containedby.annotation.multiple.values",
+                      "invalid.repeatable.annotation.multiple.values",
                       targetContainerType,
                       nr_value_elems);
             return null;
         } else if (nr_value_elems == 0) {
             log.error(pos,
-                      "invalid.containedby.annotation.no.value",
+                      "invalid.repeatable.annotation.no.value",
                       targetContainerType);
             return null;
         }
@@ -506,7 +506,7 @@ public class Annotate {
         // probably "impossible" to fail this
         if (containerValueSymbol.kind != Kinds.MTH) {
             log.error(pos,
-                      "invalid.containedby.annotation.invalid.value",
+                      "invalid.repeatable.annotation.invalid.value",
                       targetContainerType);
             fatalError = true;
         }
@@ -518,7 +518,7 @@ public class Annotate {
         if (!(types.isArray(valueRetType) &&
               types.isSameType(expectedType, valueRetType))) {
             log.error(pos,
-                      "invalid.containedby.annotation.value.return",
+                      "invalid.repeatable.annotation.value.return",
                       targetContainerType,
                       valueRetType,
                       expectedType);
@@ -528,10 +528,7 @@ public class Annotate {
             fatalError = true;
         }
 
-        // Explicitly no check for/validity of @ContainerFor. That is
-        // done on declaration of the container, and at reflect time.
-
-        // The rest of the conditions for a valid containing annotation are made
+        // The conditions for a valid containing annotation are made
         // in Check.validateRepeatedAnnotaton();
 
         return fatalError ? null : containerValueSymbol;
