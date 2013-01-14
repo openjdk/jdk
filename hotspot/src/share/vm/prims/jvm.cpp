@@ -1589,6 +1589,12 @@ JVM_ENTRY(jbyteArray, JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls))
   return NULL;
 JVM_END
 
+static void bounds_check(constantPoolHandle cp, jint index, TRAPS) {
+  if (!cp->is_within_bounds(index)) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "Constant pool index out of bounds");
+  }
+}
+
 JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
 {
   JVMWrapper("JVM_GetMethodParameters");
@@ -1598,15 +1604,31 @@ JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
   Handle reflected_method (THREAD, JNIHandles::resolve_non_null(method));
   const int num_params = mh->method_parameters_length();
 
-  if(0 != num_params) {
+  if (0 != num_params) {
+    // make sure all the symbols are properly formatted
+    for (int i = 0; i < num_params; i++) {
+      MethodParametersElement* params = mh->method_parameters_start();
+      int index = params[i].name_cp_index;
+      bounds_check(mh->constants(), index, CHECK_NULL);
+
+      if (0 != index && !mh->constants()->tag_at(index).is_utf8()) {
+        THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+                    "Wrong type at constant pool index");
+      }
+
+    }
+
     objArrayOop result_oop = oopFactory::new_objArray(SystemDictionary::reflect_Parameter_klass(), num_params, CHECK_NULL);
     objArrayHandle result (THREAD, result_oop);
 
-    for(int i = 0; i < num_params; i++) {
+    for (int i = 0; i < num_params; i++) {
       MethodParametersElement* params = mh->method_parameters_start();
-      Symbol* const sym = mh->constants()->symbol_at(params[i].name_cp_index);
+      // For a 0 index, give a NULL symbol
+      Symbol* const sym = 0 != params[i].name_cp_index ?
+        mh->constants()->symbol_at(params[i].name_cp_index) : NULL;
+      int flags = build_int_from_shorts(params[i].flags_lo, params[i].flags_hi);
       oop param = Reflection::new_parameter(reflected_method, i, sym,
-                                            params[i].flags, CHECK_NULL);
+                                            flags, CHECK_NULL);
       result->obj_at_put(i, param);
     }
     return (jobjectArray)JNIHandles::make_local(env, result());
@@ -1830,13 +1852,6 @@ JVM_ENTRY(jint, JVM_ConstantPoolGetSize(JNIEnv *env, jobject obj, jobject unused
 JVM_END
 
 
-static void bounds_check(constantPoolHandle cp, jint index, TRAPS) {
-  if (!cp->is_within_bounds(index)) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "Constant pool index out of bounds");
-  }
-}
-
-
 JVM_ENTRY(jclass, JVM_ConstantPoolGetClassAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetClassAt");
@@ -1850,7 +1865,6 @@ JVM_ENTRY(jclass, JVM_ConstantPoolGetClassAt(JNIEnv *env, jobject obj, jobject u
   return (jclass) JNIHandles::make_local(k->java_mirror());
 }
 JVM_END
-
 
 JVM_ENTRY(jclass, JVM_ConstantPoolGetClassAtIfLoaded(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
