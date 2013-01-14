@@ -929,11 +929,14 @@ class CommandLineFlags {
           "Starts debugger when an implicit OS (e.g., NULL) "               \
           "exception happens")                                              \
                                                                             \
-  notproduct(bool, PrintCodeCache, false,                                   \
-          "Print the compiled_code cache when exiting")                     \
+  product(bool, PrintCodeCache, false,                                      \
+          "Print the code cache memory usage when exiting")                 \
                                                                             \
   develop(bool, PrintCodeCache2, false,                                     \
-          "Print detailed info on the compiled_code cache when exiting")    \
+          "Print detailed usage info on the code cache when exiting")       \
+                                                                            \
+  product(bool, PrintCodeCacheOnCompilation, false,                         \
+          "Print the code cache memory usage each time a method is compiled") \
                                                                             \
   diagnostic(bool, PrintStubCode, false,                                    \
           "Print generated stub code")                                      \
