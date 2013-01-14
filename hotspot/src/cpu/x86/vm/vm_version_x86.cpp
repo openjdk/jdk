@@ -734,6 +734,10 @@ void VM_Version::get_processor_features() {
   PrefetchFieldsAhead         = prefetch_fields_ahead();
 #endif
 
+  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
+     (cache_line_size > ContendedPaddingWidth))
+     ContendedPaddingWidth = cache_line_size;
+
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("Logical CPUs per core: %u",
@@ -779,6 +783,9 @@ void VM_Version::get_processor_features() {
     }
     if (PrefetchFieldsAhead > 0) {
       tty->print_cr("PrefetchFieldsAhead %d", PrefetchFieldsAhead);
+    }
+    if (ContendedPaddingWidth > 0) {
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
     }
   }
 #endif // !PRODUCT
