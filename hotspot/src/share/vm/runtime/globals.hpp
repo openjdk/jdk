@@ -969,18 +969,6 @@ class CommandLineFlags {
   notproduct(uintx, WarnOnStalledSpinLock, 0,                               \
           "Prints warnings for stalled SpinLocks")                          \
                                                                             \
-  develop(bool, InitializeJavaLangSystem, true,                             \
-          "Initialize java.lang.System - turn off for individual "          \
-          "method debugging")                                               \
-                                                                            \
-  develop(bool, InitializeJavaLangString, true,                             \
-          "Initialize java.lang.String - turn off for individual "          \
-          "method debugging")                                               \
-                                                                            \
-  develop(bool, InitializeJavaLangExceptionsErrors, true,                   \
-          "Initialize various error and exception classes - turn off for "  \
-          "individual method debugging")                                    \
-                                                                            \
   product(bool, RegisterFinalizersAtInit, true,                             \
           "Register finalizable objects at end of Object.<init> or "        \
           "after allocation")                                               \
