@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,7 @@ public abstract class Symbol implements Element {
      * This is the implementation for {@code
      * javax.lang.model.element.Element.getAnnotationMirrors()}.
      */
-    public final List<Attribute.Compound> getAnnotationMirrors() {
+    public final List<? extends AnnotationMirror> getAnnotationMirrors() {
         return getRawAttributes();
     }
 
@@ -460,6 +460,11 @@ public abstract class Symbol implements Element {
     @Deprecated
     public <A extends java.lang.annotation.Annotation> A getAnnotation(Class<A> annoType) {
         return JavacElements.getAnnotation(this, annoType);
+    }
+
+    // This method is part of the javax.lang.model API, do not use this in javac code.
+    public <A extends java.lang.annotation.Annotation> A[] getAnnotations(Class<A> annoType) {
+        return JavacElements.getAnnotations(this, annoType);
     }
 
     // TODO: getEnclosedElements should return a javac List, fix in FilteredMemberList
