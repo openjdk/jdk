@@ -26,7 +26,8 @@
 # This file is included by the root NewerMakefile and contains targets 
 # and utilities needed by JPRT.
 
-# Utilities used in this Makefile
+# Utilities used in this Makefile. Most of this makefile executes without
+# the context of a spec file from configure.
 CAT=cat
 CMP=cmp
 CP=cp
@@ -177,8 +178,13 @@ $(JPRT_ARCHIVE_BUNDLE): bundles
 bundles: all
 	@$(call TargetEnter)
 	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
-	$(CD) $(IMAGES_OUTPUTDIR)/j2sdk-image && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2sdk-image.zip .
-	$(CD) $(IMAGES_OUTPUTDIR)/j2re-image && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2re-image.zip .
+ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
+	$(CD) $(JDK_OVERLAY_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2sdk-image.zip .
+	$(CD) $(JRE_OVERLAY_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2re-image.zip .
+else
+	$(CD) $(JDK_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2sdk-image.zip .
+	$(CD) $(JRE_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2re-image.zip .
+endif
 	@$(call TargetExit)
 
 # Keep track of phony targets
