@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,12 +126,12 @@ public class Annotations {
             //
             // We need to do this in two passes because when creating
             // a container for a repeating annotation we must
-            // guarantee that the @ContainedBy on the
+            // guarantee that the @Repeatable on the
             // contained annotation is fully annotated
             //
             // The way we force this order is to do all repeating
             // annotations in a pass after all non-repeating are
-            // finished. This will work because @ContainedBy
+            // finished. This will work because @Repeatable
             // is non-repeating and therefore will be annotated in the
             // fist pass.
 
@@ -261,7 +261,7 @@ public class Annotations {
             // its contained annotation.
             ListBuffer<Attribute.Compound> manualContainer = ctx.annotated.get(validRepeated.type.tsym);
             if (manualContainer != null) {
-                log.error(ctx.pos.get(manualContainer.first()), "invalid.containedby.annotation.repeated.and.container.present",
+                log.error(ctx.pos.get(manualContainer.first()), "invalid.repeatable.annotation.repeated.and.container.present",
                         manualContainer.first().type.tsym);
             }
         }
