@@ -145,7 +145,7 @@ public class NativeJava {
      * this usage though, you can't use non-default constructors; the type must be either an interface, or must have a
      * protected or public no-arg constructor.
      * </p><p>
-     * You can also subclass non-abstract classes; for that you will need to use the {@link #extend(Object, Object)}
+     * You can also subclass non-abstract classes; for that you will need to use the {@link #extend(Object, Object...)}
      * method.
      * <h2>Accessing static members</h2>
      * Examples:
@@ -371,15 +371,29 @@ public class NativeJava {
      * must be prepared to deal with all overloads.</li>
      * <li>You can't invoke {@code super.*()} from adapters for now.</li>
      * @param self not used
-     * @param type the original type. Must be a Java type object of class {@link StaticClass} representing either a
-     * public interface or a non-final public class with at least one public or protected constructor.
-     * @return a new {@link StaticClass} that represents the adapter for the original type.
+     * @param types the original types. The caller must pass at least one Java type object of class {@link StaticClass}
+     * representing either a public interface or a non-final public class with at least one public or protected
+     * constructor. If more than one type is specified, at most one can be a class and the rest have to be interfaces.
+     * Invoking the method twice with exactly the same types in the same order will return the same adapter
+     * class, any reordering of types or even addition or removal of redundant types (i.e. interfaces that other types
+     * in the list already implement/extend, or {@code java.lang.Object} in a list of types consisting purely of
+     * interfaces) will result in a different adapter class, even though those adapter classes are functionally
+     * identical; we deliberately don't want to incur the additional processing cost of canonicalizing type lists.
+     * @return a new {@link StaticClass} that represents the adapter for the original types.
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object extend(final Object self, final Object type) {
-        if(!(type instanceof StaticClass)) {
-            typeError(Global.instance(), "extend.expects.java.type");
+    public static Object extend(final Object self, final Object... types) {
+        if(types == null || types.length == 0) {
+            typeError(Global.instance(), "extend.expects.at.least.one.argument");
         }
-        return JavaAdapterFactory.getAdapterClassFor((StaticClass)type);
+        final Class<?>[] stypes = new Class<?>[types.length];
+        try {
+            for(int i = 0; i < types.length; ++i) {
+                stypes[i] = ((StaticClass)types[i]).getRepresentedClass();
+            }
+        } catch(final ClassCastException e) {
+            typeError(Global.instance(), "extend.expects.java.types");
+        }
+        return JavaAdapterFactory.getAdapterClassFor(stypes);
     }
 }

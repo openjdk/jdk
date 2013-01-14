@@ -51,6 +51,13 @@ try {
     print(e)
 }
 
+// Can't extend two classes
+try {
+    Java.extend(java.lang.Thread,java.lang.Number)
+} catch(e) {
+    print(e)
+}
+
 // Make sure we can implement interfaces from the unnamed package
 var c = new (Java.extend(Java.type("UnnamedPackageTestCallback")))() { call: function(s) { return s + s } }
 print(c.call("abcd"))
@@ -104,3 +111,22 @@ cwa.doSomething()
 // Do the same thing with proprietary syntax and object literal
 var cwa2 = new (model("ConstructorWithArgument"))("cwa2-token") { doSomething: function() { print("cwa2-" + cwa2.token ) } }
 cwa2.doSomething()
+
+// Implement two interfaces
+var desertToppingAndFloorWax = new (Java.extend(model("DessertTopping"), model("FloorWax"))) {
+    pourOnDessert: function() { print("Glop; IM IN UR DESSERT NOW") },
+    shineUpTheFloor: function() { print("The floor sure is shining!") }
+}
+var dtfwDriver = new (model("DessertToppingFloorWaxDriver"))
+dtfwDriver.decorateDessert(desertToppingAndFloorWax)
+dtfwDriver.waxFloor(desertToppingAndFloorWax)
+
+// Extend a class and implement two interfaces. For additional measure, put the class in between the two interfaces
+var desertToppingFloorWaxAndToothpaste = new (Java.extend(model("DessertTopping"), model("Toothpaste"), model("FloorWax"))) {
+    pourOnDessert: function() { print("Yum") },
+    shineUpTheFloor: function() { print("Scrub, scrub, scrub") },
+    applyToBrushImpl: function() { print("It's a dessert topping! It's a floor wax! It's a toothpaste!") }
+}
+dtfwDriver.decorateDessert(desertToppingFloorWaxAndToothpaste)
+dtfwDriver.waxFloor(desertToppingFloorWaxAndToothpaste)
+desertToppingFloorWaxAndToothpaste.applyToBrush();
