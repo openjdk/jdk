@@ -32,7 +32,6 @@ import java.net.PasswordAuthentication;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Base64;
-import java.util.Base64.Encoder;
 import sun.net.www.HeaderParser;
 
 /**
