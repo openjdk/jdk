@@ -45,7 +45,6 @@ GENSRC_SWING_NIMBUS := $(JDK_OUTPUTDIR)/gensrc/_the.generated_nimbus
 # Generate beaninfo java files
 #
 
-BEAN_GENSRC_DIR = $(JDK_OUTPUTDIR)/gensrc/javax/swing/beaninfo
 DOCLETSRC_DIR = $(JDK_TOPDIR)/make/tools/swing-beans
 
 # javax.swing package
@@ -69,25 +68,31 @@ BEANS_SRC = $(BEANS:%=$(JDK_TOPDIR)/src/share/classes/javax/swing/%.java) \
 # Dummy variable so far, in the old build system it was false by default
 SWINGBEAN_DEBUG_FLAG = false
 # GenDocletBeanInfo is compiled in Tools.gmk and picks up from $(JDK_OUTPUTDIR)/btclasses
-$(JDK_OUTPUTDIR)/gensrc/_the.generated_beaninfo: $(BEANS_SRC) $(BEAN_GENSRC_DIR)/SwingBeanInfoBase.java $(BEAN_GENSRC_DIR)/BeanInfoUtils.java $(BUILD_TOOLS)
+$(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo: $(BEANS_SRC) $(JDK_OUTPUTDIR)/gensrc/javax/swing/SwingBeanInfoBase.java $(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java $(BUILD_TOOLS)
 	$(ECHO) Generating beaninfo
-	$(JAVA) -Djava.awt.headless=true -jar $(JAVADOC_JARS) -doclet GenDocletBeanInfo -x $(SWINGBEAN_DEBUG_FLAG) -d $(BEAN_GENSRC_DIR) -t $(DOCLETSRC_DIR)/SwingBeanInfo.template -docletpath $(JDK_OUTPUTDIR)/btclasses \
+	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing
+	$(JAVA) -Djava.awt.headless=true -jar $(JAVADOC_JARS) -doclet GenDocletBeanInfo \
+	-x $(SWINGBEAN_DEBUG_FLAG) -d $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing \
+	-t $(DOCLETSRC_DIR)/SwingBeanInfo.template -docletpath $(JDK_OUTPUTDIR)/btclasses \
 	-XDignore.symbol.file=true \
 	-classpath $(JDK_OUTPUTDIR)/btclasses $(BEANS_SRC) $(LOG_INFO)
+#       Move the JTextComponent into its proper package directory.
+	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/text
+	$(MV) $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/JTextComponentBeanInfo.java $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/text/JTextComponentBeanInfo.java 
 	$(TOUCH) $@
 
 # This file is the part of dt.jar
-# For some reason it is under $(JDK_TOPDIR)/make/tools/swing-beans/beaninfo
+# For some reason it is under $(JDK_TOPDIR)/make/tools/swing-beans/javax/swing
 # Should it be moved under $(JDK_TOPDIR)/src/share/classes/javax/swing instead?
-$(BEAN_GENSRC_DIR)/SwingBeanInfoBase.java: $(DOCLETSRC_DIR)/beaninfo/SwingBeanInfoBase.java
+$(JDK_OUTPUTDIR)/gensrc/javax/swing/SwingBeanInfoBase.java: $(DOCLETSRC_DIR)/javax/swing/SwingBeanInfoBase.java
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 
 # This file is the part of dt.jar 
-# For some reason it is under $(JDK_TOPDIR)/make/tools/swing-beans/beaninfo
+# For some reason it is under $(JDK_TOPDIR)/make/tools/swing-beans/sun/swing
 # Should it be moved under $(JDK_TOPDIR)/src/share/classes/sun/swing instead?
-$(BEAN_GENSRC_DIR)/BeanInfoUtils.java: $(DOCLETSRC_DIR)/beaninfo/BeanInfoUtils.java
+$(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java: $(DOCLETSRC_DIR)/sun/swing/BeanInfoUtils.java
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 
-GENSRC_SWING_BEANINFO = $(JDK_OUTPUTDIR)/gensrc/_the.generated_beaninfo
+GENSRC_SWING_BEANINFO = $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo
