@@ -79,7 +79,7 @@ public final class Bootstrap {
     }
 
     /**
-     * Return a dynamic invoker for a specified dynamic operation. You can use this method to create a method handle
+     * Returns a dynamic invoker for a specified dynamic operation. You can use this method to create a method handle
      * that when invoked acts completely as if it were a Nashorn-linked call site. An overview of available dynamic
      * operations can be found in the <a href="https://github.com/szegedi/dynalink/wiki/User-Guide-0.4">Dynalink User Guide</a>,
      * but we'll show few examples here:
@@ -170,12 +170,24 @@ public final class Bootstrap {
      * delegating to the function will be returned.</li>
      * </ul>
      * @param opDesc Dynalink dynamic operation descriptor.
-     * @param rtype return type of the operation
-     * @param ptypes parameter types of the operation
+     * @param rtype the return type for the operation
+     * @param ptypes the parameter types for the operation
      * @return MethodHandle for invoking the operation.
      */
     public static MethodHandle createDynamicInvoker(final String opDesc, final Class<?> rtype, final Class<?>... ptypes) {
-        return bootstrap(null, opDesc, MethodType.methodType(rtype, ptypes), 0).dynamicInvoker();
+        return createDynamicInvoker(opDesc, MethodType.methodType(rtype, ptypes));
+    }
+
+    /**
+     * Returns a dynamic invoker for a specified dynamic operation. Similar to
+     * {@link #createDynamicInvoker(String, Class, Class...)} but with return and parameter types composed into a
+     * method type in the signature. See the discussion of that method for details.
+     * @param opDesc Dynalink dynamic operation descriptor.
+     * @param type the method type for the operation
+     * @return MethodHandle for invoking the operation.
+     */
+    public static MethodHandle createDynamicInvoker(final String opDesc, final MethodType type) {
+        return bootstrap(null, opDesc, type, 0).dynamicInvoker();
     }
 
     /**
