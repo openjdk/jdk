@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -447,14 +447,18 @@ public class Checker extends DocTreeScanner<Void, Void> {
                         if (currTag != HtmlTag.A) {
                             break;
                         }
-                    // fallthrough
+                        // fallthrough
                     case ID:
                         String value = getAttrValue(tree);
-                        if (!validName.matcher(value).matches()) {
-                            env.messages.error(HTML, tree, "dc.invalid.anchor", value);
-                        }
-                        if (!foundAnchors.add(value)) {
-                            env.messages.error(HTML, tree, "dc.anchor.already.defined", value);
+                        if (value == null) {
+                            env.messages.error(HTML, tree, "dc.anchor.value.missing");
+                        } else {
+                            if (!validName.matcher(value).matches()) {
+                                env.messages.error(HTML, tree, "dc.invalid.anchor", value);
+                            }
+                            if (!foundAnchors.add(value)) {
+                                env.messages.error(HTML, tree, "dc.anchor.already.defined", value);
+                            }
                         }
                         break;
 
