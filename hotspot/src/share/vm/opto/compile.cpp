@@ -692,7 +692,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
 
-  if (PrintInlining) {
+  if (PrintInlining  || PrintIntrinsics NOT_PRODUCT( || PrintOptoInlining)) {
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
   }
   { // Scope for timing the parser
@@ -2049,7 +2049,7 @@ void Compile::Optimize() {
 
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
- dump_inlining();
+  dump_inlining();
   // A method with only infinite loops has no edges entering loops from root
   {
     NOT_PRODUCT( TracePhase t2("graphReshape", &_t_graphReshaping, TimeCompiler); )
@@ -3497,7 +3497,7 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
 }
 
 void Compile::dump_inlining() {
-  if (PrintInlining) {
+  if (PrintInlining || PrintIntrinsics NOT_PRODUCT( || PrintOptoInlining)) {
     // Print inlining message for candidates that we couldn't inline
     // for lack of space or non constant receiver
     for (int i = 0; i < _late_inlines.length(); i++) {
