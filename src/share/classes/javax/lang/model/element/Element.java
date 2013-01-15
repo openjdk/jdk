@@ -188,7 +188,7 @@ public interface Element {
      *         type if present on this element, else an empty array
      *
      * @see #getAnnotationMirrors()
-     * @see #getAnnotation()
+     * @see #getAnnotation(java.lang.Class)
      * @see java.lang.reflect.AnnotatedElement#getAnnotations
      * @see EnumConstantNotPresentException
      * @see AnnotationTypeMismatchException
