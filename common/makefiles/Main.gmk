@@ -65,7 +65,15 @@ MAKE_ARGS:=$(MAKE_ARGS) -j$(JOBS)
 
 ### Main targets
 
-all: jdk
+default: jdk
+	@$(call CheckIfMakeAtEnd)
+
+all: images docs
+	@$(call CheckIfMakeAtEnd)
+
+ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
+  all: overlay-images
+endif
 
 start-make:
 	@$(call AtMakeStart)
@@ -126,12 +134,6 @@ overlay-images-only: start-make
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk overlay-images)
 	@$(call TargetExit)
 
-bundles: images bundles-only
-bundles-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk bundles)
-	@$(call TargetExit)
-
 install: images install-only
 install-only: start-make
 	@$(call TargetEnter)
@@ -142,6 +144,12 @@ docs: jdk docs-only
 docs-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(SRC_ROOT)/common/makefiles/javadoc && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs)
+	@$(call TargetExit)
+
+sign-jars: jdk sign-jars-only
+sign-jars-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk sign-jars)
 	@$(call TargetExit)
 
 bootcycle-images:
