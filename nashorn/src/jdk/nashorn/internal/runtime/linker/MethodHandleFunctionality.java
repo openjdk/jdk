@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Wrapper for all method handle related functions used in Nashorn. This interface only exists
@@ -90,6 +91,17 @@ public interface MethodHandleFunctionality {
      * @return handle with dropped arguments
      */
     public MethodHandle dropArguments(MethodHandle target, int pos, Class<?>... valueTypes);
+
+    /**
+     * Wrapper for {@link MethodHandles#dropArguments(MethodHandle, int, List)}
+     *
+     * @param target     target method handle
+     * @param pos        start argument index
+     * @param valueTypes valueTypes of arguments to drop
+     *
+     * @return handle with dropped arguments
+     */
+    public MethodHandle dropArguments(final MethodHandle target, final int pos, final List<Class<?>> valueTypes);
 
     /**
      * Wrapper for {@link MethodHandles#foldArguments(MethodHandle, MethodHandle)}

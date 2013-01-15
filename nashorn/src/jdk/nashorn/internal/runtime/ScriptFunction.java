@@ -62,9 +62,6 @@ public abstract class ScriptFunction extends ScriptObject {
     /** Method handle for name getter for this ScriptFunction */
     public static final MethodHandle G$NAME       = findOwnMH("G$name",       Object.class, Object.class);
 
-    /** Method handle for invokehelper for this ScriptFunction - used from applies */
-    public static final MethodHandle INVOKEHELPER = findOwnMH("invokeHelper", Object.class, Object.class, Object.class, Object[].class);
-
     /** Method handle for allocate function for this ScriptFunction */
     public static final MethodHandle ALLOCATE     = findOwnMH("allocate", Object.class);
 
@@ -384,24 +381,6 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private static Object getArg(final Object[] args, final int i) {
         return i < args.length ? args[i] : UNDEFINED;
-    }
-
-    /**
-     * Helper function used for implementation of apply
-     * @param func       script function
-     * @param self       reference to {@code this} for apply
-     * @param args       arguments to apply
-     * @return           result of apply
-     * @throws Throwable if invocation throws an error or exception
-     */
-    public static Object invokeHelper(final Object func, final Object self, final Object... args) throws Throwable {
-        if (func instanceof ScriptFunction) {
-            return ((ScriptFunction)func).invoke(self, args);
-        }
-
-        typeError(Context.getGlobal(), "not.a.function", ScriptRuntime.safeToString(func));
-
-        return UNDEFINED;
     }
 
     /**

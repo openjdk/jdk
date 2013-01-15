@@ -69,7 +69,6 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
 import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
-import org.dynalang.dynalink.support.Guards;
 
 /**
  * Base class for generic JavaScript objects.
@@ -1587,7 +1586,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
-     * Find the appropriate CALL method for an invoke dynamic call.
+     * Find an implementation for a "dyn:callMethod" operation. Note that Nashorn internally never uses
+     * "dyn:callMethod", but instead always emits two call sites in bytecode, one for "dyn:getMethod", and then another
+     * one for "dyn:call". Explicit support for "dyn:callMethod" is provided for the benefit of potential external
+     * callers. The implementation itself actually folds a "dyn:getMethod" method handle into a "dyn:call" method handle.
      *
      * @param desc The call site descriptor.
      * @param megaMorphic is this call site megaMorphic, as reported by Dynalink - then just do apply
@@ -1595,49 +1597,18 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final boolean megaMorphic) {
-        final String       name     = desc.getNameToken(2);
-        final MethodType   callType = desc.getMethodType();
-        final FindProperty find     = findProperty(name, true);
+        // R(P0, P1, ...)
+        final MethodType callType = desc.getMethodType();
+        // use type Object(P0) for the getter
+        final CallSiteDescriptor getterType = desc.changeMethodType(MethodType.methodType(Object.class, callType.parameterType(0)));
+        final GuardedInvocation getter = findGetMethod(getterType, megaMorphic, "getMethod");
 
-        if (find == null) {
-            return createNoSuchMethodInvocation(desc);
-        }
-
-        if (find.getProperty().hasGetterFunction()) {
-            final GuardedInvocation link   = findGetMethod(CallSiteDescriptorFactory.changeReturnType(desc, Object.class), megaMorphic, "getMethod");
-            final MethodHandle      getter = link.getInvocation(); //this cannot be anything but an object as this is the function
-
-            MethodHandle invoker = ScriptFunction.INVOKEHELPER;
-            invoker = MH.asCollector(invoker, Object[].class, callType.parameterCount() - 1); //deduct self
-            invoker = MH.foldArguments(invoker, MH.asType(getter, getter.type().changeReturnType(Object.class))); //getter->func to first arguments. self and object parameters remain
-
-            return new GuardedInvocation(invoker, link.getSwitchPoint(), link.getGuard());
-        }
-
-        //retrieve the appropriate scriptfunction
-        final Object value = getObjectValue(find);
-
-        MethodHandle methodHandle = getCallMethodHandle(value, callType, null);
-
-        if (methodHandle != null) {
-            if (find.isScope()) {
-                final boolean strictCallee = ((ScriptFunction)value).isStrict();
-                if (strictCallee && NashornCallSiteDescriptor.isScope(desc)) {
-                    methodHandle = bindTo(methodHandle, UNDEFINED);
-                } else {
-                    methodHandle = bindTo(methodHandle, Context.getGlobal());
-                }
-            }
-
-            final MethodHandle guard       = find.isSelf() ? Guards.getIdentityGuard(this) : NashornGuards.getMapGuard(getMap());
-            final int          invokeFlags = ((ScriptFunction)value).isStrict()? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
-
-            return new NashornGuardedInvocation(methodHandle, null, guard, invokeFlags);
-        }
-
-        typeError(Context.getGlobal(), "no.such.function", name, ScriptRuntime.safeToString(this));
-
-        throw new AssertionError("should not reach here");
+        // Object(P0) => Object(P0, P1, ...)
+        final MethodHandle argDroppingGetter = MH.dropArguments(getter.getInvocation(), 1, callType.parameterList().subList(1, callType.parameterCount()));
+        // R(Object, P0, P1, ...)
+        final MethodHandle invoker = Bootstrap.createDynamicInvoker("dyn:call", callType.insertParameterTypes(0, argDroppingGetter.type().returnType()));
+        // Fold Object(P0, P1, ...) into R(Object, P0, P1, ...) => R(P0, P1, ...)
+        return getter.replaceMethods(MH.foldArguments(invoker, argDroppingGetter), getter.getGuard());
     }
 
     /**
@@ -1920,41 +1891,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return new GuardedInvocation(MH.dropArguments(MH.constant(ScriptFunction.class,
                 func.makeBoundFunction(thiz, new Object[] { name })), 0, Object.class),
                 null, NashornGuards.getMapGuard(getMap()));
-    }
-
-    /**
-     * Create an invocation that will raise NoSuchMethod error
-     *
-     * @param desc call site descriptor
-     *
-     * @return Guarded invocation to be invoked at the call site
-     */
-    public GuardedInvocation createNoSuchMethodInvocation(final CallSiteDescriptor desc) {
-        final String name = desc.getNameToken(2);
-        final FindProperty find = findProperty(NO_SUCH_METHOD_NAME, true);
-        final boolean scopeCall = isScope() && NashornCallSiteDescriptor.isScope(desc);
-
-        if (find != null) {
-            final ScriptFunction func = (ScriptFunction)getObjectValue(find);
-            MethodHandle methodHandle = getCallMethodHandle(func, desc.getMethodType(), name);
-
-            if (methodHandle != null) {
-                if (scopeCall && func.isStrict()) {
-                    methodHandle = bindTo(methodHandle, UNDEFINED);
-                }
-                return new GuardedInvocation(methodHandle,
-                        find.isInherited()? getMap().getProtoGetSwitchPoint(NO_SUCH_PROPERTY_NAME) : null,
-                        getKnownFunctionPropertyGuard(getMap(), find.getGetter(Object.class), find.getOwner(), func));
-            }
-        }
-
-        if (scopeCall) {
-            referenceError(Context.getGlobal(), "not.defined", name);
-        } else {
-            typeError(Context.getGlobal(), "no.such.function", name, ScriptRuntime.safeToString(this));
-        }
-
-        return null;
     }
 
     /**

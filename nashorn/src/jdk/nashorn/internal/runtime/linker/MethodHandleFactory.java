@@ -25,12 +25,6 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import jdk.nashorn.internal.runtime.ConsString;
-import jdk.nashorn.internal.runtime.Debug;
-import jdk.nashorn.internal.runtime.DebugLogger;
-import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.options.Options;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandle;
@@ -42,6 +36,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
+import jdk.nashorn.internal.runtime.ConsString;
+import jdk.nashorn.internal.runtime.Debug;
+import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * This class is abstraction for all method handle, switchpoint and method type
@@ -299,6 +298,11 @@ public final class MethodHandleFactory {
         }
 
         @Override
+        public MethodHandle dropArguments(final MethodHandle target, final int pos, final List<Class<?>> valueTypes) {
+            return MethodHandles.dropArguments(target, pos, valueTypes);
+        }
+
+        @Override
         public MethodHandle asType(final MethodHandle handle, final MethodType type) {
             return handle.asType(type);
         }
@@ -495,6 +499,12 @@ public final class MethodHandleFactory {
 
         @Override
         public MethodHandle dropArguments(final MethodHandle target, final int pos, final Class<?>... values) {
+            final MethodHandle mh = super.dropArguments(target, pos, values);
+            return debug(mh, "dropArguments", target, pos, values);
+        }
+
+        @Override
+        public MethodHandle dropArguments(final MethodHandle target, final int pos, final List<Class<?>> values) {
             final MethodHandle mh = super.dropArguments(target, pos, values);
             return debug(mh, "dropArguments", target, pos, values);
         }

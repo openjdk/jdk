@@ -131,12 +131,13 @@ public class WithObject extends ScriptObject implements Scope {
         // the property is not found - now check for
         // __noSuchProperty__ and __noSuchMethod__ in expression
         if (self != null) {
-            String fallBack;
+            final String fallBack;
 
             final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
 
             switch (operator) {
             case "callMethod":
+                throw new AssertionError(); // Nashorn never emits callMethod
             case "getMethod":
                 fallBack = NO_SUCH_METHOD_NAME;
                 break;
@@ -153,9 +154,6 @@ public class WithObject extends ScriptObject implements Scope {
                 find = self.findProperty(fallBack, true);
                 if (find != null) {
                     switch (operator) {
-                    case "callMethod":
-                        link = self.createNoSuchMethodInvocation(desc);
-                        break;
                     case "getMethod":
                         link = self.noSuchMethod(desc);
                         break;
