@@ -506,12 +506,11 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         int n = 0;
         final Type[] params = signature == null ? null : Type.getMethodArguments(signature);
         for (final Node arg : args) {
-            if (n >= argCount) {
-                break;
-            }
             assert arg != null;
             load(arg);
-            if (params != null) {
+            if (n >= argCount) {
+                method.pop(); // we had to load the arg for its side effects
+            } else if (params != null) {
                 method.convert(params[n]);
             }
             n++;
