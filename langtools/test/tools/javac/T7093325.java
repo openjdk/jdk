@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,10 @@
  * @test
  * @bug 7093325
  * @summary Redundant entry in bytecode exception table
+ * @library lib
+ * @build JavacTestingAbstractThreadedTest
+ * @run main T7093325
  */
-
-import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.*;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.javac.api.JavacTool;
 
 import java.io.File;
 import java.net.URI;
@@ -41,19 +36,18 @@ import java.util.Arrays;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import com.sun.source.util.JavacTask;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Code_attribute;
+import com.sun.tools.classfile.ConstantPool.*;
+import com.sun.tools.classfile.Method;
 
-public class T7093325 {
-
-    /** global decls ***/
-
-    // Create a single file manager and reuse it for each compile to save time.
-    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
-
-    //statistics
-    static int checkCount = 0;
+public class T7093325
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum StatementKind {
         THROW("throw new RuntimeException();", false, false),
@@ -89,7 +83,8 @@ public class T7093325 {
             if (this.ordinal() == 0) {
                 return catchStr;
             } else {
-                return CatchArity.values()[this.ordinal() - 1].catchers() + catchStr;
+                return CatchArity.values()[this.ordinal() - 1].catchers() +
+                        catchStr;
             }
         }
     }
@@ -98,31 +93,36 @@ public class T7093325 {
         for (CatchArity ca : CatchArity.values()) {
             for (StatementKind stmt0 : StatementKind.values()) {
                 if (ca.ordinal() == 0) {
-                    new T7093325(ca, stmt0).compileAndCheck();
+                    pool.execute(new T7093325(ca, stmt0));
                     continue;
                 }
                 for (StatementKind stmt1 : StatementKind.values()) {
                     if (ca.ordinal() == 1) {
-                        new T7093325(ca, stmt0, stmt1).compileAndCheck();
+                        pool.execute(new T7093325(ca, stmt0, stmt1));
                         continue;
                     }
                     for (StatementKind stmt2 : StatementKind.values()) {
                         if (ca.ordinal() == 2) {
-                            new T7093325(ca, stmt0, stmt1, stmt2).compileAndCheck();
+                            pool.execute(new T7093325(ca, stmt0, stmt1, stmt2));
                             continue;
                         }
                         for (StatementKind stmt3 : StatementKind.values()) {
                             if (ca.ordinal() == 3) {
-                                new T7093325(ca, stmt0, stmt1, stmt2, stmt3).compileAndCheck();
+                                pool.execute(
+                                    new T7093325(ca, stmt0, stmt1, stmt2, stmt3));
                                 continue;
                             }
                             for (StatementKind stmt4 : StatementKind.values()) {
                                 if (ca.ordinal() == 4) {
-                                    new T7093325(ca, stmt0, stmt1, stmt2, stmt3, stmt4).compileAndCheck();
+                                    pool.execute(
+                                        new T7093325(ca, stmt0, stmt1,
+                                                     stmt2, stmt3, stmt4));
                                     continue;
                                 }
                                 for (StatementKind stmt5 : StatementKind.values()) {
-                                    new T7093325(ca, stmt0, stmt1, stmt2, stmt3, stmt4, stmt5).compileAndCheck();
+                                    pool.execute(
+                                        new T7093325(ca, stmt0, stmt1, stmt2,
+                                                     stmt3, stmt4, stmt5));
                                 }
                             }
                         }
@@ -131,7 +131,7 @@ public class T7093325 {
             }
         }
 
-        System.out.println("Total checks made: " + checkCount);
+        checkAfterExec();
     }
 
     /** instance decls **/
@@ -144,17 +144,18 @@ public class T7093325 {
         this.stmts = stmts;
     }
 
-    void compileAndCheck() throws Exception {
+    @Override
+    public void run() {
+        int id = checkCount.incrementAndGet();
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavaSource source = new JavaSource();
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, null,
+        JavaSource source = new JavaSource(id);
+        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), null,
                 null, null, Arrays.asList(source));
         ct.call();
-        verifyBytecode(source);
+        verifyBytecode(source, id);
     }
 
-    void verifyBytecode(JavaSource source) {
-        checkCount++;
+    void verifyBytecode(JavaSource source, int id) {
         boolean lastInlined = false;
         boolean hasCode = false;
         int gapsCount = 0;
@@ -172,11 +173,12 @@ public class T7093325 {
 
         //System.out.printf("gaps %d \n %s \n", gapsCount, source.toString());
 
-        File compiledTest = new File("Test.class");
+        File compiledTest = new File(String.format("Test%s.class", id));
         try {
             ClassFile cf = ClassFile.read(compiledTest);
             if (cf == null) {
-                throw new Error("Classfile not found: " + compiledTest.getName());
+                throw new Error("Classfile not found: " +
+                                compiledTest.getName());
             }
 
             Method test_method = null;
@@ -232,7 +234,7 @@ public class T7093325 {
                 "class C extends RuntimeException {} \n" +
                 "class D extends RuntimeException {} \n" +
                 "class E extends RuntimeException {} \n" +
-                "class Test {\n" +
+                "class Test#ID {\n" +
                 "   void test() {\n" +
                 "   try { #S0 } #C finally { System.out.println(); }\n" +
                 "   }\n" +
@@ -240,10 +242,12 @@ public class T7093325 {
 
         String source;
 
-        public JavaSource() {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
+        public JavaSource(int id) {
+            super(URI.create(String.format("myfo:/Test%s.java", id)),
+                  JavaFileObject.Kind.SOURCE);
             source = source_template.replace("#C", ca.catchers());
             source = source.replace("#S0", stmts[0].stmt);
+            source = source.replace("#ID", String.valueOf(id));
             for (int i = 1; i < ca.ordinal() + 1; i++) {
                 source = source.replace("#S" + i, stmts[i].stmt);
             }
@@ -259,4 +263,5 @@ public class T7093325 {
             return source;
         }
     }
+
 }

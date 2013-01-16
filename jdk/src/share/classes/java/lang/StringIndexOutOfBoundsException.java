@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package java.lang;
 
 /**
- * Thrown by <code>String</code> methods to indicate that an index
+ * Thrown by {@code String} methods to indicate that an index
  * is either negative or greater than the size of the string.  For
  * some methods such as the charAt method, this exception also is
  * thrown when the index is equal to the size of the string.
@@ -40,7 +40,7 @@ class StringIndexOutOfBoundsException extends IndexOutOfBoundsException {
     private static final long serialVersionUID = -6762910422159637258L;
 
     /**
-     * Constructs a <code>StringIndexOutOfBoundsException</code> with no
+     * Constructs a {@code StringIndexOutOfBoundsException} with no
      * detail message.
      *
      * @since   JDK1.0.
@@ -50,7 +50,7 @@ class StringIndexOutOfBoundsException extends IndexOutOfBoundsException {
     }
 
     /**
-     * Constructs a <code>StringIndexOutOfBoundsException</code> with
+     * Constructs a {@code StringIndexOutOfBoundsException} with
      * the specified detail message.
      *
      * @param   s   the detail message.
@@ -60,7 +60,7 @@ class StringIndexOutOfBoundsException extends IndexOutOfBoundsException {
     }
 
     /**
-     * Constructs a new <code>StringIndexOutOfBoundsException</code>
+     * Constructs a new {@code StringIndexOutOfBoundsException}
      * class with an argument indicating the illegal index.
      *
      * @param   index   the illegal index.

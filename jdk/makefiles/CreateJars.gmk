@@ -738,6 +738,7 @@ TOOLS_JAR_INCLUDES := \
 	com/sun/tools/javadoc   \
 	com/sun/tools/javah     \
 	com/sun/tools/javap     \
+	com/sun/tools/jdeps	\
 	com/sun/tools/corba     \
 	com/sun/tools/internal/xjc       \
 	com/sun/tools/internal/ws       \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,13 @@ import com.sun.crypto.provider.*;
 public class Test4512524 {
 
     private static final String ALGO = "AES";
-    private static final String MODE = "CBC";
     private static final String PADDING = "NoPadding";
     private static final int KEYSIZE = 16; // in bytes
 
-    public boolean execute() throws Exception {
+    public void execute(String mode) throws Exception {
 
-        Cipher ci = Cipher.getInstance(ALGO+"/"+MODE+"/"+PADDING, "SunJCE");
+        String transformation = ALGO+"/"+mode+"/"+PADDING;
+        Cipher ci = Cipher.getInstance(transformation, "SunJCE");
 
         // TEST FIX 4512524
         KeyGenerator kg = KeyGenerator.getInstance(ALGO, "SunJCE");
@@ -61,17 +61,14 @@ public class Test4512524 {
         }
 
         // passed all tests...hooray!
-        return true;
+        System.out.println(transformation + ": Passed");
     }
 
     public static void main (String[] args) throws Exception {
         Security.addProvider(new com.sun.crypto.provider.SunJCE());
 
         Test4512524 test = new Test4512524();
-        String testName = test.getClass().getName() + "[" + ALGO +
-            "/" + MODE + "/" + PADDING + "]";
-        if (test.execute()) {
-            System.out.println(testName + ": Passed!");
-        }
+        test.execute("CBC");
+        test.execute("GCM");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
-import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.*;
 
 /**
  * This class represents a block cipher in one of its modes. It wraps
@@ -150,11 +150,13 @@ abstract class FeedbackCipher {
      * @param plainLen the length of the input data
      * @param cipher the buffer for the encryption result
      * @param cipherOffset the offset in <code>cipher</code>
+     * @return the number of bytes placed into <code>cipher</code>
      */
-     void encryptFinal(byte[] plain, int plainOffset, int plainLen,
-                       byte[] cipher, int cipherOffset)
+     int encryptFinal(byte[] plain, int plainOffset, int plainLen,
+                      byte[] cipher, int cipherOffset)
          throws IllegalBlockSizeException {
          encrypt(plain, plainOffset, plainLen, cipher, cipherOffset);
+         return plainLen;
      }
     /**
      * Performs decryption operation.
@@ -190,10 +192,40 @@ abstract class FeedbackCipher {
      * @param cipherLen the length of the input data
      * @param plain the buffer for the decryption result
      * @param plainOffset the offset in <code>plain</code>
+     * @return the number of bytes placed into <code>plain</code>
      */
-     void decryptFinal(byte[] cipher, int cipherOffset, int cipherLen,
-                       byte[] plain, int plainOffset)
-         throws IllegalBlockSizeException {
+     int decryptFinal(byte[] cipher, int cipherOffset, int cipherLen,
+                      byte[] plain, int plainOffset)
+         throws IllegalBlockSizeException, AEADBadTagException {
          decrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
+         return cipherLen;
      }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD), using a subset of the provided buffer. If this
+     * cipher is operating in either GCM or CCM mode, all AAD must be
+     * supplied before beginning operations on the ciphertext (via the
+     * {@code update} and {@code doFinal} methods).
+     * <p>
+     * NOTE: Given most modes do not accept AAD, default impl for this
+     * method throws IllegalStateException.
+     *
+     * @param src the buffer containing the AAD
+     * @param offset the offset in {@code src} where the AAD input starts
+     * @param len the number of AAD bytes
+     *
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if this method
+     * has not been overridden by an implementation
+     *
+     * @since 1.8
+     */
+    void updateAAD(byte[] src, int offset, int len) {
+        throw new IllegalStateException("No AAD accepted");
+    }
 }

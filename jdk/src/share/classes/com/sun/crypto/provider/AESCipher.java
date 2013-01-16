@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.BadPaddingException;
+import java.nio.ByteBuffer;
 
 /**
  * This class implements the AES algorithm in its various modes
@@ -125,6 +126,21 @@ abstract class AESCipher extends CipherSpi {
     public static final class AES256_CFB_NoPadding extends OidImpl {
         public AES256_CFB_NoPadding() {
             super(32, "CFB", "NOPADDING");
+        }
+    }
+    public static final class AES128_GCM_NoPadding extends OidImpl {
+        public AES128_GCM_NoPadding() {
+            super(16, "GCM", "NOPADDING");
+        }
+    }
+    public static final class AES192_GCM_NoPadding extends OidImpl {
+        public AES192_GCM_NoPadding() {
+            super(24, "GCM", "NOPADDING");
+        }
+    }
+    public static final class AES256_GCM_NoPadding extends OidImpl {
+        public AES256_GCM_NoPadding() {
+            super(32, "GCM", "NOPADDING");
         }
     }
 
@@ -531,4 +547,79 @@ abstract class AESCipher extends CipherSpi {
         return core.unwrap(wrappedKey, wrappedKeyAlgorithm,
                            wrappedKeyType);
     }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD), using a subset of the provided buffer.
+     * <p>
+     * Calls to this method provide AAD to the cipher when operating in
+     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
+     * either GCM or CCM mode, all AAD must be supplied before beginning
+     * operations on the ciphertext (via the {@code update} and {@code
+     * doFinal} methods).
+     *
+     * @param src the buffer containing the AAD
+     * @param offset the offset in {@code src} where the AAD input starts
+     * @param len the number of AAD bytes
+     *
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if this method
+     * has not been overridden by an implementation
+     *
+     * @since 1.8
+     */
+    @Override
+    protected void engineUpdateAAD(byte[] src, int offset, int len) {
+        core.updateAAD(src, offset, len);
+    }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD).
+     * <p>
+     * Calls to this method provide AAD to the cipher when operating in
+     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
+     * either GCM or CCM mode, all AAD must be supplied before beginning
+     * operations on the ciphertext (via the {@code update} and {@code
+     * doFinal} methods).
+     * <p>
+     * All {@code src.remaining()} bytes starting at
+     * {@code src.position()} are processed.
+     * Upon return, the input buffer's position will be equal
+     * to its limit; its limit will not have changed.
+     *
+     * @param src the buffer containing the AAD
+     *
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if this method
+     * has not been overridden by an implementation
+     *
+     * @since 1.8
+     */
+    @Override
+    protected void engineUpdateAAD(ByteBuffer src) {
+        if (src != null) {
+            int aadLen = src.limit() - src.position();
+            if (aadLen != 0) {
+                if (src.hasArray()) {
+                    int aadOfs = src.arrayOffset() + src.position();
+                    core.updateAAD(src.array(), aadOfs, aadLen);
+                    src.position(src.limit());
+                } else {
+                    byte[] aad = new byte[aadLen];
+                    src.get(aad);
+                    core.updateAAD(aad, 0, aadLen);
+                }
+            }
+        }
+    }
 }
+
