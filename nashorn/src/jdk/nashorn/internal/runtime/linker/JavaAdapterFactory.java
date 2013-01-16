@@ -81,6 +81,7 @@ import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Undefined;
 import org.dynalang.dynalink.beans.StaticClass;
 import org.dynalang.dynalink.support.LinkRequestImpl;
@@ -144,7 +145,7 @@ public class JavaAdapterFactory {
     private static final Type METHOD_TYPE_TYPE = Type.getType(MethodType.class);
     private static final Type METHOD_HANDLE_TYPE = Type.getType(MethodHandle.class);
     private static final String GET_HANDLE_OBJECT_DESCRIPTOR = Type.getMethodDescriptor(METHOD_HANDLE_TYPE,
-            SCRIPT_OBJECT_TYPE, STRING_TYPE, METHOD_TYPE_TYPE, Type.BOOLEAN_TYPE);
+            OBJECT_TYPE, STRING_TYPE, METHOD_TYPE_TYPE, Type.BOOLEAN_TYPE);
     private static final String GET_HANDLE_FUNCTION_DESCRIPTOR = Type.getMethodDescriptor(METHOD_HANDLE_TYPE,
             SCRIPT_FUNCTION_TYPE, METHOD_TYPE_TYPE, Type.BOOLEAN_TYPE);
     private static final Type RUNTIME_EXCEPTION_TYPE = Type.getType(RuntimeException.class);
@@ -570,7 +571,7 @@ public class JavaAdapterFactory {
      * function itself, if that's what's passed). There is one method handle field in the adapter class for every method
      * that can be implemented or overridden; the name of every field is same as the name of the method, with a number
      * suffix that makes it unique in case of overloaded methods. The generated constructor will invoke
-     * {@link #getHandle(ScriptFunction, MethodType, boolean)} or {@link #getHandle(ScriptObject, String, MethodType,
+     * {@link #getHandle(ScriptFunction, MethodType, boolean)} or {@link #getHandle(Object, String, MethodType,
      * boolean)} to obtain the method handles; these methods make sure to add the necessary conversions and arity
      * adjustments so that the resulting method handles can be invoked from generated methods using {@code invokeExact}.
      * The constructor that takes a script function will only initialize the methods with the same name as the single
@@ -589,8 +590,8 @@ public class JavaAdapterFactory {
         final int argLen = originalArgTypes.length;
         final Type[] newArgTypes = new Type[argLen + 1];
 
-        // Insert ScriptFunction|ScriptObject as the last argument to the constructor
-        final Type extraArgumentType = fromFunction ? SCRIPT_FUNCTION_TYPE : SCRIPT_OBJECT_TYPE;
+        // Insert ScriptFunction|Object as the last argument to the constructor
+        final Type extraArgumentType = fromFunction ? SCRIPT_FUNCTION_TYPE : OBJECT_TYPE;
         newArgTypes[argLen] = extraArgumentType;
         System.arraycopy(originalArgTypes, 0, newArgTypes, 0, argLen);
 
@@ -675,7 +676,7 @@ public class JavaAdapterFactory {
     /**
      * Given a JS script object, retrieves a function from it by name, binds it to the script object as its "this", and
      * adapts its parameter types, return types, and arity to the specified type and arity. This method is public mainly
-     * for implementation reasons, so the adapter classes can invoke it from their constructors that take a ScriptObject
+     * for implementation reasons, so the adapter classes can invoke it from their constructors that take a Object
      * in its first argument to obtain the method handles for their method implementations.
      * @param obj the script obj
      * @param name the name of the property that contains the function
@@ -685,15 +686,21 @@ public class JavaAdapterFactory {
      * property is either null or undefined, or "toString" was requested as the name, but the object doesn't directly
      * define it but just inherits it through prototype.
      */
-    public static MethodHandle getHandle(final ScriptObject obj, final String name, final MethodType type, final boolean varArg) {
+    public static MethodHandle getHandle(final Object obj, final String name, final MethodType type, final boolean varArg) {
+        if (! (obj instanceof ScriptObject)) {
+            typeError(Context.getGlobal(), "not.an.object", ScriptRuntime.safeToString(obj));
+            throw new AssertionError();
+        }
+
+        final ScriptObject sobj = (ScriptObject)obj;
         // Since every JS Object has a toString, we only override "String toString()" it if it's explicitly specified
-        if ("toString".equals(name) && !obj.hasOwnProperty("toString")) {
+        if ("toString".equals(name) && !sobj.hasOwnProperty("toString")) {
             return null;
         }
 
-        final Object fnObj = obj.get(name);
+        final Object fnObj = sobj.get(name);
         if (fnObj instanceof ScriptFunction) {
-            return adaptHandle(((ScriptFunction)fnObj).getBoundInvokeHandle(obj), type, varArg);
+            return adaptHandle(((ScriptFunction)fnObj).getBoundInvokeHandle(sobj), type, varArg);
         } else if(fnObj == null || fnObj instanceof Undefined) {
             return null;
         } else {
@@ -773,7 +780,7 @@ public class JavaAdapterFactory {
      * exceptions, and is not an unchecked throwable, then it is wrapped into a {@link RuntimeException} and the runtime
      * exception is thrown. The method handle retrieved from the field is guaranteed to exactly match the signature of
      * the method; this is guaranteed by the way constructors of the adapter class obtain them using
-     * {@link #getHandle(ScriptObject, String, MethodType, boolean)}.
+     * {@link #getHandle(Object, String, MethodType, boolean)}.
      * @param mi the method info describing the method to be generated.
      */
     private void generateMethod(final MethodInfo mi) {
