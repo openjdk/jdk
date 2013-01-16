@@ -86,7 +86,7 @@ class InitSecContextToken extends InitialToken {
      * For the context acceptor to call. It reads the bytes out of an
      * InputStream and constructs an InitSecContextToken with them.
      */
-    InitSecContextToken(Krb5Context context, EncryptionKey[] keys,
+    InitSecContextToken(Krb5Context context, Krb5AcceptCredential cred,
                                InputStream is)
         throws IOException, GSSException, KrbException  {
 
@@ -105,7 +105,7 @@ class InitSecContextToken extends InitialToken {
         if (context.getChannelBinding() != null) {
             addr = context.getChannelBinding().getInitiatorAddress();
         }
-        apReq = new KrbApReq(apReqBytes, keys, addr);
+        apReq = new KrbApReq(apReqBytes, cred, addr);
         //debug("\nReceived AP-REQ and authenticated it.\n");
 
         EncryptionKey sessionKey = apReq.getCreds().getSessionKey();

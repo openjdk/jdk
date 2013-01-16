@@ -2611,6 +2611,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * {@link #shutdown} or {@link #shutdownNow}.
      *
      * @return the common pool instance
+     * @since 1.8
      */
     public static ForkJoinPool commonPool() {
         // assert commonPool != null : "static init error";
@@ -2793,6 +2794,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Returns the targeted parallelism level of the common pool.
      *
      * @return the targeted parallelism level of the common pool
+     * @since 1.8
      */
     public static int getCommonPoolParallelism() {
         return commonPoolParallelism;
