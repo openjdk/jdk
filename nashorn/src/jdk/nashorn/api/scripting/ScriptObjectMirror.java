@@ -38,6 +38,7 @@ import java.util.concurrent.Callable;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import netscape.javascript.JSObject;
 
 /**
@@ -65,6 +66,16 @@ final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
     @Override
     public int hashCode() {
         return sobj.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return inGlobal(new Callable<String>() {
+            @Override
+            public String call() {
+                return ScriptRuntime.safeToString(sobj);
+            }
+        });
     }
 
     private <V> V inGlobal(final Callable<V> callable) {

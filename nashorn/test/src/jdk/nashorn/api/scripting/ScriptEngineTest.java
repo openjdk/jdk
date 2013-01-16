@@ -46,6 +46,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import jdk.nashorn.internal.runtime.Version;
 import netscape.javascript.JSObject;
+import org.testng.Assert;
 import org.testng.TestNG;
 import org.testng.annotations.Test;
 
@@ -854,6 +855,27 @@ public class ScriptEngineTest {
         } catch (final ScriptException se) {
             // ECMA TypeError property wrapped as a ScriptException
             log("got " + se + " as expected");
+        } catch (final Throwable t) {
+            t.printStackTrace();
+            fail(t.getMessage());
+        }
+    }
+
+    @Test
+    public void scriptObjectMirrorToStringTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        try {
+            Object obj = e.eval("new TypeError('wrong type')");
+            Assert.assertEquals(obj.toString(), "TypeError: wrong type", "toString returns wrong value");
+        } catch (final Throwable t) {
+            t.printStackTrace();
+            fail(t.getMessage());
+        }
+
+        try {
+            Object obj = e.eval("function func() { print('hello'); }");
+            Assert.assertEquals(obj.toString(), "function func() { print('hello'); }", "toString returns wrong value");
         } catch (final Throwable t) {
             t.printStackTrace();
             fail(t.getMessage());
