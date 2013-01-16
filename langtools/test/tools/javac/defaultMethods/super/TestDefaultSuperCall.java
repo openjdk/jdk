@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,25 @@
 /*
  * @test
  * @summary Automatic test for checking correctness of default super/this resolution
+ * @library ../../lib
+ * @build JavacTestingAbstractThreadedTest
+ * @run main TestDefaultSuperCall
  */
 
-import com.sun.source.util.JavacTask;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 
-public class TestDefaultSuperCall {
+import com.sun.source.util.JavacTask;
 
-    static int checkCount = 0;
+public class TestDefaultSuperCall
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum InterfaceKind {
         DEFAULT("interface A extends B { default void m() { } }"),
@@ -212,7 +212,7 @@ public class TestDefaultSuperCall {
         List<String> elementsWithMethod;
 
         Shape(ElementKind... elements) {
-            System.err.println("elements = " + Arrays.toString(elements));
+            errWriter.println("elements = " + Arrays.toString(elements));
             enclosingElements = new ArrayList<>();
             enclosingNames = new ArrayList<>();
             elementsWithMethod = new ArrayList<>();
@@ -231,28 +231,26 @@ public class TestDefaultSuperCall {
                     elementsWithMethod.add(prevName);
                 }
                 String element = ek.templateDecl.replaceAll("#N", name);
-                shapeStr = shapeStr == null ? element : shapeStr.replaceAll("#B", element);
+                shapeStr = shapeStr ==
+                        null ? element : shapeStr.replaceAll("#B", element);
                 prevName = name;
             }
         }
 
         String getShape(QualifierKind qk, ExprKind ek) {
             String methName = ek == ExprKind.THIS ? "test" : "m";
-            String call = qk.getQualifier(this) + "." + ek.exprStr + "." + methName + "();";
+            String call = qk.getQualifier(this) + "." +
+                    ek.exprStr + "." + methName + "();";
             return shapeStr.replaceAll("#B", call);
         }
 
         String enclosingAt(int index) {
-            return index < enclosingNames.size() ? enclosingNames.get(index) : "BAD";
+            return index < enclosingNames.size() ?
+                    enclosingNames.get(index) : "BAD";
         }
     }
 
     public static void main(String... args) throws Exception {
-
-        //create default shared JavaCompiler - reused across multiple compilations
-        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-
         for (InterfaceKind ik : InterfaceKind.values()) {
             for (PruneKind pk : PruneKind.values()) {
                 for (ElementKind ek1 : ElementKind.values()) {
@@ -264,10 +262,14 @@ public class TestDefaultSuperCall {
                             for (ElementKind ek4 : ElementKind.values()) {
                                 if (!ek4.isAllowedEnclosing(ek3, false)) continue;
                                 for (ElementKind ek5 : ElementKind.values()) {
-                                    if (!ek5.isAllowedEnclosing(ek4, false) || ek5.isClassDecl()) continue;
+                                    if (!ek5.isAllowedEnclosing(ek4, false) ||
+                                            ek5.isClassDecl()) continue;
                                     for (QualifierKind qk : QualifierKind.values()) {
                                         for (ExprKind ek : ExprKind.values()) {
-                                            new TestDefaultSuperCall(ik, pk, new Shape(ek1, ek2, ek3, ek4, ek5), qk, ek).run(comp, fm);
+                                            pool.execute(
+                                                    new TestDefaultSuperCall(ik, pk,
+                                                    new Shape(ek1, ek2, ek3,
+                                                    ek4, ek5), qk, ek));
                                         }
                                     }
                                 }
@@ -277,7 +279,8 @@ public class TestDefaultSuperCall {
                 }
             }
         }
-        System.out.println("Total check executed: " + checkCount);
+
+        checkAfterExec();
     }
 
     InterfaceKind ik;
@@ -288,7 +291,8 @@ public class TestDefaultSuperCall {
     JavaSource source;
     DiagnosticChecker diagChecker;
 
-    TestDefaultSuperCall(InterfaceKind ik, PruneKind pk, Shape sh, QualifierKind qk, ExprKind ek) {
+    TestDefaultSuperCall(InterfaceKind ik, PruneKind pk, Shape sh,
+            QualifierKind qk, ExprKind ek) {
         this.ik = ik;
         this.pk = pk;
         this.sh = sh;
@@ -321,13 +325,14 @@ public class TestDefaultSuperCall {
         }
     }
 
-    void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
+    public void run() {
+        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
                 null, null, Arrays.asList(source));
         try {
             ct.analyze();
         } catch (Throwable ex) {
-            throw new AssertionError("Error thrown when analyzing the following source:\n" + source.getCharContent(true));
+            processException(ex);
+            return;
         }
         check();
     }
@@ -370,7 +375,8 @@ public class TestDefaultSuperCall {
 
             int lastIdx = sh.enclosingElements.size() - 1;
             boolean found = lastIdx == -1 ? false :
-                    sh.enclosingElements.get(lastIdx).hasSuper() && qk.allowSuperCall(ik, pk);
+                    sh.enclosingElements.get(lastIdx).hasSuper() &&
+                    qk.allowSuperCall(ik, pk);
 
             errorExpected |= !found;
             if (!found) {
@@ -378,9 +384,10 @@ public class TestDefaultSuperCall {
             }
         }
 
-        checkCount++;
+        checkCount.incrementAndGet();
         if (diagChecker.errorFound != errorExpected) {
-            throw new AssertionError("Problem when compiling source:\n" + source.getCharContent(true) +
+            throw new AssertionError("Problem when compiling source:\n" +
+                    source.getCharContent(true) +
                     "\nenclosingElems: " + sh.enclosingElements +
                     "\nenclosingNames: " + sh.enclosingNames +
                     "\nelementsWithMethod: " + sh.elementsWithMethod +
@@ -392,15 +399,17 @@ public class TestDefaultSuperCall {
         }
     }
 
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         boolean errorFound;
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                System.err.println(diagnostic.getMessage(Locale.getDefault()));
+                errWriter.println(diagnostic.getMessage(Locale.getDefault()));
                 errorFound = true;
             }
         }
     }
+
 }

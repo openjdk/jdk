@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
  * @bug     6993978 7097436
  * @summary Project Coin: Annotation to reduce varargs warnings
  * @author  mcimadamore
+ * @library ../../lib
+ * @build JavacTestingAbstractThreadedTest
  * @run main Warn5
  */
-import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.api.JavacTool;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -37,10 +37,12 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+import com.sun.source.util.JavacTask;
 
-public class Warn5 {
+public class Warn5
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum XlintOption {
         NONE("none"),
@@ -161,9 +163,6 @@ public class Warn5 {
         REDUNDANT_SAFEVARARGS;
     }
 
-    // Create a single file manager and reuse it for each compile to save time.
-    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
-
     public static void main(String... args) throws Exception {
         for (SourceLevel sourceLevel : SourceLevel.values()) {
             for (XlintOption xlint : XlintOption.values()) {
@@ -173,14 +172,9 @@ public class Warn5 {
                             for (MethodKind methKind : MethodKind.values()) {
                                 for (SignatureKind sig : SignatureKind.values()) {
                                     for (BodyKind body : BodyKind.values()) {
-                                        new Warn5(sourceLevel,
-                                                xlint,
-                                                trustMe,
-                                                suppressLevel,
-                                                modKind,
-                                                methKind,
-                                                sig,
-                                                body).test();
+                                        pool.execute(new Warn5(sourceLevel,
+                                                xlint, trustMe, suppressLevel,
+                                                modKind, methKind, sig, body));
                                     }
                                 }
                             }
@@ -189,6 +183,8 @@ public class Warn5 {
                 }
             }
         }
+
+        checkAfterExec(false);
     }
 
     final SourceLevel sourceLevel;
@@ -202,7 +198,9 @@ public class Warn5 {
     final JavaSource source;
     final DiagnosticChecker dc;
 
-    public Warn5(SourceLevel sourceLevel, XlintOption xlint, TrustMe trustMe, SuppressLevel suppressLevel, ModifierKind modKind, MethodKind methKind, SignatureKind sig, BodyKind body) {
+    public Warn5(SourceLevel sourceLevel, XlintOption xlint, TrustMe trustMe,
+            SuppressLevel suppressLevel, ModifierKind modKind,
+            MethodKind methKind, SignatureKind sig, BodyKind body) {
         this.sourceLevel = sourceLevel;
         this.xlint = xlint;
         this.trustMe = trustMe;
@@ -215,24 +213,36 @@ public class Warn5 {
         this.dc = new DiagnosticChecker();
     }
 
-    void test() throws Exception {
+    @Override
+    public void run() {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, dc,
-                Arrays.asList(xlint.getXlintOption(), "-source", sourceLevel.sourceKey), null, Arrays.asList(source));
-        ct.analyze();
+        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), dc,
+                Arrays.asList(xlint.getXlintOption(),
+                    "-source", sourceLevel.sourceKey),
+                null, Arrays.asList(source));
+        try {
+            ct.analyze();
+        } catch (Throwable t) {
+            processException(t);
+        }
         check();
     }
 
     void check() {
 
-        EnumSet<WarningKind> expectedWarnings = EnumSet.noneOf(WarningKind.class);
+        EnumSet<WarningKind> expectedWarnings =
+                EnumSet.noneOf(WarningKind.class);
 
         if (sourceLevel == SourceLevel.JDK_7 &&
                 trustMe == TrustMe.TRUST &&
                 suppressLevel != SuppressLevel.VARARGS &&
                 xlint != XlintOption.NONE &&
-                sig.isVarargs && !sig.isReifiableArg && body.hasAliasing &&
-                (methKind == MethodKind.CONSTRUCTOR || (methKind == MethodKind.METHOD && modKind != ModifierKind.NONE))) {
+                sig.isVarargs &&
+                !sig.isReifiableArg &&
+                body.hasAliasing &&
+                (methKind == MethodKind.CONSTRUCTOR ||
+                (methKind == MethodKind.METHOD &&
+                modKind != ModifierKind.NONE))) {
             expectedWarnings.add(WarningKind.UNSAFE_BODY);
         }
 
@@ -247,7 +257,8 @@ public class Warn5 {
         if (sourceLevel == SourceLevel.JDK_7 &&
                 trustMe == TrustMe.TRUST &&
                 (!sig.isVarargs ||
-                (modKind == ModifierKind.NONE && methKind == MethodKind.METHOD))) {
+                (modKind == ModifierKind.NONE &&
+                methKind == MethodKind.METHOD))) {
             expectedWarnings.add(WarningKind.MALFORMED_SAFEVARARGS);
         }
 
@@ -255,7 +266,8 @@ public class Warn5 {
                 trustMe == TrustMe.TRUST &&
                 xlint != XlintOption.NONE &&
                 suppressLevel != SuppressLevel.VARARGS &&
-                (modKind != ModifierKind.NONE || methKind == MethodKind.CONSTRUCTOR) &&
+                (modKind != ModifierKind.NONE ||
+                methKind == MethodKind.CONSTRUCTOR) &&
                 sig.isVarargs &&
                 sig.isReifiableArg) {
             expectedWarnings.add(WarningKind.REDUNDANT_SAFEVARARGS);
@@ -297,19 +309,23 @@ public class Warn5 {
         }
     }
 
-    class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         EnumSet<WarningKind> warnings = EnumSet.noneOf(WarningKind.class);
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.WARNING) {
-                    if (diagnostic.getCode().contains("unsafe.use.varargs.param")) {
+                    if (diagnostic.getCode().
+                            contains("unsafe.use.varargs.param")) {
                         setWarning(WarningKind.UNSAFE_BODY);
-                    } else if (diagnostic.getCode().contains("redundant.trustme")) {
+                    } else if (diagnostic.getCode().
+                            contains("redundant.trustme")) {
                         setWarning(WarningKind.REDUNDANT_SAFEVARARGS);
                     }
             } else if (diagnostic.getKind() == Diagnostic.Kind.MANDATORY_WARNING &&
-                    diagnostic.getCode().contains("varargs.non.reifiable.type")) {
+                    diagnostic.getCode().
+                        contains("varargs.non.reifiable.type")) {
                 setWarning(WarningKind.UNSAFE_DECL);
             } else if (diagnostic.getKind() == Diagnostic.Kind.ERROR &&
                     diagnostic.getCode().contains("invalid.trustme")) {
@@ -319,7 +335,8 @@ public class Warn5 {
 
         void setWarning(WarningKind wk) {
             if (!warnings.add(wk)) {
-                throw new AssertionError("Duplicate warning of kind " + wk + " in source:\n" + source);
+                throw new AssertionError("Duplicate warning of kind " +
+                        wk + " in source:\n" + source);
             }
         }
 
@@ -327,4 +344,5 @@ public class Warn5 {
             return warnings.contains(wk);
         }
     }
+
 }
