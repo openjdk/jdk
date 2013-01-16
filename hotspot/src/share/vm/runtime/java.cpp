@@ -542,6 +542,10 @@ void before_exit(JavaThread * thread) {
     BeforeExit_lock->notify_all();
   }
 
+  // Shutdown NMT before exit. Otherwise,
+  // it will run into trouble when system destroys static variables.
+  MemTracker::shutdown(MemTracker::NMT_normal);
+
   #undef BEFORE_EXIT_NOT_RUN
   #undef BEFORE_EXIT_RUNNING
   #undef BEFORE_EXIT_DONE

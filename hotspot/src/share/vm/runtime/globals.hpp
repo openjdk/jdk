@@ -1075,7 +1075,7 @@ class CommandLineFlags {
                                                                             \
   product(intx, ClearFPUAtPark, 0, "(Unsafe,Unstable)" )                    \
                                                                             \
-  product(intx, hashCode, 0,                                                \
+  product(intx, hashCode, 5,                                                \
          "(Unstable) select hashCode generation algorithm" )                \
                                                                             \
   product(intx, WorkAroundNPTLTimedWaitHang, 1,                             \
@@ -1165,6 +1165,18 @@ class CommandLineFlags {
                                                                             \
   notproduct(bool, PrintCompactFieldsSavings, false,                        \
           "Print how many words were saved with CompactFields")             \
+                                                                            \
+  notproduct(bool, PrintFieldLayout, false,                                 \
+          "Print field layout for each class")                              \
+                                                                            \
+  product(intx, ContendedPaddingWidth, 128,                                 \
+          "How many bytes to pad the fields/classes marked @Contended with")\
+                                                                            \
+  product(bool, EnableContended, true,                                      \
+          "Enable @Contended annotation support")                           \
+                                                                            \
+  product(bool, RestrictContended, true,                                    \
+          "Restrict @Contended to trusted classes")                         \
                                                                             \
   product(bool, UseBiasedLocking, true,                                     \
           "Enable biased locking in JVM")                                   \
