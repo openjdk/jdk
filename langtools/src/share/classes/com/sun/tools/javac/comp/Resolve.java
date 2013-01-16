@@ -2386,10 +2386,23 @@ public class Resolve {
                                   List<Type> typeargtypes,
                                   boolean boxingAllowed) {
         MethodResolutionPhase maxPhase = boxingAllowed ? VARARITY : BASIC;
+
+        ReferenceLookupHelper boundLookupHelper;
+        if (!name.equals(names.init)) {
+            //method reference
+            boundLookupHelper =
+                    new MethodReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase);
+        } else if (site.hasTag(ARRAY)) {
+            //array constructor reference
+            boundLookupHelper =
+                    new ArrayConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, maxPhase);
+        } else {
+            //class constructor reference
+            boundLookupHelper =
+                    new ConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, maxPhase);
+        }
+
         //step 1 - bound lookup
-        ReferenceLookupHelper boundLookupHelper = name.equals(names.init) ?
-                new ConstructorReferenceLookupHelper(referenceTree, site, argtypes, typeargtypes, maxPhase) :
-                new MethodReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase);
         Env<AttrContext> boundEnv = env.dup(env.tree, env.info.dup());
         Symbol boundSym = lookupMethod(boundEnv, env.tree.pos(), site.tsym, boundLookupHelper);
 
@@ -2623,6 +2636,33 @@ public class Resolve {
         @Override
         ReferenceKind referenceKind(Symbol sym) {
             return ReferenceKind.UNBOUND;
+        }
+    }
+
+    /**
+     * Helper class for array constructor lookup; an array constructor lookup
+     * is simulated by looking up a method that returns the array type specified
+     * as qualifier, and that accepts a single int parameter (size of the array).
+     */
+    class ArrayConstructorReferenceLookupHelper extends ReferenceLookupHelper {
+
+        ArrayConstructorReferenceLookupHelper(JCMemberReference referenceTree, Type site, List<Type> argtypes,
+                List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
+            super(referenceTree, names.init, site, argtypes, typeargtypes, maxPhase);
+        }
+
+        @Override
+        protected Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+            Scope sc = new Scope(syms.arrayClass);
+            MethodSymbol arrayConstr = new MethodSymbol(PUBLIC, name, null, site.tsym);
+            arrayConstr.type = new MethodType(List.of(syms.intType), site, List.<Type>nil(), syms.methodClass);
+            sc.enter(arrayConstr);
+            return findMethodInScope(env, site, name, argtypes, typeargtypes, sc, methodNotFound, phase.isBoxingRequired(), phase.isVarargsRequired(), false, false);
+        }
+
+        @Override
+        ReferenceKind referenceKind(Symbol sym) {
+            return ReferenceKind.ARRAY_CTOR;
         }
     }
 

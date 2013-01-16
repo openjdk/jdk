@@ -302,6 +302,7 @@ public class LambdaToMethod extends TreeTranslator {
             case UNBOUND:           /** Type :: instMethod */
             case STATIC:            /** Type :: staticMethod */
             case TOPLEVEL:          /** Top level :: new */
+            case ARRAY_CTOR:        /** ArrayType :: new */
                 init = null;
                 break;
 
@@ -645,24 +646,33 @@ public class LambdaToMethod extends TreeTranslator {
          * to the first bridge synthetic parameter
          */
         private JCExpression bridgeExpressionNew() {
-            JCExpression encl = null;
-            switch (tree.kind) {
-                case UNBOUND:
-                case IMPLICIT_INNER:
-                    encl = make.Ident(params.first());
-            }
+            if (tree.kind == ReferenceKind.ARRAY_CTOR) {
+                //create the array creation expression
+                JCNewArray newArr = make.NewArray(make.Type(types.elemtype(tree.getQualifierExpression().type)),
+                        List.of(make.Ident(params.first())),
+                        null);
+                newArr.type = tree.getQualifierExpression().type;
+                return newArr;
+            } else {
+                JCExpression encl = null;
+                switch (tree.kind) {
+                    case UNBOUND:
+                    case IMPLICIT_INNER:
+                        encl = make.Ident(params.first());
+                }
 
-            //create the instance creation expression
-            JCNewClass newClass = make.NewClass(encl,
-                    List.<JCExpression>nil(),
-                    make.Type(tree.getQualifierExpression().type),
-                    convertArgs(tree.sym, args.toList(), tree.varargsElement),
-                    null);
-            newClass.constructor = tree.sym;
-            newClass.constructorType = tree.sym.erasure(types);
-            newClass.type = tree.getQualifierExpression().type;
-            setVarargsIfNeeded(newClass, tree.varargsElement);
-            return newClass;
+                //create the instance creation expression
+                JCNewClass newClass = make.NewClass(encl,
+                        List.<JCExpression>nil(),
+                        make.Type(tree.getQualifierExpression().type),
+                        convertArgs(tree.sym, args.toList(), tree.varargsElement),
+                        null);
+                newClass.constructor = tree.sym;
+                newClass.constructorType = tree.sym.erasure(types);
+                newClass.type = tree.getQualifierExpression().type;
+                setVarargsIfNeeded(newClass, tree.varargsElement);
+                return newClass;
+            }
         }
 
         private VarSymbol addParameter(String name, Type p, boolean genArg) {

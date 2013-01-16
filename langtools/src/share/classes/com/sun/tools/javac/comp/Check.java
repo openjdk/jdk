@@ -634,25 +634,40 @@ public class Check {
         }
     }
 
+    Type checkClassOrArrayType(DiagnosticPosition pos, Type t) {
+        if (!t.hasTag(CLASS) && !t.hasTag(ARRAY) && !t.hasTag(ERROR)) {
+            return typeTagError(pos,
+                                diags.fragment("type.req.class.array"),
+                                asTypeParam(t));
+        } else {
+            return t;
+        }
+    }
+
     /** Check that type is a class or interface type.
      *  @param pos           Position to be used for error reporting.
      *  @param t             The type to be checked.
      */
     Type checkClassType(DiagnosticPosition pos, Type t) {
-        if (!t.hasTag(CLASS) && !t.hasTag(ERROR))
+        if (!t.hasTag(CLASS) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
                                 diags.fragment("type.req.class"),
-                                (t.hasTag(TYPEVAR))
-                                ? diags.fragment("type.parameter", t)
-                                : t);
-        else
+                                asTypeParam(t));
+        } else {
             return t;
+        }
     }
+    //where
+        private Object asTypeParam(Type t) {
+            return (t.hasTag(TYPEVAR))
+                                    ? diags.fragment("type.parameter", t)
+                                    : t;
+        }
 
     /** Check that type is a valid qualifier for a constructor reference expression
      */
     Type checkConstructorRefType(DiagnosticPosition pos, Type t) {
-        t = checkClassType(pos, t);
+        t = checkClassOrArrayType(pos, t);
         if (t.hasTag(CLASS)) {
             if ((t.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
                 log.error(pos, "abstract.cant.be.instantiated");
@@ -690,11 +705,8 @@ public class Check {
      *  @param t             The type to be checked.
      */
     Type checkReifiableReferenceType(DiagnosticPosition pos, Type t) {
-        if (!t.hasTag(CLASS) && !t.hasTag(ARRAY) && !t.hasTag(ERROR)) {
-            return typeTagError(pos,
-                                diags.fragment("type.req.class.array"),
-                                t);
-        } else if (!types.isReifiable(t)) {
+        t = checkClassOrArrayType(pos, t);
+        if (!t.isErroneous() && !types.isReifiable(t)) {
             log.error(pos, "illegal.generic.type.for.instof");
             return types.createErrorType(t);
         } else {
