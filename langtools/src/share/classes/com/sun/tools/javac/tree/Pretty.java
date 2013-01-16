@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,12 +154,13 @@ public class Pretty extends JCTree.Visitor {
         }
         //we need to (i) replace all line terminators with a space and (ii) remove
         //occurrences of 'missing' in the Pretty output (generated when types are missing)
-        String res = s.toString().replaceAll("\\s+", " ").replaceAll("/\\*missing\\*/", "");
+        String res = s.toString().trim().replaceAll("\\s+", " ").replaceAll("/\\*missing\\*/", "");
         if (res.length() < maxLength) {
             return res;
         } else {
-            int split = (maxLength - trimSequence.length()) * 2 / 3;
-            return res.substring(0, split) + trimSequence + res.substring(split);
+            int head = (maxLength - trimSequence.length()) * 2 / 3;
+            int tail = maxLength - trimSequence.length() - head;
+            return res.substring(0, head) + trimSequence + res.substring(res.length() - tail);
         }
     }
 
