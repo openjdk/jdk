@@ -230,7 +230,8 @@ class InstanceKlass: public Klass {
     _misc_rewritten            = 1 << 0, // methods rewritten.
     _misc_has_nonstatic_fields = 1 << 1, // for sizing with UseCompressedOops
     _misc_should_verify_class  = 1 << 2, // allow caching of preverification
-    _misc_is_anonymous         = 1 << 3  // has embedded _inner_classes field
+    _misc_is_anonymous         = 1 << 3, // has embedded _inner_classes field
+    _misc_is_contended         = 1 << 4  // marked with contended annotation
   };
   u2              _misc_flags;
   u2              _minor_version;        // minor version number of class file
@@ -548,6 +549,17 @@ class InstanceKlass: public Klass {
   // in places where the metadata is stored in other places, like nmethods
   oop klass_holder() const {
     return is_anonymous() ? java_mirror() : class_loader();
+  }
+
+  bool is_contended() const                {
+    return (_misc_flags & _misc_is_contended) != 0;
+  }
+  void set_is_contended(bool value)        {
+    if (value) {
+      _misc_flags |= _misc_is_contended;
+    } else {
+      _misc_flags &= ~_misc_is_contended;
+    }
   }
 
   // signers
