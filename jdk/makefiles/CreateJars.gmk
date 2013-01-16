@@ -653,7 +653,10 @@ $(eval $(call SetupArchive,BUILD_SUNMSCAPI_JAR,,\
 		SUFFIXES:=.class,\
 		INCLUDES:= sun/security/mscapi,\
 		JAR:=$(SUNMSCAPI_JAR_UNSIGNED), \
+		MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF:=true))
+
+$(SUNMSCAPI_JAR_UNSIGNED): $(JCE_MANIFEST)
 
 ifndef OPENJDK
     SUNMSCAPI_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/mscapi/sunmscapi.jar
