@@ -50,7 +50,7 @@ import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Analyze a function object's characteristics for appropriate code
- * generation. This generates code for the instantiation of ScriptFunction:s
+ * generation. This generates code for the instantiation of ScriptFunctions.
  */
 public class FunctionObjectCreator extends ObjectCreator {
 
@@ -70,7 +70,7 @@ public class FunctionObjectCreator extends ObjectCreator {
     }
 
     private void loadHandle(final MethodEmitter method, final String signature) {
-    method.loadHandle(functionNode.getCompileUnit().getUnitClassName(), functionNode.getName(), signature, EnumSet.of(HANDLE_STATIC)); // function
+        method.loadHandle(functionNode.getCompileUnit().getUnitClassName(), functionNode.getName(), signature, EnumSet.of(HANDLE_STATIC)); // function
     }
 
     /**
