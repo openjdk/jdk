@@ -1838,7 +1838,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             /** Inner # new */
             IMPLICIT_INNER(ReferenceMode.NEW, false),
             /** Toplevel # new */
-            TOPLEVEL(ReferenceMode.NEW, false);
+            TOPLEVEL(ReferenceMode.NEW, false),
+            /** ArrayType # new */
+            ARRAY_CTOR(ReferenceMode.NEW, false);
 
             final ReferenceMode mode;
             final boolean unbound;
