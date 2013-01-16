@@ -25,6 +25,7 @@
 
 package com.sun.tools.doclint;
 
+import com.sun.source.doctree.LiteralTree;
 import java.util.regex.Matcher;
 import com.sun.source.doctree.LinkTree;
 import java.net.URI;
@@ -359,9 +360,8 @@ public class Checker extends DocTreeScanner<Void, Void> {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
         } else if (t.endKind == HtmlTag.EndKind.NONE) {
             env.messages.error(HTML, tree, "dc.tag.end.not.permitted", treeName);
-        } else if (tagStack.isEmpty()) {
-            env.messages.error(HTML, tree, "dc.tag.end.unexpected", treeName);
         } else {
+            boolean done = false;
             while (!tagStack.isEmpty()) {
                 TagStackItem top = tagStack.peek();
                 if (t == top.tag) {
@@ -383,6 +383,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
                         env.messages.error(HTML, tree, "dc.text.not.allowed", treeName);
                     }
                     tagStack.pop();
+                    done = true;
                     break;
                 } else if (top.tag == null || top.tag.endKind != HtmlTag.EndKind.REQUIRED) {
                     tagStack.pop();
@@ -400,9 +401,14 @@ public class Checker extends DocTreeScanner<Void, Void> {
                         tagStack.pop();
                     } else {
                         env.messages.error(HTML, tree, "dc.tag.end.unexpected", treeName);
+                        done = true;
                         break;
                     }
                 }
+            }
+
+            if (!done && tagStack.isEmpty()) {
+                env.messages.error(HTML, tree, "dc.tag.end.unexpected", treeName);
             }
         }
 
@@ -543,6 +549,19 @@ public class Checker extends DocTreeScanner<Void, Void> {
         } finally {
             tagStack.pop();
         }
+    }
+
+    @Override
+    public Void visitLiteral(LiteralTree tree, Void ignore) {
+        if (tree.getKind() == DocTree.Kind.CODE) {
+            for (TagStackItem tsi: tagStack) {
+                if (tsi.tag == HtmlTag.CODE) {
+                    env.messages.warning(HTML, tree, "dc.tag.nested.not.allowed", "code");
+                    break;
+                }
+            }
+        }
+        return super.visitLiteral(tree, ignore);
     }
 
     @Override
