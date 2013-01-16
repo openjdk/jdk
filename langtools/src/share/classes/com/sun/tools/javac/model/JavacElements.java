@@ -266,9 +266,10 @@ public class JavacElements implements Elements {
 
     private static Class<? extends Annotation> initRepeatable() {
         try {
-            @SuppressWarnings("unchecked") // java.lang.annotation.Repeatable extends Annotation by being an annotation type
-            Class<? extends Annotation> c = (Class)Class.forName("java.lang.annotation.Repeatable");
-            return c;
+            // Repeatable will not be available when bootstrapping on
+            // JDK 7 so use a reflective lookup instead of a class
+            // literal for Repeatable.class.
+            return Class.forName("java.lang.annotation.Repeatable").asSubclass(Annotation.class);
         } catch (ClassNotFoundException e) {
             return null;
         } catch (SecurityException e) {
