@@ -2601,6 +2601,18 @@ public class Check {
             if (!isOverrider(s))
                 log.error(a.pos(), "method.does.not.override.superclass");
         }
+
+        if (a.annotationType.type.tsym == syms.functionalInterfaceType.tsym) {
+            if (s.kind != TYP) {
+                log.error(a.pos(), "bad.functional.intf.anno");
+            } else {
+                try {
+                    types.findDescriptorSymbol((TypeSymbol)s);
+                } catch (Types.FunctionDescriptorLookupError ex) {
+                    log.error(a.pos(), "bad.functional.intf.anno.1", ex.getDiagnostic());
+                }
+            }
+        }
     }
 
     /**

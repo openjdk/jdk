@@ -164,6 +164,7 @@ public class Symtab {
     public final Type repeatableType;
     public final Type documentedType;
     public final Type elementTypeType;
+    public final Type functionalInterfaceType;
 
     /** The symbol representing the length field of an array.
      */
@@ -507,6 +508,7 @@ public class Symtab {
         nativeHeaderType = enterClass("java.lang.annotation.Native");
         nativeHeaderType_old = enterClass("javax.tools.annotation.GenerateNativeHeader");
         lambdaMetafactory = enterClass("java.lang.invoke.LambdaMetafactory");
+        functionalInterfaceType = enterClass("java.lang.FunctionalInterface");
 
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
