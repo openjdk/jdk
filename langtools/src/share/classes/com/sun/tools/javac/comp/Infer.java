@@ -114,7 +114,7 @@ public class Infer {
         }
     }
 
-    private final InferenceException inferenceException;
+    final InferenceException inferenceException;
 
 /***************************************************************************
  * Mini/Maximization of UndetVars
@@ -271,15 +271,19 @@ public class Infer {
                                   boolean allowBoxing,
                                   boolean useVarargs,
                                   Resolve.MethodResolutionContext resolveContext,
+                                  Resolve.MethodCheck methodCheck,
                                   Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
         final InferenceContext inferenceContext = new InferenceContext(tvars, this, true);
         inferenceException.clear();
 
+        DeferredAttr.DeferredAttrContext deferredAttrContext =
+                resolveContext.deferredAttrContext(msym, inferenceContext);
+
         try {
-            rs.checkRawArgumentsAcceptable(env, msym, resolveContext.attrMode(), inferenceContext,
-                    argtypes, mt.getParameterTypes(), allowBoxing, useVarargs, warn,
-                    new InferenceCheckHandler(inferenceContext));
+            methodCheck.argumentsAcceptable(env, deferredAttrContext, argtypes, mt.getParameterTypes(), warn);
+
+            deferredAttrContext.complete();
 
             // minimize as yet undetermined type variables
             for (Type t : inferenceContext.undetvars) {
@@ -309,32 +313,6 @@ public class Infer {
             inferenceContext.notifyChange(types);
         }
     }
-    //where
-
-        /** inference check handler **/
-        class InferenceCheckHandler implements Resolve.MethodCheckHandler {
-
-            InferenceContext inferenceContext;
-
-            public InferenceCheckHandler(InferenceContext inferenceContext) {
-                this.inferenceContext = inferenceContext;
-            }
-
-            public InapplicableMethodException arityMismatch() {
-                return inferenceException.setMessage("infer.arg.length.mismatch", inferenceContext.inferenceVars());
-            }
-            public InapplicableMethodException argumentMismatch(boolean varargs, JCDiagnostic details) {
-                String key = varargs ?
-                        "infer.varargs.argument.mismatch" :
-                        "infer.no.conforming.assignment.exists";
-                return inferenceException.setMessage(key,
-                        inferenceContext.inferenceVars(), details);
-            }
-            public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
-                return inferenceException.setMessage("inaccessible.varargs.type",
-                        expected, Kinds.kindName(location), location);
-            }
-        }
 
     /** check that type parameters are within their bounds.
      */

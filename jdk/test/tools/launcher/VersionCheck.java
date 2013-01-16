@@ -68,6 +68,7 @@ public class VersionCheck extends TestHelper {
         "jcmd",
         "jconsole",
         "jcontrol",
+        "jdeps",
         "jinfo",
         "jmap",
         "jps",
