@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,19 @@
  * @bug     6769027
  * @summary Source line should be displayed immediately after the first diagnostic line
  * @author  Maurizio Cimadamore
+ * @library ../../lib
+ * @build JavacTestingAbstractThreadedTest
  * @run main/othervm T6769027
  */
+
 import java.net.URI;
 import java.util.regex.Matcher;
 import javax.tools.*;
 import com.sun.tools.javac.util.*;
 
-public class T6769027 {
+public class T6769027
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum OutputKind {
         RAW("rawDiagnostics","rawDiagnostics"),
@@ -314,7 +319,7 @@ public class T6769027 {
 
         @Override
         protected java.io.PrintWriter getWriterForDiagnosticType(JCDiagnostic.DiagnosticType dt) {
-            return new java.io.PrintWriter(System.out);
+            return outWriter;
         }
 
         @Override
@@ -323,13 +328,42 @@ public class T6769027 {
         }
     }
 
-    int nerrors = 0;
+    OutputKind outputKind;
+    ErrorKind errorKind;
+    MultilineKind multiKind;
+    MultilinePolicy multiPolicy;
+    PositionKind posKind;
+    XDiagsSource xdiagsSource;
+    XDiagsCompact xdiagsCompact;
+    CaretKind caretKind;
+    SourceLineKind sourceLineKind;
+    IndentKind summaryIndent;
+    IndentKind detailsIndent;
+    IndentKind sourceIndent;
+    IndentKind subdiagsIndent;
 
-    void exec(OutputKind outputKind, ErrorKind errorKind, MultilineKind multiKind,
+    T6769027(OutputKind outputKind, ErrorKind errorKind, MultilineKind multiKind,
             MultilinePolicy multiPolicy, PositionKind posKind, XDiagsSource xdiagsSource,
             XDiagsCompact xdiagsCompact, CaretKind caretKind, SourceLineKind sourceLineKind,
             IndentKind summaryIndent, IndentKind detailsIndent, IndentKind sourceIndent,
             IndentKind subdiagsIndent) {
+        this.outputKind = outputKind;
+        this.errorKind = errorKind;
+        this.multiKind = multiKind;
+        this.multiPolicy = multiPolicy;
+        this.posKind = posKind;
+        this.xdiagsSource = xdiagsSource;
+        this.xdiagsCompact = xdiagsCompact;
+        this.caretKind = caretKind;
+        this.sourceLineKind = sourceLineKind;
+        this.summaryIndent = summaryIndent;
+        this.detailsIndent = detailsIndent;
+        this.sourceIndent = sourceIndent;
+        this.subdiagsIndent = subdiagsIndent;
+    }
+
+    @Override
+    public void run() {
         Context ctx = new Context();
         Options options = Options.instance(ctx);
         outputKind.init(options);
@@ -362,23 +396,10 @@ public class T6769027 {
             d = new JCDiagnostic.MultilineDiagnostic(d, subdiags);
         }
         String diag = log.getDiagnosticFormatter().format(d, messages.getCurrentLocale());
-        checkOutput(diag,
-                outputKind,
-                errorKind,
-                multiKind,
-                multiPolicy,
-                posKind,
-                xdiagsSource,
-                xdiagsCompact,
-                caretKind,
-                sourceLineKind,
-                summaryIndent,
-                detailsIndent,
-                sourceIndent,
-                subdiagsIndent);
+        checkOutput(diag);
     }
 
-    void test() {
+    public static void main(String[] args) throws Exception {
         for (OutputKind outputKind : OutputKind.values()) {
             for (ErrorKind errKind : ErrorKind.values()) {
                 for (MultilineKind multiKind : MultilineKind.values()) {
@@ -392,7 +413,7 @@ public class T6769027 {
                                                 for (IndentKind detailsIndent : IndentKind.values()) {
                                                     for (IndentKind sourceIndent : IndentKind.values()) {
                                                         for (IndentKind subdiagsIndent : IndentKind.values()) {
-                                                            exec(outputKind,
+                                                            pool.execute(new T6769027(outputKind,
                                                                 errKind,
                                                                 multiKind,
                                                                 multiPolicy,
@@ -404,7 +425,7 @@ public class T6769027 {
                                                                 summaryIndent,
                                                                 detailsIndent,
                                                                 sourceIndent,
-                                                                subdiagsIndent);
+                                                                subdiagsIndent));
                                                         }
                                                     }
                                                 }
@@ -418,15 +439,11 @@ public class T6769027 {
                 }
             }
         }
-        if (nerrors != 0)
-            throw new AssertionError(nerrors + " errors found");
+
+        checkAfterExec(false);
     }
 
-    void printInfo(String msg, OutputKind outputKind, ErrorKind errorKind, MultilineKind multiKind,
-            MultilinePolicy multiPolicy, PositionKind posKind, XDiagsSource xdiagsSource,
-            XDiagsCompact xdiagsCompact, CaretKind caretKind, SourceLineKind sourceLineKind,
-            IndentKind summaryIndent, IndentKind detailsIndent, IndentKind sourceIndent,
-            IndentKind subdiagsIndent, String errorLine) {
+    void printInfo(String msg, String errorLine) {
         String sep = "*********************************************************";
         String desc = "raw=" + outputKind + " pos=" + posKind + " key=" + errorKind.key() +
                 " multiline=" + multiKind +" multiPolicy=" + multiPolicy.value +
@@ -434,18 +451,14 @@ public class T6769027 {
                 " caret=" + caretKind + " sourcePosition=" + sourceLineKind +
                 " summaryIndent=" + summaryIndent + " detailsIndent=" + detailsIndent +
                 " sourceIndent=" + sourceIndent + " subdiagsIndent=" + subdiagsIndent;
-        System.out.println(sep);
-        System.out.println(desc);
-        System.out.println(sep);
-        System.out.println(msg);
-        System.out.println("Diagnostic formatting problem - expected diagnostic...\n" + errorLine);
+        errWriter.println(sep);
+        errWriter.println(desc);
+        errWriter.println(sep);
+        errWriter.println(msg);
+        errWriter.println("Diagnostic formatting problem - expected diagnostic...\n" + errorLine);
     }
 
-    void checkOutput(String msg, OutputKind outputKind, ErrorKind errorKind, MultilineKind multiKind,
-            MultilinePolicy multiPolicy, PositionKind posKind, XDiagsSource xdiagsSource,
-            XDiagsCompact xdiagsCompact, CaretKind caretKind, SourceLineKind sourceLineKind,
-            IndentKind summaryIndent, IndentKind detailsIndent, IndentKind sourceIndent,
-            IndentKind subdiagsIndent) {
+    void checkOutput(String msg) {
         boolean shouldPrintSource = posKind == PositionKind.POS &&
                 xdiagsSource != XDiagsSource.NO_SOURCE &&
                 (xdiagsSource == XDiagsSource.SOURCE ||
@@ -453,7 +466,8 @@ public class T6769027 {
         String errorLine = posKind.getOutput(outputKind) +
                 errorKind.getOutput(outputKind, summaryIndent, detailsIndent);
         if (xdiagsCompact != XDiagsCompact.COMPACT)
-            errorLine += multiKind.getOutput(outputKind, errorKind, multiPolicy, summaryIndent, detailsIndent, subdiagsIndent);
+            errorLine += multiKind.getOutput(outputKind, errorKind, multiPolicy,
+                    summaryIndent, detailsIndent, subdiagsIndent);
         String[] lines = errorLine.split("\n");
         if (xdiagsCompact == XDiagsCompact.COMPACT) {
             errorLine = lines[0];
@@ -474,26 +488,9 @@ public class T6769027 {
         }
 
         if (!msg.equals(errorLine)) {
-            printInfo(msg,
-                    outputKind,
-                    errorKind,
-                    multiKind,
-                    multiPolicy,
-                    posKind,
-                    xdiagsSource,
-                    xdiagsCompact,
-                    caretKind,
-                    sourceLineKind,
-                    summaryIndent,
-                    detailsIndent,
-                    sourceIndent,
-                    subdiagsIndent,
-                    errorLine);
-            nerrors++;
+            printInfo(msg, errorLine);
+            errCount.incrementAndGet();
         }
     }
 
-    public static void main(String... args) throws Exception {
-        new T6769027().test();
-    }
 }

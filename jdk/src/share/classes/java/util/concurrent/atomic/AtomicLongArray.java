@@ -144,12 +144,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndSet(int i, long newValue) {
-        long offset = checkedByteOffset(i);
-        while (true) {
-            long current = getRaw(offset);
-            if (compareAndSetRaw(offset, current, newValue))
-                return current;
-        }
+        return unsafe.getAndSetLong(array, checkedByteOffset(i), newValue);
     }
 
     /**
@@ -181,7 +176,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @param i the index
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful.
+     * @return true if successful
      */
     public final boolean weakCompareAndSet(int i, long expect, long update) {
         return compareAndSet(i, expect, update);
@@ -215,12 +210,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndAdd(int i, long delta) {
-        long offset = checkedByteOffset(i);
-        while (true) {
-            long current = getRaw(offset);
-            if (compareAndSetRaw(offset, current, current + delta))
-                return current;
-        }
+        return unsafe.getAndAddLong(array, checkedByteOffset(i), delta);
     }
 
     /**
@@ -230,7 +220,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the updated value
      */
     public final long incrementAndGet(int i) {
-        return addAndGet(i, 1);
+        return getAndAdd(i, 1) + 1;
     }
 
     /**
@@ -240,7 +230,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the updated value
      */
     public final long decrementAndGet(int i) {
-        return addAndGet(i, -1);
+        return getAndAdd(i, -1) - 1;
     }
 
     /**
@@ -251,13 +241,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @return the updated value
      */
     public long addAndGet(int i, long delta) {
-        long offset = checkedByteOffset(i);
-        while (true) {
-            long current = getRaw(offset);
-            long next = current + delta;
-            if (compareAndSetRaw(offset, current, next))
-                return next;
-        }
+        return getAndAdd(i, delta) + delta;
     }
 
     /**
