@@ -179,6 +179,10 @@ public interface Element {
      * instance initializer}, an empty name is returned.
      *
      * @return the simple name of this element
+     * @see PackageElement#getSimpleName
+     * @see ExecutableElement#getSimpleName
+     * @see TypeElement#getSimpleName
+     * @see VariableElement#getSimpleName
      */
     Name getSimpleName();
 
@@ -201,6 +205,11 @@ public interface Element {
      * TypeParameterElement#getEnclosingElement type parameter},
      * {@linkplain TypeParameterElement#getGenericElement the
      * generic element} of the type parameter is returned.
+     *
+     * <li> If this is a {@linkplain
+     * VariableElement#getEnclosingElement method or constructor
+     * parameter}, {@linkplain ExecutableElement the executable
+     * element} which declares the parameter is returned.
      *
      * </ul>
      *

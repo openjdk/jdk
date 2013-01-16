@@ -229,7 +229,7 @@ JCK_RUNTIME_OUTPUT_DIR = $(ABS_TEST_OUTPUT_DIR)/jck-runtime-Xcompile
 all: $(JPRT_CLEAN) jtreg-tests jck-compiler-tests jck-runtime-tests $(JPRT_ARCHIVE_BUNDLE) all-summary
 	@echo "Testing completed successfully"
 
-jtreg apt javac javadoc javah javap: $(JPRT_CLEAN) jtreg-tests $(JPRT_ARCHIVE_BUNDLE) jtreg-summary
+jtreg apt javac javadoc javah javap jdeps: $(JPRT_CLEAN) jtreg-tests $(JPRT_ARCHIVE_BUNDLE) jtreg-summary
 	@echo "Testing completed successfully"
 
 jck-compiler: $(JPRT_CLEAN) jck-compiler-tests $(JPRT_ARCHIVE_BUNDLE) jck-compiler-summary
@@ -246,6 +246,7 @@ javac: 		JTREG_TESTDIRS = tools/javac
 javadoc:	JTREG_TESTDIRS = tools/javadoc com/sun/javadoc
 javah:		JTREG_TESTDIRS = tools/javah
 javap:		JTREG_TESTDIRS = tools/javap
+jdeps:		JTREG_TESTDIRS = tools/jdeps
 
 # Run jtreg tests
 #
@@ -426,7 +427,7 @@ FRC:
 
 # Phony targets (e.g. these are not filenames)
 .PHONY: all clean \
-	jtreg javac javadoc javah javap jtreg-tests jtreg-summary check-jtreg \
+	jtreg javac javadoc javah javap jdeps jtreg-tests jtreg-summary check-jtreg \
 	jck-compiler jck-compiler-tests jck-compiler-summary \
 	jck-runtime jck-runtime-tests jck-runtime-summary check-jck
 

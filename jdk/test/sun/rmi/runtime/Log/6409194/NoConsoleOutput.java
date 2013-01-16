@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,7 @@ public class NoConsoleOutput {
         JavaVM vm = new JavaVM(DoRMIStuff.class.getName(),
             "-Djava.util.logging.config.file=" + loggingPropertiesFile,
                                "", out, err);
-        vm.start();
-        vm.getVM().waitFor();
+        vm.execute();
 
         /*
          * Verify that the subprocess had no System.out or System.err

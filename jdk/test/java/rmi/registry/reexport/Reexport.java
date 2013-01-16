@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,7 @@ public class Reexport {
         try {
             JavaVM jvm = new JavaVM("RegistryRunner", "", Integer.toString(p));
             jvm.start();
-            Reexport.subreg = jvm.getVM();
-
+            Reexport.subreg = jvm;
         } catch (IOException e) {
             // one of these is summarily dropped, can't remember which one
             System.out.println ("Test setup failed - cannot run rmiregistry");
@@ -135,7 +134,8 @@ public class Reexport {
         } catch (Exception whatever) {
         }
     }
-    private static Process subreg = null;
+
+    private static JavaVM subreg = null;
 
     public static void killRegistry(int port) {
         if (Reexport.subreg != null) {

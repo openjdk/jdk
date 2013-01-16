@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,23 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  Automatic test for checking correctness of structural most specific test routine
- * @run main/timeout=360 StructuralMostSpecificTest
+ * @library ../../lib
+ * @build JavacTestingAbstractThreadedTest
+ * @run main/timeout=600 StructuralMostSpecificTest
  */
 
-import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.api.ClientCodeWrapper;
-import com.sun.tools.javac.util.JCDiagnostic;
 import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
+import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.ClientCodeWrapper;
+import com.sun.tools.javac.util.JCDiagnostic;
 
-public class StructuralMostSpecificTest {
-
-    static int checkCount = 0;
+public class StructuralMostSpecificTest
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum RetTypeKind {
         SHORT("short"),
@@ -105,7 +104,7 @@ public class StructuralMostSpecificTest {
         VOID("return;"),
         SHORT("return (short)0;"),
         INT("return 0;"),
-        INTEGER("return (Integer)null"),
+        INTEGER("return (Integer)null;"),
         NULL("return null;");
 
         String retStr;
@@ -142,11 +141,6 @@ public class StructuralMostSpecificTest {
     }
 
     public static void main(String... args) throws Exception {
-
-        //create default shared JavaCompiler - reused across multiple compilations
-        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-
         for (LambdaReturnKind lrk : LambdaReturnKind.values()) {
             for (RetTypeKind rk1 : RetTypeKind.values()) {
                 for (RetTypeKind rk2 : RetTypeKind.values()) {
@@ -154,7 +148,9 @@ public class StructuralMostSpecificTest {
                         for (ExceptionKind ek2 : ExceptionKind.values()) {
                             for (ArgTypeKind ak11 : ArgTypeKind.values()) {
                                 for (ArgTypeKind ak12 : ArgTypeKind.values()) {
-                                    new StructuralMostSpecificTest(lrk, rk1, rk2, ek1, ek2, ak11, ak12).run(comp, fm);
+                                    pool.execute(
+                                        new StructuralMostSpecificTest(lrk, rk1,
+                                            rk2, ek1, ek2, ak11, ak12));
                                 }
                             }
                         }
@@ -162,7 +158,8 @@ public class StructuralMostSpecificTest {
                 }
             }
         }
-        System.out.println("Total check executed: " + checkCount);
+
+        checkAfterExec();
     }
 
     LambdaReturnKind lrk;
@@ -218,20 +215,22 @@ public class StructuralMostSpecificTest {
         }
     }
 
-    void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
+    public void run() {
+        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
                 Arrays.asList("-XDverboseResolution=all,-predef,-internal,-object-init"),
                 null, Arrays.asList(source));
         try {
             ct.analyze();
         } catch (Throwable ex) {
-            throw new AssertionError("Error thron when analyzing the following source:\n" + source.getCharContent(true));
+            throw new
+                AssertionError("Error thron when analyzing the following source:\n" +
+                    source.getCharContent(true));
         }
         check();
     }
 
     void check() {
-        checkCount++;
+        checkCount.incrementAndGet();
 
         if (!lrk.compatibleWith(rt1) || !lrk.compatibleWith(rt2))
             return;
@@ -265,8 +264,8 @@ public class StructuralMostSpecificTest {
         }
     }
 
-    boolean moreSpecific(RetTypeKind rk1, RetTypeKind rk2, ExceptionKind ek1, ExceptionKind ek2,
-            ArgTypeKind ak1, ArgTypeKind ak2) {
+    boolean moreSpecific(RetTypeKind rk1, RetTypeKind rk2, ExceptionKind ek1,
+            ExceptionKind ek2, ArgTypeKind ak1, ArgTypeKind ak2) {
         if (!rk1.moreSpecificThan(rk2))
             return false;
 
@@ -276,7 +275,8 @@ public class StructuralMostSpecificTest {
         return true;
     }
 
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         boolean ambiguityFound;
         String mostSpecificSig;
@@ -287,12 +287,16 @@ public class StructuralMostSpecificTest {
                         diagnostic.getCode().equals("compiler.err.ref.ambiguous")) {
                     ambiguityFound = true;
                 } else if (diagnostic.getKind() == Diagnostic.Kind.NOTE &&
-                        diagnostic.getCode().equals("compiler.note.verbose.resolve.multi")) {
+                        diagnostic.getCode()
+                        .equals("compiler.note.verbose.resolve.multi")) {
                     ClientCodeWrapper.DiagnosticSourceUnwrapper dsu =
-                            (ClientCodeWrapper.DiagnosticSourceUnwrapper)diagnostic;
-                    JCDiagnostic.MultilineDiagnostic mdiag = (JCDiagnostic.MultilineDiagnostic)dsu.d;
+                        (ClientCodeWrapper.DiagnosticSourceUnwrapper)diagnostic;
+                    JCDiagnostic.MultilineDiagnostic mdiag =
+                        (JCDiagnostic.MultilineDiagnostic)dsu.d;
                     int mostSpecificIndex = (Integer)mdiag.getArgs()[2];
-                    mostSpecificSig = ((JCDiagnostic)mdiag.getSubdiagnostics().get(mostSpecificIndex)).getArgs()[1].toString();
+                    mostSpecificSig =
+                        ((JCDiagnostic)mdiag.getSubdiagnostics()
+                            .get(mostSpecificIndex)).getArgs()[1].toString();
                 }
             } catch (RuntimeException t) {
                 t.printStackTrace();
@@ -300,4 +304,5 @@ public class StructuralMostSpecificTest {
             }
         }
     }
+
 }

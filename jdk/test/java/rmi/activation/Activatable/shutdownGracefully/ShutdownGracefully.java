@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public class ShutdownGracefully
             registering = null;
 
             // Need to make sure that rmid goes away by itself
-            Process rmidProcess = rmid.getVM();
+            JavaVM rmidProcess = rmid;
             if (rmidProcess != null) {
                 try {
                     Runnable waitThread =
@@ -205,9 +205,9 @@ public class ShutdownGracefully
      * class that waits for rmid to exit
      */
     private static class ShutdownDetectThread implements Runnable {
-        private Process rmidProcess = null;
+        private JavaVM rmidProcess = null;
 
-        ShutdownDetectThread(Process rmidProcess) {
+        ShutdownDetectThread(JavaVM rmidProcess) {
             this.rmidProcess = rmidProcess;
         }
         public void run() {

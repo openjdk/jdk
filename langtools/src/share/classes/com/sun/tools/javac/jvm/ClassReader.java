@@ -217,6 +217,13 @@ public class ClassReader implements Completer {
      */
     boolean haveParameterNameIndices;
 
+    /** Set this to false every time we start reading a method
+     * and are saving parameter names.  Set it to true when we see
+     * MethodParameters, if it's set when we see a LocalVariableTable,
+     * then we ignore the parameter names from the LVT.
+     */
+    boolean sawMethodParameters;
+
     /**
      * The set of attribute names for which warnings have been generated for the current class
      */
@@ -984,7 +991,7 @@ public class ClassReader implements Completer {
             new AttributeReader(names.LocalVariableTable, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
                     int newbp = bp + attrLen;
-                    if (saveParameterNames) {
+                    if (saveParameterNames && !sawMethodParameters) {
                         // Pick up parameter names from the variable table.
                         // Parameter names are not explicitly identified as such,
                         // but all parameter name entries in the LocalVariableTable
@@ -1016,6 +1023,25 @@ public class ClassReader implements Completer {
                     bp = newbp;
                 }
             },
+
+            new AttributeReader(names.MethodParameters, V52, MEMBER_ATTRIBUTE) {
+                protected void read(Symbol sym, int attrlen) {
+                    int newbp = bp + attrlen;
+                    if (saveParameterNames) {
+                        sawMethodParameters = true;
+                        int numEntries = nextByte();
+                        parameterNameIndices = new int[numEntries];
+                        haveParameterNameIndices = true;
+                        for (int i = 0; i < numEntries; i++) {
+                            int nameIndex = nextChar();
+                            int flags = nextInt();
+                            parameterNameIndices[i] = nameIndex;
+                        }
+                    }
+                    bp = newbp;
+                }
+            },
+
 
             new AttributeReader(names.SourceFile, V45_3, CLASS_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
@@ -1826,6 +1852,7 @@ public class ClassReader implements Completer {
         } else
             Arrays.fill(parameterNameIndices, 0);
         haveParameterNameIndices = false;
+        sawMethodParameters = false;
     }
 
     /**
@@ -1845,12 +1872,16 @@ public class ClassReader implements Completer {
         // if no names were found in the class file, there's nothing more to do
         if (!haveParameterNameIndices)
             return;
-
-        int firstParam = ((sym.flags() & STATIC) == 0) ? 1 : 0;
-        // the code in readMethod may have skipped the first parameter when
-        // setting up the MethodType. If so, we make a corresponding allowance
-        // here for the position of the first parameter.  Note that this
-        // assumes the skipped parameter has a width of 1 -- i.e. it is not
+        // If we get parameter names from MethodParameters, then we
+        // don't need to skip.
+        int firstParam = 0;
+        if (!sawMethodParameters) {
+            firstParam = ((sym.flags() & STATIC) == 0) ? 1 : 0;
+            // the code in readMethod may have skipped the first
+            // parameter when setting up the MethodType. If so, we
+            // make a corresponding allowance here for the position of
+            // the first parameter.  Note that this assumes the
+            // skipped parameter has a width of 1 -- i.e. it is not
         // a double width type (long or double.)
         if (sym.name == names.init && currentOwner.hasOuterInstance()) {
             // Sometimes anonymous classes don't have an outer
@@ -1861,16 +1892,19 @@ public class ClassReader implements Completer {
         }
 
         if (sym.type != jvmType) {
-            // reading the method attributes has caused the symbol's type to
-            // be changed. (i.e. the Signature attribute.)  This may happen if
-            // there are hidden (synthetic) parameters in the descriptor, but
-            // not in the Signature.  The position of these hidden parameters
-            // is unspecified; for now, assume they are at the beginning, and
-            // so skip over them. The primary case for this is two hidden
-            // parameters passed into Enum constructors.
+                // reading the method attributes has caused the
+                // symbol's type to be changed. (i.e. the Signature
+                // attribute.)  This may happen if there are hidden
+                // (synthetic) parameters in the descriptor, but not
+                // in the Signature.  The position of these hidden
+                // parameters is unspecified; for now, assume they are
+                // at the beginning, and so skip over them. The
+                // primary case for this is two hidden parameters
+                // passed into Enum constructors.
             int skip = Code.width(jvmType.getParameterTypes())
                     - Code.width(sym.type.getParameterTypes());
             firstParam += skip;
+        }
         }
         List<Name> paramNames = List.nil();
         int index = firstParam;

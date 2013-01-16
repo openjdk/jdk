@@ -89,6 +89,15 @@ public class AnnotationDescImpl implements AnnotationDesc {
     }
 
     /**
+     * Check for the synthesized bit on the annotation.
+     *
+     * @return true if the annotation is synthesized.
+     */
+    public boolean isSynthesized() {
+        return annotation.isSynthesized();
+    }
+
+    /**
      * Returns a string representation of this annotation.
      * String is of one of the forms:
      *     @com.example.foo(name1=val1, name2=val2)
