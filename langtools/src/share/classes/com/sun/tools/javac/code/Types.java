@@ -392,9 +392,9 @@ public class Types {
          * Compute the function descriptor associated with a given functional interface
          */
         public FunctionDescriptor findDescriptorInternal(TypeSymbol origin, CompoundScope membersCache) throws FunctionDescriptorLookupError {
-            if (!origin.isInterface()) {
+            if (!origin.isInterface() || (origin.flags() & ANNOTATION) != 0) {
                 //t must be an interface
-                throw failure("not.a.functional.intf");
+                throw failure("not.a.functional.intf", origin);
             }
 
             final ListBuffer<Symbol> abstracts = ListBuffer.lb();
@@ -406,13 +406,13 @@ public class Types {
                     abstracts.append(sym);
                 } else {
                     //the target method(s) should be the only abstract members of t
-                    throw failure("not.a.functional.intf.1",
+                    throw failure("not.a.functional.intf.1",  origin,
                             diags.fragment("incompatible.abstracts", Kinds.kindName(origin), origin));
                 }
             }
             if (abstracts.isEmpty()) {
                 //t must define a suitable non-generic method
-                throw failure("not.a.functional.intf.1",
+                throw failure("not.a.functional.intf.1", origin,
                             diags.fragment("no.abstracts", Kinds.kindName(origin), origin));
             } else if (abstracts.size() == 1) {
                 return new FunctionDescriptor(abstracts.first());
