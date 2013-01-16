@@ -3421,7 +3421,10 @@ public class Resolve {
 
         @Override
         protected Symbol access(Name name, TypeSymbol location) {
-            return ambiguousSyms.last();
+            Symbol firstAmbiguity = ambiguousSyms.last();
+            return firstAmbiguity.kind == TYP ?
+                    types.createErrorType(name, location, firstAmbiguity.type).tsym :
+                    firstAmbiguity;
         }
     }
 
