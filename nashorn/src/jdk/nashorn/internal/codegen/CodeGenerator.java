@@ -536,10 +536,12 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         final List<String> keys    = new ArrayList<>();
         final List<Symbol> symbols = new ArrayList<>();
 
+        /* TODO - Predefine known properties.
         for (final Entry<String, Node> entry : thisProperties.entrySet()) {
             keys.add(entry.getKey());
             symbols.add(entry.getValue().getSymbol());
         }
+        */
 
         new FunctionObjectCreator(this, functionNode, keys, symbols).makeObject(method);
     }
