@@ -206,7 +206,8 @@ public class AuthenticationHeader {
 
             if(v == null) {
                 if ((v=schemes.get ("digest")) == null) {
-                    if (((v=schemes.get("ntlm"))==null)) {
+                    if (!NTLMAuthenticationProxy.supported
+                        || ((v=schemes.get("ntlm"))==null)) {
                         v = schemes.get ("basic");
                     }
                 }

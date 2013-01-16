@@ -860,9 +860,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return     the specified subsequence.
      *
      * @throws  IndexOutOfBoundsException
-     *          if <tt>start</tt> or <tt>end</tt> are negative,
-     *          if <tt>end</tt> is greater than <tt>length()</tt>,
-     *          or if <tt>start</tt> is greater than <tt>end</tt>
+     *          if {@code start} or {@code end} are negative,
+     *          if {@code end} is greater than {@code length()},
+     *          or if {@code start} is greater than {@code end}
      * @spec JSR-51
      */
     @Override
@@ -1292,7 +1292,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     /**
      * Returns the index within this string of the first occurrence of the
      * specified substring, starting at the specified index.  The integer
-     * returned is the smallest value <tt>k</tt> for which:
+     * returned is the smallest value {@code k} for which:
      * <blockquote><pre>
      *     k >= Math.min(fromIndex, str.length()) &&
      *                   this.toString().startsWith(str, k)
@@ -1418,7 +1418,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     public abstract String toString();
 
     /**
-     * Needed by <tt>String</tt> for the contentEquals method.
+     * Needed by {@code String} for the contentEquals method.
      */
     final char[] getValue() {
         return value;

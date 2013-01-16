@@ -615,10 +615,10 @@ public final class String
     }
 
     /**
-     * Returns <tt>true</tt> if, and only if, {@link #length()} is <tt>0</tt>.
+     * Returns {@code true} if, and only if, {@link #length()} is {@code 0}.
      *
-     * @return <tt>true</tt> if {@link #length()} is <tt>0</tt>, otherwise
-     * <tt>false</tt>
+     * @return {@code true} if {@link #length()} is {@code 0}, otherwise
+     * {@code false}
      *
      * @since 1.6
      */
@@ -1229,23 +1229,23 @@ public final class String
     /**
      * Tests if two string regions are equal.
      * <p>
-     * A substring of this <tt>String</tt> object is compared to a substring
+     * A substring of this {@code String} object is compared to a substring
      * of the argument other. The result is true if these substrings
      * represent identical character sequences. The substring of this
-     * <tt>String</tt> object to be compared begins at index <tt>toffset</tt>
-     * and has length <tt>len</tt>. The substring of other to be compared
-     * begins at index <tt>ooffset</tt> and has length <tt>len</tt>. The
-     * result is <tt>false</tt> if and only if at least one of the following
+     * {@code String} object to be compared begins at index {@code toffset}
+     * and has length {@code len}. The substring of other to be compared
+     * begins at index {@code ooffset} and has length {@code len}. The
+     * result is {@code false} if and only if at least one of the following
      * is true:
-     * <ul><li><tt>toffset</tt> is negative.
-     * <li><tt>ooffset</tt> is negative.
-     * <li><tt>toffset+len</tt> is greater than the length of this
-     * <tt>String</tt> object.
-     * <li><tt>ooffset+len</tt> is greater than the length of the other
+     * <ul><li>{@code toffset} is negative.
+     * <li>{@code ooffset} is negative.
+     * <li>{@code toffset+len} is greater than the length of this
+     * {@code String} object.
+     * <li>{@code ooffset+len} is greater than the length of the other
      * argument.
-     * <li>There is some nonnegative integer <i>k</i> less than <tt>len</tt>
+     * <li>There is some nonnegative integer <i>k</i> less than {@code len}
      * such that:
-     * <tt>this.charAt(toffset+<i>k</i>)&nbsp;!=&nbsp;other.charAt(ooffset+<i>k</i>)</tt>
+     * <code>this.charAt(toffset+<i>k</i>)&nbsp;!=&nbsp;other.charAt(ooffset+<i>k</i>)</code>
      * </ul>
      *
      * @param   toffset   the starting offset of the subregion in this string.
@@ -1280,28 +1280,28 @@ public final class String
     /**
      * Tests if two string regions are equal.
      * <p>
-     * A substring of this <tt>String</tt> object is compared to a substring
-     * of the argument <tt>other</tt>. The result is <tt>true</tt> if these
+     * A substring of this {@code String} object is compared to a substring
+     * of the argument {@code other}. The result is {@code true} if these
      * substrings represent character sequences that are the same, ignoring
-     * case if and only if <tt>ignoreCase</tt> is true. The substring of
-     * this <tt>String</tt> object to be compared begins at index
-     * <tt>toffset</tt> and has length <tt>len</tt>. The substring of
-     * <tt>other</tt> to be compared begins at index <tt>ooffset</tt> and
-     * has length <tt>len</tt>. The result is <tt>false</tt> if and only if
+     * case if and only if {@code ignoreCase} is true. The substring of
+     * this {@code String} object to be compared begins at index
+     * {@code toffset} and has length {@code len}. The substring of
+     * {@code other} to be compared begins at index {@code ooffset} and
+     * has length {@code len}. The result is {@code false} if and only if
      * at least one of the following is true:
-     * <ul><li><tt>toffset</tt> is negative.
-     * <li><tt>ooffset</tt> is negative.
-     * <li><tt>toffset+len</tt> is greater than the length of this
-     * <tt>String</tt> object.
-     * <li><tt>ooffset+len</tt> is greater than the length of the other
+     * <ul><li>{@code toffset} is negative.
+     * <li>{@code ooffset} is negative.
+     * <li>{@code toffset+len} is greater than the length of this
+     * {@code String} object.
+     * <li>{@code ooffset+len} is greater than the length of the other
      * argument.
-     * <li><tt>ignoreCase</tt> is <tt>false</tt> and there is some nonnegative
-     * integer <i>k</i> less than <tt>len</tt> such that:
+     * <li>{@code ignoreCase} is {@code false} and there is some nonnegative
+     * integer <i>k</i> less than {@code len} such that:
      * <blockquote><pre>
      * this.charAt(toffset+k) != other.charAt(ooffset+k)
      * </pre></blockquote>
-     * <li><tt>ignoreCase</tt> is <tt>true</tt> and there is some nonnegative
-     * integer <i>k</i> less than <tt>len</tt> such that:
+     * <li>{@code ignoreCase} is {@code true} and there is some nonnegative
+     * integer <i>k</i> less than {@code len} such that:
      * <blockquote><pre>
      * Character.toLowerCase(this.charAt(toffset+k)) !=
      Character.toLowerCase(other.charAt(ooffset+k))
@@ -1500,12 +1500,12 @@ public final class String
      * of {@code ch} in the range from 0 to 0xFFFF (inclusive),
      * this is the smallest value <i>k</i> such that:
      * <blockquote><pre>
-     * (this.charAt(<i>k</i>) == ch) && (<i>k</i> &gt;= fromIndex)
+     * (this.charAt(<i>k</i>) == ch) {@code &&} (<i>k</i> &gt;= fromIndex)
      * </pre></blockquote>
      * is true. For other values of {@code ch}, it is the
      * smallest value <i>k</i> such that:
      * <blockquote><pre>
-     * (this.codePointAt(<i>k</i>) == ch) && (<i>k</i> &gt;= fromIndex)
+     * (this.codePointAt(<i>k</i>) == ch) {@code &&} (<i>k</i> &gt;= fromIndex)
      * </pre></blockquote>
      * is true. In either case, if no such character occurs in this
      * string at or after position {@code fromIndex}, then
@@ -1604,12 +1604,12 @@ public final class String
      * from 0 to 0xFFFF (inclusive), the index returned is the largest
      * value <i>k</i> such that:
      * <blockquote><pre>
-     * (this.charAt(<i>k</i>) == ch) && (<i>k</i> &lt;= fromIndex)
+     * (this.charAt(<i>k</i>) == ch) {@code &&} (<i>k</i> &lt;= fromIndex)
      * </pre></blockquote>
      * is true. For other values of {@code ch}, it is the
      * largest value <i>k</i> such that:
      * <blockquote><pre>
-     * (this.codePointAt(<i>k</i>) == ch) && (<i>k</i> &lt;= fromIndex)
+     * (this.codePointAt(<i>k</i>) == ch) {@code &&} (<i>k</i> &lt;= fromIndex)
      * </pre></blockquote>
      * is true. In either case, if no such character occurs in this
      * string at or before position {@code fromIndex}, then
@@ -1690,7 +1690,7 @@ public final class String
      *
      * <p>The returned index is the smallest value <i>k</i> for which:
      * <blockquote><pre>
-     * <i>k</i> &gt;= fromIndex && this.startsWith(str, <i>k</i>)
+     * <i>k</i> &gt;= fromIndex {@code &&} this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
      * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
@@ -1799,7 +1799,7 @@ public final class String
      *
      * <p>The returned index is the largest value <i>k</i> for which:
      * <blockquote><pre>
-     * <i>k</i> &lt;= fromIndex && this.startsWith(str, <i>k</i>)
+     * <i>k</i> {@code <=} fromIndex {@code &&} this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
      * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
@@ -2080,17 +2080,18 @@ public final class String
      * href="../util/regex/Pattern.html#sum">regular expression</a>.
      *
      * <p> An invocation of this method of the form
-     * <i>str</i><tt>.matches(</tt><i>regex</i><tt>)</tt> yields exactly the
+     * <i>str</i>{@code .matches(}<i>regex</i>{@code )} yields exactly the
      * same result as the expression
      *
-     * <blockquote><tt> {@link java.util.regex.Pattern}.{@link
-     * java.util.regex.Pattern#matches(String,CharSequence)
-     * matches}(</tt><i>regex</i><tt>,</tt> <i>str</i><tt>)</tt></blockquote>
+     * <blockquote>
+     * {@link java.util.regex.Pattern}.{@link java.util.regex.Pattern#matches(String,CharSequence)
+     * matches(<i>regex</i>, <i>str</i>)}
+     * </blockquote>
      *
      * @param   regex
      *          the regular expression to which this string is to be matched
      *
-     * @return  <tt>true</tt> if, and only if, this string matches the
+     * @return  {@code true} if, and only if, this string matches the
      *          given regular expression
      *
      * @throws  PatternSyntaxException
@@ -2124,18 +2125,20 @@ public final class String
      * given replacement.
      *
      * <p> An invocation of this method of the form
-     * <i>str</i><tt>.replaceFirst(</tt><i>regex</i><tt>,</tt> <i>repl</i><tt>)</tt>
+     * <i>str</i>{@code .replaceFirst(}<i>regex</i>{@code ,} <i>repl</i>{@code )}
      * yields exactly the same result as the expression
      *
-     * <blockquote><tt>
-     * {@link java.util.regex.Pattern}.{@link java.util.regex.Pattern#compile
-     * compile}(</tt><i>regex</i><tt>).{@link
-     * java.util.regex.Pattern#matcher(java.lang.CharSequence)
-     * matcher}(</tt><i>str</i><tt>).{@link java.util.regex.Matcher#replaceFirst
-     * replaceFirst}(</tt><i>repl</i><tt>)</tt></blockquote>
+     * <blockquote>
+     * <code>
+     * {@link java.util.regex.Pattern}.{@link
+     * java.util.regex.Pattern#compile compile}(<i>regex</i>).{@link
+     * java.util.regex.Pattern#matcher(java.lang.CharSequence) matcher}(<i>str</i>).{@link
+     * java.util.regex.Matcher#replaceFirst replaceFirst}(<i>repl</i>)
+     * </code>
+     * </blockquote>
      *
      *<p>
-     * Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in the
+     * Note that backslashes ({@code \}) and dollar signs ({@code $}) in the
      * replacement string may cause the results to be different than if it were
      * being treated as a literal replacement string; see
      * {@link java.util.regex.Matcher#replaceFirst}.
@@ -2147,7 +2150,7 @@ public final class String
      * @param   replacement
      *          the string to be substituted for the first match
      *
-     * @return  The resulting <tt>String</tt>
+     * @return  The resulting {@code String}
      *
      * @throws  PatternSyntaxException
      *          if the regular expression's syntax is invalid
@@ -2167,18 +2170,20 @@ public final class String
      * given replacement.
      *
      * <p> An invocation of this method of the form
-     * <i>str</i><tt>.replaceAll(</tt><i>regex</i><tt>,</tt> <i>repl</i><tt>)</tt>
+     * <i>str</i>{@code .replaceAll(}<i>regex</i>{@code ,} <i>repl</i>{@code )}
      * yields exactly the same result as the expression
      *
-     * <blockquote><tt>
-     * {@link java.util.regex.Pattern}.{@link java.util.regex.Pattern#compile
-     * compile}(</tt><i>regex</i><tt>).{@link
-     * java.util.regex.Pattern#matcher(java.lang.CharSequence)
-     * matcher}(</tt><i>str</i><tt>).{@link java.util.regex.Matcher#replaceAll
-     * replaceAll}(</tt><i>repl</i><tt>)</tt></blockquote>
+     * <blockquote>
+     * <code>
+     * {@link java.util.regex.Pattern}.{@link
+     * java.util.regex.Pattern#compile compile}(<i>regex</i>).{@link
+     * java.util.regex.Pattern#matcher(java.lang.CharSequence) matcher}(<i>str</i>).{@link
+     * java.util.regex.Matcher#replaceAll replaceAll}(<i>repl</i>)
+     * </code>
+     * </blockquote>
      *
      *<p>
-     * Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in the
+     * Note that backslashes ({@code \}) and dollar signs ({@code $}) in the
      * replacement string may cause the results to be different than if it were
      * being treated as a literal replacement string; see
      * {@link java.util.regex.Matcher#replaceAll Matcher.replaceAll}.
@@ -2190,7 +2195,7 @@ public final class String
      * @param   replacement
      *          the string to be substituted for each match
      *
-     * @return  The resulting <tt>String</tt>
+     * @return  The resulting {@code String}
      *
      * @throws  PatternSyntaxException
      *          if the regular expression's syntax is invalid
@@ -2234,7 +2239,7 @@ public final class String
      * expression does not match any part of the input then the resulting array
      * has just one element, namely this string.
      *
-     * <p> The <tt>limit</tt> parameter controls the number of times the
+     * <p> The {@code limit} parameter controls the number of times the
      * pattern is applied and therefore affects the length of the resulting
      * array.  If the limit <i>n</i> is greater than zero then the pattern
      * will be applied at most <i>n</i>&nbsp;-&nbsp;1 times, the array's
@@ -2245,7 +2250,7 @@ public final class String
      * the pattern will be applied as many times as possible, the array can
      * have any length, and trailing empty strings will be discarded.
      *
-     * <p> The string <tt>"boo:and:foo"</tt>, for example, yields the
+     * <p> The string {@code "boo:and:foo"}, for example, yields the
      * following results with these parameters:
      *
      * <blockquote><table cellpadding=1 cellspacing=0 summary="Split example showing regex, limit, and result">
@@ -2256,33 +2261,34 @@ public final class String
      * </tr>
      * <tr><td align=center>:</td>
      *     <td align=center>2</td>
-     *     <td><tt>{ "boo", "and:foo" }</tt></td></tr>
+     *     <td>{@code { "boo", "and:foo" }}</td></tr>
      * <tr><td align=center>:</td>
      *     <td align=center>5</td>
-     *     <td><tt>{ "boo", "and", "foo" }</tt></td></tr>
+     *     <td>{@code { "boo", "and", "foo" }}</td></tr>
      * <tr><td align=center>:</td>
      *     <td align=center>-2</td>
-     *     <td><tt>{ "boo", "and", "foo" }</tt></td></tr>
+     *     <td>{@code { "boo", "and", "foo" }}</td></tr>
      * <tr><td align=center>o</td>
      *     <td align=center>5</td>
-     *     <td><tt>{ "b", "", ":and:f", "", "" }</tt></td></tr>
+     *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
      * <tr><td align=center>o</td>
      *     <td align=center>-2</td>
-     *     <td><tt>{ "b", "", ":and:f", "", "" }</tt></td></tr>
+     *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
      * <tr><td align=center>o</td>
      *     <td align=center>0</td>
-     *     <td><tt>{ "b", "", ":and:f" }</tt></td></tr>
+     *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </table></blockquote>
      *
      * <p> An invocation of this method of the form
-     * <i>str.</i><tt>split(</tt><i>regex</i><tt>,</tt>&nbsp;<i>n</i><tt>)</tt>
+     * <i>str.</i>{@code split(}<i>regex</i>{@code ,}&nbsp;<i>n</i>{@code )}
      * yields the same result as the expression
      *
      * <blockquote>
-     * {@link java.util.regex.Pattern}.{@link java.util.regex.Pattern#compile
-     * compile}<tt>(</tt><i>regex</i><tt>)</tt>.{@link
-     * java.util.regex.Pattern#split(java.lang.CharSequence,int)
-     * split}<tt>(</tt><i>str</i><tt>,</tt>&nbsp;<i>n</i><tt>)</tt>
+     * <code>
+     * {@link java.util.regex.Pattern}.{@link
+     * java.util.regex.Pattern#compile compile}(<i>regex</i>).{@link
+     * java.util.regex.Pattern#split(java.lang.CharSequence,int) split}(<i>str</i>,&nbsp;<i>n</i>)
+     * </code>
      * </blockquote>
      *
      *
@@ -2364,7 +2370,7 @@ public final class String
      * argument of zero.  Trailing empty strings are therefore not included in
      * the resulting array.
      *
-     * <p> The string <tt>"boo:and:foo"</tt>, for example, yields the following
+     * <p> The string {@code "boo:and:foo"}, for example, yields the following
      * results with these expressions:
      *
      * <blockquote><table cellpadding=1 cellspacing=0 summary="Split examples showing regex and result">
@@ -2373,9 +2379,9 @@ public final class String
      *  <th>Result</th>
      * </tr>
      * <tr><td align=center>:</td>
-     *     <td><tt>{ "boo", "and", "foo" }</tt></td></tr>
+     *     <td>{@code { "boo", "and", "foo" }}</td></tr>
      * <tr><td align=center>o</td>
-     *     <td><tt>{ "b", "", ":and:f" }</tt></td></tr>
+     *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </table></blockquote>
      *
      *
@@ -2815,7 +2821,7 @@ public final class String
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *         The behaviour on a
-     *         <tt>null</tt> argument depends on the <a
+     *         {@code null} argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
      * @throws  java.util.IllegalFormatException
@@ -2828,7 +2834,7 @@ public final class String
      *          formatter class specification.
      *
      * @throws  NullPointerException
-     *          If the <tt>format</tt> is <tt>null</tt>
+     *          If the {@code format} is {@code null}
      *
      * @return  A formatted string
      *
@@ -2845,7 +2851,7 @@ public final class String
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.
      *
      * @param  format
@@ -2859,7 +2865,7 @@ public final class String
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *         The behaviour on a
-     *         <tt>null</tt> argument depends on the <a
+     *         {@code null} argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
      * @throws  java.util.IllegalFormatException
@@ -2872,7 +2878,7 @@ public final class String
      *          formatter class specification
      *
      * @throws  NullPointerException
-     *          If the <tt>format</tt> is <tt>null</tt>
+     *          If the {@code format} is {@code null}
      *
      * @return  A formatted string
      *
@@ -3143,7 +3149,7 @@ public final class String
     *     programmer should be aware that producing distinct integer results
     *     for unequal objects may improve the performance of hash tables.
     * </ul>
-    * <p/>
+    * </p>
      * The hash value will never be zero.
     *
     * @return  a hash code value for this object.

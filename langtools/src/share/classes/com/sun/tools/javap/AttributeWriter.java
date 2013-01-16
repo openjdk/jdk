@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.LocalVariableTable_attribute;
 import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
+import com.sun.tools.classfile.MethodParameters_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
@@ -381,6 +382,28 @@ public class AttributeWriter extends BasicWriter
                     entry.start_pc, entry.length, entry.index,
                     constantWriter.stringValue(entry.name_index),
                     constantWriter.stringValue(entry.signature_index)));
+        }
+        indent(-1);
+        return null;
+    }
+
+    private static final String format = "%-31s%s";
+
+    public Void visitMethodParameters(MethodParameters_attribute attr,
+                                      Void ignore) {
+
+        final String header = String.format(format, "Name", "Flags");
+        println("MethodParameters:");
+        indent(+1);
+        println(header);
+        for (MethodParameters_attribute.Entry entry :
+                 attr.method_parameter_table) {
+            String flagstr =
+                (0 != (entry.flags & ACC_FINAL) ? " final" : "") +
+                (0 != (entry.flags & ACC_SYNTHETIC) ? " synthetic" : "");
+            println(String.format(format,
+                                  constantWriter.stringValue(entry.name_index),
+                                  flagstr));
         }
         indent(-1);
         return null;
