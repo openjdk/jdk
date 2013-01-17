@@ -556,7 +556,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
         if (tree.getKind() == DocTree.Kind.CODE) {
             for (TagStackItem tsi: tagStack) {
                 if (tsi.tag == HtmlTag.CODE) {
-                    env.messages.warning(HTML, tree, "dc.tag.nested.not.allowed", "code");
+                    env.messages.warning(HTML, tree, "dc.tag.code.within.code");
                     break;
                 }
             }
