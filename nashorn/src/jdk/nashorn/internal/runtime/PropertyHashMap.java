@@ -606,7 +606,7 @@ public final class PropertyHashMap implements Map <String, Property> {
         @Override
         public boolean equals(final Object other) {
             assert property != null && other != null;
-            return other instanceof Property && property.equals(other);
+            return other instanceof Element && property.equals(((Element)other).property);
         }
 
         @Override
