@@ -3827,7 +3827,6 @@ public final class Formatter implements Closeable, Flushable {
                                  Locale l)
             throws IOException
         {
-            assert(width == -1);
             if (sb == null)
                 sb = new StringBuilder();
             switch (c) {
