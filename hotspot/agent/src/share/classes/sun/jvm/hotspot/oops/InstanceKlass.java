@@ -52,6 +52,8 @@ public class InstanceKlass extends Klass {
   private static int LOW_OFFSET;
   private static int HIGH_OFFSET;
   private static int FIELD_SLOTS;
+  private static short FIELDINFO_TAG_SIZE;
+  private static short FIELDINFO_TAG_OFFSET;
 
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
@@ -96,9 +98,12 @@ public class InstanceKlass extends Klass {
     NAME_INDEX_OFFSET              = db.lookupIntConstant("FieldInfo::name_index_offset").intValue();
     SIGNATURE_INDEX_OFFSET         = db.lookupIntConstant("FieldInfo::signature_index_offset").intValue();
     INITVAL_INDEX_OFFSET           = db.lookupIntConstant("FieldInfo::initval_index_offset").intValue();
-    LOW_OFFSET                     = db.lookupIntConstant("FieldInfo::low_offset").intValue();
-    HIGH_OFFSET                    = db.lookupIntConstant("FieldInfo::high_offset").intValue();
+    LOW_OFFSET                     = db.lookupIntConstant("FieldInfo::low_packed_offset").intValue();
+    HIGH_OFFSET                    = db.lookupIntConstant("FieldInfo::high_packed_offset").intValue();
     FIELD_SLOTS                    = db.lookupIntConstant("FieldInfo::field_slots").intValue();
+    FIELDINFO_TAG_SIZE             = db.lookupIntConstant("FIELDINFO_TAG_SIZE").shortValue();
+    FIELDINFO_TAG_OFFSET           = db.lookupIntConstant("FIELDINFO_TAG_OFFSET").shortValue();
+
     // read ClassState constants
     CLASS_STATE_ALLOCATED = db.lookupIntConstant("InstanceKlass::allocated").intValue();
     CLASS_STATE_LOADED = db.lookupIntConstant("InstanceKlass::loaded").intValue();
@@ -314,8 +319,12 @@ public class InstanceKlass extends Klass {
 
   public int getFieldOffset(int index) {
     U2Array fields = getFields();
-    return VM.getVM().buildIntFromShorts(fields.at(index * FIELD_SLOTS + LOW_OFFSET),
-                                         fields.at(index * FIELD_SLOTS + HIGH_OFFSET));
+    short lo = fields.at(index * FIELD_SLOTS + LOW_OFFSET);
+    short hi = fields.at(index * FIELD_SLOTS + HIGH_OFFSET);
+    if ((lo & FIELDINFO_TAG_SIZE) == FIELDINFO_TAG_OFFSET) {
+      return VM.getVM().buildIntFromShorts(lo, hi) >> FIELDINFO_TAG_SIZE;
+    }
+    throw new RuntimeException("should not reach here");
   }
 
   // Accessors for declared fields
