@@ -355,6 +355,9 @@ class MemSnapshot : public CHeapObj<mtNMT> {
   // the lock to protect this snapshot
   Monitor*              _lock;
 
+  // the number of instance classes
+  int                   _number_of_classes;
+
   NOT_PRODUCT(size_t    _untracked_count;)
   friend class MemBaseline;
 
@@ -375,8 +378,9 @@ class MemSnapshot : public CHeapObj<mtNMT> {
   // merge a per-thread memory recorder into staging area
   bool merge(MemRecorder* rec);
   // promote staged data to snapshot
-  bool promote();
+  bool promote(int number_of_classes);
 
+  int  number_of_classes() const { return _number_of_classes; }
 
   void wait(long timeout) {
     assert(_lock != NULL, "Just check");

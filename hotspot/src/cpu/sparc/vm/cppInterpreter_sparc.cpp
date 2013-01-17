@@ -137,7 +137,7 @@ address CppInterpreterGenerator::generate_result_handler_for(BasicType type) {
   }
   __ ret();                           // return from interpreter activation
   __ delayed()->restore(I5_savedSP, G0, SP);  // remove interpreter frame
-  NOT_PRODUCT(__ emit_long(0);)       // marker for disassembly
+  NOT_PRODUCT(__ emit_int32(0);)       // marker for disassembly
   return entry;
 }
 
@@ -232,7 +232,7 @@ address CppInterpreterGenerator::generate_tosca_to_stack_converter(BasicType typ
   }
   __ retl();                          // return from interpreter activation
   __ delayed()->nop();                // schedule this better
-  NOT_PRODUCT(__ emit_long(0);)       // marker for disassembly
+  NOT_PRODUCT(__ emit_int32(0);)       // marker for disassembly
   return entry;
 }
 
@@ -1473,7 +1473,7 @@ static address interpreter_frame_manager = NULL;
     __ brx(Assembler::equal, false, Assembler::pt, skip);         \
     __ delayed()->nop();                                          \
     __ breakpoint_trap();                                         \
-    __ emit_long(marker);                                         \
+    __ emit_int32(marker);                                         \
     __ bind(skip);                                                \
   }
 #else
