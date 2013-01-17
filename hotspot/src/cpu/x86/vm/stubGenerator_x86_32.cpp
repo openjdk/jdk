@@ -796,16 +796,22 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
   __ BIND(L_copy_64_bytes_loop);
 
-    if(UseUnalignedLoadStores) {
-      __ movdqu(xmm0, Address(from, 0));
-      __ movdqu(Address(from, to_from, Address::times_1, 0), xmm0);
-      __ movdqu(xmm1, Address(from, 16));
-      __ movdqu(Address(from, to_from, Address::times_1, 16), xmm1);
-      __ movdqu(xmm2, Address(from, 32));
-      __ movdqu(Address(from, to_from, Address::times_1, 32), xmm2);
-      __ movdqu(xmm3, Address(from, 48));
-      __ movdqu(Address(from, to_from, Address::times_1, 48), xmm3);
-
+    if (UseUnalignedLoadStores) {
+      if (UseAVX >= 2) {
+        __ vmovdqu(xmm0, Address(from,  0));
+        __ vmovdqu(Address(from, to_from, Address::times_1,  0), xmm0);
+        __ vmovdqu(xmm1, Address(from, 32));
+        __ vmovdqu(Address(from, to_from, Address::times_1, 32), xmm1);
+      } else {
+        __ movdqu(xmm0, Address(from, 0));
+        __ movdqu(Address(from, to_from, Address::times_1, 0), xmm0);
+        __ movdqu(xmm1, Address(from, 16));
+        __ movdqu(Address(from, to_from, Address::times_1, 16), xmm1);
+        __ movdqu(xmm2, Address(from, 32));
+        __ movdqu(Address(from, to_from, Address::times_1, 32), xmm2);
+        __ movdqu(xmm3, Address(from, 48));
+        __ movdqu(Address(from, to_from, Address::times_1, 48), xmm3);
+      }
     } else {
       __ movq(xmm0, Address(from, 0));
       __ movq(Address(from, to_from, Address::times_1, 0), xmm0);
