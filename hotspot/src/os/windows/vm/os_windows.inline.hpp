@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,6 @@ inline const char* os::file_separator()                { return "\\"; }
 inline const char* os::line_separator()                { return "\r\n"; }
 inline const char* os::path_separator()                { return ";"; }
 inline const char* os::dll_file_extension()            { return ".dll"; }
-
-inline const char* os::jlong_format_specifier()        { return "%I64d"; }
-inline const char* os::julong_format_specifier()       { return "%I64u"; }
 
 inline const int os::default_file_open_flags() { return O_BINARY | O_NOINHERIT;}
 
