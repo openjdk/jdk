@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,21 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  Add parser support for lambda expressions
+ * @library ../lib
+ * @build JavacTestingAbstractThreadedTest
+ * @run main LambdaParserTest
  */
 
-import com.sun.source.util.JavacTask;
 import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
+import com.sun.source.util.JavacTask;
 
-public class LambdaParserTest {
-
-    static int checkCount = 0;
+public class LambdaParserTest
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     enum LambdaKind {
         NILARY_EXPR("()->x"),
@@ -173,25 +173,26 @@ public class LambdaParserTest {
     }
 
     public static void main(String... args) throws Exception {
-
-        //create default shared JavaCompiler - reused across multiple compilations
-        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-
         for (LambdaKind lk : LambdaKind.values()) {
             for (LambdaParameterKind pk1 : LambdaParameterKind.values()) {
-                if (lk.arity() < 1 && pk1 != LambdaParameterKind.IMPLICIT) continue;
+                if (lk.arity() < 1 && pk1 != LambdaParameterKind.IMPLICIT)
+                    continue;
                 for (LambdaParameterKind pk2 : LambdaParameterKind.values()) {
-                    if (lk.arity() < 2 && pk2 != LambdaParameterKind.IMPLICIT) continue;
+                    if (lk.arity() < 2 && pk2 != LambdaParameterKind.IMPLICIT)
+                        continue;
                     for (ModifierKind mk1 : ModifierKind.values()) {
-                        if (mk1 != ModifierKind.NONE && lk.isShort()) continue;
-                        if (lk.arity() < 1 && mk1 != ModifierKind.NONE) continue;
+                        if (mk1 != ModifierKind.NONE && lk.isShort())
+                            continue;
+                        if (lk.arity() < 1 && mk1 != ModifierKind.NONE)
+                            continue;
                         for (ModifierKind mk2 : ModifierKind.values()) {
-                            if (lk.arity() < 2 && mk2 != ModifierKind.NONE) continue;
+                            if (lk.arity() < 2 && mk2 != ModifierKind.NONE)
+                                continue;
                             for (SubExprKind sk : SubExprKind.values()) {
                                 for (ExprKind ek : ExprKind.values()) {
-                                    new LambdaParserTest(pk1, pk2, mk1, mk2, lk, sk, ek)
-                                            .run(comp, fm);
+                                    pool.execute(
+                                        new LambdaParserTest(pk1, pk2, mk1,
+                                                             mk2, lk, sk, ek));
                                 }
                             }
                         }
@@ -199,7 +200,8 @@ public class LambdaParserTest {
                 }
             }
         }
-        System.out.println("Total check executed: " + checkCount);
+
+        checkAfterExec();
     }
 
     LambdaParameterKind pk1;
@@ -212,8 +214,9 @@ public class LambdaParserTest {
     JavaSource source;
     DiagnosticChecker diagChecker;
 
-    LambdaParserTest(LambdaParameterKind pk1, LambdaParameterKind pk2, ModifierKind mk1,
-            ModifierKind mk2, LambdaKind lk, SubExprKind sk, ExprKind ek) {
+    LambdaParserTest(LambdaParameterKind pk1, LambdaParameterKind pk2,
+            ModifierKind mk1, ModifierKind mk2, LambdaKind lk,
+            SubExprKind sk, ExprKind ek) {
         this.pk1 = pk1;
         this.pk2 = pk2;
         this.mk1 = mk1;
@@ -235,7 +238,8 @@ public class LambdaParserTest {
 
         public JavaSource() {
             super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#E", ek.expressionString(pk1, pk2, mk1, mk2, lk, sk));
+            source = template.replaceAll("#E",
+                    ek.expressionString(pk1, pk2, mk1, mk2, lk, sk));
         }
 
         @Override
@@ -244,19 +248,20 @@ public class LambdaParserTest {
         }
     }
 
-    void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
+    public void run() {
+        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
                 null, null, Arrays.asList(source));
         try {
             ct.parse();
         } catch (Throwable ex) {
-            throw new AssertionError("Error thrown when parsing the following source:\n" + source.getCharContent(true));
+            processException(ex);
+            return;
         }
         check();
     }
 
     void check() {
-        checkCount++;
+        checkCount.incrementAndGet();
 
         boolean errorExpected = (lk.arity() > 0 && !mk1.compatibleWith(pk1)) ||
                 (lk.arity() > 1 && !mk2.compatibleWith(pk2));
@@ -275,7 +280,8 @@ public class LambdaParserTest {
         }
     }
 
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         boolean errorFound;
 
@@ -285,4 +291,5 @@ public class LambdaParserTest {
             }
         }
     }
+
 }

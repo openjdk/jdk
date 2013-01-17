@@ -270,6 +270,11 @@ $(eval $(call SetupLauncher,javap,\
     -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.javap.Main"$(COMMA) }'))
 
+$(eval $(call SetupLauncher,jdeps,\
+    -DEXPAND_CLASSPATH_WILDCARDS \
+    -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.jdeps.Main"$(COMMA) }'))
+
 BUILD_LAUNCHER_jconsole_CFLAGS_windows:=-DJAVAW
 BUILD_LAUNCHER_jconsole_LDFLAGS_windows:=user32.lib
 

@@ -747,6 +747,7 @@ TOOLS_JAR_INCLUDES := \
 	com/sun/tools/javadoc   \
 	com/sun/tools/javah     \
 	com/sun/tools/javap     \
+	com/sun/tools/jdeps	\
 	com/sun/tools/jdi	\
 	com/sun/tools/script/shell	\
 	com/sun/xml/internal/dtdparser \

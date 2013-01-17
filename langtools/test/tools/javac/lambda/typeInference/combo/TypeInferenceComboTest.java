@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,24 @@
  * @test
  * @bug 8003280
  * @summary Add lambda tests
- *  perform automated checks in type inference in lambda expressions in different contexts
+ *  perform automated checks in type inference in lambda expressions
+ *  in different contexts
+ * @library ../../../lib
+ * @build JavacTestingAbstractThreadedTest
  * @compile  TypeInferenceComboTest.java
  * @run main/timeout=360 TypeInferenceComboTest
  */
 
-import com.sun.source.util.JavacTask;
 import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.ToolProvider;
-import javax.tools.StandardJavaFileManager;
+import com.sun.source.util.JavacTask;
 
-public class TypeInferenceComboTest {
+public class TypeInferenceComboTest
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
     enum Context {
         ASSIGNMENT("SAM#Type s = #LBody;"),
         METHOD_CALL("#GenericDeclKind void method1(SAM#Type s) { }\n" +
@@ -59,27 +61,35 @@ public class TypeInferenceComboTest {
             this.context = context;
         }
 
-        String getContext(SamKind sk, TypeKind samTargetT, Keyword kw, TypeKind parameterT, TypeKind returnT, LambdaKind lk, ParameterKind pk, GenericDeclKind gdk, LambdaBody lb) {
+        String getContext(SamKind sk, TypeKind samTargetT, Keyword kw,
+                TypeKind parameterT, TypeKind returnT, LambdaKind lk,
+                ParameterKind pk, GenericDeclKind gdk, LambdaBody lb) {
             String result = context;
             if (sk == SamKind.GENERIC) {
                 if(this == Context.METHOD_CALL) {
-                    result = result.replaceAll("#GenericDeclKind", gdk.getGenericDeclKind(samTargetT));
+                    result = result.replaceAll("#GenericDeclKind",
+                            gdk.getGenericDeclKind(samTargetT));
                     if(gdk == GenericDeclKind.NON_GENERIC)
-                        result = result.replaceAll("#Type", "<" + samTargetT.typeStr + ">");
+                        result = result.replaceAll("#Type", "<" +
+                                samTargetT.typeStr + ">");
                     else //#GenericDeclKind is <T> or <T extends xxx>
                         result = result.replaceAll("#Type", "<T>");
                 }
                 else {
                     if(kw == Keyword.VOID)
-                        result = result.replaceAll("#Type", "<" + samTargetT.typeStr + ">");
+                        result = result.replaceAll("#Type", "<" +
+                                samTargetT.typeStr + ">");
                     else
-                        result = result.replaceAll("#Type", "<? " + kw.keyStr + " " + samTargetT.typeStr + ">");
+                        result = result.replaceAll("#Type", "<? " + kw.keyStr +
+                                " " + samTargetT.typeStr + ">");
                 }
             }
             else
-                result = result.replaceAll("#Type", "").replaceAll("#GenericDeclKind", "");
+                result = result.replaceAll("#Type", "").
+                        replaceAll("#GenericDeclKind", "");
 
-            return result.replaceAll("#LBody", lb.getLambdaBody(samTargetT, parameterT, returnT, lk, pk));
+            return result.replaceAll("#LBody",
+                    lb.getLambdaBody(samTargetT, parameterT, returnT, lk, pk));
         }
     }
 
@@ -94,8 +104,10 @@ public class TypeInferenceComboTest {
         }
 
         String getSam(TypeKind parameterT, TypeKind returnT) {
-            return sam_str.replaceAll("#ARG", parameterT == TypeKind.VOID ? "" : parameterT.typeStr + " arg")
-                          .replaceAll("#R", returnT.typeStr);
+            return sam_str.replaceAll("#ARG",
+                    parameterT == TypeKind.VOID ?
+                        "" : parameterT.typeStr + " arg")
+                    .replaceAll("#R", returnT.typeStr);
         }
     }
 
@@ -104,7 +116,8 @@ public class TypeInferenceComboTest {
         STRING("String", "\"hello\""),
         INTEGER("Integer", "1"),
         INT("int", "0"),
-        COMPARATOR("java.util.Comparator<String>", "(java.util.Comparator<String>)(a, b) -> a.length()-b.length()"),
+        COMPARATOR("java.util.Comparator<String>",
+                "(java.util.Comparator<String>)(a, b) -> a.length()-b.length()"),
         SAM("SAM2", "null"),
         GENERIC("T", null);
 
@@ -152,8 +165,10 @@ public class TypeInferenceComboTest {
     }
 
     enum LambdaBody {
-        RETURN_VOID("() -> #RET"),//no parameters, return type is one of the TypeKind
-        RETURN_ARG("(#PK arg) -> #RET");//has parameters, return type is one of the TypeKind
+        //no parameters, return type is one of the TypeKind
+        RETURN_VOID("() -> #RET"),
+        //has parameters, return type is one of the TypeKind
+        RETURN_ARG("(#PK arg) -> #RET");
 
         String bodyStr;
 
@@ -161,12 +176,14 @@ public class TypeInferenceComboTest {
             this.bodyStr = bodyStr;
         }
 
-        String getLambdaBody(TypeKind samTargetT, TypeKind parameterT, TypeKind returnT, LambdaKind lk, ParameterKind pk) {
+        String getLambdaBody(TypeKind samTargetT, TypeKind parameterT,
+                TypeKind returnT, LambdaKind lk, ParameterKind pk) {
             String result = bodyStr.replaceAll("#PK", pk.paramTemplate);
 
             if(result.contains("#TYPE")) {
                 if (parameterT == TypeKind.GENERIC && this != RETURN_VOID)
-                    result = result.replaceAll("#TYPE", samTargetT == null? "": samTargetT.typeStr);
+                    result = result.replaceAll("#TYPE",
+                            samTargetT == null? "": samTargetT.typeStr);
                 else
                     result = result.replaceAll("#TYPE", parameterT.typeStr);
             }
@@ -174,9 +191,12 @@ public class TypeInferenceComboTest {
                 return result.replaceAll("#RET", lk.stmt.replaceAll("#VAL", "arg"));
             else {
                 if(returnT != TypeKind.GENERIC)
-                    return result.replaceAll("#RET", lk.stmt.replaceAll("#VAL", (returnT==TypeKind.VOID && lk==LambdaKind.EXPRESSION)? "{}" : returnT.valStr));
+                    return result.replaceAll("#RET", lk.stmt.replaceAll("#VAL",
+                            (returnT==TypeKind.VOID &&
+                            lk==LambdaKind.EXPRESSION) ? "{}" : returnT.valStr));
                 else
-                    return result.replaceAll("#RET", lk.stmt.replaceAll("#VAL", samTargetT.valStr));
+                    return result.replaceAll("#RET",
+                            lk.stmt.replaceAll("#VAL", samTargetT.valStr));
             }
         }
     }
@@ -203,8 +223,10 @@ public class TypeInferenceComboTest {
         }
         else if (lambdaBodyType != LambdaBody.RETURN_ARG)
             return false;
-        if (  genericDeclKind == GenericDeclKind.GENERIC_NOBOUND || genericDeclKind == GenericDeclKind.GENERIC_BOUND ) {
-            if ( parameterType == TypeKind.GENERIC && parameterKind == ParameterKind.IMPLICIT) //cyclic inference
+        if (  genericDeclKind == GenericDeclKind.GENERIC_NOBOUND ||
+                genericDeclKind == GenericDeclKind.GENERIC_BOUND ) {
+            if ( parameterType == TypeKind.GENERIC &&
+                    parameterKind == ParameterKind.IMPLICIT) //cyclic inference
                 return false;
         }
         return true;
@@ -216,7 +238,8 @@ public class TypeInferenceComboTest {
                          "}\n";
     SourceFile samSourceFile = new SourceFile("Sam.java", templateStr) {
         public String toString() {
-            return template.replaceAll("#C", samKind.getSam(parameterType, returnType));
+            return template.replaceAll("#C",
+                    samKind.getSam(parameterType, returnType));
         }
     };
 
@@ -225,22 +248,35 @@ public class TypeInferenceComboTest {
                                                  "    #Context\n" +
                                                  "}") {
         public String toString() {
-            return template.replaceAll("#Context", context.getContext(samKind, samTargetType, keyword, parameterType, returnType, lambdaKind, parameterKind, genericDeclKind, lambdaBodyType));
+            return template.replaceAll("#Context",
+                    context.getContext(samKind, samTargetType, keyword,
+                    parameterType, returnType, lambdaKind, parameterKind,
+                    genericDeclKind, lambdaBodyType));
         }
     };
 
-    void test() throws Exception {
-        System.out.println("kk:");
+    public void run() {
+        outWriter.println("kk:");
         StringBuilder sb = new StringBuilder("SamKind:");
-        sb.append(samKind).append(" SamTargetType:").append(samTargetType).append(" ParameterType:").append(parameterType)
-            .append(" ReturnType:").append(returnType).append(" Context:").append(context).append(" LambdaKind:").append(lambdaKind)
-            .append(" LambdaBodyType:").append(lambdaBodyType).append(" ParameterKind:").append(parameterKind).append(" Keyword:").append(keyword);
-        System.out.println(sb);
+        sb.append(samKind).append(" SamTargetType:")
+            .append(samTargetType).append(" ParameterType:").append(parameterType)
+            .append(" ReturnType:").append(returnType).append(" Context:")
+            .append(context).append(" LambdaKind:").append(lambdaKind)
+            .append(" LambdaBodyType:").append(lambdaBodyType)
+            .append(" ParameterKind:").append(parameterKind).append(" Keyword:")
+            .append(keyword);
+        outWriter.println(sb);
         DiagnosticChecker dc = new DiagnosticChecker();
-        JavacTask ct = (JavacTask)comp.getTask(null, fm, dc, null, null, Arrays.asList(samSourceFile, clientSourceFile));
-        ct.analyze();
+        JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), dc,
+                null, null, Arrays.asList(samSourceFile, clientSourceFile));
+        try {
+            ct.analyze();
+        } catch (Throwable t) {
+            processException(t);
+        }
         if (dc.errorFound == checkTypeInference()) {
-            throw new AssertionError(samSourceFile + "\n\n" + clientSourceFile + "\n" + parameterType + " " + returnType);
+            throw new AssertionError(samSourceFile + "\n\n" +
+                    clientSourceFile + "\n" + parameterType + " " + returnType);
         }
     }
 
@@ -261,7 +297,8 @@ public class TypeInferenceComboTest {
         public abstract String toString();
     }
 
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         boolean errorFound = false;
 
@@ -283,10 +320,9 @@ public class TypeInferenceComboTest {
     Keyword keyword;
     GenericDeclKind genericDeclKind;
 
-    static JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-    static StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-
-    TypeInferenceComboTest(SamKind sk, TypeKind samTargetT, TypeKind parameterT, TypeKind returnT, LambdaBody lb, Context c, LambdaKind lk, ParameterKind pk, Keyword kw, GenericDeclKind gdk) {
+    TypeInferenceComboTest(SamKind sk, TypeKind samTargetT, TypeKind parameterT,
+            TypeKind returnT, LambdaBody lb, Context c, LambdaKind lk,
+            ParameterKind pk, Keyword kw, GenericDeclKind gdk) {
         samKind = sk;
         samTargetType = samTargetT;
         parameterType = parameterT;
@@ -308,24 +344,14 @@ public class TypeInferenceComboTest {
                             for(LambdaKind lambdaK : LambdaKind.values()) {
                                 for (SamKind sk : SamKind.values()) {
                                     if (sk == SamKind.NON_GENERIC) {
-                                        if(parameterT != TypeKind.GENERIC && returnT != TypeKind.GENERIC )
-                                            new TypeInferenceComboTest(sk, null, parameterT, returnT, lb, ct, lambdaK, parameterK, null, null).test();
+                                        generateNonGenericSAM(ct, returnT,
+                                                parameterT, lb, parameterK,
+                                                lambdaK, sk);
                                     }
                                     else if (sk == SamKind.GENERIC) {
-                                        for (Keyword kw : Keyword.values()) {
-                                            for (TypeKind samTargetT : TypeKind.values()) {
-                                                if(samTargetT != TypeKind.VOID && samTargetT != TypeKind.INT && samTargetT != TypeKind.GENERIC
-                                                   && (parameterT == TypeKind.GENERIC || returnT == TypeKind.GENERIC)) {
-                                                    if(ct != Context.METHOD_CALL) {
-                                                        new TypeInferenceComboTest(sk, samTargetT, parameterT, returnT, lb, ct, lambdaK, parameterK, kw, null).test();
-                                                    }
-                                                    else {//Context.METHOD_CALL
-                                                        for (GenericDeclKind gdk : GenericDeclKind.values())
-                                                            new TypeInferenceComboTest(sk, samTargetT, parameterT, returnT, lb, ct, lambdaK, parameterK, kw, gdk).test();
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        generateGenericSAM(ct, returnT,
+                                                parameterT, lb, parameterK,
+                                                lambdaK, sk);
                                     }
                                 }
                             }
@@ -334,5 +360,44 @@ public class TypeInferenceComboTest {
                 }
             }
         }
+
+        checkAfterExec(false);
     }
+
+    static void generateNonGenericSAM(Context ct, TypeKind returnT,
+            TypeKind parameterT, LambdaBody lb, ParameterKind parameterK,
+            LambdaKind lambdaK, SamKind sk) {
+        if(parameterT != TypeKind.GENERIC && returnT != TypeKind.GENERIC ) {
+            pool.execute(new TypeInferenceComboTest(sk, null, parameterT,
+                    returnT, lb, ct, lambdaK, parameterK, null, null));
+        }
+    }
+
+    static void generateGenericSAM(Context ct, TypeKind returnT,
+            TypeKind parameterT, LambdaBody lb, ParameterKind parameterK,
+            LambdaKind lambdaK, SamKind sk) {
+        for (Keyword kw : Keyword.values()) {
+            for (TypeKind samTargetT : TypeKind.values()) {
+                if(samTargetT != TypeKind.VOID &&
+                   samTargetT != TypeKind.INT &&
+                   samTargetT != TypeKind.GENERIC &&
+                   (parameterT == TypeKind.GENERIC ||
+                   returnT == TypeKind.GENERIC)) {
+                    if(ct != Context.METHOD_CALL) {
+                        pool.execute(
+                            new TypeInferenceComboTest(sk, samTargetT, parameterT,
+                                returnT, lb, ct, lambdaK, parameterK, kw, null));
+                    } else {//Context.METHOD_CALL
+                        for (GenericDeclKind gdk :
+                                GenericDeclKind.values())
+                            pool.execute(
+                                    new TypeInferenceComboTest(sk, samTargetT,
+                                    parameterT, returnT, lb, ct, lambdaK,
+                                    parameterK, kw, gdk));
+                    }
+                }
+            }
+         }
+    }
+
 }
