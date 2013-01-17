@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,26 @@
  * @test
  * @bug 8002099
  * @summary Add support for intersection types in cast expression
+ * @library ../../lib
+ * @build JavacTestingAbstractThreadedTest
+ * @run main/timeout=360 IntersectionTypeCastTest
  */
 
-import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.ListBuffer;
 import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-public class IntersectionTypeCastTest {
+import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 
-    static int checkCount = 0;
+public class IntersectionTypeCastTest
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     interface Type {
         boolean subtypeOf(Type that);
@@ -59,7 +62,8 @@ public class IntersectionTypeCastTest {
         String typeStr;
         InterfaceKind superInterface;
 
-        InterfaceKind(String declStr, String typeStr, InterfaceKind superInterface) {
+        InterfaceKind(String declStr, String typeStr,
+                InterfaceKind superInterface) {
             this.declStr = declStr;
             this.typeStr = typeStr;
             this.superInterface = superInterface;
@@ -67,7 +71,8 @@ public class IntersectionTypeCastTest {
 
         @Override
         public boolean subtypeOf(Type that) {
-            return this == that || superInterface == that || that == ClassKind.OBJECT;
+            return this == that || superInterface == that ||
+                   that == ClassKind.OBJECT;
         }
 
         @Override
@@ -88,19 +93,27 @@ public class IntersectionTypeCastTest {
 
     enum ClassKind implements Type {
         OBJECT(null, "Object"),
-        CA("#M class CA implements A { }\n", "CA", InterfaceKind.A),
-        CB("#M class CB implements B { }\n", "CB", InterfaceKind.B),
-        CAB("#M class CAB implements A, B { }\n", "CAB", InterfaceKind.A, InterfaceKind.B),
-        CC("#M class CC implements C { }\n", "CC", InterfaceKind.C, InterfaceKind.A),
-        CCA("#M class CCA implements C, A { }\n", "CCA", InterfaceKind.C, InterfaceKind.A),
-        CCB("#M class CCB implements C, B { }\n", "CCB", InterfaceKind.C, InterfaceKind.A, InterfaceKind.B),
-        CCAB("#M class CCAB implements C, A, B { }\n", "CCAB", InterfaceKind.C, InterfaceKind.A, InterfaceKind.B);
+        CA("#M class CA implements A { }\n", "CA",
+           InterfaceKind.A),
+        CB("#M class CB implements B { }\n", "CB",
+           InterfaceKind.B),
+        CAB("#M class CAB implements A, B { }\n", "CAB",
+            InterfaceKind.A, InterfaceKind.B),
+        CC("#M class CC implements C { }\n", "CC",
+           InterfaceKind.C, InterfaceKind.A),
+        CCA("#M class CCA implements C, A { }\n", "CCA",
+            InterfaceKind.C, InterfaceKind.A),
+        CCB("#M class CCB implements C, B { }\n", "CCB",
+            InterfaceKind.C, InterfaceKind.A, InterfaceKind.B),
+        CCAB("#M class CCAB implements C, A, B { }\n", "CCAB",
+             InterfaceKind.C, InterfaceKind.A, InterfaceKind.B);
 
         String declTemplate;
         String typeStr;
         List<InterfaceKind> superInterfaces;
 
-        ClassKind(String declTemplate, String typeStr, InterfaceKind... superInterfaces) {
+        ClassKind(String declTemplate, String typeStr,
+                InterfaceKind... superInterfaces) {
             this.declTemplate = declTemplate;
             this.typeStr = typeStr;
             this.superInterfaces = List.from(superInterfaces);
@@ -114,7 +127,8 @@ public class IntersectionTypeCastTest {
 
         @Override
         public boolean subtypeOf(Type that) {
-            return this == that || superInterfaces.contains(that) || that == OBJECT;
+            return this == that || superInterfaces.contains(that) ||
+                    that == OBJECT;
         }
 
         @Override
@@ -170,9 +184,11 @@ public class IntersectionTypeCastTest {
         }
 
         String getCast() {
-            String temp = kind.castTemplate.replaceAll("#C", types[0].asString());
+            String temp = kind.castTemplate.replaceAll("#C",
+                    types[0].asString());
             for (int i = 0; i < kind.interfaceBounds ; i++) {
-                temp = temp.replace(String.format("#I%d", i), types[i + 1].asString());
+                temp = temp.replace(String.format("#I%d", i),
+                                    types[i + 1].asString());
             }
             return temp;
         }
@@ -195,7 +211,8 @@ public class IntersectionTypeCastTest {
                             t1.subtypeOf(t2) ||
                             t2.subtypeOf(t1) ||
                             (t1.isInterface() && t2.isInterface()) || //side-cast (1)
-                            (mod == ModifierKind.NONE && (t1.isInterface() != t2.isInterface())); //side-cast (2)
+                            (mod == ModifierKind.NONE &&
+                            (t1.isInterface() != t2.isInterface())); //side-cast (2)
                     if (!compat) return false;
                 }
             }
@@ -204,18 +221,15 @@ public class IntersectionTypeCastTest {
     }
 
     public static void main(String... args) throws Exception {
-        //create default shared JavaCompiler - reused across multiple compilations
-        JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-
         for (ModifierKind mod : ModifierKind.values()) {
             for (CastInfo cast1 : allCastInfo()) {
                 for (CastInfo cast2 : allCastInfo()) {
-                    new IntersectionTypeCastTest(mod, cast1, cast2).run(comp, fm);
+                    pool.execute(
+                        new IntersectionTypeCastTest(mod, cast1, cast2));
                 }
             }
         }
-        System.out.println("Total check executed: " + checkCount);
+        checkAfterExec();
     }
 
     static List<CastInfo> allCastInfo() {
@@ -235,11 +249,14 @@ public class IntersectionTypeCastTest {
                         } else {
                             for (InterfaceKind intf2 : InterfaceKind.values()) {
                                 if (kind.interfaceBounds == 2) {
-                                    buf.append(new CastInfo(kind, clazz, intf1, intf2));
+                                    buf.append(
+                                            new CastInfo(kind, clazz, intf1, intf2));
                                     continue;
                                 } else {
                                     for (InterfaceKind intf3 : InterfaceKind.values()) {
-                                        buf.append(new CastInfo(kind, clazz, intf1, intf2, intf3));
+                                        buf.append(
+                                                new CastInfo(kind, clazz, intf1,
+                                                             intf2, intf3));
                                         continue;
                                     }
                                 }
@@ -265,6 +282,22 @@ public class IntersectionTypeCastTest {
         this.diagChecker = new DiagnosticChecker();
     }
 
+    @Override
+    public void run() {
+        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+
+        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), diagChecker,
+                Arrays.asList("-XDallowIntersectionTypes"),
+                null, Arrays.asList(source));
+        try {
+            ct.analyze();
+        } catch (Throwable ex) {
+            throw new AssertionError("Error thrown when compiling the following code:\n" +
+                    source.getCharContent(true));
+        }
+        check();
+    }
+
     class JavaSource extends SimpleJavaFileObject {
 
         String bodyTemplate = "class Test {\n" +
@@ -282,7 +315,8 @@ public class IntersectionTypeCastTest {
             for (InterfaceKind ik : InterfaceKind.values()) {
                 source += ik.declStr;
             }
-            source += bodyTemplate.replaceAll("#C1", cast1.getCast()).replaceAll("#C2", cast2.getCast());
+            source += bodyTemplate.replaceAll("#C1", cast1.getCast()).
+                    replaceAll("#C2", cast2.getCast());
         }
 
         @Override
@@ -291,21 +325,11 @@ public class IntersectionTypeCastTest {
         }
     }
 
-    void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
-                Arrays.asList("-XDallowIntersectionTypes"), null, Arrays.asList(source));
-        try {
-            ct.analyze();
-        } catch (Throwable ex) {
-            throw new AssertionError("Error thrown when compiling the following code:\n" + source.getCharContent(true));
-        }
-        check();
-    }
-
     void check() {
-        checkCount++;
+        checkCount.incrementAndGet();
 
-        boolean errorExpected = cast1.hasDuplicateTypes() || cast2.hasDuplicateTypes();
+        boolean errorExpected = cast1.hasDuplicateTypes() ||
+                cast2.hasDuplicateTypes();
 
         errorExpected |= !cast2.compatibleWith(mod, cast1);
 
@@ -317,7 +341,8 @@ public class IntersectionTypeCastTest {
         }
     }
 
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         boolean errorFound;
 
@@ -327,4 +352,5 @@ public class IntersectionTypeCastTest {
             }
         }
     }
+
 }

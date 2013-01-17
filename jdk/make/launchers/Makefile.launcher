@@ -62,6 +62,10 @@ ifeq ($(PROGRAM),javap)
   WILDCARDS=true
   NEVER_ACT_AS_SERVER_CLASS_MACHINE=true
 endif
+ifeq ($(PROGRAM),jdeps)
+  WILDCARDS=true
+  NEVER_ACT_AS_SERVER_CLASS_MACHINE=true
+endif
 ifeq ($(PROGRAM),javah)
   WILDCARDS=true
   NEVER_ACT_AS_SERVER_CLASS_MACHINE=true

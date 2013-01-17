@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.security;
 
+import javax.security.auth.Subject;
+
 /**
  * This interface represents the abstract notion of a principal, which
  * can be used to represent any entity, such as an individual, a
@@ -45,7 +47,6 @@ public interface Principal {
      *
      * @return true if the principal passed in is the same as that
      * encapsulated by this principal, and false otherwise.
-
      */
     public boolean equals(Object another);
 
@@ -69,4 +70,24 @@ public interface Principal {
      * @return the name of this principal.
      */
     public String getName();
+
+    /**
+     * Returns true if the specified subject is implied by this principal.
+     *
+     * <p>The default implementation of this method returns true if
+     * {@code subject} is non-null and contains at least one principal that
+     * is equal to this principal.
+     *
+     * <p>Subclasses may override this with a different implementation, if
+     * necessary.
+     *
+     * @return true if {@code subject} is non-null and is
+     *              implied by this principal, or false otherwise.
+     * @since 1.8
+     */
+    public default boolean implies(Subject subject) {
+        if (subject == null)
+            return false;
+        return subject.getPrincipals().contains(this);
+    }
 }

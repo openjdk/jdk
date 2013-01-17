@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,14 @@ import com.sun.crypto.provider.*;
 
 public class Test4512704 {
     private static final String ALGO = "AES";
-    private static final String MODE = "CBC";
-    private static final String PADDING = "PKCS5Padding";
+    private static final String PADDING = "NoPadding";
     private static final int KEYSIZE = 16; // in bytes
 
-    public boolean execute() throws Exception {
-        AlgorithmParameterSpec aps = null;
+    public void execute(String mode) throws Exception {
 
-        Cipher ci = Cipher.getInstance(ALGO+"/"+MODE+"/"+PADDING, "SunJCE");
+        AlgorithmParameterSpec aps = null;
+        String transformation = ALGO + "/" + mode + "/"+PADDING;
+        Cipher ci = Cipher.getInstance(transformation, "SunJCE");
 
         KeyGenerator kg = KeyGenerator.getInstance(ALGO, "SunJCE");
         kg.init(KEYSIZE*8);
@@ -57,19 +57,14 @@ public class Test4512704 {
         } catch(InvalidAlgorithmParameterException ex) {
             throw new Exception("parameter should be generated when null is specified!");
         }
-
-        // passed all tests...hooray!
-        return true;
+        System.out.println(transformation + ": Passed");
     }
 
     public static void main (String[] args) throws Exception {
         Security.addProvider(new com.sun.crypto.provider.SunJCE());
 
         Test4512704 test = new Test4512704();
-        String testName = test.getClass().getName() + "[" + ALGO +
-            "/" + MODE + "/" + PADDING + "]";
-        if (test.execute()) {
-            System.out.println(testName + ": Passed!");
-        }
+        test.execute("CBC");
+        test.execute("GCM");
     }
 }
