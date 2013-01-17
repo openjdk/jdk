@@ -245,40 +245,42 @@ public class JavacParser implements Parser {
         token = S.token();
     }
 
-    protected boolean peekToken(TokenKind tk) {
+    protected boolean peekToken(Filter<TokenKind> tk) {
         return peekToken(0, tk);
     }
 
-    protected boolean peekToken(int lookahead, TokenKind tk) {
-        return S.token(lookahead + 1).kind == tk;
+    protected boolean peekToken(int lookahead, Filter<TokenKind> tk) {
+        return tk.accepts(S.token(lookahead + 1).kind);
     }
 
-    protected boolean peekToken(TokenKind tk1, TokenKind tk2) {
+    protected boolean peekToken(Filter<TokenKind> tk1, Filter<TokenKind> tk2) {
         return peekToken(0, tk1, tk2);
     }
 
-    protected boolean peekToken(int lookahead, TokenKind tk1, TokenKind tk2) {
-        return S.token(lookahead + 1).kind == tk1 &&
-                S.token(lookahead + 2).kind == tk2;
+    protected boolean peekToken(int lookahead, Filter<TokenKind> tk1, Filter<TokenKind> tk2) {
+        return tk1.accepts(S.token(lookahead + 1).kind) &&
+                tk2.accepts(S.token(lookahead + 2).kind);
     }
 
-    protected boolean peekToken(TokenKind tk1, TokenKind tk2, TokenKind tk3) {
+    protected boolean peekToken(Filter<TokenKind> tk1, Filter<TokenKind> tk2, Filter<TokenKind> tk3) {
         return peekToken(0, tk1, tk2, tk3);
     }
 
-    protected boolean peekToken(int lookahead, TokenKind tk1, TokenKind tk2, TokenKind tk3) {
-        return S.token(lookahead + 1).kind == tk1 &&
-                S.token(lookahead + 2).kind == tk2 &&
-                S.token(lookahead + 3).kind == tk3;
+    protected boolean peekToken(int lookahead, Filter<TokenKind> tk1, Filter<TokenKind> tk2, Filter<TokenKind> tk3) {
+        return tk1.accepts(S.token(lookahead + 1).kind) &&
+                tk2.accepts(S.token(lookahead + 2).kind) &&
+                tk3.accepts(S.token(lookahead + 3).kind);
     }
 
-    protected boolean peekToken(TokenKind... kinds) {
+    @SuppressWarnings("unchecked")
+    protected boolean peekToken(Filter<TokenKind>... kinds) {
         return peekToken(0, kinds);
     }
 
-    protected boolean peekToken(int lookahead, TokenKind... kinds) {
+    @SuppressWarnings("unchecked")
+    protected boolean peekToken(int lookahead, Filter<TokenKind>... kinds) {
         for (; lookahead < kinds.length ; lookahead++) {
-            if (S.token(lookahead + 1).kind != kinds[lookahead]) {
+            if (!kinds[lookahead].accepts(S.token(lookahead + 1).kind)) {
                 return false;
             }
         }
@@ -333,6 +335,7 @@ public class JavacParser implements Parser {
                     if (stopAtMemberDecl)
                         return;
                     break;
+                case UNDERSCORE:
                 case IDENTIFIER:
                    if (stopAtIdentifier)
                         return;
@@ -552,11 +555,16 @@ public class JavacParser implements Parser {
                 nextToken();
                 return name;
             }
+        } else if (token.kind == UNDERSCORE) {
+            warning(token.pos, "underscore.as.identifier");
+            Name name = token.name();
+            nextToken();
+            return name;
         } else {
             accept(IDENTIFIER);
             return names.error;
         }
-}
+    }
 
     /**
      * Qualident = Ident { DOT Ident }
@@ -1056,7 +1064,7 @@ public class JavacParser implements Parser {
                 typeArgs = null;
             } else return illegal();
             break;
-        case IDENTIFIER: case ASSERT: case ENUM:
+        case UNDERSCORE: case IDENTIFIER: case ASSERT: case ENUM:
             if (typeArgs != null) return illegal();
             if ((mode & EXPR) != 0 && peekToken(ARROW)) {
                 t = lambdaExpressionOrStatement(false, false, pos);
@@ -1274,7 +1282,7 @@ public class JavacParser implements Parser {
         int pos = 0, depth = 0;
         for (Token t = S.token(pos) ; ; t = S.token(++pos)) {
             switch (t.kind) {
-                case IDENTIFIER: case QUES: case EXTENDS: case SUPER:
+                case IDENTIFIER: case UNDERSCORE: case QUES: case EXTENDS: case SUPER:
                 case DOT: case RBRACKET: case LBRACKET: case COMMA:
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR:
@@ -1323,8 +1331,8 @@ public class JavacParser implements Parser {
                     if (peekToken(lookahead, RPAREN)) {
                         //Type, ')' -> cast
                         return ParensResult.CAST;
-                    } else if (peekToken(lookahead, IDENTIFIER)) {
-                        //Type, 'Identifier -> explicit lambda
+                    } else if (peekToken(lookahead, LAX_IDENTIFIER)) {
+                        //Type, Identifier/'_'/'assert'/'enum' -> explicit lambda
                         return ParensResult.EXPLICIT_LAMBDA;
                     }
                     break;
@@ -1350,16 +1358,19 @@ public class JavacParser implements Parser {
                         case INTLITERAL: case LONGLITERAL: case FLOATLITERAL:
                         case DOUBLELITERAL: case CHARLITERAL: case STRINGLITERAL:
                         case TRUE: case FALSE: case NULL:
-                            case NEW: case IDENTIFIER: case ASSERT: case ENUM:
+                        case NEW: case IDENTIFIER: case ASSERT: case ENUM: case UNDERSCORE:
                         case BYTE: case SHORT: case CHAR: case INT:
                         case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
                             return ParensResult.CAST;
                         default:
                             return ParensResult.PARENS;
                     }
+                case UNDERSCORE:
+                case ASSERT:
+                case ENUM:
                 case IDENTIFIER:
-                    if (peekToken(lookahead, IDENTIFIER)) {
-                        // Identifier, Identifier -> explicit lambda
+                    if (peekToken(lookahead, LAX_IDENTIFIER)) {
+                        // Identifier, Identifier/'_'/'assert'/'enum' -> explicit lambda
                         return ParensResult.EXPLICIT_LAMBDA;
                     } else if (peekToken(lookahead, RPAREN, ARROW)) {
                         // Identifier, ')' '->' -> implicit lambda
@@ -1372,8 +1383,8 @@ public class JavacParser implements Parser {
                     //those can only appear in explicit lambdas
                     return ParensResult.EXPLICIT_LAMBDA;
                 case LBRACKET:
-                    if (peekToken(lookahead, RBRACKET, IDENTIFIER)) {
-                        // '[', ']', Identifier -> explicit lambda
+                    if (peekToken(lookahead, RBRACKET, LAX_IDENTIFIER)) {
+                        // '[', ']', Identifier/'_'/'assert'/'enum' -> explicit lambda
                         return ParensResult.EXPLICIT_LAMBDA;
                     } else if (peekToken(lookahead, RBRACKET, RPAREN) ||
                             peekToken(lookahead, RBRACKET, AMP)) {
@@ -1402,11 +1413,11 @@ public class JavacParser implements Parser {
                             // '>', ')' -> cast
                             // '>', '&' -> cast
                             return ParensResult.CAST;
-                        } else if (peekToken(lookahead, IDENTIFIER, COMMA) ||
-                                peekToken(lookahead, IDENTIFIER, RPAREN, ARROW) ||
+                        } else if (peekToken(lookahead, LAX_IDENTIFIER, COMMA) ||
+                                peekToken(lookahead, LAX_IDENTIFIER, RPAREN, ARROW) ||
                                 peekToken(lookahead, ELLIPSIS)) {
-                            // '>', Identifier, ',' -> explicit lambda
-                            // '>', Identifier, ')', '->' -> explicit lambda
+                            // '>', Identifier/'_'/'assert'/'enum', ',' -> explicit lambda
+                            // '>', Identifier/'_'/'assert'/'enum', ')', '->' -> explicit lambda
                             // '>', '...' -> explicit lambda
                             return ParensResult.EXPLICIT_LAMBDA;
                         }
@@ -1426,6 +1437,13 @@ public class JavacParser implements Parser {
         }
     }
 
+    /** Accepts all identifier-like tokens */
+    Filter<TokenKind> LAX_IDENTIFIER = new Filter<TokenKind>() {
+        public boolean accepts(TokenKind t) {
+            return t == IDENTIFIER || t == UNDERSCORE || t == ASSERT || t == ENUM;
+        }
+    };
+
     enum ParensResult {
         CAST,
         EXPLICIT_LAMBDA,
@@ -1433,21 +1451,9 @@ public class JavacParser implements Parser {
         PARENS;
     }
 
-    JCExpression lambdaExpressionOrStatement(JCVariableDecl firstParam, int pos) {
-        ListBuffer<JCVariableDecl> params = new ListBuffer<JCVariableDecl>();
-        params.append(firstParam);
-        JCVariableDecl lastParam = firstParam;
-        while ((lastParam.mods.flags & Flags.VARARGS) == 0 && token.kind == COMMA) {
-            nextToken();
-            params.append(lastParam = formalParameter());
-        }
-        accept(RPAREN);
-        return lambdaExpressionOrStatementRest(params.toList(), pos);
-    }
-
     JCExpression lambdaExpressionOrStatement(boolean hasParens, boolean explicitParams, int pos) {
         List<JCVariableDecl> params = explicitParams ?
-                formalParameters() :
+                formalParameters(true) :
                 implicitParameters(hasParens);
 
         return lambdaExpressionOrStatementRest(params, pos);
@@ -1628,7 +1634,7 @@ public class JavacParser implements Parser {
             nextToken();
             JCExpression bound = parseType();
             return F.at(pos).Wildcard(t, bound);
-        } else if (token.kind == IDENTIFIER) {
+        } else if (LAX_IDENTIFIER.accepts(token.kind)) {
             //error recovery
             TypeBoundKind t = F.at(Position.NOPOS).TypeBoundKind(BoundKind.UNBOUND);
             JCExpression wc = toP(F.at(pos).Wildcard(t, null));
@@ -1678,7 +1684,7 @@ public class JavacParser implements Parser {
             if (token.pos == endPosTable.errorEndPos) {
                 // error recovery
                 Name name = null;
-                if (token.kind == IDENTIFIER) {
+                if (LAX_IDENTIFIER.accepts(token.kind)) {
                     name = token.name();
                     nextToken();
                 } else {
@@ -2026,10 +2032,7 @@ public class JavacParser implements Parser {
                 nextToken();
                 JCStatement stat = parseStatement();
                 return List.<JCStatement>of(F.at(pos).Labelled(prevToken.name(), stat));
-            } else if ((lastmode & TYPE) != 0 &&
-                       (token.kind == IDENTIFIER ||
-                        token.kind == ASSERT ||
-                        token.kind == ENUM)) {
+            } else if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.accepts(token.kind)) {
                 pos = token.pos;
                 JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                 F.at(pos);
@@ -2183,14 +2186,14 @@ public class JavacParser implements Parser {
         }
         case BREAK: {
             nextToken();
-            Name label = (token.kind == IDENTIFIER || token.kind == ASSERT || token.kind == ENUM) ? ident() : null;
+            Name label = LAX_IDENTIFIER.accepts(token.kind) ? ident() : null;
             JCBreak t = to(F.at(pos).Break(label));
             accept(SEMI);
             return t;
         }
         case CONTINUE: {
             nextToken();
-            Name label = (token.kind == IDENTIFIER || token.kind == ASSERT || token.kind == ENUM) ? ident() : null;
+            Name label = LAX_IDENTIFIER.accepts(token.kind) ? ident() : null;
             JCContinue t =  to(F.at(pos).Continue(label));
             accept(SEMI);
             return t;
@@ -2351,9 +2354,7 @@ public class JavacParser implements Parser {
             return variableDeclarators(optFinal(0), parseType(), stats).toList();
         } else {
             JCExpression t = term(EXPR | TYPE);
-            if ((lastmode & TYPE) != 0 &&
-                (token.kind == IDENTIFIER || token.kind == ASSERT ||
-                 token.kind == ENUM)) {
+            if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.accepts(token.kind)) {
                 return variableDeclarators(modifiersOpt(), t, stats).toList();
             } else if ((lastmode & TYPE) != 0 && token.kind == COLON) {
                 error(pos, "bad.initializer", "for-loop");
@@ -2609,8 +2610,18 @@ public class JavacParser implements Parser {
     /** VariableDeclaratorId = Ident BracketsOpt
      */
     JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type) {
+        return variableDeclaratorId(mods, type, false);
+    }
+    //where
+    JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type, boolean lambdaParameter) {
         int pos = token.pos;
-        Name name = ident();
+        Name name;
+        if (lambdaParameter && token.kind == UNDERSCORE) {
+            syntaxError(pos, "expected", IDENTIFIER);
+            name = token.name();
+        } else {
+            name = ident();
+        }
         if ((mods.flags & Flags.VARARGS) != 0 &&
                 token.kind == LBRACKET) {
             log.error(token.pos, "varargs.and.old.array.syntax");
@@ -2770,7 +2781,7 @@ public class JavacParser implements Parser {
             } else {
                 int pos = token.pos;
                 List<JCTree> errs;
-                if (token.kind == IDENTIFIER) {
+                if (LAX_IDENTIFIER.accepts(token.kind)) {
                     errs = List.<JCTree>of(mods, toP(F.at(pos).Ident(ident())));
                     setErrorEndPos(token.pos);
                 } else {
@@ -2787,7 +2798,7 @@ public class JavacParser implements Parser {
             }
             int pos = token.pos;
             List<JCTree> errs;
-            if (token.kind == IDENTIFIER) {
+            if (LAX_IDENTIFIER.accepts(token.kind)) {
                 errs = List.<JCTree>of(mods, toP(F.at(pos).Ident(ident())));
                 setErrorEndPos(token.pos);
             } else {
@@ -3182,14 +3193,17 @@ public class JavacParser implements Parser {
      *  FormalParameterListNovarargs = [ FormalParameterListNovarargs , ] FormalParameter
      */
     List<JCVariableDecl> formalParameters() {
+        return formalParameters(false);
+    }
+    List<JCVariableDecl> formalParameters(boolean lambdaParameters) {
         ListBuffer<JCVariableDecl> params = new ListBuffer<JCVariableDecl>();
         JCVariableDecl lastParam = null;
         accept(LPAREN);
         if (token.kind != RPAREN) {
-            params.append(lastParam = formalParameter());
+            params.append(lastParam = formalParameter(lambdaParameters));
             while ((lastParam.mods.flags & Flags.VARARGS) == 0 && token.kind == COMMA) {
                 nextToken();
-                params.append(lastParam = formalParameter());
+                params.append(lastParam = formalParameter(lambdaParameters));
             }
         }
         accept(RPAREN);
@@ -3225,6 +3239,9 @@ public class JavacParser implements Parser {
      *  LastFormalParameter = { FINAL | '@' Annotation } Type '...' Ident | FormalParameter
      */
     protected JCVariableDecl formalParameter() {
+        return formalParameter(false);
+    }
+    protected JCVariableDecl formalParameter(boolean lambdaParameter) {
         JCModifiers mods = optFinal(Flags.PARAMETER);
         JCExpression type = parseType();
         if (token.kind == ELLIPSIS) {
@@ -3233,12 +3250,12 @@ public class JavacParser implements Parser {
             type = to(F.at(token.pos).TypeArray(type));
             nextToken();
         }
-        return variableDeclaratorId(mods, type);
+        return variableDeclaratorId(mods, type, lambdaParameter);
     }
 
     protected JCVariableDecl implicitParameter() {
         JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
-        return variableDeclaratorId(mods, null);
+        return variableDeclaratorId(mods, null, true);
     }
 
 /* ---------- auxiliary methods -------------- */
