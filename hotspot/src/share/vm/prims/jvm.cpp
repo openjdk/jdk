@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,15 +481,6 @@ JVM_ENTRY(void, JVM_FillInStackTrace(JNIEnv *env, jobject receiver))
   JVMWrapper("JVM_FillInStackTrace");
   Handle exception(thread, JNIHandles::resolve_non_null(receiver));
   java_lang_Throwable::fill_in_stack_trace(exception);
-JVM_END
-
-
-JVM_ENTRY(void, JVM_PrintStackTrace(JNIEnv *env, jobject receiver, jobject printable))
-  JVMWrapper("JVM_PrintStackTrace");
-  // Note: This is no longer used in Merlin, but we still support it for compatibility.
-  oop exception = JNIHandles::resolve_non_null(receiver);
-  oop stream    = JNIHandles::resolve_non_null(printable);
-  java_lang_Throwable::print_stack_trace(exception, stream);
 JVM_END
 
 
