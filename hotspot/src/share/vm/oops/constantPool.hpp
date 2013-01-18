@@ -787,7 +787,7 @@ class ConstantPool : public Metadata {
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }
   void increment_and_save_version(int version) {
-    _saved._version = version >= 0 ? version++ : version;  // keep overflow
+    _saved._version = version >= 0 ? (version + 1) : version;  // keep overflow
   }
 
   void set_resolved_reference_length(int length) { _saved._resolved_reference_length = length; }
