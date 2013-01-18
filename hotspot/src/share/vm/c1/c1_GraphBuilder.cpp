@@ -3223,7 +3223,12 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
   }
   if (try_inline_full(callee, holder_known, bc, receiver))
     return true;
-  print_inlining(callee, _inline_bailout_msg, /*success*/ false);
+
+  // Entire compilation could fail during try_inline_full call.
+  // In that case printing inlining decision info is useless.
+  if (!bailed_out())
+    print_inlining(callee, _inline_bailout_msg, /*success*/ false);
+
   return false;
 }
 
@@ -3753,7 +3758,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   push_scope(callee, cont);
 
   // the BlockListBuilder for the callee could have bailed out
-  CHECK_BAILOUT_(false);
+  if (bailed_out())
+      return false;
 
   // Temporarily set up bytecode stream so we can append instructions
   // (only using the bci of this stream)
@@ -3819,7 +3825,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   iterate_all_blocks(callee_start_block == NULL);
 
   // If we bailed out during parsing, return immediately (this is bad news)
-  if (bailed_out()) return false;
+  if (bailed_out())
+      return false;
 
   // iterate_all_blocks theoretically traverses in random order; in
   // practice, we have only traversed the continuation if we are
@@ -3827,9 +3834,6 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   assert(continuation_existed ||
          !continuation()->is_set(BlockBegin::was_visited_flag),
          "continuation should not have been parsed yet if we created it");
-
-  // If we bailed out during parsing, return immediately (this is bad news)
-  CHECK_BAILOUT_(false);
 
   // At this point we are almost ready to return and resume parsing of
   // the caller back in the GraphBuilder. The only thing we want to do
@@ -4171,7 +4175,10 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
       else
         log->inline_success("receiver is statically known");
     } else {
-      log->inline_fail(msg);
+      if (msg != NULL)
+        log->inline_fail(msg);
+      else
+        log->inline_fail("reason unknown");
     }
   }
 
