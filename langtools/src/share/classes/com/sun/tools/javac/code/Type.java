@@ -302,10 +302,12 @@ public class Type implements PrimitiveType {
      * never complete classes. Where isSameType would complete a
      * class, equals assumes that the two types are different.
      */
+    @Override
     public boolean equals(Object t) {
         return super.equals(t);
     }
 
+    @Override
     public int hashCode() {
         return super.hashCode();
     }
@@ -994,34 +996,6 @@ public class Type implements PrimitiveType {
          */
         public String toString() {
             return "(" + argtypes + ")" + restype;
-        }
-
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (!(obj instanceof MethodType))
-                return false;
-            MethodType m = (MethodType)obj;
-            List<Type> args1 = argtypes;
-            List<Type> args2 = m.argtypes;
-            while (!args1.isEmpty() && !args2.isEmpty()) {
-                if (!args1.head.equals(args2.head))
-                    return false;
-                args1 = args1.tail;
-                args2 = args2.tail;
-            }
-            if (!args1.isEmpty() || !args2.isEmpty())
-                return false;
-            return restype.equals(m.restype);
-        }
-
-        public int hashCode() {
-            int h = METHOD.ordinal();
-            for (List<Type> thisargs = this.argtypes;
-                 thisargs.tail != null; /*inlined: thisargs.nonEmpty()*/
-                 thisargs = thisargs.tail)
-                h = (h << 5) + thisargs.head.hashCode();
-            return (h << 5) + this.restype.hashCode();
         }
 
         public List<Type>        getParameterTypes() { return argtypes; }

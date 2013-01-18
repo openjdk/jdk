@@ -929,11 +929,14 @@ class CommandLineFlags {
           "Starts debugger when an implicit OS (e.g., NULL) "               \
           "exception happens")                                              \
                                                                             \
-  notproduct(bool, PrintCodeCache, false,                                   \
-          "Print the compiled_code cache when exiting")                     \
+  product(bool, PrintCodeCache, false,                                      \
+          "Print the code cache memory usage when exiting")                 \
                                                                             \
   develop(bool, PrintCodeCache2, false,                                     \
-          "Print detailed info on the compiled_code cache when exiting")    \
+          "Print detailed usage info on the code cache when exiting")       \
+                                                                            \
+  product(bool, PrintCodeCacheOnCompilation, false,                         \
+          "Print the code cache memory usage each time a method is compiled") \
                                                                             \
   diagnostic(bool, PrintStubCode, false,                                    \
           "Print generated stub code")                                      \
@@ -968,18 +971,6 @@ class CommandLineFlags {
                                                                             \
   notproduct(uintx, WarnOnStalledSpinLock, 0,                               \
           "Prints warnings for stalled SpinLocks")                          \
-                                                                            \
-  develop(bool, InitializeJavaLangSystem, true,                             \
-          "Initialize java.lang.System - turn off for individual "          \
-          "method debugging")                                               \
-                                                                            \
-  develop(bool, InitializeJavaLangString, true,                             \
-          "Initialize java.lang.String - turn off for individual "          \
-          "method debugging")                                               \
-                                                                            \
-  develop(bool, InitializeJavaLangExceptionsErrors, true,                   \
-          "Initialize various error and exception classes - turn off for "  \
-          "individual method debugging")                                    \
                                                                             \
   product(bool, RegisterFinalizersAtInit, true,                             \
           "Register finalizable objects at end of Object.<init> or "        \
@@ -1100,13 +1091,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, ReduceSignalUsage, false,                                   \
           "Reduce the use of OS signals in Java and/or the VM")             \
-                                                                            \
-  notproduct(bool, ValidateMarkSweep, false,                                \
-          "Do extra validation during MarkSweep collection")                \
-                                                                            \
-  notproduct(bool, RecordMarkSweepCompaction, false,                        \
-          "Enable GC-to-GC recording and querying of compaction during "    \
-          "MarkSweep")                                                      \
                                                                             \
   develop_pd(bool, ShareVtableStubs,                                        \
           "Share vtable stubs (smaller code but worse branch prediction")   \
@@ -1618,7 +1602,7 @@ class CommandLineFlags {
   develop(bool, CMSTraceThreadState, false,                                 \
           "Trace the CMS thread state (enable the trace_state() method)")   \
                                                                             \
-  product(bool, CMSClassUnloadingEnabled, false,                            \
+  product(bool, CMSClassUnloadingEnabled, true,                             \
           "Whether class unloading enabled when using CMS GC")              \
                                                                             \
   product(uintx, CMSClassUnloadingMaxInterval, 0,                           \
@@ -2229,7 +2213,8 @@ class CommandLineFlags {
   develop(bool, TraceClassLoaderData, false,                                \
           "Trace class loader loader_data lifetime")                        \
                                                                             \
-  product(uintx, InitialBootClassLoaderMetaspaceSize, 3*M,                  \
+  product(uintx, InitialBootClassLoaderMetaspaceSize,                       \
+          NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
           "Initial size of the boot class loader data metaspace")           \
                                                                             \
   product(bool, TraceGen0Time, false,                                       \

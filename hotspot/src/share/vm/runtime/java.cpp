@@ -368,6 +368,12 @@ void print_statistics() {
   if (CITime) {
     CompileBroker::print_times();
   }
+
+  if (PrintCodeCache) {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::print();
+  }
+
 #ifdef COMPILER2
   if (PrintPreciseBiasedLockingStatistics) {
     OptoRuntime::print_named_counters();

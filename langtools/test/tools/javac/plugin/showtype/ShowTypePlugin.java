@@ -41,7 +41,7 @@ public class ShowTypePlugin implements Plugin {
         return "showtype";
     }
 
-    public void call(JavacTask task, String... args) {
+    public void init(JavacTask task, String... args) {
         Pattern pattern = null;
         if (args.length == 1)
             pattern = Pattern.compile(args[0]);

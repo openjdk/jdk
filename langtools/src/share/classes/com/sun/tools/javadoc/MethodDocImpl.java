@@ -76,19 +76,17 @@ public class MethodDocImpl
     }
 
     /**
+     * Return true if this method is default
+     */
+    public boolean isDefault() {
+        return (sym.flags() & Flags.DEFAULT) != 0;
+    }
+
+    /**
      * Return true if this method is abstract
      */
     public boolean isAbstract() {
-        //### This is dubious, but old 'javadoc' apparently does it.
-        //### I regard this as a bug and an obstacle to treating the
-        //### doclet API as a proper compile-time reflection facility.
-        //### (maddox 09/26/2000)
-        if (containingClass().isInterface()) {
-            //### Don't force creation of ClassDocImpl for super here.
-            // Abstract modifier is implicit.  Strip/canonicalize it.
-            return false;
-        }
-        return Modifier.isAbstract(getModifiers());
+        return (Modifier.isAbstract(getModifiers()) && !isDefault());
     }
 
     /**

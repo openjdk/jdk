@@ -25,7 +25,7 @@
  * @test
  * @bug 6988079
  * @summary Errors reported via Messager.printMessage(ERROR,"error message") are not tallied correctly
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor TestErrorCount
  * @compile/fail/ref=TestErrorCount.out -XDrawDiagnostics -processor TestErrorCount TestErrorCount.java
  */

@@ -26,7 +26,7 @@
  * @bug     6359313
  * @summary error compiling annotated package
  * @author  Peter von der Ah\u00e9
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile T6359313.java
  * @compile -processor T6359313 package-info.java Foo.java

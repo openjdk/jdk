@@ -449,8 +449,16 @@ public class ValueConversions {
      * @param x an arbitrary reference value
      * @return the same value x
      */
+    @SuppressWarnings("unchecked")
     static <T,U> T castReference(Class<? extends T> t, U x) {
-        return t.cast(x);
+        // inlined Class.cast because we can't ForceInline it
+        if (x != null && !t.isInstance(x))
+            throw newClassCastException(t, x);
+        return (T) x;
+    }
+
+    private static ClassCastException newClassCastException(Class<?> t, Object obj) {
+        return new ClassCastException("Cannot cast " + obj.getClass().getName() + " to " + t.getName());
     }
 
     private static final MethodHandle IDENTITY, CAST_REFERENCE, ZERO_OBJECT, IGNORE, EMPTY,

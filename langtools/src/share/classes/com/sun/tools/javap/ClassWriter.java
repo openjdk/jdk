@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public class ClassWriter extends BasicWriter {
             println("minor version: " + cf.minor_version);
             println("major version: " + cf.major_version);
             if (!options.compat)
-              writeList("flags: ", flags.getClassFlags(), NEWLINE);
+              writeList("flags: ", flags.getClassFlags(), "\n");
             indent(-1);
             constantWriter.writeConstantPool();
         } else {
@@ -383,7 +383,7 @@ public class ClassWriter extends BasicWriter {
             println("Signature: " + getValue(f.descriptor));
 
         if (options.verbose && !options.compat)
-            writeList("flags: ", flags.getFieldFlags(), NEWLINE);
+            writeList("flags: ", flags.getFieldFlags(), "\n");
 
         if (options.showAllAttrs) {
             for (Attribute attr: f.attributes)
@@ -480,7 +480,7 @@ public class ClassWriter extends BasicWriter {
         }
 
         if (options.verbose && !options.compat) {
-            writeList("flags: ", flags.getMethodFlags(), NEWLINE);
+            writeList("flags: ", flags.getMethodFlags(), "\n");
         }
 
         Code_attribute code = null;
@@ -749,5 +749,4 @@ public class ClassWriter extends BasicWriter {
     private int size;
     private ConstantPool constant_pool;
     private Method method;
-    private static final String NEWLINE = System.getProperty("line.separator", "\n");
 }

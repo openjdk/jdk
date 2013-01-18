@@ -83,13 +83,13 @@ public abstract class Symbol implements Element {
      *  Attributes of class symbols should be accessed through the accessor
      *  method to make sure that the class symbol is loaded.
      */
-    public List<Attribute.Compound> getAnnotationMirrors() {
-        return Assert.checkNonNull(annotations.getAttributes());
+    public List<Attribute.Compound> getRawAttributes() {
+        return annotations.getAttributes();
     }
 
     /** Fetch a particular annotation from a symbol. */
     public Attribute.Compound attribute(Symbol anno) {
-        for (Attribute.Compound a : getAnnotationMirrors()) {
+        for (Attribute.Compound a : getRawAttributes()) {
             if (a.type.tsym == anno) return a;
         }
         return null;
@@ -447,6 +447,14 @@ public abstract class Symbol implements Element {
     }
 
     /**
+     * This is the implementation for {@code
+     * javax.lang.model.element.Element.getAnnotationMirrors()}.
+     */
+    public final List<Attribute.Compound> getAnnotationMirrors() {
+        return getRawAttributes();
+    }
+
+    /**
      * @deprecated this method should never be used by javac internally.
      */
     @Deprecated
@@ -662,15 +670,21 @@ public abstract class Symbol implements Element {
             return flags_field;
         }
 
-        public List<Attribute.Compound> getAnnotationMirrors() {
+        @Override
+        public List<Attribute.Compound> getRawAttributes() {
             if (completer != null) complete();
             if (package_info != null && package_info.completer != null) {
                 package_info.complete();
-                if (annotations.isEmpty()) {
-                    annotations.setAttributes(package_info.annotations);
+                mergeAttributes();
             }
+            return super.getRawAttributes();
+        }
+
+        private void mergeAttributes() {
+            if (annotations.isEmpty() &&
+                !package_info.annotations.isEmpty()) {
+                annotations.setAttributes(package_info.annotations);
             }
-            return Assert.checkNonNull(annotations.getAttributes());
         }
 
         /** A package "exists" if a type or package that exists has
@@ -770,9 +784,10 @@ public abstract class Symbol implements Element {
             return members_field;
         }
 
-        public List<Attribute.Compound> getAnnotationMirrors() {
+        @Override
+        public List<Attribute.Compound> getRawAttributes() {
             if (completer != null) complete();
-            return Assert.checkNonNull(annotations.getAttributes());
+            return super.getRawAttributes();
         }
 
         public Type erasure(Types types) {
@@ -1268,8 +1283,9 @@ public abstract class Symbol implements Element {
                 List<Name> paramNames = savedParameterNames;
                 savedParameterNames = null;
                 // discard the provided names if the list of names is the wrong size.
-                if (paramNames == null || paramNames.size() != type.getParameterTypes().size())
+                if (paramNames == null || paramNames.size() != type.getParameterTypes().size()) {
                     paramNames = List.nil();
+                }
                 ListBuffer<VarSymbol> buf = new ListBuffer<VarSymbol>();
                 List<Name> remaining = paramNames;
                 // assert: remaining and paramNames are both empty or both
@@ -1353,12 +1369,16 @@ public abstract class Symbol implements Element {
             return defaultValue;
         }
 
-        public List<VarSymbol> getParameters() {
+         public List<VarSymbol> getParameters() {
             return params();
         }
 
         public boolean isVarArgs() {
             return (flags() & VARARGS) != 0;
+        }
+
+        public boolean isDefault() {
+            return (flags() & DEFAULT) != 0;
         }
 
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {

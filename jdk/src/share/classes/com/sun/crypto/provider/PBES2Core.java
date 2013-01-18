@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,13 +134,13 @@ abstract class PBES2Core extends CipherSpi {
         if (salt == null) {
             // generate random salt and use default iteration count
             salt = new byte[DEFAULT_SALT_LENGTH];
-            SunJCE.RANDOM.nextBytes(salt);
+            SunJCE.getRandom().nextBytes(salt);
             iCount = DEFAULT_COUNT;
         }
         if (ivSpec == null) {
             // generate random IV
             byte[] ivBytes = new byte[blkSize];
-            SunJCE.RANDOM.nextBytes(ivBytes);
+            SunJCE.getRandom().nextBytes(ivBytes);
             ivSpec = new IvParameterSpec(ivBytes);
         }
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount, ivSpec);

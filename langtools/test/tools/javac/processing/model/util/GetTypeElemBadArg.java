@@ -26,7 +26,7 @@
  * @bug     6346506 6408241
  * @summary getTypeElement should tolerate a type that can't be found
  * @author  Scott Seligman
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor GetTypeElemBadArg
  * @compile -processor GetTypeElemBadArg -proc:only GetTypeElemBadArg.java
  */

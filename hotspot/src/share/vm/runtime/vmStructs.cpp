@@ -1198,7 +1198,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /*********************************/                                                                                                \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
-  static_field(java_lang_Class,                _resolved_constructor_offset,                  int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
   static_field(java_lang_Class,                _oop_size_offset,                              int)                                   \
   static_field(java_lang_Class,                _static_oop_field_count_offset,                int)                                   \

@@ -1405,7 +1405,8 @@ public class Attr extends JCTree.Visitor {
         Type owntype = standaloneConditional ? condType(tree, truetype, falsetype) : pt();
         if (condtype.constValue() != null &&
                 truetype.constValue() != null &&
-                falsetype.constValue() != null) {
+                falsetype.constValue() != null &&
+                !owntype.hasTag(NONE)) {
             //constant folding
             owntype = cfolder.coerce(condtype.isTrue() ? truetype : falsetype, owntype);
         }

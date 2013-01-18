@@ -44,6 +44,8 @@ import javax.tools.JavaFileObject;
 
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.Plugin;
+import com.sun.tools.doclint.DocLint;
+import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -428,6 +430,7 @@ public class Main {
             if (batchMode)
                 CacheFSInfo.preRegister(context);
 
+            // FIXME: this code will not be invoked if using JavacTask.parse/analyze/generate
             // invoke any available plugins
             String plugins = options.get(PLUGIN);
             if (plugins != null) {
@@ -448,7 +451,7 @@ public class Main {
                             try {
                                 if (task == null)
                                     task = JavacTask.instance(pEnv);
-                                plugin.call(task, p.tail.toArray(new String[p.tail.size()]));
+                                plugin.init(task, p.tail.toArray(new String[p.tail.size()]));
                             } catch (Throwable ex) {
                                 if (apiMode)
                                     throw new RuntimeException(ex);
@@ -464,10 +467,31 @@ public class Main {
                 }
             }
 
-            fileManager = context.get(JavaFileManager.class);
-
             comp = JavaCompiler.instance(context);
-            if (comp == null) return Result.SYSERR;
+
+            // FIXME: this code will not be invoked if using JavacTask.parse/analyze/generate
+            String xdoclint = options.get(XDOCLINT);
+            String xdoclintCustom = options.get(XDOCLINT_CUSTOM);
+            if (xdoclint != null || xdoclintCustom != null) {
+                Set<String> doclintOpts = new LinkedHashSet<String>();
+                if (xdoclint != null)
+                    doclintOpts.add(DocLint.XMSGS_OPTION);
+                if (xdoclintCustom != null) {
+                    for (String s: xdoclintCustom.split("\\s+")) {
+                        if (s.isEmpty())
+                            continue;
+                        doclintOpts.add(s.replace(XDOCLINT_CUSTOM.text, DocLint.XMSGS_CUSTOM_PREFIX));
+                    }
+                }
+                if (!(doclintOpts.size() == 1
+                        && doclintOpts.iterator().next().equals(DocLint.XMSGS_CUSTOM_PREFIX + "none"))) {
+                    JavacTask t = BasicJavacTask.instance(context);
+                    new DocLint().init(t, doclintOpts.toArray(new String[doclintOpts.size()]));
+                    comp.keepComments = true;
+                }
+            }
+
+            fileManager = context.get(JavaFileManager.class);
 
             if (!files.isEmpty()) {
                 // add filenames to fileObjects

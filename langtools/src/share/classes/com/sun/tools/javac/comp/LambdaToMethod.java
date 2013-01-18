@@ -692,8 +692,9 @@ public class LambdaToMethod extends TreeTranslator {
         //determine the static bsm args
         Type mtype = makeFunctionalDescriptorType(targetType, true);
         List<Object> staticArgs = List.<Object>of(
-                new Pool.MethodHandle(ClassFile.REF_invokeInterface, types.findDescriptorSymbol(targetType.tsym)),
-                new Pool.MethodHandle(refKind, refSym),
+                new Pool.MethodHandle(ClassFile.REF_invokeInterface,
+                    types.findDescriptorSymbol(targetType.tsym), types),
+                new Pool.MethodHandle(refKind, refSym, types),
                 new MethodType(mtype.getParameterTypes(),
                         mtype.getReturnType(),
                         mtype.getThrownTypes(),
