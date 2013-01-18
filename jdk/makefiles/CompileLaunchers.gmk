@@ -588,6 +588,34 @@ else
 endif
 
 ##########################################################################################
+# jabswitch
+
+ifndef OPENJDK
+ifeq ($(OPENJDK_TARGET_OS),windows)
+
+    $(eval $(call SetupNativeCompilation,BUILD_JABSWITCH,\
+		SRC:=$(JDK_TOPDIR)/src/closed/windows/native/sun/bridge,\
+		INCLUDE_FILES:=jabswitch.cpp,\
+		LANG:=C++,\
+		CFLAGS:=$(filter-out -Zc:wchar_t-,$(CFLAGS_JDKEXE)) -Zc:wchar_t \
+			-analyze- -Od -Gd -D_WINDOWS \
+			-D_UNICODE -DUNICODE -RTC1 -EHsc,\
+		LDFLAGS:=$(LDFLAGS_JDKEXE) \
+			 Advapi32.lib Version.lib User32.lib,\
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/jabswitch,\
+		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/bin,\
+		PROGRAM:=jabswitch,\
+		DEBUG_SYMBOLS:=true,\
+		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/AccessBridgeStatusWindow.rc,\
+		RC_FLAGS:=$(RC_FLAGS),\
+		MANIFEST:=$(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/jabswitch.manifest))
+
+    BUILD_LAUNCHERS += $(BUILD_JABSWITCH)
+
+endif
+endif
+
+##########################################################################################
 
 $(BUILD_LAUNCHERS) : $(JDK_TOPDIR)/makefiles/CompileLaunchers.gmk
 
