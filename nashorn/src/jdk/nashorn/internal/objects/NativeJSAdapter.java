@@ -734,6 +734,10 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.lookup(), NativeJSAdapter.class, name, MH.type(rtype, types));
+        try {
+            return MethodHandles.lookup().findStatic(NativeJSAdapter.class, name, MH.type(rtype, types));
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
     }
 }
