@@ -44,6 +44,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.runtime.linker.Lookup;
+import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
 
@@ -737,7 +738,7 @@ public final class NativeJSAdapter extends ScriptObject {
         try {
             return MethodHandles.lookup().findStatic(NativeJSAdapter.class, name, MH.type(rtype, types));
         } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new AssertionError(e);
+            throw new MethodHandleFactory.LookupException(e);
         }
     }
 }

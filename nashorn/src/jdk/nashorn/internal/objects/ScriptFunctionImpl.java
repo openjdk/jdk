@@ -39,6 +39,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.linker.Lookup;
+import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 
 /**
  * Concrete implementation of ScriptFunction. This sets correct map for the
@@ -340,6 +341,10 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.lookup(), ScriptFunctionImpl.class, name, MH.type(rtype, types));
+        try {
+            return MethodHandles.lookup().findStatic(ScriptFunctionImpl.class, name, MH.type(rtype, types));
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            throw new MethodHandleFactory.LookupException(e);
+        }
     }
 }

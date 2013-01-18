@@ -106,6 +106,6 @@ public class PrototypeObject extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.lookup(), PrototypeObject.class, name, MH.type(rtype, types));
+        return MH.findStatic(MethodHandles.publicLookup(), PrototypeObject.class, name, MH.type(rtype, types));
     }
 }

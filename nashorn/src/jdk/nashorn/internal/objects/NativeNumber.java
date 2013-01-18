@@ -45,6 +45,7 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 import org.dynalang.dynalink.linker.GuardedInvocation;
@@ -382,7 +383,7 @@ public final class NativeNumber extends ScriptObject {
         try {
             return MethodHandles.lookup().findStatic(NativeNumber.class, "wrapFilter", MH.type(NativeNumber.class, Object.class));
         } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new AssertionError(e);
+            throw new MethodHandleFactory.LookupException(e);
         }
     }
 }
