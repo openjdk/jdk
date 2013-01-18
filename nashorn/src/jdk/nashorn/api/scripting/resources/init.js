@@ -187,11 +187,31 @@ function jlist(list) {
 }
 
 /**
- * This is java.lang.System properties wrapped by jmap.
+ * This is java.lang.System properties wrapped by JSAdapter.
  * For eg. to access java.class.path property, you can use
  * the syntax sysProps["java.class.path"]
  */
-var sysProps = jmap(java.lang.System.getProperties());
+var sysProps = new JSAdapter({
+    __get__ : function (name) {
+        return java.lang.System.getProperty(name);
+    },
+    __has__ : function (name) {
+        return java.lang.System.getProperty(name) != null;
+    },
+    __getIds__ : function() {
+        return java.lang.System.getProperties().keySet().toArray();
+    },
+    __delete__ : function(name) {
+        java.lang.System.clearProperty(name);
+        return true;
+    },
+    __put__ : function (name, value) {
+        java.lang.System.setProperty(name, value);
+    },
+    toString: function() {
+        return "<system properties>";
+    }
+});
 
 // stdout, stderr & stdin
 var out = java.lang.System.out;

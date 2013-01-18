@@ -91,7 +91,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
         // throw ParseException on first error from script
         final ErrorManager errors = new Context.ThrowErrorManager();
-        // create new Nashorn Context and get global object
+        // create new Nashorn Context
         this.nashornContext = AccessController.doPrivileged(new PrivilegedAction<Context>() {
             @Override
             public Context run() {
@@ -107,7 +107,19 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         });
 
         // create new global object
-        this.global = nashornContext.createGlobal();
+        this.global =  AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
+            @Override
+            public ScriptObject run() {
+                try {
+                    return nashornContext.createGlobal();
+                } catch (final RuntimeException e) {
+                    if (Context.DEBUG) {
+                        e.printStackTrace();
+                    }
+                    throw e;
+                }
+            }
+        });
 
         // current ScriptContext exposed as "context"
         global.addOwnProperty("context", Property.NOT_ENUMERABLE, context);
@@ -121,14 +133,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
         // evaluate engine initial script
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                @Override
-                public Void run() throws ScriptException {
-                    evalEngineScript();
-                    return null;
-                }
-            });
-        } catch (final PrivilegedActionException e) {
+            evalEngineScript();
+        } catch (final ScriptException e) {
             if (Context.DEBUG) {
                 e.printStackTrace();
             }
@@ -330,15 +336,20 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         evalSupportScript("resources/engine.js");
     }
 
-    private void evalSupportScript(String script) throws ScriptException {
-        final URL url = NashornScriptEngine.class.getResource(script);
+    private void evalSupportScript(final String script) throws ScriptException {
         try {
-            final InputStream is = url.openStream();
-            put(ScriptEngine.FILENAME, url);
+            final InputStream is = AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<InputStream>() {
+                        public InputStream run() throws Exception {
+                            final URL url = NashornScriptEngine.class.getResource(script);
+                            return url.openStream();
+                        }
+                    });
+            put(ScriptEngine.FILENAME, "<engine>:" + script);
             try (final InputStreamReader isr = new InputStreamReader(is)) {
                 eval(isr);
             }
-        } catch (final IOException e) {
+        } catch (final PrivilegedActionException | IOException e) {
             throw new ScriptException(e);
         } finally {
             put(ScriptEngine.FILENAME, null);
