@@ -1716,7 +1716,6 @@ static void ensure_join(JavaThread* thread) {
 // cleanup_failed_attach_current_thread as well.
 void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   assert(this == JavaThread::current(),  "thread consistency check");
-  if (!InitializeJavaLangSystem) return;
 
   HandleMark hm(this);
   Handle uncaught_exception(this, this->pending_exception());
@@ -3469,11 +3468,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       create_vm_init_libraries();
     }
 
-    if (InitializeJavaLangString) {
-      initialize_class(vmSymbols::java_lang_String(), CHECK_0);
-    } else {
-      warning("java.lang.String not initialized");
-    }
+    initialize_class(vmSymbols::java_lang_String(), CHECK_0);
 
     if (AggressiveOpts) {
       {
@@ -3514,53 +3509,39 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     }
 
     // Initialize java_lang.System (needed before creating the thread)
-    if (InitializeJavaLangSystem) {
-      initialize_class(vmSymbols::java_lang_System(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK_0);
-      Handle thread_group = create_initial_thread_group(CHECK_0);
-      Universe::set_main_thread_group(thread_group());
-      initialize_class(vmSymbols::java_lang_Thread(), CHECK_0);
-      oop thread_object = create_initial_thread(thread_group, main_thread, CHECK_0);
-      main_thread->set_threadObj(thread_object);
-      // Set thread status to running since main thread has
-      // been started and running.
-      java_lang_Thread::set_thread_status(thread_object,
-                                          java_lang_Thread::RUNNABLE);
+    initialize_class(vmSymbols::java_lang_System(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK_0);
+    Handle thread_group = create_initial_thread_group(CHECK_0);
+    Universe::set_main_thread_group(thread_group());
+    initialize_class(vmSymbols::java_lang_Thread(), CHECK_0);
+    oop thread_object = create_initial_thread(thread_group, main_thread, CHECK_0);
+    main_thread->set_threadObj(thread_object);
+    // Set thread status to running since main thread has
+    // been started and running.
+    java_lang_Thread::set_thread_status(thread_object,
+                                        java_lang_Thread::RUNNABLE);
 
-      // The VM creates & returns objects of this class. Make sure it's initialized.
-      initialize_class(vmSymbols::java_lang_Class(), CHECK_0);
+    // The VM creates & returns objects of this class. Make sure it's initialized.
+    initialize_class(vmSymbols::java_lang_Class(), CHECK_0);
 
-      // The VM preresolves methods to these classes. Make sure that they get initialized
-      initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_ref_Finalizer(),  CHECK_0);
-      call_initializeSystemClass(CHECK_0);
+    // The VM preresolves methods to these classes. Make sure that they get initialized
+    initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_ref_Finalizer(),  CHECK_0);
+    call_initializeSystemClass(CHECK_0);
 
-      // get the Java runtime name after java.lang.System is initialized
-      JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
-      JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
-    } else {
-      warning("java.lang.System not initialized");
-    }
+    // get the Java runtime name after java.lang.System is initialized
+    JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
+    JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
 
     // an instance of OutOfMemory exception has been allocated earlier
-    if (InitializeJavaLangExceptionsErrors) {
-      initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_NullPointerException(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_ClassCastException(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_ArrayStoreException(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK_0);
-      initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK_0);
-    } else {
-      warning("java.lang.OutOfMemoryError has not been initialized");
-      warning("java.lang.NullPointerException has not been initialized");
-      warning("java.lang.ClassCastException has not been initialized");
-      warning("java.lang.ArrayStoreException has not been initialized");
-      warning("java.lang.ArithmeticException has not been initialized");
-      warning("java.lang.StackOverflowError has not been initialized");
-      warning("java.lang.IllegalArgumentException has not been initialized");
-    }
+    initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_NullPointerException(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_ClassCastException(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_ArrayStoreException(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK_0);
   }
 
   // See        : bugid 4211085.

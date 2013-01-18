@@ -687,19 +687,6 @@ void java_lang_Class::set_array_klass(oop java_class, Klass* klass) {
 }
 
 
-Method* java_lang_Class::resolved_constructor(oop java_class) {
-  Metadata* constructor = java_class->metadata_field(_resolved_constructor_offset);
-  assert(constructor == NULL || constructor->is_method(), "should be method");
-  return ((Method*)constructor);
-}
-
-
-void java_lang_Class::set_resolved_constructor(oop java_class, Method* constructor) {
-  assert(constructor->is_method(), "should be method");
-  java_class->metadata_field_put(_resolved_constructor_offset, constructor);
-}
-
-
 bool java_lang_Class::is_primitive(oop java_class) {
   // should assert:
   //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
@@ -2949,7 +2936,6 @@ int java_lang_System::err_offset_in_bytes() {
 
 int java_lang_Class::_klass_offset;
 int java_lang_Class::_array_klass_offset;
-int java_lang_Class::_resolved_constructor_offset;
 int java_lang_Class::_oop_size_offset;
 int java_lang_Class::_static_oop_field_count_offset;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
@@ -3303,7 +3289,6 @@ void JavaClasses::check_offsets() {
   // Fake fields
   // CHECK_OFFSET("java/lang/Class", java_lang_Class, klass); // %%% this needs to be checked
   // CHECK_OFFSET("java/lang/Class", java_lang_Class, array_klass); // %%% this needs to be checked
-  // CHECK_OFFSET("java/lang/Class", java_lang_Class, resolved_constructor); // %%% this needs to be checked
 
   // java.lang.Throwable
 
