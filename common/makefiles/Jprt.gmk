@@ -128,6 +128,9 @@ else
   ifdef ALT_SLASH_JAVA
 	@$(ECHO) " --with-java-devtools=$(call UnixPath,$(ALT_SLASH_JAVA)/devtools) " >> $@.tmp
   endif
+  ifdef ALT_SPARKLE_FRAMEWORK_DIR
+	@$(ECHO) " --with-sparkle-framework=$(call UnixPath,$(ALT_SPARKLE_FRAMEWORK_DIR)) " >> $@.tmp
+  endif 
 endif
 	@if [ -f $@ ] ; then \
           if ! $(CMP) $@ $@.tmp > /dev/null ; then \
