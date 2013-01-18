@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 5011189
+ * @bug 5011189 8004928
  * @summary Unit test for java.lang.management.CompilationMXBean
  *
- * @run main/othervm -Xcomp -Xbatch -Djava.awt.headless=true Basic
+ * @run main/othervm -Xcomp -Xbatch Basic
  */
 import java.lang.management.*;
 
@@ -65,8 +65,6 @@ public class Basic {
 
         java.util.Locale.getAvailableLocales();
         java.security.Security.getProviders();
-        java.awt.Toolkit.getDefaultToolkit();
-        javax.swing.UIManager.getInstalledLookAndFeels();
         java.nio.channels.spi.SelectorProvider.provider();
 
         time = mb.getTotalCompilationTime();

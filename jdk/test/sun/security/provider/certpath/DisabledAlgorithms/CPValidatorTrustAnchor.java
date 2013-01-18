@@ -21,6 +21,9 @@
  * questions.
  */
 
+// This test case relies on updated static security property, no way to re-use
+// security property in samevm/agentvm mode.
+
 /**
  * @test
  *
@@ -28,7 +31,7 @@
  * @summary Disable MD2 support
  *          new CertPathValidatorException.BasicReason enum constant for
  *     constrained algorithm
- *
+ * @run main/othervm CPValidatorTrustAnchor
  * @author Xuelei Fan
  */
 
@@ -133,6 +136,10 @@ public class CPValidatorTrustAnchor {
     }
 
     public static void main(String args[]) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
+
         try {
             validate(trustAnchor_SHA1withRSA_1024);
             validate(trustAnchor_SHA1withRSA_512);

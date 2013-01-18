@@ -772,7 +772,7 @@ public final class Integer extends Number implements Comparable<Integer> {
                 int i = parseInt(integerCacheHighPropValue);
                 i = Math.max(i, 127);
                 // Maximum array size is Integer.MAX_VALUE
-                h = Math.min(i, Integer.MAX_VALUE - (-low));
+                h = Math.min(i, Integer.MAX_VALUE - (-low) -1);
             }
             high = h;
 

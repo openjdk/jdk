@@ -26,7 +26,7 @@
  * @bug 6365040 6358129
  * @summary Test -processor foo,bar,baz
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile ProcFoo.java
  * @compile ProcBar.java

@@ -67,9 +67,11 @@ class Metachunk VALUE_OBJ_CLASS_SPEC {
   void set_word_size(size_t v) { _word_size = v; }
  public:
 #ifdef ASSERT
-  Metachunk() : _bottom(NULL), _end(NULL), _top(NULL), _is_free(false) {}
+  Metachunk() : _bottom(NULL), _end(NULL), _top(NULL), _is_free(false),
+    _next(NULL), _prev(NULL) {}
 #else
-  Metachunk() : _bottom(NULL), _end(NULL), _top(NULL) {}
+  Metachunk() : _bottom(NULL), _end(NULL), _top(NULL),
+    _next(NULL), _prev(NULL) {}
 #endif
 
   // Used to add a Metachunk to a list of Metachunks
@@ -102,15 +104,15 @@ class Metachunk VALUE_OBJ_CLASS_SPEC {
   }
 
   // Reset top to bottom so chunk can be reused.
-  void reset_empty() { _top = (_bottom + _overhead); }
+  void reset_empty() { _top = (_bottom + _overhead); _next = NULL; _prev = NULL; }
   bool is_empty() { return _top == (_bottom + _overhead); }
 
   // used (has been allocated)
   // free (available for future allocations)
   // capacity (total size of chunk)
-  size_t used_word_size();
-  size_t free_word_size();
-  size_t capacity_word_size();
+  size_t used_word_size() const;
+  size_t free_word_size() const;
+  size_t capacity_word_size()const;
 
   // Debug support
 #ifdef ASSERT

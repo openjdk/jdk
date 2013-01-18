@@ -74,7 +74,7 @@ public class Version {
 
     /** Version string.
      * @deprecated  getVersion() should be used instead.  */
-    public static String fVersion = "Xerces-J 2.7.1";
+    public static final String fVersion = getVersion();
 
     private static final String fImmutableVersion = "Xerces-J 2.7.1";
 

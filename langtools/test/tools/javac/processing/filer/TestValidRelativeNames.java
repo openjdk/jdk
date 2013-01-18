@@ -25,7 +25,7 @@
  * @test
  * @bug 6999891
  * @summary Test valid relative names for Filer.createResource and Filer.getResource
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile TestValidRelativeNames.java
  * @compile/process -processor TestValidRelativeNames -Amode=create java.lang.Object

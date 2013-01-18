@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public class DeadCachedConnection {
             JavaVM jvm =
                 new JavaVM("sun.rmi.registry.RegistryImpl", "", Integer.toString(p));
             jvm.start();
-            DeadCachedConnection.subreg = jvm.getVM();
+            DeadCachedConnection.subreg = jvm;
 
         } catch (IOException e) {
             // one of these is summarily dropped, can't remember which one
@@ -117,7 +117,7 @@ public class DeadCachedConnection {
         } catch (Exception whatever) {
         }
     }
-    private static Process subreg = null;
+    private static JavaVM subreg = null;
 
     public static void killRegistry() {
         if (DeadCachedConnection.subreg != null) {

@@ -52,21 +52,27 @@ import javax.management.remote.JMXServiceURL;
 import com.sun.jmx.remote.util.EnvHelp;
 
 public class IdleTimeoutTest {
+
+    static boolean isPresent(String cn) {
+        try {
+            Class.forName(cn);
+            return true;
+        } catch (ClassNotFoundException x) {
+            return false;
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         boolean ok = true;
         List protos;
         if (args.length > 0)
             protos = Arrays.asList(args);
         else {
-            protos =
-                new ArrayList(Arrays.asList(new String[] {"rmi", "iiop"}));
-            try {
-                Class.forName("javax.management.remote.jmxmp." +
-                              "JMXMPConnectorServer");
+            protos = new ArrayList(Arrays.asList(new String[] {"rmi"}));
+            if (isPresent("javax.management.remote.rmi._RMIConnectionImpl_Tie"))
+                protos.add("iiop");
+            if (isPresent("javax.management.remote.jmxmp.JMXMPConnectorServer"))
                 protos.add("jmxmp");
-            } catch (ClassNotFoundException e) {
-                // OK: Optional JMXMP support is not present
-            }
         }
         for (Iterator it = protos.iterator(); it.hasNext(); ) {
             String proto = (String) it.next();
@@ -81,13 +87,13 @@ public class IdleTimeoutTest {
             }
         }
         if (!ok) {
-            System.out.println("SOME TESTS FAILED");
-            System.exit(1);
+            throw new RuntimeException("Some tests failed - see log for details");
         }
     }
 
     private static long getIdleTimeout(MBeanServer mbs, JMXServiceURL url)
-        throws Exception {
+        throws Exception
+    {
         JMXConnectorServer server =
             JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
         server.start();

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6894072
+ * @compile -XDignore.symbol.file DynamicKeytab.java
  * @run main/othervm DynamicKeytab
  * @summary always refresh keytab
  */
@@ -110,11 +111,13 @@ public class DynamicKeytab {
             throw new Exception("Should not success");
         } catch (GSSException gsse) {
             System.out.println(gsse);
-            KrbException ke = (KrbException)gsse.getCause();
-            if (ke.returnCode() != Krb5.KRB_AP_ERR_BADKEYVER) {
-                throw new Exception("Not expected failure code: " +
-                        ke.returnCode());
-            }
+            // Since 7197159, different kvno is accepted, this return code
+            // will never be thrown out again.
+            //KrbException ke = (KrbException)gsse.getCause();
+            //if (ke.returnCode() != Krb5.KRB_AP_ERR_BADKEYVER) {
+            //    throw new Exception("Not expected failure code: " +
+            //            ke.returnCode());
+            //}
         }
 
         // Test 8: an empty KDC means revoke all

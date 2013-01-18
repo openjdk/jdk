@@ -206,7 +206,6 @@ class java_lang_String : AllStatic {
 
 #define CLASS_INJECTED_FIELDS(macro)                                       \
   macro(java_lang_Class, klass,                  intptr_signature,  false) \
-  macro(java_lang_Class, resolved_constructor,   intptr_signature,  false) \
   macro(java_lang_Class, array_klass,            intptr_signature,  false) \
   macro(java_lang_Class, oop_size,               int_signature,     false) \
   macro(java_lang_Class, static_oop_field_count, int_signature,     false)
@@ -218,7 +217,6 @@ class java_lang_Class : AllStatic {
   // The fake offsets are added by the class loader when java.lang.Class is loaded
 
   static int _klass_offset;
-  static int _resolved_constructor_offset;
   static int _array_klass_offset;
 
   static int _oop_size_offset;
@@ -254,15 +252,11 @@ class java_lang_Class : AllStatic {
   static bool is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
-  // JVM_NewInstance support
-  static Method* resolved_constructor(oop java_class);
-  static void set_resolved_constructor(oop java_class, Method* constructor);
   // JVM_NewArray support
   static Klass* array_klass(oop java_class);
   static void set_array_klass(oop java_class, Klass* klass);
   // compiler support for class operations
   static int klass_offset_in_bytes()                { return _klass_offset; }
-  static int resolved_constructor_offset_in_bytes() { return _resolved_constructor_offset; }
   static int array_klass_offset_in_bytes()          { return _array_klass_offset; }
   // Support for classRedefinedCount field
   static int classRedefinedCount(oop the_class_mirror);

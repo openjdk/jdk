@@ -57,6 +57,13 @@ public class BasicJavacTask extends JavacTask {
     protected Context context;
     private TaskListener taskListener;
 
+    public static JavacTask instance(Context context) {
+        JavacTask instance = context.get(JavacTask.class);
+        if (instance == null)
+            instance = new BasicJavacTask(context, true);
+        return instance;
+    }
+
     public BasicJavacTask(Context c, boolean register) {
         context = c;
         if (register)

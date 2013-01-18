@@ -1543,6 +1543,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
+    static int getNumberOfButtonsForMask() {
+        return Math.min(XConstants.MAX_BUTTONS, ((SunToolkit) (Toolkit.getDefaultToolkit())).getNumberOfButtons());
+    }
+
     private final static String prefix  = "DnD.Cursor.";
     private final static String postfix = ".32x32";
     private static final String dndPrefix  = "DnD.";

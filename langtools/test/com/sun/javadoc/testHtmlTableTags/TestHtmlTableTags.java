@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public class TestHtmlTableTags extends JavadocTester {
             "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">" +
             "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t5\" class=\"tableTab\"><span><a href=\"javascript:show(16);\">" +
+            "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">" +
             "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "</caption>"
         },

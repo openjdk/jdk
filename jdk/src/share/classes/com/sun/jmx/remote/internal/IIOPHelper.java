@@ -26,13 +26,8 @@
 package com.sun.jmx.remote.internal;
 
 import java.util.Properties;
+import java.io.IOException;
 import java.rmi.Remote;
-import java.rmi.RemoteException;
-import java.rmi.NoSuchObjectException;
-
-import java.util.Properties;
-import java.rmi.Remote;
-import java.rmi.RemoteException;
 import java.rmi.NoSuchObjectException;
 
 import java.security.AccessController;
@@ -115,9 +110,10 @@ public final class IIOPHelper {
      * Connects the Stub to the given ORB.
      */
     public static void connect(Object stub, Object orb)
-        throws RemoteException
+        throws IOException
     {
-        ensureAvailable();
+        if (proxy == null)
+            throw new IOException("Connection to ORB failed, RMI/IIOP not available");
         proxy.connect(stub, orb);
     }
 
@@ -125,15 +121,17 @@ public final class IIOPHelper {
      * Returns true if the given object is an ORB.
      */
     public static boolean isOrb(Object obj) {
-        ensureAvailable();
-        return proxy.isOrb(obj);
+        return (proxy == null) ? false : proxy.isOrb(obj);
     }
 
     /**
      * Creates, and returns, a new ORB instance.
      */
-    public static Object createOrb(String[] args, Properties props) {
-        ensureAvailable();
+    public static Object createOrb(String[] args, Properties props)
+        throws IOException
+    {
+        if (proxy == null)
+            throw new IOException("ORB initialization failed, RMI/IIOP not available");
         return proxy.createOrb(args, props);
     }
 
@@ -166,24 +164,27 @@ public final class IIOPHelper {
     /**
      * Makes a server object ready to receive remote calls
      */
-    public static void exportObject(Remote obj) throws RemoteException {
-        ensureAvailable();
+    public static void exportObject(Remote obj) throws IOException {
+        if (proxy == null)
+            throw new IOException("RMI object cannot be exported, RMI/IIOP not available");
         proxy.exportObject(obj);
     }
 
     /**
      * Deregisters a server object from the runtime.
      */
-    public static void unexportObject(Remote obj) throws NoSuchObjectException {
-        ensureAvailable();
+    public static void unexportObject(Remote obj) throws IOException {
+        if (proxy == null)
+            throw new NoSuchObjectException("Object not exported");
         proxy.unexportObject(obj);
     }
 
     /**
      * Returns a stub for the given server object.
      */
-    public static Remote toStub(Remote obj) throws NoSuchObjectException {
-        ensureAvailable();
+    public static Remote toStub(Remote obj) throws IOException {
+        if (proxy == null)
+            throw new NoSuchObjectException("Object not exported");
         return proxy.toStub(obj);
     }
 }

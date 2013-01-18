@@ -25,7 +25,7 @@
  * @test
  * @bug 6441871
  * @summary javac crashes at com.sun.tools.javac.jvm.ClassReader$BadClassFile
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor A
  * @run main T6348499
  */

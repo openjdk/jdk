@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5003916 6704655 6873951 6476261
+ * @bug 5003916 6704655 6873951 6476261 8004928
  * @summary Testing parsing of signatures attributes of nested classes
  * @author Joseph D. Darcy
  */
@@ -52,8 +52,7 @@ import static java.util.Arrays.*;
           "java.util.HashMap$ValueIterator",
           "java.util.LinkedHashMap$EntryIterator",
           "java.util.LinkedHashMap$KeyIterator",
-          "java.util.LinkedHashMap$ValueIterator",
-          "javax.swing.JComboBox$AccessibleJComboBox"})
+          "java.util.LinkedHashMap$ValueIterator"})
 public class Probe {
     public static void main (String... args) throws Throwable {
         Classes classesAnnotation = (Probe.class).getAnnotation(Classes.class);

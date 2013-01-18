@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,12 @@ public interface ClassDoc extends ProgramElementDoc, Type {
      * <code>java.io.Externalizable</code>.
      */
     boolean isExternalizable();
+
+    /**
+     * Return true if this class can be used as a target type of a lambda expression
+     * or method reference.
+     */
+    boolean isFunctionalInterface();
 
     /**
      * Return the serialization methods for this class or

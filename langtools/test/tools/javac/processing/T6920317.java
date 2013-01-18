@@ -25,7 +25,7 @@
  * @test
  * @bug 6920317
  * @summary package-info.java file has to be specified on the javac cmdline, else it will not be avail
- * @library ../lib
+ * @library /tools/javac/lib
  */
 
 import java.io.*;
