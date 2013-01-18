@@ -53,6 +53,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
+import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
@@ -931,7 +932,7 @@ public final class NativeString extends ScriptObject {
         try {
             return MethodHandles.lookup().findStatic(NativeString.class, "wrapFilter", MH.type(NativeString.class, Object.class));
         } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new AssertionError(e);
+            throw new MethodHandleFactory.LookupException(e);
         }
     }
 }

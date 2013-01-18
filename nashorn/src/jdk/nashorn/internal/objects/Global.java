@@ -1658,6 +1658,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.lookup(), Global.class, name, MH.type(rtype, types));
+        return MH.findStatic(MethodHandles.publicLookup(), Global.class, name, MH.type(rtype, types));
     }
 }

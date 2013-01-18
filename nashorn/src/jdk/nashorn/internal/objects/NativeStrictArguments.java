@@ -142,6 +142,6 @@ public final class NativeStrictArguments extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.lookup(), NativeStrictArguments.class, name, MH.type(rtype, types));
+        return MH.findStatic(MethodHandles.publicLookup(), NativeStrictArguments.class, name, MH.type(rtype, types));
     }
 }
