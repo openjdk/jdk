@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import javax.script.Bindings;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -43,9 +44,10 @@ import netscape.javascript.JSObject;
 
 /**
  * Mirror object that wraps a given ScriptObject instance. User can
- * access ScriptObject via the java.util.Map interface.
+ * access ScriptObject via the javax.script.Bindings interface or
+ * netscape.javascript.JSObject interface.
  */
-final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
+final class ScriptObjectMirror extends JSObject implements Bindings {
     private final ScriptObject sobj;
     private final ScriptObject global;
 
@@ -146,12 +148,20 @@ final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
 
     @Override
     public Object getMember(final String name) {
-        return get(name);
+        return inGlobal(new Callable<Object>() {
+            @Override public Object call() {
+                return wrap(sobj.get(name), global);
+            }
+        });
     }
 
     @Override
     public Object getSlot(final int index) {
-        return get(Integer.valueOf(index));
+        return inGlobal(new Callable<Object>() {
+            @Override public Object call() {
+                return wrap(sobj.get(index), global);
+            }
+        });
     }
 
     @Override
@@ -166,7 +176,12 @@ final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
 
     @Override
     public void setSlot(final int index, final Object value) {
-        put(Integer.valueOf(index), wrap(value, Context.getGlobal()));
+        inGlobal(new Callable<Void>() {
+            @Override public Void call() {
+                sobj.set(index, unwrap(value, global), global.getContext()._strict);
+                return null;
+            }
+        });
     }
 
     @Override
@@ -175,7 +190,8 @@ final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
             @Override public Object call() {
                 sobj.clear();
                 return null;
-            }});
+            }
+        });
     }
 
     @Override
@@ -183,7 +199,8 @@ final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
                 return sobj.containsKey(unwrap(key, global));
-            }});
+            }
+        });
     }
 
     @Override
@@ -191,19 +208,20 @@ final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
                 return sobj.containsValue(unwrap(value, global));
-            }});
+            }
+        });
     }
 
     @Override
-    public Set<Map.Entry<Object, Object>> entrySet() {
-        return inGlobal(new Callable<Set<Map.Entry<Object, Object>>>() {
-            @Override public Set<Map.Entry<Object, Object>> call() {
+    public Set<Map.Entry<String, Object>> entrySet() {
+        return inGlobal(new Callable<Set<Map.Entry<String, Object>>>() {
+            @Override public Set<Map.Entry<String, Object>> call() {
                 final Iterator<String>               iter    = sobj.propertyIterator();
-                final Set<Map.Entry<Object, Object>> entries = new HashSet<>();
+                final Set<Map.Entry<String, Object>> entries = new HashSet<>();
 
                 while (iter.hasNext()) {
-                    final Object key   = wrap(iter.next(), global);
-                    final Object value = wrap(sobj.get(key), global);
+                    final String key   = iter.next();
+                    final Object value = translateUndefined(wrap(sobj.get(key), global));
                     entries.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
                 }
 
@@ -214,49 +232,58 @@ final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
 
     @Override
     public Object get(final Object key) {
-        return inGlobal(new Callable<Object>() { @Override public Object call() {
-            return wrap(sobj.get(key), global);
-        }});
+        return inGlobal(new Callable<Object>() {
+            @Override public Object call() {
+                return translateUndefined(wrap(sobj.get(key), global));
+            }
+        });
     }
 
     @Override
     public boolean isEmpty() {
-        return inGlobal(new Callable<Boolean>() { @Override public Boolean call() {
-            return sobj.isEmpty();
-        }});
-    }
-
-    @Override
-    public Set<Object> keySet() {
-        return inGlobal(new Callable<Set<Object>>() { @Override public Set<Object> call() {
-            final Iterator<String> iter   = sobj.propertyIterator();
-            final Set<Object>      keySet = new HashSet<>();
-
-            while (iter.hasNext()) {
-                keySet.add(wrap(iter.next(), global));
+        return inGlobal(new Callable<Boolean>() {
+            @Override public Boolean call() {
+                return sobj.isEmpty();
             }
-
-            return Collections.unmodifiableSet(keySet);
-        }});
+        });
     }
 
     @Override
-    public Object put(final Object key, final Object value) {
+    public Set<String> keySet() {
+        return inGlobal(new Callable<Set<String>>() {
+            @Override public Set<String> call() {
+                final Iterator<String> iter   = sobj.propertyIterator();
+                final Set<String>      keySet = new HashSet<>();
+
+                while (iter.hasNext()) {
+                    keySet.add(iter.next());
+                }
+
+                return Collections.unmodifiableSet(keySet);
+            }
+        });
+    }
+
+    @Override
+    public Object put(final String key, final Object value) {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return sobj.put(unwrap(key, global), unwrap(value, global));
-        }});
+                return sobj.put(key, unwrap(value, global));
+            }
+        });
     }
 
     @Override
-    public void putAll(final Map<?, ?> map) {
+    public void putAll(final Map<? extends String, ? extends Object> map) {
         final boolean strict = sobj.getContext()._strict;
-        inGlobal(new Callable<Object>() { @Override public Object call() {
-            for (final Map.Entry<?, ?> entry : map.entrySet()) {
-                sobj.set(unwrap(entry.getKey(), global), unwrap(entry.getValue(), global), strict);
+        inGlobal(new Callable<Object>() {
+            @Override public Object call() {
+                for (final Map.Entry<? extends String, ? extends Object> entry : map.entrySet()) {
+                    sobj.set(entry.getKey(), unwrap(entry.getValue(), global), strict);
+                }
+                return null;
             }
-            return null;
-        }});
+        });
     }
 
     @Override
@@ -279,16 +306,22 @@ final class ScriptObjectMirror extends JSObject implements Map<Object, Object> {
 
     @Override
     public Collection<Object> values() {
-        return inGlobal(new Callable<Collection<Object>>() { @Override public Collection<Object> call() {
-            final List<Object>     values = new ArrayList<>(size());
-            final Iterator<Object> iter   = sobj.valueIterator();
+        return inGlobal(new Callable<Collection<Object>>() {
+            @Override public Collection<Object> call() {
+                final List<Object>     values = new ArrayList<>(size());
+                final Iterator<Object> iter   = sobj.valueIterator();
 
-            while (iter.hasNext()) {
-                values.add(wrap(iter.next(), global));
+                while (iter.hasNext()) {
+                    values.add(wrap(iter.next(), global));
+                }
+
+                return Collections.unmodifiableList(values);
             }
+        });
+    }
 
-            return Collections.unmodifiableList(values);
-        }});
+    static Object translateUndefined(Object obj) {
+        return (obj == ScriptRuntime.UNDEFINED)? null : obj;
     }
 
     static Object wrap(final Object obj, final ScriptObject homeGlobal) {

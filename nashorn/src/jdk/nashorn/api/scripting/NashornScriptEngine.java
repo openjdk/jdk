@@ -28,15 +28,11 @@ package jdk.nashorn.api.scripting;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -140,6 +136,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
             throw new RuntimeException(e);
         }
+
+        context.setBindings(new ScriptObjectMirror(global, global), ScriptContext.ENGINE_SCOPE);
     }
 
     @Override
@@ -154,23 +152,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     @Override
     public Object eval(final String script, final ScriptContext ctxt) throws ScriptException {
         return evalImpl(script.toCharArray(), ctxt);
-    }
-
-    /*
-     * FIXME: This is not exactly right. Script execution should actually
-     * put the variables in ENGINE_SCOPE bindings. But, it is difficult
-     * (not possible?) with the way ScriptObject is implemented. So, for now
-     * giving access to script variables by accessing it from "globals". This
-     * way at least engine.get("foo") will work whenever "foo" is a global var
-     * defined by eval'ed scripts.
-     */
-    @Override
-    public Object get(final String key) {
-        Object value = super.get(key);
-        if (value == null) {
-            value = ScriptObjectMirror.wrap(global.get(key), global);
-        }
-        return (value == UNDEFINED) ? null : value;
     }
 
     @Override
@@ -306,23 +287,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
 
         value = ScriptObjectMirror.unwrap(value, global);
-
-        if (value instanceof Method) {
-            final Method method = (Method) value;
-            final int    mods   = method.getModifiers();
-            if (Modifier.isStatic(mods) && Modifier.isPublic(mods)) {
-               value = MH.find((Method)value);
-            }
-        }
-
-        if (value instanceof MethodHandle) {
-            value = ((GlobalObject)global).newScriptFunction(name, (MethodHandle)value, null, false);
-        }
-
-        if (!(value instanceof ScriptFunction)) {
-            typeError(global, "not.a.function", name);
-        }
-
         if (value instanceof ScriptFunction) {
             return ScriptObjectMirror.unwrap(ScriptRuntime.apply((ScriptFunction)value, global, args), global);
         }
@@ -359,13 +323,12 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     // scripts should see "context" and "engine" as variables
     private void setContextVariables(final ScriptContext ctxt) {
         ctxt.setAttribute("context", ctxt, ScriptContext.ENGINE_SCOPE);
-        // current ScriptContext exposed as "context"
         global.set("context", ctxt, false);
-        Object args = ctxt.getAttribute("arguments");
-        // if no arguments passed, make it empty array
-        if (args == null) {
+        Object args = ScriptObjectMirror.unwrap(ctxt.getAttribute("arguments"), global);
+        if (args == null || args == UNDEFINED) {
             args = ScriptRuntime.EMPTY_ARRAY;
         }
+        // if no arguments passed, expose it
         args = ((GlobalObject)global).wrapAsObject(args);
         global.set("arguments", args, false);
     }
@@ -382,7 +345,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
 
             ScriptObject sobj;
-            Object       value;
+            Object       value = null;
 
             self = ScriptObjectMirror.unwrap(self, global);
 
@@ -394,25 +357,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 self  = global;
                 sobj  = global;
                 value = sobj.get(name);
-            } else {
-                // Find the java method and make a ScriptFunction of it.
-                final Method[] methods = self.getClass().getMethods();
-                Method target = null;
-
-                for (final Method mth : methods) {
-                    // choose the right overload by number of arguments -- don't
-                    // care overload resolution for now..
-                    if (mth.getName().equals(name) &&
-                        mth.getParameterTypes().length == args.length) {
-                        target = mth;
-                        break;
-                    }
-                }
-                if (target == null) {
-                    throw new NoSuchMethodException(name);
-                }
-                final GlobalObject gobj = (GlobalObject) global;
-                value = gobj.newScriptFunction(name, MH.find(target), null, false);
             }
 
             if (value instanceof ScriptFunction) {
@@ -423,7 +367,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                     throwAsScriptException(e);
                     throw new AssertionError("should not reach here");
                 }
-                return ScriptObjectMirror.wrap(res, global);
+                return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, global));
             }
 
             throw new NoSuchMethodException(name);
@@ -461,8 +405,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
 
             Object res = ScriptRuntime.apply(script, global);
-            res = ScriptObjectMirror.wrap(res, global);
-            return (res == UNDEFINED) ? null : res;
+            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, global));
         } catch (final Exception e) {
             throwAsScriptException(e);
             throw new AssertionError("should not reach here");
@@ -516,7 +459,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 setNashornGlobal(global);
             }
 
-            setContextVariables(ctxt);
             return nashornContext.compileScript(source, global, nashornContext._strict);
         } catch (final Exception e) {
             throwAsScriptException(e);
