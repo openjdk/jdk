@@ -87,7 +87,7 @@ import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
  */
 
 
-public abstract class ScriptObject extends PropertyListenerManager implements PropertyAccess, Map<Object, Object> {
+public abstract class ScriptObject extends PropertyListenerManager implements PropertyAccess {
 
     /** Search fall back routine name for "no such method" */
     static final String NO_SUCH_METHOD_NAME   = "__noSuchMethod__";
@@ -1414,7 +1414,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return (flags & IS_SCOPE) != 0;
     }
 
-    @Override
+    // java.util.Map-like methods to help ScriptObjectMirror implementation
     public void clear() {
         final boolean strict = getContext()._strict;
         final Iterator<String> iter = propertyIterator();
@@ -1423,12 +1423,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
     }
 
-    @Override
     public boolean containsKey(final Object key) {
         return has(key);
     }
 
-    @Override
     public boolean containsValue(final Object value) {
         final Iterator<Object> iter = valueIterator();
         while (iter.hasNext()) {
@@ -1439,7 +1437,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return false;
     }
 
-    @Override
     public Set<Map.Entry<Object, Object>> entrySet() {
         final Iterator<String> iter = propertyIterator();
         final Set<Map.Entry<Object, Object>> entries = new HashSet<>();
@@ -1450,12 +1447,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return Collections.unmodifiableSet(entries);
     }
 
-    @Override
     public boolean isEmpty() {
         return !propertyIterator().hasNext();
     }
 
-    @Override
     public Set<Object> keySet() {
         final Iterator<String> iter = propertyIterator();
         final Set<Object> keySet = new HashSet<>();
@@ -1465,14 +1460,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return Collections.unmodifiableSet(keySet);
     }
 
-    @Override
     public Object put(final Object key, final Object value) {
         final Object oldValue = get(key);
         set(key, value, getContext()._strict);
         return oldValue;
     }
 
-    @Override
     public void putAll(final Map<?, ?> otherMap) {
         final boolean strict = getContext()._strict;
         for (final Map.Entry<?, ?> entry : otherMap.entrySet()) {
@@ -1480,14 +1473,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
     }
 
-    @Override
     public Object remove(final Object key) {
         final Object oldValue = get(key);
         delete(key, getContext()._strict);
         return oldValue;
     }
 
-    @Override
     public int size() {
         int n = 0;
         for (final Iterator<String> iter = propertyIterator(); iter.hasNext(); iter.next()) {
@@ -1496,7 +1487,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return n;
     }
 
-    @Override
     public Collection<Object> values() {
         final List<Object>     values = new ArrayList<>(size());
         final Iterator<Object> iter   = valueIterator();

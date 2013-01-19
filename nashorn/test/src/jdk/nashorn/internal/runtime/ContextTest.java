@@ -49,13 +49,13 @@ public class ContextTest {
             assertTrue(32.0 == ((Number)(eval(cx, "<evalTest>", code))).doubleValue());
 
             code = "obj = { js: 'nashorn' }; obj.js";
-            assertEquals("nashorn", eval(cx, "<evalTest2>", code));
+            assertEquals(eval(cx, "<evalTest2>", code), "nashorn");
         } finally {
             Context.setGlobal(oldGlobal);
         }
     }
 
-    // basic check for JS reflection access
+    // basic check for JS reflection access - java.util.Map-like access on ScriptObject
     @Test
     public void reflectionTest() {
         final Options options = new Options("");
@@ -70,12 +70,11 @@ public class ContextTest {
 
             final Object obj = cx.getGlobal().get("obj");
 
-            assertTrue(obj instanceof Map);
+            assertTrue(obj instanceof ScriptObject);
 
-            @SuppressWarnings("unchecked")
-            final Map<Object, Object> map = (Map<Object, Object>)obj;
+            final ScriptObject sobj = (ScriptObject)obj;
             int count = 0;
-            for (final Map.Entry<?, ?> ex : map.entrySet()) {
+            for (final Map.Entry<?, ?> ex : sobj.entrySet()) {
                 final Object key = ex.getKey();
                 if (key.equals("x")) {
                     assertTrue(ex.getValue() instanceof Number);
@@ -89,13 +88,13 @@ public class ContextTest {
                     count++;
                 }
             }
-            assertEquals(2, count);
-            assertEquals(2, map.size());
+            assertEquals(count, 2);
+            assertEquals(sobj.size(), 2);
 
             // add property
-            map.put("zee", "hello");
-            assertEquals("hello", map.get("zee"));
-            assertEquals(3, map.size());
+            sobj.put("zee", "hello");
+            assertEquals(sobj.get("zee"), "hello");
+            assertEquals(sobj.size(), 3);
 
         } finally {
             Context.setGlobal(oldGlobal);
