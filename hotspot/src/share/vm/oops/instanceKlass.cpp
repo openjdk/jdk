@@ -47,6 +47,7 @@
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/methodComparator.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -160,6 +161,8 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
 
 #endif //  ndef DTRACE_ENABLED
 
+volatile int InstanceKlass::_total_instanceKlass_count = 0;
+
 Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
                                                 int vtable_len,
                                                 int itable_len,
@@ -203,6 +206,7 @@ Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
         access_flags, !host_klass.is_null());
   }
 
+  Atomic::inc(&_total_instanceKlass_count);
   return ik;
 }
 
@@ -361,6 +365,9 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_protection_domain(NULL);
   set_signers(NULL);
   set_init_lock(NULL);
+
+  // We should deallocate the Annotations instance
+  MetadataFactory::free_metadata(loader_data, annotations());
   set_annotations(NULL);
 }
 
@@ -599,7 +606,7 @@ bool InstanceKlass::link_class_impl(
       }
 
       // relocate jsrs and link methods after they are all rewritten
-      this_oop->relocate_and_link_methods(CHECK_false);
+      this_oop->link_methods(CHECK_false);
 
       // Initialize the vtable and interface table after
       // methods have been rewritten since rewrite may
@@ -647,10 +654,31 @@ void InstanceKlass::rewrite_class(TRAPS) {
 // Now relocate and link method entry points after class is rewritten.
 // This is outside is_rewritten flag. In case of an exception, it can be
 // executed more than once.
-void InstanceKlass::relocate_and_link_methods(TRAPS) {
-  assert(is_loaded(), "must be loaded");
-  instanceKlassHandle this_oop(THREAD, this);
-  Rewriter::relocate_and_link(this_oop, CHECK);
+void InstanceKlass::link_methods(TRAPS) {
+  int len = methods()->length();
+  for (int i = len-1; i >= 0; i--) {
+    methodHandle m(THREAD, methods()->at(i));
+
+    // Set up method entry points for compiler and interpreter    .
+    m->link_method(m, CHECK);
+
+    // This is for JVMTI and unrelated to relocator but the last thing we do
+#ifdef ASSERT
+    if (StressMethodComparator) {
+      ResourceMark rm(THREAD);
+      static int nmc = 0;
+      for (int j = i; j >= 0 && j >= i-4; j--) {
+        if ((++nmc % 1000) == 0)  tty->print_cr("Have run MethodComparator %d times...", nmc);
+        bool z = MethodComparator::methods_EMCP(m(),
+                   methods()->at(j));
+        if (j == i && !z) {
+          tty->print("MethodComparator FAIL: "); m->print(); m->print_codes();
+          assert(z, "method must compare equal to itself");
+        }
+      }
+    }
+#endif //ASSERT
+  }
 }
 
 
@@ -2306,6 +2334,9 @@ void InstanceKlass::release_C_heap_structures() {
   if (_array_name != NULL)  _array_name->decrement_refcount();
   if (_source_file_name != NULL) _source_file_name->decrement_refcount();
   if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension, mtClass);
+
+  assert(_total_instanceKlass_count >= 1, "Sanity check");
+  Atomic::dec(&_total_instanceKlass_count);
 }
 
 void InstanceKlass::set_source_file_name(Symbol* n) {

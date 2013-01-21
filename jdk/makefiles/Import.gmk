@@ -170,18 +170,11 @@ $(INSTALL_LIBRARIES_HERE)/server/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debug
 $(INSTALL_LIBRARIES_HERE)/server/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-ifeq (REALLY_WEIRD,1)
-	$(LN) -s ../$(@F) $@
-else
-#
-# TODO: Check if this is what they really want...a zip containing a symlink
-#
 	$(RM) $@.tmp $(basename $@).debuginfo
 	$(LN) -s ../$(basename $(@F)).debuginfo $(basename $@).debuginfo
-	$(ZIP) -q -y $@.tmp $(basename $@).debuginfo
+	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).debuginfo
 	$(RM) $(basename $@).debuginfo
 	$(MV) $@.tmp $@
-endif
 
 $(INSTALL_LIBRARIES_HERE)/client/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
 	$(MKDIR) -p $(@D)
@@ -196,18 +189,11 @@ $(INSTALL_LIBRARIES_HERE)/client/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debug
 $(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-ifeq (REALLY_WEIRD,1)
-	$(LN) -s ../$(@F) $@
-else
-#
-# TODO: Check if this is what they really want...a zip containing a symlink
-#
 	$(RM) $@.tmp $(basename $@).debuginfo
 	$(LN) -s ../$(basename $(@F)).debuginfo $(basename $@).debuginfo
-	$(ZIP) -q -y $@.tmp $(basename $@).debuginfo
+	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).debuginfo
 	$(RM) $(basename $@).debuginfo
 	$(MV) $@.tmp $@
-endif
 
 #######
 

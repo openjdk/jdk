@@ -26,9 +26,11 @@ script_dir=`dirname $0`
 
 # Create a timestamp as seconds since epoch
 if test "x`uname -s`" = "xSunOS"; then
-  # date +%s is not available on Solaris, use this workaround
-  # from http://solarisjedi.blogspot.co.uk/2006/06/solaris-date-command-and-epoch-time.html
-  TIMESTAMP=`/usr/bin/truss /usr/bin/date 2>&1 |  nawk -F= '/^time\(\)/ {gsub(/ /,"",$2);print $2}'`
+  TIMESTAMP=`date +%s`
+  if test "x$TIMESTAMP" = "x%s"; then
+    # date +%s not available on this Solaris, use workaround from nawk(1):
+    TIMESTAMP=`nawk 'BEGIN{print srand()}'`
+  fi
 else
   TIMESTAMP=`date +%s`
 fi
