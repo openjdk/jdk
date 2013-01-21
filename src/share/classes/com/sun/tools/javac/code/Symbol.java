@@ -1233,7 +1233,8 @@ public abstract class Symbol implements Element {
             case Flags.PRIVATE:
                 return false;
             case Flags.PUBLIC:
-                return true;
+                return !this.owner.isInterface() ||
+                        (flags_field & STATIC) == 0;
             case Flags.PROTECTED:
                 return (origin.flags() & INTERFACE) == 0;
             case 0:
@@ -1244,6 +1245,18 @@ public abstract class Symbol implements Element {
                     (origin.flags() & INTERFACE) == 0;
             default:
                 return false;
+            }
+        }
+
+        @Override
+        public boolean isInheritedIn(Symbol clazz, Types types) {
+            switch ((int)(flags_field & Flags.AccessFlags)) {
+                case PUBLIC:
+                    return !this.owner.isInterface() ||
+                            clazz == owner ||
+                            (flags_field & STATIC) == 0;
+                default:
+                    return super.isInheritedIn(clazz, types);
             }
         }
 
