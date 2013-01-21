@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,6 +385,15 @@ public class LocaleResources {
         }
 
         return numberPatterns;
+    }
+
+    /**
+     * Returns the FormatData resource bundle of this LocaleResources.
+     * The FormatData should be used only for accessing extra
+     * resources required by JSR 310.
+     */
+    public ResourceBundle getFormatData() {
+        return localeData.getDateFormatData(locale);
     }
 
     private String getDateTimePattern(String key, int styleIndex, String calendarType) {
