@@ -124,9 +124,7 @@ public class JavacParser implements Parser {
         this.allowLambda = source.allowLambda();
         this.allowMethodReferences = source.allowMethodReferences();
         this.allowDefaultMethods = source.allowDefaultMethods();
-        this.allowIntersectionTypesInCast =
-                source.allowIntersectionTypesInCast() &&
-                fac.options.isSet("allowIntersectionTypes");
+        this.allowIntersectionTypesInCast = source.allowIntersectionTypesInCast();
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
