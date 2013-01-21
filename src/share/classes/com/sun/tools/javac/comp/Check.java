@@ -36,7 +36,6 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
-import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.*;
@@ -44,6 +43,8 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
+import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
@@ -900,7 +901,6 @@ public class Check {
                    syms.methodClass);
         }
         if (useVarargs) {
-            JCTree tree = env.tree;
             Type argtype = owntype.getParameterTypes().last();
             if (!types.isReifiable(argtype) &&
                     (!allowSimplifiedVarargs ||
@@ -911,22 +911,13 @@ public class Check {
                                   argtype);
             }
             if (!((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types)) {
-                Type elemtype = types.elemtype(argtype);
-                switch (tree.getTag()) {
-                    case APPLY:
-                        ((JCMethodInvocation) tree).varargsElement = elemtype;
-                        break;
-                    case NEWCLASS:
-                        ((JCNewClass) tree).varargsElement = elemtype;
-                        break;
-                    case REFERENCE:
-                        ((JCMemberReference) tree).varargsElement = elemtype;
-                        break;
-                    default:
-                        throw new AssertionError(""+tree);
-                }
+                TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
             }
          }
+         PolyKind pkind = (sym.type.hasTag(FORALL) &&
+                 sym.type.getReturnType().containsAny(((ForAll)sym.type).tvars)) ?
+                 PolyKind.POLY : PolyKind.STANDALONE;
+         TreeInfo.setPolyKind(env.tree, pkind);
          return owntype;
     }
     //where

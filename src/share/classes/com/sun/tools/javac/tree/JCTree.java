@@ -607,6 +607,42 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
+     * Common supertype for all poly expression trees (lambda, method references,
+     * conditionals, method and constructor calls)
+     */
+    public static abstract class JCPolyExpression extends JCExpression {
+
+        /**
+         * A poly expression can only be truly 'poly' in certain contexts
+         */
+        public enum PolyKind {
+            /** poly expression to be treated as a standalone expression */
+            STANDALONE,
+            /** true poly expression */
+            POLY;
+        }
+
+        /** is this poly expression a 'true' poly expression? */
+        public PolyKind polyKind;
+    }
+
+    /**
+     * Common supertype for all functional expression trees (lambda and method references)
+     */
+    public static abstract class JCFunctionalExpression extends JCPolyExpression {
+
+        public JCFunctionalExpression() {
+            //a functional expression is always a 'true' poly
+            polyKind = PolyKind.POLY;
+        }
+
+        /** target descriptor inferred for this functional expression. */
+        public Type descriptorType;
+        /** list of target types inferred for this functional expression. */
+        public List<TypeSymbol> targets;
+    }
+
+    /**
      * A class definition.
      */
     public static class JCClassDecl extends JCStatement implements ClassTree {
@@ -1147,7 +1183,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * A ( ) ? ( ) : ( ) conditional expression
      */
-    public static class JCConditional extends JCExpression implements ConditionalExpressionTree {
+    public static class JCConditional extends JCPolyExpression implements ConditionalExpressionTree {
         public JCExpression cond;
         public JCExpression truepart;
         public JCExpression falsepart;
@@ -1373,7 +1409,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * A method invocation
      */
-    public static class JCMethodInvocation extends JCExpression implements MethodInvocationTree {
+    public static class JCMethodInvocation extends JCPolyExpression implements MethodInvocationTree {
         public List<JCExpression> typeargs;
         public JCExpression meth;
         public List<JCExpression> args;
@@ -1416,7 +1452,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * A new(...) operation.
      */
-    public static class JCNewClass extends JCExpression implements NewClassTree {
+    public static class JCNewClass extends JCPolyExpression implements NewClassTree {
         public JCExpression encl;
         public List<JCExpression> typeargs;
         public JCExpression clazz;
@@ -1502,18 +1538,29 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * A lambda expression.
      */
-    public static class JCLambda extends JCExpression implements LambdaExpressionTree {
+    public static class JCLambda extends JCFunctionalExpression implements LambdaExpressionTree {
+
+        public enum ParameterKind {
+            IMPLICIT,
+            EXPLICIT;
+        }
 
         public List<JCVariableDecl> params;
         public JCTree body;
-        public Type targetType;
         public boolean canCompleteNormally = true;
         public List<Type> inferredThrownTypes;
+        public ParameterKind paramKind;
 
         public JCLambda(List<JCVariableDecl> params,
                         JCTree body) {
             this.params = params;
             this.body = body;
+            if (params.isEmpty() ||
+                params.head.vartype != null) {
+                paramKind = ParameterKind.EXPLICIT;
+            } else {
+                paramKind = ParameterKind.IMPLICIT;
+            }
         }
         @Override
         public Tag getTag() {
@@ -1812,15 +1859,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * Selects a member expression.
      */
-    public static class JCMemberReference extends JCExpression implements MemberReferenceTree {
+    public static class JCMemberReference extends JCFunctionalExpression implements MemberReferenceTree {
         public ReferenceMode mode;
         public ReferenceKind kind;
         public Name name;
         public JCExpression expr;
         public List<JCExpression> typeargs;
-        public Type targetType;
         public Symbol sym;
         public Type varargsElement;
+        public PolyKind refPolyKind;
 
         /**
          * Javac-dependent classification for member references, based
