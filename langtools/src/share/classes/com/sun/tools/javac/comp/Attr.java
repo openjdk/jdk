@@ -954,8 +954,7 @@ public class Attr extends JCTree.Visitor {
                 // Empty bodies are only allowed for
                 // abstract, native, or interface methods, or for methods
                 // in a retrofit signature class.
-                if (isDefaultMethod || ((owner.flags() & INTERFACE) == 0 &&
-                    (tree.mods.flags & (ABSTRACT | NATIVE)) == 0) &&
+                if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0 &&
                     !relax)
                     log.error(tree.pos(), "missing.meth.body.or.decl.abstract");
                 if (tree.defaultValue != null) {
@@ -3479,6 +3478,15 @@ public class Attr extends JCTree.Visitor {
                 }
             }
             env.info.defaultSuperCallSite = null;
+        }
+
+        if (sym.isStatic() && site.isInterface()) {
+            Assert.check(env.tree.hasTag(APPLY));
+            JCMethodInvocation app = (JCMethodInvocation)env.tree;
+            if (app.meth.hasTag(SELECT) &&
+                    !TreeInfo.isStaticSelector(((JCFieldAccess)app.meth).selected, names)) {
+                log.error(env.tree.pos(), "illegal.static.intf.meth.call", site);
+            }
         }
 
         // Compute the identifier's instantiated type.

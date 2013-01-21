@@ -280,7 +280,7 @@ public class Flags {
                                 SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
         ExtendedStandardFlags       = (long)StandardFlags | DEFAULT,
-        InterfaceDefaultMethodMask  = ABSTRACT | PUBLIC | STRICTFP | DEFAULT,
+        InterfaceMethodMask         = ABSTRACT | STATIC | PUBLIC | STRICTFP | DEFAULT,
         LocalVarFlags               = FINAL | PARAMETER;
 
 
