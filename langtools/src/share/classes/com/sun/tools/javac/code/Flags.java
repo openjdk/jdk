@@ -264,6 +264,11 @@ public class Flags {
      */
     public static final long AUXILIARY = 1L<<44;
 
+    /**
+     * Flag that marks that a symbol is not available in the current profile
+     */
+    public static final long NOT_IN_PROFILE = 1L<<45;
+
     /** Modifier masks.
      */
     public static final int

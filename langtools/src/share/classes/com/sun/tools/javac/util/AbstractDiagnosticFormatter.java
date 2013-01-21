@@ -45,6 +45,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.CapturedType;
 import com.sun.tools.javac.file.BaseFileObject;
+import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.Pretty;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
@@ -196,6 +197,9 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         }
         else if (arg instanceof JavaFileObject) {
             return ((JavaFileObject)arg).getName();
+        }
+        else if (arg instanceof Profile) {
+            return ((Profile)arg).name;
         }
         else if (arg instanceof Formattable) {
             return ((Formattable)arg).toString(l, messages);
