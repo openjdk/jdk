@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,8 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
             case "buddhist":
             case "japanese":
             case "gregory":
+            case "islamic":
+            case "roc":
                 break;
             default:
                 // Unknown calendar type
@@ -239,6 +241,9 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
             break;
 
         case MONTH:
+            if ("islamic".equals(type)) {
+                key.append(type).append('.');
+            }
             if (isStandalone) {
                 key.append("standalone.");
             }

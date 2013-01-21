@@ -65,14 +65,27 @@ public class CalendarDataUtility {
     public static String retrieveFieldValueName(String id, int field, int value, int style, Locale locale) {
         LocaleServiceProviderPool pool =
                 LocaleServiceProviderPool.getPool(CalendarNameProvider.class);
-        return pool.getLocalizedObject(CalendarFieldValueNameGetter.INSTANCE, locale, id,
+        return pool.getLocalizedObject(CalendarFieldValueNameGetter.INSTANCE, locale, normalizeCalendarType(id),
                                        field, value, style);
     }
 
     public static Map<String, Integer> retrieveFieldValueNames(String id, int field, int style, Locale locale) {
         LocaleServiceProviderPool pool =
             LocaleServiceProviderPool.getPool(CalendarNameProvider.class);
-        return pool.getLocalizedObject(CalendarFieldValueNamesMapGetter.INSTANCE, locale, id, field, style);
+        return pool.getLocalizedObject(CalendarFieldValueNamesMapGetter.INSTANCE, locale,
+                                       normalizeCalendarType(id), field, style);
+    }
+
+    private static String normalizeCalendarType(String requestID) {
+        String type;
+        if (requestID.equals("gregorian") || requestID.equals("iso8601")) {
+            type = "gregory";
+        } else if (requestID.startsWith("islamic")) {
+            type = "islamic";
+        } else {
+            type = requestID;
+        }
+        return type;
     }
 
     /**
