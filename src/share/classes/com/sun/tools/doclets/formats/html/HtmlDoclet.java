@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.javac.sym.Profiles;
+import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
@@ -195,6 +197,44 @@ public class HtmlDoclet extends AbstractDoclet {
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new DocletAbortException();
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected void generateProfileFiles() throws Exception {
+        if (configuration.showProfiles) {
+            ProfileIndexFrameWriter.generate(configuration);
+            Profile prevProfile = null, nextProfile;
+            for (int i = 1; i < configuration.profiles.getProfileCount(); i++) {
+                ProfilePackageIndexFrameWriter.generate(configuration, Profile.lookup(i).name);
+                PackageDoc[] packages = configuration.profilePackages.get(
+                        Profile.lookup(i).name);
+                PackageDoc prev = null, next;
+                for (int j = 0; j < packages.length; j++) {
+                    // if -nodeprecated option is set and the package is marked as
+                    // deprecated, do not generate the profilename-package-summary.html
+                    // and profilename-package-frame.html pages for that package.
+                    if (!(configuration.nodeprecated && Util.isDeprecated(packages[j]))) {
+                        ProfilePackageFrameWriter.generate(configuration, packages[j], i);
+                        next = (j + 1 < packages.length
+                                && packages[j + 1].name().length() > 0) ? packages[j + 1] : null;
+                        AbstractBuilder profilePackageSummaryBuilder =
+                                configuration.getBuilderFactory().getProfilePackageSummaryBuilder(
+                                packages[j], prev, next, Profile.lookup(i));
+                        profilePackageSummaryBuilder.build();
+                        prev = packages[j];
+                    }
+                }
+                nextProfile = (i + 1 < configuration.profiles.getProfileCount()) ?
+                        Profile.lookup(i + 1) : null;
+                AbstractBuilder profileSummaryBuilder =
+                        configuration.getBuilderFactory().getProfileSummaryBuilder(
+                        Profile.lookup(i), prevProfile, nextProfile);
+                profileSummaryBuilder.build();
+                prevProfile = Profile.lookup(i);
             }
         }
     }

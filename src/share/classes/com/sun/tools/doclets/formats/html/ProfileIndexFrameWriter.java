@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,46 +27,49 @@ package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
 
-import com.sun.javadoc.*;
+import com.sun.tools.javac.sym.Profiles;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.javac.jvm.Profile;
 
 /**
- * Generate the package index for the left-hand frame in the generated output.
- * A click on the package name in this frame will update the page in the bottom
- * left hand frame with the listing of contents of the clicked package.
+ * Generate the profile index for the left-hand frame in the generated output.
+ * A click on the profile name in this frame will update the page in the top
+ * left hand frame with the listing of packages of the clicked profile.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @author Atul M Dambalkar
+ * @author Bhavesh Patel
  */
-public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
+public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
 
     /**
-     * Construct the PackageIndexFrameWriter object.
+     * Construct the ProfileIndexFrameWriter object.
      *
-     * @param filename Name of the package index file to be generated.
+     * @param configuration the configuration object
+     * @param filename Name of the profile index file to be generated.
      */
-    public PackageIndexFrameWriter(ConfigurationImpl configuration,
+    public ProfileIndexFrameWriter(ConfigurationImpl configuration,
                                    DocPath filename) throws IOException {
         super(configuration, filename);
     }
 
     /**
-     * Generate the package index file named "overview-frame.html".
+     * Generate the profile index file named "profile-overview-frame.html".
      * @throws DocletAbortException
+     * @param configuration the configuration object
      */
     public static void generate(ConfigurationImpl configuration) {
-        PackageIndexFrameWriter packgen;
-        DocPath filename = DocPaths.OVERVIEW_FRAME;
+        ProfileIndexFrameWriter profilegen;
+        DocPath filename = DocPaths.PROFILE_OVERVIEW_FRAME;
         try {
-            packgen = new PackageIndexFrameWriter(configuration, filename);
-            packgen.buildPackageIndexFile("doclet.Window_Overview", false);
-            packgen.close();
+            profilegen = new ProfileIndexFrameWriter(configuration, filename);
+            profilegen.buildProfileIndexFile("doclet.Window_Overview", false);
+            profilegen.close();
         } catch (IOException exc) {
             configuration.standardmessage.error(
                         "doclet.exception_encountered",
@@ -78,45 +81,34 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addPackagesList(PackageDoc[] packages, String text,
+    protected void addProfilesList(Profiles profiles, String text,
             String tableSummary, Content body) {
-        Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
-                packagesLabel);
+        Content heading = HtmlTree.HEADING(HtmlConstants.PROFILE_HEADING, true,
+                profilesLabel);
         Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addAttr(HtmlAttr.TITLE, packagesLabel.toString());
-        for(int i = 0; i < packages.length; i++) {
-            // Do not list the package if -nodeprecated option is set and the
-            // package is marked as deprecated.
-            if (packages[i] != null &&
-                    (!(configuration.nodeprecated && Util.isDeprecated(packages[i])))) {
-                ul.addContent(getPackage(packages[i]));
-            }
+        ul.addAttr(HtmlAttr.TITLE, profilesLabel.toString());
+        for (int i = 1; i < profiles.getProfileCount(); i++) {
+            ul.addContent(getProfile(i));
         }
         div.addContent(ul);
         body.addContent(div);
     }
 
     /**
-     * Gets each package name as a separate link.
+     * Gets each profile name as a separate link.
      *
-     * @param pd PackageDoc
-     * @return content for the package link
+     * @param profile the profile being documented
+     * @return content for the profile link
      */
-    protected Content getPackage(PackageDoc pd) {
-        Content packageLinkContent;
-        Content packageLabel;
-        if (pd.name().length() > 0) {
-            packageLabel = getPackageLabel(pd.name());
-            packageLinkContent = getHyperLink(pathString(pd,
-                     DocPaths.PACKAGE_FRAME), packageLabel, "",
-                    "packageFrame");
-        } else {
-            packageLabel = new RawHtml("&lt;unnamed package&gt;");
-            packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
-                    packageLabel, "", "packageFrame");
-        }
-        Content li = HtmlTree.LI(packageLinkContent);
+    protected Content getProfile(int profile) {
+        Content profileLinkContent;
+        Content profileLabel;
+        String profileName = (Profile.lookup(profile)).name;
+        profileLabel = new StringContent(profileName);
+        profileLinkContent = getHyperLink(DocPaths.profileFrame(profileName), profileLabel, "",
+                    "profileListFrame");
+        Content li = HtmlTree.LI(profileLinkContent);
         return li;
     }
 
@@ -155,14 +147,14 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     }
 
     /**
-     * Adds "All Profiles" link for the top of the left-hand frame page to the
+     * Adds "All Packages" link for the top of the left-hand frame page to the
      * documentation tree.
      *
-     * @param div the Content object to which the all profiles link should be added
+     * @param div the Content object to which the all packages link should be added
      */
-    protected void addAllProfilesLink(Content div) {
-        Content linkContent = getHyperLink(DocPaths.PROFILE_OVERVIEW_FRAME,
-                allprofilesLabel, "", "profileListFrame");
+    protected void addAllPackagesLink(Content div) {
+        Content linkContent = getHyperLink(DocPaths.OVERVIEW_FRAME,
+                allpackagesLabel, "", "profileListFrame");
         Content span = HtmlTree.SPAN(linkContent);
         div.addContent(span);
     }
@@ -173,5 +165,9 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     protected void addNavigationBarFooter(Content body) {
         Content p = HtmlTree.P(getSpace());
         body.addContent(p);
+    }
+
+    protected void addProfilePackagesList(Profiles profiles, String text,
+            String tableSummary, Content body, String profileName) {
     }
 }
