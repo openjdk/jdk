@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@ public enum HtmlTag {
         static final Map<String,Attr> index = new HashMap<String,Attr>();
         static {
             for (Attr t: values()) {
-                index.put(t.name().toLowerCase(), t);
+                index.put(t.getText(), t);
             }
         }
     }
@@ -346,7 +346,7 @@ public enum HtmlTag {
     private static final Map<String,HtmlTag> index = new HashMap<String,HtmlTag>();
     static {
         for (HtmlTag t: values()) {
-            index.put(t.name().toLowerCase(), t);
+            index.put(t.getText(), t);
         }
     }
 
