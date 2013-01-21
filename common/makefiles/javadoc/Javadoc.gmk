@@ -269,6 +269,7 @@ COMMON_JAVADOCFLAGS =					\
 		-quiet					\
                 -use					\
                 -keywords				\
+                -Xprofilespath $(JDK_TOPDIR)/makefiles/profile-rtjar-includes.txt \
 		$(ADDITIONAL_JAVADOCFLAGS)
 
 ifdef OPENJDK
