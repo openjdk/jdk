@@ -1300,7 +1300,7 @@ public interface PreparedStatement extends Statement {
      * such as a DDL statement.
      * <p>
      * This method should be used when the returned row count may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      * <p>
      * The default implementation will throw {@code UnsupportedOperationException}
      *

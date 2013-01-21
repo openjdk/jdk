@@ -1077,7 +1077,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *  is returned. This method should be called only once per result.
      * <p>
      * This method should be used when the returned row count may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      *<p>
      * The default implementation will throw {@code UnsupportedOperationException}
      *
@@ -1100,7 +1100,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * rows are silently dropped.
      * <p>
      * This method should be used when the row limit may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      *<p>
      * The default implementation will throw {@code UnsupportedOperationException}
      *
@@ -1122,7 +1122,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * the excess rows are silently dropped.
      * <p>
      * This method should be used when the returned row limit may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      *<p>
      * The default implementation will return {@code 0}
      *
@@ -1172,7 +1172,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * </OL>
      * <p>
      * This method should be used when the returned row count may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      *<p>
      * The default implementation will throw {@code UnsupportedOperationException}
      *
@@ -1203,7 +1203,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * SQL statement that returns nothing, such as an SQL DDL statement.
      * <p>
      * This method should be used when the returned row count may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      * <p>
      * <strong>Note:</strong>This method cannot be called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>.
@@ -1242,7 +1242,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * auto-generated keys (the list of such statements is vendor-specific).
      * <p>
      * This method should be used when the returned row count may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      * <p>
      * <strong>Note:</strong>This method cannot be called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>.
@@ -1290,7 +1290,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * auto-generated keys (the list of such statements is vendor-specific).
      * <p>
      * This method should be used when the returned row count may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      * <p>
      * <strong>Note:</strong>This method cannot be called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>.
@@ -1334,7 +1334,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * auto-generated keys (the list of such statements is vendor-specific).
      * <p>
      * This method should be used when the returned row count may exceed
-     * {@link Integer.MAX_VALUE}.
+     * {@link Integer#MAX_VALUE}.
      * <p>
      * <strong>Note:</strong>This method cannot be called on a
      * <code>PreparedStatement</code> or <code>CallableStatement</code>.
@@ -1368,4 +1368,3 @@ public interface Statement extends Wrapper, AutoCloseable {
         throw new SQLFeatureNotSupportedException("executeLargeUpdate not implemented");
     }
 }
-

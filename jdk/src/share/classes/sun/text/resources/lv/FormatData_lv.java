@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,42 @@
  * This notice and attribution to Taligent may not be removed.
  * Taligent is a registered trademark of Taligent, Inc.
  *
+ */
+
+/*
+ * COPYRIGHT AND PERMISSION NOTICE
+ *
+ * Copyright (C) 1991-2012 Unicode, Inc. All rights reserved. Distributed under
+ * the Terms of Use in http://www.unicode.org/copyright.html.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of the Unicode data files and any associated documentation (the "Data
+ * Files") or Unicode software and any associated documentation (the
+ * "Software") to deal in the Data Files or Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, and/or sell copies of the Data Files or Software, and
+ * to permit persons to whom the Data Files or Software are furnished to do so,
+ * provided that (a) the above copyright notice(s) and this permission notice
+ * appear with all copies of the Data Files or Software, (b) both the above
+ * copyright notice(s) and this permission notice appear in associated
+ * documentation, and (c) there is clear notice in each modified Data File or
+ * in the Software as well as in the documentation associated with the Data
+ * File(s) or Software that the data or software has been modified.
+ *
+ * THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+ * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+ * THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS
+ * INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR
+ * CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THE DATA FILES OR SOFTWARE.
+ *
+ * Except as contained in this notice, the name of a copyright holder shall not
+ * be used in advertising or otherwise to promote the sale, use or other
+ * dealings in these Data Files or Software without prior written authorization
+ * of the copyright holder.
  */
 
 package sun.text.resources.lv;
@@ -175,6 +211,41 @@ public class FormatData_lv extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
+            { "islamic.MonthNames",
+                new String[] {
+                    "muharams",
+                    "safars",
+                    "1. rab\u012b",
+                    "2. rab\u012b",
+                    "1. d\u017eum\u0101d\u0101",
+                    "2. d\u017eum\u0101d\u0101",
+                    "rad\u017eabs",
+                    "\u0161abans",
+                    "ramad\u0101ns",
+                    "\u0161auvals",
+                    "du al-kid\u0101",
+                    "du al-hid\u017e\u0101",
+                    "",
+                }
+            },
+            { "calendarname.islamic-civil", "isl\u0101ma pilso\u0146u kalend\u0101rs" },
+            { "calendarname.islamicc", "isl\u0101ma pilso\u0146u kalend\u0101rs" },
+            { "calendarname.islamic", "isl\u0101ma kalend\u0101rs" },
+            { "calendarname.japanese", "jap\u0101\u0146u kalend\u0101rs" },
+            { "calendarname.gregorian", "Gregora kalend\u0101rs" },
+            { "calendarname.gregory", "Gregora kalend\u0101rs" },
+            { "calendarname.roc", "\u0136\u012bnas Republikas kalend\u0101rs" },
+            { "calendarname.buddhist", "budistu kalend\u0101rs" },
+            { "field.era", "\u0113ra" },
+            { "field.year", "Gads" },
+            { "field.month", "M\u0113nesis" },
+            { "field.week", "Ned\u0113\u013ca" },
+            { "field.weekday", "Ned\u0113\u013cas diena" },
+            { "field.dayperiod", "Dayperiod" },
+            { "field.hour", "Stundas" },
+            { "field.minute", "Min\u016btes" },
+            { "field.second", "Sekundes" },
+            { "field.zone", "Josla" },
         };
     }
 }
