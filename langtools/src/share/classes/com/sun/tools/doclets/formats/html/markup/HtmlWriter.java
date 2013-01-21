@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,11 @@ public class HtmlWriter {
     protected boolean memberDetailsListPrinted;
 
     /**
+     * Header for table displaying profiles and description..
+     */
+    protected final String[] profileTableHeader;
+
+    /**
      * Header for tables displaying packages and description..
      */
     protected final String[] packageTableHeader;
@@ -82,6 +87,8 @@ public class HtmlWriter {
     public final Content defaultPackageLabel;
 
     public final Content packageLabel;
+
+    public final Content profileLabel;
 
     public final Content useLabel;
 
@@ -111,6 +118,10 @@ public class HtmlWriter {
 
     public final Content allclassesLabel;
 
+    public final Content allpackagesLabel;
+
+    public final Content allprofilesLabel;
+
     public final Content indexLabel;
 
     public final Content helpLabel;
@@ -123,7 +134,13 @@ public class HtmlWriter {
 
     public final Content nextpackageLabel;
 
+    public final Content prevprofileLabel;
+
+    public final Content nextprofileLabel;
+
     public final Content packagesLabel;
+
+    public final Content profilesLabel;
 
     public final Content methodDetailsLabel;
 
@@ -162,6 +179,10 @@ public class HtmlWriter {
         writer = DocFile.createFileForOutput(configuration, path).openWriter();
         this.configuration = configuration;
         this.memberDetailsListPrinted = false;
+        profileTableHeader = new String[] {
+            configuration.getText("doclet.Profile"),
+            configuration.getText("doclet.Description")
+        };
         packageTableHeader = new String[] {
             configuration.getText("doclet.Package"),
             configuration.getText("doclet.Description")
@@ -175,6 +196,7 @@ public class HtmlWriter {
         defaultPackageLabel = new RawHtml(
                 DocletConstants.DEFAULT_PACKAGE_NAME);
         packageLabel = getResource("doclet.Package");
+        profileLabel = getResource("doclet.Profile");
         useLabel = getResource("doclet.navClassUse");
         prevLabel = getResource("doclet.Prev");
         nextLabel = getResource("doclet.Next");
@@ -189,13 +211,18 @@ public class HtmlWriter {
         deprecatedLabel = getResource("doclet.navDeprecated");
         deprecatedPhrase = getResource("doclet.Deprecated");
         allclassesLabel = getResource("doclet.All_Classes");
+        allpackagesLabel = getResource("doclet.All_Packages");
+        allprofilesLabel = getResource("doclet.All_Profiles");
         indexLabel = getResource("doclet.Index");
         helpLabel = getResource("doclet.Help");
         seeLabel = getResource("doclet.See");
         descriptionLabel = getResource("doclet.Description");
         prevpackageLabel = getResource("doclet.Prev_Package");
         nextpackageLabel = getResource("doclet.Next_Package");
+        prevprofileLabel = getResource("doclet.Prev_Profile");
+        nextprofileLabel = getResource("doclet.Next_Profile");
         packagesLabel = getResource("doclet.Packages");
+        profilesLabel = getResource("doclet.Profiles");
         methodDetailsLabel = getResource("doclet.Method_Detail");
         annotationTypeDetailsLabel = getResource("doclet.Annotation_Type_Member_Detail");
         fieldDetailsLabel = getResource("doclet.Field_Detail");
