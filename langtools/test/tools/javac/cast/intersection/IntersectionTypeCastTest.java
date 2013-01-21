@@ -287,8 +287,7 @@ public class IntersectionTypeCastTest
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
 
         JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), diagChecker,
-                Arrays.asList("-XDallowIntersectionTypes"),
-                null, Arrays.asList(source));
+                null, null, Arrays.asList(source));
         try {
             ct.analyze();
         } catch (Throwable ex) {
