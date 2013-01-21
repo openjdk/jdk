@@ -158,14 +158,6 @@ class Rewriter: public StackObj {
  public:
   // Driver routine:
   static void rewrite(instanceKlassHandle klass, TRAPS);
-  static void rewrite(instanceKlassHandle klass, constantPoolHandle cpool, Array<Method*>* methods, TRAPS);
-
-  // Second pass, not gated by is_rewritten flag
-  static void relocate_and_link(instanceKlassHandle klass, TRAPS);
-  // JSR292 version to call with it's own methods.
-  static void relocate_and_link(instanceKlassHandle klass,
-                                Array<Method*>* methods, TRAPS);
-
 };
 
 #endif // SHARE_VM_INTERPRETER_REWRITER_HPP

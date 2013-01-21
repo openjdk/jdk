@@ -30,6 +30,9 @@ include Setup.gmk
 
 default: all
 
+# Prepare the find cache. Only used if running on windows.
+$(eval $(call FillCacheFind,$(JDK_OUTPUTDIR)/classes))
+
 include Tools.gmk
 
 #
@@ -126,81 +129,22 @@ JARS+=$(IMAGES_OUTPUTDIR)/lib/ext/localedata.jar
 
 # Exclude list for rt.jar and resources.jar
 RT_JAR_EXCLUDES := \
+	com/oracle/security \
+	com/sun/codemodel \
+	com/sun/crypto/provider \
+	com/sun/istack/internal/tools \
+	com/sun/jarsigner \
 	com/sun/javadoc \
 	com/sun/jdi \
-	com/sun/jarsigner \
-	com/sun/source \
-	com/sun/istack/internal/tools \
-	META-INF/services/com.sun.jdi.connect.Connector \
-	META-INF/services/com.sun.jdi.connect.spi.TransportService \
-	META-INF/services/com.sun.tools.xjc.Plugin \
-	com/sun/tools \
-	sun/jvmstat \
-	sun/nio/cs/ext \
-	sun/awt/HKSCS.class \
-	sun/awt/motif/X11GB2312\$$$$Decoder.class \
-	sun/awt/motif/X11GB2312\$$$$Encoder.class \
-	sun/awt/motif/X11GB2312.class \
-	sun/awt/motif/X11GBK\$$$$Encoder.class \
-	sun/awt/motif/X11GBK.class \
-	sun/awt/motif/X11KSC5601\$$$$Decoder.class \
-	sun/awt/motif/X11KSC5601\$$$$Encoder.class \
-	sun/awt/motif/X11KSC5601.class \
-	META-INF/services/java.nio.charset.spi.CharsetProvider \
-	sun/rmi/rmic \
-	sun/tools/asm \
-	sun/tools/java \
-	sun/tools/javac \
-	com/sun/tools/classfile \
-	com/sun/tools/javap \
-	sun/tools/jcmd \
-	sun/tools/jconsole \
-	sun/tools/jps \
-	sun/tools/jstat \
-	sun/tools/jstatd \
-	sun/tools/native2ascii \
-	sun/tools/serialver \
-	sun/tools/tree \
-	sun/tools/util \
-	sun/security/tools/jarsigner \
-	sun/security/provider/Sun.class \
-	sun/security/rsa/SunRsaSign.class \
-	sun/security/ssl \
-	sun/security/ec/ECDHKeyAgreement.class \
-	sun/security/ec/ECDSASignature\$$$$Raw.class \
-	sun/security/ec/ECDSASignature\$$$$SHA1.class \
-	sun/security/ec/ECDSASignature\$$$$SHA224.class \
-	sun/security/ec/ECDSASignature\$$$$SHA256.class \
-	sun/security/ec/ECDSASignature\$$$$SHA384.class \
-	sun/security/ec/ECDSASignature\$$$$SHA512.class \
-	sun/security/ec/ECDSASignature.class \
-	sun/security/ec/ECKeyFactory.class \
-	sun/security/ec/ECKeyPairGenerator.class \
-	sun/security/ec/SunEC\$$$$1.class \
-	sun/security/ec/SunEC.class \
-	sun/security/ec/SunECEntries.class \
-	sun/security/mscapi \
-	sun/security/pkcs11 \
 	com/sun/net/ssl/internal/ssl \
-	javax/crypto \
-	sun/security/internal \
-	com/sun/crypto/provider \
-	META-INF/services/com.sun.tools.attach.spi.AttachProvider \
-	com/sun/tools/attach \
-	org/relaxng/datatype \
-	com/sun/codemodel \
+	com/sun/source \
+	com/sun/tools \
 	com/sun/xml/internal/dtdparser \
 	com/sun/xml/internal/rngom \
 	com/sun/xml/internal/xsom \
-	com/sun/tools/script/shell \
-	sun/tools/attach \
-	sun/tools/jstack \
-	sun/tools/jinfo \
-	sun/tools/jmap \
-	sun/net/spi/nameservice/dns \
-	META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor \
-	javax/swing/beaninfo \
+	javax/crypto \
 	javax/swing/AbstractButtonBeanInfo.class \
+	javax/swing/beaninfo \
 	javax/swing/BoxBeanInfo.class \
 	javax/swing/JAppletBeanInfo.class \
 	javax/swing/JButtonBeanInfo.class \
@@ -246,11 +190,67 @@ RT_JAR_EXCLUDES := \
 	javax/swing/JWindowBeanInfo.class \
 	javax/swing/SwingBeanInfoBase.class \
 	javax/swing/text/JTextComponentBeanInfo.class \
+	META-INF/services/com.sun.jdi.connect.Connector \
+	META-INF/services/com.sun.jdi.connect.spi.TransportService \
+	META-INF/services/com.sun.tools.attach.spi.AttachProvider \
+	META-INF/services/com.sun.tools.xjc.Plugin \
+	META-INF/services/java.nio.charset.spi.CharsetProvider \
+	META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor \
+	org/relaxng/datatype \
+	sun/awt/HKSCS.class \
+	sun/awt/motif/X11GB2312.class \
+	sun/awt/motif/X11GB2312\$$$$Decoder.class \
+	sun/awt/motif/X11GB2312\$$$$Encoder.class \
+	sun/awt/motif/X11GBK.class \
+	sun/awt/motif/X11GBK\$$$$Encoder.class \
+	sun/awt/motif/X11KSC5601.class \
+	sun/awt/motif/X11KSC5601\$$$$Decoder.class \
+	sun/awt/motif/X11KSC5601\$$$$Encoder.class \
+	sun/jvmstat \
+	sun/net/spi/nameservice/dns \
+	sun/nio/cs/ext \
+	sun/rmi/rmic \
+	sun/security/ec/ECDHKeyAgreement.class \
+	sun/security/ec/ECDSASignature.class \
+	sun/security/ec/ECDSASignature\$$$$Raw.class \
+	sun/security/ec/ECDSASignature\$$$$SHA1.class \
+	sun/security/ec/ECDSASignature\$$$$SHA224.class \
+	sun/security/ec/ECDSASignature\$$$$SHA256.class \
+	sun/security/ec/ECDSASignature\$$$$SHA384.class \
+	sun/security/ec/ECDSASignature\$$$$SHA512.class \
+	sun/security/ec/ECKeyFactory.class \
+	sun/security/ec/ECKeyPairGenerator.class \
+	sun/security/ec/SunEC\$$$$1.class \
+	sun/security/ec/SunEC.class \
+	sun/security/ec/SunECEntries.class \
+	sun/security/internal \
+	sun/security/mscapi \
+	sun/security/pkcs11 \
+	sun/security/provider/Sun.class \
+	sun/security/rsa/SunRsaSign.class \
+	sun/security/ssl \
+	sun/security/tools/jarsigner \
 	sun/swing/BeanInfoUtils.class \
-	$(LOCALEDATA_INCLUDES) \
 	sun/text/resources/cldr \
+	sun/tools/asm \
+	sun/tools/attach \
+	sun/tools/java \
+	sun/tools/javac \
+	sun/tools/jcmd \
+	sun/tools/jconsole \
+	sun/tools/jinfo \
+	sun/tools/jmap \
+	sun/tools/jps \
+	sun/tools/jstack \
+	sun/tools/jstat \
+	sun/tools/jstatd \
+	sun/tools/native2ascii \
+	sun/tools/serialver \
+	sun/tools/tree \
+	sun/tools/util \
+	sun/util/cldr/CLDRLocaleDataMetaInfo.class \
 	sun/util/resources/cldr \
-	sun/util/cldr/CLDRLocaleDataMetaInfo.class
+	$(LOCALEDATA_INCLUDES)
 
 # These files should never be put into rt.jar
 # but due to a misstake...some are put there if embedded
@@ -275,8 +275,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # Find all files in the classes dir to use as dependencies. This could be more fine granular.
-ALL_FILES_IN_CLASSES := $(shell $(FIND) $(JDK_OUTPUTDIR)/classes -type f \
-			| $(GREP) -v -e '/_the\.*' -e '^_the\.*' -e 'javac_state')
+ALL_FILES_IN_CLASSES := $(call not-containing,_the.,$(filter-out %javac_state,\
+                        $(call CacheFind,$(JDK_OUTPUTDIR)/classes)))
 
 RT_JAR_MANIFEST_FILE := $(IMAGES_OUTPUTDIR)/lib/_the.rt.jar_manifest
 RESOURCE_JAR_MANIFEST_FILE := $(IMAGES_OUTPUTDIR)/lib/_the.resources.jar_manifest
@@ -437,60 +437,61 @@ $(JCE_MANIFEST): $(MAINMANIFEST)
 	$(MV) $@.tmp $@
 
 ##########################################################################################
+# For all security jars, always build the jar, but for closed, install the prebuilt signed
+# version instead of the newly built jar. For open, signing is not needed. See SignJars.gmk
+# for more information.
 
 SUNPKCS11_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunpkcs11.jar
+SUNPKCS11_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/sunpkcs11.jar
 
-ifndef OPENJDK
-
-    SUNPKCS11_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/pkcs11/sunpkcs11.jar
-
-    $(SUNPKCS11_JAR_DST) : $(SUNPKCS11_JAR_SRC)
-	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunPKCS11 provider..."
-	$(install-file)
-
-else
-
-    $(eval $(call SetupArchive,BUILD_SUNPKCS11_JAR,,\
+$(eval $(call SetupArchive,BUILD_SUNPKCS11_JAR,,\
 	SRCS:=$(JDK_OUTPUTDIR)/classes, \
 	SUFFIXES:=.class,\
 	INCLUDES:=sun/security/pkcs11,\
-	JAR:=$(SUNPKCS11_JAR_DST), \
+	JAR:=$(SUNPKCS11_JAR_UNSIGNED), \
         MANIFEST:=$(JCE_MANIFEST), \
 	SKIP_METAINF := true))
 
-    $(SUNPKCS11_JAR_DST): $(JCE_MANIFEST)
+$(SUNPKCS11_JAR_UNSIGNED): $(JCE_MANIFEST)
 
+ifndef OPENJDK
+    SUNPKCS11_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/pkcs11/sunpkcs11.jar
+    $(SUNPKCS11_JAR_DST) : $(SUNPKCS11_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunPKCS11 provider..."
+	$(install-file)
+else
+    $(SUNPKCS11_JAR_DST) : $(SUNPKCS11_JAR_UNSIGNED)
+	$(install-file)
 endif
 
-JARS += $(SUNPKCS11_JAR_DST)
+JARS += $(SUNPKCS11_JAR_DST) $(SUNPKCS11_JAR_UNSIGNED)
 
 ##########################################################################################
 
 SUNEC_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunec.jar
+SUNEC_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/sunec.jar
 
-ifndef OPENJDK
-
-    SUNEC_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ec/sunec.jar
-
-    $(SUNEC_JAR_DST) : $(SUNEC_JAR_SRC)
-	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunEC provider..."
-	$(install-file)
-
-else
-
-    $(eval $(call SetupArchive,BUILD_SUNEC_JAR,,\
+$(eval $(call SetupArchive,BUILD_SUNEC_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:=sun/security/ec,\
-		JAR:=$(SUNEC_JAR_DST), \
+		JAR:=$(SUNEC_JAR_UNSIGNED), \
                 MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
 
-    $(SUNEC_JAR_DST): $(JCE_MANIFEST)
+$(SUNEC_JAR_UNSIGNED): $(JCE_MANIFEST)
 
+ifndef OPENJDK
+    SUNEC_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ec/sunec.jar
+    $(SUNEC_JAR_DST) : $(SUNEC_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunEC provider..."
+	$(install-file)
+else
+    $(SUNEC_JAR_DST) : $(SUNEC_JAR_UNSIGNED)
+	$(install-file)
 endif
 
-JARS += $(SUNEC_JAR_DST)
+JARS += $(SUNEC_JAR_DST) $(SUNEC_JAR_UNSIGNED)
 
 ##########################################################################################
 
@@ -508,162 +509,166 @@ JARS+=$(IMAGES_OUTPUTDIR)/lib/dt.jar
 ##########################################################################################
 
 SUNJCE_PROVIDER_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunjce_provider.jar
+SUNJCE_PROVIDER_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/sunjce_provider.jar
 
-ifndef OPENJDK
-    SUNJCE_PROVIDER_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/sunjce_provider.jar
-
-    $(SUNJCE_PROVIDER_JAR_DST) : $(SUNJCE_PROVIDER_JAR_SRC)
-	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunJCE provider..."
-	$(install-file)
-
-else
-
-    $(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR,,\
+$(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= com/sun/crypto/provider,\
-		JAR:=$(SUNJCE_PROVIDER_JAR_DST), \
+		JAR:=$(SUNJCE_PROVIDER_JAR_UNSIGNED), \
                 MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
 
-    $(SUNJCE_PROVIDER_JAR_DST): $(JCE_MANIFEST)
-
-endif
-
-JARS += $(SUNJCE_PROVIDER_JAR_DST)
-
-JCE_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/jce.jar
+$(SUNJCE_PROVIDER_JAR_UNSIGNED): $(JCE_MANIFEST)
 
 ifndef OPENJDK
-
-    JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
-
-    $(JCE_JAR_DST) : $(JCE_JAR_SRC)
-	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt jce.jar..."
+    SUNJCE_PROVIDER_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/sunjce_provider.jar
+    $(SUNJCE_PROVIDER_JAR_DST) : $(SUNJCE_PROVIDER_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunJCE provider..."
 	$(install-file)
-
 else
+    $(SUNJCE_PROVIDER_JAR_DST) : $(SUNJCE_PROVIDER_JAR_UNSIGNED)
+	$(install-file)
+endif
 
-    $(eval $(call SetupArchive,BUILD_JCE_JAR,,\
+JARS += $(SUNJCE_PROVIDER_JAR_DST) $(SUNJCE_PROVIDER_JAR_UNSIGNED)
+
+##########################################################################################
+
+JCE_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/jce.jar
+JCE_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/jce.jar
+
+$(eval $(call SetupArchive,BUILD_JCE_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= javax/crypto sun/security/internal,\
-		JAR:=$(JCE_JAR_DST), \
+		JAR:=$(JCE_JAR_UNSIGNED), \
                 MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
 
-    $(JCE_JAR_DST): $(JCE_MANIFEST)
+$(JCE_JAR_UNSIGNED): $(JCE_MANIFEST)
 
+ifndef OPENJDK
+    JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
+    $(JCE_JAR_DST) : $(JCE_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt jce.jar..."
+	$(install-file)
+else
+    $(JCE_JAR_DST) : $(JCE_JAR_UNSIGNED)
+	$(install-file)
 endif
 
-JARS += $(JCE_JAR_DST)
+JARS += $(JCE_JAR_DST) $(JCE_JAR_UNSIGNED)
 
 ##########################################################################################
 
 US_EXPORT_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/US_export_policy.jar
+US_EXPORT_POLICY_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/US_export_policy.jar
 
-ifndef OPENJDK
+#
+# TODO fix so that SetupArchive does not write files into SRCS
+#   then we don't need this extra copying
+#
+# NOTE:  We currently do not place restrictions on our limited export
+# policy.  This was not a typo.
+#
+US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
+US_EXPORT_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/US_export_policy_jar.tmp
 
-
-    $(US_EXPORT_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
-	$(ECHO) $(LOG_INFO) Copying $(@F)
+$(US_EXPORT_POLICY_JAR_TMP)/% : $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
 	$(install-file)
 
-else
+US_EXPORT_POLICY_JAR_DEPS := $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
 
-    #
-    # TODO fix so that SetupArchive does not write files into SRCS
-    #   then we don't need this extra copying
-    #
-    # NOTE:  We currently do not place restrictions on our limited export
-    # policy.  This was not a typo.
-    #
-    US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
-    US_EXPORT_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/US_export_policy_jar.tmp
-
-    $(US_EXPORT_POLICY_JAR_TMP)/% : $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
-	$(install-file)
-
-    US_EXPORT_POLICY_JAR_DEPS := $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
-
-    $(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR,$(US_EXPORT_POLICY_JAR_DEPS),\
+$(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR,$(US_EXPORT_POLICY_JAR_DEPS),\
 		SRCS:=$(US_EXPORT_POLICY_JAR_TMP), \
 		SUFFIXES:= .policy,\
-		JAR:=$(US_EXPORT_POLICY_JAR_DST), \
+		JAR:=$(US_EXPORT_POLICY_JAR_UNSIGNED), \
 		EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
 		SKIP_METAINF := true))
 
+ifndef OPENJDK
+    $(US_EXPORT_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
+	$(ECHO) $(LOG_INFO) Copying $(@F)
+	$(install-file)
+else
+    $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_UNSIGNED)
+	$(install-file)
 endif
 
-JARS += $(US_EXPORT_POLICY_JAR_DST)
+JARS += $(US_EXPORT_POLICY_JAR_DST) $(US_EXPORT_POLICY_JAR_UNSIGNED)
 
 ##########################################################################################
 
 LOCAL_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/local_policy.jar
+LOCAL_POLICY_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/local_policy.jar
 
-ifndef OPENJDK
+#
+# TODO fix so that SetupArchive does not write files into SRCS
+#   then we don't need this extra copying
+#
+LOCAL_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/local_policy_jar.tmp
 
-    $(LOCAL_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
-	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(install-file)
-
+ifeq ($(UNLIMITED_CRYPTO), true)
+    LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
+    LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/default_local.policy
+    LOCAL_POLICY_JAR_ATTR := Crypto-Strength: unlimited
 else
+    LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/limited
+    LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy \
+                             $(LOCAL_POLICY_JAR_TMP)/default_local.policy
+    LOCAL_POLICY_JAR_ATTR := Crypto-Strength: limited
+endif
 
-    #
-    # TODO fix so that SetupArchive does not write files into SRCS
-    #   then we don't need this extra copying
-    #
-    LOCAL_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/local_policy_jar.tmp
-
-    ifeq ($(UNLIMITED_CRYPTO), true)
-        LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
-        LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/default_local.policy
-        LOCAL_POLICY_JAR_ATTR := Crypto-Strength: unlimited
-    else
-        LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/limited
-        LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy \
-                                 $(LOCAL_POLICY_JAR_TMP)/default_local.policy
-        LOCAL_POLICY_JAR_ATTR := Crypto-Strength: limited
-    endif
-
-    $(LOCAL_POLICY_JAR_TMP)/% : $(LOCAL_POLICY_JAR_SRC_DIR)/%
+$(LOCAL_POLICY_JAR_TMP)/% : $(LOCAL_POLICY_JAR_SRC_DIR)/%
 	$(install-file)
 
-    $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR,$(LOCAL_POLICY_JAR_DEPS),\
+$(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR,$(LOCAL_POLICY_JAR_DEPS),\
 		SRCS:=$(LOCAL_POLICY_JAR_TMP),\
 		SUFFIXES:= .policy,\
-		JAR:=$(LOCAL_POLICY_JAR_DST), \
+		JAR:=$(LOCAL_POLICY_JAR_UNSIGNED), \
 		EXTRA_MANIFEST_ATTR := $(LOCAL_POLICY_JAR_ATTR), \
 		SKIP_METAINF := true))
 
+ifndef OPENJDK
+    $(LOCAL_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
+	$(ECHO) $(LOG_INFO) Copying $(@F)
+	$(install-file)
+else
+    $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_UNSIGNED)
+	$(install-file)
 endif
 
-JARS += $(LOCAL_POLICY_JAR_DST)
+JARS += $(LOCAL_POLICY_JAR_DST) $(LOCAL_POLICY_JAR_UNSIGNED)
 
 ##########################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS),windows)
 
 SUNMSCAPI_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunmscapi.jar
-
-ifndef OPENJDK
-SUNMSCAPI_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/mscapi/sunmscapi.jar
-
-$(SUNMSCAPI_JAR_DST) : $(SUNMSCAPI_JAR_SRC)
-	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunMSCAPI provider..."
-	$(install-file)
-
-else
+SUNMSCAPI_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/sunmscapi.jar
 
 $(eval $(call SetupArchive,BUILD_SUNMSCAPI_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= sun/security/mscapi,\
-		JAR:=$(SUNMSCAPI_JAR_DST), \
+		JAR:=$(SUNMSCAPI_JAR_UNSIGNED), \
+		MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF:=true))
+
+$(SUNMSCAPI_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+ifndef OPENJDK
+    SUNMSCAPI_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/mscapi/sunmscapi.jar
+    $(SUNMSCAPI_JAR_DST) : $(SUNMSCAPI_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt SunMSCAPI provider..."
+	$(install-file)
+else
+    $(SUNMSCAPI_JAR_DST) : $(SUNMSCAPI_JAR_UNSIGNED)
+	$(install-file)
 endif
 
-JARS += $(SUNMSCAPI_JAR_DST)
+JARS += $(SUNMSCAPI_JAR_DST) $(SUNMSCAPI_JAR_UNSIGNED)
 
 endif
 
@@ -673,13 +678,24 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
 ifndef OPENJDK
 
 UCRYPTO_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/ucrypto.jar
+UCRYPTO_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/ucrypto.jar
 UCRYPTO_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ucrypto/ucrypto.jar
+
+$(eval $(call SetupArchive,BUILD_UCRYPTO_JAR,,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes, \
+		SUFFIXES:=.class,\
+		INCLUDES:=com/oracle/security/ucrypto,\
+		JAR:=$(UCRYPTO_JAR_UNSIGNED), \
+		MANIFEST:=$(JCE_MANIFEST), \
+		SKIP_METAINF:=true))
+
+$(UCRYPTO_JAR_UNSIGNED): $(JCE_MANIFEST)
 
 $(UCRYPTO_JAR_DST) : $(UCRYPTO_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt OracleUcrypto provider..."
 	$(install-file)
 
-JARS += $(UCRYPTO_JAR_DST)
+JARS += $(UCRYPTO_JAR_DST) $(UCRYPTO_JAR_UNSIGNED)
 
 endif
 endif
@@ -707,57 +723,57 @@ JARS += $(CLDRDATA_JAR_DST)
 ##########################################################################################
 
 TOOLS_JAR_INCLUDES := \
-	sun/tools/asm		\
-	sun/tools/jar		\
-	sun/tools/java		\
-	sun/tools/javac		\
-	sun/tools/jcmd		\
-	sun/tools/jps		\
-	sun/tools/jstat		\
-	sun/tools/jstatd	\
-	sun/tools/native2ascii	\
-	sun/tools/serialver	\
-	sun/tools/tree		\
-	sun/tools/util		\
-	sun/security/tools/jarsigner \
-	sun/rmi/rmic		\
-	sun/applet		\
-	sun/jvmstat		\
+        com/sun/codemodel       \
+	com/sun/istack/internal/tools       \
+	com/sun/jarsigner	\
 	com/sun/javadoc		\
 	com/sun/jdi		\
-	com/sun/jarsigner	\
 	com/sun/source          \
+	com/sun/tools/attach	\
 	com/sun/tools/classfile \
+	com/sun/tools/corba     \
 	com/sun/tools/doclets   \
 	com/sun/tools/doclint   \
 	com/sun/tools/example/debug/expr \
 	com/sun/tools/example/debug/tty  \
 	com/sun/tools/extcheck  \
 	com/sun/tools/hat       \
+        com/sun/tools/internal/jxc             \
+	com/sun/tools/internal/jxc/ap   \
+	com/sun/tools/internal/ws       \
+	com/sun/tools/internal/ws/wscompile/plugin/at_generated \
+	com/sun/tools/internal/xjc       \
 	com/sun/tools/javac     \
 	com/sun/tools/javadoc   \
 	com/sun/tools/javah     \
 	com/sun/tools/javap     \
 	com/sun/tools/jdeps	\
-	com/sun/tools/corba     \
-	com/sun/tools/internal/xjc       \
-	com/sun/tools/internal/ws       \
-	com/sun/istack/internal/tools       \
-	com/sun/tools/internal/jxc/ap   \
-	com/sun/tools/internal/ws/wscompile/plugin/at_generated \
-        com/sun/codemodel       \
-        com/sun/tools/internal/jxc             \
+	com/sun/tools/jdi	\
+	com/sun/tools/script/shell	\
+	com/sun/xml/internal/dtdparser \
         com/sun/xml/internal/rngom       \
         com/sun/xml/internal/xsom       \
         org/relaxng/datatype   \
-	com/sun/xml/internal/dtdparser \
-	com/sun/tools/jdi	\
-	com/sun/tools/script/shell	\
-	com/sun/tools/attach	\
+	sun/applet		\
+	sun/jvmstat		\
+	sun/rmi/rmic		\
+	sun/security/tools/jarsigner \
+	sun/tools/asm		\
 	sun/tools/attach	\
-	sun/tools/jstack        \
+	sun/tools/jar		\
+	sun/tools/java		\
+	sun/tools/javac		\
+	sun/tools/jcmd		\
 	sun/tools/jinfo         \
-	sun/tools/jmap
+	sun/tools/jmap		\
+	sun/tools/jps		\
+	sun/tools/jstack        \
+	sun/tools/jstat		\
+	sun/tools/jstatd	\
+	sun/tools/native2ascii	\
+	sun/tools/serialver	\
+	sun/tools/tree		\
+	sun/tools/util
 
 # The sjavac tools is not ready for public consumption.
 TOOLS_JAR_EXCLUDES=com/sun/tools/sjavac
@@ -821,7 +837,7 @@ $(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(IMAGES_OUTPUTDIR)/lib/rt.jar
 	    $(CORE_PKGS) $(NON_CORE_PKGS) $(EXCLUDE_PROPWARN_PKGS) $(EXPORTED_PRIVATE_PKGS)
 	$(TOUCH) $@
 
-$(shell $(MKDIR) -p $(IMAGES_OUTPUTDIR)/symbols)
+$(eval $(call MakeDir,$(IMAGES_OUTPUTDIR)/symbols))
 $(eval $(call SetupArchive,BUILD_CT_SYM,$(IMAGES_OUTPUTDIR)/symbols/_the.symbols,\
 		SRCS:=$(IMAGES_OUTPUTDIR)/symbols,\
 		INCLUDES:=META-INF/sym,\
@@ -833,6 +849,19 @@ JARS+=$(IMAGES_OUTPUTDIR)/lib/ct.sym
 ##########################################################################################
 
 SRC_ZIP_INCLUDES = \
+	com/sun/corba			\
+	com/sun/image/codec/jpeg	\
+	com/sun/imageio                 \
+	com/sun/java_cup		\
+	com/sun/javadoc			\
+	com/sun/java/swing		\
+	com/sun/jlex	        	\
+	com/sun/jmx			\
+	com/sun/naming			\
+	com/sun/org/apache		\
+	com/sun/security/auth		\
+	com/sun/security/jgss		\
+	com/sun/source			\
 	java/applet			\
 	java/awt			\
 	java/beans			\
@@ -846,34 +875,21 @@ SRC_ZIP_INCLUDES = \
 	java/sql			\
 	java/text			\
 	java/util			\
-	com/sun/corba			\
-	com/sun/image/codec/jpeg	\
-	com/sun/imageio                 \
-	com/sun/java/swing		\
-	com/sun/javadoc			\
-	com/sun/jmx			\
-	com/sun/source			\
-	com/sun/naming			\
-	com/sun/security/auth		\
-	com/sun/security/jgss		\
 	javax/accessibility		\
 	javax/annotation		\
-	javax/script			\
 	javax/imageio			\
 	javax/lang			\
 	javax/management		\
 	javax/naming			\
 	javax/print			\
 	javax/rmi			\
+	javax/script			\
 	javax/security			\
 	javax/sound			\
 	javax/sql			\
 	javax/swing			\
 	javax/tools			\
 	javax/xml			\
-	com/sun/org/apache		\
-	com/sun/java_cup		\
-	com/sun/jlex	        	\
 	org/ietf			\
 	org/omg				\
 	org/w3c/dom			\
@@ -964,6 +980,62 @@ $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar: $(JDK_OUTPUTDIR)/lib/sa-jdi.jar
 	$(install-file)
 
 JARS += $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
+
+##########################################################################################
+#
+# sec-bin.zip is used by builds where the corresponding sources are not available
+#
+$(eval $(call SetupZipArchive,BUILD_SEC_BIN_ZIP,\
+		SRC:=$(JDK_OUTPUTDIR),\
+		INCLUDES:=classes/javax/net \
+			  classes/javax/security/cert \
+			  classes/com/sun/net/ssl \
+			  classes/com/sun/security/cert \
+			  classes/sun/net/www/protocol/https \
+			  classes/sun/security/pkcs12 \
+			  classes/sun/security/ssl \
+			  classes/sun/security/krb5 \
+			  classes/sun/security/krb5/internal \
+			  classes/sun/security/krb5/internal/ccache \
+			  classes/sun/security/krb5/internal/crypto \
+			  classes/sun/security/krb5/internal/ktab \
+			  classes/sun/security/krb5/internal/rcache \
+			  classes/sun/security/krb5/internal/util,\
+		INCLUDE_FILES:=classes/sun/security/jgss/spi/GSSContextSpi.class,\
+		EXCLUDES:=classes/sun/security/krb5/internal/tools,\
+		ZIP:=$(IMAGES_OUTPUTDIR)/sec-bin.zip))
+
+JARS += $(IMAGES_OUTPUTDIR)/sec-bin.zip
+
+##########################################################################################
+#
+# Windows specific binary security packages.
+#
+ifeq ($(OPENJDK_TARGET_OS),windows)
+    # sec-windows-bin.zip is used by builds where the corresponding sources are not available
+    $(eval $(call SetupZipArchive,BUILD_SEC_WINDOWS_BIN_ZIP,\
+		SRC:=$(JDK_OUTPUTDIR),\
+		INCLUDES:=classes/sun/security/krb5/internal/tools,\
+		ZIP:=$(IMAGES_OUTPUTDIR)/sec-windows-bin.zip))
+
+    JARS += $(IMAGES_OUTPUTDIR)/sec-windows-bin.zip
+
+    # JGSS files contain the native Kerberos library
+    ifeq ($(OPENJDK_TARGET_CPU),x86_64)
+        JGSS_ZIP_NAME=jgss-windows-x64-bin.zip
+    else
+        JGSS_ZIP_NAME=jgss-windows-i586-bin.zip
+    endif
+
+    $(eval $(call SetupZipArchive,BUILD_JGSS_BIN_ZIP,\
+		SRC:=$(JDK_OUTPUTDIR),\
+		INCLUDE_FILES:=bin/w2k_lsa_auth.dll \
+			       bin/w2k_lsa_auth.map \
+			       bin/w2k_lsa_auth.pdb,\
+		ZIP:=$(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME)))
+
+    JARS += $(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME)
+endif
 
 ##########################################################################################
 

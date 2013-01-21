@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -163,11 +163,22 @@ MACOSX_BUNDLE_ID_BASE=@MACOSX_BUNDLE_ID_BASE@
 
 # Different version strings generated from the above information.
 JDK_VERSION:=@JDK_VERSION@
-RUNTIME_NAME:=@RUNTIME_NAME@
-FULL_VERSION:=@FULL_VERSION@
-JRE_RELEASE_VERSION:=@FULL_VERSION@
-RELEASE:=@RELEASE@
+RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 COOKED_BUILD_NUMBER:=@COOKED_BUILD_NUMBER@
+# These variables need to be generated here so that MILESTONE and
+# JDK_BUILD_NUMBER can be overridden on the make command line.
+ifeq ($(MILESTONE),)
+  RELEASE=$(JDK_VERSION)$(BUILD_VARIANT_RELEASE)
+else
+  RELEASE=$(JDK_VERSION)-$(MILESTONE)$(BUILD_VARIANT_RELEASE)
+endif
+ifeq ($(JDK_BUILD_NUMBER),b00)
+  USER_RELEASE_SUFFIX=@USER_RELEASE_SUFFIX@
+  FULL_VERSION=$(RELEASE)-$(USER_RELEASE_SUFFIX)-$(JDK_BUILD_NUMBER)
+else
+  FULL_VERSION=$(RELEASE)-$(JDK_BUILD_NUMBER)
+endif
+JRE_RELEASE_VERSION:=$(FULL_VERSION)
 
 # How to compile the code: release, fastdebug or slowdebug
 DEBUG_LEVEL:=@DEBUG_LEVEL@
@@ -220,6 +231,7 @@ JAXWS_OUTPUTDIR=$(BUILD_OUTPUT)/jaxws
 HOTSPOT_OUTPUTDIR=$(BUILD_OUTPUT)/hotspot
 JDK_OUTPUTDIR=$(BUILD_OUTPUT)/jdk
 IMAGES_OUTPUTDIR=$(BUILD_OUTPUT)/images
+JCE_OUTPUTDIR=$(BUILD_OUTPUT)/jce-release
 
 LANGTOOLS_DIST=$(LANGTOOLS_OUTPUTDIR)/dist
 CORBA_DIST=$(CORBA_OUTPUTDIR)/dist
@@ -420,6 +432,8 @@ RMIC=@FIXPATH@ $(BOOT_JDK)/bin/rmic
 
 NATIVE2ASCII=@FIXPATH@ $(BOOT_JDK)/bin/native2ascii
 
+JARSIGNER=@FIXPATH@ $(BOOT_JDK)/bin/jarsigner
+
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple
 # times.
@@ -440,10 +454,13 @@ CCACHE:=@CCACHE@
 # CD is going away, but remains to cater for legacy makefiles.
 CD:=cd
 CHMOD:=@CHMOD@
+COMM:=@COMM@
 CP:=@CP@
+CPIO:=@CPIO@
 CUT:=@CUT@
 DATE:=@DATE@
 DIFF:=@DIFF@
+DIRNAME:=@DIRNAME@
 FIND:=@FIND@
 FIND_DELETE:=@FIND_DELETE@
 ECHO:=@ECHO@
@@ -468,6 +485,7 @@ TEE:=@TEE@
 TIME:=@TIME@
 TR:=@TR@
 TOUCH:=@TOUCH@
+UNIQ:=@UNIQ@
 WC:=@WC@
 XARGS:=@XARGS@
 ZIPEXE:=@ZIP@
@@ -599,6 +617,22 @@ SALIB_NAME=@SALIB_NAME@
 OS_VERSION_MAJOR:=@OS_VERSION_MAJOR@
 OS_VERSION_MINOR:=@OS_VERSION_MINOR@
 OS_VERSION_MICRO:=@OS_VERSION_MICRO@
+
+# Images directory definitions
+JDK_IMAGE_SUBDIR:=j2sdk-image
+JRE_IMAGE_SUBDIR:=j2re-image
+JDK_OVERLAY_IMAGE_SUBDIR:=j2sdk-overlay-image
+JRE_OVERLAY_IMAGE_SUBDIR:=j2re-overlay-image
+JDK_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/$(JDK_IMAGE_SUBDIR)
+JRE_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/$(JRE_IMAGE_SUBDIR)
+JDK_OVERLAY_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/$(JDK_OVERLAY_IMAGE_SUBDIR)
+JRE_OVERLAY_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/$(JRE_OVERLAY_IMAGE_SUBDIR)
+
+# Macosx bundles directory definitions
+JDK_BUNDLE_SUBDIR:=j2sdk-bundle/jdk$(JDK_VERSION).jdk/Contents
+JRE_BUNDLE_SUBDIR:=j2re-bundle/jre$(JDK_VERSION).jre/Contents
+JDK_BUNDLE_DIR:=$(IMAGES_OUTPUTDIR)/$(JDK_BUNDLE_SUBDIR)
+JRE_BUNDLE_DIR:=$(IMAGES_OUTPUTDIR)/$(JRE_BUNDLE_SUBDIR)
 
 # Include the custom-spec.gmk file if it exists
 -include $(dir @SPEC@)/custom-spec.gmk
