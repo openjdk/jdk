@@ -409,7 +409,7 @@ public class BatchUpdateException extends SQLException {
    * <code>cause</code> and <code>updateCounts</code>.
    * <p>
    * This constructor should be used when the returned update count may exceed
-   * {@link Integer.MAX_VALUE}.
+   * {@link Integer#MAX_VALUE}.
    * <p>
    * @param reason a description of the error
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
@@ -447,7 +447,7 @@ public class BatchUpdateException extends SQLException {
    * the <code>BatchUpdateException</code> was thrown.
    * <p>
    * This method should be used when {@code Statement.executeLargeBatch} is
-   * invoked and the returned update count may exceed {@link Integer.MAX_VALUE}.
+   * invoked and the returned update count may exceed {@link Integer#MAX_VALUE}.
    * <p>
    * @return an array of <code>long</code> containing the update counts
    * for the updates that were executed successfully before this error
