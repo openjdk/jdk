@@ -330,10 +330,19 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
     }
     if (this == the_null_class_loader_data()) {
       assert (class_loader() == NULL, "Must be");
-      size_t word_size = Metaspace::first_chunk_word_size();
-      set_metaspace(new Metaspace(_metaspace_lock, word_size));
+      set_metaspace(new Metaspace(_metaspace_lock, Metaspace::BootMetaspaceType));
+    } else if (is_anonymous()) {
+      if (TraceClassLoaderData && Verbose && class_loader() != NULL) {
+        tty->print_cr("is_anonymous: %s", class_loader()->klass()->internal_name());
+      }
+      set_metaspace(new Metaspace(_metaspace_lock, Metaspace::AnonymousMetaspaceType));
+    } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
+      if (TraceClassLoaderData && Verbose && class_loader() != NULL) {
+        tty->print_cr("is_reflection: %s", class_loader()->klass()->internal_name());
+      }
+      set_metaspace(new Metaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType));
     } else {
-      set_metaspace(new Metaspace(_metaspace_lock));  // default size for now.
+      set_metaspace(new Metaspace(_metaspace_lock, Metaspace::StandardMetaspaceType));
     }
   }
   return _metaspace;
@@ -672,8 +681,8 @@ void ClassLoaderData::initialize_shared_metaspaces() {
          "only supported for null loader data for now");
   assert (!_shared_metaspaces_initialized, "only initialize once");
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  _ro_metaspace = new Metaspace(_metaspace_lock, SharedReadOnlySize/wordSize);
-  _rw_metaspace = new Metaspace(_metaspace_lock, SharedReadWriteSize/wordSize);
+  _ro_metaspace = new Metaspace(_metaspace_lock, Metaspace::ROMetaspaceType);
+  _rw_metaspace = new Metaspace(_metaspace_lock, Metaspace::ReadWriteMetaspaceType);
   _shared_metaspaces_initialized = true;
 }
 
