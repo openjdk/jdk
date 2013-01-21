@@ -92,10 +92,11 @@ public class Checker extends DocTreeScanner<Void, Void> {
     boolean foundInheritDoc = false;
     boolean foundReturn = false;
 
-    enum Flag {
+    public enum Flag {
         TABLE_HAS_CAPTION,
         HAS_ELEMENT,
-        HAS_TEXT
+        HAS_TEXT,
+        REPORTED_BAD_INLINE
     }
 
     static class TagStackItem {
@@ -195,7 +196,8 @@ public class Checker extends DocTreeScanner<Void, Void> {
 
     @Override
     public Void visitText(TextTree tree, Void ignore) {
-        if (!tree.getBody().trim().isEmpty()) {
+        if (hasNonWhitespace(tree)) {
+            checkAllowsText(tree);
             markEnclosingTag(Flag.HAS_TEXT);
         }
         return null;
@@ -203,6 +205,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
 
     @Override
     public Void visitEntity(EntityTree tree, Void ignore) {
+        checkAllowsText(tree);
         markEnclosingTag(Flag.HAS_TEXT);
         String name = tree.getName().toString();
         if (name.startsWith("#")) {
@@ -218,6 +221,18 @@ public class Checker extends DocTreeScanner<Void, Void> {
         return null;
     }
 
+    void checkAllowsText(DocTree tree) {
+        TagStackItem top = tagStack.peek();
+        if (top != null
+                && top.tree.getKind() == DocTree.Kind.START_ELEMENT
+                && !top.tag.acceptsText()) {
+            if (top.flags.add(Flag.REPORTED_BAD_INLINE)) {
+                env.messages.error(HTML, tree, "dc.text.not.allowed",
+                        ((StartElementTree) top.tree).getName());
+            }
+        }
+    }
+
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="HTML elements">
@@ -230,53 +245,22 @@ public class Checker extends DocTreeScanner<Void, Void> {
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
         } else {
+            for (TagStackItem tsi: tagStack) {
+                if (tsi.tag.accepts(t)) {
+                    while (tagStack.peek() != tsi) tagStack.pop();
+                    break;
+                } else if (tsi.tag.endKind != HtmlTag.EndKind.OPTIONAL)
+                    break;
+            }
+
+            checkStructure(tree, t);
+
             // tag specific checks
             switch (t) {
                 // check for out of sequence headers, such as <h1>...</h1>  <h3>...</h3>
                 case H1: case H2: case H3: case H4: case H5: case H6:
                     checkHeader(tree, t);
                     break;
-                // <p> inside <pre>
-                case P:
-                    TagStackItem top = tagStack.peek();
-                    if (top != null && top.tag == HtmlTag.PRE)
-                        env.messages.warning(HTML, tree, "dc.tag.p.in.pre");
-                    break;
-            }
-
-            // check that only block tags and inline tags are used,
-            // and that blocks tags are not used within inline tags
-            switch (t.blockType) {
-                case INLINE:
-                    break;
-                case BLOCK:
-                    TagStackItem top = tagStack.peek();
-                    if (top != null && top.tag != null && top.tag.blockType == HtmlTag.BlockType.INLINE) {
-                        switch (top.tree.getKind()) {
-                            case START_ELEMENT: {
-                                Name name = ((StartElementTree) top.tree).getName();
-                                env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
-                                        treeName, name);
-                                break;
-                            }
-                            case LINK:
-                            case LINK_PLAIN: {
-                                String name = top.tree.getKind().tagName;
-                                env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.tag",
-                                        treeName, name);
-                                break;
-                            }
-                            default:
-                                env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.other",
-                                        treeName);
-                        }
-                    }
-                    break;
-                case OTHER:
-                    env.messages.error(HTML, tree, "dc.tag.not.allowed", treeName);
-                    break;
-                default:
-                    throw new AssertionError();
             }
 
             if (t.flags.contains(HtmlTag.Flag.NO_NEST)) {
@@ -322,6 +306,58 @@ public class Checker extends DocTreeScanner<Void, Void> {
             if (t == null || t.endKind == HtmlTag.EndKind.NONE)
                 tagStack.pop();
         }
+    }
+
+    private void checkStructure(StartElementTree tree, HtmlTag t) {
+        Name treeName = tree.getName();
+        TagStackItem top = tagStack.peek();
+        switch (t.blockType) {
+            case BLOCK:
+                if (top == null || top.tag.accepts(t))
+                    return;
+
+                switch (top.tree.getKind()) {
+                    case START_ELEMENT: {
+                        if (top.tag.blockType == HtmlTag.BlockType.INLINE) {
+                            Name name = ((StartElementTree) top.tree).getName();
+                            env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
+                                    treeName, name);
+                            return;
+                        }
+                    }
+                    break;
+
+                    case LINK:
+                    case LINK_PLAIN: {
+                        String name = top.tree.getKind().tagName;
+                        env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.tag",
+                                treeName, name);
+                        return;
+                    }
+                }
+                break;
+
+            case INLINE:
+                if (top == null || top.tag.accepts(t))
+                    return;
+                break;
+
+            case LIST_ITEM:
+            case TABLE_ITEM:
+                if (top != null) {
+                    // reset this flag so subsequent bad inline content gets reported
+                    top.flags.remove(Flag.REPORTED_BAD_INLINE);
+                    if (top.tag.accepts(t))
+                        return;
+                }
+                break;
+
+            case OTHER:
+                env.messages.error(HTML, tree, "dc.tag.not.allowed", treeName);
+                return;
+        }
+
+        env.messages.error(HTML, tree, "dc.tag.not.allowed.here", treeName);
     }
 
     private void checkHeader(StartElementTree tree, HtmlTag tag) {
@@ -377,10 +413,6 @@ public class Checker extends DocTreeScanner<Void, Void> {
                             && !top.flags.contains(Flag.HAS_TEXT)
                             && !top.flags.contains(Flag.HAS_ELEMENT)) {
                         env.messages.warning(HTML, tree, "dc.tag.empty", treeName);
-                    }
-                    if (t.flags.contains(HtmlTag.Flag.NO_TEXT)
-                            && top.flags.contains(Flag.HAS_TEXT)) {
-                        env.messages.error(HTML, tree, "dc.text.not.allowed", treeName);
                     }
                     tagStack.pop();
                     done = true;
@@ -763,7 +795,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
         for (DocTree d: list) {
             switch (d.getKind()) {
                 case TEXT:
-                    if (!((TextTree) d).getBody().trim().isEmpty())
+                    if (hasNonWhitespace((TextTree) d))
                         return;
                     break;
                 default:
@@ -772,6 +804,16 @@ public class Checker extends DocTreeScanner<Void, Void> {
         }
         env.messages.warning(SYNTAX, tree, "dc.empty", tree.getKind().tagName);
     }
+
+    boolean hasNonWhitespace(TextTree tree) {
+        String s = tree.getBody();
+        for (int i = 0; i < s.length(); i++) {
+            if (!Character.isWhitespace(s.charAt(i)))
+                return true;
+        }
+        return false;
+    }
+
     // </editor-fold>
 
 }
