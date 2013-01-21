@@ -124,6 +124,7 @@ public class JavacParser implements Parser {
         this.allowLambda = source.allowLambda();
         this.allowMethodReferences = source.allowMethodReferences();
         this.allowDefaultMethods = source.allowDefaultMethods();
+        this.allowStaticInterfaceMethods = source.allowStaticInterfaceMethods();
         this.allowIntersectionTypesInCast = source.allowIntersectionTypesInCast();
         this.keepDocComments = keepDocComments;
         docComments = newDocCommentTable(keepDocComments, fac);
@@ -197,6 +198,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow default methods in interfaces?
      */
     boolean allowDefaultMethods;
+
+    /** Switch: should we allow static methods in interfaces?
+     */
+    boolean allowStaticInterfaceMethods;
 
     /** Switch: should we allow intersection types in cast?
      */
@@ -3093,6 +3098,9 @@ public class JavacParser implements Parser {
                               List<JCTypeParameter> typarams,
                               boolean isInterface, boolean isVoid,
                               Comment dc) {
+        if (isInterface && (mods.flags & Flags.STATIC) != 0) {
+            checkStaticInterfaceMethods();
+        }
         List<JCVariableDecl> params = formalParameters();
         if (!isVoid) type = bracketsOpt(type);
         List<JCExpression> thrown = List.nil();
@@ -3492,6 +3500,12 @@ public class JavacParser implements Parser {
         if (!allowIntersectionTypesInCast) {
             log.error(token.pos, "intersection.types.in.cast.not.supported.in.source", source.name);
             allowIntersectionTypesInCast = true;
+        }
+    }
+    void checkStaticInterfaceMethods() {
+        if (!allowStaticInterfaceMethods) {
+            log.error(token.pos, "static.intf.methods.not.supported.in.source", source.name);
+            allowStaticInterfaceMethods = true;
         }
     }
 

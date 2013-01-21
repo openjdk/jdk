@@ -1058,9 +1058,12 @@ public class Check {
                 } else
                     mask = ConstructorFlags;
             }  else if ((sym.owner.flags_field & INTERFACE) != 0) {
-                if ((flags & DEFAULT) != 0) {
-                    mask = InterfaceDefaultMethodMask;
-                    implicit = PUBLIC | ABSTRACT;
+                if ((flags & (DEFAULT | STATIC)) != 0) {
+                    mask = InterfaceMethodMask;
+                    implicit = PUBLIC;
+                    if ((flags & DEFAULT) != 0) {
+                        implicit |= ABSTRACT;
+                    }
                 } else {
                     mask = implicit = InterfaceMethodFlags;
                 }
@@ -1128,6 +1131,10 @@ public class Check {
                   checkDisjoint(pos, flags,
                                 ABSTRACT,
                                 PRIVATE | STATIC | DEFAULT))
+                 &&
+                 checkDisjoint(pos, flags,
+                                STATIC,
+                                DEFAULT)
                  &&
                  checkDisjoint(pos, flags,
                                ABSTRACT | INTERFACE,
