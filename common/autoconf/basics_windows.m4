@@ -175,7 +175,7 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_CYGWIN],
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -191,7 +191,7 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_CYGWIN],
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
