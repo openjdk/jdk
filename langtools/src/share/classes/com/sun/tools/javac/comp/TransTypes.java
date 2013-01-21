@@ -549,9 +549,6 @@ public class TransTypes extends TreeTranslator {
             currentMethod = null;
             tree.params = translate(tree.params);
             tree.body = translate(tree.body, null);
-            //save non-erased target
-            tree.targetType = tree.type;
-            Assert.check(!tree.targetType.isCompound(), "Intersection-type targets not supported yet!");
             tree.type = erasure(tree.type);
             result = tree;
         }
@@ -785,9 +782,6 @@ public class TransTypes extends TreeTranslator {
 
     public void visitReference(JCMemberReference tree) {
         tree.expr = translate(tree.expr, null);
-        //save non-erased target
-        tree.targetType = tree.type;
-        Assert.check(!tree.targetType.isCompound(), "Intersection-type targets not supported yet!");
         tree.type = erasure(tree.type);
         result = tree;
     }

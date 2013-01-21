@@ -253,7 +253,7 @@ public class LambdaToMethod extends TreeTranslator {
         int refKind = referenceKind(sym);
 
         //convert to an invokedynamic call
-        result = makeMetaFactoryIndyCall(tree, tree.targetType, refKind, sym, indy_args);
+        result = makeMetaFactoryIndyCall(tree, refKind, sym, indy_args);
     }
 
     private JCIdent makeThis(Type type, Symbol owner) {
@@ -314,7 +314,7 @@ public class LambdaToMethod extends TreeTranslator {
 
 
         //build a sam instance using an indy call to the meta-factory
-        result = makeMetaFactoryIndyCall(tree, tree.targetType, localContext.referenceKind(), refSym, indy_args);
+        result = makeMetaFactoryIndyCall(tree, localContext.referenceKind(), refSym, indy_args);
     }
 
     /**
@@ -503,19 +503,6 @@ public class LambdaToMethod extends TreeTranslator {
 
     // </editor-fold>
 
-    private MethodSymbol makeSamDescriptor(Type targetType) {
-        return (MethodSymbol)types.findDescriptorSymbol(targetType.tsym);
-    }
-
-    private Type makeFunctionalDescriptorType(Type targetType, MethodSymbol samDescriptor, boolean erased) {
-        Type descType = types.memberType(targetType, samDescriptor);
-        return erased ? types.erasure(descType) : descType;
-    }
-
-    private Type makeFunctionalDescriptorType(Type targetType, boolean erased) {
-        return makeFunctionalDescriptorType(targetType, makeSamDescriptor(targetType), erased);
-    }
-
     /**
      * Generate an adapter method "bridge" for a method reference which cannot
      * be used directly.
@@ -698,12 +685,12 @@ public class LambdaToMethod extends TreeTranslator {
     /**
      * Generate an indy method call to the meta factory
      */
-    private JCExpression makeMetaFactoryIndyCall(JCExpression tree, Type targetType, int refKind, Symbol refSym, List<JCExpression> indy_args) {
+    private JCExpression makeMetaFactoryIndyCall(JCFunctionalExpression tree, int refKind, Symbol refSym, List<JCExpression> indy_args) {
         //determine the static bsm args
-        Type mtype = makeFunctionalDescriptorType(targetType, true);
+        Type mtype = types.erasure(tree.descriptorType);
+        MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.type.tsym);
         List<Object> staticArgs = List.<Object>of(
-                new Pool.MethodHandle(ClassFile.REF_invokeInterface,
-                    types.findDescriptorSymbol(targetType.tsym), types),
+                new Pool.MethodHandle(ClassFile.REF_invokeInterface, types.findDescriptorSymbol(tree.type.tsym), types),
                 new Pool.MethodHandle(refKind, refSym, types),
                 new MethodType(mtype.getParameterTypes(),
                         mtype.getReturnType(),
@@ -1165,7 +1152,7 @@ public class LambdaToMethod extends TreeTranslator {
          * This class is used to store important information regarding translation of
          * lambda expression/method references (see subclasses).
          */
-        private abstract class TranslationContext<T extends JCTree> {
+        private abstract class TranslationContext<T extends JCFunctionalExpression> {
 
             /** the underlying (untranslated) tree */
             T tree;
@@ -1329,7 +1316,7 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             Type generatedLambdaSig() {
-                return types.erasure(types.findDescriptorType(tree.targetType));
+                return types.erasure(tree.descriptorType);
             }
         }
 
@@ -1385,7 +1372,7 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             Type bridgedRefSig() {
-                return types.erasure(types.findDescriptorSymbol(tree.targetType.tsym).type);
+                return types.erasure(types.findDescriptorSymbol(tree.targets.head).type);
             }
         }
     }

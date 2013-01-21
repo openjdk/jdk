@@ -946,7 +946,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitLambda(JCLambda tree) {
         try {
             print("(");
-            if (TreeInfo.isExplicitLambda(tree)) {
+            if (tree.paramKind == JCLambda.ParameterKind.EXPLICIT) {
                 printExprs(tree.params);
             } else {
                 String sep = "";

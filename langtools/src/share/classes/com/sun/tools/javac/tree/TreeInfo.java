@@ -32,6 +32,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
@@ -264,9 +265,38 @@ public class TreeInfo {
         }
     }
 
-    public static boolean isExplicitLambda(JCLambda lambda) {
-        return lambda.params.isEmpty() ||
-                lambda.params.head.vartype != null;
+    /** set 'polyKind' on given tree */
+    public static void setPolyKind(JCTree tree, PolyKind pkind) {
+        switch (tree.getTag()) {
+            case APPLY:
+                ((JCMethodInvocation)tree).polyKind = pkind;
+                break;
+            case NEWCLASS:
+                ((JCNewClass)tree).polyKind = pkind;
+                break;
+            case REFERENCE:
+                ((JCMemberReference)tree).refPolyKind = pkind;
+                break;
+            default:
+                throw new AssertionError("Unexpected tree: " + tree);
+        }
+    }
+
+    /** set 'varargsElement' on given tree */
+    public static void setVarargsElement(JCTree tree, Type varargsElement) {
+        switch (tree.getTag()) {
+            case APPLY:
+                ((JCMethodInvocation)tree).varargsElement = varargsElement;
+                break;
+            case NEWCLASS:
+                ((JCNewClass)tree).varargsElement = varargsElement;
+                break;
+            case REFERENCE:
+                ((JCMemberReference)tree).varargsElement = varargsElement;
+                break;
+            default:
+                throw new AssertionError("Unexpected tree: " + tree);
+        }
     }
 
     /** Return true if the tree corresponds to an expression statement */

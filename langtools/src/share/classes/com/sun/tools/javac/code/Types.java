@@ -354,8 +354,29 @@ public class Types {
                 return descSym;
             }
 
-            public Type getType(Type origin) {
-                return memberType(origin, descSym);
+            public Type getType(Type site) {
+                if (capture(site) != site) {
+                    Type formalInterface = site.tsym.type;
+                    ListBuffer<Type> typeargs = ListBuffer.lb();
+                    List<Type> actualTypeargs = site.getTypeArguments();
+                    //simply replace the wildcards with its bound
+                    for (Type t : formalInterface.getTypeArguments()) {
+                        if (actualTypeargs.head.hasTag(WILDCARD)) {
+                            WildcardType wt = (WildcardType)actualTypeargs.head;
+                            typeargs.append(wt.type);
+                        } else {
+                            typeargs.append(actualTypeargs.head);
+                        }
+                        actualTypeargs = actualTypeargs.tail;
+                    }
+                    site = subst(formalInterface, formalInterface.getTypeArguments(), typeargs.toList());
+                    if (!chk.checkValidGenericType(site)) {
+                        //if the inferred functional interface type is not well-formed,
+                        //or if it's not a subtype of the original target, issue an error
+                        throw failure(diags.fragment("no.suitable.functional.intf.inst", site));
+                    }
+                }
+                return memberType(site, descSym);
             }
         }
 
@@ -548,6 +569,15 @@ public class Types {
     public boolean isFunctionalInterface(TypeSymbol tsym) {
         try {
             findDescriptorSymbol(tsym);
+            return true;
+        } catch (FunctionDescriptorLookupError ex) {
+            return false;
+        }
+    }
+
+    public boolean isFunctionalInterface(Type site) {
+        try {
+            findDescriptorType(site);
             return true;
         } catch (FunctionDescriptorLookupError ex) {
             return false;
