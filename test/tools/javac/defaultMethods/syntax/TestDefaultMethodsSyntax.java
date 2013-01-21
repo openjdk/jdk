@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7192245
+ * @bug 7192245 8005851
  * @summary Automatic test for checking set of allowed modifiers on interface methods
  */
 
@@ -183,10 +183,10 @@ public class TestDefaultMethodsSyntax {
             /* ABSTRACT */       { T   , T    , C        , F       , F       , F     , F     , F           , F    , F       , F   },
             /* STATIC */         { C   , C    , C        , C       , F       , F     , C     , C           , C    , C       , F   },
             /* NATIVE */         { C   , C    , C        , C       , F       , C     , F     , C           , C    , F       , F   },
-            /* SYNCHRONIZED */   { C   , C    , C        , C       , F       , C     , C     , F           , C    , C       , I   },
+            /* SYNCHRONIZED */   { C   , C    , C        , C       , F       , C     , C     , F           , C    , C       , F   },
             /* FINAL */          { C   , C    , C        , C       , F       , C     , C     , C           , F    , C       , F   },
             /* STRICTFP */       { C   , C    , C        , C       , F       , C     , F     , C           , C    , F       , I   },
-            /* DEFAULT */        { I   , I    , F        , F       , F       , F     , F     , I           , F    , I       , F   }};
+            /* DEFAULT */        { I   , I    , F        , F       , F       , F     , F     , F           , F    , I       , F   }};
     }
 
     enum MethodKind {
