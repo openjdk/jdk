@@ -236,7 +236,7 @@ define SetupNativeCompilation
     $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
 
     # Find all files in the source trees. Sort to remove duplicates.
-    $1_ALL_SRCS := $$(sort $$(shell $(FIND) $$($1_SRC) -type f))
+    $1_ALL_SRCS := $$(sort $$(call CacheFind,$$($1_SRC)))
     # Extract the C/C++ files.
     $1_EXCLUDE_FILES:=$$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$($1_EXCLUDE_FILES)))
     $1_INCLUDE_FILES:=$$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
