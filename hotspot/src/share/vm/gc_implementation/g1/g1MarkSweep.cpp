@@ -282,10 +282,8 @@ class G1AdjustPointersClosure: public HeapRegionClosure {
       if (r->startsHumongous()) {
         // We must adjust the pointers on the single H object.
         oop obj = oop(r->bottom());
-        debug_only(GenMarkSweep::track_interior_pointers(obj));
         // point all the oops to the new location
         obj->adjust_pointers();
-        debug_only(GenMarkSweep::check_interior_pointers());
       }
     } else {
       // This really ought to be "as_CompactibleSpace"...

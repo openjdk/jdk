@@ -429,7 +429,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -446,6 +446,7 @@ void VM_Version::get_processor_features() {
                (supports_avx()    ? ", avx" : ""),
                (supports_avx2()   ? ", avx2" : ""),
                (supports_aes()    ? ", aes" : ""),
+               (supports_erms()   ? ", erms" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
                (supports_lzcnt()   ? ", lzcnt": ""),
@@ -669,6 +670,16 @@ void VM_Version::get_processor_features() {
   } else if (UsePopCountInstruction) {
     warning("POPCNT instruction is not available on this CPU");
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+  }
+
+  // Use fast-string operations if available.
+  if (supports_erms()) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = true;
+    }
+  } else if (UseFastStosb) {
+    warning("fast-string operations are not available on this CPU");
+    FLAG_SET_DEFAULT(UseFastStosb, false);
   }
 
 #ifdef COMPILER2

@@ -119,6 +119,7 @@ void FileMapInfo::populate_header(size_t alignment) {
   _header._magic = 0xf00baba2;
   _header._version = _current_version;
   _header._alignment = alignment;
+  _header._obj_alignment = ObjectAlignmentInBytes;
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -211,7 +212,11 @@ void FileMapInfo::open_for_write() {
 
   // Remove the existing file in case another process has it open.
   remove(_full_path);
+#ifdef _WINDOWS  // if 0444 is used on Windows, then remove() will fail.
+  int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0744);
+#else
   int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
+#endif
   if (fd < 0) {
     fail_stop("Unable to create shared archive file %s.", _full_path);
   }
@@ -370,9 +375,8 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
     return rs;
   }
   // the reserved virtual memory is for mapping class data sharing archive
-  if (MemTracker::is_on()) {
-    MemTracker::record_virtual_memory_type((address)rs.base(), mtClassShared);
-  }
+  MemTracker::record_virtual_memory_type((address)rs.base(), mtClassShared);
+
   return rs;
 }
 
@@ -394,6 +398,11 @@ char* FileMapInfo::map_region(int i) {
     fail_continue(err_msg("Unable to map %s shared space at required address.", shared_region_name[i]));
     return NULL;
   }
+#ifdef _WINDOWS
+  // This call is Windows-only because the memory_type gets recorded for the other platforms
+  // in method FileMapInfo::reserve_shared_memory(), which is not called on Windows.
+  MemTracker::record_virtual_memory_type((address)base, mtClassShared);
+#endif
   return base;
 }
 
@@ -463,6 +472,12 @@ bool FileMapInfo::validate() {
   if (strncmp(_header._jvm_ident, header_version, JVM_IDENT_MAX-1) != 0) {
     fail_continue("The shared archive file was created by a different"
                   " version or build of HotSpot.");
+    return false;
+  }
+  if (_header._obj_alignment != ObjectAlignmentInBytes) {
+    fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
+                  " does not equal the current ObjectAlignmentInBytes of %d.",
+                  _header._obj_alignment, ObjectAlignmentInBytes);
     return false;
   }
 
