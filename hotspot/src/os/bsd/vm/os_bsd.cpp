@@ -243,29 +243,32 @@ void os::Bsd::initialize_system_info() {
   int mib[2];
   size_t len;
   int cpu_val;
-  u_long mem_val;
+  julong mem_val;
 
   /* get processors count via hw.ncpus sysctl */
   mib[0] = CTL_HW;
   mib[1] = HW_NCPU;
   len = sizeof(cpu_val);
   if (sysctl(mib, 2, &cpu_val, &len, NULL, 0) != -1 && cpu_val >= 1) {
+       assert(len == sizeof(cpu_val), "unexpected data size");
        set_processor_count(cpu_val);
   }
   else {
        set_processor_count(1);   // fallback
   }
 
-  /* get physical memory via hw.usermem sysctl (hw.usermem is used
-   * instead of hw.physmem because we need size of allocatable memory
+  /* get physical memory via hw.memsize sysctl (hw.memsize is used
+   * since it returns a 64 bit value)
    */
   mib[0] = CTL_HW;
-  mib[1] = HW_USERMEM;
+  mib[1] = HW_MEMSIZE;
   len = sizeof(mem_val);
-  if (sysctl(mib, 2, &mem_val, &len, NULL, 0) != -1)
+  if (sysctl(mib, 2, &mem_val, &len, NULL, 0) != -1) {
+       assert(len == sizeof(mem_val), "unexpected data size");
        _physical_memory = mem_val;
-  else
+  } else {
        _physical_memory = 256*1024*1024;       // fallback (XXXBSD?)
+  }
 
 #ifdef __OpenBSD__
   {
