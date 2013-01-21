@@ -92,7 +92,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
     boolean foundInheritDoc = false;
     boolean foundReturn = false;
 
-    enum Flag {
+    public enum Flag {
         TABLE_HAS_CAPTION,
         HAS_ELEMENT,
         HAS_TEXT
