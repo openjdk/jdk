@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2946,7 +2946,7 @@ char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
     }
     if( Verbose && PrintMiscellaneous ) {
       reserveTimer.stop();
-      tty->print_cr("reserve_memory of %Ix bytes took %ld ms (%ld ticks)", bytes,
+      tty->print_cr("reserve_memory of %Ix bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
                     reserveTimer.milliseconds(), reserveTimer.ticks());
     }
   }
@@ -4305,7 +4305,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
   if (hFile == NULL) {
     if (PrintMiscellaneous && Verbose) {
       DWORD err = GetLastError();
-      tty->print_cr("CreateFile() failed: GetLastError->%ld.");
+      tty->print_cr("CreateFile() failed: GetLastError->%ld.", err);
     }
     return NULL;
   }
@@ -4355,7 +4355,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     if (hMap == NULL) {
       if (PrintMiscellaneous && Verbose) {
         DWORD err = GetLastError();
-        tty->print_cr("CreateFileMapping() failed: GetLastError->%ld.");
+        tty->print_cr("CreateFileMapping() failed: GetLastError->%ld.", err);
       }
       CloseHandle(hFile);
       return NULL;
