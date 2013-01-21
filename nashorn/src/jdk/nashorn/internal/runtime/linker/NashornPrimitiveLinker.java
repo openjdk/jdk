@@ -31,44 +31,28 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.GlobalObject;
-import org.dynalang.dynalink.beans.BeansLinker;
-import org.dynalang.dynalink.beans.StaticClass;
 import org.dynalang.dynalink.linker.ConversionComparator;
 import org.dynalang.dynalink.linker.GuardedInvocation;
-import org.dynalang.dynalink.linker.GuardingDynamicLinker;
 import org.dynalang.dynalink.linker.GuardingTypeConverterFactory;
 import org.dynalang.dynalink.linker.LinkRequest;
 import org.dynalang.dynalink.linker.LinkerServices;
 import org.dynalang.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import org.dynalang.dynalink.support.Guards;
 import org.dynalang.dynalink.support.TypeUtilities;
 
 /**
- * Internal linker for String, Boolean, Number, and {@link StaticClass} objects, only ever used by Nashorn engine and
- * not exposed to other engines. It is used for treatment of strings, boolean, and numbers, as JavaScript primitives,
- * as well as for extending the "new" operator on StaticClass in order to be able to instantiate interfaces and abstract
- * classes by passing a ScriptObject or ScriptFunction as their implementation, e.g.:
- * <pre>
- *   var r = new Runnable() { run: function() { print("Hello World" } }
- * </pre>
- * or even, for SAM types:
- * <pre>
- *   var r = new Runnable(function() { print("Hello World" })
- * </pre>
+ * Internal linker for String, Boolean, and Number objects, only ever used by Nashorn engine and not exposed to other
+ * engines. It is used for treatment of strings, boolean, and numbers as JavaScript primitives. Also provides ECMAScript
+ * primitive type conversions for these types when linking to Java methods.
  */
 class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
-    private static final GuardingDynamicLinker staticClassLinker = BeansLinker.getLinkerForClass(StaticClass.class);
-
     @Override
     public boolean canLinkType(final Class<?> type) {
         return canLinkTypeStatic(type);
     }
 
     private static boolean canLinkTypeStatic(final Class<?> type) {
-        return type == String.class || type == Boolean.class || type == StaticClass.class ||
-                type == ConsString.class || Number.class.isAssignableFrom(type);
+        return type == String.class || type == Boolean.class || type == ConsString.class || Number.class.isAssignableFrom(type);
     }
 
     @Override
@@ -86,39 +70,8 @@ class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Guarding
            return Bootstrap.asType(global.stringLookup(desc, (CharSequence) self), linkerServices, desc);
         } else if (self instanceof Boolean) {
             return Bootstrap.asType(global.booleanLookup(desc, (Boolean) self), linkerServices, desc);
-        } else if (self instanceof StaticClass) {
-            // We intercept "new" on StaticClass instances to provide additional capabilities
-            if ("new".equals(desc.getOperator())) {
-                final Class<?> receiverClass = ((StaticClass) self).getRepresentedClass();
-                // Is the class abstract? (This includes interfaces.)
-                if (JavaAdapterFactory.isAbstractClass(receiverClass)) {
-                    // Change this link request into a link request on the adapter class.
-                    final Object[] args = request.getArguments();
-                    args[0] = JavaAdapterFactory.getAdapterClassFor(new Class<?>[] { receiverClass });
-                    final LinkRequest adapterRequest = request.replaceArguments(request.getCallSiteDescriptor(), args);
-                    final GuardedInvocation gi = checkNullConstructor(
-                            staticClassLinker.getGuardedInvocation(adapterRequest, linkerServices), receiverClass);
-                    // Finally, modify the guard to test for the original abstract class.
-                    return gi.replaceMethods(gi.getInvocation(), Guards.getIdentityGuard(self));
-                }
-                // If the class was not abstract, just link to the ordinary constructor. Make an additional check to
-                // ensure we have a constructor. We could just fall through to the next "return" statement, except we
-                // also insert a call to checkNullConstructor() which throws an error with a more intuitive message when
-                // no suitable constructor is found.
-                return checkNullConstructor(staticClassLinker.getGuardedInvocation(request, linkerServices), receiverClass);
-            }
-            // In case this was not a "new" operation, just link with the standard StaticClass linker.
-            return staticClassLinker.getGuardedInvocation(request, linkerServices);
         }
-
         throw new AssertionError(); // Can't reach here
-    }
-
-    private static GuardedInvocation checkNullConstructor(final GuardedInvocation ctorInvocation, final Class<?> receiverClass) {
-        if(ctorInvocation == null) {
-            ECMAErrors.typeError(Context.getGlobal(), "no.constructor.matches.args", receiverClass.getName());
-        }
-        return ctorInvocation;
     }
 
     /**
@@ -144,7 +97,8 @@ class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Guarding
      * @param sourceType the source type to convert from
      * @param targetType1 one candidate target type
      * @param targetType2 another candidate target type
-     * @return one of {@link org.dynalang.dynalink.linker.ConversionComparator.Comparison} values signifying which target type should be favored for conversion.
+     * @return one of {@link org.dynalang.dynalink.linker.ConversionComparator.Comparison} values signifying which
+     * target type should be favored for conversion.
      */
     @Override
     public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {

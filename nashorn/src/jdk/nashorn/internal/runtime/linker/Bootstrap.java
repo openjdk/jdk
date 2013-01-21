@@ -54,7 +54,8 @@ public final class Bootstrap {
     private static final DynamicLinker dynamicLinker;
     static {
         final DynamicLinkerFactory factory = new DynamicLinkerFactory();
-        factory.setPrioritizedLinkers(new NashornLinker(), new NashornPrimitiveLinker(), new JSObjectLinker());
+        factory.setPrioritizedLinkers(new NashornLinker(), new NashornPrimitiveLinker(), new NashornStaticClassLinker(),
+                new JSObjectLinker());
         factory.setFallbackLinkers(new BeansLinker(), new NashornBottomLinker());
         factory.setSyncOnRelink(true);
         final int relinkThreshold = Options.getIntProperty("nashorn.unstable.relink.threshold", -1);
