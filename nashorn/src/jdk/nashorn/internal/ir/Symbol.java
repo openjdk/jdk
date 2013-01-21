@@ -605,7 +605,7 @@ public final class Symbol implements Comparable<Symbol> {
     private void trace(final String desc) {
         if (TRACE_SYMBOL != null && TRACE_SYMBOL.equals(name)) {
             Context.err("SYMBOL: '" + name + "' " + desc);
-            new Throwable().printStackTrace(Context.getContext().getErr());
+            new Throwable().printStackTrace(Context.getCurrentErr());
         }
     }
 }

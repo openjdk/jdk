@@ -148,7 +148,7 @@ public class Shell {
      *
      * @throws IOException if there's a problem setting up the streams
      */
-    protected int run(final InputStream in, final OutputStream out, final OutputStream err, final String[] args) throws IOException {
+    protected final int run(final InputStream in, final OutputStream out, final OutputStream err, final String[] args) throws IOException {
         final Context context = makeContext(in, out, err, args);
         if (context == null) {
             return COMMANDLINE_ERROR;
@@ -157,14 +157,14 @@ public class Shell {
         final ScriptObject global = context.createGlobal();
         final List<String> files = context.getOptions().getFiles();
         if (files.isEmpty()) {
-            return readEvalPrint(global);
+            return readEvalPrint(context, global);
         }
 
         if (context._compile_only) {
-            return compileScripts(global, files);
+            return compileScripts(context, global, files);
         }
 
-        return runScripts(global, files);
+        return runScripts(context, global, files);
     }
 
     /**
@@ -178,7 +178,7 @@ public class Shell {
      * @return null if there are problems with option parsing.
      */
     @SuppressWarnings("resource")
-    protected Context makeContext(final InputStream in, final OutputStream out, final OutputStream err, final String[] args) {
+    private Context makeContext(final InputStream in, final OutputStream out, final OutputStream err, final String[] args) {
         final PrintStream pout = out instanceof PrintStream ? (PrintStream) out : new PrintStream(out);
         final PrintStream perr = err instanceof PrintStream ? (PrintStream) err : new PrintStream(err);
         final PrintWriter wout = new PrintWriter(pout, true);
@@ -217,27 +217,27 @@ public class Shell {
             }
         }
 
-        return new Context(options, errors, wout, werr);
+        return new Context(options, errors, wout, werr, Thread.currentThread().getContextClassLoader());
     }
 
     /**
      * Compiles the given script files in the command line
      *
+     * @param context the nashorn context
      * @param global the global scope
      * @param files the list of script files to compile
      *
      * @return error code
      * @throws IOException when any script file read results in I/O error
      */
-    protected int compileScripts(final ScriptObject global, final List<String> files) throws IOException {
-        final Context context = global.getContext();
+    private int compileScripts(final Context context, final ScriptObject global, final List<String> files) throws IOException {
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         try {
             if (globalChanged) {
                 Context.setGlobal(global);
             }
-            final ErrorManager errors = context.getErrors();
+            final ErrorManager errors = context.getErrorManager();
 
             // For each file on the command line.
             for (final String fileName : files) {
@@ -263,21 +263,21 @@ public class Shell {
     /**
      * Runs the given JavaScript files in the command line
      *
+     * @param context the nashorn context
      * @param global the global scope
      * @param files the list of script files to run
      *
      * @return error code
      * @throws IOException when any script file read results in I/O error
      */
-    protected int runScripts(final ScriptObject global, final List<String> files) throws IOException {
-        final Context context = global.getContext();
+    private int runScripts(final Context context, final ScriptObject global, final List<String> files) throws IOException {
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         try {
             if (globalChanged) {
                 Context.setGlobal(global);
             }
-            final ErrorManager errors = context.getErrors();
+            final ErrorManager errors = context.getErrorManager();
 
             // For each file on the command line.
             for (final String fileName : files) {
@@ -325,12 +325,12 @@ public class Shell {
     /**
      * read-eval-print loop for Nashorn shell.
      *
+     * @param context the nashorn context
      * @param global  global scope object to use
      * @return return code
      */
     @SuppressWarnings("resource")
-    protected int readEvalPrint(final ScriptObject global) {
-        final Context context = global.getContext();
+    private int readEvalPrint(final Context context, final ScriptObject global) {
         final String prompt = bundle.getString("shell.prompt");
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         final PrintWriter err = context.getErr();

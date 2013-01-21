@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.ir.debug;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
 import jdk.nashorn.internal.codegen.Compiler;
@@ -86,7 +88,13 @@ public final class JSONWriter extends NodeVisitor {
      */
     public static String parse(final String code, final String name, final boolean includeLoc) {
         final ScriptObject global     = Context.getGlobal();
-        final Context      context    = global.getContext();
+        final Context      context    = AccessController.doPrivileged(
+                new PrivilegedAction<Context>() {
+                    @Override
+                    public Context run() {
+                        return Context.getContext();
+                    }
+                });
         final Compiler     compiler   = Compiler.compiler(new Source(name, code), context, new Context.ThrowErrorManager(), context._strict);
         final Parser       parser     = new Parser(compiler, context._strict);
         final JSONWriter   jsonWriter = new JSONWriter(includeLoc);

@@ -65,7 +65,7 @@ public class ParserTest {
         options.set("scripting", true);
 
         ErrorManager errors = new ErrorManager();
-        this.context = new Context(options, errors);
+        this.context = new Context(options, errors, Thread.currentThread().getContextClassLoader());
         this.global = context.createGlobal();
     }
 

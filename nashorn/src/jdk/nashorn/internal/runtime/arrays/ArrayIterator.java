@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
@@ -83,6 +84,6 @@ public class ArrayIterator extends ArrayLikeIterator<Object> {
 
     @Override
     public void remove() {
-        array.delete(index, array.getContext()._strict);
+        array.delete(index, array.isStrictContext());
     }
 }

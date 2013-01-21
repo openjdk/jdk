@@ -136,7 +136,7 @@ import org.dynalang.dynalink.support.LinkRequestImpl;
  * </p>
  */
 
-public class JavaAdapterFactory {
+public final class JavaAdapterFactory {
     private static final Type SCRIPT_FUNCTION_TYPE = Type.getType(ScriptFunction.class);
     private static final Type SCRIPT_OBJECT_TYPE = Type.getType(ScriptObject.class);
     private static final Type OBJECT_TYPE = Type.getType(Object.class);
@@ -470,7 +470,7 @@ public class JavaAdapterFactory {
         // private final ScriptObject global;
         w.visitField(ACC_PRIVATE | ACC_FINAL, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR, null, null).visitEnd();
 
-        // private ContextSetter(ScriptObject global) {
+        // private GlobalSetter(ScriptObject global) {
         InstructionAdapter mv = new InstructionAdapter(w.visitMethod(ACC_PRIVATE, INIT,
                 SET_GLOBAL_METHOD_DESCRIPTOR, null, new String[0]));
         mv.visitCode();

@@ -285,7 +285,7 @@ public class LinkerCallSite extends ChainedCallSite {
                         out = new PrintWriter(new FileOutputStream(PROFILEFILE));
                         fileOutput = true;
                     } catch (final FileNotFoundException e) {
-                        out = Context.getContext().getErr();
+                        out = Context.getCurrentErr();
                     }
 
                     dump(out);
@@ -316,8 +316,6 @@ public class LinkerCallSite extends ChainedCallSite {
         private static final MethodHandle TRACEOBJECT = findOwnMH("traceObject", Object.class, MethodHandle.class, Object[].class);
         private static final MethodHandle TRACEVOID   = findOwnMH("traceVoid", void.class, MethodHandle.class, Object[].class);
         private static final MethodHandle TRACEMISS   = findOwnMH("traceMiss", void.class, Object[].class);
-
-        private static final PrintWriter out = Context.getContext().getErr();
 
         TracingLinkerCallSite(final NashornCallSiteDescriptor desc) {
            super(desc);
@@ -366,7 +364,7 @@ public class LinkerCallSite extends ChainedCallSite {
             return MH.foldArguments(relink, MH.asType(MH.asCollector(MH.bindTo(TRACEMISS, this), Object[].class, type.parameterCount()), type.changeReturnType(void.class)));
         }
 
-        private void printObject(final Object arg) {
+        private void printObject(final PrintWriter out, final Object arg) {
             if (!getNashornDescriptor().isTraceObjects()) {
                 out.print((arg instanceof ScriptObject) ? "ScriptObject" : arg);
                 return;
@@ -396,7 +394,7 @@ public class LinkerCallSite extends ChainedCallSite {
                         if (value instanceof ScriptObject) {
                             out.print("...");
                         } else {
-                            printObject(value);
+                            printObject(out, value);
                         }
 
                         isFirst = false;
@@ -409,19 +407,19 @@ public class LinkerCallSite extends ChainedCallSite {
             }
         }
 
-        private void tracePrint(final String tag, final Object[] args, final Object result) {
+        private void tracePrint(final PrintWriter out, final String tag, final Object[] args, final Object result) {
             //boolean isVoid = type().returnType() == void.class;
             out.print(Debug.id(this) + " TAG " + tag);
             out.print(getDescriptor().getName() + "(");
 
             if (args.length > 0) {
-                printObject(args[0]);
+                printObject(out, args[0]);
                 for (int i = 1; i < args.length; i++) {
                     final Object arg = args[i];
                     out.print(", ");
 
                     if (getNashornDescriptor().isTraceScope() || !(arg instanceof ScriptObject && ((ScriptObject)arg).isScope())) {
-                        printObject(arg);
+                        printObject(out, arg);
                     } else {
                         out.print("SCOPE");
                     }
@@ -432,7 +430,7 @@ public class LinkerCallSite extends ChainedCallSite {
 
             if (tag.equals("EXIT  ")) {
                 out.print(" --> ");
-                printObject(result);
+                printObject(out, result);
             }
 
             out.println();
@@ -450,9 +448,10 @@ public class LinkerCallSite extends ChainedCallSite {
          */
         @SuppressWarnings("unused")
         public Object traceObject(final MethodHandle mh, final Object... args) throws Throwable {
-            tracePrint("ENTER ", args, null);
+            final PrintWriter out = Context.getCurrentErr();
+            tracePrint(out, "ENTER ", args, null);
             final Object result = mh.invokeWithArguments(args);
-            tracePrint("EXIT  ", args, result);
+            tracePrint(out, "EXIT  ", args, result);
 
             return result;
         }
@@ -467,9 +466,10 @@ public class LinkerCallSite extends ChainedCallSite {
          */
         @SuppressWarnings("unused")
         public void traceVoid(final MethodHandle mh, final Object... args) throws Throwable {
-            tracePrint("ENTER ", args, null);
+            final PrintWriter out = Context.getCurrentErr();
+            tracePrint(out, "ENTER ", args, null);
             mh.invokeWithArguments(args);
-            tracePrint("EXIT  ", args, null);
+            tracePrint(out, "EXIT  ", args, null);
         }
 
         /**
@@ -481,7 +481,7 @@ public class LinkerCallSite extends ChainedCallSite {
          */
         @SuppressWarnings("unused")
         public void traceMiss(final Object... args) throws Throwable {
-            tracePrint("MISS ", args, null);
+            tracePrint(Context.getCurrentErr(), "MISS ", args, null);
         }
 
         private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

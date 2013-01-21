@@ -86,13 +86,22 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         options.process(args);
 
         // throw ParseException on first error from script
-        final ErrorManager errors = new Context.ThrowErrorManager();
+        final ErrorManager errMgr = new Context.ThrowErrorManager();
+        // application loader for the context
+        ClassLoader tmp;
+        try {
+            tmp = Thread.currentThread().getContextClassLoader();
+        } catch (final SecurityException se) {
+            tmp = null;
+        }
+        final ClassLoader appLoader = tmp;
+
         // create new Nashorn Context
         this.nashornContext = AccessController.doPrivileged(new PrivilegedAction<Context>() {
             @Override
             public Context run() {
                 try {
-                    return new Context(options, errors);
+                    return new Context(options, errMgr, appLoader);
                 } catch (final RuntimeException e) {
                     if (Context.DEBUG) {
                         e.printStackTrace();
