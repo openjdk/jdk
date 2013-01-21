@@ -182,7 +182,7 @@ public final class ECMAException extends NashornException {
     public static Object printStackTrace(final ScriptObject errObj) {
         final Object exception = getException(errObj);
         if (exception instanceof Throwable) {
-            ((Throwable)exception).printStackTrace(Context.getContext().getErr());
+            ((Throwable)exception).printStackTrace(Context.getCurrentErr());
         } else {
             Context.err("<stack trace not available>");
         }

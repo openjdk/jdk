@@ -72,12 +72,6 @@ public final class Context {
         };
 
     /**
-     * Get the error stream if applicable and initialized, otherwise stderr
-     * Usually this is the error stream given the context, but for testing and
-     * certain bootstrapping situations we need a default stream
-     */
-
-    /**
      * Return the current global scope
      * @return current global scope
      */
@@ -107,7 +101,21 @@ public final class Context {
      * @return current global scope's context.
      */
     public static Context getContext() {
-        return Context.getGlobal().getContext();
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("getNashornContext"));
+        }
+        return getContextTrusted();
+    }
+
+    /**
+     * Get current context's error writer
+     *
+     * @return error writer of the current context
+     */
+    public static PrintWriter getCurrentErr() {
+        final ScriptObject global = getGlobal();
+        return (global != null)? global.getContext().getErr() : new PrintWriter(System.err);
     }
 
     /**
@@ -127,7 +135,7 @@ public final class Context {
      */
     @SuppressWarnings("resource")
     public static void err(final String str, final boolean crlf) {
-        final PrintWriter err = Context.getContext().getErr();
+        final PrintWriter err = Context.getCurrentErr();
         if (err != null) {
             if (crlf) {
                 err.println(str);
@@ -136,6 +144,9 @@ public final class Context {
             }
         }
     }
+
+    /** class loader to resolve classes from script. */
+    private final ClassLoader  appLoader;
 
     /** Class loader to load classes from -classpath option, if set. */
     private final ClassLoader  classPathLoader;
@@ -242,13 +253,14 @@ public final class Context {
     /** time zone for this context */
     public final TimeZone _timezone;
 
+    private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
     static {
         sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
             @Override
             public StructureLoader run() {
-                return new StructureLoader(Context.class.getClassLoader(), null);
+                return new StructureLoader(myLoader, null);
             }
         });
     }
@@ -273,9 +285,10 @@ public final class Context {
      *
      * @param options options from command line or Context creator
      * @param errors  error manger
+     * @param appLoader application class loader
      */
-    public Context(final Options options, final ErrorManager errors) {
-        this(options, errors, new PrintWriter(System.out, true), new PrintWriter(System.err, true));
+    public Context(final Options options, final ErrorManager errors, final ClassLoader appLoader) {
+        this(options, errors, new PrintWriter(System.out, true), new PrintWriter(System.err, true), appLoader);
     }
 
     /**
@@ -285,13 +298,15 @@ public final class Context {
      * @param errors  error manger
      * @param out     output writer for this Context
      * @param err     error writer for this Context
+     * @param appLoader application class loader
      */
-    public Context(final Options options, final ErrorManager errors, final PrintWriter out, final PrintWriter err) {
+    public Context(final Options options, final ErrorManager errors, final PrintWriter out, final PrintWriter err, final ClassLoader appLoader) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("createNashornContext"));
         }
 
+        this.appLoader = appLoader;
         this.scriptLoader = (ScriptLoader)AccessController.doPrivileged(
              new PrivilegedAction<ClassLoader>() {
                 @Override
@@ -389,7 +404,7 @@ public final class Context {
      * Get the error manager for this context
      * @return error manger
      */
-    public ErrorManager getErrors() {
+    public ErrorManager getErrorManager() {
         return errors;
     }
 
@@ -652,28 +667,17 @@ public final class Context {
             }
         }
 
-        // try script loader first
-        try {
-            return Class.forName(fullName, true, scriptLoader);
-        } catch (final ClassNotFoundException e) {
-            // ignored, continue search
-        }
-
-        // try script -classpath loader, if set
+        // try the script -classpath loader, if that is set
         if (classPathLoader != null) {
             try {
                 return Class.forName(fullName, true, classPathLoader);
-            } catch (final ClassNotFoundException e) {
+            } catch (final ClassNotFoundException ignored) {
                 // ignore, continue search
             }
         }
 
-        // This helps in finding using "app" loader - which is typically set as thread context loader
-        try {
-            return Class.forName(fullName, true, Thread.currentThread().getContextClassLoader());
-        } catch (final ClassNotFoundException e) {
-            throw e;
-        }
+        // Try finding using the "app" loader.
+        return Class.forName(fullName, true, appLoader);
     }
 
     /**
@@ -684,7 +688,7 @@ public final class Context {
      */
     public static void printStackTrace(final Throwable t) {
         if (Context.DEBUG) {
-            t.printStackTrace(Context.getContext().getErr());
+            t.printStackTrace(Context.getCurrentErr());
         }
     }
 
@@ -714,15 +718,32 @@ public final class Context {
      * @return the global script object
      */
     public ScriptObject createGlobal() {
-        final ScriptObject global = newGlobal();
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("createNashornGlobal"));
+        }
 
+        final ScriptObject global = newGlobal();
         // Need only minimal global object, if we are just compiling.
         if (!_compile_only) {
-            // initialize global scope with builtin global objects
-            ((GlobalObject)global).initBuiltinObjects();
+            final ScriptObject oldGlobal = Context.getGlobal();
+            try {
+                Context.setGlobal(global);
+                // initialize global scope with builtin global objects
+                ((GlobalObject)global).initBuiltinObjects();
+            } finally {
+                Context.setGlobal(oldGlobal);
+            }
         }
 
         return global;
+    }
+
+    /**
+     * Trusted variant package-private
+     */
+    static Context getContextTrusted() {
+        return Context.getGlobal().getContext();
     }
 
     /**
@@ -740,7 +761,7 @@ public final class Context {
             context = ((NashornLoader)loader).getContext();
         }
 
-        return (context != null) ? context : Context.getContext();
+        return (context != null) ? context : Context.getContextTrusted();
     }
 
     private Object evaluateSource(final String name, final URL url, final ScriptObject scope, final ScriptObject thiz) throws IOException {

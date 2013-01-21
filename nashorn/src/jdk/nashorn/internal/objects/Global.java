@@ -46,6 +46,7 @@ import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
+import jdk.nashorn.internal.runtime.OptionsObject;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -365,7 +366,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      *
      * @return the context
      */
-    public static Context getThisContext() {
+    static Context getThisContext() {
         return instance().getContext();
     }
 
@@ -374,7 +375,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      *
      * @return true if strict mode enabled in {@link Global#getThisContext()}
      */
-    public static boolean isStrict() {
+    static boolean isStrict() {
         return getThisContext()._strict;
     }
 
@@ -387,13 +388,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
             return;
         }
 
-        final ScriptObject oldGlobal = Context.getGlobal();
-        Context.setGlobal(this);
-        try {
-            init();
-        } finally {
-            Context.setGlobal(oldGlobal);
-        }
+        init();
     }
 
     @Override
@@ -650,9 +645,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         if (!(str instanceof String || str instanceof ConsString)) {
             return str;
         }
-        final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : Global.instance();
+        final Global global = Global.instance();
+        final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
 
-        return Global.getThisContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict));
+        return global.getContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict));
     }
 
     /**
@@ -690,8 +686,9 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @throws IOException if source could not be read
      */
     public static Object load(final Object self, final Object source) throws IOException {
-        final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : Global.instance();
-        return getThisContext().load(scope, source);
+        final Global global = Global.instance();
+        final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
+        return global.getContext().load(scope, source);
     }
 
     ScriptObject getFunctionPrototype() {
@@ -1302,6 +1299,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     private void init() {
+        assert Context.getGlobal() == this : "this global is not set as current";
+
         // initialize Function and Object constructor
         initFunctionAndObject();
 
@@ -1367,7 +1366,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
             initScripting();
         }
 
-        if (Context.DEBUG) {
+        if (Context.DEBUG && System.getSecurityManager() == null) {
             initDebug();
         }
 
@@ -1460,8 +1459,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         addOwnProperty("echo", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)
-        // expose current Context to access command line options
-        value = this.getContext();
+        value = new OptionsObject(this.getContext());
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, value);
     }
 

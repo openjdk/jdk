@@ -186,7 +186,7 @@ public final class Compiler {
      * @return compiler instance
      */
     public static Compiler compiler(final Source source, final Context context) {
-        return Compiler.compiler(source, context, context.getErrors(), context._strict);
+        return Compiler.compiler(source, context, context.getErrorManager(), context._strict);
     }
 
     /**

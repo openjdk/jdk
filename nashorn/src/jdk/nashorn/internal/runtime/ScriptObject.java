@@ -1043,11 +1043,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         set(key, value, getContext()._strict);
     }
 
+    public final boolean isStrictContext() {
+        return getContext()._strict;
+    }
+
     /**
      * Return the current context from the object's map.
      * @return Current context.
      */
-    public final Context getContext() {
+    protected final Context getContext() {
         return getMap().getContext();
     }
 

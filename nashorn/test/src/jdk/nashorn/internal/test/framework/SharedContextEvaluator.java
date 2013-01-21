@@ -104,7 +104,7 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
         Options options = new Options("nashorn", werr);
         options.process(args);
         ErrorManager errors = new ErrorManager(werr);
-        this.context = new Context(options, errors, wout, werr);
+        this.context = new Context(options, errors, wout, werr, Thread.currentThread().getContextClassLoader());
     }
 
     @Override
@@ -113,7 +113,7 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
         try {
             ctxOut.setDelegatee(out);
             ctxErr.setDelegatee(err);
-            final ErrorManager errors = context.getErrors();
+            final ErrorManager errors = context.getErrorManager();
             final ScriptObject global = context.createGlobal();
             Context.setGlobal(global);
 

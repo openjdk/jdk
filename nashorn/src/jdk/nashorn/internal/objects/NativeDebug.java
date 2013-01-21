@@ -252,7 +252,7 @@ public class NativeDebug extends ScriptObject {
     @SuppressWarnings("resource")
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object dumpCounters(final Object self) {
-        final PrintWriter out = Context.getContext().getErr();
+        final PrintWriter out = Context.getCurrentErr();
 
         out.println("ScriptObject count " + ScriptObject.getCount());
         out.println("Scope count " + ScriptObject.getScopeCount());

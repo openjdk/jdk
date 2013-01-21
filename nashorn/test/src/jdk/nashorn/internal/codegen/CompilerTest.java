@@ -74,7 +74,7 @@ public class CompilerTest {
 
         final StringWriter sw = new StringWriter();
         final PrintWriter pw = new PrintWriter(sw);
-        this.context = new Context(options, errors, pw, pw);
+        this.context = new Context(options, errors, pw, pw, Thread.currentThread().getContextClassLoader());
         this.global = context.createGlobal();
     }
 
@@ -160,7 +160,7 @@ public class CompilerTest {
             }
             final Source source = new Source(file.getAbsolutePath(), buffer);
             final ScriptFunction script = context.compileScript(source, global, context._strict);
-            if (script == null || context.getErrors().getNumberOfErrors() > 0) {
+            if (script == null || context.getErrorManager().getNumberOfErrors() > 0) {
                 log("Compile failed: " + file.getAbsolutePath());
                 failed++;
             } else {

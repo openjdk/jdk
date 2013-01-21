@@ -129,7 +129,7 @@ final class StructureLoader extends NashornLoader {
         Context context = getContext();
 
         if (context == null) {
-            context = Context.getContext();
+            context = Context.getContextTrusted();
         }
 
         final byte[] code = new ObjectClassGenerator(context).generate(descriptor);

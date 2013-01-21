@@ -25,6 +25,8 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -141,7 +143,14 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         return inGlobal(new Callable<Object>() {
             @Override
             public Object call() {
-                return wrap(global.getContext().eval(global, s, null, null, false), global);
+                final Context context = AccessController.doPrivileged(
+                        new PrivilegedAction<Context>() {
+                            @Override
+                            public Context run() {
+                                return Context.getContext();
+                            }
+                        });
+                return wrap(context.eval(global, s, null, null, false), global);
             }
         });
     }
@@ -178,7 +187,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
     public void setSlot(final int index, final Object value) {
         inGlobal(new Callable<Void>() {
             @Override public Void call() {
-                sobj.set(index, unwrap(value, global), global.getContext()._strict);
+                sobj.set(index, unwrap(value, global), global.isStrictContext());
                 return null;
             }
         });
@@ -275,7 +284,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
 
     @Override
     public void putAll(final Map<? extends String, ? extends Object> map) {
-        final boolean strict = sobj.getContext()._strict;
+        final boolean strict = sobj.isStrictContext();
         inGlobal(new Callable<Object>() {
             @Override public Object call() {
                 for (final Map.Entry<? extends String, ? extends Object> entry : map.entrySet()) {

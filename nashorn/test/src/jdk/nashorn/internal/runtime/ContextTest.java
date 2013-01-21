@@ -41,7 +41,7 @@ public class ContextTest {
     public void evalTest() {
         final Options options = new Options("");
         final ErrorManager errors = new ErrorManager();
-        final Context cx = new Context(options, errors);
+        final Context cx = new Context(options, errors, Thread.currentThread().getContextClassLoader());
         final ScriptObject oldGlobal = Context.getGlobal();
         Context.setGlobal(cx.createGlobal());
         try {
@@ -60,7 +60,7 @@ public class ContextTest {
     public void reflectionTest() {
         final Options options = new Options("");
         final ErrorManager errors = new ErrorManager();
-        final Context cx = new Context(options, errors);
+        final Context cx = new Context(options, errors, Thread.currentThread().getContextClassLoader());
         final ScriptObject oldGlobal = Context.getGlobal();
         Context.setGlobal(cx.createGlobal());
 

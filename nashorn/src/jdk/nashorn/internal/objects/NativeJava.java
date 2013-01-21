@@ -334,7 +334,7 @@ public class NativeJava {
 
     private static Class<?> simpleType(final String typeName) throws ClassNotFoundException {
         final Class<?> primClass = TypeUtilities.getPrimitiveTypeByName(typeName);
-        return primClass != null ? primClass : Global.instance().getContext().findClass(typeName);
+        return primClass != null ? primClass : Global.getThisContext().findClass(typeName);
     }
 
     private static Class<?> arrayType(final String typeName) throws ClassNotFoundException {

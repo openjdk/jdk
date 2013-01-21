@@ -74,7 +74,7 @@ public class DebugLogger {
      * @return print writer for log output.
      */
     public PrintWriter getOutputStream() {
-        return Context.getContext().getErr();
+        return Context.getCurrentErr();
     }
 
     /**

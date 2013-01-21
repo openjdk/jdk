@@ -603,7 +603,7 @@ public final class NativeArray extends ScriptObject {
     public static Object pop(final Object self) {
         try {
             final ScriptObject sobj = (ScriptObject)self;
-            final boolean strict    = sobj.getContext()._strict;
+            final boolean strict    = sobj.isStrictContext();
 
             if (bulkable(sobj)) {
                 return ((NativeArray)sobj).getArray().pop();
@@ -640,7 +640,7 @@ public final class NativeArray extends ScriptObject {
     public static Object push(final Object self, final Object... args) {
         try {
             final ScriptObject sobj   = (ScriptObject)self;
-            final boolean      strict = sobj.getContext()._strict;
+            final boolean      strict = sobj.isStrictContext();
 
             if (bulkable(sobj)) {
                 final NativeArray nativeArray = (NativeArray)sobj;
@@ -675,7 +675,7 @@ public final class NativeArray extends ScriptObject {
     public static Object reverse(final Object self) {
         try {
             final ScriptObject sobj   = (ScriptObject)self;
-            final boolean      strict = sobj.getContext()._strict;
+            final boolean      strict = sobj.isStrictContext();
             final long         len    = JSType.toUint32(sobj.getLength());
             final long         middle = len / 2;
 
@@ -846,8 +846,7 @@ public final class NativeArray extends ScriptObject {
     public static Object sort(final Object self, final Object comparefn) {
         try {
             final ScriptObject sobj    = (ScriptObject) self;
-            final Context      context = sobj.getContext();
-            final boolean      strict  = context._strict;
+            final boolean      strict  = sobj.isStrictContext();
             final long         len     = JSType.toUint32(sobj.getLength());
 
             if (len > 1) {
@@ -994,7 +993,7 @@ public final class NativeArray extends ScriptObject {
             nativeArray.getArray().shiftRight(items.length);
 
             for (int j = 0; j < items.length; j++) {
-                nativeArray.setArray(nativeArray.getArray().set(j, items[j], sobj.getContext()._strict));
+                nativeArray.setArray(nativeArray.getArray().set(j, items[j], sobj.isStrictContext()));
             }
         } else {
             for (long k = len; k > 0; k--) {
