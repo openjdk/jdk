@@ -310,7 +310,7 @@ public:
 
 #ifndef PRODUCT
   void print() const { dump(); }
-  void dump() const;            // Print a mask
+  void dump(outputStream *st = tty) const; // Print a mask
 #endif
 
   static const RegMask Empty;   // Common empty mask
