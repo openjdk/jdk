@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2960,7 +2960,7 @@ char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
     }
     if( Verbose && PrintMiscellaneous ) {
       reserveTimer.stop();
-      tty->print_cr("reserve_memory of %Ix bytes took %ld ms (%ld ticks)", bytes,
+      tty->print_cr("reserve_memory of %Ix bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
                     reserveTimer.milliseconds(), reserveTimer.ticks());
     }
   }
@@ -4319,7 +4319,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
   if (hFile == NULL) {
     if (PrintMiscellaneous && Verbose) {
       DWORD err = GetLastError();
-      tty->print_cr("CreateFile() failed: GetLastError->%ld.");
+      tty->print_cr("CreateFile() failed: GetLastError->%ld.", err);
     }
     return NULL;
   }
@@ -4369,7 +4369,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     if (hMap == NULL) {
       if (PrintMiscellaneous && Verbose) {
         DWORD err = GetLastError();
-        tty->print_cr("CreateFileMapping() failed: GetLastError->%ld.");
+        tty->print_cr("CreateFileMapping() failed: GetLastError->%ld.", err);
       }
       CloseHandle(hFile);
       return NULL;
@@ -4579,6 +4579,7 @@ int os::PlatformEvent::park (jlong Millis) {
     }
     v = _Event ;
     _Event = 0 ;
+    // see comment at end of os::PlatformEvent::park() below:
     OrderAccess::fence() ;
     // If we encounter a nearly simultanous timeout expiry and unpark()
     // we return OS_OK indicating we awoke via unpark().
@@ -4616,25 +4617,25 @@ void os::PlatformEvent::park () {
 
 void os::PlatformEvent::unpark() {
   guarantee (_ParkHandle != NULL, "Invariant") ;
-  int v ;
-  for (;;) {
-      v = _Event ;      // Increment _Event if it's < 1.
-      if (v > 0) {
-         // If it's already signaled just return.
-         // The LD of _Event could have reordered or be satisfied
-         // by a read-aside from this processor's write buffer.
-         // To avoid problems execute a barrier and then
-         // ratify the value.  A degenerate CAS() would also work.
-         // Viz., CAS (v+0, &_Event, v) == v).
-         OrderAccess::fence() ;
-         if (_Event == v) return ;
-         continue ;
-      }
-      if (Atomic::cmpxchg (v+1, &_Event, v) == v) break ;
-  }
-  if (v < 0) {
-     ::SetEvent (_ParkHandle) ;
-  }
+
+  // Transitions for _Event:
+  //    0 :=> 1
+  //    1 :=> 1
+  //   -1 :=> either 0 or 1; must signal target thread
+  //          That is, we can safely transition _Event from -1 to either
+  //          0 or 1. Forcing 1 is slightly more efficient for back-to-back
+  //          unpark() calls.
+  // See also: "Semaphores in Plan 9" by Mullender & Cox
+  //
+  // Note: Forcing a transition from "-1" to "1" on an unpark() means
+  // that it will take two back-to-back park() calls for the owning
+  // thread to block. This has the benefit of forcing a spurious return
+  // from the first park() call after an unpark() call which will help
+  // shake out uses of park() and unpark() without condition variables.
+
+  if (Atomic::xchg(1, &_Event) >= 0) return;
+
+  ::SetEvent(_ParkHandle);
 }
 
 

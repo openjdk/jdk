@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ public class Test4504153 {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         JavaVM vm = new JavaVM(StartRegistry.class.getName(),
                                "-Dsun.rmi.transport.logLevel=v", "", out, err);
-        vm.start();
-        vm.getVM().waitFor();
+        vm.execute();
 
         String errString = err.toString();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ final class ISO10126Padding implements Padding {
 
         byte paddingOctet = (byte) (len & 0xff);
         byte[] padding = new byte[len];
-        SunJCE.RANDOM.nextBytes(padding);
+        SunJCE.getRandom().nextBytes(padding);
         padding[len-1] = paddingOctet;
         System.arraycopy(padding, 0, in, off, len);
         return;

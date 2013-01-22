@@ -80,6 +80,7 @@ ACCEPTED_BIN_DIFF="
 ./bin/javadoc
 ./bin/javah
 ./bin/javap
+./bin/jdeps
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
@@ -167,6 +168,7 @@ ACCEPTED_BIN_DIFF="
 ./bin/javadoc
 ./bin/javah
 ./bin/javap
+./bin/jdeps
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
@@ -309,6 +311,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/javadoc
 ./bin/javah
 ./bin/javap
+./bin/jdeps
 ./bin/javaws
 ./bin/jcmd
 ./bin/jconsole
@@ -449,6 +452,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/amd64/javadoc
 ./bin/amd64/javah
 ./bin/amd64/javap
+./bin/amd64/jdeps
 ./bin/amd64/jcmd
 ./bin/amd64/jconsole
 ./bin/amd64/jdb
@@ -606,6 +610,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/javadoc
 ./bin/javah
 ./bin/javap
+./bin/jdeps
 ./bin/javaws
 ./bin/jcmd
 ./bin/jconsole
@@ -751,6 +756,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/sparcv9/javadoc
 ./bin/sparcv9/javah
 ./bin/sparcv9/javap
+./bin/sparcv9/jdeps
 ./bin/sparcv9/jcmd
 ./bin/sparcv9/jconsole
 ./bin/sparcv9/jdb
@@ -807,6 +813,10 @@ fi
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
 
+ACCEPTED_JARZIP_CONTENTS="
+/bin/w2k_lsa_auth.dll
+"
+
 # Probably should add all libs here
 ACCEPTED_SMALL_SIZE_DIFF="
 ./demo/jvmti/gctest/lib/gctest.dll
@@ -815,6 +825,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/bin/attach.dll
 ./jre/bin/java_crw_demo.dll
 ./jre/bin/jsoundds.dll
+./jre/bin/server/jvm.dll
 ./bin/appletviewer.exe
 ./bin/extcheck.exe
 ./bin/idlj.exe
@@ -826,6 +837,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/javadoc.exe
 ./bin/javah.exe
 ./bin/javap.exe
+./bin/jdeps.exe
 ./bin/javaw.exe
 ./bin/jcmd.exe
 ./bin/jconsole.exe
@@ -910,6 +922,7 @@ ACCEPTED_BIN_DIFF="
 ./bin/javadoc
 ./bin/javah
 ./bin/javap
+./bin/jdeps
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb

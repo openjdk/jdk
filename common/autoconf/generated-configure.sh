@@ -752,10 +752,7 @@ BOOT_RTJAR
 JAVA_CHECK
 JAVAC_CHECK
 COOKED_BUILD_NUMBER
-FULL_VERSION
-RELEASE
 JDK_VERSION
-RUNTIME_NAME
 COPYRIGHT_YEAR
 MACOSX_BUNDLE_ID_BASE
 MACOSX_BUNDLE_NAME_BASE
@@ -770,6 +767,7 @@ JDK_UPDATE_VERSION
 JDK_MICRO_VERSION
 JDK_MINOR_VERSION
 JDK_MAJOR_VERSION
+USER_RELEASE_SUFFIX
 COMPRESS_JARS
 UNLIMITED_CRYPTO
 CACERTS_FILE
@@ -777,14 +775,12 @@ TEST_IN_BUILD
 BUILD_HEADLESS
 SUPPORT_HEADFUL
 SUPPORT_HEADLESS
-SET_OPENJDK
 BDEPS_FTP
 BDEPS_UNZIP
 OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
 PKG_CONFIG
-COMM
 TIME
 STAT
 HG
@@ -812,10 +808,12 @@ MACOSX_UNIVERSAL
 JVM_VARIANT_ZEROSHARK
 JVM_VARIANT_ZERO
 JVM_VARIANT_KERNEL
+JVM_VARIANT_MINIMAL1
 JVM_VARIANT_CLIENT
 JVM_VARIANT_SERVER
 JVM_VARIANTS
 JDK_VARIANT
+SET_OPENJDK
 BUILD_LOG_WRAPPER
 BUILD_LOG_PREVIOUS
 BUILD_LOG
@@ -899,7 +897,9 @@ DIRNAME
 DIFF
 DATE
 CUT
+CPIO
 CP
+COMM
 CMP
 CHMOD
 CAT
@@ -954,6 +954,7 @@ with_target_bits
 with_sys_root
 with_tools_dir
 with_devkit
+enable_openjdk_only
 with_jdk_variant
 with_jvm_variants
 enable_debug
@@ -963,11 +964,13 @@ with_builddeps_conf
 with_builddeps_server
 with_builddeps_dir
 with_builddeps_group
-enable_openjdk_only
 enable_headful
 enable_hotspot_test_in_build
 with_cacerts_file
 enable_unlimited_crypto
+with_milestone
+with_build_number
+with_user_release_suffix
 with_boot_jdk
 with_boot_jdk_jvmargs
 with_add_source_root
@@ -1646,10 +1649,10 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-openjdk-only   suppress building custom source even if present
+                          [disabled]
   --enable-debug          set the debug level to fastdebug (shorthand for
                           --with-debug-level=fastdebug) [disabled]
-  --enable-openjdk-only   supress building closed source even if present
-                          [disabled]
   --disable-headful       disable building headful support (graphical UI
                           support) [enabled]
   --enable-hotspot-test-in-build
@@ -1684,7 +1687,7 @@ Optional Packages:
                           sys-root (for cross-compiling)
   --with-jdk-variant      JDK variant to build (normal) [normal]
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
-                          client, kernel, zero, zeroshark) [server]
+                          client, minimal1, kernel, zero, zeroshark) [server]
   --with-debug-level      set the debug level (release, fastdebug, slowdebug)
                           [release]
   --with-conf-name        use this as the name of the configuration [generated
@@ -1697,6 +1700,11 @@ Optional Packages:
   --with-builddeps-group  chgrp the downloaded build dependencies to this
                           group
   --with-cacerts-file     specify alternative cacerts file
+  --with-milestone        Set milestone value for build [internal]
+  --with-build-number     Set build number value for build [b00]
+  --with-user-release-suffix
+                          Add a custom string to the version string if build
+                          number isn't set.[username_builddateb00]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-boot-jdk-jvmargs specify JVM arguments to be passed to all
                           invocations of the Boot JDK, overriding the default
@@ -2919,6 +2927,32 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 # pkg.m4 - Macros to locate and utilise pkg-config.            -*- Autoconf -*-
+
+#
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
 #
 # Copyright © 2004 Scott James Remnant <scott@netsplit.com>.
 #
@@ -2982,7 +3016,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # Include these first...
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3077,6 +3111,10 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # Argument 1: directory to test
 # Argument 2: what to do if it is on local disk
 # Argument 3: what to do otherwise (remote disk or failure)
+
+
+# Check that source files have basic read permissions set. This might
+# not be the case in cygwin in certain conditions.
 
 
 
@@ -3393,7 +3431,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3424,7 +3462,18 @@ pkgadd_help() {
 
 
 
+###############################################################################
+#
+# Should we build only OpenJDK even if closed sources are present?
+#
 
+
+
+
+###############################################################################
+#
+# Setup version numbers
+#
 
 
 
@@ -3674,7 +3723,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1355849613
+DATE_WHEN_GENERATED=1358499442
 
 ###############################################################################
 #
@@ -4001,6 +4050,65 @@ $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
 
 
 
+    for ac_prog in comm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_COMM+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $COMM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+COMM=$ac_cv_path_COMM
+if test -n "$COMM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
+$as_echo "$COMM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$COMM" && break
+done
+
+
+    if test "x$COMM" = x; then
+        if test "xcomm" = x; then
+          PROG_NAME=comm
+        else
+          PROG_NAME=comm
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
     for ac_prog in cp
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -4052,6 +4160,65 @@ done
           PROG_NAME=cp
         else
           PROG_NAME=cp
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+
+    for ac_prog in cpio
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CPIO+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CPIO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CPIO="$CPIO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CPIO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CPIO=$ac_cv_path_CPIO
+if test -n "$CPIO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CPIO" >&5
+$as_echo "$CPIO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CPIO" && break
+done
+
+
+    if test "x$CPIO" = x; then
+        if test "xcpio" = x; then
+          PROG_NAME=cpio
+        else
+          PROG_NAME=cpio
         fi
         { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
 $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
@@ -7346,6 +7513,53 @@ BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
 
 
 
+# Check if it's a pure open build or if custom sources are to be used.
+
+  # Check whether --enable-openjdk-only was given.
+if test "${enable_openjdk_only+set}" = set; then :
+  enableval=$enable_openjdk_only;
+else
+  enable_openjdk_only="no"
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for presence of closed sources" >&5
+$as_echo_n "checking for presence of closed sources... " >&6; }
+  if test -d "$SRC_ROOT/jdk/src/closed"; then
+    CLOSED_SOURCE_PRESENT=yes
+  else
+    CLOSED_SOURCE_PRESENT=no
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CLOSED_SOURCE_PRESENT" >&5
+$as_echo "$CLOSED_SOURCE_PRESENT" >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if closed source is suppressed (openjdk-only)" >&5
+$as_echo_n "checking if closed source is suppressed (openjdk-only)... " >&6; }
+  SUPPRESS_CLOSED_SOURCE="$enable_openjdk_only"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SUPPRESS_CLOSED_SOURCE" >&5
+$as_echo "$SUPPRESS_CLOSED_SOURCE" >&6; }
+
+  if test "x$CLOSED_SOURCE_PRESENT" = xno; then
+    OPENJDK=true
+    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No closed source present, --enable-openjdk-only makes no sense" >&5
+$as_echo "$as_me: WARNING: No closed source present, --enable-openjdk-only makes no sense" >&2;}
+    fi
+  else
+    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
+      OPENJDK=true
+    else
+      OPENJDK=false
+    fi
+  fi
+
+  if test "x$OPENJDK" = "xtrue"; then
+    SET_OPENJDK="OPENJDK=true"
+  fi
+
+
+
+
 # These are needed to be able to create a configuration name (and thus the output directory)
 
 ###############################################################################
@@ -7387,6 +7601,7 @@ $as_echo "$JDK_VARIANT" >&6; }
 # Currently we have:
 #    server: normal interpreter and a tiered C1/C2 compiler
 #    client: normal interpreter and C1 (no C2 compiler) (only 32-bit platforms)
+#    minimal1: reduced form of client with optional VM services and features stripped out
 #    kernel: kernel footprint JVM that passes the TCK without major performance problems,
 #             ie normal interpreter and C1, only the serial GC, kernel jvmti etc
 #    zero: no machine code interpreter, no compiler
@@ -7405,16 +7620,17 @@ if test "x$with_jvm_variants" = x; then
 fi
 
 JVM_VARIANTS=",$with_jvm_variants,"
-TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//'`
+TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//'`
 
 if test "x$TEST_VARIANTS" != "x,"; then
-   as_fn_error $? "The available JVM variants are: server, client, kernel, zero, zeroshark" "$LINENO" 5
+   as_fn_error $? "The available JVM variants are: server, client, minimal1, kernel, zero, zeroshark" "$LINENO" 5
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_jvm_variants" >&5
 $as_echo "$with_jvm_variants" >&6; }
 
 JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
 JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'`
+JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS" | $SED -e '/,minimal1,/!s/.*/false/g' -e '/,minimal1,/s/.*/true/g'`
 JVM_VARIANT_KERNEL=`$ECHO "$JVM_VARIANTS" | $SED -e '/,kernel,/!s/.*/false/g' -e '/,kernel,/s/.*/true/g'`
 JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
 JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
@@ -7429,15 +7645,21 @@ if test "x$JVM_VARIANT_KERNEL" = xtrue; then
         as_fn_error $? "You cannot build a kernel JVM for a 64-bit machine." "$LINENO" 5
     fi
 fi
+if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        as_fn_error $? "You cannot build a minimal JVM for a 64-bit machine." "$LINENO" 5
+    fi
+fi
 
 # Replace the commas with AND for use in the build directory name.
 ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/'`
-COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/'`
+COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/'`
 if test "x$COUNT_VARIANTS" != "x,1"; then
     BUILDING_MULTIPLE_JVM_VARIANTS=yes
 else
     BUILDING_MULTIPLE_JVM_VARIANTS=no
 fi
+
 
 
 
@@ -7531,7 +7753,9 @@ esac
 #####
 # Generate the legacy makefile targets for hotspot.
 # The hotspot api for selecting the build artifacts, really, needs to be improved.
-#
+# JDK-7195896 will fix this on the hotspot side by using the JVM_VARIANT_* variables to
+# determine what needs to be built. All we will need to set here is all_product, all_fastdebug etc
+# But until then ...
 HOTSPOT_TARGET=""
 
 if test "x$JVM_VARIANT_SERVER" = xtrue; then
@@ -7540,6 +7764,10 @@ fi
 
 if test "x$JVM_VARIANT_CLIENT" = xtrue; then
     HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}1 "
+fi
+
+if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
 fi
 
 if test "x$JVM_VARIANT_KERNEL" = xtrue; then
@@ -7561,7 +7789,7 @@ HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
 # from configure, but only server is valid anyway. Fix this
 # when hotspot makefiles are rewritten.
 if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_product
+    HOTSPOT_TARGET=universal_${HOTSPOT_EXPORT}
 fi
 
 #####
@@ -7962,7 +8190,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -7978,7 +8206,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -8319,7 +8547,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -8335,7 +8563,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -8673,7 +8901,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -8689,7 +8917,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -9032,7 +9260,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -9048,7 +9276,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -9385,7 +9613,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -9401,7 +9629,7 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -10439,54 +10667,6 @@ done
 
 ###############################################################################
 #
-# Should we build only OpenJDK even if closed sources are present?
-#
-# Check whether --enable-openjdk-only was given.
-if test "${enable_openjdk_only+set}" = set; then :
-  enableval=$enable_openjdk_only;
-else
-  enable_openjdk_only="no"
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for presence of closed sources" >&5
-$as_echo_n "checking for presence of closed sources... " >&6; }
-if test -d "$SRC_ROOT/jdk/src/closed"; then
-    CLOSED_SOURCE_PRESENT=yes
-else
-    CLOSED_SOURCE_PRESENT=no
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CLOSED_SOURCE_PRESENT" >&5
-$as_echo "$CLOSED_SOURCE_PRESENT" >&6; }
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if closed source is supressed (openjdk-only)" >&5
-$as_echo_n "checking if closed source is supressed (openjdk-only)... " >&6; }
-SUPRESS_CLOSED_SOURCE="$enable_openjdk_only"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $SUPRESS_CLOSED_SOURCE" >&5
-$as_echo "$SUPRESS_CLOSED_SOURCE" >&6; }
-
-if test "x$CLOSED_SOURCE_PRESENT" = xno; then
-  OPENJDK=true
-  if test "x$SUPRESS_CLOSED_SOURCE" = "xyes"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No closed source present, --enable-openjdk-only makes no sense" >&5
-$as_echo "$as_me: WARNING: No closed source present, --enable-openjdk-only makes no sense" >&2;}
-  fi
-else
-  if test "x$SUPRESS_CLOSED_SOURCE" = "xyes"; then
-    OPENJDK=true
-  else
-    OPENJDK=false
-  fi
-fi
-
-if test "x$OPENJDK" = "xtrue"; then
-    SET_OPENJDK="OPENJDK=true"
-fi
-
-
-
-###############################################################################
-#
 # Should we build a JDK/JVM with headful support (ie a graphical ui)?
 # We always build headless support.
 #
@@ -10585,10 +10765,56 @@ COMPRESS_JARS=false
 
 
 # Source the version numbers
-. $AUTOCONF_DIR/version.numbers
-if test "x$OPENJDK" = "xfalse"; then
-    . $AUTOCONF_DIR/closed.version.numbers
+. $AUTOCONF_DIR/version-numbers
+
+# Get the settings from parameters
+
+# Check whether --with-milestone was given.
+if test "${with_milestone+set}" = set; then :
+  withval=$with_milestone;
 fi
+
+if test "x$with_milestone" = xyes; then
+  as_fn_error $? "Milestone must have a value" "$LINENO" 5
+elif test "x$with_milestone" != x; then
+    MILESTONE="$with_milestone"
+else
+  MILESTONE=internal
+fi
+
+
+# Check whether --with-build-number was given.
+if test "${with_build_number+set}" = set; then :
+  withval=$with_build_number;
+fi
+
+if test "x$with_build_number" = xyes; then
+  as_fn_error $? "Build number must have a value" "$LINENO" 5
+elif test "x$with_build_number" != x; then
+  JDK_BUILD_NUMBER="$with_build_number"
+fi
+if test "x$JDK_BUILD_NUMBER" = x; then
+  JDK_BUILD_NUMBER=b00
+fi
+
+
+# Check whether --with-user-release-suffix was given.
+if test "${with_user_release_suffix+set}" = set; then :
+  withval=$with_user_release_suffix;
+fi
+
+if test "x$with_user_release_suffix" = xyes; then
+  as_fn_error $? "Release suffix must have a value" "$LINENO" 5
+elif test "x$with_user_release_suffix" != x; then
+  USER_RELEASE_SUFFIX="$with_user_release_suffix"
+else
+  BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
+  # Avoid [:alnum:] since it depends on the locale.
+  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
+  USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+fi
+
+
 # Now set the JDK version, milestone, build number etc.
 
 
@@ -10607,33 +10833,12 @@ fi
 COPYRIGHT_YEAR=`date +'%Y'`
 
 
-RUNTIME_NAME="$PRODUCT_NAME $PRODUCT_SUFFIX"
-
-
 if test "x$JDK_UPDATE_VERSION" != x; then
-    JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}_${JDK_UPDATE_VERSION}"
+  JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}_${JDK_UPDATE_VERSION}"
 else
-    JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}"
+  JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}"
 fi
 
-
-if test "x$MILESTONE" != x; then
-    RELEASE="${JDK_VERSION}-${MILESTONE}${BUILD_VARIANT_RELEASE}"
-else
-    RELEASE="${JDK_VERSION}${BUILD_VARIANT_RELEASE}"
-fi
-
-
-if test "x$JDK_BUILD_NUMBER" != x; then
-    FULL_VERSION="${RELEASE}-${JDK_BUILD_NUMBER}"
-else
-    JDK_BUILD_NUMBER=b00
-    BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
-    # Avoid [:alnum:] since it depends on the locale.
-    CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
-    USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-    FULL_VERSION="${RELEASE}-${USER_RELEASE_SUFFIX}-${JDK_BUILD_NUMBER}"
-fi
 
 COOKED_BUILD_NUMBER=`$ECHO $JDK_BUILD_NUMBER | $SED -e 's/^b//' -e 's/^0//'`
 
@@ -16225,7 +16430,7 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -16241,7 +16446,7 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -16825,7 +17030,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -16841,7 +17046,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -17136,7 +17341,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -17152,7 +17357,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -17442,7 +17647,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -17458,7 +17663,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -18040,7 +18245,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -18056,7 +18261,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -18476,7 +18681,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -18492,7 +18697,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -19609,7 +19814,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -19625,7 +19830,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -20045,7 +20250,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -20061,7 +20266,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -20946,7 +21151,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -20962,7 +21167,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -21327,7 +21532,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -21343,7 +21548,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -21674,7 +21879,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -21690,7 +21895,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -22011,7 +22216,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -22027,7 +22232,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -22332,7 +22537,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -22348,7 +22553,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -22706,7 +22911,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -22722,7 +22927,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -23012,7 +23217,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -23028,7 +23233,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -23423,7 +23628,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -23439,7 +23644,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -23823,7 +24028,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -23839,7 +24044,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -24152,7 +24357,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -24168,7 +24373,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -24469,7 +24674,7 @@ done
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -24485,7 +24690,7 @@ done
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -24775,7 +24980,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -24791,7 +24996,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -25081,7 +25286,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -25097,7 +25302,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -25440,7 +25645,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -25456,7 +25661,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -25798,7 +26003,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -25814,7 +26019,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -26171,7 +26376,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -26187,7 +26392,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -26542,7 +26747,7 @@ if test "x$OBJDUMP" != x; then
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -26558,7 +26763,7 @@ if test "x$OBJDUMP" != x; then
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -26851,7 +27056,7 @@ fi
   # bat and cmd files are not always considered executable in cygwin causing which
   # to not find them
   if test "x$new_path" = x \
-           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
            && test "x`$LS \"$path\" 2>/dev/null`" != x; then
     new_path=`$CYGPATH -u "$path"`
   fi
@@ -26867,7 +27072,7 @@ fi
     # bat and cmd files are not always considered executable in cygwin causing which
     # to not find them
     if test "x$new_path" = x \
-             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
              && test "x`$LS \"$path\" 2>/dev/null`" != x; then
       new_path=`$CYGPATH -u "$path"`
     fi
@@ -28105,11 +28310,14 @@ else
 
     # On some platforms (mac) the linker warns about non existing -L dirs.
     # Add server first if available. Linking aginst client does not always produce the same results.
-    # Only add client dir if client is being built. Default to server for other variants.
+    # Only add client dir if client is being built. Add minimal (note not minimal1) if only building minimal1.
+    # Default to server for other variants.
     if test "x$JVM_VARIANT_SERVER" = xtrue; then
         LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
     elif test "x$JVM_VARIANT_CLIENT" = xtrue; then
         LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client"
+    elif test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/minimal"
     else
         LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
     fi
@@ -30984,7 +31192,7 @@ HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
 # The name of the Service Agent jar.
 SALIB_NAME="${LIBRARY_PREFIX}saproc${SHARED_LIBRARY_SUFFIX}"
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
+  SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
 fi
 
 
@@ -31520,6 +31728,14 @@ $as_echo "no, disabling ccaching of precompiled headers" >&6; }
 
 # Check for some common pitfalls
 
+  if test x"$OPENJDK_BUILD_OS" = xwindows; then
+    file_to_test="$SRC_ROOT/LICENSE"
+    if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
+      as_fn_error $? "Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin." "$LINENO" 5
+    fi
+  fi
+
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if build directory is on local disk" >&5
 $as_echo_n "checking if build directory is on local disk... " >&6; }
@@ -31549,6 +31765,8 @@ $as_echo_n "checking if build directory is on local disk... " >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OUTPUT_DIR_IS_LOCAL" >&5
 $as_echo "$OUTPUT_DIR_IS_LOCAL" >&6; }
+
+
 
 # Check if the user has any old-style ALT_ variables set.
 FOUND_ALT_VARIABLES=`env | grep ^ALT_`

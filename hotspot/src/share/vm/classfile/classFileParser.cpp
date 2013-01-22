@@ -59,6 +59,7 @@
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
 #include "utilities/array.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -2159,9 +2160,21 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
                                      cp, CHECK_(nullHandle));
     } else if (method_attribute_name == vmSymbols::tag_method_parameters()) {
       method_parameters_length = cfs->get_u1_fast();
+      // Track the actual size (note: this is written for clarity; a
+      // decent compiler will CSE and constant-fold this into a single
+      // expression)
+      u2 actual_size = 1;
       method_parameters_data = cfs->get_u1_buffer();
+      actual_size += 2 * method_parameters_length;
       cfs->skip_u2_fast(method_parameters_length);
+      actual_size += 4 * method_parameters_length;
       cfs->skip_u4_fast(method_parameters_length);
+      // Enforce attribute length
+      if (method_attribute_length != actual_size) {
+        classfile_parse_error(
+          "Invalid MethodParameters method attribute length %u in class file %s",
+          method_attribute_length, CHECK_(nullHandle));
+      }
       // ignore this attribute if it cannot be reflected
       if (!SystemDictionary::Parameter_klass_loaded())
         method_parameters_length = 0;
@@ -2309,7 +2322,10 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
       elem[i].name_cp_index =
         Bytes::get_Java_u2(method_parameters_data);
       method_parameters_data += 2;
-      elem[i].flags = Bytes::get_Java_u4(method_parameters_data);
+      u4 flags = Bytes::get_Java_u4(method_parameters_data);
+      // This caused an alignment fault on Sparc, if flags was a u4
+      elem[i].flags_lo = extract_low_short_from_int(flags);
+      elem[i].flags_hi = extract_high_short_from_int(flags);
       method_parameters_data += 4;
     }
   }
@@ -2487,26 +2503,38 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
         *has_default_methods = true;
       }
       methods->at_put(index, method());
-      if (*methods_annotations == NULL) {
-        *methods_annotations =
-             MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+
+      if (method_annotations != NULL) {
+        if (*methods_annotations == NULL) {
+          *methods_annotations =
+              MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+        }
+        (*methods_annotations)->at_put(index, method_annotations);
       }
-      (*methods_annotations)->at_put(index, method_annotations);
-      if (*methods_parameter_annotations == NULL) {
-        *methods_parameter_annotations =
-            MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+
+      if (method_parameter_annotations != NULL) {
+        if (*methods_parameter_annotations == NULL) {
+          *methods_parameter_annotations =
+              MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+        }
+        (*methods_parameter_annotations)->at_put(index, method_parameter_annotations);
       }
-      (*methods_parameter_annotations)->at_put(index, method_parameter_annotations);
-      if (*methods_default_annotations == NULL) {
-        *methods_default_annotations =
-            MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+
+      if (method_default_annotations != NULL) {
+        if (*methods_default_annotations == NULL) {
+          *methods_default_annotations =
+              MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+        }
+        (*methods_default_annotations)->at_put(index, method_default_annotations);
       }
-      (*methods_default_annotations)->at_put(index, method_default_annotations);
-      if (*methods_type_annotations == NULL) {
-        *methods_type_annotations =
-             MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+
+      if (method_type_annotations != NULL) {
+        if (*methods_type_annotations == NULL) {
+          *methods_type_annotations =
+              MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+        }
+        (*methods_type_annotations)->at_put(index, method_type_annotations);
       }
-      (*methods_type_annotations)->at_put(index, method_type_annotations);
     }
 
     if (_need_verify && length > 1) {
@@ -3322,8 +3350,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     bool has_final_method = false;
     AccessFlags promoted_flags;
     promoted_flags.set_flags(0);
-    // These need to be oop pointers because they are allocated lazily
-    // inside parse_methods inside a nested HandleMark
+
     Array<AnnotationArray*>* methods_annotations = NULL;
     Array<AnnotationArray*>* methods_parameter_annotations = NULL;
     Array<AnnotationArray*>* methods_default_annotations = NULL;

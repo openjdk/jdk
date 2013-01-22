@@ -1,0 +1,13 @@
+AccessibilityTest.java:14: error: header used out of sequence: <H2>
+     * <h2> ... </h2>
+       ^
+AccessibilityTest.java:20: error: header used out of sequence: <H3>
+     * <h3> ... </h3>
+       ^
+AccessibilityTest.java:25: error: no "alt" attribute for image
+     * <img src="x.jpg">
+       ^
+AccessibilityTest.java:40: error: no summary or caption for table
+     * <table><tr><th>head<tr><td>data</table>
+                                      ^
+4 errors

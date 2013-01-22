@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
  * @bug     6945418 6993978
  * @summary Project Coin: Simplified Varargs Method Invocation
  * @author  mcimadamore
+ * @library ../../lib
+ * @build JavacTestingAbstractThreadedTest
  * @run main Warn4
  */
-import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.api.JavacTool;
+
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Set;
@@ -38,16 +39,19 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+import com.sun.source.util.JavacTask;
 
-public class Warn4 {
+public class Warn4
+    extends JavacTestingAbstractThreadedTest
+    implements Runnable {
 
     final static Warning[] error = null;
     final static Warning[] none = new Warning[] {};
     final static Warning[] vararg = new Warning[] { Warning.VARARGS };
     final static Warning[] unchecked = new Warning[] { Warning.UNCHECKED };
-    final static Warning[] both = new Warning[] { Warning.VARARGS, Warning.UNCHECKED };
+    final static Warning[] both =
+            new Warning[] { Warning.VARARGS, Warning.UNCHECKED };
 
     enum Warning {
         UNCHECKED("generic.array.creation"),
@@ -59,8 +63,10 @@ public class Warn4 {
             this.key = key;
         }
 
-        boolean isSuppressed(TrustMe trustMe, SourceLevel source, SuppressLevel suppressLevelClient,
-                SuppressLevel suppressLevelDecl, ModifierKind modKind) {
+        boolean isSuppressed(TrustMe trustMe, SourceLevel source,
+                SuppressLevel suppressLevelClient,
+                SuppressLevel suppressLevelDecl,
+                ModifierKind modKind) {
             switch(this) {
                 case VARARGS:
                     return source == SourceLevel.JDK_6 ||
@@ -68,7 +74,8 @@ public class Warn4 {
                             trustMe == TrustMe.TRUST;
                 case UNCHECKED:
                     return suppressLevelClient == SuppressLevel.UNCHECKED ||
-                        (trustMe == TrustMe.TRUST && modKind != ModifierKind.NONE && source == SourceLevel.JDK_7);
+                        (trustMe == TrustMe.TRUST && modKind !=
+                            ModifierKind.NONE && source == SourceLevel.JDK_7);
             }
 
             SuppressLevel supLev = this == VARARGS ?
@@ -172,13 +179,13 @@ public class Warn4 {
                             for (Signature vararg_meth : Signature.values()) {
                                 for (Signature client_meth : Signature.values()) {
                                     if (vararg_meth.isApplicableTo(client_meth)) {
-                                        test(sourceLevel,
+                                        pool.execute(new Warn4(sourceLevel,
                                                 trustMe,
                                                 suppressLevelClient,
                                                 suppressLevelDecl,
                                                 modKind,
                                                 vararg_meth,
-                                                client_meth);
+                                                client_meth));
                                     }
                                 }
                             }
@@ -187,63 +194,82 @@ public class Warn4 {
                 }
             }
         }
+
+        checkAfterExec();
     }
 
-    // Create a single file manager and reuse it for each compile to save time.
-    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
+    SourceLevel sourceLevel;
+    TrustMe trustMe;
+    SuppressLevel suppressLevelClient;
+    SuppressLevel suppressLevelDecl;
+    ModifierKind modKind;
+    Signature vararg_meth;
+    Signature client_meth;
+    DiagnosticChecker diagChecker;
 
-    static void test(SourceLevel sourceLevel, TrustMe trustMe, SuppressLevel suppressLevelClient,
-            SuppressLevel suppressLevelDecl, ModifierKind modKind, Signature vararg_meth, Signature client_meth) throws Exception {
+    public Warn4(SourceLevel sourceLevel, TrustMe trustMe,
+            SuppressLevel suppressLevelClient, SuppressLevel suppressLevelDecl,
+            ModifierKind modKind, Signature vararg_meth, Signature client_meth) {
+        this.sourceLevel = sourceLevel;
+        this.trustMe = trustMe;
+        this.suppressLevelClient = suppressLevelClient;
+        this.suppressLevelDecl = suppressLevelDecl;
+        this.modKind = modKind;
+        this.vararg_meth = vararg_meth;
+        this.client_meth = client_meth;
+        this.diagChecker = new DiagnosticChecker();
+    }
+
+    @Override
+    public void run() {
+        int id = checkCount.incrementAndGet();
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavaSource source = new JavaSource(trustMe, suppressLevelClient, suppressLevelDecl, modKind, vararg_meth, client_meth);
-        DiagnosticChecker dc = new DiagnosticChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, dc,
+        JavaSource source = new JavaSource(id);
+        JavacTask ct = (JavacTask)tool.getTask(null, fm.get(), diagChecker,
                 Arrays.asList("-Xlint:unchecked", "-source", sourceLevel.sourceKey),
                 null, Arrays.asList(source));
-        ct.generate(); //to get mandatory notes
-        check(dc.warnings, sourceLevel,
-                new boolean[] {vararg_meth.giveUnchecked(client_meth),
-                               vararg_meth.giveVarargs(client_meth)},
-                source, trustMe, suppressLevelClient, suppressLevelDecl, modKind);
+        ct.call(); //to get mandatory notes
+        check(source, new boolean[] {vararg_meth.giveUnchecked(client_meth),
+                               vararg_meth.giveVarargs(client_meth)});
     }
 
-    static void check(Set<Warning> warnings, SourceLevel sourceLevel, boolean[] warnArr, JavaSource source,
-            TrustMe trustMe, SuppressLevel suppressLevelClient, SuppressLevel suppressLevelDecl, ModifierKind modKind) {
+    void check(JavaSource source, boolean[] warnArr) {
         boolean badOutput = false;
         for (Warning wkind : Warning.values()) {
             boolean isSuppressed = wkind.isSuppressed(trustMe, sourceLevel,
                     suppressLevelClient, suppressLevelDecl, modKind);
             System.out.println("SUPPRESSED = " + isSuppressed);
-            badOutput |= (warnArr[wkind.ordinal()] && !isSuppressed) != warnings.contains(wkind);
+            badOutput |= (warnArr[wkind.ordinal()] && !isSuppressed) !=
+                    diagChecker.warnings.contains(wkind);
         }
         if (badOutput) {
             throw new Error("invalid diagnostics for source:\n" +
                     source.getCharContent(true) +
                     "\nExpected unchecked warning: " + warnArr[0] +
                     "\nExpected unsafe vararg warning: " + warnArr[1] +
-                    "\nWarnings: " + warnings +
+                    "\nWarnings: " + diagChecker.warnings +
                     "\nSource level: " + sourceLevel);
         }
     }
 
-    static class JavaSource extends SimpleJavaFileObject {
+    class JavaSource extends SimpleJavaFileObject {
 
         String source;
 
-        public JavaSource(TrustMe trustMe, SuppressLevel suppressLevelClient, SuppressLevel suppressLevelDecl,
-                ModifierKind modKind, Signature vararg_meth, Signature client_meth) {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
+        public JavaSource(int id) {
+            super(URI.create(String.format("myfo:/Test%d.java", id)),
+                    JavaFileObject.Kind.SOURCE);
             String meth1 = vararg_meth.template.replace("#arity", "...");
             meth1 = meth1.replace("#name", "m");
             meth1 = meth1.replace("#body", "");
-            meth1 = trustMe.anno + "\n" + suppressLevelDecl.getSuppressAnno() + modKind.mod + meth1;
+            meth1 = trustMe.anno + "\n" + suppressLevelDecl.getSuppressAnno() +
+                    modKind.mod + meth1;
             String meth2 = client_meth.template.replace("#arity", "");
             meth2 = meth2.replace("#name", "test");
             meth2 = meth2.replace("#body", "m(arg);");
             meth2 = suppressLevelClient.getSuppressAnno() + meth2;
-            source = "import java.util.List;\n" +
-                     "class Test {\n" + meth1 +
-                     "\n" + meth2 + "\n}\n";
+            source = String.format("import java.util.List;\n" +
+                     "class Test%s {\n %s \n %s \n } \n", id, meth1, meth2);
         }
 
         @Override
@@ -252,7 +278,8 @@ public class Warn4 {
         }
     }
 
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
+    static class DiagnosticChecker
+        implements javax.tools.DiagnosticListener<JavaFileObject> {
 
         Set<Warning> warnings = new HashSet<>();
 
@@ -267,4 +294,5 @@ public class Warn4 {
             }
         }
     }
+
 }

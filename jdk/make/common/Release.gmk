@@ -366,6 +366,7 @@ TOOLS = \
 	com/sun/source          \
 	com/sun/tools/classfile \
 	com/sun/tools/doclets   \
+	com/sun/tools/doclint   \
 	com/sun/tools/example/debug/expr \
 	com/sun/tools/example/debug/tty  \
 	com/sun/tools/extcheck  \
@@ -374,6 +375,7 @@ TOOLS = \
 	com/sun/tools/javadoc   \
 	com/sun/tools/javah     \
 	com/sun/tools/javap     \
+	com/sun/tools/jdeps     \
 	com/sun/tools/corba     \
 	com/sun/tools/internal/xjc       \
 	com/sun/tools/internal/ws       \
@@ -456,6 +458,7 @@ NOTJRETOOLS = \
 	javadoc$(EXE_SUFFIX) \
 	javah$(EXE_SUFFIX) \
 	javap$(EXE_SUFFIX) \
+	jdeps$(EXE_SUFFIX) \
 	jcmd$(EXE_SUFFIX) \
 	jdb$(EXE_SUFFIX) \
 	jps$(EXE_SUFFIX) \
@@ -563,6 +566,7 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/javac/" >> $@
 	$(ECHO) "com/sun/tools/classfile/" >> $@
 	$(ECHO) "com/sun/tools/javap/" >> $@
+	$(ECHO) "com/sun/tools/jdeps/" >> $@
 	$(ECHO) "sun/tools/jcmd/" >> $@
 	$(ECHO) "sun/tools/jconsole/" >> $@
 	$(ECHO) "sun/tools/jps/" >> $@

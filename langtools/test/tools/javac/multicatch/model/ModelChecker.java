@@ -25,7 +25,7 @@
  * @test
  * @bug 6993963 7025809
  * @summary Project Coin: Use precise exception analysis for effectively final catch parameters
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor ModelChecker
  * @compile -processor ModelChecker Model01.java
  */

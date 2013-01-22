@@ -347,10 +347,6 @@ class ParNewGeneration: public DefNewGeneration {
   bool survivor_overflow() { return _survivor_overflow; }
   void set_survivor_overflow(bool v) { _survivor_overflow = v; }
 
-  // Adjust the tenuring threshold.  See the implementation for
-  // the details of the policy.
-  virtual void adjust_desired_tenuring_threshold();
-
  public:
   ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level);
 
@@ -360,8 +356,6 @@ class ParNewGeneration: public DefNewGeneration {
 
     delete _task_queues;
   }
-
-  static bool in_use();
 
   virtual void ref_processor_init();
   virtual Generation::Name kind()        { return Generation::ParNew; }

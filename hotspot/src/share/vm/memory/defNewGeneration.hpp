@@ -124,7 +124,9 @@ protected:
     _should_allocate_from_space = true;
   }
 
- protected:
+  // Tenuring
+  void adjust_desired_tenuring_threshold();
+
   // Spaces
   EdenSpace*       _eden_space;
   ContiguousSpace* _from_space;

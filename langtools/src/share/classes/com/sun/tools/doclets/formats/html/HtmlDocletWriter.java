@@ -90,6 +90,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected boolean printedAnnotationHeading = false;
 
     /**
+     * To check whether the repeated annotations is documented or not.
+     */
+    private boolean isAnnotationDocumented = false;
+
+    /**
+     * To check whether the container annotations is documented or not.
+     */
+    private boolean isContainerDocumented = false;
+
+    /**
      * Constructor to construct the HtmlStandardWriter object.
      *
      * @param path File to be generated.
@@ -1793,55 +1803,156 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         StringBuilder annotation;
         for (int i = 0; i < descList.length; i++) {
             AnnotationTypeDoc annotationDoc = descList[i].annotationType();
-            if (! Util.isDocumentedAnnotation(annotationDoc)){
+            // If an annotation is not documented, do not add it to the list. If
+            // the annotation is of a repeatable type, and if it is not documented
+            // and also if its container annotation is not documented, do not add it
+            // to the list. If an annotation of a repeatable type is not documented
+            // but its container is documented, it will be added to the list.
+            if (! Util.isDocumentedAnnotation(annotationDoc) &&
+                    (!isAnnotationDocumented && !isContainerDocumented)) {
                 continue;
             }
             annotation = new StringBuilder();
+            isAnnotationDocumented = false;
             LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.CONTEXT_ANNOTATION, annotationDoc);
-            linkInfo.label = "@" + annotationDoc.name();
-            annotation.append(getLink(linkInfo));
             AnnotationDesc.ElementValuePair[] pairs = descList[i].elementValues();
-            if (pairs.length > 0) {
-                annotation.append('(');
+            // If the annotation is synthesized, do not print the container.
+            if (descList[i].isSynthesized()) {
                 for (int j = 0; j < pairs.length; j++) {
-                    if (j > 0) {
-                        annotation.append(",");
-                        if (linkBreak) {
-                            annotation.append(DocletConstants.NL);
-                            int spaces = annotationDoc.name().length() + 2;
-                            for (int k = 0; k < (spaces + indent); k++) {
-                                annotation.append(' ');
-                            }
-                        }
-                    }
-                    annotation.append(getDocLink(LinkInfoImpl.CONTEXT_ANNOTATION,
-                        pairs[j].element(), pairs[j].element().name(), false));
-                    annotation.append('=');
                     AnnotationValue annotationValue = pairs[j].value();
                     List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
                     if (annotationValue.value() instanceof AnnotationValue[]) {
                         AnnotationValue[] annotationArray =
-                            (AnnotationValue[]) annotationValue.value();
-                        for (int k = 0; k < annotationArray.length; k++) {
-                            annotationTypeValues.add(annotationArray[k]);
-                        }
+                                (AnnotationValue[]) annotationValue.value();
+                        annotationTypeValues.addAll(Arrays.asList(annotationArray));
                     } else {
                         annotationTypeValues.add(annotationValue);
                     }
-                    annotation.append(annotationTypeValues.size() == 1 ? "" : "{");
-                    for (Iterator<AnnotationValue> iter = annotationTypeValues.iterator(); iter.hasNext(); ) {
-                        annotation.append(annotationValueToString(iter.next()));
-                        annotation.append(iter.hasNext() ? "," : "");
+                    String sep = "";
+                    for (AnnotationValue av : annotationTypeValues) {
+                        annotation.append(sep);
+                        annotation.append(annotationValueToString(av));
+                        sep = " ";
                     }
-                    annotation.append(annotationTypeValues.size() == 1 ? "" : "}");
                 }
-                annotation.append(")");
+            }
+            else if (isAnnotationArray(pairs)) {
+                // If the container has 1 or more value defined and if the
+                // repeatable type annotation is not documented, do not print
+                // the container.
+                if (pairs.length == 1 && isAnnotationDocumented) {
+                    AnnotationValue[] annotationArray =
+                            (AnnotationValue[]) (pairs[0].value()).value();
+                    List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
+                    annotationTypeValues.addAll(Arrays.asList(annotationArray));
+                    String sep = "";
+                    for (AnnotationValue av : annotationTypeValues) {
+                        annotation.append(sep);
+                        annotation.append(annotationValueToString(av));
+                        sep = " ";
+                    }
+                }
+                // If the container has 1 or more value defined and if the
+                // repeatable type annotation is not documented, print the container.
+                else {
+                    addAnnotations(annotationDoc, linkInfo, annotation, pairs,
+                        indent, false);
+                }
+            }
+            else {
+                addAnnotations(annotationDoc, linkInfo, annotation, pairs,
+                        indent, linkBreak);
             }
             annotation.append(linkBreak ? DocletConstants.NL : "");
             results.add(annotation.toString());
         }
         return results;
+    }
+
+    /**
+     * Add annotation to the annotation string.
+     *
+     * @param annotationDoc the annotation being documented
+     * @param linkInfo the information about the link
+     * @param annotation the annotation string to which the annotation will be added
+     * @param pairs annotation type element and value pairs
+     * @param indent the number of extra spaces to indent the annotations.
+     * @param linkBreak if true, add new line between each member value
+     */
+    private void addAnnotations(AnnotationTypeDoc annotationDoc, LinkInfoImpl linkInfo,
+            StringBuilder annotation, AnnotationDesc.ElementValuePair[] pairs,
+            int indent, boolean linkBreak) {
+        linkInfo.label = "@" + annotationDoc.name();
+        annotation.append(getLink(linkInfo));
+        if (pairs.length > 0) {
+            annotation.append('(');
+            for (int j = 0; j < pairs.length; j++) {
+                if (j > 0) {
+                    annotation.append(",");
+                    if (linkBreak) {
+                        annotation.append(DocletConstants.NL);
+                        int spaces = annotationDoc.name().length() + 2;
+                        for (int k = 0; k < (spaces + indent); k++) {
+                            annotation.append(' ');
+                        }
+                    }
+                }
+                annotation.append(getDocLink(LinkInfoImpl.CONTEXT_ANNOTATION,
+                        pairs[j].element(), pairs[j].element().name(), false));
+                annotation.append('=');
+                AnnotationValue annotationValue = pairs[j].value();
+                List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
+                if (annotationValue.value() instanceof AnnotationValue[]) {
+                    AnnotationValue[] annotationArray =
+                            (AnnotationValue[]) annotationValue.value();
+                    annotationTypeValues.addAll(Arrays.asList(annotationArray));
+                } else {
+                    annotationTypeValues.add(annotationValue);
+                }
+                annotation.append(annotationTypeValues.size() == 1 ? "" : "{");
+                String sep = "";
+                for (AnnotationValue av : annotationTypeValues) {
+                    annotation.append(sep);
+                    annotation.append(annotationValueToString(av));
+                    sep = ",";
+                }
+                annotation.append(annotationTypeValues.size() == 1 ? "" : "}");
+                isContainerDocumented = false;
+            }
+            annotation.append(")");
+        }
+    }
+
+    /**
+     * Check if the annotation contains an array of annotation as a value. This
+     * check is to verify if a repeatable type annotation is present or not.
+     *
+     * @param pairs annotation type element and value pairs
+     *
+     * @return true if the annotation contains an array of annotation as a value.
+     */
+    private boolean isAnnotationArray(AnnotationDesc.ElementValuePair[] pairs) {
+        AnnotationValue annotationValue;
+        for (int j = 0; j < pairs.length; j++) {
+            annotationValue = pairs[j].value();
+            if (annotationValue.value() instanceof AnnotationValue[]) {
+                AnnotationValue[] annotationArray =
+                        (AnnotationValue[]) annotationValue.value();
+                if (annotationArray.length > 1) {
+                    if (annotationArray[0].value() instanceof AnnotationDesc) {
+                        AnnotationTypeDoc annotationDoc =
+                                ((AnnotationDesc) annotationArray[0].value()).annotationType();
+                        isContainerDocumented = true;
+                        if (Util.isDocumentedAnnotation(annotationDoc)) {
+                            isAnnotationDocumented = true;
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private String annotationValueToString(AnnotationValue annotationValue) {

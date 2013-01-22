@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public final class HmacPKCS12PBESHA1 extends HmacCore {
             // generate default for salt and iteration count if necessary
             if (salt == null) {
                 salt = new byte[20];
-                SunJCE.RANDOM.nextBytes(salt);
+                SunJCE.getRandom().nextBytes(salt);
             }
             if (iCount == 0) iCount = 100;
         } else if (!(params instanceof PBEParameterSpec)) {

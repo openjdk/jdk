@@ -53,6 +53,7 @@ public class InstanceKlass extends Klass {
   private static int HIGH_OFFSET;
   private static int FIELD_SLOTS;
   private static short FIELDINFO_TAG_SIZE;
+  private static short FIELDINFO_TAG_MASK;
   private static short FIELDINFO_TAG_OFFSET;
 
   // ClassState constants
@@ -102,6 +103,7 @@ public class InstanceKlass extends Klass {
     HIGH_OFFSET                    = db.lookupIntConstant("FieldInfo::high_packed_offset").intValue();
     FIELD_SLOTS                    = db.lookupIntConstant("FieldInfo::field_slots").intValue();
     FIELDINFO_TAG_SIZE             = db.lookupIntConstant("FIELDINFO_TAG_SIZE").shortValue();
+    FIELDINFO_TAG_MASK             = db.lookupIntConstant("FIELDINFO_TAG_MASK").shortValue();
     FIELDINFO_TAG_OFFSET           = db.lookupIntConstant("FIELDINFO_TAG_OFFSET").shortValue();
 
     // read ClassState constants
@@ -321,7 +323,7 @@ public class InstanceKlass extends Klass {
     U2Array fields = getFields();
     short lo = fields.at(index * FIELD_SLOTS + LOW_OFFSET);
     short hi = fields.at(index * FIELD_SLOTS + HIGH_OFFSET);
-    if ((lo & FIELDINFO_TAG_SIZE) == FIELDINFO_TAG_OFFSET) {
+    if ((lo & FIELDINFO_TAG_MASK) == FIELDINFO_TAG_OFFSET) {
       return VM.getVM().buildIntFromShorts(lo, hi) >> FIELDINFO_TAG_SIZE;
     }
     throw new RuntimeException("should not reach here");

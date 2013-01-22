@@ -1007,11 +1007,11 @@ public class Types {
                     if (!visit(supertype(t), supertype(s)))
                         return false;
 
-                    HashSet<SingletonType> set = new HashSet<SingletonType>();
+                    HashSet<UniqueType> set = new HashSet<UniqueType>();
                     for (Type x : interfaces(t))
-                        set.add(new SingletonType(x));
+                        set.add(new UniqueType(x, Types.this));
                     for (Type x : interfaces(s)) {
-                        if (!set.remove(new SingletonType(x)))
+                        if (!set.remove(new UniqueType(x, Types.this)))
                             return false;
                     }
                     return (set.isEmpty());
@@ -3137,7 +3137,7 @@ public class Types {
             }
             @Override
             public int hashCode() {
-                return 127 * Types.hashCode(t1) + Types.hashCode(t2);
+                return 127 * Types.this.hashCode(t1) + Types.this.hashCode(t2);
             }
             @Override
             public boolean equals(Object obj) {
@@ -3400,7 +3400,7 @@ public class Types {
     /**
      * Compute a hash code on a type.
      */
-    public static int hashCode(Type t) {
+    public int hashCode(Type t) {
         return hashCode.visit(t);
     }
     // where
@@ -3420,6 +3420,16 @@ public class Types {
                     result += visit(s);
                 }
                 return result;
+            }
+
+            @Override
+            public Integer visitMethodType(MethodType t, Void ignored) {
+                int h = METHOD.ordinal();
+                for (List<Type> thisargs = t.argtypes;
+                     thisargs.tail != null;
+                     thisargs = thisargs.tail)
+                    h = (h << 5) + visit(thisargs.head);
+                return (h << 5) + visit(t.restype);
             }
 
             @Override
@@ -4082,21 +4092,28 @@ public class Types {
     /**
      * A wrapper for a type that allows use in sets.
      */
-    class SingletonType {
-        final Type t;
-        SingletonType(Type t) {
-            this.t = t;
+    public static class UniqueType {
+        public final Type type;
+        final Types types;
+
+        public UniqueType(Type type, Types types) {
+            this.type = type;
+            this.types = types;
         }
+
         public int hashCode() {
-            return Types.hashCode(t);
+            return types.hashCode(type);
         }
+
         public boolean equals(Object obj) {
-            return (obj instanceof SingletonType) &&
-                isSameType(t, ((SingletonType)obj).t);
+            return (obj instanceof UniqueType) &&
+                types.isSameType(type, ((UniqueType)obj).type);
         }
+
         public String toString() {
-            return t.toString();
+            return type.toString();
         }
+
     }
     // </editor-fold>
 

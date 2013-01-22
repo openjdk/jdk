@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,30 @@
 
 package com.sun.tools.javac.main;
 
-import java.util.Collections;
-import com.sun.tools.javac.util.Log.PrefixKind;
-import com.sun.tools.javac.util.Log.WriterKind;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.util.Options;
-import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
 import javax.lang.model.SourceVersion;
 
+import com.sun.tools.doclint.DocLint;
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Log.PrefixKind;
+import com.sun.tools.javac.util.Log.WriterKind;
+import com.sun.tools.javac.util.Options;
 import static com.sun.tools.javac.main.Option.ChoiceKind.*;
-import static com.sun.tools.javac.main.Option.OptionKind.*;
 import static com.sun.tools.javac.main.Option.OptionGroup.*;
+import static com.sun.tools.javac.main.Option.OptionKind.*;
 
 /**
  * Options for javac. The specific Option to handle a command-line option
@@ -78,6 +80,24 @@ public enum Option {
 
     XLINT_CUSTOM("-Xlint:", "opt.Xlint.suboptlist",
             EXTENDED,   BASIC, ANYOF, getXLintChoices()),
+
+    XDOCLINT("-Xdoclint", "opt.Xdoclint", EXTENDED, BASIC),
+
+    XDOCLINT_CUSTOM("-Xdoclint:", "opt.Xdoclint.subopts", "opt.Xdoclint.custom", EXTENDED, BASIC) {
+        @Override
+        public boolean matches(String option) {
+            return DocLint.isValidOption(
+                    option.replace(XDOCLINT_CUSTOM.text, DocLint.XMSGS_CUSTOM_PREFIX));
+        }
+
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            String prev = helper.get(XDOCLINT_CUSTOM);
+            String next = (prev == null) ? option : (prev + " " + option);
+            helper.put(XDOCLINT_CUSTOM.text, next);
+            return false;
+        }
+    },
 
     // -nowarn is retained for command-line backward compatibility
     NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC) {
@@ -155,6 +175,8 @@ public enum Option {
     PROCESSOR("-processor", "opt.arg.class.list", "opt.processor", STANDARD, BASIC),
 
     PROCESSORPATH("-processorpath", "opt.arg.path", "opt.processorpath", STANDARD, FILEMANAGER),
+
+    PARAMETERS("-parameters","opt.parameters", STANDARD, BASIC),
 
     D("-d", "opt.arg.directory", "opt.d", STANDARD, FILEMANAGER),
 
@@ -289,7 +311,7 @@ public enum Option {
 
     // This option exists only for the purpose of documenting itself.
     // It's actually implemented by the launcher.
-    J("-J", "opt.arg.flag", "opt.J", STANDARD, INFO) {
+    J("-J", "opt.arg.flag", "opt.J", STANDARD, INFO, true) {
         @Override
         public boolean process(OptionHelper helper, String option) {
             throw new AssertionError
@@ -394,7 +416,7 @@ public enum Option {
 
     // This option exists only for the purpose of documenting itself.
     // It's actually implemented by the CommandLine class.
-    AT("@", "opt.arg.file", "opt.AT", STANDARD, INFO) {
+    AT("@", "opt.arg.file", "opt.AT", STANDARD, INFO, true) {
         @Override
         public boolean process(OptionHelper helper, String option) {
             throw new AssertionError("the @ flag should be caught by CommandLine.");

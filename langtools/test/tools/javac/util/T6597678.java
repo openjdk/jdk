@@ -25,7 +25,7 @@
  * @test
  * @bug 6597678 6449184
  * @summary Ensure Messages propogated between rounds
- * @library ../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor T6597678
  * @run main T6597678
  */

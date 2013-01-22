@@ -27,6 +27,7 @@ package com.sun.tools.javac.jvm;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
@@ -901,6 +902,7 @@ public class Code {
         if (o instanceof ClassSymbol) return syms.classType;
         if (o instanceof Type.ArrayType) return syms.classType;
         if (o instanceof Type.MethodType) return syms.methodTypeType;
+        if (o instanceof UniqueType) return typeForPool(((UniqueType)o).type);
         if (o instanceof Pool.MethodHandle) return syms.methodHandleType;
         throw new AssertionError(o);
     }
@@ -1030,7 +1032,7 @@ public class Code {
             Object o = pool.pool[od];
             Type t = (o instanceof Symbol)
                 ? ((Symbol)o).erasure(types)
-                : types.erasure(((Type)o));
+                : types.erasure((((UniqueType)o).type));
             state.push(t);
             break; }
         case ldc2w:

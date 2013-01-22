@@ -239,7 +239,14 @@ public abstract class AbstractMemberWriter {
         if ((member.isField() || member.isMethod()) &&
             writer instanceof ClassWriterImpl &&
             ((ClassWriterImpl) writer).getClassDoc().isInterface()) {
-            mod = Util.replaceText(mod, "public", "").trim();
+            // This check for isDefault() and the default modifier needs to be
+            // added for it to appear on the method details section. Once the
+            // default modifier is added to the Modifier list on DocEnv and once
+            // it is updated to use the javax.lang.model.element.Modifier, we
+            // will need to remove this.
+            mod = (member.isMethod() && ((MethodDoc)member).isDefault()) ?
+                    Util.replaceText(mod, "public", "default").trim() :
+                    Util.replaceText(mod, "public", "").trim();
         }
         if(mod.length() > 0) {
             htmltree.addContent(mod);
@@ -313,8 +320,19 @@ public abstract class AbstractMemberWriter {
             code.addContent(configuration.getText("doclet.Package_private"));
             code.addContent(" ");
         }
-        if (member.isMethod() && ((MethodDoc)member).isAbstract()) {
-            code.addContent("abstract ");
+        if (member.isMethod()) {
+            if (!(member.containingClass().isInterface()) &&
+                    ((MethodDoc)member).isAbstract()) {
+                code.addContent("abstract ");
+            }
+            // This check for isDefault() and the default modifier needs to be
+            // added for it to appear on the "Modifier and Type" column in the
+            // method summary section. Once the default modifier is added
+            // to the Modifier list on DocEnv and once it is updated to use the
+            // javax.lang.model.element.Modifier, we will need to remove this.
+            if (((MethodDoc)member).isDefault()) {
+                code.addContent("default ");
+            }
         }
         if (member.isStatic()) {
             code.addContent("static ");
@@ -544,9 +562,15 @@ public abstract class AbstractMemberWriter {
         if (member instanceof MethodDoc && !member.isAnnotationTypeElement()) {
             int methodType = (member.isStatic()) ? MethodTypes.STATIC.value() :
                     MethodTypes.INSTANCE.value();
-            methodType = (classdoc.isInterface() || ((MethodDoc)member).isAbstract()) ?
-                    methodType | MethodTypes.ABSTRACT.value() :
-                    methodType | MethodTypes.CONCRETE.value();
+            if (member.containingClass().isInterface()) {
+                methodType = (((MethodDoc) member).isAbstract())
+                        ? methodType | MethodTypes.ABSTRACT.value()
+                        : methodType | MethodTypes.DEFAULT.value();
+            } else {
+                methodType = (((MethodDoc) member).isAbstract())
+                        ? methodType | MethodTypes.ABSTRACT.value()
+                        : methodType | MethodTypes.CONCRETE.value();
+            }
             if (Util.isDeprecated(member) || Util.isDeprecated(classdoc)) {
                 methodType = methodType | MethodTypes.DEPRECATED.value();
             }

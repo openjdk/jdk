@@ -25,7 +25,7 @@
  * @test
  * @bug 6930508
  * @summary Passing nested class names on javac command line interfere with subsequent name -> class lookup
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor p.NestedExamples Test
  * @run main Test
  */
