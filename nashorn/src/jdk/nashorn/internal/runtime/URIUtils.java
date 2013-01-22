@@ -71,7 +71,7 @@ public final class URIUtils {
             }
 
             if (C >= 0xDC00 && C <= 0xDFFF) {
-                return error(Context.getGlobal(), string, k);
+                return error(string, k);
             }
 
             int V;
@@ -80,12 +80,12 @@ public final class URIUtils {
             } else {
                 k++;
                 if (k == len) {
-                    return error(Context.getGlobal(), string, k);
+                    return error(string, k);
                 }
 
                 final char kChar = string.charAt(k);
                 if (kChar < 0xDC00 || kChar > 0xDFFF) {
-                    return error(Context.getGlobal(), string, k);
+                    return error(string, k);
                 }
                 V = ((C - 0xD800) * 0x400 + (kChar - 0xDC00) + 0x10000);
             }
@@ -93,7 +93,7 @@ public final class URIUtils {
             try {
                 sb.append(toHexEscape(V));
             } catch (final Exception e) {
-                uriError(Context.getGlobal(), e, "bad.uri", string, Integer.toString(k));
+                uriError( e, "bad.uri", string, Integer.toString(k));
                 return null;
             }
         }
@@ -118,12 +118,12 @@ public final class URIUtils {
             }
             final int start = k;
             if (k + 2 >= len) {
-                return error(Context.getGlobal(), string, k);
+                return error(string, k);
             }
 
             int B = toHexByte(string.charAt(k + 1), string.charAt(k + 2));
             if (B < 0) {
-                return error(Context.getGlobal(), string, k + 1);
+                return error(string, k + 1);
             }
 
             k += 2;
@@ -146,11 +146,11 @@ public final class URIUtils {
                 }
 
                 if (n == 1 || n > 4) {
-                    return error(Context.getGlobal(), string, k);
+                    return error(string, k);
                 }
 
                 if ((k + (3 * (n - 1))) >= len) {
-                    return error(Context.getGlobal(), string, k);
+                    return error(string, k);
                 }
 
                 final byte[] bbuf = new byte[n];
@@ -159,16 +159,16 @@ public final class URIUtils {
                 for (int j = 1; j < n; j++) {
                     k++;
                     if (string.charAt(k) != '%') {
-                        return error(Context.getGlobal(), string, k);
+                        return error(string, k);
                     }
 
                     if (k + 2 == len) {
-                        return error(Context.getGlobal(), string, k);
+                        return error(string, k);
                     }
 
                     B = toHexByte(string.charAt(k + 1), string.charAt(k + 2));
                     if (B < 0 || (B & 0xC0) != 0x80) {
-                        return error(Context.getGlobal(), string, k + 1);
+                        return error(string, k + 1);
                     }
 
                     k += 2;
@@ -179,7 +179,7 @@ public final class URIUtils {
                 try {
                     V = ucs4Char(bbuf);
                 } catch (final Exception e) {
-                    uriError(Context.getGlobal(), e, "bad.uri", string, Integer.toString(k));
+                    uriError(e, "bad.uri", string, Integer.toString(k));
                     return null;
                 }
                 if (V < 0x10000) {
@@ -193,7 +193,7 @@ public final class URIUtils {
                     }
                 } else { // V >= 0x10000
                     if (V > 0x10FFFF) {
-                        return error(Context.getGlobal(), string, k);
+                        return error(string, k);
                     }
                     final int L = ((V - 0x10000) & 0x3FF) + 0xDC00;
                     final int H = (((V - 0x10000) >> 10) & 0x3FF) + 0xD800;
@@ -268,8 +268,8 @@ public final class URIUtils {
         return sb.toString();
     }
 
-    private static String error(final ScriptObject global, final String string, final int index) {
-        uriError(global, "bad.uri", string, Integer.toString(index));
+    private static String error(final String string, final int index) {
+        uriError("bad.uri", string, Integer.toString(index));
         return null;
     }
 

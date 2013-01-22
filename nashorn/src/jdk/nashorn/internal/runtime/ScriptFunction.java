@@ -289,7 +289,7 @@ public abstract class ScriptFunction extends ScriptObject {
     @Override
     public boolean isInstance(final ScriptObject instance) {
         if (!(prototype instanceof ScriptObject)) {
-            typeError(Context.getGlobal(), "prototype.not.an.object", ScriptRuntime.safeToString(this), ScriptRuntime.safeToString(prototype));
+            typeError("prototype.not.an.object", ScriptRuntime.safeToString(this), ScriptRuntime.safeToString(prototype));
         }
 
         for (ScriptObject proto = instance.getProto(); proto != null; proto = proto.getProto()) {
@@ -401,7 +401,7 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     public Object construct(final Object self, final Object... args) throws Throwable {
         if (constructHandle == null) {
-            typeError(Context.getGlobal(), "not.a.constructor", ScriptRuntime.safeToString(this));
+            typeError("not.a.constructor", ScriptRuntime.safeToString(this));
         }
 
         if (isVarArg(constructHandle)) {
@@ -480,7 +480,7 @@ public abstract class ScriptFunction extends ScriptObject {
         }
 
         if (getConstructHandle() == null) {
-            typeError(Context.getGlobal(), "not.a.constructor", ScriptRuntime.safeToString(this));
+            typeError("not.a.constructor", ScriptRuntime.safeToString(this));
         }
 
         ScriptObject object = null;
@@ -863,7 +863,7 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle constructor = getConstructHandle(type);
 
         if (constructor == null) {
-            typeError(Context.getGlobal(), "not.a.constructor", ScriptRuntime.safeToString(this));
+            typeError("not.a.constructor", ScriptRuntime.safeToString(this));
             return null;
         }
 
@@ -925,7 +925,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
             if(NashornCallSiteDescriptor.isScope(desc)) {
                 // (this, callee, args...) => (callee, args...) => (callee, [this], args...)
-                boundHandle = MH.bindTo(callHandle, isNonStrictFunction() ? Context.getGlobal(): ScriptRuntime.UNDEFINED);
+                boundHandle = MH.bindTo(callHandle, isNonStrictFunction() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
                 boundHandle = MH.dropArguments(boundHandle, 1, Object.class);
             } else {
                 // (this, callee, args...) permute => (callee, this, args...) which is what we get in
@@ -943,7 +943,7 @@ public abstract class ScriptFunction extends ScriptObject {
             final MethodHandle callHandle = getBestSpecializedInvokeHandle(type.dropParameterTypes(0, 1));
 
             if(NashornCallSiteDescriptor.isScope(desc)) {
-                boundHandle = MH.bindTo(callHandle, isNonStrictFunction()? Context.getGlobal() : ScriptRuntime.UNDEFINED);
+                boundHandle = MH.bindTo(callHandle, isNonStrictFunction()? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
                 boundHandle = MH.dropArguments(boundHandle, 0, Object.class, Object.class);
             } else {
                 boundHandle = MH.dropArguments(callHandle, 0, Object.class);
@@ -952,7 +952,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
         boundHandle = pairArguments(boundHandle, type);
         return new NashornGuardedInvocation(boundHandle, null, NashornGuards.getFunctionGuard(this), isNonStrictFunction());
-    }
+   }
 
     /**
      * Used for noSuchMethod/noSuchProperty and JSAdapter hooks.

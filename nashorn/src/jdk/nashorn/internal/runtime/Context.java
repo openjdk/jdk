@@ -50,10 +50,12 @@ import jdk.nashorn.internal.codegen.ClassEmitter;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.options.KeyValueOption;
 import jdk.nashorn.internal.runtime.options.Option;
 import jdk.nashorn.internal.runtime.options.Options;
+import sun.reflect.Reflection;
 
 /**
  * This class manages the global state of execution. Context is immutable.
@@ -72,11 +74,27 @@ public final class Context {
         };
 
     /**
-     * Return the current global scope
-     * @return current global scope
+     * Get the current global scope
+     * @return the current global scope
      */
     public static ScriptObject getGlobal() {
-        return currentGlobal.get();
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // skip getCallerClass and getGlobal and get to the real caller
+            Class<?> caller = Reflection.getCallerClass(2);
+            ClassLoader callerLoader = caller.getClassLoader();
+
+            // Allow this method only for nashorn's own classes, script
+            // generated classes and Java adapter classes. Rest should
+            // have the necessary security permission.
+            if (callerLoader != myLoader &&
+                !(callerLoader instanceof NashornLoader) &&
+                !(JavaAdapterFactory.isAdapterClass(caller))) {
+                sm.checkPermission(new RuntimePermission("getNashornGlobal"));
+            }
+        }
+
+        return getGlobalTrusted();
     }
 
     /**
@@ -93,7 +111,7 @@ public final class Context {
             throw new IllegalArgumentException("global does not implement GlobalObject!");
         }
 
-        currentGlobal.set(global);
+        setGlobalTrusted(global);
     }
 
     /**
@@ -114,7 +132,7 @@ public final class Context {
      * @return error writer of the current context
      */
     public static PrintWriter getCurrentErr() {
-        final ScriptObject global = getGlobal();
+        final ScriptObject global = getGlobalTrusted();
         return (global != null)? global.getContext().getErr() : new PrintWriter(System.err);
     }
 
@@ -456,6 +474,14 @@ public final class Context {
         return _timezone;
     }
 
+    /*
+     * Get the PropertyMap of the current global scope
+     * @return the property map of the current global scope
+     */
+    public PropertyMap getGlobalMap() {
+        return Context.getGlobalTrusted().getMap();
+    }
+
     /**
      * Compile a top level script.
      *
@@ -501,7 +527,7 @@ public final class Context {
         final String  file       = (location == UNDEFINED || location == null) ? "<eval>" : location.toString();
         final Source  source     = new Source(file, string);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
-        final ScriptObject global = Context.getGlobal();
+        final ScriptObject global = Context.getGlobalTrusted();
 
         ScriptObject scope = initialScope;
 
@@ -624,7 +650,7 @@ public final class Context {
             }
         }
 
-        typeError(Context.getGlobal(), "cant.load.script", ScriptRuntime.safeToString(source));
+        typeError("cant.load.script", ScriptRuntime.safeToString(source));
 
         return UNDEFINED;
     }
@@ -726,13 +752,13 @@ public final class Context {
         final ScriptObject global = newGlobal();
         // Need only minimal global object, if we are just compiling.
         if (!_compile_only) {
-            final ScriptObject oldGlobal = Context.getGlobal();
+            final ScriptObject oldGlobal = Context.getGlobalTrusted();
             try {
-                Context.setGlobal(global);
+                Context.setGlobalTrusted(global);
                 // initialize global scope with builtin global objects
                 ((GlobalObject)global).initBuiltinObjects();
             } finally {
-                Context.setGlobal(oldGlobal);
+                Context.setGlobalTrusted(oldGlobal);
             }
         }
 
@@ -740,10 +766,30 @@ public final class Context {
     }
 
     /**
-     * Trusted variant package-private
+     * Trusted variants - package-private
+     */
+
+    /**
+     * Return the current global scope
+     * @return current global scope
+     */
+    static ScriptObject getGlobalTrusted() {
+        return currentGlobal.get();
+    }
+
+    /**
+     * Set the current global scope
+     */
+    static void setGlobalTrusted(ScriptObject global) {
+         currentGlobal.set(global);
+    }
+
+    /**
+     * Return the current global's context
+     * @return current global's context
      */
     static Context getContextTrusted() {
-        return Context.getGlobal().getContext();
+        return Context.getGlobalTrusted().getContext();
     }
 
     /**
@@ -770,7 +816,7 @@ public final class Context {
         try {
             script = compileScript(name, url, scope, new Context.ThrowErrorManager(), _strict);
         } catch (final ParserException e) {
-            e.throwAsEcmaException(Context.getGlobal());
+            e.throwAsEcmaException();
         }
 
         return ScriptRuntime.apply(script, thiz);
@@ -782,7 +828,7 @@ public final class Context {
         try {
             script = compileScript(source, scope, new Context.ThrowErrorManager(), _strict);
         } catch (final ParserException e) {
-            e.throwAsEcmaException(Context.getGlobal());
+            e.throwAsEcmaException();
         }
 
         return ScriptRuntime.apply(script, thiz);
@@ -813,7 +859,7 @@ public final class Context {
         }
 
         // Package as a JavaScript function and pass function back to shell.
-        return ((GlobalObject)Context.getGlobal()).newScriptFunction(RUN_SCRIPT.tag(), runMethodHandle, scope, strict);
+        return ((GlobalObject)Context.getGlobalTrusted()).newScriptFunction(RUN_SCRIPT.tag(), runMethodHandle, scope, strict);
     }
 
     private ScriptFunction compileScript(final String name, final URL url, final ScriptObject scope, final ErrorManager errMan, final boolean strict) throws IOException {
@@ -836,7 +882,7 @@ public final class Context {
         Class<?> script;
 
         if (_class_cache_size > 0) {
-            global = (GlobalObject)Context.getGlobal();
+            global = (GlobalObject)Context.getGlobalTrusted();
             script = global.findCachedClass(source);
             if (script != null) {
                 return script;

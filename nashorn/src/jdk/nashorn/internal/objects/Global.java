@@ -1157,7 +1157,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public static Object toObject(final Object obj) {
         if (obj == null || obj == UNDEFINED) {
-            typeError(instance(), "not.an.object", ScriptRuntime.safeToString(obj));
+            typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
 
         if (obj instanceof ScriptObject) {
@@ -1274,7 +1274,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public static void checkObject(final Object obj) {
         if (!(obj instanceof ScriptObject)) {
-            typeError(instance(), "not.an.object", ScriptRuntime.safeToString(obj));
+            typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
     }
 
@@ -1286,7 +1286,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public static void checkObjectCoercible(final Object obj) {
         if (obj == null || obj == UNDEFINED) {
-            typeError(instance(), "not.an.object", ScriptRuntime.safeToString(obj));
+            typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
     }
 

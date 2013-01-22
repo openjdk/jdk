@@ -122,7 +122,7 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
             return new ArrayIterator((ScriptObject) obj, includeUndefined);
         }
 
-        obj = JSType.toObject(Context.getGlobal(), obj);
+        obj = JSType.toScriptObject(obj);
         if (obj instanceof ScriptObject) {
             return new MapIterator((ScriptObject)obj, includeUndefined);
         }
@@ -143,7 +143,7 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
             return new ReverseArrayIterator((ScriptObject) obj, includeUndefined);
         }
 
-        obj = JSType.toObject(Context.getGlobal(), obj);
+        obj = JSType.toScriptObject(obj);
         if (obj instanceof ScriptObject) {
             return new ReverseMapIterator((ScriptObject)obj, includeUndefined);
         }

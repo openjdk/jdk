@@ -97,7 +97,7 @@ public abstract class IteratorAction<T> {
      */
     public final T apply() {
         if (!(callbackfn instanceof ScriptFunction)) {
-            typeError(Context.getGlobal(), "not.a.function", ScriptRuntime.safeToString(callbackfn));
+            typeError("not.a.function", ScriptRuntime.safeToString(callbackfn));
             return result;
         }
         final ScriptFunction func = ((ScriptFunction)callbackfn);
@@ -136,4 +136,5 @@ public abstract class IteratorAction<T> {
      * @throws Throwable if invocation throws an exception/error
      */
     protected abstract boolean forEach(final Object val, final int i) throws Throwable;
+
 }

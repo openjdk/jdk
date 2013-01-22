@@ -129,6 +129,13 @@ public final class ParserException extends NashornException {
 
     /**
      * Throw this {@code ParserException} as one of the 7 native JavaScript errors
+     */
+    public void throwAsEcmaException() {
+        ECMAErrors.throwAsEcmaException(this);
+    }
+
+    /**
+     * Throw this {@code ParserException} as one of the 7 native JavaScript errors
      * @param global global scope object
      */
     public void throwAsEcmaException(final ScriptObject global) {

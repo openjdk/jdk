@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.beans.BeansLinker;
@@ -94,7 +93,7 @@ class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
 
     private static GuardedInvocation checkNullConstructor(final GuardedInvocation ctorInvocation, final Class<?> receiverClass) {
         if(ctorInvocation == null) {
-            ECMAErrors.typeError(Context.getGlobal(), "no.constructor.matches.args", receiverClass.getName());
+            ECMAErrors.typeError("no.constructor.matches.args", receiverClass.getName());
         }
         return ctorInvocation;
     }

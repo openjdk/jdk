@@ -540,7 +540,7 @@ public final class NativeJSAdapter extends ScriptObject {
         Object adaptee;
 
         if (args == null || args.length == 0) {
-            typeError(Global.instance(), "not.an.object", "null");
+            typeError("not.an.object", "null");
             return null; //won't reach, but fixed warning
         }
 
@@ -564,7 +564,7 @@ public final class NativeJSAdapter extends ScriptObject {
         }
 
         if (!(adaptee instanceof ScriptObject)) {
-            typeError(Global.instance(), "not.an.object", ScriptRuntime.safeToString(adaptee));
+            typeError("not.an.object", ScriptRuntime.safeToString(adaptee));
         }
 
         if (proto != null && !(proto instanceof ScriptObject)) {
@@ -623,7 +623,7 @@ public final class NativeJSAdapter extends ScriptObject {
                         func.makeBoundFunction(this, new Object[] { name })), 0, Object.class),
                         adaptee.getMap().getProtoGetSwitchPoint(__call__), testJSAdaptor(adaptee, null, null, null));
             }
-            typeError(Global.instance(), "no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
+            typeError("no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
             break;
         default:
             break;
@@ -696,7 +696,7 @@ public final class NativeJSAdapter extends ScriptObject {
 
         switch (hook) {
         case __call__:
-            typeError(Global.instance(), "no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
+            typeError("no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
             throw new AssertionError("should not reach here");
         default:
             final MethodHandle methodHandle = hook.equals(__put__) ?

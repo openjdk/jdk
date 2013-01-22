@@ -216,7 +216,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             realSelf = self;
         }
         try {
-            final ScriptObject oldGlobal = Context.getGlobal();
+            final ScriptObject oldGlobal = getNashornGlobal();
             try {
                 if(oldGlobal != global) {
                     setNashornGlobal(global);
@@ -343,7 +343,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private Object invokeImpl(final Object selfObject, final String name, final Object... args) throws ScriptException, NoSuchMethodException {
-        final ScriptObject oldGlobal     = Context.getGlobal();
+        final ScriptObject oldGlobal     = getNashornGlobal();
         final boolean globalChanged = (oldGlobal != global);
 
         Object self = selfObject;
@@ -395,7 +395,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         if (script == null) {
             return null;
         }
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final ScriptObject oldGlobal = getNashornGlobal();
         final boolean globalChanged = (oldGlobal != global);
         try {
             if (globalChanged) {
@@ -457,7 +457,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private ScriptFunction compileImpl(final char[] buf, final ScriptContext ctxt) throws ScriptException {
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final ScriptObject oldGlobal = getNashornGlobal();
         final boolean globalChanged = (oldGlobal != global);
         try {
             final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
@@ -479,13 +479,17 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
     }
 
-    // don't make this public!!
+    // don't make these public!!
+    static ScriptObject getNashornGlobal() {
+       return Context.getGlobal();
+    }
+
     static void setNashornGlobal(final ScriptObject global) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
-               Context.setGlobal(global);
-               return null;
+                Context.setGlobal(global);
+                return null;
             }
         });
     }

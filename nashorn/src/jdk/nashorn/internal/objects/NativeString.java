@@ -288,7 +288,7 @@ public final class NativeString extends ScriptObject {
     private boolean checkDeleteIndex(final int index, final boolean strict) {
         if (isValid(index)) {
             if (strict) {
-                typeError(Global.instance(), "cant.delete.property", Integer.toString(index), ScriptRuntime.safeToString(this));
+                typeError("cant.delete.property", Integer.toString(index), ScriptRuntime.safeToString(this));
             }
             return true;
         }
@@ -904,7 +904,7 @@ public final class NativeString extends ScriptObject {
         } else if (self != null && self == Global.instance().getStringPrototype()) {
             return "";
         } else {
-            typeError(Global.instance(), "not.a.string", ScriptRuntime.safeToString(self));
+            typeError("not.a.string", ScriptRuntime.safeToString(self));
             return null;
         }
     }
@@ -919,7 +919,7 @@ public final class NativeString extends ScriptObject {
         } else if (self != null && self == Global.instance().getStringPrototype()) {
             return "";
         } else {
-            typeError(Global.instance(), "not.a.string", ScriptRuntime.safeToString(self));
+            typeError( "not.a.string", ScriptRuntime.safeToString(self));
             return null;
         }
     }

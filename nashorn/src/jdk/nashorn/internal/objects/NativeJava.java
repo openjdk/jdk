@@ -287,7 +287,7 @@ public class NativeJava {
             return new NativeArray(copyArray((boolean[])objArray));
         }
 
-        typeError(Global.instance(), "cant.convert.to.javascript.array", objArray.getClass().getName());
+        typeError("cant.convert.to.javascript.array", objArray.getClass().getName());
 
         throw new AssertionError();
     }
@@ -384,7 +384,7 @@ public class NativeJava {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object extend(final Object self, final Object... types) {
         if(types == null || types.length == 0) {
-            typeError(Global.instance(), "extend.expects.at.least.one.argument");
+            typeError("extend.expects.at.least.one.argument");
         }
         final Class<?>[] stypes = new Class<?>[types.length];
         try {
@@ -392,7 +392,7 @@ public class NativeJava {
                 stypes[i] = ((StaticClass)types[i]).getRepresentedClass();
             }
         } catch(final ClassCastException e) {
-            typeError(Global.instance(), "extend.expects.java.types");
+            typeError("extend.expects.java.types");
         }
         return JavaAdapterFactory.getAdapterClassFor(stypes);
     }

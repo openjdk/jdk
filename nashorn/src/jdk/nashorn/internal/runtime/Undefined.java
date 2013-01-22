@@ -129,7 +129,7 @@ public final class Undefined extends DefaultPropertyAccess {
     }
 
     private static void lookupTypeError(final String msg, final CallSiteDescriptor desc) {
-        typeError(Context.getGlobal(), msg, desc.getNameTokenCount() > 2 ? desc.getNameToken(2) : null);
+        typeError(msg, desc.getNameTokenCount() > 2 ? desc.getNameToken(2) : null);
     }
 
     /**
@@ -174,18 +174,18 @@ public final class Undefined extends DefaultPropertyAccess {
 
     @Override
     public Object get(final Object key) {
-        typeError(Context.getGlobal(), "cant.read.property.of.undefined", ScriptRuntime.safeToString(key));
+        typeError("cant.read.property.of.undefined", ScriptRuntime.safeToString(key));
         return ScriptRuntime.UNDEFINED;
     }
 
     @Override
     public void set(final Object key, final Object value, final boolean strict) {
-        typeError(Context.getGlobal(), "cant.set.property.of.undefined", ScriptRuntime.safeToString(key));
+        typeError("cant.set.property.of.undefined", ScriptRuntime.safeToString(key));
     }
 
     @Override
     public boolean delete(final Object key, final boolean strict) {
-        typeError(Context.getGlobal(), "cant.delete.property.of.undefined", ScriptRuntime.safeToString(key));
+        typeError("cant.delete.property.of.undefined", ScriptRuntime.safeToString(key));
         return false;
     }
 

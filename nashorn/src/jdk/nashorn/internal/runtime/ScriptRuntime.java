@@ -385,14 +385,14 @@ public final class ScriptRuntime {
      * @return {@link WithObject} that is the new scope
      */
     public static ScriptObject openWith(final ScriptObject scope, final Object expression) {
-        final ScriptObject global = Context.getGlobal();
+        final ScriptObject global = Context.getGlobalTrusted();
         if (expression == UNDEFINED) {
             typeError(global, "cant.apply.with.to.undefined");
         } else if (expression == null) {
             typeError(global, "cant.apply.with.to.null");
         }
 
-        final ScriptObject withObject = new WithObject(scope, JSType.toObject(global, expression));
+        final ScriptObject withObject = new WithObject(scope, JSType.toScriptObject(global, expression));
 
         return withObject;
     }
@@ -488,9 +488,9 @@ public final class ScriptRuntime {
             } else if (object instanceof Undefined) {
                 obj = ((Undefined)obj).get(property);
             } else if (object == null) {
-                typeError(Context.getGlobal(), "cant.get.property", safeToString(property), "null");
+                typeError("cant.get.property", safeToString(property), "null");
             } else if (JSType.isPrimitive(obj)) {
-                obj = ((ScriptObject)JSType.toObject(Context.getGlobal(), obj)).get(property);
+                obj = ((ScriptObject)JSType.toScriptObject(obj)).get(property);
             } else {
                 obj = UNDEFINED;
             }
@@ -526,7 +526,7 @@ public final class ScriptRuntime {
      * @return undefined
      */
     public static Object REFERENCE_ERROR(final Object lhs, final Object rhs, final Object msg) {
-        referenceError(Context.getGlobal(), "cant.be.used.as.lhs", Objects.toString(msg));
+        referenceError("cant.be.used.as.lhs", Objects.toString(msg));
         return UNDEFINED;
     }
 
@@ -549,11 +549,11 @@ public final class ScriptRuntime {
         }
 
         if (obj == null) {
-            typeError(Context.getGlobal(), "cant.delete.property", safeToString(property), "null");
+            typeError("cant.delete.property", safeToString(property), "null");
         }
 
         if (JSType.isPrimitive(obj)) {
-            return ((ScriptObject) JSType.toObject(Context.getGlobal(), obj)).delete(property, Boolean.TRUE.equals(strict));
+            return ((ScriptObject) JSType.toScriptObject(obj)).delete(property, Boolean.TRUE.equals(strict));
         }
 
         // if object is not reference type, vacuously delete is successful.
@@ -574,7 +574,7 @@ public final class ScriptRuntime {
      */
     public static boolean FAIL_DELETE(final Object obj, final Object property, final Object strict) {
         if (Boolean.TRUE.equals(strict)) {
-            syntaxError(Context.getGlobal(), "strict.cant.delete", safeToString(property));
+            syntaxError("strict.cant.delete", safeToString(property));
         }
         return false;
     }
@@ -751,7 +751,7 @@ public final class ScriptRuntime {
             return false;
         }
 
-        typeError(Context.getGlobal(), "in.with.non.object", rvalType.toString().toLowerCase());
+        typeError("in.with.non.object", rvalType.toString().toLowerCase());
 
         return false;
     }
@@ -776,7 +776,7 @@ public final class ScriptRuntime {
             return ((StaticClass)clazz).getRepresentedClass().isInstance(obj);
         }
 
-        typeError(Context.getGlobal(), "instanceof.on.non.object");
+        typeError("instanceof.on.non.object");
 
         return false;
     }

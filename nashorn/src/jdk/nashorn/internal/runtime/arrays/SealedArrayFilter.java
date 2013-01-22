@@ -47,7 +47,7 @@ class SealedArrayFilter extends ArrayFilter {
     @Override
     public boolean canDelete(final int index, final boolean strict) {
         if (strict) {
-            typeError(Context.getGlobal(), "cant.delete.property", Integer.toString(index), "sealed array");
+            typeError("cant.delete.property", Integer.toString(index), "sealed array");
         }
         return false;
     }
