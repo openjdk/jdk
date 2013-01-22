@@ -83,7 +83,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
     }
 
     private <V> V inGlobal(final Callable<V> callable) {
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
         final boolean globalChanged = (oldGlobal != global);
         if (globalChanged) {
             NashornScriptEngine.setNashornGlobal(global);
@@ -105,7 +105,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
     @Override
     public Object call(final String methodName, final Object args[]) {
         final Object val = sobj.get(methodName);
-        final ScriptObject oldGlobal = Context.getGlobal();
+        final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
         final boolean globalChanged = (oldGlobal != global);
 
         if (val instanceof ScriptFunction) {
@@ -180,7 +180,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
 
     @Override
     public void setMember(final String name, final Object value) {
-        put(name, wrap(value, Context.getGlobal()));
+        put(name, wrap(value, NashornScriptEngine.getNashornGlobal()));
     }
 
     @Override

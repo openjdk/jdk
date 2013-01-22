@@ -185,7 +185,7 @@ public final class NativeNumber extends ScriptObject {
     public static Object toFixed(final Object self, final Object fractionDigits) {
         final int f = JSType.toInteger(fractionDigits);
         if (f < 0 || f > 20) {
-            rangeError(Global.instance(), "invalid.fraction.digits", "toFixed");
+            rangeError("invalid.fraction.digits", "toFixed");
             return UNDEFINED;
         }
 
@@ -227,7 +227,7 @@ public final class NativeNumber extends ScriptObject {
         }
 
         if (fractionDigits != UNDEFINED && (f < 0 || f > 20)) {
-            rangeError(Global.instance(), "invalid.fraction.digits", "toExponential");
+            rangeError("invalid.fraction.digits", "toExponential");
             return UNDEFINED;
         }
 
@@ -258,7 +258,7 @@ public final class NativeNumber extends ScriptObject {
         }
 
         if (p < 1 || p > 21) {
-            rangeError(Global.instance(), "invalid.precision");
+            rangeError("invalid.precision");
             return UNDEFINED;
         }
 
@@ -283,7 +283,7 @@ public final class NativeNumber extends ScriptObject {
             final int intRadix = JSType.toInteger(radix);
             if (intRadix != 10) {
                 if (intRadix < 2 || intRadix > 36) {
-                    rangeError(Global.instance(), "invalid.radix");
+                    rangeError("invalid.radix");
                 }
                 return JSType.toString(getNumberValue(self), intRadix);
             }
@@ -338,7 +338,7 @@ public final class NativeNumber extends ScriptObject {
         } else if (self != null && self == Global.instance().getNumberPrototype()) {
             return 0.0;
         } else {
-            typeError(Global.instance(), "not.a.number", ScriptRuntime.safeToString(self));
+            typeError("not.a.number", ScriptRuntime.safeToString(self));
             return Double.NaN;
         }
     }

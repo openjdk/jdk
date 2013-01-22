@@ -86,7 +86,7 @@ public final class NativeRegExp extends ScriptObject {
             regExp = new RegExp(input, flagString);
         } catch (final ParserException e) {
             // translate it as SyntaxError object and throw it
-            e.throwAsEcmaException(Global.instance());
+            e.throwAsEcmaException();
             throw new AssertionError(); //guard against null warnings below
         }
 
@@ -221,7 +221,7 @@ public final class NativeRegExp extends ScriptObject {
                 if (!flagsDefined) {
                     return (NativeRegExp)regexp; // 15.10.3.1 - undefined flags and regexp as
                 }
-                typeError(Global.instance(), "regex.cant.supply.flags");
+                typeError("regex.cant.supply.flags");
             }
             patternString = JSType.toString(regexp);
         }
@@ -716,7 +716,7 @@ public final class NativeRegExp extends ScriptObject {
         } else if (self != null && self == Global.instance().getRegExpPrototype()) {
             return Global.instance().DEFAULT_REGEXP;
         } else {
-            typeError(Global.instance(), "not.a.regexp", ScriptRuntime.safeToString(self));
+            typeError("not.a.regexp", ScriptRuntime.safeToString(self));
             return null;
         }
     }

@@ -56,6 +56,16 @@ public final class ECMAErrors {
         throw new ECMAException(thrown, cause);
     }
 
+     /**
+     * Error dispatch mechanism.
+     * Throw a {@link ParserException} as the correct JavaScript error
+     *
+     * @param e {@code ParserException} for error dispatcher
+     */
+    public static void throwAsEcmaException(final ParserException e) {
+        throwAsEcmaException(Context.getGlobalTrusted(), e);
+    }
+
     /**
      * Error dispatch mechanism.
      * Throw a {@link ParserException} as the correct JavaScript error
@@ -103,6 +113,15 @@ public final class ECMAErrors {
         // should not happen - perhaps unknown error type?
         throw e;
     }
+    /**
+     * Throw a syntax error (ECMA 15.11.6.4)
+     *
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void syntaxError(final String msgId, final String... args) {
+        syntaxError(Context.getGlobalTrusted(), msgId, args);
+    }
 
     /**
      * Throw a syntax error (ECMA 15.11.6.4)
@@ -113,6 +132,17 @@ public final class ECMAErrors {
      */
     public static void syntaxError(final ScriptObject global, final String msgId, final String... args) {
         syntaxError(global, null, msgId, args);
+    }
+
+    /**
+     * Throw a syntax error (ECMA 15.11.6.4)
+     *
+     * @param cause   native Java {@code Throwable} that is the cause of error
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void syntaxError(final Throwable cause, final String msgId, final String... args) {
+        syntaxError(Context.getGlobalTrusted(), cause, msgId, args);
     }
 
     /**
@@ -131,12 +161,33 @@ public final class ECMAErrors {
     /**
      * Throw a type error (ECMA 15.11.6.5)
      *
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void typeError(final String msgId, final String... args) {
+        typeError(Context.getGlobalTrusted(), msgId, args);
+    }
+
+    /**
+     * Throw a type error (ECMA 15.11.6.5)
+     *
      * @param global  global scope object
      * @param msgId   resource tag for error message
      * @param args    arguments to resource
      */
     public static void typeError(final ScriptObject global, final String msgId, final String... args) {
         typeError(global, null, msgId, args);
+    }
+
+    /**
+     * Throw a type error (ECMA 15.11.6.5)
+     *
+     * @param cause   native Java {@code Throwable} that is the cause of error
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void typeError(final Throwable cause, final String msgId, final String... args) {
+        typeError(Context.getGlobalTrusted(), cause, msgId, args);
     }
 
     /**
@@ -155,12 +206,33 @@ public final class ECMAErrors {
     /**
      * Throw a range error (ECMA 15.11.6.2)
      *
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void rangeError(final String msgId, final String... args) {
+        rangeError(Context.getGlobalTrusted(), msgId, args);
+    }
+
+    /**
+     * Throw a range error (ECMA 15.11.6.2)
+     *
      * @param global  global scope object
      * @param msgId   resource tag for error message
      * @param args    arguments to resource
      */
     public static void rangeError(final ScriptObject global, final String msgId, final String... args) {
         rangeError(global, null, msgId, args);
+    }
+
+    /**
+     * Throw a range error (ECMA 15.11.6.2)
+     *
+     * @param cause   native Java {@code Throwable} that is the cause of error
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void rangeError(final Throwable cause, final String msgId, final String... args) {
+        rangeError(Context.getGlobalTrusted(), cause, msgId, args);
     }
 
     /**
@@ -179,12 +251,33 @@ public final class ECMAErrors {
     /**
      * Throw a reference error (ECMA 15.11.6.3)
      *
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void referenceError(final String msgId, final String... args) {
+        referenceError(Context.getGlobalTrusted(), msgId, args);
+    }
+
+    /**
+     * Throw a reference error (ECMA 15.11.6.3)
+     *
      * @param global  global scope object
      * @param msgId   resource tag for error message
      * @param args    arguments to resource
      */
     public static void referenceError(final ScriptObject global, final String msgId, final String... args) {
         referenceError(global, null, msgId, args);
+    }
+
+    /**
+     * Throw a reference error (ECMA 15.11.6.3)
+     *
+     * @param cause   native Java {@code Throwable} that is the cause of error
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void referenceError(final Throwable cause, final String msgId, final String... args) {
+        referenceError(Context.getGlobalTrusted(), cause, msgId, args);
     }
 
     /**
@@ -203,12 +296,33 @@ public final class ECMAErrors {
     /**
      * Throw a URI error (ECMA 15.11.6.6)
      *
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void uriError(final String msgId, final String... args) {
+        uriError(Context.getGlobalTrusted(), msgId, args);
+    }
+
+    /**
+     * Throw a URI error (ECMA 15.11.6.6)
+     *
      * @param global  global scope object
      * @param msgId   resource tag for error message
      * @param args    arguments to resource
      */
     public static void uriError(final ScriptObject global, final String msgId, final String... args) {
         uriError(global, null, msgId, args);
+    }
+
+    /**
+     * Throw a URI error (ECMA 15.11.6.6)
+     *
+     * @param cause   native Java {@code Throwable} that is the cause of error
+     * @param msgId   resource tag for error message
+     * @param args    arguments to resource
+     */
+    public static void uriError(final Throwable cause, final String msgId, final String... args) {
+        uriError(Context.getGlobalTrusted(), cause, msgId, args);
     }
 
     /**

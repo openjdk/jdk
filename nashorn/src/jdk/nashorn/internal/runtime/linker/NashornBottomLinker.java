@@ -30,8 +30,6 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
-import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
@@ -81,21 +79,21 @@ class NashornBottomLinker implements GuardingDynamicLinker {
         switch (operator) {
         case "new":
             if(isJavaDynamicMethod(self)) {
-                typeError(Context.getGlobal(), "method.not.constructor", ScriptRuntime.safeToString(self));
+                typeError("method.not.constructor", ScriptRuntime.safeToString(self));
             } else {
-                typeError(Context.getGlobal(), "not.a.function", ScriptRuntime.safeToString(self));
+                typeError("not.a.function", ScriptRuntime.safeToString(self));
             }
             break;
         case "call":
             if(isJavaDynamicMethod(self)) {
-                typeError(Context.getGlobal(), "no.method.matches.args", ScriptRuntime.safeToString(self));
+                typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
             } else {
-                typeError(Context.getGlobal(), "not.a.function", ScriptRuntime.safeToString(self));
+                typeError("not.a.function", ScriptRuntime.safeToString(self));
             }
             break;
         case "callMethod":
         case "getMethod":
-            typeError(Context.getGlobal(), "no.such.function", getArgument(linkRequest), ScriptRuntime.safeToString(self));
+            typeError("no.such.function", getArgument(linkRequest), ScriptRuntime.safeToString(self));
             break;
         case "getProp":
         case "getElem":
@@ -136,25 +134,24 @@ class NashornBottomLinker implements GuardingDynamicLinker {
     }
 
     private static GuardedInvocation linkNull(final LinkRequest linkRequest) {
-        final ScriptObject global = Context.getGlobal();
         final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor)linkRequest.getCallSiteDescriptor();
         final String operator = desc.getFirstOperator();
         switch (operator) {
         case "new":
         case "call":
-            typeError(global, "not.a.function", "null");
+            typeError("not.a.function", "null");
             break;
         case "callMethod":
         case "getMethod":
-            typeError(global, "no.such.function", getArgument(linkRequest), "null");
+            typeError("no.such.function", getArgument(linkRequest), "null");
             break;
         case "getProp":
         case "getElem":
-            typeError(global, "cant.get.property", getArgument(linkRequest), "null");
+            typeError("cant.get.property", getArgument(linkRequest), "null");
             break;
         case "setProp":
         case "setElem":
-            typeError(global, "cant.set.property", getArgument(linkRequest), "null");
+            typeError("cant.set.property", getArgument(linkRequest), "null");
             break;
         default:
             break;

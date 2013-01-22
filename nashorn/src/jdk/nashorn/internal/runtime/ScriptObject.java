@@ -274,7 +274,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
       * @return property descriptor
       */
     public final PropertyDescriptor toPropertyDescriptor() {
-        final GlobalObject global = (GlobalObject) Context.getGlobal();
+        final GlobalObject global = (GlobalObject) Context.getGlobalTrusted();
 
         final PropertyDescriptor desc;
         if (isDataDescriptor()) {
@@ -324,7 +324,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     public Object getOwnPropertyDescriptor(final String key) {
         final Property property = getMap().findProperty(key);
 
-        final GlobalObject global = (GlobalObject)Context.getGlobal();
+        final GlobalObject global = (GlobalObject)Context.getGlobalTrusted();
 
         if (property != null) {
             final ScriptFunction get   = property.getGetterFunction(this);
@@ -389,7 +389,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return true if property was successfully defined
      */
     public boolean defineOwnProperty(final String key, final Object propertyDesc, final boolean reject) {
-        final ScriptObject       global  = Context.getGlobal();
+        final ScriptObject       global  = Context.getGlobalTrusted();
         final PropertyDescriptor desc    = toPropertyDescriptor(global, propertyDesc);
         final Object             current = getOwnPropertyDescriptor(key);
         final String             name    = JSType.toString(key);
@@ -594,7 +594,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final int propFlags = Property.toFlags(pdesc);
 
         if (pdesc.type() == PropertyDescriptor.GENERIC) {
-            final GlobalObject global = (GlobalObject) Context.getGlobal();
+            final GlobalObject global = (GlobalObject) Context.getGlobalTrusted();
             final PropertyDescriptor dDesc = global.newDataDescriptor(UNDEFINED, false, false, false);
 
             dDesc.fillFrom((ScriptObject)pdesc);
@@ -1142,8 +1142,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (newProto == null || newProto instanceof ScriptObject) {
             setProto((ScriptObject)newProto);
         } else {
-            final ScriptObject global = Context.getGlobal();
-            final Object  newProtoObject = JSType.toObject(global, newProto);
+            final ScriptObject global = Context.getGlobalTrusted();
+            final Object  newProtoObject = JSType.toScriptObject(global, newProto);
 
             if (newProtoObject instanceof ScriptObject) {
                 setProto((ScriptObject)newProtoObject);
@@ -1246,7 +1246,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         // "valueOf" methods, and in order to avoid those call sites from becoming megamorphic when multiple contexts
         // are being executed in a long-running program, we move the code and their associated dynamic call sites
         // (Global.TO_STRING and Global.VALUE_OF) into per-context code.
-        return ((GlobalObject)Context.getGlobal()).getDefaultValue(this, typeHint);
+        return ((GlobalObject)Context.getGlobalTrusted()).getDefaultValue(this, typeHint);
     }
 
     /**
@@ -1575,7 +1575,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private GuardedInvocation notAFunction() {
-        typeError(Context.getGlobal(), "not.a.function", ScriptRuntime.safeToString(this));
+        typeError("not.a.function", ScriptRuntime.safeToString(this));
         return null;
     }
 
@@ -1754,7 +1754,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, String strictErrorMessage, boolean canBeFastScope) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         if (NashornCallSiteDescriptor.isStrict(desc)) {
-               typeError(Context.getGlobal(), strictErrorMessage, name, ScriptRuntime.safeToString((this)));
+               typeError(strictErrorMessage, name, ScriptRuntime.safeToString((this)));
            }
            assert canBeFastScope || !NashornCallSiteDescriptor.isFastScope(desc);
            final PropertyMap myMap = getMap();
@@ -1781,7 +1781,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     private boolean trySetEmbedOrSpill(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final Object value) {
         final boolean isStrict = NashornCallSiteDescriptor.isStrict(desc);
         if (!isExtensible() && isStrict) {
-            typeError(Context.getGlobal(), "object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(this));
+            typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(this));
             throw new AssertionError(); // never reached
         } else if (compareAndSetMap(oldMap, newMap)) {
             return true;
@@ -1798,7 +1798,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (!obj.isExtensible()) {
             if (isStrict) {
-                typeError(Context.getGlobal(), "object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
+                typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
             }
         } else if (obj.compareAndSetMap(oldMap, newMap)) {
             obj.spill = new Object[SPILL_RATE];
@@ -1815,7 +1815,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (!obj.isExtensible()) {
             if (isStrict) {
-                typeError(Context.getGlobal(), "object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
+                typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
             }
         } else if (obj.compareAndSetMap(oldMap, newMap)) {
             final int oldLength = obj.spill.length;
@@ -1870,7 +1870,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (find == null) {
             if (scopeCall) {
-                ECMAErrors.referenceError(Context.getGlobal(), "not.defined", name);
+                ECMAErrors.referenceError("not.defined", name);
                 throw new AssertionError(); // never reached
             }
             return createEmptyGetter(desc, name);
@@ -1909,7 +1909,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         if (scopeAccess) {
-            referenceError(Context.getGlobal(), "not.defined", name);
+            referenceError("not.defined", name);
         }
 
         return createEmptyGetter(desc, name);
@@ -2510,7 +2510,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (longIndex >= oldLength) {
             if (!isExtensible()) {
                 if (strict) {
-                    typeError(Context.getGlobal(), "object.non.extensible", JSType.toString(index), ScriptRuntime.safeToString(this));
+                    typeError("object.non.extensible", JSType.toString(index), ScriptRuntime.safeToString(this));
                 }
                 return;
             }
@@ -2559,7 +2559,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (f != null) {
             if (!f.isWritable()) {
                 if (strict) {
-                    typeError(Context.getGlobal(), "property.not.writable", key, ScriptRuntime.safeToString(this));
+                    typeError("property.not.writable", key, ScriptRuntime.safeToString(this));
                 }
 
                 return;
@@ -2575,7 +2575,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         } else if (!isExtensible()) {
             if (strict) {
-                typeError(Context.getGlobal(), "object.non.extensible", key, ScriptRuntime.safeToString(this));
+                typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
             }
         } else {
             spill(key, value);
@@ -3062,7 +3062,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (!find.isConfigurable()) {
             if (strict) {
-                typeError(Context.getGlobal(), "cant.delete.property", propName, ScriptRuntime.safeToString(this));
+                typeError("cant.delete.property", propName, ScriptRuntime.safeToString(this));
             }
             return false;
         }
@@ -3232,7 +3232,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 throw new RuntimeException(t);
             }
         }  else if (name != null) {
-            typeError(Context.getGlobal(), "property.has.no.setter", name, ScriptRuntime.safeToString(self));
+            typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
         }
     }
 

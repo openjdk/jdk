@@ -248,7 +248,7 @@ public enum JSType {
         final Object       result = sobj.getDefaultValue(hint);
 
         if (!isPrimitive(result)) {
-            typeError(Context.getGlobal(), "bad.default.value", result.toString());
+            typeError("bad.default.value", result.toString());
         }
 
         return result;
@@ -803,12 +803,25 @@ public enum JSType {
      * NativeObject type
      * See ECMA 9.9 ToObject
      *
+     * @param obj     the object to convert
+     *
+     * @return the wrapped object
+     */
+    public static Object toScriptObject(final Object obj) {
+        return toScriptObject(Context.getGlobalTrusted(), obj);
+    }
+
+    /**
+     * Object conversion. This is used to convert objects and numbers to their corresponding
+     * NativeObject type
+     * See ECMA 9.9 ToObject
+     *
      * @param global  the global object
      * @param obj     the object to convert
      *
      * @return the wrapped object
      */
-    public static Object toObject(final ScriptObject global, final Object obj) {
+    public static Object toScriptObject(final ScriptObject global, final Object obj) {
         if (nullOrUndefined(obj)) {
             typeError(global, "not.an.object", ScriptRuntime.safeToString(obj));
         }
@@ -851,7 +864,7 @@ public enum JSType {
         if (obj instanceof ScriptObject) {
             if (safe) {
                 final ScriptObject sobj = (ScriptObject)obj;
-                final GlobalObject gobj = (GlobalObject)Context.getGlobal();
+                final GlobalObject gobj = (GlobalObject)Context.getGlobalTrusted();
                 return gobj.isError(sobj) ?
                     ECMAException.safeToString(sobj) :
                     sobj.safeToString();

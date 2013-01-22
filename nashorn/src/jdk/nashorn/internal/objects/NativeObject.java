@@ -316,7 +316,7 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toLocaleString(final Object self) {
-        final Object obj = JSType.toObject(Global.instance(), self);
+        final Object obj = JSType.toScriptObject(self);
         if (obj instanceof ScriptObject) {
             final ScriptObject sobj = (ScriptObject)self;
             try {
@@ -331,7 +331,7 @@ public final class NativeObject {
                 throw new RuntimeException(t);
             }
 
-            typeError(Global.instance(), "not.a.function", "toString");
+            typeError("not.a.function", "toString");
             throw new AssertionError(); // never reached
         }
 

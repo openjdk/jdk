@@ -101,7 +101,7 @@ public final class NativeJSON extends ScriptObject {
         try {
             node = parser.parse();
         } catch (final ParserException e) {
-            syntaxError(Global.instance(), e, "invalid.json", e.getMessage());
+            syntaxError(e, "invalid.json", e.getMessage());
             return UNDEFINED;
         }
 
@@ -404,7 +404,7 @@ public final class NativeJSON extends ScriptObject {
     // Spec: The abstract operation JO(value) serializes an object.
     private static String JO(final ScriptObject value, final StringifyState state) {
         if (state.stack.containsKey(value)) {
-            typeError(Global.instance(), "JSON.stringify.cyclic");
+            typeError("JSON.stringify.cyclic");
         }
 
         state.stack.put(value, value);
@@ -480,7 +480,7 @@ public final class NativeJSON extends ScriptObject {
     // Spec: The abstract operation JA(value) serializes an array.
     private static Object JA(final NativeArray value, final StringifyState state) {
         if (state.stack.containsKey(value)) {
-            typeError(Global.instance(), "JSON.stringify.cyclic");
+            typeError("JSON.stringify.cyclic");
         }
 
         state.stack.put(value, value);

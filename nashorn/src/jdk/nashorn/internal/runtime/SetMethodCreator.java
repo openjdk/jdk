@@ -144,7 +144,7 @@ class SetMethodCreator {
         // In strict mode, assignment can not create a new variable.
         // See also ECMA Annex C item 4. ReferenceError is thrown.
         if (NashornCallSiteDescriptor.isScope(desc) && NashornCallSiteDescriptor.isStrict(desc)) {
-            referenceError(Context.getGlobal(), "not.defined", getName());
+            referenceError("not.defined", getName());
         }
     }
 
@@ -171,7 +171,7 @@ class SetMethodCreator {
     }
 
     private SetMethod createGlobalPropertySetter() {
-        final ScriptObject global = Context.getGlobal();
+        final ScriptObject global = Context.getGlobalTrusted();
         return new SetMethod(ScriptObject.bindTo(global.addSpill(getName()), global), null, false);
     }
 

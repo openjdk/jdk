@@ -88,7 +88,7 @@ public class ScriptingFunctions {
         }
 
         if (f == null || !f.isFile()) {
-            typeError(Context.getGlobal(), "not.a.file", ScriptRuntime.safeToString(file));
+            typeError("not.a.file", ScriptRuntime.safeToString(file));
             return UNDEFINED;
         }
 

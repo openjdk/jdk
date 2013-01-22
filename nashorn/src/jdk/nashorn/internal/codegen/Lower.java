@@ -1080,10 +1080,10 @@ final class Lower extends NodeOperatorVisitor {
     /*
      * For a script, add scope symbols as defined in the property map
      */
-    private static void initFromPropertyMap(final FunctionNode functionNode) {
+    private static void initFromPropertyMap(final Context context, final FunctionNode functionNode) {
         assert functionNode.isScript();
 
-        final PropertyMap map = Context.getGlobal().getMap();
+        final PropertyMap map = context.getGlobalMap();
 
         for (final Property property : map.getProperties()) {
             final String key = property.getKey();
@@ -1130,7 +1130,7 @@ final class Lower extends NodeOperatorVisitor {
         }
 
         if (functionNode.isScript()) {
-            initFromPropertyMap(functionNode);
+            initFromPropertyMap(compiler.getContext(), functionNode);
         }
 
         // Add function name as local symbol

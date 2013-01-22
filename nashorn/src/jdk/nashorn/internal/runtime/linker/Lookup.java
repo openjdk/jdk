@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -112,7 +111,7 @@ public final class Lookup {
      * @return undefined (but throws error before return point)
      */
     public static Object typeErrorThrowerGetter(final Object self) {
-        typeError(Context.getGlobal(), "strict.getter.setter.poison", ScriptRuntime.safeToString(self));
+        typeError("strict.getter.setter.poison", ScriptRuntime.safeToString(self));
         return UNDEFINED;
     }
 
@@ -123,7 +122,7 @@ public final class Lookup {
      * @param value (ignored)
      */
     public static void typeErrorThrowerSetter(final Object self, final Object value) {
-        typeError(Context.getGlobal(), "strict.getter.setter.poison", ScriptRuntime.safeToString(self));
+        typeError("strict.getter.setter.poison", ScriptRuntime.safeToString(self));
     }
 
     /**

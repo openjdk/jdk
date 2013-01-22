@@ -867,7 +867,7 @@ public final class NativeDate extends ScriptObject {
             if (func instanceof ScriptFunction) {
                 return TO_ISO_STRING.getInvoker().invokeExact(func, sobj, key);
             }
-            typeError(Global.instance(), "not.a.function", ScriptRuntime.safeToString(func));
+            typeError("not.a.function", ScriptRuntime.safeToString(func));
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
@@ -1006,7 +1006,7 @@ public final class NativeDate extends ScriptObject {
             return sb.toString();
         }
 
-        rangeError(Global.instance(), "invalid.date");
+        rangeError("invalid.date");
 
         return INVALID_DATE;
     }
@@ -1035,7 +1035,7 @@ public final class NativeDate extends ScriptObject {
             return sb.toString();
         }
 
-        rangeError(Global.instance(), "invalid.date");
+        rangeError("invalid.date");
 
         return INVALID_DATE;
     }
@@ -1268,7 +1268,7 @@ public final class NativeDate extends ScriptObject {
         } else if (self != null && self == Global.instance().getDatePrototype()) {
             return Global.instance().DEFAULT_DATE;
         } else {
-            typeError(Global.instance(), "not.a.date", ScriptRuntime.safeToString(self));
+            typeError("not.a.date", ScriptRuntime.safeToString(self));
             return null;
         }
     }

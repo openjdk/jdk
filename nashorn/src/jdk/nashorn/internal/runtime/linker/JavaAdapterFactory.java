@@ -430,6 +430,21 @@ public final class JavaAdapterFactory {
         }
     }
 
+    /**
+     * Tells if the given Class is an adapter or support class
+     * @param clazz Class object
+     * @return true if the Class given is adapter or support class
+     */
+    public static boolean isAdapterClass(Class<?> clazz) {
+        return clazz.getClassLoader() instanceof AdapterLoader;
+    }
+
+    private static class AdapterLoader extends SecureClassLoader {
+        AdapterLoader(ClassLoader parent) {
+            super(parent);
+        }
+    }
+
     // Creation of class loader is in a separate static method so that it doesn't retain a reference to the factory
     // instance. Note that the adapter class is created in the protection domain of the class/interface being
     // extended/implemented, and only the privileged global setter action class is generated in the protection domain
@@ -440,7 +455,7 @@ public final class JavaAdapterFactory {
     // security tradeoff...
     private static ClassLoader createClassLoader(final ClassLoader parentLoader, final String className,
             final byte[] classBytes, final String privilegedActionClassName) {
-        return new SecureClassLoader(parentLoader) {
+        return new AdapterLoader(parentLoader) {
             @Override
             protected Class<?> findClass(final String name) throws ClassNotFoundException {
                 if(name.equals(className)) {
@@ -688,7 +703,7 @@ public final class JavaAdapterFactory {
      */
     public static MethodHandle getHandle(final Object obj, final String name, final MethodType type, final boolean varArg) {
         if (! (obj instanceof ScriptObject)) {
-            typeError(Context.getGlobal(), "not.an.object", ScriptRuntime.safeToString(obj));
+            typeError("not.an.object", ScriptRuntime.safeToString(obj));
             throw new AssertionError();
         }
 
@@ -704,7 +719,7 @@ public final class JavaAdapterFactory {
         } else if(fnObj == null || fnObj instanceof Undefined) {
             return null;
         } else {
-            typeError(Context.getGlobal(), "not.a.function", name);
+            typeError("not.a.function", name);
             throw new AssertionError();
         }
     }
@@ -1076,7 +1091,7 @@ public final class JavaAdapterFactory {
 
         void typeError() {
             assert adaptationOutcome != AdaptationOutcome.SUCCESS;
-            ECMAErrors.typeError(Context.getGlobal(), "extend." + adaptationOutcome, classList);
+            ECMAErrors.typeError("extend." + adaptationOutcome, classList);
         }
     }
 
@@ -1219,7 +1234,7 @@ public final class JavaAdapterFactory {
         while(it.hasNext()) {
             b.append(", ").append(it.next().clazz.getCanonicalName());
         }
-        typeError(Context.getGlobal(), "extend.ambiguous.defining.class", b.toString());
+        typeError("extend.ambiguous.defining.class", b.toString());
         throw new AssertionError(); // never reached
     }
 

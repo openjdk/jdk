@@ -71,7 +71,6 @@ import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ParserException;
-import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
@@ -87,7 +86,6 @@ public final class JSONWriter extends NodeVisitor {
      * @return JSON string representation of AST of the supplied code
      */
     public static String parse(final String code, final String name, final boolean includeLoc) {
-        final ScriptObject global     = Context.getGlobal();
         final Context      context    = AccessController.doPrivileged(
                 new PrivilegedAction<Context>() {
                     @Override
@@ -103,7 +101,7 @@ public final class JSONWriter extends NodeVisitor {
             functionNode.accept(jsonWriter);
             return jsonWriter.getString();
         } catch (final ParserException e) {
-            e.throwAsEcmaException(global);
+            e.throwAsEcmaException();
             return null;
         }
     }

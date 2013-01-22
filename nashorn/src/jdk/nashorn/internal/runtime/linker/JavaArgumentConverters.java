@@ -34,7 +34,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.nashorn.internal.runtime.ConsString;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import org.dynalang.dynalink.support.TypeUtilities;
@@ -110,7 +109,7 @@ public class JavaArgumentConverters {
                 return Character.valueOf((char) ival);
             }
 
-            typeError(Context.getGlobal(), "cant.convert.number.to.char");
+            typeError("cant.convert.number.to.char");
         }
 
         final String s = toString(o);
@@ -119,7 +118,7 @@ public class JavaArgumentConverters {
         }
 
         if (s.length() != 1) {
-            typeError(Context.getGlobal(), "cant.convert.string.to.char");
+            typeError("cant.convert.string.to.char");
         }
 
         return s.charAt(0);
