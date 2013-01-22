@@ -1761,7 +1761,6 @@ final class Lower extends NodeOperatorVisitor {
 
         final CatchNode catchNode = new CatchNode(tryNodeSource, token, finish, new IdentNode(exception), null, catchBody);
         catchNode.setIsSyntheticRethrow();
-        getCurrentFunctionNode().setHasThrows(true);
         catchBlock.addStatement(catchNode);
 
         // replace all catches of outer tryNode with the catch-all

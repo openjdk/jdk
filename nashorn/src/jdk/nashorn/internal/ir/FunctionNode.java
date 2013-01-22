@@ -164,22 +164,16 @@ public class FunctionNode extends Block {
     private static final int IS_SPLIT                = 0b0000_0000_0010_0000;
     /** Is this function lazily compiled? */
     private static final int IS_LAZY                 = 0b0000_0000_0100_0000;
-    /** Do we have throws ? */
-    private static final int HAS_THROWS              = 0b0000_0000_1000_0000;
-    /** Do we have calls ? */
-    private static final int HAS_CALLS               = 0b0000_0001_0000_0000;
-    /** Has yield flag */
-    private static final int HAS_YIELD               = 0b0000_0010_0000_0000;
     /** Does the function contain eval? */
-    private static final int HAS_EVAL                = 0b0000_0100_0000_0000;
+    private static final int HAS_EVAL                = 0b0000_0000_1000_0000;
     /** Does the function contain a with block ? */
-    private static final int HAS_WITH                = 0b0000_1000_0000_0000;
+    private static final int HAS_WITH                = 0b0000_0001_0000_0000;
     /** Does a child function contain a with or eval? */
-    private static final int HAS_CHILD_WITH_OR_EVAL  = 0b0001_0000_0000_0000;
+    private static final int HAS_CHILD_WITH_OR_EVAL  = 0b0000_0010_0000_0000;
     /** Hide arguments? */
-    private static final int HIDE_ARGS               = 0b0010_0000_0000_0000;
+    private static final int HIDE_ARGS               = 0b0000_0100_0000_0000;
     /** Does the function need a self symbol? */
-    private static final int NEEDS_SELF_SYMBOL       = 0b0100_0000_0000_0000;
+    private static final int NEEDS_SELF_SYMBOL       = 0b0000_1000_0000_0000;
 
     /** Does this function or any nested functions contain a with or an eval? */
     private static final int HAS_DEEP_WITH_OR_EVAL = HAS_EVAL | HAS_WITH | HAS_CHILD_WITH_OR_EVAL;
@@ -586,22 +580,6 @@ public class FunctionNode extends Block {
      */
     public Stack<LabelNode> getLabelStack() {
         return labelStack;
-    }
-
-    /**
-     * Check if this function has a {@code yield} usage
-     *
-     * @return true if function uses {@code yield}
-     */
-    public boolean hasYield() {
-        return (flags & HAS_YIELD) != 0;
-    }
-
-    /**
-     * Flag this function as using the {@code yield} keyword
-     */
-    public void setHasYield() {
-        this.flags |= HAS_YIELD;
     }
 
     /**
@@ -1046,42 +1024,6 @@ public class FunctionNode extends Block {
      */
     public boolean isLowered() {
         return (flags & IS_LOWERED) != 0;
-    }
-
-    /**
-     * Set if function has calls
-     *
-     * @param hasCalls does the function have calls?
-     */
-    public void setHasCalls(final boolean hasCalls) {
-        flags = hasCalls ? flags | HAS_CALLS : flags & ~HAS_CALLS;
-    }
-
-    /**
-     * Check if function has calls
-     *
-     * @return true if function has calls
-     */
-    public boolean hasCalls() {
-        return (flags & HAS_CALLS) != 0;
-    }
-
-    /**
-     * Set if the function has throws
-     *
-     * @param hasThrows does the function have throw statements
-     */
-    public void setHasThrows(final boolean hasThrows) {
-        flags = hasThrows ? flags | HAS_THROWS : flags & ~HAS_THROWS;
-    }
-
-    /**
-     * Can the function throw exceptioons
-     *
-     * @return true if function throws exceptions
-     */
-    public boolean hasThrows() {
-        return (flags & HAS_THROWS) != 0;
     }
 
     /**
