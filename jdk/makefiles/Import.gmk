@@ -155,6 +155,12 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
             IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
         endif
     endif
+    ifeq ($(JVM_VARIANT_MINIMAL1), true)
+        IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+        ifneq (,$(JSIG_DEBUGINFO))
+            IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+        endif
+    endif
 endif
 
 $(INSTALL_LIBRARIES_HERE)/server/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
@@ -187,6 +193,25 @@ $(INSTALL_LIBRARIES_HERE)/client/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debug
 	$(LN) -s ../$(@F) $@
 
 $(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(RM) $@.tmp $(basename $@).debuginfo
+	$(LN) -s ../$(basename $(@F)).debuginfo $(basename $@).debuginfo
+	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).debuginfo
+	$(RM) $(basename $@).debuginfo
+	$(MV) $@.tmp $@
+
+$(INSTALL_LIBRARIES_HERE)/minimal/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/minimal/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/minimal/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@).debuginfo
