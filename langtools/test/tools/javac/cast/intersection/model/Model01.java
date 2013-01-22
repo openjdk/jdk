@@ -25,7 +25,7 @@
  * @test
  * @bug 8002099
  * @summary Add support for intersection types in cast expression
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor ModelChecker
  * @compile -XDallowIntersectionTypes -processor ModelChecker Model01.java
  */

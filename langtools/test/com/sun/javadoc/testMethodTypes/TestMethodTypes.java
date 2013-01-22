@@ -55,7 +55,7 @@ public class TestMethodTypes extends JavadocTester {
             "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">" +
             "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t5\" class=\"tableTab\"><span><a href=\"javascript:show(16);\">" +
+            "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">" +
             "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "</caption>"
         },
@@ -87,7 +87,7 @@ public class TestMethodTypes extends JavadocTester {
             "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "<span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">" +
             "Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
-            "<span id=\"t5\" class=\"tableTab\"><span><a href=\"javascript:show(16);\">" +
+            "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">" +
             "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>" +
             "</caption>"
         },

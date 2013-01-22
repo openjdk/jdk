@@ -25,7 +25,7 @@
  * @test
  * @bug 6986892
  * @summary confusing warning given after errors in annotation processing
- * @library ../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor TestProcUseImplicitWarning
  * @clean C1 p.C2
  * @compile/fail/ref=err.out -XDrawDiagnostics -processor TestProcUseImplicitWarning -Aerror C1.java

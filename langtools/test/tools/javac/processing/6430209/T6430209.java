@@ -25,7 +25,7 @@
  * @test
  * @bug 6441871
  * @summary spurious compiler error elicited by packageElement.getEnclosedElements()
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor b6341534
  * @run main T6430209
  */

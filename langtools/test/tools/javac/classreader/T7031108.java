@@ -25,7 +25,7 @@
  * @test
  * @bug 7031108
  * @summary NPE in javac.jvm.ClassReader.findMethod in PackageElement.enclosedElements from AP in incr build
- * @library ../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor T7031108
  * @run main T7031108
  */

@@ -25,7 +25,7 @@
  * @test
  * @bug 7021650
  * @summary Fix Context issues
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor T7021650
  * @run main T7021650
  */

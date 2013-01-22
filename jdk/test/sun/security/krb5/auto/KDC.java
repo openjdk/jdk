@@ -285,10 +285,12 @@ public class KDC {
             if (Character.isDigit(pass[pass.length-1])) {
                 kvno = pass[pass.length-1] - '0';
             }
-            ktab.addEntry(new PrincipalName(name,
-                    name.indexOf('/') < 0 ?
-                        PrincipalName.KRB_NT_UNKNOWN :
-                        PrincipalName.KRB_NT_SRV_HST),
+            PrincipalName pn = new PrincipalName(name,
+                        name.indexOf('/') < 0 ?
+                            PrincipalName.KRB_NT_UNKNOWN :
+                            PrincipalName.KRB_NT_SRV_HST);
+            ktab.addEntry(pn,
+                        getSalt(pn),
                         pass,
                         kvno,
                         true);
@@ -534,7 +536,7 @@ public class KDC {
         if (pass == null) {
             throw new KrbException(server?
                 Krb5.KDC_ERR_S_PRINCIPAL_UNKNOWN:
-                Krb5.KDC_ERR_C_PRINCIPAL_UNKNOWN);
+                Krb5.KDC_ERR_C_PRINCIPAL_UNKNOWN, pn.toString());
         }
         return pass;
     }
@@ -544,7 +546,7 @@ public class KDC {
      * @param p principal
      * @return the salt
      */
-    private String getSalt(PrincipalName p) {
+    protected String getSalt(PrincipalName p) {
         String pn = p.toString();
         if (p.getRealmString() == null) {
             pn = pn + "@" + getRealm();

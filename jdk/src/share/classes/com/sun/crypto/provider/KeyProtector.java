@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ final class KeyProtector {
     {
         // create a random salt (8 bytes)
         byte[] salt = new byte[8];
-        SunJCE.RANDOM.nextBytes(salt);
+        SunJCE.getRandom().nextBytes(salt);
 
         // create PBE parameters from salt and iteration count
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, 20);
@@ -284,7 +284,7 @@ final class KeyProtector {
     {
         // create a random salt (8 bytes)
         byte[] salt = new byte[8];
-        SunJCE.RANDOM.nextBytes(salt);
+        SunJCE.getRandom().nextBytes(salt);
 
         // create PBE parameters from salt and iteration count
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, 20);

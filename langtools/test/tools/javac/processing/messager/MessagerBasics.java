@@ -26,7 +26,7 @@
  * @bug     6341173 6341072
  * @summary Test presence of Messager methods
  * @author  Joseph D. Darcy
- * @library ../../lib
+ * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile MessagerBasics.java
  * @compile -processor MessagerBasics -proc:only MessagerBasics.java

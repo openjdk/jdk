@@ -717,7 +717,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
                                                                                                                                      \
   static_field(ClassLoaderDataGraph,           _head,                                         ClassLoaderData*)                      \
-  nonstatic_field(ClassLoaderDataGraph,        _unloading,                                    ClassLoaderData*)                      \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* GrowableArrays  */                                                                                                              \
@@ -1199,7 +1198,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /*********************************/                                                                                                \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
-  static_field(java_lang_Class,                _resolved_constructor_offset,                  int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
   static_field(java_lang_Class,                _oop_size_offset,                              int)                                   \
   static_field(java_lang_Class,                _static_oop_field_count_offset,                int)                                   \
@@ -2293,6 +2291,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /*************************************/                                 \
                                                                           \
   declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
+  declare_preprocessor_constant("FIELDINFO_TAG_MASK", FIELDINFO_TAG_MASK) \
   declare_preprocessor_constant("FIELDINFO_TAG_OFFSET", FIELDINFO_TAG_OFFSET) \
                                                                           \
   /************************************************/                      \
@@ -2575,7 +2574,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
 
 // This macro checks the type of a VMStructEntry by comparing pointer types
 #define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
- {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName; }
+ {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
+  assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); }
 
 // This macro checks the type of a volatile VMStructEntry by comparing pointer types
 #define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)        \

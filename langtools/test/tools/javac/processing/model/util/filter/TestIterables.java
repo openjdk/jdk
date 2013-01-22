@@ -26,7 +26,7 @@
  * @bug 6406164
  * @summary Test that ElementFilter iterable methods behave properly.
  * @author  Joseph D. Darcy
- * @library ../../../../lib
+ * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor
  * @compile TestIterables.java
  * @compile -processor TestIterables -proc:only Foo1.java

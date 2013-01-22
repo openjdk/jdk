@@ -99,9 +99,9 @@ class ParameterImpl implements Parameter {
      * Return an empty array if there are none.
      */
     public AnnotationDesc[] annotations() {
-        AnnotationDesc res[] = new AnnotationDesc[sym.getAnnotationMirrors().length()];
+        AnnotationDesc res[] = new AnnotationDesc[sym.getRawAttributes().length()];
         int i = 0;
-        for (Attribute.Compound a : sym.getAnnotationMirrors()) {
+        for (Attribute.Compound a : sym.getRawAttributes()) {
             res[i++] = new AnnotationDescImpl(env, a);
         }
         return res;

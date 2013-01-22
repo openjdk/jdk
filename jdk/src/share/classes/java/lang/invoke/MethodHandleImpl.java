@@ -310,9 +310,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     static class AsVarargsCollector extends MethodHandle {
-        MethodHandle target;
-        final Class<?> arrayType;
-        MethodHandle cache;
+        private final MethodHandle target;
+        private final Class<?> arrayType;
+        private MethodHandle cache;
 
         AsVarargsCollector(MethodHandle target, MethodType type, Class<?> arrayType) {
             super(type, reinvokerForm(type));
