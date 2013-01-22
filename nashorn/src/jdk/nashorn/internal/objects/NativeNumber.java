@@ -57,7 +57,7 @@ import org.dynalang.dynalink.linker.GuardedInvocation;
 @ScriptClass("Number")
 public final class NativeNumber extends ScriptObject {
 
-    private static final MethodHandle WRAPFILTER = findWrapFilter();
+    static final MethodHandle WRAPFILTER = findWrapFilter();
 
     /** ECMA 15.7.3.2 largest positive finite value */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT, where = Where.CONSTRUCTOR)

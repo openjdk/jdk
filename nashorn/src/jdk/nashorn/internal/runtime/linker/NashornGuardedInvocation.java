@@ -33,7 +33,8 @@ import org.dynalang.dynalink.linker.GuardedInvocation;
  * Guarded invocation with Nashorn specific bits.
  */
 public class NashornGuardedInvocation extends GuardedInvocation {
-    private final int flags;
+
+    private final boolean nonStrict;
 
     /**
      * Constructor
@@ -41,28 +42,28 @@ public class NashornGuardedInvocation extends GuardedInvocation {
      * @param invocation  invocation target
      * @param switchPoint SwitchPoint that will, when invalidated, require relinking callsite, null if no SwitchPoint
      * @param guard       guard that will, when failed, require relinking callsite, null if no guard
-     * @param flags       callsite flags
+     * @param nonStrict   non-strict invocation target flag
      */
-    public NashornGuardedInvocation(final MethodHandle invocation, final SwitchPoint switchPoint, final MethodHandle guard, final int flags) {
+    public NashornGuardedInvocation(final MethodHandle invocation, final SwitchPoint switchPoint, final MethodHandle guard, final boolean nonStrict) {
         super(invocation, switchPoint, guard);
-        this.flags = flags;
+        this.nonStrict = nonStrict;
 
     }
 
     /**
-     * Is this invocation created from a callsite with strict semantics
-     * @return true if strict
+     * Is the target of this invocation a non-strict function?
+     * @return true if invocation target is non-strict
      */
-    public boolean isStrict() {
-        return (flags & NashornCallSiteDescriptor.CALLSITE_STRICT) != 0;
+    public boolean isNonStrict() {
+        return nonStrict;
     }
 
     /**
-     * Check whether a GuardedInvocation is created from a callsite with strict semantics
+     * Check whether the target of this invocation is a non-strict script function.
      * @param inv guarded invocation
-     * @return true if strict
+     * @return true if invocation target is non-strict
      */
-    public static boolean isStrict(final GuardedInvocation inv) {
-        return (inv instanceof NashornGuardedInvocation)? ((NashornGuardedInvocation)inv).isStrict() : false;
+    public static boolean isNonStrict(final GuardedInvocation inv) {
+        return inv instanceof NashornGuardedInvocation && ((NashornGuardedInvocation)inv).isNonStrict();
     }
 }

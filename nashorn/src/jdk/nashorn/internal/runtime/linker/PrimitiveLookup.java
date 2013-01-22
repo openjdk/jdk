@@ -94,11 +94,11 @@ public class PrimitiveLookup {
         final GuardedInvocation link = wrappedReceiver.lookup(desc);
         if (link != null) {
             MethodHandle method = link.getInvocation();
-            if (!NashornGuardedInvocation.isStrict(link)) {
+            final Class<?> receiverType = method.type().parameterType(0);
+            if (receiverType != Object.class || NashornGuardedInvocation.isNonStrict(link)) {
                 final MethodType wrapType = wrapFilter.type();
-                final Class<?> methodReceiverType = method.type().parameterType(0);
-                assert methodReceiverType.isAssignableFrom(wrapType.returnType());
-                method = MH.filterArguments(method, 0, MH.asType(wrapFilter, wrapType.changeReturnType(methodReceiverType)));
+                assert receiverType.isAssignableFrom(wrapType.returnType());
+                method = MH.filterArguments(method, 0, MH.asType(wrapFilter, wrapType.changeReturnType(receiverType)));
             }
             return new GuardedInvocation(method, guard, link.getSwitchPoint());
         }
