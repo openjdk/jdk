@@ -419,6 +419,18 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     @Override
+    public MethodHandle getWrapFilter(Object obj) {
+        if (obj instanceof String || obj instanceof ConsString) {
+            return NativeString.WRAPFILTER;
+        } else if (obj instanceof Number) {
+            return NativeNumber.WRAPFILTER;
+        } else if (obj instanceof Boolean) {
+            return NativeBoolean.WRAPFILTER;
+        }
+        throw new IllegalArgumentException("Unsupported primitive value: " + obj);
+    }
+
+    @Override
     public GuardedInvocation numberLookup(final NashornCallSiteDescriptor callSite, final Number self) {
         return NativeNumber.lookupPrimitive(callSite, self);
     }

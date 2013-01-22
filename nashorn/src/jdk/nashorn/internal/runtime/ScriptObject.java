@@ -1643,16 +1643,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         // getMap() is fine as we have the prototype switchpoint depending on where the property was found
         final MethodHandle guard = NashornGuards.getMapGuard(getMap());
 
-        int invokeFlags = 0;
-
         if (methodHandle != null) {
             assert methodHandle.type().returnType().equals(returnType);
             final ScriptFunction getter = find.getGetterFunction();
-            invokeFlags = (getter != null && getter.isStrict()) ? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
+            final boolean nonStrict = getter != null && getter.isNonStrictFunction();
             if (find.isSelf()) {
                 return new NashornGuardedInvocation(methodHandle, null, ObjectClassGenerator.OBJECT_FIELDS_ONLY &&
                         NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType() ? null : guard,
-                                invokeFlags);
+                            nonStrict);
             }
 
             final ScriptObject prototype = find.getOwner();
@@ -1660,11 +1658,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (!property.hasGetterFunction()) {
                 methodHandle = bindTo(methodHandle, prototype);
             }
-            return new NashornGuardedInvocation(methodHandle, getMap().getProtoGetSwitchPoint(name), guard, invokeFlags);
+            return new NashornGuardedInvocation(methodHandle, getMap().getProtoGetSwitchPoint(name), guard, nonStrict);
         }
 
         assert !NashornCallSiteDescriptor.isFastScope(desc);
-        return new NashornGuardedInvocation(Lookup.emptyGetter(returnType), getMap().getProtoGetSwitchPoint(name), guard, invokeFlags);
+        return new GuardedInvocation(Lookup.emptyGetter(returnType), getMap().getProtoGetSwitchPoint(name), guard);
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name) {
@@ -1855,7 +1853,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final Class<?>   valueClass = callType.parameterType(2);
 
         MethodHandle methodHandle = findOwnMH("set", void.class, keyClass, valueClass, boolean.class);
-        methodHandle = MH.asType(methodHandle, methodHandle.type().changeParameterType(0, Object.class));
         methodHandle = MH.insertArguments(methodHandle, 3, isStrict);
 
         return new GuardedInvocation(methodHandle, getScriptObjectGuard(callType));

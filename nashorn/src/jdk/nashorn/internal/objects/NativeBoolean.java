@@ -50,7 +50,7 @@ import org.dynalang.dynalink.linker.GuardedInvocation;
 public final class NativeBoolean extends ScriptObject {
     private final boolean value;
 
-    private final static MethodHandle WRAPFILTER = findWrapFilter();
+    final static MethodHandle WRAPFILTER = findWrapFilter();
 
     NativeBoolean(final boolean value) {
         this(value, Global.instance().getBooleanPrototype());

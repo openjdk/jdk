@@ -67,7 +67,7 @@ public final class NativeFunction {
     }
 
     private static Object convertThis(final ScriptFunction func, final Object thiz) {
-        if (!(thiz instanceof ScriptObject) && !func.isStrict() && !func.isBuiltin()) {
+        if (!(thiz instanceof ScriptObject) && func.isNonStrictFunction()) {
             if (thiz == UNDEFINED || thiz == null) {
                 return Global.instance();
             }

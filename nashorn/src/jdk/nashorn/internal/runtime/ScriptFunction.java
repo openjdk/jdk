@@ -40,6 +40,7 @@ import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
+import jdk.nashorn.internal.runtime.linker.NashornGuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.dynalang.dynalink.CallSiteDescriptor;
@@ -327,6 +328,14 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return true if built-in
      */
     public abstract boolean isBuiltin();
+
+    /**
+     * Is this a non-strict (not built-in) script function?
+     * @return true if neither strict nor built-in
+     */
+    public boolean isNonStrictFunction() {
+        return !isStrict() && !isBuiltin();
+    }
 
     /**
      * Execute this script function.
@@ -916,7 +925,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
             if(NashornCallSiteDescriptor.isScope(desc)) {
                 // (this, callee, args...) => (callee, args...) => (callee, [this], args...)
-                boundHandle = MH.bindTo(callHandle, isStrict() || isBuiltin()? ScriptRuntime.UNDEFINED : Context.getGlobal());
+                boundHandle = MH.bindTo(callHandle, isNonStrictFunction() ? Context.getGlobal(): ScriptRuntime.UNDEFINED);
                 boundHandle = MH.dropArguments(boundHandle, 1, Object.class);
             } else {
                 // (this, callee, args...) permute => (callee, this, args...) which is what we get in
@@ -934,7 +943,7 @@ public abstract class ScriptFunction extends ScriptObject {
             final MethodHandle callHandle = getBestSpecializedInvokeHandle(type.dropParameterTypes(0, 1));
 
             if(NashornCallSiteDescriptor.isScope(desc)) {
-                boundHandle = MH.bindTo(callHandle, isStrict() || isBuiltin()? ScriptRuntime.UNDEFINED : Context.getGlobal());
+                boundHandle = MH.bindTo(callHandle, isNonStrictFunction()? Context.getGlobal() : ScriptRuntime.UNDEFINED);
                 boundHandle = MH.dropArguments(boundHandle, 0, Object.class, Object.class);
             } else {
                 boundHandle = MH.dropArguments(callHandle, 0, Object.class);
@@ -942,7 +951,7 @@ public abstract class ScriptFunction extends ScriptObject {
         }
 
         boundHandle = pairArguments(boundHandle, type);
-        return new GuardedInvocation(boundHandle, NashornGuards.getFunctionGuard(this));
+        return new NashornGuardedInvocation(boundHandle, null, NashornGuards.getFunctionGuard(this), isNonStrictFunction());
     }
 
     /**

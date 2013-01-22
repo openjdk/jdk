@@ -29,6 +29,10 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+
+import jdk.nashorn.internal.runtime.ConsString;
+import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Undefined;
@@ -71,9 +75,23 @@ public class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
             return null;
         }
 
-        final GuardedInvocation inv;
+        GuardedInvocation inv;
         if (self instanceof ScriptObject) {
             inv = ((ScriptObject)self).lookup(desc, request.isCallSiteUnstable());
+
+            if (self instanceof ScriptFunction && "call".equals(desc.getNameToken(CallSiteDescriptor.OPERATOR))) {
+
+                // Add toObject wrapper for non-object self argument to non-strict functions
+                assert request.getArguments().length >= 2 : "No self argument in script function callsite";
+                Object thisObject = request.getArguments()[1];
+                // Add wrapper filter for primitive this-object on non-strict functions
+                if (NashornGuardedInvocation.isNonStrict(inv) && isPrimitive(thisObject)) {
+                    MethodHandle wrapFilter = ((GlobalObject) Context.getGlobal()).getWrapFilter(thisObject);
+                    MethodHandle invocation = MH.filterArguments(inv.getInvocation(), 1,
+                            MH.asType(wrapFilter, wrapFilter.type().changeReturnType(Object.class)));
+                    inv = new GuardedInvocation(invocation, inv.getSwitchPoint(), inv.getGuard());
+                }
+            }
         } else if (self instanceof Undefined) {
             inv = Undefined.lookup(desc);
         } else {
@@ -133,6 +151,13 @@ public class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     private static boolean isAutoConvertibleFromFunction(final Class<?> clazz) {
         return JavaAdapterFactory.isAbstractClass(clazz) && !ScriptObject.class.isAssignableFrom(clazz) &&
                 JavaAdapterFactory.isAutoConvertibleFromFunction(clazz);
+    }
+
+    private static boolean isPrimitive(Object obj) {
+        return obj instanceof Boolean ||
+               obj instanceof Number ||
+               obj instanceof String ||
+               obj instanceof ConsString;
     }
 
     @Override

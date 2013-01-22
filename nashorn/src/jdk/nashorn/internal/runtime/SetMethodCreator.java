@@ -89,21 +89,19 @@ class SetMethodCreator {
     private class SetMethod {
         private final MethodHandle methodHandle;
         private final Property property;
-        private final int invokeFlags;
+        private final boolean nonStrict;
 
         /**
          * Creates a new lookup result.
          * @param methodHandle the actual method handle
          * @param property the property object. Can be null in case we're creating a new property in the global object.
-         * @param invokeFlags flags for the invocation. Normally either 0, or
-         * {@link NashornCallSiteDescriptor#CALLSITE_STRICT} when an existing property with a strict function for a
-         * property setter is discovered.
+         * @param nonStrict True if an existing property with a non-strict function as property setter is discovered.
          */
-        SetMethod(final MethodHandle methodHandle, final Property property, final int invokeFlags) {
+        SetMethod(final MethodHandle methodHandle, final Property property, final boolean nonStrict) {
             assert methodHandle != null;
             this.methodHandle = methodHandle;
             this.property = property;
-            this.invokeFlags = invokeFlags;
+            this.nonStrict = nonStrict;
         }
 
         /**
@@ -111,7 +109,7 @@ class SetMethodCreator {
          * @return the composed guarded invocation that represents the dynamic setter method for the property.
          */
         GuardedInvocation createGuardedInvocation() {
-            return new NashornGuardedInvocation(methodHandle, null, getGuard(), invokeFlags);
+            return new NashornGuardedInvocation(methodHandle, null, getGuard(), nonStrict);
         }
 
         private MethodHandle getGuard() {
@@ -164,20 +162,17 @@ class SetMethodCreator {
         } else {
             boundHandle = methodHandle;
         }
-        return new SetMethod(boundHandle, property, getExistingPropertySetterInvokeFlags());
+        return new SetMethod(boundHandle, property, getExistingSetterNonStrictFlag());
     }
 
-    private int getExistingPropertySetterInvokeFlags() {
+    private boolean getExistingSetterNonStrictFlag() {
         final ScriptFunction setter = find.getSetterFunction();
-        if (setter != null && setter.isStrict()) {
-            return NashornCallSiteDescriptor.CALLSITE_STRICT;
-        }
-        return 0;
+        return setter != null && setter.isNonStrictFunction();
     }
 
     private SetMethod createGlobalPropertySetter() {
         final ScriptObject global = Context.getGlobal();
-        return new SetMethod(ScriptObject.bindTo(global.addSpill(getName()), global), null, 0);
+        return new SetMethod(ScriptObject.bindTo(global.addSpill(getName()), global), null, false);
     }
 
     private SetMethod createNewPropertySetter() {
@@ -197,7 +192,7 @@ class SetMethodCreator {
         final int nextSpill = getMap().getSpillLength();
 
         final Property property = createSpillProperty(nextSpill);
-        return new SetMethod(createSpillMethodHandle(nextSpill, property), property, 0);
+        return new SetMethod(createSpillMethodHandle(nextSpill, property), property, false);
     }
 
     private Property createSpillProperty(final int nextSpill) {
@@ -227,7 +222,7 @@ class SetMethodCreator {
         final Property property = new SpillProperty(getName(), 0, nextEmbed, ScriptObject.GET_EMBED[nextEmbed], ScriptObject.SET_EMBED[nextEmbed]);
         //TODO specfields
         final MethodHandle methodHandle = MH.insertArguments(ScriptObject.SETEMBED, 0, desc, getMap(), getNewMap(property), property.getSetter(Object.class, getMap()), nextEmbed);
-        return new SetMethod(methodHandle, property, 0);
+        return new SetMethod(methodHandle, property, false);
     }
 
     private PropertyMap getNewMap(Property property) {

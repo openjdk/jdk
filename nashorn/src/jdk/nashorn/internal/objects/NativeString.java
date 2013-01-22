@@ -68,7 +68,7 @@ public final class NativeString extends ScriptObject {
 
     private final CharSequence value;
 
-    private static final MethodHandle WRAPFILTER = findWrapFilter();
+    static final MethodHandle WRAPFILTER = findWrapFilter();
 
     NativeString(final CharSequence value) {
         this(value, Global.instance().getStringPrototype());
