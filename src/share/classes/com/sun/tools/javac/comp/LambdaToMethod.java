@@ -859,8 +859,8 @@ public class LambdaToMethod extends TreeTranslator {
             finally {
                 frameStack = prevStack;
             }
-            if (frameStack.nonEmpty() && enclosingLambda() != null) {
-                // Any class defined within a lambda is an implicit 'this' reference
+            if (!tree.sym.isStatic() && frameStack.nonEmpty() && enclosingLambda() != null) {
+                // Any (non-static) class defined within a lambda is an implicit 'this' reference
                 // because its constructor will reference the enclosing class
                 ((LambdaTranslationContext) context()).addSymbol(tree.sym.type.getEnclosingType().tsym, CAPTURED_THIS);
             }
@@ -994,6 +994,11 @@ public class LambdaToMethod extends TreeTranslator {
          * (required to skip synthetic lambda symbols)
          */
         private Symbol owner() {
+            return owner(false);
+        }
+
+        @SuppressWarnings("fallthrough")
+        private Symbol owner(boolean skipLambda) {
             List<Frame> frameStack2 = frameStack;
             while (frameStack2.nonEmpty()) {
                 switch (frameStack2.head.tree.getTag()) {
@@ -1012,7 +1017,8 @@ public class LambdaToMethod extends TreeTranslator {
                     case METHODDEF:
                         return ((JCMethodDecl)frameStack2.head.tree).sym;
                     case LAMBDA:
-                        return ((LambdaTranslationContext)contextMap.get(frameStack2.head.tree)).translatedSym;
+                        if (!skipLambda)
+                            return ((LambdaTranslationContext)contextMap.get(frameStack2.head.tree)).translatedSym;
                     default:
                         frameStack2 = frameStack2.tail;
                 }
@@ -1311,8 +1317,9 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             Type enclosingType() {
-                //local inner classes defined inside a lambda are always non-static
-                return owner.enclClass().type;
+                return owner.isStatic() ?
+                        Type.noType :
+                        owner.enclClass().type;
             }
 
             Type generatedLambdaSig() {
