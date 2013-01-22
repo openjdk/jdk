@@ -302,6 +302,10 @@ public class LogManager {
      * the same event Listener results in multiple entries
      * in the property event listener table.
      *
+     * <p><b>WARNING:</b> This method is omitted from this class in all subset
+     * Profiles of Java SE that do not include the {@code java.beans} package.
+     * </p>
+     *
      * @param l  event listener
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
@@ -334,6 +338,10 @@ public class LogManager {
      * all instances of that listener from the listener table.
      * <P>
      * Returns silently if the given listener is not found.
+     *
+     * <p><b>WARNING:</b> This method is omitted from this class in all subset
+     * Profiles of Java SE that do not include the {@code java.beans} package.
+     * </p>
      *
      * @param l  event listener (can be null)
      * @exception  SecurityException  if a security manager exists and if
