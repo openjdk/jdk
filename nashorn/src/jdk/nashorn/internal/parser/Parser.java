@@ -1447,9 +1447,6 @@ loop:
         // Construct and add YIELD node.
         final ReturnNode yieldNode = new ReturnNode(source, yieldToken, finish, expression, findControl(TryNode.class));
         block.addStatement(yieldNode);
-
-        // Note that this function contains a yield.
-        function.setHasYield();
     }
 
     /**
@@ -1671,7 +1668,6 @@ loop:
 
         // Construct and add THROW node.
         final ThrowNode throwNode = new ThrowNode(source, throwToken, finish, expression, findControl(TryNode.class));
-        function.setHasThrows(true);
         block.addStatement(throwNode);
     }
 
@@ -2235,8 +2231,6 @@ loop:
             if (isInWithBlock()) {
                 ((CallNode)lhs).setInWithBlock();
             }
-
-            function.setHasCalls(true);
         }
 
 loop:
@@ -2254,8 +2248,6 @@ loop:
                 if (isInWithBlock()) {
                     ((CallNode)lhs).setInWithBlock();
                 }
-
-                function.setHasCalls(true);
 
                 break;
 
@@ -2333,7 +2325,6 @@ loop:
             arguments.add(objectLiteral());
         }
 
-        function.setHasCalls(true);
         final CallNode callNode = new CallNode(source, constructor.getToken(), finish, constructor, arguments);
         if (isInWithBlock()) {
             callNode.setInWithBlock();
