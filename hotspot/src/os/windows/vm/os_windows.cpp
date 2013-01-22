@@ -1874,8 +1874,22 @@ static BOOL WINAPI consoleHandler(DWORD event) {
       }
       return TRUE;
       break;
+    case CTRL_LOGOFF_EVENT: {
+      // Don't terminate JVM if it is running in a non-interactive session,
+      // such as a service process.
+      USEROBJECTFLAGS flags;
+      HANDLE handle = GetProcessWindowStation();
+      if (handle != NULL &&
+          GetUserObjectInformation(handle, UOI_FLAGS, &flags,
+            sizeof( USEROBJECTFLAGS), NULL)) {
+        // If it is a non-interactive session, let next handler to deal
+        // with it.
+        if ((flags.dwFlags & WSF_VISIBLE) == 0) {
+          return FALSE;
+        }
+      }
+    }
     case CTRL_CLOSE_EVENT:
-    case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
       os::signal_raise(SIGTERM);
       return TRUE;
