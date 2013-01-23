@@ -413,15 +413,6 @@ public enum LauncherHelper {
             if (mainValue == null) {
                 abort(null, "java.launcher.jar.error3", jarname);
             }
-            /*
-             * Hand off to FXHelper if it detects a JavaFX application
-             * This must be done after ensuring a Main-Class entry
-             * exists to enforce compliance with the jar specification
-             */
-            if (mainAttrs.containsKey(
-                    new Attributes.Name(FXHelper.JAVAFX_APPLICATION_MARKER))) {
-                return FXHelper.class.getName();
-            }
 
             /*
              * If this is not a full JRE then the Profile attribute must be
@@ -442,6 +433,16 @@ public enum LauncherHelper {
                     URLClassPath.suppressProfileCheckForLauncher();
                     abort(null, "java.launcher.jar.error5", profile, jarname);
                 }
+            }
+
+            /*
+             * Hand off to FXHelper if it detects a JavaFX application
+             * This must be done after ensuring a Main-Class entry
+             * exists to enforce compliance with the jar specification
+             */
+            if (mainAttrs.containsKey(
+                    new Attributes.Name(FXHelper.JAVAFX_APPLICATION_MARKER))) {
+                return FXHelper.class.getName();
             }
 
             return mainValue.trim();
