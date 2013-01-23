@@ -137,6 +137,7 @@ JAVA_JAVA_java = \
     java/lang/Appendable.java \
     java/lang/Comparable.java \
     java/lang/Readable.java \
+    java/lang/FunctionalInterface.java \
     java/lang/Override.java \
     java/lang/SafeVarargs.java \
     java/lang/SuppressWarnings.java \
