@@ -26,6 +26,7 @@
 package java.security;
 
 import java.io.*;
+import java.net.URI;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -405,7 +406,44 @@ public class KeyStore {
      *
      * @since 1.5
      */
-    public static interface Entry { }
+    public static interface Entry {
+
+        /**
+         * Retrieves the attributes associated with an entry.
+         * <p>
+         * The default implementation returns an empty {@code Set}.
+         *
+         * @return an unmodifiable {@code Set} of attributes, possibly empty
+         *
+         * @since 1.8
+         */
+        public default Set<Attribute> getAttributes() {
+            return Collections.<Attribute>emptySet();
+        }
+
+        /**
+         * An attribute associated with a keystore entry.
+         * It comprises a name and one or more values.
+         *
+         * @since 1.8
+         */
+        public interface Attribute {
+            /**
+             * Returns the attribute's name.
+             *
+             * @return the attribute name
+             */
+            public String getName();
+
+            /**
+             * Returns the attribute's value.
+             * Multi-valued attributes encode their values as a single string.
+             *
+             * @return the attribute value
+             */
+            public String getValue();
+        }
+    }
 
     /**
      * A <code>KeyStore</code> entry that holds a <code>PrivateKey</code>
@@ -417,6 +455,7 @@ public class KeyStore {
 
         private final PrivateKey privKey;
         private final Certificate[] chain;
+        private final Set<Attribute> attributes;
 
         /**
          * Constructs a <code>PrivateKeyEntry</code> with a
@@ -443,7 +482,39 @@ public class KeyStore {
          *      in the end entity <code>Certificate</code> (at index 0)
          */
         public PrivateKeyEntry(PrivateKey privateKey, Certificate[] chain) {
-            if (privateKey == null || chain == null) {
+            this(privateKey, chain, Collections.<Attribute>emptySet());
+        }
+
+        /**
+         * Constructs a {@code PrivateKeyEntry} with a {@code PrivateKey} and
+         * corresponding certificate chain and associated entry attributes.
+         *
+         * <p> The specified {@code chain} and {@code attributes} are cloned
+         * before they are stored in the new {@code PrivateKeyEntry} object.
+         *
+         * @param privateKey the {@code PrivateKey}
+         * @param chain an array of {@code Certificate}s
+         *      representing the certificate chain.
+         *      The chain must be ordered and contain a
+         *      {@code Certificate} at index 0
+         *      corresponding to the private key.
+         * @param attributes the attributes
+         *
+         * @exception NullPointerException if {@code privateKey}, {@code chain}
+         *      or {@code attributes} is {@code null}
+         * @exception IllegalArgumentException if the specified chain has a
+         *      length of 0, if the specified chain does not contain
+         *      {@code Certificate}s of the same type,
+         *      or if the {@code PrivateKey} algorithm
+         *      does not match the algorithm of the {@code PublicKey}
+         *      in the end entity {@code Certificate} (at index 0)
+         *
+         * @since 1.8
+         */
+        public PrivateKeyEntry(PrivateKey privateKey, Certificate[] chain,
+           Set<Attribute> attributes) {
+
+            if (privateKey == null || chain == null || attributes == null) {
                 throw new NullPointerException("invalid null input");
             }
             if (chain.length == 0) {
@@ -478,6 +549,9 @@ public class KeyStore {
             } else {
                 this.chain = clonedChain;
             }
+
+            this.attributes =
+                Collections.unmodifiableSet(new HashSet<>(attributes));
         }
 
         /**
@@ -519,6 +593,19 @@ public class KeyStore {
         }
 
         /**
+         * Retrieves the attributes associated with an entry.
+         * <p>
+         *
+         * @return an unmodifiable {@code Set} of attributes, possibly empty
+         *
+         * @since 1.8
+         */
+        @Override
+        public Set<Attribute> getAttributes() {
+            return attributes;
+        }
+
+        /**
          * Returns a string representation of this PrivateKeyEntry.
          * @return a string representation of this PrivateKeyEntry.
          */
@@ -543,6 +630,7 @@ public class KeyStore {
     public static final class SecretKeyEntry implements Entry {
 
         private final SecretKey sKey;
+        private final Set<Attribute> attributes;
 
         /**
          * Constructs a <code>SecretKeyEntry</code> with a
@@ -558,6 +646,32 @@ public class KeyStore {
                 throw new NullPointerException("invalid null input");
             }
             this.sKey = secretKey;
+            this.attributes = Collections.<Attribute>emptySet();
+        }
+
+        /**
+         * Constructs a {@code SecretKeyEntry} with a {@code SecretKey} and
+         * associated entry attributes.
+         *
+         * <p> The specified {@code attributes} is cloned before it is stored
+         * in the new {@code SecretKeyEntry} object.
+         *
+         * @param secretKey the {@code SecretKey}
+         * @param attributes the attributes
+         *
+         * @exception NullPointerException if {@code secretKey} or
+         *     {@code attributes} is {@code null}
+         *
+         * @since 1.8
+         */
+        public SecretKeyEntry(SecretKey secretKey, Set<Attribute> attributes) {
+
+            if (secretKey == null || attributes == null) {
+                throw new NullPointerException("invalid null input");
+            }
+            this.sKey = secretKey;
+            this.attributes =
+                Collections.unmodifiableSet(new HashSet<>(attributes));
         }
 
         /**
@@ -567,6 +681,19 @@ public class KeyStore {
          */
         public SecretKey getSecretKey() {
             return sKey;
+        }
+
+        /**
+         * Retrieves the attributes associated with an entry.
+         * <p>
+         *
+         * @return an unmodifiable {@code Set} of attributes, possibly empty
+         *
+         * @since 1.8
+         */
+        @Override
+        public Set<Attribute> getAttributes() {
+            return attributes;
         }
 
         /**
@@ -587,6 +714,7 @@ public class KeyStore {
     public static final class TrustedCertificateEntry implements Entry {
 
         private final Certificate cert;
+        private final Set<Attribute> attributes;
 
         /**
          * Constructs a <code>TrustedCertificateEntry</code> with a
@@ -602,6 +730,32 @@ public class KeyStore {
                 throw new NullPointerException("invalid null input");
             }
             this.cert = trustedCert;
+            this.attributes = Collections.<Attribute>emptySet();
+        }
+
+        /**
+         * Constructs a {@code TrustedCertificateEntry} with a
+         * trusted {@code Certificate} and associated entry attributes.
+         *
+         * <p> The specified {@code attributes} is cloned before it is stored
+         * in the new {@code TrustedCertificateEntry} object.
+         *
+         * @param trustedCert the trusted {@code Certificate}
+         * @param attributes the attributes
+         *
+         * @exception NullPointerException if {@code trustedCert} or
+         *     {@code attributes} is {@code null}
+         *
+         * @since 1.8
+         */
+        public TrustedCertificateEntry(Certificate trustedCert,
+           Set<Attribute> attributes) {
+            if (trustedCert == null || attributes == null) {
+                throw new NullPointerException("invalid null input");
+            }
+            this.cert = trustedCert;
+            this.attributes =
+                Collections.unmodifiableSet(new HashSet<>(attributes));
         }
 
         /**
@@ -611,6 +765,19 @@ public class KeyStore {
          */
         public Certificate getTrustedCertificate() {
             return cert;
+        }
+
+        /**
+         * Retrieves the attributes associated with an entry.
+         * <p>
+         *
+         * @return an unmodifiable {@code Set} of attributes, possibly empty
+         *
+         * @since 1.8
+         */
+        @Override
+        public Set<Attribute> getAttributes() {
+            return attributes;
         }
 
         /**
