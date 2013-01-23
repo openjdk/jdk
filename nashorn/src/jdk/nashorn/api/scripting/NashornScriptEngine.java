@@ -47,7 +47,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
-import javax.script.SimpleBindings;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.GlobalObject;
@@ -112,29 +111,9 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         });
 
         // create new global object
-        this.global =  AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
-            @Override
-            public ScriptObject run() {
-                try {
-                    return nashornContext.createGlobal();
-                } catch (final RuntimeException e) {
-                    if (Context.DEBUG) {
-                        e.printStackTrace();
-                    }
-                    throw e;
-                }
-            }
-        });
-
-        // current ScriptContext exposed as "context"
-        global.addOwnProperty("context", Property.NOT_ENUMERABLE, context);
-        // current ScriptEngine instance exposed as "engine". We added @SuppressWarnings("LeakingThisInConstructor") as
-        // NetBeans identifies this assignment as such a leak - this is a false positive as we're setting this property
-        // in the Global of a Context we just created - both the Context and the Global were just created and can not be
-        // seen from another thread outside of this constructor.
-        global.addOwnProperty("engine", Property.NOT_ENUMERABLE, this);
-        // global script arguments
-        global.addOwnProperty("arguments", Property.NOT_ENUMERABLE, UNDEFINED);
+        this.global =  createNashornGlobal();
+        // set the default engine scope for the default context
+        context.setBindings(new ScriptObjectMirror(global, global), ScriptContext.ENGINE_SCOPE);
 
         // evaluate engine initial script
         try {
@@ -145,8 +124,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
             throw new RuntimeException(e);
         }
-
-        context.setBindings(new ScriptObjectMirror(global, global), ScriptContext.ENGINE_SCOPE);
     }
 
     @Override
@@ -170,7 +147,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     @Override
     public Bindings createBindings() {
-        return new SimpleBindings();
+        final ScriptObject newGlobal = createNashornGlobal();
+        return new ScriptObjectMirror(newGlobal, newGlobal);
     }
 
     // Compilable methods
@@ -208,22 +186,23 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     private <T> T getInterfaceInner(final Object self, final Class<T> clazz) {
         final Object realSelf;
+        final ScriptObject ctxtGlobal = getNashornGlobalFrom(context);
         if(self == null) {
-            realSelf = global;
+            realSelf = ctxtGlobal;
         } else if (!(self instanceof ScriptObject)) {
-            realSelf = ScriptObjectMirror.unwrap(self, global);
+            realSelf = ScriptObjectMirror.unwrap(self, ctxtGlobal);
         } else {
             realSelf = self;
         }
         try {
             final ScriptObject oldGlobal = getNashornGlobal();
             try {
-                if(oldGlobal != global) {
-                    setNashornGlobal(global);
+                if(oldGlobal != ctxtGlobal) {
+                    setNashornGlobal(ctxtGlobal);
                 }
                 return clazz.cast(JavaAdapterFactory.getConstructor(realSelf.getClass(), clazz).invoke(realSelf));
             } finally {
-                if(oldGlobal != global) {
+                if(oldGlobal != ctxtGlobal) {
                     setNashornGlobal(oldGlobal);
                 }
             }
@@ -259,13 +238,14 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
      */
     public Object __noSuchProperty__(final Object self, final ScriptContext ctxt, final String name) {
         final int scope = ctxt.getAttributesScope(name);
+        final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
         if (scope != -1) {
-            return ScriptObjectMirror.unwrap(ctxt.getAttribute(name, scope), global);
+            return ScriptObjectMirror.unwrap(ctxt.getAttribute(name, scope), ctxtGlobal);
         }
 
         if (self == UNDEFINED) {
             // scope access and so throw ReferenceError
-            referenceError(global, "not.defined", name);
+            referenceError(ctxtGlobal, "not.defined", name);
         }
 
         return UNDEFINED;
@@ -282,27 +262,70 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
      */
     public Object __noSuchMethod__(final Object self, final ScriptContext ctxt, final String name, final Object args) {
         final int scope = ctxt.getAttributesScope(name);
+        final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
         Object value;
 
         if (scope != -1) {
             value = ctxt.getAttribute(name, scope);
         } else {
             if (self == UNDEFINED) {
-                referenceError(global, "not.defined", name);
+                referenceError(ctxtGlobal, "not.defined", name);
             } else {
-                typeError(global, "no.such.function", name, ScriptRuntime.safeToString(global));
+                typeError(ctxtGlobal, "no.such.function", name, ScriptRuntime.safeToString(ctxtGlobal));
             }
             return UNDEFINED;
         }
 
-        value = ScriptObjectMirror.unwrap(value, global);
+        value = ScriptObjectMirror.unwrap(value, ctxtGlobal);
         if (value instanceof ScriptFunction) {
-            return ScriptObjectMirror.unwrap(ScriptRuntime.apply((ScriptFunction)value, global, args), global);
+            return ScriptObjectMirror.unwrap(ScriptRuntime.apply((ScriptFunction)value, ctxtGlobal, args), ctxtGlobal);
         }
 
-        typeError(global, "not.a.function", ScriptRuntime.safeToString(name));
+        typeError(ctxtGlobal, "not.a.function", ScriptRuntime.safeToString(name));
 
         return UNDEFINED;
+    }
+
+    private ScriptObject getNashornGlobalFrom(final ScriptContext ctxt) {
+        final Bindings bindings = ctxt.getBindings(ScriptContext.ENGINE_SCOPE);
+        if (bindings instanceof ScriptObjectMirror) {
+             ScriptObject sobj = ((ScriptObjectMirror)bindings).getScriptObject();
+             if (sobj instanceof GlobalObject) {
+                 return sobj;
+             }
+        }
+
+        // didn't find global object from context given - return the engine-wide global
+        return global;
+    }
+
+    private ScriptObject createNashornGlobal() {
+        final ScriptObject newGlobal = AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
+            @Override
+            public ScriptObject run() {
+                try {
+                    return nashornContext.createGlobal();
+                } catch (final RuntimeException e) {
+                    if (Context.DEBUG) {
+                        e.printStackTrace();
+                    }
+                    throw e;
+                }
+            }
+        });
+
+        // current ScriptContext exposed as "context"
+        newGlobal.addOwnProperty("context", Property.NOT_ENUMERABLE, UNDEFINED);
+        // current ScriptEngine instance exposed as "engine". We added @SuppressWarnings("LeakingThisInConstructor") as
+        // NetBeans identifies this assignment as such a leak - this is a false positive as we're setting this property
+        // in the Global of a Context we just created - both the Context and the Global were just created and can not be
+        // seen from another thread outside of this constructor.
+        newGlobal.addOwnProperty("engine", Property.NOT_ENUMERABLE, this);
+        // global script arguments with undefined value
+        newGlobal.addOwnProperty("arguments", Property.NOT_ENUMERABLE, UNDEFINED);
+        // file name default is null
+        newGlobal.addOwnProperty(ScriptEngine.FILENAME, Property.NOT_ENUMERABLE, null);
+        return newGlobal;
     }
 
     private void evalEngineScript() throws ScriptException {
@@ -332,51 +355,53 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     // scripts should see "context" and "engine" as variables
     private void setContextVariables(final ScriptContext ctxt) {
         ctxt.setAttribute("context", ctxt, ScriptContext.ENGINE_SCOPE);
-        global.set("context", ctxt, false);
-        Object args = ScriptObjectMirror.unwrap(ctxt.getAttribute("arguments"), global);
+        final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
+        ctxtGlobal.set("context", ctxt, false);
+        Object args = ScriptObjectMirror.unwrap(ctxt.getAttribute("arguments"), ctxtGlobal);
         if (args == null || args == UNDEFINED) {
             args = ScriptRuntime.EMPTY_ARRAY;
         }
         // if no arguments passed, expose it
-        args = ((GlobalObject)global).wrapAsObject(args);
-        global.set("arguments", args, false);
+        args = ((GlobalObject)ctxtGlobal).wrapAsObject(args);
+        ctxtGlobal.set("arguments", args, false);
     }
 
     private Object invokeImpl(final Object selfObject, final String name, final Object... args) throws ScriptException, NoSuchMethodException {
         final ScriptObject oldGlobal     = getNashornGlobal();
-        final boolean globalChanged = (oldGlobal != global);
+        final ScriptObject ctxtGlobal    = getNashornGlobalFrom(context);
+        final boolean globalChanged = (oldGlobal != ctxtGlobal);
 
         Object self = selfObject;
 
         try {
             if (globalChanged) {
-                setNashornGlobal(global);
+                setNashornGlobal(ctxtGlobal);
             }
 
             ScriptObject sobj;
             Object       value = null;
 
-            self = ScriptObjectMirror.unwrap(self, global);
+            self = ScriptObjectMirror.unwrap(self, ctxtGlobal);
 
             // FIXME: should convert when self is not ScriptObject
             if (self instanceof ScriptObject) {
                 sobj = (ScriptObject)self;
                 value = sobj.get(name);
             } else if (self == null) {
-                self  = global;
-                sobj  = global;
+                self  = ctxtGlobal;
+                sobj  = ctxtGlobal;
                 value = sobj.get(name);
             }
 
             if (value instanceof ScriptFunction) {
                 final Object res;
                 try {
-                    res = ScriptRuntime.apply((ScriptFunction)value, self, ScriptObjectMirror.unwrapArray(args, global));
+                    res = ScriptRuntime.apply((ScriptFunction)value, self, ScriptObjectMirror.unwrapArray(args, ctxtGlobal));
                 } catch (final Exception e) {
                     throwAsScriptException(e);
                     throw new AssertionError("should not reach here");
                 }
-                return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, global));
+                return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, ctxtGlobal));
             }
 
             throw new NoSuchMethodException(name);
@@ -396,10 +421,11 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             return null;
         }
         final ScriptObject oldGlobal = getNashornGlobal();
-        final boolean globalChanged = (oldGlobal != global);
+        final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
+        final boolean globalChanged = (oldGlobal != ctxtGlobal);
         try {
             if (globalChanged) {
-                setNashornGlobal(global);
+                setNashornGlobal(ctxtGlobal);
             }
 
             setContextVariables(ctxt);
@@ -413,8 +439,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 return null;
             }
 
-            Object res = ScriptRuntime.apply(script, global);
-            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, global));
+            Object res = ScriptRuntime.apply(script, ctxtGlobal);
+            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, ctxtGlobal));
         } catch (final Exception e) {
             throwAsScriptException(e);
             throw new AssertionError("should not reach here");
@@ -458,17 +484,18 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     private ScriptFunction compileImpl(final char[] buf, final ScriptContext ctxt) throws ScriptException {
         final ScriptObject oldGlobal = getNashornGlobal();
-        final boolean globalChanged = (oldGlobal != global);
+        final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
+        final boolean globalChanged = (oldGlobal != ctxtGlobal);
         try {
             final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
             final String fileName = (val != null) ? val.toString() : "<eval>";
 
             final Source source = new Source(fileName, buf);
             if (globalChanged) {
-                setNashornGlobal(global);
+                setNashornGlobal(ctxtGlobal);
             }
 
-            return nashornContext.compileScript(source, global, nashornContext._strict);
+            return nashornContext.compileScript(source, ctxtGlobal, nashornContext._strict);
         } catch (final Exception e) {
             throwAsScriptException(e);
             throw new AssertionError("should not reach here");
@@ -479,17 +506,17 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
     }
 
-    // don't make these public!!
+    // don't make this public!!
     static ScriptObject getNashornGlobal() {
-       return Context.getGlobal();
+        return Context.getGlobal();
     }
 
-    static void setNashornGlobal(final ScriptObject global) {
+    static void setNashornGlobal(final ScriptObject newGlobal) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
-                Context.setGlobal(global);
-                return null;
+               Context.setGlobal(newGlobal);
+               return null;
             }
         });
     }
