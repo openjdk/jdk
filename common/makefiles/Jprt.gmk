@@ -150,6 +150,9 @@ PHONY_LIST += bridge2configure bridgeBuild
 ifndef JPRT_ARCHIVE_BUNDLE
   JPRT_ARCHIVE_BUNDLE=/tmp/jprt_bundles/j2sdk-image.zip
 endif
+ifndef JPRT_ARCHIVE_INSTALL_BUNDLE
+    JPRT_ARCHIVE_INSTALL_BUNDLE=/tmp/jprt_bundles/product-install.zip
+endif
 
 # These targets execute in a SPEC free context, before calling bridgeBuild
 # to generate the SPEC.
@@ -188,6 +191,9 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
 else
 	$(CD) $(JDK_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2sdk-image.zip .
 	$(CD) $(JRE_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2re-image.zip .
+	if [ -d  $(BUILD_OUTPUT)/install/bundles ] ; then \
+           $(CD) $(BUILD_OUTPUT)/install/bundles && $(ZIP) -q -r $(JPRT_ARCHIVE_INSTALL_BUNDLE) . ; \
+        fi
 endif
 	@$(call TargetExit)
 
