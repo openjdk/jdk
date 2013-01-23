@@ -64,6 +64,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                          int localvariable_table_length,
                          int exception_table_length,
                          int checked_exceptions_length,
+                         int method_parameters_length,
                          u2  generic_signature_index,
                          ConstMethod::MethodType method_type,
                          TRAPS) {
@@ -75,6 +76,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                                           localvariable_table_length,
                                           exception_table_length,
                                           checked_exceptions_length,
+                                          method_parameters_length,
                                           generic_signature_index,
                                           method_type,
                                           CHECK_NULL);
@@ -192,16 +194,16 @@ char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol
   return buf;
 }
 
-int  Method::fast_exception_handler_bci_for(KlassHandle ex_klass, int throw_bci, TRAPS) {
+int Method::fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS) {
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table
-  ExceptionTable table(this);
+  ExceptionTable table(mh());
   int length = table.length();
   // iterate through all entries sequentially
-  constantPoolHandle pool(THREAD, constants());
+  constantPoolHandle pool(THREAD, mh->constants());
   for (int i = 0; i < length; i ++) {
     //reacquire the table in case a GC happened
-    ExceptionTable table(this);
+    ExceptionTable table(mh());
     int beg_bci = table.start_pc(i);
     int end_bci = table.end_pc(i);
     assert(beg_bci <= end_bci, "inconsistent exception table");
@@ -1035,8 +1037,10 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 
   methodHandle m;
   {
-    Method* m_oop = Method::allocate(loader_data, 0, accessFlags_from(flags_bits),
-             0, 0, 0, 0, 0, ConstMethod::NORMAL, CHECK_(empty));
+    Method* m_oop = Method::allocate(loader_data, 0,
+                                     accessFlags_from(flags_bits),
+                                     0, 0, 0, 0, 0, 0,
+                                     ConstMethod::NORMAL, CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
   m->set_constants(cp());
@@ -1088,6 +1092,7 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   int checked_exceptions_len = m->checked_exceptions_length();
   int localvariable_len = m->localvariable_table_length();
   int exception_table_len = m->exception_table_length();
+  int method_parameters_len = m->method_parameters_length();
 
   ClassLoaderData* loader_data = m->method_holder()->class_loader_data();
   Method* newm_oop = Method::allocate(loader_data,
@@ -1097,6 +1102,7 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
                                       localvariable_len,
                                       exception_table_len,
                                       checked_exceptions_len,
+                                      method_parameters_len,
                                       generic_signature_index,
                                       m->method_type(),
                                       CHECK_(methodHandle()));
@@ -1331,13 +1337,15 @@ void Method::sort_methods(Array<Method*>* methods,
                                  Array<AnnotationArray*>* methods_annotations,
                                  Array<AnnotationArray*>* methods_parameter_annotations,
                                  Array<AnnotationArray*>* methods_default_annotations,
+                                 Array<AnnotationArray*>* methods_type_annotations,
                                  bool idempotent) {
   int length = methods->length();
   if (length > 1) {
     bool do_annotations = false;
     if (methods_annotations != NULL ||
         methods_parameter_annotations != NULL ||
-        methods_default_annotations != NULL) {
+        methods_default_annotations != NULL ||
+        methods_type_annotations != NULL) {
       do_annotations = true;
     }
     if (do_annotations) {
@@ -1356,6 +1364,7 @@ void Method::sort_methods(Array<Method*>* methods,
     assert(methods_annotations == NULL           || methods_annotations->length() == methods->length(), "");
     assert(methods_parameter_annotations == NULL || methods_parameter_annotations->length() == methods->length(), "");
     assert(methods_default_annotations == NULL   || methods_default_annotations->length() == methods->length(), "");
+    assert(methods_type_annotations == NULL   || methods_type_annotations->length() == methods->length(), "");
     if (do_annotations) {
       ResourceMark rm;
       // Allocate temporary storage
@@ -1363,6 +1372,7 @@ void Method::sort_methods(Array<Method*>* methods,
       reorder_based_on_method_index(methods, methods_annotations, temp_array);
       reorder_based_on_method_index(methods, methods_parameter_annotations, temp_array);
       reorder_based_on_method_index(methods, methods_default_annotations, temp_array);
+      reorder_based_on_method_index(methods, methods_type_annotations, temp_array);
     }
 
     // Reset method ordering

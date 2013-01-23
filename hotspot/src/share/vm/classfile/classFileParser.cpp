@@ -906,6 +906,7 @@ void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
                                              bool* is_synthetic_addr,
                                              u2* generic_signature_index_addr,
                                              AnnotationArray** field_annotations,
+                                             AnnotationArray** field_type_annotations,
                                              ClassFileParser::FieldAnnotationCollector* parsed_annotations,
                                              TRAPS) {
   ClassFileStream* cfs = stream();
@@ -917,6 +918,10 @@ void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
   int runtime_visible_annotations_length = 0;
   u1* runtime_invisible_annotations = NULL;
   int runtime_invisible_annotations_length = 0;
+  u1* runtime_visible_type_annotations = NULL;
+  int runtime_visible_type_annotations_length = 0;
+  u1* runtime_invisible_type_annotations = NULL;
+  int runtime_invisible_type_annotations_length = 0;
   while (attributes_count--) {
     cfs->guarantee_more(6, CHECK);  // attribute_name_index, attribute_length
     u2 attribute_name_index = cfs->get_u2_fast();
@@ -971,6 +976,16 @@ void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
         runtime_invisible_annotations = cfs->get_u1_buffer();
         assert(runtime_invisible_annotations != NULL, "null invisible annotations");
         cfs->skip_u1(runtime_invisible_annotations_length, CHECK);
+      } else if (attribute_name == vmSymbols::tag_runtime_visible_type_annotations()) {
+        runtime_visible_type_annotations_length = attribute_length;
+        runtime_visible_type_annotations = cfs->get_u1_buffer();
+        assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
+        cfs->skip_u1(runtime_visible_type_annotations_length, CHECK);
+      } else if (PreserveAllAnnotations && attribute_name == vmSymbols::tag_runtime_invisible_type_annotations()) {
+        runtime_invisible_type_annotations_length = attribute_length;
+        runtime_invisible_type_annotations = cfs->get_u1_buffer();
+        assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
+        cfs->skip_u1(runtime_invisible_type_annotations_length, CHECK);
       } else {
         cfs->skip_u1(attribute_length, CHECK);  // Skip unknown attributes
       }
@@ -987,6 +1002,12 @@ void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
                                             runtime_visible_annotations_length,
                                             runtime_invisible_annotations,
                                             runtime_invisible_annotations_length,
+                                            CHECK);
+  *field_type_annotations = assemble_annotations(loader_data,
+                                            runtime_visible_type_annotations,
+                                            runtime_visible_type_annotations_length,
+                                            runtime_invisible_type_annotations,
+                                            runtime_invisible_type_annotations_length,
                                             CHECK);
   return;
 }
@@ -1084,6 +1105,7 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
                                          bool is_interface,
                                          FieldAllocationCount *fac,
                                          Array<AnnotationArray*>** fields_annotations,
+                                         Array<AnnotationArray*>** fields_type_annotations,
                                          u2* java_fields_count_ptr, TRAPS) {
   ClassFileStream* cfs = stream();
   cfs->guarantee_more(2, CHECK_NULL);  // length
@@ -1119,6 +1141,7 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
              THREAD, u2, total_fields * (FieldInfo::field_slots + 1));
 
   AnnotationArray* field_annotations = NULL;
+  AnnotationArray* field_type_annotations = NULL;
   // The generic signature slots start after all other fields' data.
   int generic_signature_slot = total_fields * FieldInfo::field_slots;
   int num_generic_signature = 0;
@@ -1160,7 +1183,7 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
                              cp, attributes_count, is_static, signature_index,
                              &constantvalue_index, &is_synthetic,
                              &generic_signature_index, &field_annotations,
-                             &parsed_annotations,
+                             &field_type_annotations, &parsed_annotations,
                              CHECK_NULL);
       if (field_annotations != NULL) {
         if (*fields_annotations == NULL) {
@@ -1169,6 +1192,14 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
                                              CHECK_NULL);
         }
         (*fields_annotations)->at_put(n, field_annotations);
+      }
+      if (field_type_annotations != NULL) {
+        if (*fields_type_annotations == NULL) {
+          *fields_type_annotations = MetadataFactory::new_array<AnnotationArray*>(
+                                                  loader_data, length, NULL,
+                                                  CHECK_NULL);
+        }
+        (*fields_type_annotations)->at_put(n, field_type_annotations);
       }
       if (is_synthetic) {
         access_flags.set_is_synthetic();
@@ -1831,6 +1862,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
                                            AnnotationArray** method_annotations,
                                            AnnotationArray** method_parameter_annotations,
                                            AnnotationArray** method_default_annotations,
+                                           AnnotationArray** method_type_annotations,
                                            TRAPS) {
   ClassFileStream* cfs = stream();
   methodHandle nullHandle;
@@ -1903,6 +1935,8 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   u2** localvariable_table_start;
   u2* localvariable_type_table_length;
   u2** localvariable_type_table_start;
+  u2 method_parameters_length = 0;
+  u1* method_parameters_data = NULL;
   bool parsed_code_attribute = false;
   bool parsed_checked_exceptions_attribute = false;
   bool parsed_stackmap_attribute = false;
@@ -1918,6 +1952,10 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   int runtime_visible_parameter_annotations_length = 0;
   u1* runtime_invisible_parameter_annotations = NULL;
   int runtime_invisible_parameter_annotations_length = 0;
+  u1* runtime_visible_type_annotations = NULL;
+  int runtime_visible_type_annotations_length = 0;
+  u1* runtime_invisible_type_annotations = NULL;
+  int runtime_invisible_type_annotations_length = 0;
   u1* annotation_default = NULL;
   int annotation_default_length = 0;
 
@@ -2108,6 +2146,14 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
             parse_checked_exceptions(&checked_exceptions_length,
                                      method_attribute_length,
                                      cp, CHECK_(nullHandle));
+    } else if (method_attribute_name == vmSymbols::tag_method_parameters()) {
+      method_parameters_length = cfs->get_u1_fast();
+      method_parameters_data = cfs->get_u1_buffer();
+      cfs->skip_u2_fast(method_parameters_length);
+      cfs->skip_u4_fast(method_parameters_length);
+      // ignore this attribute if it cannot be reflected
+      if (!SystemDictionary::Parameter_klass_loaded())
+        method_parameters_length = 0;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
         classfile_parse_error(
@@ -2159,6 +2205,17 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
         annotation_default = cfs->get_u1_buffer();
         assert(annotation_default != NULL, "null annotation default");
         cfs->skip_u1(annotation_default_length, CHECK_(nullHandle));
+      } else if (method_attribute_name == vmSymbols::tag_runtime_visible_type_annotations()) {
+        runtime_visible_type_annotations_length = method_attribute_length;
+        runtime_visible_type_annotations = cfs->get_u1_buffer();
+        assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
+        // No need for the VM to parse Type annotations
+        cfs->skip_u1(runtime_visible_type_annotations_length, CHECK_(nullHandle));
+      } else if (PreserveAllAnnotations && method_attribute_name == vmSymbols::tag_runtime_invisible_type_annotations()) {
+        runtime_invisible_type_annotations_length = method_attribute_length;
+        runtime_invisible_type_annotations = cfs->get_u1_buffer();
+        assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
+        cfs->skip_u1(runtime_invisible_type_annotations_length, CHECK_(nullHandle));
       } else {
         // Skip unknown attributes
         cfs->skip_u1(method_attribute_length, CHECK_(nullHandle));
@@ -2184,7 +2241,8 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   Method* m = Method::allocate(
       loader_data, code_length, access_flags, linenumber_table_length,
       total_lvt_length, exception_table_length, checked_exceptions_length,
-      generic_signature_index, ConstMethod::NORMAL, CHECK_(nullHandle));
+      method_parameters_length, generic_signature_index,
+      ConstMethod::NORMAL, CHECK_(nullHandle));
 
   ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
 
@@ -2230,6 +2288,18 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
       exception_table_length * sizeof(ExceptionTableElement) / sizeof(u2);
     copy_u2_with_conversion((u2*) m->exception_table_start(),
                              exception_table_start, size);
+  }
+
+  // Copy method parameters
+  if (method_parameters_length > 0) {
+    MethodParametersElement* elem = m->constMethod()->method_parameters_start();
+    for(int i = 0; i < method_parameters_length; i++) {
+      elem[i].name_cp_index =
+        Bytes::get_Java_u2(method_parameters_data);
+      method_parameters_data += 2;
+      elem[i].flags = Bytes::get_Java_u4(method_parameters_data);
+      method_parameters_data += 4;
+    }
   }
 
   // Copy checked exceptions
@@ -2333,6 +2403,12 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
                                                      NULL,
                                                      0,
                                                      CHECK_(nullHandle));
+  *method_type_annotations = assemble_annotations(loader_data,
+                                                  runtime_visible_type_annotations,
+                                                  runtime_visible_type_annotations_length,
+                                                  runtime_invisible_type_annotations,
+                                                  runtime_invisible_type_annotations_length,
+                                                  CHECK_(nullHandle));
 
   if (name == vmSymbols::finalize_method_name() &&
       signature == vmSymbols::void_method_signature()) {
@@ -2364,12 +2440,14 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
                                                Array<AnnotationArray*>** methods_annotations,
                                                Array<AnnotationArray*>** methods_parameter_annotations,
                                                Array<AnnotationArray*>** methods_default_annotations,
+                                               Array<AnnotationArray*>** methods_type_annotations,
                                                bool* has_default_methods,
                                                TRAPS) {
   ClassFileStream* cfs = stream();
   AnnotationArray* method_annotations = NULL;
   AnnotationArray* method_parameter_annotations = NULL;
   AnnotationArray* method_default_annotations = NULL;
+  AnnotationArray* method_type_annotations = NULL;
   cfs->guarantee_more(2, CHECK_NULL);  // length
   u2 length = cfs->get_u2_fast();
   if (length == 0) {
@@ -2386,6 +2464,7 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
                                          &method_annotations,
                                          &method_parameter_annotations,
                                          &method_default_annotations,
+                                         &method_type_annotations,
                                          CHECK_NULL);
 
       if (method->is_final()) {
@@ -2411,7 +2490,13 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
             MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
       }
       (*methods_default_annotations)->at_put(index, method_default_annotations);
+      if (*methods_type_annotations == NULL) {
+        *methods_type_annotations =
+             MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
+      }
+      (*methods_type_annotations)->at_put(index, method_type_annotations);
     }
+
     if (_need_verify && length > 1) {
       // Check duplicated methods
       ResourceMark rm(THREAD);
@@ -2445,6 +2530,7 @@ Array<int>* ClassFileParser::sort_methods(ClassLoaderData* loader_data,
                                           Array<AnnotationArray*>* methods_annotations,
                                           Array<AnnotationArray*>* methods_parameter_annotations,
                                           Array<AnnotationArray*>* methods_default_annotations,
+                                          Array<AnnotationArray*>* methods_type_annotations,
                                               TRAPS) {
   int length = methods->length();
   // If JVMTI original method ordering or sharing is enabled we have to
@@ -2463,7 +2549,8 @@ Array<int>* ClassFileParser::sort_methods(ClassLoaderData* loader_data,
   // Note that the ordering is not alphabetical, see Symbol::fast_compare
   Method::sort_methods(methods, methods_annotations,
                        methods_parameter_annotations,
-                       methods_default_annotations);
+                       methods_default_annotations,
+                       methods_type_annotations);
 
   // If JVMTI original method ordering or sharing is enabled construct int
   // array remembering the original ordering
@@ -2728,6 +2815,10 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
   int runtime_visible_annotations_length = 0;
   u1* runtime_invisible_annotations = NULL;
   int runtime_invisible_annotations_length = 0;
+  u1* runtime_visible_type_annotations = NULL;
+  int runtime_visible_type_annotations_length = 0;
+  u1* runtime_invisible_type_annotations = NULL;
+  int runtime_invisible_type_annotations_length = 0;
   u1* inner_classes_attribute_start = NULL;
   u4  inner_classes_attribute_length = 0;
   u2  enclosing_method_class_index = 0;
@@ -2834,6 +2925,17 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
           classfile_parse_error("Multiple BootstrapMethods attributes in class file %s", CHECK);
         parsed_bootstrap_methods_attribute = true;
         parse_classfile_bootstrap_methods_attribute(loader_data, cp, attribute_length, CHECK);
+      } else if (tag == vmSymbols::tag_runtime_visible_type_annotations()) {
+        runtime_visible_type_annotations_length = attribute_length;
+        runtime_visible_type_annotations = cfs->get_u1_buffer();
+        assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
+        // No need for the VM to parse Type annotations
+        cfs->skip_u1(runtime_visible_type_annotations_length, CHECK);
+      } else if (PreserveAllAnnotations && tag == vmSymbols::tag_runtime_invisible_type_annotations()) {
+        runtime_invisible_type_annotations_length = attribute_length;
+        runtime_invisible_type_annotations = cfs->get_u1_buffer();
+        assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
+        cfs->skip_u1(runtime_invisible_type_annotations_length, CHECK);
       } else {
         // Unknown attribute
         cfs->skip_u1(attribute_length, CHECK);
@@ -2850,6 +2952,13 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
                                                       runtime_invisible_annotations_length,
                                                       CHECK);
   set_class_annotations(annotations);
+  AnnotationArray* type_annotations = assemble_annotations(loader_data,
+                                                           runtime_visible_type_annotations,
+                                                           runtime_visible_type_annotations_length,
+                                                           runtime_invisible_type_annotations,
+                                                           runtime_invisible_type_annotations_length,
+                                                           CHECK);
+  set_class_type_annotations(type_annotations);
 
   if (parsed_innerclasses_attribute || parsed_enclosingmethod_attribute) {
     u2 num_of_classes = parse_classfile_inner_classes_attribute(
@@ -2956,6 +3065,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                     TempNewSymbol& parsed_name,
                                                     bool verify,
                                                     TRAPS) {
+
   // When a retransformable agent is attached, JVMTI caches the
   // class bytes that existed before the first retransformation.
   // If RedefineClasses() was used before the retransformable
@@ -3190,7 +3300,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // Fields (offsets are filled in later)
     FieldAllocationCount fac;
     Array<AnnotationArray*>* fields_annotations = NULL;
+    Array<AnnotationArray*>* fields_type_annotations = NULL;
     Array<u2>* fields = parse_fields(loader_data, class_name, cp, access_flags.is_interface(), &fac, &fields_annotations,
+                                          &fields_type_annotations,
                                           &java_fields_count,
                                           CHECK_(nullHandle));
     // Methods
@@ -3202,6 +3314,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     Array<AnnotationArray*>* methods_annotations = NULL;
     Array<AnnotationArray*>* methods_parameter_annotations = NULL;
     Array<AnnotationArray*>* methods_default_annotations = NULL;
+    Array<AnnotationArray*>* methods_type_annotations = NULL;
     Array<Method*>* methods = parse_methods(loader_data,
                                             cp, access_flags.is_interface(),
                                             &promoted_flags,
@@ -3209,6 +3322,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                             &methods_annotations,
                                             &methods_parameter_annotations,
                                             &methods_default_annotations,
+                                            &methods_type_annotations,
                                             &has_default_methods,
                                             CHECK_(nullHandle));
 
@@ -3270,6 +3384,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                methods_annotations,
                                                methods_parameter_annotations,
                                                methods_default_annotations,
+                                               methods_type_annotations,
                                                CHECK_(nullHandle));
 
     // promote flags from parse_methods() to the klass' flags
@@ -3687,11 +3802,13 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     if (is_anonymous())  // I am well known to myself
       cp->klass_at_put(this_class_index, this_klass()); // eagerly resolve
 
+    // Allocate an annotation type if needed.
     if (fields_annotations != NULL ||
         methods_annotations != NULL ||
         methods_parameter_annotations != NULL ||
-        methods_default_annotations != NULL) {
-      // Allocate an annotation type if needed.
+        methods_default_annotations != NULL ||
+        fields_type_annotations != NULL ||
+        methods_type_annotations != NULL) {
       Annotations* anno = Annotations::allocate(loader_data,
                             fields_annotations, methods_annotations,
                             methods_parameter_annotations,
@@ -3701,6 +3818,16 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       this_klass->set_annotations(NULL);
     }
 
+    if (fields_type_annotations != NULL ||
+        methods_type_annotations != NULL) {
+      assert(this_klass->annotations() != NULL, "annotations should have been allocated");
+      Annotations* anno = Annotations::allocate(loader_data,
+                                                fields_type_annotations,
+                                                methods_type_annotations,
+                                                NULL,
+                                                NULL, CHECK_(nullHandle));
+      this_klass->annotations()->set_type_annotations(anno);
+    }
 
     this_klass->set_minor_version(minor_version);
     this_klass->set_major_version(major_version);
@@ -3725,12 +3852,26 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // Fill in field values obtained by parse_classfile_attributes
     if (parsed_annotations.has_any_annotations())
       parsed_annotations.apply_to(this_klass);
+
     // Create annotations
     if (_annotations != NULL && this_klass->annotations() == NULL) {
       Annotations* anno = Annotations::allocate(loader_data, CHECK_NULL);
       this_klass->set_annotations(anno);
     }
     apply_parsed_class_attributes(this_klass);
+
+    // Create type annotations
+    if (_type_annotations != NULL) {
+      if (this_klass->annotations() == NULL) {
+        Annotations* anno = Annotations::allocate(loader_data, CHECK_NULL);
+        this_klass->set_annotations(anno);
+      }
+      if (this_klass->annotations()->type_annotations() == NULL) {
+        Annotations* anno = Annotations::allocate(loader_data, CHECK_NULL);
+        this_klass->annotations()->set_type_annotations(anno);
+      }
+      this_klass->annotations()->type_annotations()->set_class_annotations(_type_annotations);
+    }
 
     // Miranda methods
     if ((num_miranda_methods > 0) ||
