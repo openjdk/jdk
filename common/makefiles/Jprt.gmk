@@ -43,23 +43,19 @@ endef
 
 BUILD_DIR_ROOT:=$(root_dir)/build
 
-# Appears to be an open build
-OPEN_BUILD := \
-$(shell \
-  if [    -d $(root_dir)/jdk/src/closed      \
-       -o -d $(root_dir)/jdk/make/closed     \
-       -o -d $(root_dir)/jdk/test/closed     \
-       -o -d $(root_dir)/hotspot/src/closed  \
-       -o -d $(root_dir)/hotspot/make/closed \
-       -o -d $(root_dir)/hotspot/test/closed ] ; then \
-    echo "false"; \
-  else \
-    echo "true"; \
-  fi \
- )
 ifdef OPENJDK
   OPEN_BUILD=true
+else
+  OPEN_BUILD := $(if $(or $(wildcard $(root_dir)/jdk/src/closed), \
+                          $(wildcard $(root_dir)/jdk/make/closed), \
+                          $(wildcard $(root_dir)/jdk/test/closed), \
+                          $(wildcard $(root_dir)/hotspot/src/closed), \
+                          $(wildcard $(root_dir)/hotspot/make/closed), \
+                          $(wildcard $(root_dir)/hotspot/test/closed)), \
+                     false,true)
 endif
+
+HOTSPOT_AVAILABLE := $(if $(wildcard $(root_dir)/hotspot),true,false)
 
 ###########################################################################
 # To help in adoption of the new configure&&make build process, a bridge
@@ -103,6 +99,11 @@ endif
 ifdef ALT_FREETYPE_HEADERS_PATH
 	@$(ECHO) " --with-freetype=$(call UnixPath,$(ALT_FREETYPE_HEADERS_PATH)/..) " >> $@.tmp
 endif
+ifeq ($(HOTSPOT_AVAILABLE),false)
+  ifdef ALT_JDK_IMPORT_PATH
+	@$(ECHO) " --with-import-hotspot=$(call UnixPath,$(ALT_JDK_IMPORT_PATH)) " >> $@.tmp
+  endif
+endif
 ifeq ($(OPEN_BUILD),true)
 	@$(ECHO) " --enable-openjdk-only " >> $@.tmp
 else
@@ -128,6 +129,9 @@ else
   ifdef ALT_SLASH_JAVA
 	@$(ECHO) " --with-java-devtools=$(call UnixPath,$(ALT_SLASH_JAVA)/devtools) " >> $@.tmp
   endif
+  ifdef ALT_SPARKLE_FRAMEWORK_DIR
+	@$(ECHO) " --with-sparkle-framework=$(call UnixPath,$(ALT_SPARKLE_FRAMEWORK_DIR)) " >> $@.tmp
+  endif 
 endif
 	@if [ -f $@ ] ; then \
           if ! $(CMP) $@ $@.tmp > /dev/null ; then \
