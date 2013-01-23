@@ -84,7 +84,15 @@ public abstract class Symbol implements Element {
      *  method to make sure that the class symbol is loaded.
      */
     public List<Attribute.Compound> getRawAttributes() {
-        return annotations.getAttributes();
+        return annotations.getDeclarationAttributes();
+    }
+
+    /** An accessor method for the type attributes of this symbol.
+     *  Attributes of class symbols should be accessed through the accessor
+     *  method to make sure that the class symbol is loaded.
+     */
+    public List<Attribute.TypeCompound> getRawTypeAttributes() {
+        return annotations.getTypeAttributes();
     }
 
     /** Fetch a particular annotation from a symbol. */
@@ -455,6 +463,14 @@ public abstract class Symbol implements Element {
     }
 
     /**
+     * TODO: Should there be a {@code
+     * javax.lang.model.element.Element.getTypeAnnotationMirrors()}.
+     */
+    public final List<Attribute.TypeCompound> getTypeAnnotationMirrors() {
+        return getRawTypeAttributes();
+    }
+
+    /**
      * @deprecated this method should never be used by javac internally.
      */
     @Deprecated
@@ -793,6 +809,12 @@ public abstract class Symbol implements Element {
         public List<Attribute.Compound> getRawAttributes() {
             if (completer != null) complete();
             return super.getRawAttributes();
+        }
+
+        @Override
+        public List<Attribute.TypeCompound> getRawTypeAttributes() {
+            if (completer != null) complete();
+            return super.getRawTypeAttributes();
         }
 
         public Type erasure(Types types) {
@@ -1387,7 +1409,7 @@ public abstract class Symbol implements Element {
             return defaultValue;
         }
 
-         public List<VarSymbol> getParameters() {
+        public List<VarSymbol> getParameters() {
             return params();
         }
 

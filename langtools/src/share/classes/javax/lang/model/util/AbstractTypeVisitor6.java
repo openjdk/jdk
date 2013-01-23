@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,23 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
      */
     public R visitIntersection(IntersectionType t, P p) {
         return visitUnknown(t, p);
+    }
+
+    /**
+     * Visits an {@code AnnotatedType} element by calling {@code
+     * visit} on the underlying type.
+
+     * @param t  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of calling {@code visit} on the underlying type
+     *
+     * @since 1.8
+     *
+     * TODO: should xxxVisitor8 subclasses override this and call
+     *   the defaultAction?
+     */
+    public R visitAnnotated(AnnotatedType t, P p) {
+        return visit(t.getUnderlyingType(), p);
     }
 
     /**

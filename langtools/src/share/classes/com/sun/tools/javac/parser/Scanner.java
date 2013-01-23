@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class Scanner implements Lexer {
     private List<Token> savedTokens = new ArrayList<Token>();
 
     private JavaTokenizer tokenizer;
+
     /**
      * Create a scanner from the input array.  This method might
      * modify the array.  To avoid copying the input array, ensure

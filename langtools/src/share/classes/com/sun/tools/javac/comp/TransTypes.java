@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -483,6 +483,7 @@ public class TransTypes extends TreeTranslator {
             tree.restype = translate(tree.restype, null);
             tree.typarams = List.nil();
             tree.params = translateVarDefs(tree.params);
+            tree.recvparam = translate(tree.recvparam, null);
             tree.thrown = translate(tree.thrown, null);
             tree.body = translate(tree.body, tree.sym.erasure(types).getReturnType());
             tree.type = erasure(tree.type);
