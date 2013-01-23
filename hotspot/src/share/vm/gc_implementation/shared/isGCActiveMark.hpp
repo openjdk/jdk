@@ -25,9 +25,10 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_ISGCACTIVEMARK_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_ISGCACTIVEMARK_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // This class provides a method for block structured setting of the
 // _is_gc_active state without requiring accessors in CollectedHeap

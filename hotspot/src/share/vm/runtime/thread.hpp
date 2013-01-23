@@ -41,6 +41,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/unhandledOops.hpp"
+#include "utilities/macros.hpp"
 
 #if INCLUDE_NMT
 #include "services/memRecorder.hpp"
@@ -49,10 +50,10 @@
 #include "trace/tracing.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/top.hpp"
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/dirtyCardQueue.hpp"
 #include "gc_implementation/g1/satbQueue.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 #ifdef ZERO
 #ifdef TARGET_ARCH_zero
 # include "stack_zero.hpp"
@@ -929,7 +930,7 @@ class JavaThread: public Thread {
   }   _jmp_ring[ jump_ring_buffer_size ];
 #endif /* PRODUCT */
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // Support for G1 barriers
 
   ObjPtrQueue _satb_mark_queue;          // Thread-local log for SATB barrier.
@@ -941,7 +942,7 @@ class JavaThread: public Thread {
   static DirtyCardQueueSet _dirty_card_queue_set;
 
   void flush_barrier_queues();
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   friend class VMThread;
   friend class ThreadWaitTransition;
@@ -1345,10 +1346,10 @@ class JavaThread: public Thread {
     return byte_offset_of(JavaThread, _should_post_on_exceptions_flag);
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   static ByteSize satb_mark_queue_offset()       { return byte_offset_of(JavaThread, _satb_mark_queue); }
   static ByteSize dirty_card_queue_offset()      { return byte_offset_of(JavaThread, _dirty_card_queue); }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
@@ -1637,7 +1638,7 @@ public:
     _stack_size_at_create = value;
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // SATB marking queue support
   ObjPtrQueue& satb_mark_queue() { return _satb_mark_queue; }
   static SATBMarkQueueSet& satb_mark_queue_set() {
@@ -1649,7 +1650,7 @@ public:
   static DirtyCardQueueSet& dirty_card_queue_set() {
     return _dirty_card_queue_set;
   }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // This method initializes the SATB and dirty card queues before a
   // JavaThread is added to the Java thread list. Right now, we don't
@@ -1668,11 +1669,11 @@ public:
   // might happen between the JavaThread constructor being called and the
   // thread being added to the Java thread list (an example of this is
   // when the structure for the DestroyJavaVM thread is created).
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   void initialize_queues();
-#else // !SERIALGC
+#else  // INCLUDE_ALL_GCS
   void initialize_queues() { }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Machine dependent stuff
 #ifdef TARGET_OS_ARCH_linux_x86

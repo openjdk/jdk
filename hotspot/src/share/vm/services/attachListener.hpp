@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/macros.hpp"
 
 // The AttachListener thread services a queue of operations that are enqueued
 // by client tools. Each operation is identified by a name and has up to 3

@@ -50,9 +50,10 @@
 #include "runtime/vframe.hpp"
 #include "services/attachListener.hpp"
 #include "services/serviceUtil.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #ifdef JVMTI_TRACE
 #define EVT_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_SENT) != 0) { SafeResourceMark rm; tty->print_cr out; }
