@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,10 +340,15 @@ class Modifier {
     static final int BRIDGE    = 0x00000040;
     static final int VARARGS   = 0x00000080;
     static final int SYNTHETIC = 0x00001000;
-    static final int ANNOTATION= 0x00002000;
+    static final int ANNOTATION  = 0x00002000;
     static final int ENUM      = 0x00004000;
+    static final int SYNTHESIZED = 0x00010000;
     static boolean isSynthetic(int mod) {
       return (mod & SYNTHETIC) != 0;
+    }
+
+    static boolean isSynthesized(int mod) {
+      return (mod & SYNTHESIZED) != 0;
     }
 
     /**
