@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 6970584
+ * @bug 6970584 8006694
  * @summary assorted position errors in compiler syntax trees
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main CheckAttributedTree -q -r -et ERRONEOUS .
+ * @run main/othervm CheckAttributedTree -q -r -et ERRONEOUS .
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -505,7 +509,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
         }
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            out.println(diagnostic);
+            //out.println(diagnostic);
             switch (diagnostic.getKind()) {
                 case ERROR:
                     errors++;
