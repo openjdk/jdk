@@ -329,6 +329,11 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         });
     }
 
+    // package-privates below this.
+    ScriptObject getScriptObject() {
+        return sobj;
+    }
+
     static Object translateUndefined(Object obj) {
         return (obj == ScriptRuntime.UNDEFINED)? null : obj;
     }

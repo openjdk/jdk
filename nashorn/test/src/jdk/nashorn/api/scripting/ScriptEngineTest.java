@@ -46,8 +46,10 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.script.SimpleScriptContext;
 import jdk.nashorn.internal.runtime.Version;
 import netscape.javascript.JSObject;
+import org.testng.Assert;
 import org.testng.TestNG;
 import org.testng.annotations.Test;
 
@@ -921,5 +923,52 @@ public class ScriptEngineTest {
         // now check modified value from scope and engine
         assertEquals(engineScope.get("myVar"), "nashorn");
         assertEquals(e.get("myVar"), "nashorn");
+    }
+
+    @Test
+    public void multiGlobalTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+        try {
+            Object obj1 = e.eval("Object");
+            Object obj2 = e.eval("Object", newCtxt);
+            Assert.assertNotEquals(obj1, obj2);
+            Assert.assertNotNull(obj1);
+            Assert.assertNotNull(obj2);
+            Assert.assertEquals(obj1.toString(), obj2.toString());
+
+            e.eval("x = 'hello'");
+            e.eval("x = 'world'", newCtxt);
+            Object x1 = e.getContext().getAttribute("x");
+            Object x2 = newCtxt.getAttribute("x");
+            Assert.assertNotEquals(x1, x2);
+            Assert.assertEquals(x1, "hello");
+            Assert.assertEquals(x2, "world");
+
+            x1 = e.eval("x");
+            x2 = e.eval("x", newCtxt);
+            Assert.assertNotEquals(x1, x2);
+            Assert.assertEquals(x1, "hello");
+            Assert.assertEquals(x2, "world");
+
+            final ScriptContext origCtxt = e.getContext();
+            e.setContext(newCtxt);
+            e.eval("y = new Object()");
+            e.eval("y = new Object()", origCtxt);
+
+            Object y1 = origCtxt.getAttribute("y");
+            Object y2 = newCtxt.getAttribute("y");
+            Assert.assertNotEquals(y1, y2);
+            Assert.assertNotEquals(e.eval("y"), e.eval("y", origCtxt));
+            Assert.assertEquals("[object Object]", y1.toString());
+            Assert.assertEquals("[object Object]", y2.toString());
+        } catch (final ScriptException se) {
+            se.printStackTrace();
+            fail(se.getMessage());
+        }
     }
 }
