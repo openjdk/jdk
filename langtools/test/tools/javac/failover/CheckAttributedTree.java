@@ -362,11 +362,18 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
             }
 
             Info self = new Info(tree, endPosTable);
-            check(!mandatoryType(tree) ||
-                    (tree.type != null &&
-                    checkFields(tree)),
-                    "'null' found in tree ",
-                    self);
+            if (mandatoryType(tree)) {
+                check(tree.type != null,
+                        "'null' field 'type' found in tree ", self);
+                if (tree.type==null)
+                    new Throwable().printStackTrace();
+            }
+
+            Field errField = checkFields(tree);
+            if (errField!=null) {
+                check(false,
+                        "'null' field '" + errField.getName() + "' found in tree ", self);
+            }
 
             Info prevEncl = encl;
             encl = self;
@@ -395,7 +402,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
             }
         }
 
-        boolean checkFields(JCTree t) {
+        Field checkFields(JCTree t) {
             List<Field> fieldsToCheck = treeUtil.getFieldsOfType(t,
                     excludedFields,
                     Symbol.class,
@@ -403,7 +410,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
             for (Field f : fieldsToCheck) {
                 try {
                     if (f.get(t) == null) {
-                        return false;
+                        return f;
                     }
                 }
                 catch (IllegalAccessException e) {
@@ -411,7 +418,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
                     //swallow it
                 }
             }
-            return true;
+            return null;
         }
 
         @Override

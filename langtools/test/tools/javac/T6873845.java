@@ -19,8 +19,8 @@ public class T6873845 {
         if (out.contains("sunapi"))
             throw new Exception("unexpected output for -X");
 
-        String warn1 = "T6873845.java:72:9: compiler.warn.sun.proprietary: sun.misc.Unsafe" + newline;
-        String warn2 = "T6873845.java:77:9: compiler.warn.sun.proprietary: sun.misc.Unsafe" + newline;
+        String warn1 = "T6873845.java:73:9: compiler.warn.sun.proprietary: sun.misc.Unsafe" + newline;
+        String warn2 = "T6873845.java:78:9: compiler.warn.sun.proprietary: sun.misc.Unsafe" + newline;
         String note1 = "- compiler.note.sunapi.filename: T6873845.java" + newline;
         String note2 = "- compiler.note.sunapi.recompile" + newline;
 
@@ -52,7 +52,8 @@ public class T6873845 {
         args.add(0, "-XDrawDiagnostics");
         String out = compile(args);
         if (!out.equals(expect))
-            throw new Exception("unexpected output from compiler");
+            throw new Exception("unexpected output from compiler; expected: " + expect +
+                    "\n  found: " + out);
     }
 
     String compile(List<String> args) throws Exception{
