@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2288,7 +2288,7 @@ public class Lower extends TreeTranslator {
                 return tree.packageAnnotations.nonEmpty();
             case NONEMPTY:
                 for (Attribute.Compound a :
-                         tree.packge.annotations.getAttributes()) {
+                         tree.packge.annotations.getDeclarationAttributes()) {
                     Attribute.RetentionPolicy p = types.getRetention(a);
                     if (p != Attribute.RetentionPolicy.SOURCE)
                         return true;
@@ -2683,6 +2683,13 @@ public class Lower extends TreeTranslator {
             super.visitMethodDef(tree);
         }
         result = tree;
+    }
+
+    public void visitAnnotatedType(JCAnnotatedType tree) {
+        // No need to retain type annotations any longer.
+        // tree.annotations = translate(tree.annotations);
+        tree.underlyingType = translate(tree.underlyingType);
+        result = tree.underlyingType;
     }
 
     public void visitTypeCast(JCTypeCast tree) {

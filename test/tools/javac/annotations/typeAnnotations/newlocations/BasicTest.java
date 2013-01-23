@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,24 @@
 
 /*
  * @test
- * @bug 6843077
+ * @bug 6843077 8006775
  * @summary random tests for new locations
  * @author Matt Papi
- * @compile/fail/ref=BasicTest.out -XDrawDiagnostics BasicTest.java
+ * @compile BasicTest.java
  */
 
+import java.lang.annotation.*;
 import java.util.*;
 import java.io.*;
 
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface A {}
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface B {}
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface C {}
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface D {}
-
-//308: Test inverted to verify that type annotations can not be parsed yet.
 
 /**
  * Tests basic JSR 308 parser functionality. We don't really care about what
@@ -48,8 +51,7 @@ class BasicTest<T extends @A Object> extends @B LinkedList<T> implements @C List
 
     void test() {
 
-        // Handle annotated class literals/cast types
-        Class<?> c = @A String.class;
+        // Handle annotated cast types
         Object o = (@A Object) "foo";
 
         // Handle annotated "new" expressions (except arrays; see ArrayTest)
@@ -57,21 +59,23 @@ class BasicTest<T extends @A Object> extends @B LinkedList<T> implements @C List
 
         boolean b = o instanceof @A Object;
 
-
         @A Map<@B List<@C String>, @D String> map =
             new @A HashMap<@B List<@C String>, @D String>();
 
-        Class<? extends @A String> c2 = @A String.class;
+        Class<? extends @A String> c2 = null;
     }
 
     // Handle receiver annotations
     // Handle annotations on a qualified identifier list
-    void test2() @C @D throws @A IllegalArgumentException, @B IOException {
+    void test2(@C @D BasicTest<T> this) throws @A IllegalArgumentException, @B IOException {
 
     }
 
     // Handle annotations on a varargs element type
-    void test3(Object @A... objs) {
+    void test3(@B Object @A... objs) { }
 
-    }
+    void test4(@B Class<@C ?> @A ... clz) { }
+
+
+    // TODO: add more tests... nested classes, etc.
 }
