@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.*;
 import javax.crypto.SecretKey;
 
@@ -239,6 +240,8 @@ public class KeyStore {
                 ProtectionParameter, javax.security.auth.Destroyable {
 
         private final char[] password;
+        private final String protectionAlgorithm;
+        private final AlgorithmParameterSpec protectionParameters;
         private volatile boolean destroyed = false;
 
         /**
@@ -251,6 +254,72 @@ public class KeyStore {
          */
         public PasswordProtection(char[] password) {
             this.password = (password == null) ? null : password.clone();
+            this.protectionAlgorithm = null;
+            this.protectionParameters = null;
+        }
+
+        /**
+         * Creates a password parameter and specifies the protection algorithm
+         * and associated parameters to use when encrypting a keystore entry.
+         * <p>
+         * The specified {@code password} is cloned before it is stored in the
+         * new {@code PasswordProtection} object.
+         *
+         * @param password the password, which may be {@code null}
+         * @param protectionAlgorithm the encryption algorithm name, for
+         *     example, {@code PBEWithHmacSHA256AndAES_256}.
+         *     See the Cipher section in the <a href=
+         * "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
+         * Java Cryptography Architecture Standard Algorithm Name
+         * Documentation</a>
+         *     for information about standard encryption algorithm names.
+         * @param protectionParameters the encryption algorithm parameter
+         *     specification, which may be {@code null}
+         * @exception NullPointerException if {@code protectionAlgorithm} is
+         *     {@code null}
+         *
+         * @since 1.8
+         */
+        public PasswordProtection(char[] password, String protectionAlgorithm,
+            AlgorithmParameterSpec protectionParameters) {
+            if (protectionAlgorithm == null) {
+                throw new NullPointerException("invalid null input");
+            }
+            this.password = (password == null) ? null : password.clone();
+            this.protectionAlgorithm = protectionAlgorithm;
+            this.protectionParameters = protectionParameters;
+        }
+
+        /**
+         * Gets the name of the protection algorithm.
+         * If none was set then the keystore provider will use its default
+         * protection algorithm. The name of the default protection algorithm
+         * for a given keystore type is set using the
+         * {@code 'keystore.<type>.keyProtectionAlgorithm'} security property.
+         * For example, the
+         * {@code keystore.PKCS12.keyProtectionAlgorithm} property stores the
+         * name of the default key protection algorithm used for PKCS12
+         * keystores. If the security property is not set, an
+         * implementation-specific algorithm will be used.
+         *
+         * @return the algorithm name, or {@code null} if none was set
+         *
+         * @since 1.8
+         */
+        public String getProtectionAlgorithm() {
+            return protectionAlgorithm;
+        }
+
+        /**
+         * Gets the parameters supplied for the protection algorithm.
+         *
+         * @return the algorithm parameter specification, or {@code  null},
+         *     if none was set
+         *
+         * @since 1.8
+         */
+        public AlgorithmParameterSpec getProtectionParameters() {
+            return protectionParameters;
         }
 
         /**
