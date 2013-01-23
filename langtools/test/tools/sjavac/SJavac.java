@@ -21,16 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Test all aspects of sjavac.
- *
- * @bug 8004658
- * @summary Add internal smart javac wrapper to solve JEP 139
- *
- * @run main SJavac
- */
-
 import java.util.*;
 import java.io.*;
 import java.net.*;
@@ -44,13 +34,6 @@ public
 class SJavac {
 
     public static void main(String... args) throws Exception {
-        URL url = SJavac.class.getClassLoader().getResource("com/sun/tools/sjavac/Main.class");
-        if (url == null) {
-            // No sjavac in the classpath.
-            System.out.println("pass by default");
-            return;
-        }
-
         SJavac s = new SJavac();
         s.test();
     }
