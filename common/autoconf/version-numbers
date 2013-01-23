@@ -1,10 +1,12 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,12 +23,16 @@
 # questions.
 #
 
-LAUNCHER_NAME=java
-PRODUCT_NAME="Java(TM)"
-PRODUCT_SUFFIX="SE Runtime Environment"
-JDK_RC_PLATFORM_NAME="Platform SE"
-COMPANY_NAME="Oracle Corporation"
+JDK_MAJOR_VERSION=1
+JDK_MINOR_VERSION=8
+JDK_MICRO_VERSION=0
+JDK_UPDATE_VERSION=
+LAUNCHER_NAME=openjdk
+PRODUCT_NAME=OpenJDK
+PRODUCT_SUFFIX="Runtime Environment"
+JDK_RC_PLATFORM_NAME=Platform
+COMPANY_NAME=N/A
 
 # Might need better names for these
-MACOSX_BUNDLE_NAME_BASE="Java SE"
-MACOSX_BUNDLE_ID_BASE="com.oracle.java"
+MACOSX_BUNDLE_NAME_BASE="OpenJDK"
+MACOSX_BUNDLE_ID_BASE="net.java.openjdk"

@@ -411,7 +411,6 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     assert(q->forwardee() == NULL, "should be forwarded to NULL");
   }
 
-  VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(q, size));
   compact_top += size;
 
   // we need to update the offset table so that the beginnings of objects can be
@@ -470,13 +469,10 @@ void Space::adjust_pointers() {
     if (oop(q)->is_gc_marked()) {
       // q is alive
 
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::track_interior_pointers(oop(q)));
       // point all the oops to the new location
       size_t size = oop(q)->adjust_pointers();
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::check_interior_pointers());
 
       debug_only(prev_q = q);
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::validate_live_oop(oop(q), size));
 
       q += size;
     } else {
