@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,6 +551,13 @@ JNIEXPORT jstring JNICALL JVM_ConstantPoolGetStringAt
 
 JNIEXPORT jstring JNICALL JVM_ConstantPoolGetUTF8At
 (JNIEnv *env, jobject unused, jobject jcpool, jint index);
+
+/*
+ * Parameter reflection
+ */
+
+JNIEXPORT jobjectArray JNICALL
+JVM_GetMethodParameters(JNIEnv *env, jobject method);
 
 /*
  * java.security.*
