@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 8002099
+ * @bug 8002099 8006694
  * @summary Add support for intersection types in cast expression
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main/timeout=360 IntersectionTypeCastTest
+ * @run main/othervm/timeout=360 IntersectionTypeCastTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;
