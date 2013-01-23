@@ -40,7 +40,8 @@ package javax.crypto;
  * sensitive key information to be destroyed, cleared, or in the case
  * where such information is immutable, unreferenced.
  * Finally, since {@code SecretKey} is {@code Serializable}, implementations
- * should also override {@link java.io.ObjectOutputStream.writeObject}
+ * should also override
+ * {@link java.io.ObjectOutputStream#writeObject(java.lang.Object)}
  * to prevent keys that have been destroyed from being serialized.
  *
  * <p>Keys that implement this interface return the string {@code RAW}
