@@ -38,6 +38,7 @@
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/taskqueue.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
@@ -51,9 +52,9 @@
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_bsd.inline.hpp"
 #endif
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // Note: This is a special bug reporting site for the JVM
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.sun.com/bugreport/crash.jsp"
@@ -1072,7 +1073,7 @@ void Arguments::set_tiered_flags() {
   }
 }
 
-#if INCLUDE_ALTERNATE_GCS
+#if INCLUDE_ALL_GCS
 static void disable_adaptive_size_policy(const char* collector_name) {
   if (UseAdaptiveSizePolicy) {
     if (FLAG_IS_CMDLINE(UseAdaptiveSizePolicy)) {
@@ -1284,7 +1285,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
   }
 }
-#endif // INCLUDE_ALTERNATE_GCS
+#endif // INCLUDE_ALL_GCS
 
 void set_object_alignment() {
   // Object alignment.
@@ -1301,10 +1302,10 @@ void set_object_alignment() {
   // Oop encoding heap max
   OopEncodingHeapMax = (uint64_t(max_juint) + 1) << LogMinObjAlignmentInBytes;
 
-#if INCLUDE_ALTERNATE_GCS
+#if INCLUDE_ALL_GCS
   // Set CMS global values
   CompactibleFreeListSpace::set_cms_values();
-#endif // INCLUDE_ALTERNATE_GCS
+#endif // INCLUDE_ALL_GCS
 }
 
 bool verify_object_alignment() {
@@ -1976,7 +1977,7 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_min_value(ParGCArrayScanChunk, 1, "ParGCArrayScanChunk");
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   if (UseG1GC) {
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
@@ -1985,7 +1986,7 @@ bool Arguments::check_vm_args_consistency() {
     status = status && verify_min_value((intx)G1ConcMarkStepDurationMillis, 1,
                                         "G1ConcMarkStepDurationMillis");
   }
-#endif
+#endif // INCLUDE_ALL_GCS
 
   status = status && verify_interval(RefDiscoveryPolicy,
                                      ReferenceProcessor::DiscoveryPolicyMin,
@@ -3157,7 +3158,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   UNSUPPORTED_OPTION(UseLargePages, "-XX:+UseLargePages");
 #endif
 
-#if !INCLUDE_ALTERNATE_GCS
+#if !INCLUDE_ALL_GCS
   if (UseParallelGC) {
     warning("Parallel GC is not supported in this VM.  Using Serial GC.");
   }
@@ -3170,7 +3171,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (UseParNewGC) {
     warning("Par New GC is not supported in this VM.  Using Serial GC.");
   }
-#endif // INCLUDE_ALTERNATE_GCS
+#endif // INCLUDE_ALL_GCS
 
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {
@@ -3217,9 +3218,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Set object alignment values.
   set_object_alignment();
 
-#ifdef SERIALGC
+#if !INCLUDE_ALL_GCS
   force_serial_gc();
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 #if !INCLUDE_CDS
   no_shared_spaces();
 #endif // INCLUDE_CDS
@@ -3247,7 +3248,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Set heap size based on available physical memory
   set_heap_size();
 
-#if INCLUDE_ALTERNATE_GCS
+#if INCLUDE_ALL_GCS
   // Set per-collector flags
   if (UseParallelGC || UseParallelOldGC) {
     set_parallel_gc_flags();
@@ -3259,11 +3260,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     set_g1_gc_flags();
   }
   check_deprecated_gcs();
-#endif // INCLUDE_ALTERNATE_GCS
-
-#ifdef SERIALGC
+#else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Set bytecode rewriting flags
   set_bytecode_flags();
@@ -3357,7 +3356,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 }
 
 jint Arguments::adjust_after_os() {
-#if INCLUDE_ALTERNATE_GCS
+#if INCLUDE_ALL_GCS
   if (UseParallelGC || UseParallelOldGC) {
     if (UseNUMA) {
       if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
@@ -3368,7 +3367,7 @@ jint Arguments::adjust_after_os() {
       UseNUMAInterleaving = true;
     }
   }
-#endif
+#endif // INCLUDE_ALL_GCS
   return JNI_OK;
 }
 

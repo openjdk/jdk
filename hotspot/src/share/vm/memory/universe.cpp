@@ -70,13 +70,14 @@
 #include "utilities/events.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/preserveException.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // Known objects
 Klass* Universe::_boolArrayKlassObj                 = NULL;
@@ -740,20 +741,20 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
 jint Universe::initialize_heap() {
 
   if (UseParallelGC) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     Universe::_collectedHeap = new ParallelScavengeHeap();
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
     fatal("UseParallelGC not supported in this VM.");
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   } else if (UseG1GC) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     G1CollectorPolicy* g1p = new G1CollectorPolicy();
     G1CollectedHeap* g1h = new G1CollectedHeap(g1p);
     Universe::_collectedHeap = g1h;
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
     fatal("UseG1GC not supported in java kernel vm.");
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   } else {
     GenCollectorPolicy *gc_policy;
@@ -761,15 +762,15 @@ jint Universe::initialize_heap() {
     if (UseSerialGC) {
       gc_policy = new MarkSweepPolicy();
     } else if (UseConcMarkSweepGC) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
       if (UseAdaptiveSizePolicy) {
         gc_policy = new ASConcurrentMarkSweepPolicy();
       } else {
         gc_policy = new ConcurrentMarkSweepPolicy();
       }
-#else   // SERIALGC
+#else  // INCLUDE_ALL_GCS
     fatal("UseConcMarkSweepGC not supported in this VM.");
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     } else { // default old generation
       gc_policy = new MarkSweepPolicy();
     }

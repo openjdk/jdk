@@ -82,6 +82,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/macros.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
 #endif
@@ -94,11 +95,11 @@
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_bsd.inline.hpp"
 #endif
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
 #include "gc_implementation/parallelScavenge/pcTasks.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -1482,17 +1483,17 @@ void JavaThread::initialize() {
   pd_initialize();
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 SATBMarkQueueSet JavaThread::_satb_mark_queue_set;
 DirtyCardQueueSet JavaThread::_dirty_card_queue_set;
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 JavaThread::JavaThread(bool is_attaching_via_jni) :
   Thread()
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   , _satb_mark_queue(&_satb_mark_queue_set),
   _dirty_card_queue(&_dirty_card_queue_set)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 {
   initialize();
   if (is_attaching_via_jni) {
@@ -1547,10 +1548,10 @@ static void compiler_thread_entry(JavaThread* thread, TRAPS);
 
 JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
   Thread()
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   , _satb_mark_queue(&_satb_mark_queue_set),
   _dirty_card_queue(&_dirty_card_queue_set)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 {
   if (TraceThreadEvents) {
     tty->print_cr("creating thread %p", this);
@@ -1896,19 +1897,19 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     JvmtiExport::cleanup_thread(this);
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // We must flush G1-related buffers before removing a thread from
   // the list of active threads.
   if (UseG1GC) {
     flush_barrier_queues();
   }
-#endif
+#endif // INCLUDE_ALL_GCS
 
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
   Threads::remove(this);
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 // Flush G1-related queues.
 void JavaThread::flush_barrier_queues() {
   satb_mark_queue().flush();
@@ -1936,7 +1937,7 @@ void JavaThread::initialize_queues() {
   // active field set to true.
   assert(dirty_queue.is_active(), "dirty card queue should be active");
 }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 void JavaThread::cleanup_failed_attach_current_thread() {
   if (get_thread_profiler() != NULL) {
@@ -1964,11 +1965,11 @@ void JavaThread::cleanup_failed_attach_current_thread() {
     tlab().make_parsable(true);  // retire TLAB, if any
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   if (UseG1GC) {
     flush_barrier_queues();
   }
-#endif
+#endif // INCLUDE_ALL_GCS
 
   Threads::remove(this);
   delete this;
@@ -3600,7 +3601,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // Support for ConcurrentMarkSweep. This should be cleaned up
   // and better encapsulated. The ugly nested if test would go away
   // once things are properly refactored. XXX YSR
@@ -3614,7 +3615,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
     }
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
@@ -4209,7 +4210,7 @@ void Threads::possibly_parallel_oops_do(OopClosure* f, CLDToOopClosure* cld_f, C
   }
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 // Used by ParallelScavenge
 void Threads::create_thread_roots_tasks(GCTaskQueue* q) {
   ALL_JAVA_THREADS(p) {
@@ -4225,7 +4226,7 @@ void Threads::create_thread_roots_marking_tasks(GCTaskQueue* q) {
   }
   q->enqueue(new ThreadRootsMarkingTask(VMThread::vm_thread()));
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 void Threads::nmethods_do(CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {
@@ -4333,13 +4334,13 @@ void Threads::print_on(outputStream* st, bool print_stacks, bool internal_format
                );
   st->cr();
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // Dump concurrent locks
   ConcurrentLocksDump concurrent_locks;
   if (print_concurrent_locks) {
     concurrent_locks.dump_at_safepoint();
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   ALL_JAVA_THREADS(p) {
     ResourceMark rm;
@@ -4352,11 +4353,11 @@ void Threads::print_on(outputStream* st, bool print_stacks, bool internal_format
       }
     }
     st->cr();
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     if (print_concurrent_locks) {
       concurrent_locks.print_locks_on(p, st);
     }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
   }
 
   VMThread::vm_thread()->print_on(st);
