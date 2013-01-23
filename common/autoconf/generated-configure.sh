@@ -3723,7 +3723,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1358937404
+DATE_WHEN_GENERATED=1358937713
 
 ###############################################################################
 #
@@ -10778,7 +10778,8 @@ if test "x$with_milestone" = xyes; then
   as_fn_error $? "Milestone must have a value" "$LINENO" 5
 elif test "x$with_milestone" != x; then
     MILESTONE="$with_milestone"
-else
+fi
+if test "x$MILESTONE" = x; then
   MILESTONE=internal
 fi
 
