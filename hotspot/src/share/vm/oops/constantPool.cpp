@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -34,7 +35,6 @@
 #include "oops/constantPool.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
-#include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
@@ -65,11 +65,10 @@ ConstantPool::ConstantPool(Array<u1>* tags) {
   set_operands(NULL);
   set_pool_holder(NULL);
   set_flags(0);
+
   // only set to non-zero if constant pool is merged by RedefineClasses
   set_version(0);
   set_lock(new Monitor(Monitor::nonleaf + 2, "A constant pool lock"));
-  // all fields are initialized; needed for GC
-  set_on_stack(false);
 
   // initialize tag array
   int length = tags->length();
@@ -98,18 +97,6 @@ void ConstantPool::release_C_heap_structures() {
 
   delete _lock;
   set_lock(NULL);
-}
-
-void ConstantPool::set_flag_at(FlagBit fb) {
-  const int MAX_STATE_CHANGES = 2;
-  for (int i = MAX_STATE_CHANGES + 10; i > 0; i--) {
-    int oflags = _flags;
-    int nflags = oflags | (1 << (int)fb);
-    if (Atomic::cmpxchg(nflags, &_flags, oflags) == oflags)
-      return;
-  }
-  assert(false, "failed to cmpxchg flags");
-  _flags |= (1 << (int)fb);     // better than nothing
 }
 
 objArrayOop ConstantPool::resolved_references() const {
@@ -1755,7 +1742,11 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
 
 
 void ConstantPool::set_on_stack(const bool value) {
-  _on_stack = value;
+  if (value) {
+    _flags |= _on_stack;
+  } else {
+    _flags &= ~_on_stack;
+  }
   if (value) MetadataOnStackMark::record(this);
 }
 
@@ -1827,6 +1818,7 @@ void ConstantPool::print_on(outputStream* st) const {
     if (has_pseudo_string()) st->print(" has_pseudo_string");
     if (has_invokedynamic()) st->print(" has_invokedynamic");
     if (has_preresolution()) st->print(" has_preresolution");
+    if (on_stack()) st->print(" on_stack");
     st->cr();
   }
   if (pool_holder() != NULL) {
