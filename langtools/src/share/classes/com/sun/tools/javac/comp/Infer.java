@@ -321,8 +321,10 @@ public class Infer {
                             mt.getReturnType() : syms.objectType;
                 }
                 Type qtype1 = inferenceContext.asFree(mt.getReturnType(), types);
-                if (!types.isSubtype(qtype1,
-                        qtype1.hasTag(UNDETVAR) ? types.boxedTypeOrType(to) : to)) {
+                Warner retWarn = new Warner();
+                if (!resultInfo.checkContext.compatible(qtype1, qtype1.hasTag(UNDETVAR) ? types.boxedTypeOrType(to) : to, retWarn) ||
+                        //unchecked conversion is not allowed
+                        retWarn.hasLint(Lint.LintCategory.UNCHECKED)) {
                     throw inferenceException
                             .setMessage("infer.no.conforming.instance.exists",
                             inferenceContext.restvars(), mt.getReturnType(), to);
