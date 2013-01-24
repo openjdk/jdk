@@ -43,6 +43,14 @@ public class StoreSecretKeyTest {
 
     public static void main(String[] args) throws Exception {
 
+        // Skip test if AES is unavailable
+        try {
+            SecretKeyFactory.getInstance("AES");
+        } catch (NoSuchAlgorithmException nsae) {
+            System.out.println("AES is unavailable. Skipping test...");
+            return;
+        }
+
         new File(KEYSTORE).delete();
 
         try {
@@ -79,6 +87,17 @@ public class StoreSecretKeyTest {
 
     private static SecretKey generateSecretKey(String algorithm, int size)
         throws NoSuchAlgorithmException {
+
+        // Failover to DES if the requested secret key factory is unavailable
+        SecretKeyFactory keyFactory;
+        try {
+            keyFactory = SecretKeyFactory.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException nsae) {
+            keyFactory = SecretKeyFactory.getInstance("DES");
+            algorithm = "DES";
+            size = 56;
+        }
+
         KeyGenerator generator = KeyGenerator.getInstance(algorithm);
         generator.init(size);
         return generator.generateKey();

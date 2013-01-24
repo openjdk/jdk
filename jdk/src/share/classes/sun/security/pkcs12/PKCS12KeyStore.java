@@ -887,13 +887,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     /*
      * Map a PBE algorithm name onto its object identifier
      */
-    private ObjectIdentifier mapPBEAlgorithmToOID(String algorithm) {
+    private ObjectIdentifier mapPBEAlgorithmToOID(String algorithm)
+        throws NoSuchAlgorithmException {
         // Check for PBES2 algorithms
         if (algorithm.toLowerCase().startsWith("pbewithhmacsha")) {
             return pbes2_OID;
         }
-
-        return null;
+        return AlgorithmId.get(algorithm).getOID();
     }
 
     /**
