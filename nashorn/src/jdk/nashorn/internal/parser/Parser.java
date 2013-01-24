@@ -2495,7 +2495,7 @@ loop:
 
         final FunctionNode functionNode = functionBody(functionToken, name, parameters, FunctionNode.Kind.NORMAL);
 
-        if (isStatement) {
+        if (isStatement && !isInWithBlock()) {
             functionNode.setIsStatement();
         }
 
@@ -2544,7 +2544,14 @@ loop:
         }
 
         if (isStatement) {
-            functionNode.setFunctionVarNode(new VarNode(source, functionToken, finish, name, referenceNode), lineNumber);
+            final VarNode var = new VarNode(source, functionToken, finish, name, referenceNode);
+            if (isInWithBlock()) {
+                function.addDeclaration(var);
+                // Add to current block.
+                block.addStatement(var);
+            } else {
+                functionNode.setFunctionVarNode(var, lineNumber);
+            }
         }
 
         return referenceNode;
