@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import java.lang.annotation.Native;
 import java.math.*;
 
 /**
@@ -54,13 +55,13 @@ public final class Long extends Number implements Comparable<Long> {
      * A constant holding the minimum value a {@code long} can
      * have, -2<sup>63</sup>.
      */
-    public static final long MIN_VALUE = 0x8000000000000000L;
+    @Native public static final long MIN_VALUE = 0x8000000000000000L;
 
     /**
      * A constant holding the maximum value a {@code long} can
      * have, 2<sup>63</sup>-1.
      */
-    public static final long MAX_VALUE = 0x7fffffffffffffffL;
+    @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
 
     /**
      * The {@code Class} instance representing the primitive type
@@ -1317,7 +1318,7 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @since 1.5
      */
-    public static final int SIZE = 64;
+    @Native public static final int SIZE = 64;
 
     /**
      * The number of bytes used to represent a {@code long} value in two's
@@ -1540,5 +1541,5 @@ public final class Long extends Number implements Comparable<Long> {
     }
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    private static final long serialVersionUID = 4290774380558885855L;
+    @Native private static final long serialVersionUID = 4290774380558885855L;
 }
