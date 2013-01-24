@@ -52,6 +52,18 @@ import javax.lang.model.element.*;
  * parameters, return type, etc. rather than one of the abstract
  * classes.
  *
+ * <p>Note that methods to accommodate new language constructs could
+ * be added in a source <em>compatible</em> way if they were added as
+ * <em>default methods</em>.  However, default methods are only
+ * available on Java SE 8 and higher releases and the {@code
+ * javax.lang.model.*} packages bundled in Java SE 8 are required to
+ * also be runnable on Java SE 7.  Therefore, default methods
+ * <em>cannot</em> be used when extending {@code javax.lang.model.*}
+ * to cover Java SE 8 language features.  However, default methods may
+ * be used in subsequent revisions of the {@code javax.lang.model.*}
+ * packages that are only required to run on Java SE 8 and higher
+ * platform versions.
+ *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
  * @param <P> the type of the additional parameter to this visitor's
