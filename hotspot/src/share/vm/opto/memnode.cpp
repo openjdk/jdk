@@ -2797,6 +2797,26 @@ const Type *StrIntrinsicNode::Value( PhaseTransform *phase ) const {
 }
 
 //=============================================================================
+//------------------------------match_edge-------------------------------------
+// Do not match memory edge
+uint EncodeISOArrayNode::match_edge(uint idx) const {
+  return idx == 2 || idx == 3; // EncodeISOArray src (Binary dst len)
+}
+
+//------------------------------Ideal------------------------------------------
+// Return a node which is more "ideal" than the current node.  Strip out
+// control copies
+Node *EncodeISOArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
+}
+
+//------------------------------Value------------------------------------------
+const Type *EncodeISOArrayNode::Value(PhaseTransform *phase) const {
+  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
+  return bottom_type();
+}
+
+//=============================================================================
 MemBarNode::MemBarNode(Compile* C, int alias_idx, Node* precedent)
   : MultiNode(TypeFunc::Parms + (precedent == NULL? 0: 1)),
     _adr_type(C->get_adr_type(alias_idx))

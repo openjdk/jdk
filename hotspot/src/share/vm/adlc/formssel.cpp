@@ -862,8 +862,10 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
-        strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 )) {
+        strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 ||
+        strcmp(_matrule->_rChild->_opType,"EncodeISOArray")==0)) {
         // String.(compareTo/equals/indexOf) and Arrays.equals
+        // and sun.nio.cs.iso8859_1$Encoder.EncodeISOArray
         // take 1 control and 1 memory edges.
     return 2;
   }

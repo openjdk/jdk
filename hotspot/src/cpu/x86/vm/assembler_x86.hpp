@@ -1395,6 +1395,10 @@ private:
   // Pack with unsigned saturation
   void packuswb(XMMRegister dst, XMMRegister src);
   void packuswb(XMMRegister dst, Address src);
+  void vpackuswb(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
+
+  // Pemutation of 64bit words
+  void vpermq(XMMRegister dst, XMMRegister src, int imm8, bool vector256);
 
   // SSE4.2 string instructions
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
