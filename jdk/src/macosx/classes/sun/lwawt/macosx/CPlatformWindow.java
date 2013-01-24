@@ -38,7 +38,6 @@ import sun.awt.*;
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLSurfaceData;
 import sun.lwawt.*;
-import sun.lwawt.LWWindowPeer.PeerType;
 import sun.util.logging.PlatformLogger;
 
 import com.apple.laf.*;
@@ -196,7 +195,8 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     // 1) setting native bounds via nativeSetBounds() call
     // 2) getting notification from the native level via deliverMoveResizeEvent()
     private Rectangle nativeBounds = new Rectangle(0, 0, 0, 0);
-    private volatile boolean isFullScreenMode = false;
+    private volatile boolean isFullScreenMode;
+    private boolean isFullScreenAnimationOn;
 
     private Window target;
     private LWWindowPeer peer;
@@ -414,8 +414,10 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
 
     @Override // PlatformWindow
     public Insets getInsets() {
-        final Insets insets = nativeGetNSWindowInsets(getNSWindowPtr());
-        return insets;
+        if (!isFullScreenMode) {
+            return nativeGetNSWindowInsets(getNSWindowPtr());
+        }
+        return new Insets(0, 0, 0, 0);
     }
 
     @Override // PlatformWindow
@@ -727,7 +729,19 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     @Override
     public void enterFullScreenMode() {
         isFullScreenMode = true;
-        contentView.enterFullScreenMode(getNSWindowPtr());
+        contentView.enterFullScreenMode();
+        // the move/size notification from the underlying system comes
+        // but it contains a bounds smaller than the whole screen
+        // and therefore we need to create the synthetic notifications
+        Rectangle screenBounds;
+        final long screenPtr = CWrapper.NSWindow.screen(getNSWindowPtr());
+        try {
+            screenBounds = CWrapper.NSScreen.frame(screenPtr).getBounds();
+        } finally {
+            CWrapper.NSObject.release(screenPtr);
+        }
+        peer.notifyReshape(screenBounds.x, screenBounds.y, screenBounds.width,
+                           screenBounds.height);
     }
 
     @Override
@@ -874,11 +888,10 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         final Rectangle oldB = nativeBounds;
         nativeBounds = new Rectangle(x, y, width, height);
         peer.notifyReshape(x, y, width, height);
-        if (byUser && !oldB.getSize().equals(nativeBounds.getSize())) {
+        if ((byUser && !oldB.getSize().equals(nativeBounds.getSize()))
+            || isFullScreenAnimationOn) {
             flushBuffers();
         }
-        //TODO validateSurface already called from notifyReshape
-        validateSurface();
     }
 
     private void deliverWindowClosingEvent() {
@@ -978,27 +991,19 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         orderAboveSiblings();
     }
 
-    private void updateDisplay() {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                validateSurface();
-            }
-        });
-    }
-
-    private void updateWindowContent() {
-        ComponentEvent resizeEvent = new ComponentEvent(target, ComponentEvent.COMPONENT_RESIZED);
-        SunToolkit.postEvent(SunToolkit.targetToAppContext(target), resizeEvent);
-    }
-
     private void windowWillEnterFullScreen() {
-        updateWindowContent();
+        isFullScreenAnimationOn = true;
     }
+
     private void windowDidEnterFullScreen() {
-        updateDisplay();
+        isFullScreenAnimationOn = false;
     }
+
     private void windowWillExitFullScreen() {
-        updateWindowContent();
+        isFullScreenAnimationOn = true;
     }
-    private void windowDidExitFullScreen() {}
+
+    private void windowDidExitFullScreen() {
+        isFullScreenAnimationOn = false;
+    }
 }
