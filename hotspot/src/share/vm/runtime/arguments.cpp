@@ -1896,6 +1896,24 @@ bool Arguments::check_vm_args_consistency() {
   // Keeping the heap 100% free is hard ;-) so limit it to 99%.
   MinHeapFreeRatio = MIN2(MinHeapFreeRatio, (uintx) 99);
 
+  // Min/MaxMetaspaceFreeRatio
+  status = status && verify_percentage(MinMetaspaceFreeRatio, "MinMetaspaceFreeRatio");
+  status = status && verify_percentage(MaxMetaspaceFreeRatio, "MaxMetaspaceFreeRatio");
+
+  if (MinMetaspaceFreeRatio > MaxMetaspaceFreeRatio) {
+    jio_fprintf(defaultStream::error_stream(),
+                "MinMetaspaceFreeRatio (%s" UINTX_FORMAT ") must be less than or "
+                "equal to MaxMetaspaceFreeRatio (%s" UINTX_FORMAT ")\n",
+                FLAG_IS_DEFAULT(MinMetaspaceFreeRatio) ? "Default: " : "",
+                MinMetaspaceFreeRatio,
+                FLAG_IS_DEFAULT(MaxMetaspaceFreeRatio) ? "Default: " : "",
+                MaxMetaspaceFreeRatio);
+    status = false;
+  }
+
+  // Trying to keep 100% free is not practical
+  MinMetaspaceFreeRatio = MIN2(MinMetaspaceFreeRatio, (uintx) 99);
+
   if (FullGCALot && FLAG_IS_DEFAULT(MarkSweepAlwaysCompactCount)) {
     MarkSweepAlwaysCompactCount = 1;  // Move objects every gc.
   }

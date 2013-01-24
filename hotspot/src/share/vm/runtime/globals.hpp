@@ -3010,10 +3010,16 @@ class CommandLineFlags {
           "Min change in heap space due to GC (in bytes)")                  \
                                                                             \
   product(uintx, MinMetaspaceExpansion, ScaleForWordSize(256*K),            \
-          "Min expansion of permanent heap (in bytes)")                     \
+          "Min expansion of Metaspace (in bytes)")                          \
+                                                                            \
+  product(uintx, MinMetaspaceFreeRatio,    40,                              \
+          "Min percentage of Metaspace free after GC to avoid expansion")   \
+                                                                            \
+  product(uintx, MaxMetaspaceFreeRatio,    70,                              \
+          "Max percentage of Metaspace free after GC to avoid shrinking")   \
                                                                             \
   product(uintx, MaxMetaspaceExpansion, ScaleForWordSize(4*M),              \
-          "Max expansion of permanent heap without full GC (in bytes)")     \
+          "Max expansion of Metaspace without full GC (in bytes)")          \
                                                                             \
   product(intx, QueuedAllocationWarningCount, 0,                            \
           "Number of times an allocation that queues behind a GC "          \
