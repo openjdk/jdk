@@ -27,13 +27,8 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/gcLocker.hpp"
-#include "memory/metadataFactory.hpp"
-#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
-#include "oops/objArrayOop.hpp"
-#include "oops/oop.inline.hpp"
-#include "prims/methodComparator.hpp"
 #include "prims/methodHandles.hpp"
 
 // Computes a CPC map (new_index -> original_index) for constant pool entries
@@ -402,13 +397,6 @@ void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
 }
 
 
-void Rewriter::rewrite(instanceKlassHandle klass, constantPoolHandle cpool, Array<Method*>* methods, TRAPS) {
-  ResourceMark rm(THREAD);
-  Rewriter     rw(klass, cpool, methods, CHECK);
-  // (That's all, folks.)
-}
-
-
 Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Method*>* methods, TRAPS)
   : _klass(klass),
     _pool(cpool),
@@ -453,46 +441,25 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
     restore_bytecodes();
     return;
   }
-}
 
-// Relocate jsr/rets in a method.  This can't be done with the rewriter
-// stage because it can throw other exceptions, leaving the bytecodes
-// pointing at constant pool cache entries.
-// Link and check jvmti dependencies while we're iterating over the methods.
-// JSR292 code calls with a different set of methods, so two entry points.
-void Rewriter::relocate_and_link(instanceKlassHandle this_oop, TRAPS) {
-  relocate_and_link(this_oop, this_oop->methods(), THREAD);
-}
-
-void Rewriter::relocate_and_link(instanceKlassHandle this_oop,
-                                 Array<Method*>* methods, TRAPS) {
-  int len = methods->length();
+  // Relocate after everything, but still do this under the is_rewritten flag,
+  // so methods with jsrs in custom class lists in aren't attempted to be
+  // rewritten in the RO section of the shared archive.
+  // Relocated bytecodes don't have to be restored, only the cp cache entries
   for (int i = len-1; i >= 0; i--) {
-    methodHandle m(THREAD, methods->at(i));
+    methodHandle m(THREAD, _methods->at(i));
 
     if (m->has_jsrs()) {
-      m = rewrite_jsrs(m, CHECK);
+      m = rewrite_jsrs(m, THREAD);
+      // Restore bytecodes to their unrewritten state if there are exceptions
+      // relocating bytecodes.  If some are relocated, that is ok because that
+      // doesn't affect constant pool to cpCache rewriting.
+      if (HAS_PENDING_EXCEPTION) {
+        restore_bytecodes();
+        return;
+      }
       // Method might have gotten rewritten.
       methods->at_put(i, m());
     }
-
-    // Set up method entry points for compiler and interpreter    .
-    m->link_method(m, CHECK);
-
-    // This is for JVMTI and unrelated to relocator but the last thing we do
-#ifdef ASSERT
-    if (StressMethodComparator) {
-      static int nmc = 0;
-      for (int j = i; j >= 0 && j >= i-4; j--) {
-        if ((++nmc % 1000) == 0)  tty->print_cr("Have run MethodComparator %d times...", nmc);
-        bool z = MethodComparator::methods_EMCP(m(),
-                   methods->at(j));
-        if (j == i && !z) {
-          tty->print("MethodComparator FAIL: "); m->print(); m->print_codes();
-          assert(z, "method must compare equal to itself");
-        }
-      }
-    }
-#endif //ASSERT
   }
 }

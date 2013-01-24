@@ -777,6 +777,15 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
                                        full_gc_count,
                                        GCCause::_metadata_GC_threshold);
     VMThread::execute(&op);
+
+    // If GC was locked out, try again.  Check
+    // before checking success because the prologue
+    // could have succeeded and the GC still have
+    // been locked out.
+    if (op.gc_locked()) {
+      continue;
+    }
+
     if (op.prologue_succeeded()) {
       return op.result();
     }
@@ -818,7 +827,7 @@ void MarkSweepPolicy::initialize_generations() {
   if (_generations == NULL)
     vm_exit_during_initialization("Unable to allocate gen spec");
 
-  if (UseParNewGC && ParallelGCThreads > 0) {
+  if (UseParNewGC) {
     _generations[0] = new GenerationSpec(Generation::ParNew, _initial_gen0_size, _max_gen0_size);
   } else {
     _generations[0] = new GenerationSpec(Generation::DefNew, _initial_gen0_size, _max_gen0_size);
@@ -831,10 +840,9 @@ void MarkSweepPolicy::initialize_generations() {
 
 void MarkSweepPolicy::initialize_gc_policy_counters() {
   // initialize the policy counters - 2 collectors, 3 generations
-  if (UseParNewGC && ParallelGCThreads > 0) {
+  if (UseParNewGC) {
     _gc_policy_counters = new GCPolicyCounters("ParNew:MSC", 2, 3);
-  }
-  else {
+  } else {
     _gc_policy_counters = new GCPolicyCounters("Copy:MSC", 2, 3);
   }
 }
