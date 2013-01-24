@@ -2076,7 +2076,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final int parameterCount = methodType.parameterCount();
         final int callCount      = callType.parameterCount();
 
-        final boolean isCalleeVarArg = parameterCount > 1 && methodType.parameterType(parameterCount - 1).isArray();
+        final boolean isCalleeVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
         final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : (callCount > 1 &&
                 callType.parameterType(callCount - 1).isArray());
 
