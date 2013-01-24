@@ -36,7 +36,8 @@ import javax.crypto.spec.*;
 
 public class PBETest {
     private final static String DIR = System.getProperty("test.src", ".");
-    private static final String PBE_ALGO = "PBEWithHmacSHA1AndAES_128";
+    //private static final String PBE_ALGO = "PBEWithHmacSHA1AndAES_128";
+    private static final String PBE_ALGO = "PBEWithSHA1AndDESede";
     private static final char[] PASSWORD = "passphrase".toCharArray();
     private static final String KEYSTORE_TYPE = "JKS";
     private static final String KEYSTORE = DIR + "/keystore.jks";
