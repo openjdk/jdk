@@ -840,7 +840,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     new PrivilegedAction<String>() {
                         public String run() {
                             String prop =
-                                Security.getProperty
+                                Security.getProperty(
                                     KEY_PROTECTION_ALGORITHM[0]);
                             if (prop == null) {
                                 prop = Security.getProperty(
