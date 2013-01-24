@@ -75,11 +75,11 @@
 //    [class_loader_data]
 //    [modifier_flags]
 //    [access_flags  ]
-//    [verify_count  ] - not in product
-//    [alloc_count   ]
 //    [last_biased_lock_bulk_revocation_time] (64 bits)
 //    [prototype_header]
 //    [biased_lock_revocation_count]
+//    [verify_count  ] - not in product
+//    [alloc_count   ]
 //    [_modified_oops]
 //    [_accumulated_modified_oops]
 //    [trace_id]
@@ -164,17 +164,17 @@ class Klass : public Metadata {
   jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
-#ifndef PRODUCT
-  int           _verify_count;  // to avoid redundant verifies
-#endif
-
-  juint    _alloc_count;        // allocation profiling support
-
   // Biased locking implementation and statistics
   // (the 64-bit chunk goes first, to avoid some fragmentation)
   jlong    _last_biased_lock_bulk_revocation_time;
   markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
+
+#ifndef PRODUCT
+  int           _verify_count;  // to avoid redundant verifies
+#endif
+
+  juint    _alloc_count;        // allocation profiling support
 
   TRACE_DEFINE_KLASS_TRACE_ID;
 
