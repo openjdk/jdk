@@ -56,7 +56,7 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
      * pairs of hexadecimal digits.
      * Multi-valued attributes are represented as a comma-separated
      * list of values, enclosed in square brackets. See
-     * {@link Arrays.toString}.
+     * {@link Arrays#toString(java.lang.Object[])}.
      * <p>
      * A string value will be DER-encoded as an ASN.1 UTF8String and a
      * binary value will be DER-encoded as an ASN.1 Octet String.
@@ -163,7 +163,7 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
      * </ul>
      * Multi-valued attributes are represented as a comma-separated
      * list of values, enclosed in square brackets. See
-     * {@link Arrays.toString}.
+     * {@link Arrays#toString(java.lang.Object[])}.
      *
      * @return the attribute value's string encoding
      */
