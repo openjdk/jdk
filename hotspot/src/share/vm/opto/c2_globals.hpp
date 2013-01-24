@@ -516,6 +516,9 @@
   develop(bool, SpecialArraysEquals, true,                                  \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \
+  product(bool, SpecialEncodeISOArray, true,                                \
+          "special version of ISO_8859_1$Encoder.encodeISOArray")           \
+                                                                            \
   develop(bool, BailoutToInterpreterForThrows, false,                       \
           "Compiled methods which throws/catches exceptions will be "       \
           "deopt and intp.")                                                \
