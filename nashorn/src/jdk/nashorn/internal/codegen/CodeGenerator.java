@@ -341,7 +341,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             @Override
             public Node enter(final IndexNode indexNode) {
                 if (!baseAlreadyOnStack) {
-                    load(indexNode.getBase());
+                    load(indexNode.getBase()).convert(Type.OBJECT);
                     load(indexNode.getIndex());
                 }
                 method.dynamicGetIndex(node.getType(), getCallSiteFlags(), indexNode.isFunction());
