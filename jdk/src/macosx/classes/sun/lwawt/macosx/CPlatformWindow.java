@@ -923,6 +923,10 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
             return false;
         }
 
+        if (blocker instanceof CPrinterDialogPeer) {
+            return true;
+        }
+
         CPlatformWindow pWindow = (CPlatformWindow)blocker.getPlatformWindow();
 
         pWindow.orderAboveSiblings();
