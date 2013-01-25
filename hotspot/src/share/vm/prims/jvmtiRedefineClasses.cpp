@@ -1122,6 +1122,8 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
       }
     } // end for each old_cp entry
 
+    ConstantPool::copy_operands(old_cp, *merge_cp_p, CHECK_0);
+
     // We don't need to sanity check that *merge_cp_length_p is within
     // *merge_cp_p bounds since we have the minimum on-entry check above.
     (*merge_cp_length_p) = old_i;
@@ -1305,8 +1307,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   _index_map_count = 0;
   _index_map_p = new intArray(scratch_cp->length(), -1);
 
+  // reference to the cp holder is needed for copy_operands()
+  merge_cp->set_pool_holder(scratch_class());
   bool result = merge_constant_pools(old_cp, scratch_cp, &merge_cp,
                   &merge_cp_length, THREAD);
+  merge_cp->set_pool_holder(NULL);
+
   if (!result) {
     // The merge can fail due to memory allocation failure or due
     // to robustness checks.
@@ -2380,13 +2386,14 @@ void VM_RedefineClasses::set_new_constant_pool(
   assert(version != 0, "sanity check");
   smaller_cp->set_version(version);
 
+  // attach klass to new constant pool
+  // reference to the cp holder is needed for copy_operands()
+  smaller_cp->set_pool_holder(scratch_class());
+
   scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
   scratch_cp = smaller_cp;
 
   // attach new constant pool to klass
-  scratch_cp->set_pool_holder(scratch_class());
-
-  // attach klass to new constant pool
   scratch_class->set_constants(scratch_cp());
 
   int i;  // for portability
