@@ -136,6 +136,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         "keystore.PKCS12.keyProtectionAlgorithm"
     };
 
+    // friendlyName, localKeyId, trustedKeyUsage
+    private static final String[] CORE_ATTRIBUTES = {
+        "1.2.840.113549.1.9.20",
+        "1.2.840.113549.1.9.21",
+        "2.16.840.1.113894.746875.1.1"
+    };
+
     private static final Debug debug = Debug.getInstance("pkcs12");
 
     private static final int keyBag[]  = {1, 2, 840, 113549, 1, 12, 10, 1, 2};
@@ -1537,6 +1544,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         if (attributes != null) {
             for (KeyStore.Entry.Attribute attribute : attributes) {
+                String attributeName = attribute.getName();
+                // skip friendlyName, localKeyId and trustedKeyUsage
+                if (CORE_ATTRIBUTES[0].equals(attributeName) ||
+                    CORE_ATTRIBUTES[1].equals(attributeName) ||
+                    CORE_ATTRIBUTES[2].equals(attributeName)) {
+                    continue;
+                }
                 attrs.write(((PKCS12Attribute) attribute).getEncoded());
             }
         }
