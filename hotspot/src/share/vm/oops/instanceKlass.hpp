@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -826,6 +826,9 @@ class InstanceKlass: public Klass {
                                                is_interface(),
                                                is_anonymous());
   }
+#if INCLUDE_SERVICES
+  virtual void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   static int vtable_start_offset()    { return header_size(); }
   static int vtable_length_offset()   { return offset_of(InstanceKlass, _vtable_len) / HeapWordSize; }

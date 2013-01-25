@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ template <class T> class GrowableArray;
 class ClassLoaderData;
 class klassVtable;
 class ParCompactionManager;
+class KlassSizeStats;
 
 class Klass : public Metadata {
   friend class VMStructs;
@@ -477,6 +478,9 @@ class Klass : public Metadata {
 
   // Size of klass in word size.
   virtual int size() const = 0;
+#if INCLUDE_SERVICES
+  virtual void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   // Returns the Java name for a class (Resource allocated)
   // For arrays, this returns the name of the element with a leading '['.

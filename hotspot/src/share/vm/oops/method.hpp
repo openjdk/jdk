@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ class LocalVariableTableElement;
 class AdapterHandlerEntry;
 class MethodData;
 class ConstMethod;
+class KlassSizeStats;
 
 class Method : public Metadata {
  friend class VMStructs;
@@ -593,6 +594,9 @@ class Method : public Metadata {
   static int header_size()                       { return sizeof(Method)/HeapWordSize; }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
+#if INCLUDE_SERVICES
+  void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   // interpreter support
   static ByteSize const_offset()                 { return byte_offset_of(Method, _constMethod       ); }

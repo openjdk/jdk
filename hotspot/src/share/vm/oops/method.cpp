@@ -34,6 +34,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/generation.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/constMethod.hpp"
@@ -1954,6 +1955,22 @@ void Method::print_value_on(outputStream* st) const {
   if (WizardMode && code() != NULL) st->print(" ((nmethod*)%p)", code());
 }
 
+#if INCLUDE_SERVICES
+// Size Statistics
+void Method::collect_statistics(KlassSizeStats *sz) const {
+  int mysize = sz->count(this);
+  sz->_method_bytes += mysize;
+  sz->_method_all_bytes += mysize;
+  sz->_rw_bytes += mysize;
+
+  if (constMethod()) {
+    constMethod()->collect_statistics(sz);
+  }
+  if (method_data()) {
+    method_data()->collect_statistics(sz);
+  }
+}
+#endif // INCLUDE_SERVICES
 
 // Verification
 

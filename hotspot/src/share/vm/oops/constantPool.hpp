@@ -80,6 +80,7 @@ class CPSlot VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+class KlassSizeStats;
 class ConstantPool : public Metadata {
   friend class VMStructs;
   friend class BytecodeInterpreter;  // Directly extracts an oop in the pool for fast instanceof/checkcast
@@ -684,9 +685,13 @@ class ConstantPool : public Metadata {
     return 0 <= index && index < length();
   }
 
+  // Sizing (in words)
   static int header_size()             { return sizeof(ConstantPool)/HeapWordSize; }
   static int size(int length)          { return align_object_size(header_size() + length); }
   int size() const                     { return size(length()); }
+#if INCLUDE_SERVICES
+  void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   friend class ClassFileParser;
   friend class SystemDictionary;
