@@ -55,9 +55,9 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
-import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.scripts.JO$;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * Representation of global scope.
@@ -427,22 +427,19 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         } else if (obj instanceof Boolean) {
             return NativeBoolean.WRAPFILTER;
         }
-        throw new IllegalArgumentException("Unsupported primitive value: " + obj);
+        throw new IllegalArgumentException("Unsupported primitive: " + obj);
     }
 
     @Override
-    public GuardedInvocation numberLookup(final NashornCallSiteDescriptor callSite, final Number self) {
-        return NativeNumber.lookupPrimitive(callSite, self);
-    }
-
-    @Override
-    public GuardedInvocation stringLookup(final NashornCallSiteDescriptor callSite, final CharSequence self) {
-        return NativeString.lookupPrimitive(callSite, self);
-    }
-
-    @Override
-    public GuardedInvocation booleanLookup(final NashornCallSiteDescriptor callSite, final Boolean self) {
-        return NativeBoolean.lookupPrimitive(callSite, self);
+    public GuardedInvocation primitiveLookup(final LinkRequest request, final Object self) {
+        if (self instanceof String || self instanceof ConsString) {
+            return NativeString.lookupPrimitive(request, self);
+        } else if (self instanceof Number) {
+            return NativeNumber.lookupPrimitive(request, self);
+        } else if (self instanceof Boolean) {
+            return NativeBoolean.lookupPrimitive(request, self);
+        }
+        throw new IllegalArgumentException("Unsupported primitive: " + self);
     }
 
     @Override

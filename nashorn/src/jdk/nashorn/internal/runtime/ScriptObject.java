@@ -68,6 +68,7 @@ import jdk.nashorn.internal.runtime.linker.NashornGuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
 
 /**
@@ -1506,22 +1507,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * with the appropriate guard(s).
      *
      * @param desc call site descriptor
+     * @param request the link request
      *
      * @return GuardedInvocation for the callsite
      */
-    public final GuardedInvocation lookup(final CallSiteDescriptor desc) {
-        return lookup(desc, false);
-    }
-
-    /**
-     * Lookup the appropriate method for an invoke dynamic call.
-     *
-     * @param desc The descriptor of the call site.
-     * @param megaMorphic if the call site is considered megamorphic
-     *
-     * @return GuardedInvocation to be invoked at call site.
-     */
-    public GuardedInvocation lookup(final CallSiteDescriptor desc, final boolean megaMorphic) {
+    public GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request) {
         final int c = desc.getNameTokenCount();
         // JavaScript is "immune" to all currently defined Dynalink composite operation - getProp is the same as getElem
         // is the same as getMethod as JavaScript objects have a single namespace for all three. Therefore, we don't
@@ -1535,16 +1525,16 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         case "getProp":
         case "getElem":
         case "getMethod":
-            return c > 2 ? findGetMethod(desc, megaMorphic, operator) : findGetIndexMethod(desc);
+            return c > 2 ? findGetMethod(desc, request, operator) : findGetIndexMethod(desc, request);
         case "setProp":
         case "setElem":
-            return c > 2 ? findSetMethod(desc, megaMorphic) : findSetIndexMethod(desc);
+            return c > 2 ? findSetMethod(desc, request) : findSetIndexMethod(desc);
         case "call":
-            return findCallMethod(desc, megaMorphic);
+            return findCallMethod(desc, request);
         case "new":
             return findNewMethod(desc);
         case "callMethod":
-            return findCallMethodMethod(desc, megaMorphic);
+            return findCallMethodMethod(desc, request);
         default:
             return null;
         }
@@ -1565,12 +1555,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * Find the appropriate CALL method for an invoke dynamic call.
      * This generates "not a function" always
      *
-     * @param desc        the call site descriptor.
-     * @param megaMorphic is this call site megaMorphic, as reported by Dynalink - then just do apply
+     * @param desc    the call site descriptor.
+     * @param request the link request
      *
      * @return GuardedInvocation to be invoed at call site.
      */
-    protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final boolean megaMorphic) {
+    protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         return notAFunction();
     }
 
@@ -1585,17 +1575,17 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * one for "dyn:call". Explicit support for "dyn:callMethod" is provided for the benefit of potential external
      * callers. The implementation itself actually folds a "dyn:getMethod" method handle into a "dyn:call" method handle.
      *
-     * @param desc The call site descriptor.
-     * @param megaMorphic is this call site megaMorphic, as reported by Dynalink - then just do apply
+     * @param desc    the call site descriptor.
+     * @param request the link request
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    protected GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final boolean megaMorphic) {
+    protected GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         // R(P0, P1, ...)
         final MethodType callType = desc.getMethodType();
         // use type Object(P0) for the getter
         final CallSiteDescriptor getterType = desc.changeMethodType(MethodType.methodType(Object.class, callType.parameterType(0)));
-        final GuardedInvocation getter = findGetMethod(getterType, megaMorphic, "getMethod");
+        final GuardedInvocation getter = findGetMethod(getterType, request, "getMethod");
 
         // Object(P0) => Object(P0, P1, ...)
         final MethodHandle argDroppingGetter = MH.dropArguments(getter.getInvocation(), 1, callType.parameterList().subList(1, callType.parameterCount()));
@@ -1608,16 +1598,16 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /**
      * Find the appropriate GET method for an invoke dynamic call.
      *
-     * @param desc         the call site descriptor
-     * @param megaMorphic  is this call site megaMorphic, as reported by Dynalink - then just do apply
-     * @param operator     operator for get: getProp, getMethod, getElem etc
+     * @param desc     the call site descriptor
+     * @param request  the link request
+     * @param operator operator for get: getProp, getMethod, getElem etc
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final boolean megaMorphic, final String operator) {
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
         final String name = desc.getNameToken(2);
 
-        if (megaMorphic) {
+        if (request.isCallSiteUnstable()) {
             return findMegaMorphicGetMethod(desc, name);
         }
 
@@ -1627,9 +1617,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (find == null) {
             if ("getProp".equals(operator)) {
-                return noSuchProperty(desc);
+                return noSuchProperty(desc, request);
             } else if ("getMethod".equals(operator)) {
-                return noSuchMethod(desc);
+                return noSuchMethod(desc, request);
             } else if ("getElem".equals(operator)) {
                 return createEmptyGetter(desc, name);
             }
@@ -1673,11 +1663,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /**
      * Find the appropriate GETINDEX method for an invoke dynamic call.
      *
-     * @param desc the call site descriptor
+     * @param desc    the call site descriptor
+     * @param request the link request
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    private static GuardedInvocation findGetIndexMethod(final CallSiteDescriptor desc) {
+    protected GuardedInvocation findGetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         return findGetIndexMethod(desc.getMethodType());
     }
 
@@ -1708,14 +1699,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /**
      * Find the appropriate SET method for an invoke dynamic call.
      *
-     * @param desc the call site descriptor
-     * @param megaMorphic  is this call site megaMorphic, as reported by Dynalink - then just do apply
+     * @param desc    the call site descriptor
+     * @param request the link request
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final boolean megaMorphic) {
+    protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-        if(megaMorphic) {
+        if(request.isCallSiteUnstable()) {
             return findMegaMorphicSetMethod(desc, name);
         }
 
@@ -1861,9 +1852,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /**
      * Fall back if a function property is not found.
      * @param desc The call site descriptor
+     * @param request the link request
      * @return GuardedInvocation to be invoked at call site.
      */
-    public GuardedInvocation noSuchMethod(final CallSiteDescriptor desc) {
+    public GuardedInvocation noSuchMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final String       name      = desc.getNameToken(2);
         final FindProperty find      = findProperty(NO_SUCH_METHOD_NAME, true);
         final boolean      scopeCall = isScope() && NashornCallSiteDescriptor.isScope(desc);
@@ -1887,9 +1879,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /**
      * Fall back if a property is not found.
      * @param desc the call site descriptor.
+     * @param request the link request
      * @return GuardedInvocation to be invoked at call site.
      */
-    public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc) {
+    public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
         final String name = desc.getNameToken(2);
         final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
         final boolean scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);

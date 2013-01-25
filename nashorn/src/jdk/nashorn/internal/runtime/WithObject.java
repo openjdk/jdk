@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandles;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
 
 
@@ -86,7 +87,7 @@ public class WithObject extends ScriptObject implements Scope {
 
 
     @Override
-    public GuardedInvocation lookup(final CallSiteDescriptor desc, final boolean megaMorphic) {
+    public GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request) {
         // With scopes can never be observed outside of Nashorn code, so all call sites that can address it will of
         // necessity have a Nashorn descriptor - it is safe to cast.
         final NashornCallSiteDescriptor ndesc = (NashornCallSiteDescriptor)desc;
@@ -111,7 +112,7 @@ public class WithObject extends ScriptObject implements Scope {
             }
 
             if (find != null) {
-                link = self.lookup(desc);
+                link = self.lookup(desc, request);
 
                 if (link != null) {
                     return fixExpressionCallSite(ndesc, link);
@@ -125,7 +126,7 @@ public class WithObject extends ScriptObject implements Scope {
         }
 
         if (find != null) {
-            return fixScopeCallSite(scope.lookup(desc));
+            return fixScopeCallSite(scope.lookup(desc, request));
         }
 
         // the property is not found - now check for
@@ -155,11 +156,11 @@ public class WithObject extends ScriptObject implements Scope {
                 if (find != null) {
                     switch (operator) {
                     case "getMethod":
-                        link = self.noSuchMethod(desc);
+                        link = self.noSuchMethod(desc, request);
                         break;
                     case "getProp":
                     case "getElem":
-                        link = self.noSuchProperty(desc);
+                        link = self.noSuchProperty(desc, request);
                         break;
                     default:
                         break;
@@ -174,7 +175,7 @@ public class WithObject extends ScriptObject implements Scope {
 
         // still not found, may be scope can handle with it's own
         // __noSuchProperty__, __noSuchMethod__ etc.
-        link = scope.lookup(desc);
+        link = scope.lookup(desc, request);
 
         if (link != null) {
             return fixScopeCallSite(link);

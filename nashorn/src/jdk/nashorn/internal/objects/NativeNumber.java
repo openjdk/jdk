@@ -46,9 +46,9 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
-import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * ECMA 15.7 Number Objects.
@@ -317,12 +317,12 @@ public final class NativeNumber extends ScriptObject {
 
     /**
      * Lookup the appropriate method for an invoke dynamic call.
-     * @param desc The call site descriptor.
+     * @param request  The link request
      * @param receiver receiver of call
      * @return Link to be invoked at call site.
      */
-    public static GuardedInvocation lookupPrimitive(final NashornCallSiteDescriptor desc, final Object receiver) {
-        return PrimitiveLookup.lookupPrimitive(desc, Number.class, new NativeNumber(((Number)receiver).doubleValue()), WRAPFILTER);
+    public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Object receiver) {
+        return PrimitiveLookup.lookupPrimitive(request, Number.class, new NativeNumber(((Number)receiver).doubleValue()), WRAPFILTER);
     }
 
     @SuppressWarnings("unused")

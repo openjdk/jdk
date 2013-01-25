@@ -26,8 +26,8 @@
 package jdk.nashorn.internal.runtime;
 
 import java.lang.invoke.MethodHandle;
-import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * Runtime interface to the global scope of the current context.
@@ -79,34 +79,15 @@ public interface GlobalObject {
    public MethodHandle getWrapFilter(Object obj);
 
     /**
-     * Wrapper for {@link jdk.nashorn.internal.objects.Global#numberLookup(NashornCallSiteDescriptor, Number)}
+     * Wrapper for {@link jdk.nashorn.internal.objects.Global#primitiveLookup(LinkRequest, Object)}
      *
-     * @param callSite call site descriptor
+     * @param request the link request for the dynamic call site.
      * @param self     self reference
      *
      * @return guarded invocation
      */
-   public GuardedInvocation numberLookup(NashornCallSiteDescriptor callSite, Number self);
+   public GuardedInvocation primitiveLookup(LinkRequest request, Object self);
 
-    /**
-     * Wrapper for {@link jdk.nashorn.internal.objects.Global#stringLookup(NashornCallSiteDescriptor, CharSequence)}
-     *
-     * @param callSite call site descriptor
-     * @param self     self reference
-     *
-     * @return guarded invocation
-     */
-   public GuardedInvocation stringLookup(NashornCallSiteDescriptor callSite, CharSequence self);
-
-    /**
-     * Wrapper for {@link jdk.nashorn.internal.objects.Global#booleanLookup(NashornCallSiteDescriptor, Boolean)}
-     *
-     * @param callSite call site descriptor
-     * @param self     self reference
-     *
-     * @return guarded invocation
-     */
-   public GuardedInvocation booleanLookup(NashornCallSiteDescriptor callSite, Boolean self);
 
     /**
      * Wrapper for {@link jdk.nashorn.internal.objects.Global#newObject()}

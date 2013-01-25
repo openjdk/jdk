@@ -55,10 +55,11 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
-import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
+import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 
 /**
@@ -121,6 +122,59 @@ public final class NativeString extends ScriptObject {
     @Override
     public Object getLength() {
         return value.length();
+    }
+
+    // This is to provide array-like access to string characters without creating a NativeString wrapper.
+    @Override
+    protected GuardedInvocation findGetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) {
+        final Object self = request.getReceiver();
+        final Class<?> returnType = desc.getMethodType().returnType();
+
+        if (returnType == Object.class && (self instanceof String || self instanceof ConsString)) {
+            try {
+                MethodHandle mh = MethodHandles.lookup().findStatic(NativeString.class, "get", desc.getMethodType());
+                return new GuardedInvocation(mh, NashornGuards.getInstanceOf2Guard(String.class, ConsString.class));
+            } catch (final NoSuchMethodException | IllegalAccessException e) {
+                // Shouldn't happen. Fall back to super
+            }
+        }
+        return super.findGetIndexMethod(desc, request);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object get(final Object self, final Object key) {
+        final CharSequence cs = JSType.toCharSequence(self);
+        final int index = getArrayIndexNoThrow(key);
+        if (index >= 0 && index < cs.length()) {
+            return String.valueOf(cs.charAt(index));
+        }
+        return ((ScriptObject) Global.toObject(self)).get(key);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object get(final Object self, final double key) {
+        if (isRepresentableAsInt(key)) {
+            return get(self, (int)key);
+        }
+        return ((ScriptObject) Global.toObject(self)).get(key);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object get(final Object self, final long key) {
+        final CharSequence cs = JSType.toCharSequence(self);
+        if (key >= 0 && key < cs.length()) {
+            return String.valueOf(cs.charAt((int)key));
+        }
+        return ((ScriptObject) Global.toObject(self)).get(key);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object get(final Object self, final int key) {
+        final CharSequence cs = JSType.toCharSequence(self);
+        if (key >= 0 && key < cs.length()) {
+            return String.valueOf(cs.charAt(key));
+        }
+        return ((ScriptObject) Global.toObject(self)).get(key);
     }
 
     // String characters can be accessed with array-like indexing..
@@ -1066,13 +1120,13 @@ public final class NativeString extends ScriptObject {
     /**
      * Lookup the appropriate method for an invoke dynamic call.
      *
-     * @param desc the call site descriptor
+     * @param request  the link request
      * @param receiver receiver of call
      * @return Link to be invoked at call site.
      */
-    public static GuardedInvocation lookupPrimitive(final NashornCallSiteDescriptor desc, final Object receiver) {
+    public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Object receiver) {
         final MethodHandle guard = NashornGuards.getInstanceOf2Guard(String.class, ConsString.class);
-        return PrimitiveLookup.lookupPrimitive(desc, guard, new NativeString((CharSequence)receiver), WRAPFILTER);
+        return PrimitiveLookup.lookupPrimitive(request, guard, new NativeString((CharSequence)receiver), WRAPFILTER);
     }
 
     @SuppressWarnings("unused")

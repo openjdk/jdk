@@ -31,6 +31,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.beans.StaticClass;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * An object that exposes Java packages and classes as its properties. Packages are exposed as objects that have further
@@ -155,10 +156,11 @@ public class NativeJavaPackage extends ScriptObject {
     /**
      * Handle creation of new attribute.
      * @param desc the call site descriptor
+     * @param request the link request
      * @return Link to be invoked at call site.
      */
     @Override
-    public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc) {
+    public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
         final String propertyName = desc.getNameToken(2);
         final String fullName     = name.isEmpty() ? propertyName : name + "." + propertyName;
 
@@ -178,12 +180,12 @@ public class NativeJavaPackage extends ScriptObject {
             set(propertyName, StaticClass.forClass(javaClass), strict);
         }
 
-        return super.lookup(desc);
+        return super.lookup(desc, request);
     }
 
     @Override
-    public GuardedInvocation noSuchMethod(final CallSiteDescriptor desc) {
-        return noSuchProperty(desc);
+    public GuardedInvocation noSuchMethod(final CallSiteDescriptor desc, final LinkRequest request) {
+        return noSuchProperty(desc, request);
     }
 
 }
