@@ -2224,11 +2224,11 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         keyId = "01".getBytes("UTF8");
                     }
                 }
-                if (alias == null) {
-                    alias = getUnfriendlyName();
-                }
                 // Trusted certificate
                 if (trustedKeyUsage != null) {
+                    if (alias == null) {
+                        alias = getUnfriendlyName();
+                    }
                     CertEntry certEntry =
                         new CertEntry(cert, keyId, alias, trustedKeyUsage,
                             attributes);
