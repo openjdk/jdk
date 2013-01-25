@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,6 @@
   template(java_lang_Compiler,                        "java/lang/Compiler")                       \
   template(sun_misc_Signal,                           "sun/misc/Signal")                          \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
-  template(sun_jkernel_DownloadManager,               "sun/jkernel/DownloadManager")              \
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \
   template(sun_misc_PostVMInitHook,                   "sun/misc/PostVMInitHook")                  \
   template(sun_misc_Launcher_ExtClassLoader,          "sun/misc/Launcher$ExtClassLoader")         \

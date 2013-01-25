@@ -3104,11 +3104,9 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   Klass* the_class_oop = java_lang_Class::as_Klass(the_class_mirror);
   instanceKlassHandle the_class = instanceKlassHandle(THREAD, the_class_oop);
 
-#ifndef JVMTI_KERNEL
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   jvmti_breakpoints.clearall_in_class_at_safepoint(the_class_oop);
-#endif // !JVMTI_KERNEL
 
   if (the_class_oop == Universe::reflect_invoke_cache()->klass()) {
     // We are redefining java.lang.reflect.Method. Method.invoke() is
