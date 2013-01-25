@@ -476,6 +476,8 @@ class MethodHandleNatives {
         case "getProxyClass":
         case "newProxyInstance":
             return defc == java.lang.reflect.Proxy.class;
+        case "asInterfaceInstance":
+            return defc == java.lang.invoke.MethodHandleProxies.class;
         case "getBundle":
         case "clearCache":
             return defc == java.util.ResourceBundle.class;
