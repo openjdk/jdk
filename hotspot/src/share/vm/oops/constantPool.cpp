@@ -30,6 +30,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/constantPool.hpp"
@@ -1946,6 +1947,20 @@ void ConstantPool::print_value_on(outputStream* st) const {
   }
 }
 
+#if INCLUDE_SERVICES
+// Size Statistics
+void ConstantPool::collect_statistics(KlassSizeStats *sz) const {
+  sz->_cp_all_bytes += (sz->_cp_bytes          = sz->count(this));
+  sz->_cp_all_bytes += (sz->_cp_tags_bytes     = sz->count_array(tags()));
+  sz->_cp_all_bytes += (sz->_cp_cache_bytes    = sz->count(cache()));
+  sz->_cp_all_bytes += (sz->_cp_operands_bytes = sz->count_array(operands()));
+  sz->_cp_all_bytes += (sz->_cp_refmap_bytes   = sz->count_array(reference_map()));
+
+  sz->_ro_bytes += sz->_cp_operands_bytes + sz->_cp_tags_bytes +
+                   sz->_cp_refmap_bytes;
+  sz->_rw_bytes += sz->_cp_bytes + sz->_cp_cache_bytes;
+}
+#endif // INCLUDE_SERVICES
 
 // Verification
 

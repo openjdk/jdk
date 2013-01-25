@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,10 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   outputStream* _out;
   bool _full_gc;
   bool _need_prologue;
+  bool _csv_format; // "comma separated values" format for spreadsheet.
+  bool _print_help;
+  bool _print_class_stats;
+  const char* _columns;
  public:
   VM_GC_HeapInspection(outputStream* out, bool request_full_gc,
                        bool need_prologue) :
@@ -140,6 +144,10 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
     _out = out;
     _full_gc = request_full_gc;
     _need_prologue = need_prologue;
+    _csv_format = false;
+    _print_help = false;
+    _print_class_stats = false;
+    _columns = NULL;
   }
 
   ~VM_GC_HeapInspection() {}
@@ -147,6 +155,10 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   virtual bool skip_operation() const;
   virtual bool doit_prologue();
   virtual void doit();
+  void set_csv_format(bool value) {_csv_format = value;}
+  void set_print_help(bool value) {_print_help = value;}
+  void set_print_class_stats(bool value) {_print_class_stats = value;}
+  void set_columns(const char* value) {_columns = value;}
 };
 
 
