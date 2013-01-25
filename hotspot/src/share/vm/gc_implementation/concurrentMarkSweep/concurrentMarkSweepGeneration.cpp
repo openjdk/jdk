@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3338,7 +3338,7 @@ bool ConcurrentMarkSweepGeneration::grow_by(size_t bytes) {
     if (Verbose && PrintGC) {
       size_t new_mem_size = _virtual_space.committed_size();
       size_t old_mem_size = new_mem_size - bytes;
-      gclog_or_tty->print_cr("Expanding %s from %ldK by %ldK to %ldK",
+      gclog_or_tty->print_cr("Expanding %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
                     name(), old_mem_size/K, bytes/K, new_mem_size/K);
     }
   }
@@ -9203,7 +9203,7 @@ void ASConcurrentMarkSweepGeneration::shrink_by(size_t desired_bytes) {
       if (Verbose && PrintGCDetails) {
         size_t new_mem_size = _virtual_space.committed_size();
         size_t old_mem_size = new_mem_size + bytes;
-        gclog_or_tty->print_cr("Shrinking %s from %ldK by %ldK to %ldK",
+        gclog_or_tty->print_cr("Shrinking %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
                       name(), old_mem_size/K, bytes/K, new_mem_size/K);
       }
     }

@@ -131,17 +131,23 @@ void WorkerDataArray<T>::print(int level, const char* title) {
 
 #ifndef PRODUCT
 
+template <> const int WorkerDataArray<int>::_uninitialized = -1;
+template <> const double WorkerDataArray<double>::_uninitialized = -1.0;
+template <> const size_t WorkerDataArray<size_t>::_uninitialized = (size_t)-1;
+
 template <class T>
 void WorkerDataArray<T>::reset() {
   for (uint i = 0; i < _length; i++) {
-    _data[i] = (T)-1;
+    _data[i] = (T)_uninitialized;
   }
 }
 
 template <class T>
 void WorkerDataArray<T>::verify() {
   for (uint i = 0; i < _length; i++) {
-    assert(_data[i] >= (T)0, err_msg("Invalid data for worker %d", i));
+    assert(_data[i] != _uninitialized,
+        err_msg("Invalid data for worker " UINT32_FORMAT ", data: %lf, uninitialized: %lf",
+            i, (double)_data[i], (double)_uninitialized));
   }
 }
 
@@ -201,20 +207,20 @@ void G1GCPhaseTimes::note_gc_end() {
   _last_termination_attempts.verify();
   _last_gc_worker_end_times_ms.verify();
 
-    for (uint i = 0; i < _active_gc_threads; i++) {
-      double worker_time = _last_gc_worker_end_times_ms.get(i) - _last_gc_worker_start_times_ms.get(i);
-      _last_gc_worker_times_ms.set(i, worker_time);
+  for (uint i = 0; i < _active_gc_threads; i++) {
+    double worker_time = _last_gc_worker_end_times_ms.get(i) - _last_gc_worker_start_times_ms.get(i);
+    _last_gc_worker_times_ms.set(i, worker_time);
 
-      double worker_known_time = _last_ext_root_scan_times_ms.get(i) +
-        _last_satb_filtering_times_ms.get(i) +
-        _last_update_rs_times_ms.get(i) +
-        _last_scan_rs_times_ms.get(i) +
-        _last_obj_copy_times_ms.get(i) +
-        _last_termination_times_ms.get(i);
+    double worker_known_time = _last_ext_root_scan_times_ms.get(i) +
+      _last_satb_filtering_times_ms.get(i) +
+      _last_update_rs_times_ms.get(i) +
+      _last_scan_rs_times_ms.get(i) +
+      _last_obj_copy_times_ms.get(i) +
+      _last_termination_times_ms.get(i);
 
-      double worker_other_time = worker_time - worker_known_time;
-      _last_gc_worker_other_times_ms.set(i, worker_other_time);
-    }
+    double worker_other_time = worker_time - worker_known_time;
+    _last_gc_worker_other_times_ms.set(i, worker_other_time);
+  }
 
   _last_gc_worker_times_ms.verify();
   _last_gc_worker_other_times_ms.verify();

@@ -542,17 +542,17 @@ void print_register_type(OopMapValue::oop_types x, VMReg optional,
     st->print("Oop");
     break;
   case OopMapValue::value_value:
-    st->print("Value" );
+    st->print("Value");
     break;
   case OopMapValue::narrowoop_value:
-    tty->print("NarrowOop" );
+    st->print("NarrowOop");
     break;
   case OopMapValue::callee_saved_value:
-    st->print("Callers_" );
+    st->print("Callers_");
     optional->print_on(st);
     break;
   case OopMapValue::derived_oop_value:
-    st->print("Derived_oop_" );
+    st->print("Derived_oop_");
     optional->print_on(st);
     break;
   default:

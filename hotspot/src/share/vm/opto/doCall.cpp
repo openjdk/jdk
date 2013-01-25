@@ -553,7 +553,13 @@ void Parse::do_call() {
         rtype = ctype;
       }
     } else {
-      assert(rtype == ctype, "mismatched return types");  // symbolic resolution enforces this
+      // Symbolic resolution enforces the types to be the same.
+      // NOTE: We must relax the assert for unloaded types because two
+      // different ciType instances of the same unloaded class type
+      // can appear to be "loaded" by different loaders (depending on
+      // the accessing class).
+      assert(!rtype->is_loaded() || !ctype->is_loaded() || rtype == ctype,
+             err_msg_res("mismatched return types: rtype=%s, ctype=%s", rtype->name(), ctype->name()));
     }
 
     // If the return type of the method is not loaded, assert that the
