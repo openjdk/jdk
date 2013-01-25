@@ -60,6 +60,19 @@ bool ciType::is_subtype_of(ciType* type) {
 }
 
 // ------------------------------------------------------------------
+// ciType::name
+//
+// Return the name of this type
+const char* ciType::name() {
+  if (is_primitive_type()) {
+    return type2name(basic_type());
+  } else {
+    assert(is_klass(), "must be");
+    return as_klass()->name()->as_utf8();
+  }
+}
+
+// ------------------------------------------------------------------
 // ciType::print_impl
 //
 // Implementation of the print method.
@@ -73,7 +86,8 @@ void ciType::print_impl(outputStream* st) {
 //
 // Print the name of this type
 void ciType::print_name_on(outputStream* st) {
-  st->print(type2name(basic_type()));
+  ResourceMark rm;
+  st->print(name());
 }
 
 

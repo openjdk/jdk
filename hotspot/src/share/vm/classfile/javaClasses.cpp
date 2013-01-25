@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -687,19 +687,6 @@ void java_lang_Class::set_array_klass(oop java_class, Klass* klass) {
 }
 
 
-Method* java_lang_Class::resolved_constructor(oop java_class) {
-  Metadata* constructor = java_class->metadata_field(_resolved_constructor_offset);
-  assert(constructor == NULL || constructor->is_method(), "should be method");
-  return ((Method*)constructor);
-}
-
-
-void java_lang_Class::set_resolved_constructor(oop java_class, Method* constructor) {
-  assert(constructor->is_method(), "should be method");
-  java_class->metadata_field_put(_resolved_constructor_offset, constructor);
-}
-
-
 bool java_lang_Class::is_primitive(oop java_class) {
   // should assert:
   //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
@@ -924,7 +911,6 @@ jlong java_lang_Thread::stackSize(oop java_thread) {
 // Write the thread status value to threadStatus field in java.lang.Thread java class.
 void java_lang_Thread::set_thread_status(oop java_thread,
                                          java_lang_Thread::ThreadStatus status) {
-  assert(JavaThread::current()->thread_state() == _thread_in_vm, "Java Thread is not running in vm");
   // The threadStatus is only present starting in 1.5
   if (_thread_status_offset > 0) {
     java_thread->int_field_put(_thread_status_offset, status);
@@ -1158,179 +1144,43 @@ void java_lang_Throwable::print(Handle throwable, outputStream* st) {
   }
 }
 
-// Print stack trace element to resource allocated buffer
-char* java_lang_Throwable::print_stack_element_to_buffer(Method* method, int bci) {
-  // Get strings and string lengths
-  InstanceKlass* klass = method->method_holder();
-  const char* klass_name  = klass->external_name();
-  int buf_len = (int)strlen(klass_name);
-  char* source_file_name;
-  if (klass->source_file_name() == NULL) {
-    source_file_name = NULL;
-  } else {
-    source_file_name = klass->source_file_name()->as_C_string();
-    buf_len += (int)strlen(source_file_name);
-  }
-  char* method_name = method->name()->as_C_string();
-  buf_len += (int)strlen(method_name);
+// After this many redefines, the stack trace is unreliable.
+const int MAX_VERSION = USHRT_MAX;
 
-  // Allocate temporary buffer with extra space for formatting and line number
-  char* buf = NEW_RESOURCE_ARRAY(char, buf_len + 64);
+// Helper backtrace functions to store bci|version together.
+static inline int merge_bci_and_version(int bci, int version) {
+  // only store u2 for version, checking for overflow.
+  if (version > USHRT_MAX || version < 0) version = MAX_VERSION;
+  assert((jushort)bci == bci, "bci should be short");
+  return build_int_from_shorts(version, bci);
+}
 
-  // Print stack trace line in buffer
-  sprintf(buf, "\tat %s.%s", klass_name, method_name);
+static inline int bci_at(unsigned int merged) {
+  return extract_high_short_from_int(merged);
+}
+static inline int version_at(unsigned int merged) {
+  return extract_low_short_from_int(merged);
+}
+
+static inline bool version_matches(Method* method, int version) {
+  return (method->constants()->version() == version && version < MAX_VERSION);
+}
+
+static inline int get_line_number(Method* method, int bci) {
+  int line_number = 0;
   if (method->is_native()) {
-    strcat(buf, "(Native Method)");
+    // Negative value different from -1 below, enabling Java code in
+    // class java.lang.StackTraceElement to distinguish "native" from
+    // "no LineNumberTable".  JDK tests for -2.
+    line_number = -2;
   } else {
-    int line_number = method->line_number_from_bci(bci);
-    if (source_file_name != NULL && (line_number != -1)) {
-      // Sourcename and linenumber
-      sprintf(buf + (int)strlen(buf), "(%s:%d)", source_file_name, line_number);
-    } else if (source_file_name != NULL) {
-      // Just sourcename
-      sprintf(buf + (int)strlen(buf), "(%s)", source_file_name);
-    } else {
-      // Neither soucename and linenumber
-      sprintf(buf + (int)strlen(buf), "(Unknown Source)");
-    }
-    nmethod* nm = method->code();
-    if (WizardMode && nm != NULL) {
-      sprintf(buf + (int)strlen(buf), "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+    // Returns -1 if no LineNumberTable, and otherwise actual line number
+    line_number = method->line_number_from_bci(bci);
+    if (line_number == -1 && ShowHiddenFrames) {
+      line_number = bci + 1000000;
     }
   }
-
-  return buf;
-}
-
-
-void java_lang_Throwable::print_stack_element(Handle stream, Method* method, int bci) {
-  ResourceMark rm;
-  char* buf = print_stack_element_to_buffer(method, bci);
-  print_to_stream(stream, buf);
-}
-
-void java_lang_Throwable::print_stack_element(outputStream *st, Method* method, int bci) {
-  ResourceMark rm;
-  char* buf = print_stack_element_to_buffer(method, bci);
-  st->print_cr("%s", buf);
-}
-
-void java_lang_Throwable::print_to_stream(Handle stream, const char* str) {
-  if (stream.is_null()) {
-    tty->print_cr("%s", str);
-  } else {
-    EXCEPTION_MARK;
-    JavaValue result(T_VOID);
-    Handle arg (THREAD, oopFactory::new_charArray(str, THREAD));
-    if (!HAS_PENDING_EXCEPTION) {
-      JavaCalls::call_virtual(&result,
-                              stream,
-                              KlassHandle(THREAD, stream->klass()),
-                              vmSymbols::println_name(),
-                              vmSymbols::char_array_void_signature(),
-                              arg,
-                              THREAD);
-    }
-    // Ignore any exceptions. we are in the middle of exception handling. Same as classic VM.
-    if (HAS_PENDING_EXCEPTION) CLEAR_PENDING_EXCEPTION;
-  }
-
-}
-
-
-const char* java_lang_Throwable::no_stack_trace_message() {
-  return "\t<<no stack trace available>>";
-}
-
-
-// Currently used only for exceptions occurring during startup
-void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
-  Thread *THREAD = Thread::current();
-  Handle h_throwable(THREAD, throwable);
-  while (h_throwable.not_null()) {
-    objArrayHandle result (THREAD, objArrayOop(backtrace(h_throwable())));
-    if (result.is_null()) {
-      st->print_cr(no_stack_trace_message());
-      return;
-    }
-
-    while (result.not_null()) {
-      typeArrayHandle methods (THREAD,
-                               typeArrayOop(result->obj_at(trace_methods_offset)));
-      typeArrayHandle bcis (THREAD,
-                            typeArrayOop(result->obj_at(trace_bcis_offset)));
-
-      if (methods.is_null() || bcis.is_null()) {
-        st->print_cr(no_stack_trace_message());
-        return;
-      }
-
-      int length = methods()->length();
-      for (int index = 0; index < length; index++) {
-        Method* method = ((Method*)methods()->metadata_at(index));
-        if (method == NULL) goto handle_cause;
-        int bci = bcis->ushort_at(index);
-        print_stack_element(st, method, bci);
-      }
-      result = objArrayHandle(THREAD, objArrayOop(result->obj_at(trace_next_offset)));
-    }
-  handle_cause:
-    {
-      EXCEPTION_MARK;
-      JavaValue result(T_OBJECT);
-      JavaCalls::call_virtual(&result,
-                              h_throwable,
-                              KlassHandle(THREAD, h_throwable->klass()),
-                              vmSymbols::getCause_name(),
-                              vmSymbols::void_throwable_signature(),
-                              THREAD);
-      // Ignore any exceptions. we are in the middle of exception handling. Same as classic VM.
-      if (HAS_PENDING_EXCEPTION) {
-        CLEAR_PENDING_EXCEPTION;
-        h_throwable = Handle();
-      } else {
-        h_throwable = Handle(THREAD, (oop) result.get_jobject());
-        if (h_throwable.not_null()) {
-          st->print("Caused by: ");
-          print(h_throwable, st);
-          st->cr();
-        }
-      }
-    }
-  }
-}
-
-
-void java_lang_Throwable::print_stack_trace(oop throwable, oop print_stream) {
-  // Note: this is no longer used in Merlin, but we support it for compatibility.
-  Thread *thread = Thread::current();
-  Handle stream(thread, print_stream);
-  objArrayHandle result (thread, objArrayOop(backtrace(throwable)));
-  if (result.is_null()) {
-    print_to_stream(stream, no_stack_trace_message());
-    return;
-  }
-
-  while (result.not_null()) {
-    typeArrayHandle methods(thread,
-                            typeArrayOop(result->obj_at(trace_methods_offset)));
-    typeArrayHandle bcis (thread,
-                          typeArrayOop(result->obj_at(trace_bcis_offset)));
-
-    if (methods.is_null() || bcis.is_null()) {
-      print_to_stream(stream, no_stack_trace_message());
-      return;
-    }
-
-    int length = methods()->length();
-    for (int index = 0; index < length; index++) {
-      Method* method = ((Method*)methods()->metadata_at(index));
-      if (method == NULL) return;
-      int bci = bcis->ushort_at(index);
-      print_stack_element(stream, method, bci);
-    }
-    result = objArrayHandle(thread, objArrayOop(result->obj_at(trace_next_offset)));
-  }
+  return line_number;
 }
 
 // This class provides a simple wrapper over the internal structure of
@@ -1350,17 +1200,47 @@ class BacktraceBuilder: public StackObj {
 
   enum {
     trace_methods_offset = java_lang_Throwable::trace_methods_offset,
-    trace_bcis_offset    = java_lang_Throwable::trace_bcis_offset,
+    trace_bcis_offset = java_lang_Throwable::trace_bcis_offset,
     trace_mirrors_offset = java_lang_Throwable::trace_mirrors_offset,
     trace_next_offset    = java_lang_Throwable::trace_next_offset,
     trace_size           = java_lang_Throwable::trace_size,
     trace_chunk_size     = java_lang_Throwable::trace_chunk_size
   };
 
+  // get info out of chunks
+  static typeArrayOop get_methods(objArrayHandle chunk) {
+    typeArrayOop methods = typeArrayOop(chunk->obj_at(trace_methods_offset));
+    assert(methods != NULL, "method array should be initialized in backtrace");
+    return methods;
+  }
+  static typeArrayOop get_bcis(objArrayHandle chunk) {
+    typeArrayOop bcis = typeArrayOop(chunk->obj_at(trace_bcis_offset));
+    assert(bcis != NULL, "bci array should be initialized in backtrace");
+    return bcis;
+  }
+  static objArrayOop get_mirrors(objArrayHandle chunk) {
+    objArrayOop mirrors = objArrayOop(chunk->obj_at(trace_mirrors_offset));
+    assert(mirrors != NULL, "mirror array should be initialized in backtrace");
+    return mirrors;
+  }
+
   // constructor for new backtrace
   BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _mirrors(NULL) {
     expand(CHECK);
     _backtrace = _head;
+    _index = 0;
+  }
+
+  BacktraceBuilder(objArrayHandle backtrace) {
+    _methods = get_methods(backtrace);
+    _bcis = get_bcis(backtrace);
+    _mirrors = get_mirrors(backtrace);
+    assert(_methods->length() == _bcis->length() &&
+           _methods->length() == _mirrors->length(),
+           "method and source information arrays should match");
+
+    // head is the preallocated backtrace
+    _backtrace = _head = backtrace();
     _index = 0;
   }
 
@@ -1371,10 +1251,10 @@ class BacktraceBuilder: public StackObj {
     objArrayOop head = oopFactory::new_objectArray(trace_size, CHECK);
     objArrayHandle new_head(THREAD, head);
 
-    typeArrayOop methods = oopFactory::new_metaDataArray(trace_chunk_size, CHECK);
+    typeArrayOop methods = oopFactory::new_shortArray(trace_chunk_size, CHECK);
     typeArrayHandle new_methods(THREAD, methods);
 
-    typeArrayOop bcis = oopFactory::new_shortArray(trace_chunk_size, CHECK);
+    typeArrayOop bcis = oopFactory::new_intArray(trace_chunk_size, CHECK);
     typeArrayHandle new_bcis(THREAD, bcis);
 
     objArrayOop mirrors = oopFactory::new_objectArray(trace_chunk_size, CHECK);
@@ -1389,7 +1269,7 @@ class BacktraceBuilder: public StackObj {
 
     _head    = new_head();
     _methods = new_methods();
-    _bcis    = new_bcis();
+    _bcis = new_bcis();
     _mirrors = new_mirrors();
     _index = 0;
   }
@@ -1403,7 +1283,6 @@ class BacktraceBuilder: public StackObj {
     // shorts.  The later line number lookup would just smear the -1
     // to a 0 even if it could be recorded.
     if (bci == SynchronizationEntryBCI) bci = 0;
-    assert(bci == (jushort)bci, "doesn't fit");
 
     if (_index >= trace_chunk_size) {
       methodHandle mhandle(THREAD, method);
@@ -1411,26 +1290,148 @@ class BacktraceBuilder: public StackObj {
       method = mhandle();
     }
 
-    _methods->metadata_at_put(_index, method);
-    _bcis->ushort_at_put(_index, bci);
-    // we need to save the mirrors in the backtrace to keep the methods from
-    // being unloaded if their class loader is unloaded while we still have
-    // this stack trace.
+    _methods->short_at_put(_index, method->method_idnum());
+    _bcis->int_at_put(_index, merge_bci_and_version(bci, method->constants()->version()));
+
+    // We need to save the mirrors in the backtrace to keep the class
+    // from being unloaded while we still have this stack trace.
+    assert(method->method_holder()->java_mirror() != NULL, "never push null for mirror");
     _mirrors->obj_at_put(_index, method->method_holder()->java_mirror());
     _index++;
   }
 
-  Method* current_method() {
-    assert(_index >= 0 && _index < trace_chunk_size, "out of range");
-    return ((Method*)_methods->metadata_at(_index));
-  }
-
-  jushort current_bci() {
-    assert(_index >= 0 && _index < trace_chunk_size, "out of range");
-    return _bcis->ushort_at(_index);
-  }
 };
 
+// Print stack trace element to resource allocated buffer
+char* java_lang_Throwable::print_stack_element_to_buffer(Handle mirror,
+                                  int method_id, int version, int bci) {
+
+  // Get strings and string lengths
+  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
+  const char* klass_name  = holder->external_name();
+  int buf_len = (int)strlen(klass_name);
+
+  // pushing to the stack trace added one.
+  Method* method = holder->method_with_idnum(method_id);
+  char* method_name = method->name()->as_C_string();
+  buf_len += (int)strlen(method_name);
+
+  char* source_file_name = NULL;
+  if (version_matches(method, version)) {
+    Symbol* source = holder->source_file_name();
+    if (source != NULL) {
+      source_file_name = source->as_C_string();
+      buf_len += (int)strlen(source_file_name);
+    }
+  }
+
+  // Allocate temporary buffer with extra space for formatting and line number
+  char* buf = NEW_RESOURCE_ARRAY(char, buf_len + 64);
+
+  // Print stack trace line in buffer
+  sprintf(buf, "\tat %s.%s", klass_name, method_name);
+
+  if (!version_matches(method, version)) {
+    strcat(buf, "(Redefined)");
+  } else {
+    int line_number = get_line_number(method, bci);
+    if (line_number == -2) {
+      strcat(buf, "(Native Method)");
+    } else {
+      if (source_file_name != NULL && (line_number != -1)) {
+        // Sourcename and linenumber
+        sprintf(buf + (int)strlen(buf), "(%s:%d)", source_file_name, line_number);
+      } else if (source_file_name != NULL) {
+        // Just sourcename
+        sprintf(buf + (int)strlen(buf), "(%s)", source_file_name);
+      } else {
+        // Neither sourcename nor linenumber
+        sprintf(buf + (int)strlen(buf), "(Unknown Source)");
+      }
+      nmethod* nm = method->code();
+      if (WizardMode && nm != NULL) {
+        sprintf(buf + (int)strlen(buf), "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+      }
+    }
+  }
+
+  return buf;
+}
+
+void java_lang_Throwable::print_stack_element(outputStream *st, Handle mirror,
+                                              int method_id, int version, int bci) {
+  ResourceMark rm;
+  char* buf = print_stack_element_to_buffer(mirror, method_id, version, bci);
+  st->print_cr("%s", buf);
+}
+
+void java_lang_Throwable::print_stack_element(outputStream *st, methodHandle method, int bci) {
+  Handle mirror = method->method_holder()->java_mirror();
+  int method_id = method->method_idnum();
+  int version = method->constants()->version();
+  print_stack_element(st, mirror, method_id, version, bci);
+}
+
+const char* java_lang_Throwable::no_stack_trace_message() {
+  return "\t<<no stack trace available>>";
+}
+
+
+// Currently used only for exceptions occurring during startup
+void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
+  Thread *THREAD = Thread::current();
+  Handle h_throwable(THREAD, throwable);
+  while (h_throwable.not_null()) {
+    objArrayHandle result (THREAD, objArrayOop(backtrace(h_throwable())));
+    if (result.is_null()) {
+      st->print_cr(no_stack_trace_message());
+      return;
+    }
+
+    while (result.not_null()) {
+
+      // Get method id, bci, version and mirror from chunk
+      typeArrayHandle methods (THREAD, BacktraceBuilder::get_methods(result));
+      typeArrayHandle bcis (THREAD, BacktraceBuilder::get_bcis(result));
+      objArrayHandle mirrors (THREAD, BacktraceBuilder::get_mirrors(result));
+
+      int length = methods()->length();
+      for (int index = 0; index < length; index++) {
+        Handle mirror(THREAD, mirrors->obj_at(index));
+        // NULL mirror means end of stack trace
+        if (mirror.is_null()) goto handle_cause;
+        int method = methods->short_at(index);
+        int version = version_at(bcis->int_at(index));
+        int bci = bci_at(bcis->int_at(index));
+        print_stack_element(st, mirror, method, version, bci);
+      }
+      result = objArrayHandle(THREAD, objArrayOop(result->obj_at(trace_next_offset)));
+    }
+  handle_cause:
+    {
+      EXCEPTION_MARK;
+      JavaValue cause(T_OBJECT);
+      JavaCalls::call_virtual(&cause,
+                              h_throwable,
+                              KlassHandle(THREAD, h_throwable->klass()),
+                              vmSymbols::getCause_name(),
+                              vmSymbols::void_throwable_signature(),
+                              THREAD);
+      // Ignore any exceptions. we are in the middle of exception handling. Same as classic VM.
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION;
+        h_throwable = Handle();
+      } else {
+        h_throwable = Handle(THREAD, (oop) cause.get_jobject());
+        if (h_throwable.not_null()) {
+          st->print("Caused by: ");
+          print(h_throwable, st);
+          st->cr();
+        }
+      }
+    }
+  }
+}
 
 void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle method, TRAPS) {
   if (!StackTraceInThrowable) return;
@@ -1591,21 +1592,8 @@ void java_lang_Throwable::allocate_backtrace(Handle throwable, TRAPS) {
 
   // No-op if stack trace is disabled
   if (!StackTraceInThrowable) return;
-
-  objArrayOop h_oop = oopFactory::new_objectArray(trace_size, CHECK);
-  objArrayHandle backtrace  (THREAD, h_oop);
-  typeArrayOop m_oop = oopFactory::new_metaDataArray(trace_chunk_size, CHECK);
-  typeArrayHandle methods (THREAD, m_oop);
-  typeArrayOop b = oopFactory::new_shortArray(trace_chunk_size, CHECK);
-  typeArrayHandle bcis(THREAD, b);
-  objArrayOop mirror_oop = oopFactory::new_objectArray(trace_chunk_size, CHECK);
-  objArrayHandle mirrors (THREAD, mirror_oop);
-
-  // backtrace has space for one chunk (next is NULL)
-  backtrace->obj_at_put(trace_methods_offset, methods());
-  backtrace->obj_at_put(trace_bcis_offset, bcis());
-  backtrace->obj_at_put(trace_mirrors_offset, mirrors());
-  set_backtrace(throwable(), backtrace());
+  BacktraceBuilder bt(CHECK);   // creates a backtrace
+  set_backtrace(throwable(), bt.backtrace());
 }
 
 
@@ -1617,48 +1605,26 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
 
   assert(throwable->is_a(SystemDictionary::Throwable_klass()), "sanity check");
 
-  objArrayOop backtrace = (objArrayOop)java_lang_Throwable::backtrace(throwable());
-  assert(backtrace != NULL, "backtrace not preallocated");
+  JavaThread* THREAD = JavaThread::current();
 
-  oop m = backtrace->obj_at(trace_methods_offset);
-  typeArrayOop methods = typeArrayOop(m);
-  assert(methods != NULL && methods->length() > 0, "method array not preallocated");
+  objArrayHandle backtrace (THREAD, (objArrayOop)java_lang_Throwable::backtrace(throwable()));
+  assert(backtrace.not_null(), "backtrace should have been preallocated");
 
-  oop b = backtrace->obj_at(trace_bcis_offset);
-  typeArrayOop bcis = typeArrayOop(b);
-  assert(bcis != NULL, "bci array not preallocated");
+  ResourceMark rm(THREAD);
+  vframeStream st(THREAD);
 
-  oop mr = backtrace->obj_at(trace_mirrors_offset);
-  objArrayOop mirrors = objArrayOop(mr);
-  assert(mirrors != NULL, "bci array not preallocated");
-
-  assert(methods->length() == bcis->length() &&
-         methods->length() == mirrors->length(),
-         "method and bci arrays should match");
-
-  JavaThread* thread = JavaThread::current();
-  ResourceMark rm(thread);
-  vframeStream st(thread);
+  BacktraceBuilder bt(backtrace);
 
   // Unlike fill_in_stack_trace we do not skip fillInStackTrace or throwable init
   // methods as preallocated errors aren't created by "java" code.
 
   // fill in as much stack trace as possible
+  typeArrayOop methods = BacktraceBuilder::get_methods(backtrace);
   int max_chunks = MIN2(methods->length(), (int)MaxJavaStackTraceDepth);
   int chunk_count = 0;
 
   for (;!st.at_end(); st.next()) {
-    // Add entry and smear the -1 bci to 0 since the array only holds
-    // unsigned shorts.  The later line number lookup would just smear
-    // the -1 to a 0 even if it could be recorded.
-    int bci = st.bci();
-    if (bci == SynchronizationEntryBCI) bci = 0;
-    assert(bci == (jushort)bci, "doesn't fit");
-    bcis->ushort_at_put(chunk_count, bci);
-    methods->metadata_at_put(chunk_count, st.method());
-    mirrors->obj_at_put(chunk_count,
-                   st.method()->method_holder()->java_mirror());
-
+    bt.push(st.method(), st.bci(), CHECK);
     chunk_count++;
 
     // Bail-out for deep stacks
@@ -1672,7 +1638,6 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
       java_lang_Throwable::set_stacktrace(throwable(), java_lang_Throwable::unassigned_stacktrace());
       assert(java_lang_Throwable::unassigned_stacktrace() != NULL, "not initialized");
   }
-
 }
 
 
@@ -1691,12 +1656,12 @@ int java_lang_Throwable::get_stack_trace_depth(oop throwable, TRAPS) {
       chunk = next;
     }
     assert(chunk != NULL && chunk->obj_at(trace_next_offset) == NULL, "sanity check");
-    // Count element in remaining partial chunk
-    typeArrayOop methods = typeArrayOop(chunk->obj_at(trace_methods_offset));
-    typeArrayOop bcis = typeArrayOop(chunk->obj_at(trace_bcis_offset));
-    assert(methods != NULL && bcis != NULL, "sanity check");
-    for (int i = 0; i < methods->length(); i++) {
-      if (methods->metadata_at(i) == NULL) break;
+    // Count element in remaining partial chunk.  NULL value for mirror
+    // marks the end of the stack trace elements that are saved.
+    objArrayOop mirrors = BacktraceBuilder::get_mirrors(chunk);
+    assert(mirrors != NULL, "sanity check");
+    for (int i = 0; i < mirrors->length(); i++) {
+      if (mirrors->obj_at(i) == NULL) break;
       depth++;
     }
   }
@@ -1722,25 +1687,28 @@ oop java_lang_Throwable::get_stack_trace_element(oop throwable, int index, TRAPS
   if (chunk == NULL) {
     THROW_(vmSymbols::java_lang_IndexOutOfBoundsException(), NULL);
   }
-  // Get method,bci from chunk
-  typeArrayOop methods = typeArrayOop(chunk->obj_at(trace_methods_offset));
-  typeArrayOop bcis = typeArrayOop(chunk->obj_at(trace_bcis_offset));
-  assert(methods != NULL && bcis != NULL, "sanity check");
-  methodHandle method(THREAD, ((Method*)methods->metadata_at(chunk_index)));
-  int bci = bcis->ushort_at(chunk_index);
+  // Get method id, bci, version and mirror from chunk
+  typeArrayOop methods = BacktraceBuilder::get_methods(chunk);
+  typeArrayOop bcis = BacktraceBuilder::get_bcis(chunk);
+  objArrayOop mirrors = BacktraceBuilder::get_mirrors(chunk);
+
+  assert(methods != NULL && bcis != NULL && mirrors != NULL, "sanity check");
+
+  int method = methods->short_at(chunk_index);
+  int version = version_at(bcis->int_at(chunk_index));
+  int bci = bci_at(bcis->int_at(chunk_index));
+  Handle mirror(THREAD, mirrors->obj_at(chunk_index));
+
   // Chunk can be partial full
-  if (method.is_null()) {
+  if (mirror.is_null()) {
     THROW_(vmSymbols::java_lang_IndexOutOfBoundsException(), NULL);
   }
 
-  oop element = java_lang_StackTraceElement::create(method, bci, CHECK_0);
+  oop element = java_lang_StackTraceElement::create(mirror, method, version, bci, CHECK_0);
   return element;
 }
 
-oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
-  // SystemDictionary::stackTraceElement_klass() will be null for pre-1.4 JDKs
-  assert(JDK_Version::is_gte_jdk14x_version(), "should only be called in >= 1.4");
-
+oop java_lang_StackTraceElement::create(Handle mirror, int method_id, int version, int bci, TRAPS) {
   // Allocate java.lang.StackTraceElement instance
   Klass* k = SystemDictionary::StackTraceElement_klass();
   assert(k != NULL, "must be loaded in 1.4+");
@@ -1752,37 +1720,39 @@ oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
   Handle element = ik->allocate_instance_handle(CHECK_0);
   // Fill in class name
   ResourceMark rm(THREAD);
-  const char* str = method->method_holder()->external_name();
+  InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
+  const char* str = holder->external_name();
   oop classname = StringTable::intern((char*) str, CHECK_0);
   java_lang_StackTraceElement::set_declaringClass(element(), classname);
+
   // Fill in method name
+  Method* method = holder->method_with_idnum(method_id);
   oop methodname = StringTable::intern(method->name(), CHECK_0);
   java_lang_StackTraceElement::set_methodName(element(), methodname);
-  // Fill in source file name
-  Symbol* source = method->method_holder()->source_file_name();
-  if (ShowHiddenFrames && source == NULL)
-    source = vmSymbols::unknown_class_name();
-  oop filename = StringTable::intern(source, CHECK_0);
-  java_lang_StackTraceElement::set_fileName(element(), filename);
-  // File in source line number
-  int line_number;
-  if (method->is_native()) {
-    // Negative value different from -1 below, enabling Java code in
-    // class java.lang.StackTraceElement to distinguish "native" from
-    // "no LineNumberTable".
-    line_number = -2;
-  } else {
-    // Returns -1 if no LineNumberTable, and otherwise actual line number
-    line_number = method->line_number_from_bci(bci);
-    if (line_number == -1 && ShowHiddenFrames) {
-      line_number = bci + 1000000;
-    }
-  }
-  java_lang_StackTraceElement::set_lineNumber(element(), line_number);
 
+  if (!version_matches(method, version)) {
+    // The method was redefined, accurate line number information isn't available
+    java_lang_StackTraceElement::set_fileName(element(), NULL);
+    java_lang_StackTraceElement::set_lineNumber(element(), -1);
+  } else {
+    // Fill in source file name and line number.
+    Symbol* source = holder->source_file_name();
+    if (ShowHiddenFrames && source == NULL)
+      source = vmSymbols::unknown_class_name();
+    oop filename = StringTable::intern(source, CHECK_0);
+    java_lang_StackTraceElement::set_fileName(element(), filename);
+
+    int line_number = get_line_number(method, bci);
+    java_lang_StackTraceElement::set_lineNumber(element(), line_number);
+  }
   return element();
 }
 
+oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
+  Handle mirror (THREAD, method->method_holder()->java_mirror());
+  int method_id = method->method_idnum();
+  return create(mirror, method_id, method->constants()->version(), bci, THREAD);
+}
 
 void java_lang_reflect_AccessibleObject::compute_offsets() {
   Klass* k = SystemDictionary::reflect_AccessibleObject_klass();
@@ -2949,7 +2919,6 @@ int java_lang_System::err_offset_in_bytes() {
 
 int java_lang_Class::_klass_offset;
 int java_lang_Class::_array_klass_offset;
-int java_lang_Class::_resolved_constructor_offset;
 int java_lang_Class::_oop_size_offset;
 int java_lang_Class::_static_oop_field_count_offset;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
@@ -3303,7 +3272,6 @@ void JavaClasses::check_offsets() {
   // Fake fields
   // CHECK_OFFSET("java/lang/Class", java_lang_Class, klass); // %%% this needs to be checked
   // CHECK_OFFSET("java/lang/Class", java_lang_Class, array_klass); // %%% this needs to be checked
-  // CHECK_OFFSET("java/lang/Class", java_lang_Class, resolved_constructor); // %%% this needs to be checked
 
   // java.lang.Throwable
 
