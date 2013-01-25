@@ -47,6 +47,7 @@ import jdk.nashorn.internal.runtime.linker.Lookup;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * This class is the implementation of the Nashorn-specific global object named {@code JSAdapter}. It can be
@@ -580,10 +581,10 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final boolean megaMorphic) {
+    protected GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         if (overrides && super.hasOwnProperty(desc.getNameToken(2))) {
             try {
-                final GuardedInvocation inv = super.findCallMethodMethod(desc, megaMorphic);
+                final GuardedInvocation inv = super.findCallMethodMethod(desc, request);
                 if (inv != null) {
                     return inv;
                 }
@@ -596,11 +597,11 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final boolean megaMorphic, final String operation) {
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operation) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         if (overrides && super.hasOwnProperty(name)) {
             try {
-                final GuardedInvocation inv = super.findGetMethod(desc, megaMorphic, operation);
+                final GuardedInvocation inv = super.findGetMethod(desc, request, operation);
                 if (inv != null) {
                     return inv;
                 }
@@ -633,10 +634,10 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final boolean megaMorphic) {
+    protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         if (overrides && super.hasOwnProperty(desc.getNameToken(CallSiteDescriptor.NAME_OPERAND))) {
             try {
-                final GuardedInvocation inv = super.findSetMethod(desc, megaMorphic);
+                final GuardedInvocation inv = super.findSetMethod(desc, request);
                 if (inv != null) {
                     return inv;
                 }

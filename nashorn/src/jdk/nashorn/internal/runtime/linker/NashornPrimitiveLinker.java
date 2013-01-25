@@ -64,14 +64,7 @@ class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Guarding
         final GlobalObject global = (GlobalObject) Context.getGlobal();
         final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor) request.getCallSiteDescriptor();
 
-        if (self instanceof Number) {
-            return Bootstrap.asType(global.numberLookup(desc, (Number) self), linkerServices, desc);
-        } else if (self instanceof String || self instanceof ConsString) {
-           return Bootstrap.asType(global.stringLookup(desc, (CharSequence) self), linkerServices, desc);
-        } else if (self instanceof Boolean) {
-            return Bootstrap.asType(global.booleanLookup(desc, (Boolean) self), linkerServices, desc);
-        }
-        throw new AssertionError(); // Can't reach here
+        return Bootstrap.asType(global.primitiveLookup(request, self), linkerServices, desc);
     }
 
     /**

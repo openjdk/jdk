@@ -32,6 +32,7 @@ import java.lang.invoke.MethodType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
 import org.dynalang.dynalink.support.Guards;
 
@@ -47,7 +48,7 @@ public class PrimitiveLookup {
 
     /**
      * Returns a guarded invocation representing the linkage for a dynamic operation on a primitive Java value.
-     * @param desc the descriptor of the call site identifying the dynamic operation.
+     * @param request the link request for the dynamic call site.
      * @param receiverClass the class of the receiver value (e.g., {@link java.lang.Boolean}, {@link java.lang.String} etc.)
      * @param wrappedReceiver a transient JavaScript native wrapper object created as the object proxy for the primitive
      * value; see ECMAScript 5.1, section 8.7.1 for discussion of using {@code [[Get]]} on a property reference with a
@@ -58,14 +59,14 @@ public class PrimitiveLookup {
      * @return a guarded invocation representing the operation at the call site when performed on a JavaScript primitive
      * type {@code receiverClass}.
      */
-    public static GuardedInvocation lookupPrimitive(final CallSiteDescriptor desc, final Class<?> receiverClass,
+    public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Class<?> receiverClass,
                                                     final ScriptObject wrappedReceiver, final MethodHandle wrapFilter) {
-        return lookupPrimitive(desc, Guards.getInstanceOfGuard(receiverClass), wrappedReceiver, wrapFilter);
+        return lookupPrimitive(request, Guards.getInstanceOfGuard(receiverClass), wrappedReceiver, wrapFilter);
     }
 
     /**
      * Returns a guarded invocation representing the linkage for a dynamic operation on a primitive Java value.
-     * @param desc the descriptor of the call site identifying the dynamic operation.
+     * @param request the link request for the dynamic call site.
      * @param guard an explicit guard that will be used for the returned guarded invocation.
      * @param wrappedReceiver a transient JavaScript native wrapper object created as the object proxy for the primitive
      * value; see ECMAScript 5.1, section 8.7.1 for discussion of using {@code [[Get]]} on a property reference with a
@@ -76,12 +77,17 @@ public class PrimitiveLookup {
      * @return a guarded invocation representing the operation at the call site when performed on a JavaScript primitive
      * type (that is implied by both {@code guard} and {@code wrappedReceiver}).
      */
-    public static GuardedInvocation lookupPrimitive(final CallSiteDescriptor desc, final MethodHandle guard,
+    public static GuardedInvocation lookupPrimitive(final LinkRequest request, final MethodHandle guard,
                                                     final ScriptObject wrappedReceiver, final MethodHandle wrapFilter) {
+        final CallSiteDescriptor desc = request.getCallSiteDescriptor();
         final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
-        if ("setProp".equals(operator) && desc.getNameTokenCount() > 2) {
-            return new GuardedInvocation(MH.asType(Lookup.EMPTY_SETTER, MH.type(void.class, Object.class,
-                    desc.getMethodType().parameterType(1))), guard);
+        if ("setProp".equals(operator) || "setElem".equals(operator)) {
+            MethodType type = desc.getMethodType();
+            MethodHandle method = MH.asType(Lookup.EMPTY_SETTER, MH.type(void.class, Object.class, type.parameterType(1)));
+            if (type.parameterCount() == 3) {
+                method = MH.dropArguments(method, 2, type.parameterType(2));
+            }
+            return new GuardedInvocation(method, guard);
         }
 
         if(desc.getNameTokenCount() > 2) {
@@ -91,7 +97,7 @@ public class PrimitiveLookup {
                 return null;
             }
         }
-        final GuardedInvocation link = wrappedReceiver.lookup(desc);
+        final GuardedInvocation link = wrappedReceiver.lookup(desc, request);
         if (link != null) {
             MethodHandle method = link.getInvocation();
             final Class<?> receiverType = method.type().parameterType(0);

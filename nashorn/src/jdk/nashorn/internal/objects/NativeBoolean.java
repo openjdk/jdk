@@ -38,9 +38,9 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
-import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * ECMA 15.6 Boolean Objects.
@@ -153,12 +153,12 @@ public final class NativeBoolean extends ScriptObject {
     /**
      * Lookup the appropriate method for an invoke dynamic call.
      *
-     * @param desc     The invoke dynamic callsite descriptor.
+     * @param request  The link request
      * @param receiver The receiver for the call
      * @return Link to be invoked at call site.
      */
-    public static GuardedInvocation lookupPrimitive(final NashornCallSiteDescriptor desc, final Object receiver) {
-        return PrimitiveLookup.lookupPrimitive(desc, Boolean.class, new NativeBoolean((Boolean)receiver), WRAPFILTER);
+    public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Object receiver) {
+        return PrimitiveLookup.lookupPrimitive(request, Boolean.class, new NativeBoolean((Boolean)receiver), WRAPFILTER);
     }
 
     /**

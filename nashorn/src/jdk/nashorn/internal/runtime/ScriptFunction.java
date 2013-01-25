@@ -45,6 +45,7 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * Runtime representation of a JavaScript function.
@@ -907,15 +908,15 @@ public abstract class ScriptFunction extends ScriptObject {
      *   (4) for normal this-calls, drop callee.
      */
     @Override
-    protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final boolean megaMorphic) {
+    protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final MethodType type = desc.getMethodType();
 
-        if(megaMorphic) {
+        if (request.isCallSiteUnstable()) {
             // (this, callee, args...) => (this, callee, args[])
             final MethodHandle collector = MH.asCollector(ScriptRuntime.APPLY.methodHandle(), Object[].class,
                     type.parameterCount() - 2);
 
-            return new GuardedInvocation(collector,
+            return new GuardedInvocation(addPrimitiveWrap(collector, desc, request),
                     desc.getMethodType().parameterType(0) == ScriptFunction.class ? null : NashornGuards.getScriptFunctionGuard());
         }
 
@@ -938,6 +939,8 @@ public abstract class ScriptFunction extends ScriptObject {
                 assert reorder[1] == 0;
                 final MethodType newType = oldType.changeParameterType(0, oldType.parameterType(1)).changeParameterType(1, oldType.parameterType(0));
                 boundHandle = MethodHandles.permuteArguments(callHandle, newType, reorder);
+                // thiz argument may be a JS primitive needing a wrapper
+                boundHandle = addPrimitiveWrap(boundHandle, desc, request);
             }
         } else {
             final MethodHandle callHandle = getBestSpecializedInvokeHandle(type.dropParameterTypes(0, 1));
@@ -975,6 +978,23 @@ public abstract class ScriptFunction extends ScriptObject {
         }
 
         return pairArguments(methodHandle, type);
+    }
+
+    private MethodHandle addPrimitiveWrap(final MethodHandle mh, final CallSiteDescriptor desc, final LinkRequest request) {
+        // Check whether thiz is a JS primitive type and needs an object wrapper for non-strict function
+        if (!NashornCallSiteDescriptor.isScope(desc) && isNonStrictFunction()) {
+            Object self = request.getArguments()[1];
+            if (isPrimitiveThis(self)) {
+                MethodHandle wrapFilter = ((GlobalObject) Context.getGlobalTrusted()).getWrapFilter(self);
+                return MH.filterArguments(mh, 1, MH.asType(wrapFilter, wrapFilter.type().changeReturnType(Object.class)));
+            }
+        }
+        return mh;
+    }
+
+    private static boolean isPrimitiveThis(Object obj) {
+        return obj instanceof String || obj instanceof ConsString ||
+               obj instanceof Number || obj instanceof Boolean;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

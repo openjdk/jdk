@@ -34,6 +34,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.beans.StaticClass;
 import org.dynalang.dynalink.linker.GuardedInvocation;
+import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * This is "JavaImporter" constructor. This constructor allows you to use Java types omitting explicit package names.
@@ -107,13 +108,13 @@ public class NativeJavaImporter extends ScriptObject {
     }
 
     @Override
-    public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc) {
-        return createAndSetProperty(desc) ? super.lookup(desc) : super.noSuchProperty(desc);
+    public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
+        return createAndSetProperty(desc) ? super.lookup(desc, request) : super.noSuchProperty(desc, request);
     }
 
     @Override
-    public GuardedInvocation noSuchMethod(final CallSiteDescriptor desc) {
-        return createAndSetProperty(desc) ? super.lookup(desc) : super.noSuchMethod(desc);
+    public GuardedInvocation noSuchMethod(final CallSiteDescriptor desc, final LinkRequest request) {
+        return createAndSetProperty(desc) ? super.lookup(desc, request) : super.noSuchMethod(desc, request);
     }
 
     private boolean createAndSetProperty(final CallSiteDescriptor desc) {
