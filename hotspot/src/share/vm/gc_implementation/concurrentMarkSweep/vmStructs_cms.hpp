@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,17 @@ typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList> AFLBinaryTreeDictionar
   nonstatic_field(CompactibleFreeListSpace,    _bt,                                           BlockOffsetArrayNonContigSpace)        \
                                                                                                                                      \
   nonstatic_field(CMSBitMap,                   _bmWordSize,                                   size_t)                                \
-  nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                            \
-  nonstatic_field(CMSBitMap,                      _bm,                                           BitMap)                            \
-  nonstatic_field(CMSBitMap,                   _virtual_space,                                VirtualSpace)                         \
+  nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                             \
+  nonstatic_field(CMSBitMap,                      _bm,                                           BitMap)                             \
+  nonstatic_field(CMSBitMap,                   _virtual_space,                                VirtualSpace)                          \
   nonstatic_field(CMSCollector,                _markBitMap,                                   CMSBitMap)                             \
   nonstatic_field(ConcurrentMarkSweepGeneration, _cmsSpace,                                   CompactibleFreeListSpace*)             \
      static_field(ConcurrentMarkSweepThread,   _collector,                                    CMSCollector*)                         \
   nonstatic_field(LinearAllocBlock,            _word_size,                                    size_t)                                \
   nonstatic_field(AFLBinaryTreeDictionary,     _total_size,                                   size_t)                                \
   nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           FreeList<FreeChunk>)                   \
-  nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)
+  nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)                      \
+  nonstatic_field(CompactibleFreeListSpace,    _dictionary,                                   FreeBlockDictionary<FreeChunk>*)
 
 
 #define VM_TYPES_CMS(declare_type,                                        \
