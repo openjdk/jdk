@@ -985,15 +985,28 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 // if C stack is walkable beyond current frame. The check for fp() is not
 // necessary on Sparc, but it's harmless.
 bool os::is_first_C_frame(frame* fr) {
-#ifdef IA64
-  // In order to walk native frames on Itanium, we need to access the unwind
-  // table, which is inside ELF. We don't want to parse ELF after fatal error,
-  // so return true for IA64. If we need to support C stack walking on IA64,
-  // this function needs to be moved to CPU specific files, as fp() on IA64
-  // is register stack, which grows towards higher memory address.
+#if defined(IA64) && !defined(_WIN32)
+  // On IA64 we have to check if the callers bsp is still valid
+  // (i.e. within the register stack bounds).
+  // Notice: this only works for threads created by the VM and only if
+  // we walk the current stack!!! If we want to be able to walk
+  // arbitrary other threads, we'll have to somehow store the thread
+  // object in the frame.
+  Thread *thread = Thread::current();
+  if ((address)fr->fp() <=
+      thread->register_stack_base() HPUX_ONLY(+ 0x0) LINUX_ONLY(+ 0x50)) {
+    // This check is a little hacky, because on Linux the first C
+    // frame's ('start_thread') register stack frame starts at
+    // "register_stack_base + 0x48" while on HPUX, the first C frame's
+    // ('__pthread_bound_body') register stack frame seems to really
+    // start at "register_stack_base".
+    return true;
+  } else {
+    return false;
+  }
+#elif defined(IA64) && defined(_WIN32)
   return true;
-#endif
-
+#else
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
@@ -1023,6 +1036,7 @@ bool os::is_first_C_frame(frame* fr) {
   if (old_fp - ufp > 64 * K) return true;
 
   return false;
+#endif
 }
 
 #ifdef ASSERT
