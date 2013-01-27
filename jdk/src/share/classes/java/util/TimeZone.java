@@ -430,32 +430,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
     }
 
     private static String[] getDisplayNames(String id, Locale locale) {
-        Map<String, SoftReference<Map<Locale, String[]>>> displayNames = DisplayNames.CACHE;
-
-        SoftReference<Map<Locale, String[]>> ref = displayNames.get(id);
-        if (ref != null) {
-            Map<Locale, String[]> perLocale = ref.get();
-            if (perLocale != null) {
-                String[] names = perLocale.get(locale);
-                if (names != null) {
-                    return names;
-                }
-                names = TimeZoneNameUtility.retrieveDisplayNames(id, locale);
-                if (names != null) {
-                    perLocale.put(locale, names);
-                }
-                return names;
-            }
-        }
-
-        String[] names = TimeZoneNameUtility.retrieveDisplayNames(id, locale);
-        if (names != null) {
-            Map<Locale, String[]> perLocale = new ConcurrentHashMap<>();
-            perLocale.put(locale, names);
-            ref = new SoftReference<>(perLocale);
-            displayNames.put(id, ref);
-        }
-        return names;
+        return TimeZoneNameUtility.retrieveDisplayNames(id, locale);
     }
 
     /**

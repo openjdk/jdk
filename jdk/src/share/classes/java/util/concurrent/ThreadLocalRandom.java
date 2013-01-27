@@ -35,7 +35,10 @@
 
 package java.util.concurrent;
 
+import java.io.ObjectStreamField;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A random number generator isolated to the current thread.  Like the
@@ -62,46 +65,105 @@ import java.util.Random;
  * @author Doug Lea
  */
 public class ThreadLocalRandom extends Random {
+    /*
+     * This class implements the java.util.Random API (and subclasses
+     * Random) using a single static instance that accesses random
+     * number state held in class Thread (primarily, field
+     * threadLocalRandomSeed). In doing so, it also provides a home
+     * for managing package-private utilities that rely on exactly the
+     * same state as needed to maintain the ThreadLocalRandom
+     * instances. We leverage the need for an initialization flag
+     * field to also use it as a "probe" -- a self-adjusting thread
+     * hash used for contention avoidance, as well as a secondary
+     * simpler (xorShift) random seed that is conservatively used to
+     * avoid otherwise surprising users by hijacking the
+     * ThreadLocalRandom sequence.  The dual use is a marriage of
+     * convenience, but is a simple and efficient way of reducing
+     * application-level overhead and footprint of most concurrent
+     * programs.
+     *
+     * Because this class is in a different package than class Thread,
+     * field access methods must use Unsafe to bypass access control
+     * rules.  The base functionality of Random methods is
+     * conveniently isolated in method next(bits), that just reads and
+     * writes the Thread field rather than its own field. However, to
+     * conform to the requirements of the Random constructor, during
+     * construction, the common static ThreadLocalRandom must maintain
+     * initialization and value fields, mainly for the sake of
+     * disabling user calls to setSeed while still allowing a call
+     * from constructor.  For serialization compatibility, these
+     * fields are left with the same declarations as used in the
+     * previous ThreadLocal-based version of this class, that used
+     * them differently. Note that serialization is completely
+     * unnecessary because there is only a static singleton. But these
+     * mechanics still ensure compatibility across versions.
+     *
+     * Per-instance initialization is similar to that in the no-arg
+     * Random constructor, but we avoid correlation among not only
+     * initial seeds of those created in different threads, but also
+     * those created using class Random itself; while at the same time
+     * not changing any statistical properties.  So we use the same
+     * underlying multiplicative sequence, but start the sequence far
+     * away from the base version, and then merge (xor) current time
+     * and per-thread probe bits to generate initial values.
+     *
+     * The nextLocalGaussian ThreadLocal supports the very rarely used
+     * nextGaussian method by providing a holder for the second of a
+     * pair of them. As is true for the base class version of this
+     * method, this time/space tradeoff is probably never worthwhile,
+     * but we provide identical statistical properties.
+     */
+
     // same constants as Random, but must be redeclared because private
     private static final long multiplier = 0x5DEECE66DL;
     private static final long addend = 0xBL;
     private static final long mask = (1L << 48) - 1;
+    private static final int PROBE_INCREMENT = 0x61c88647;
+
+    /** Generates the basis for per-thread initial seed values */
+    private static final AtomicLong seedGenerator =
+        new AtomicLong(1269533684904616924L);
+
+    /** Generates per-thread initialization/probe field */
+    private static final AtomicInteger probeGenerator =
+        new AtomicInteger(0xe80f8647);
+
+    /** Rarely-used holder for the second of a pair of Gaussians */
+    private static final ThreadLocal<Double> nextLocalGaussian =
+        new ThreadLocal<Double>();
+
+    /*
+     * Field used only during singleton initialization
+     */
+    boolean initialized; // true when constructor completes
+
+    /** Constructor used only for static singleton */
+    private ThreadLocalRandom() {
+        initialized = true; // false during super() call
+    }
+
+    /** The common ThreadLocalRandom */
+    static final ThreadLocalRandom instance = new ThreadLocalRandom();
 
     /**
-     * The random seed. We can't use super.seed.
+     * Initialize Thread fields for the current thread.  Called only
+     * when Thread.threadLocalRandomProbe is zero, indicating that a
+     * thread local seed value needs to be generated. Note that even
+     * though the initialization is purely thread-local, we need to
+     * rely on (static) atomic generators to initialize the values.
      */
-    private long rnd;
-
-    /**
-     * Initialization flag to permit calls to setSeed to succeed only
-     * while executing the Random constructor.  We can't allow others
-     * since it would cause setting seed in one part of a program to
-     * unintentionally impact other usages by the thread.
-     */
-    boolean initialized;
-
-    // Padding to help avoid memory contention among seed updates in
-    // different TLRs in the common case that they are located near
-    // each other.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-
-    /**
-     * The actual ThreadLocal
-     */
-    private static final ThreadLocal<ThreadLocalRandom> localRandom =
-        new ThreadLocal<ThreadLocalRandom>() {
-            protected ThreadLocalRandom initialValue() {
-                return new ThreadLocalRandom();
-            }
-    };
-
-
-    /**
-     * Constructor called only by localRandom.initialValue.
-     */
-    ThreadLocalRandom() {
-        super();
-        initialized = true;
+    static final void localInit() {
+        int p = probeGenerator.getAndAdd(PROBE_INCREMENT);
+        int probe = (p == 0) ? 1 : p; // skip 0
+        long current, next;
+        do { // same sequence as j.u.Random but different initial value
+            current = seedGenerator.get();
+            next = current * 181783497276652981L;
+        } while (!seedGenerator.compareAndSet(current, next));
+        long r = next ^ ((long)probe << 32) ^ System.nanoTime();
+        Thread t = Thread.currentThread();
+        UNSAFE.putLong(t, SEED, r);
+        UNSAFE.putInt(t, PROBE, probe);
     }
 
     /**
@@ -110,7 +172,9 @@ public class ThreadLocalRandom extends Random {
      * @return the current thread's {@code ThreadLocalRandom}
      */
     public static ThreadLocalRandom current() {
-        return localRandom.get();
+        if (UNSAFE.getInt(Thread.currentThread(), PROBE) == 0)
+            localInit();
+        return instance;
     }
 
     /**
@@ -120,14 +184,16 @@ public class ThreadLocalRandom extends Random {
      * @throws UnsupportedOperationException always
      */
     public void setSeed(long seed) {
-        if (initialized)
+        if (initialized) // allow call from super() constructor
             throw new UnsupportedOperationException();
-        rnd = (seed ^ multiplier) & mask;
     }
 
     protected int next(int bits) {
-        rnd = (rnd * multiplier + addend) & mask;
-        return (int) (rnd >>> (48-bits));
+        Thread t; long r; // read and update per-thread seed
+        UNSAFE.putLong
+            (t = Thread.currentThread(), SEED,
+             r = (UNSAFE.getLong(t, SEED) * multiplier + addend) & mask);
+        return (int) (r >>> (48-bits));
     }
 
     /**
@@ -222,5 +288,153 @@ public class ThreadLocalRandom extends Random {
         return nextDouble() * (bound - least) + least;
     }
 
+    public double nextGaussian() {
+        // Use nextLocalGaussian instead of nextGaussian field
+        Double d = nextLocalGaussian.get();
+        if (d != null) {
+            nextLocalGaussian.set(null);
+            return d.doubleValue();
+        }
+        double v1, v2, s;
+        do {
+            v1 = 2 * nextDouble() - 1; // between -1 and 1
+            v2 = 2 * nextDouble() - 1; // between -1 and 1
+            s = v1 * v1 + v2 * v2;
+        } while (s >= 1 || s == 0);
+        double multiplier = StrictMath.sqrt(-2 * StrictMath.log(s)/s);
+        nextLocalGaussian.set(new Double(v2 * multiplier));
+        return v1 * multiplier;
+    }
+
+    // Within-package utilities
+
+    /*
+     * Descriptions of the usages of the methods below can be found in
+     * the classes that use them. Briefly, a thread's "probe" value is
+     * a non-zero hash code that (probably) does not collide with
+     * other existing threads with respect to any power of two
+     * collision space. When it does collide, it is pseudo-randomly
+     * adjusted (using a Marsaglia XorShift). The nextSecondarySeed
+     * method is used in the same contexts as ThreadLocalRandom, but
+     * only for transient usages such as random adaptive spin/block
+     * sequences for which a cheap RNG suffices and for which it could
+     * in principle disrupt user-visible statistical properties of the
+     * main ThreadLocalRandom if we were to use it.
+     *
+     * Note: Because of package-protection issues, versions of some
+     * these methods also appear in some subpackage classes.
+     */
+
+    /**
+     * Returns the probe value for the current thread without forcing
+     * initialization. Note that invoking ThreadLocalRandom.current()
+     * can be used to force initialization on zero return.
+     */
+    static final int getProbe() {
+        return UNSAFE.getInt(Thread.currentThread(), PROBE);
+    }
+
+    /**
+     * Pseudo-randomly advances and records the given probe value for the
+     * given thread.
+     */
+    static final int advanceProbe(int probe) {
+        probe ^= probe << 13;   // xorshift
+        probe ^= probe >>> 17;
+        probe ^= probe << 5;
+        UNSAFE.putInt(Thread.currentThread(), PROBE, probe);
+        return probe;
+    }
+
+    /**
+     * Returns the pseudo-randomly initialized or updated secondary seed.
+     */
+    static final int nextSecondarySeed() {
+        int r;
+        Thread t = Thread.currentThread();
+        if ((r = UNSAFE.getInt(t, SECONDARY)) != 0) {
+            r ^= r << 13;   // xorshift
+            r ^= r >>> 17;
+            r ^= r << 5;
+        }
+        else if ((r = (int)UNSAFE.getLong(t, SEED)) == 0)
+            r = 1; // avoid zero
+        UNSAFE.putInt(t, SECONDARY, r);
+        return r;
+    }
+
+    // Serialization support, maintains original persistent form.
+
     private static final long serialVersionUID = -5851777807851030925L;
+
+    /**
+     * @serialField rnd long
+     * @serialField initialized boolean
+     * @serialField pad0 long
+     * @serialField pad1 long
+     * @serialField pad2 long
+     * @serialField pad3 long
+     * @serialField pad4 long
+     * @serialField pad5 long
+     * @serialField pad6 long
+     * @serialField pad7 long
+     */
+    private static final ObjectStreamField[] serialPersistentFields = {
+            new ObjectStreamField("rnd", long.class),
+            new ObjectStreamField("initialized", boolean.class),
+            new ObjectStreamField("pad0", long.class),
+            new ObjectStreamField("pad1", long.class),
+            new ObjectStreamField("pad2", long.class),
+            new ObjectStreamField("pad3", long.class),
+            new ObjectStreamField("pad4", long.class),
+            new ObjectStreamField("pad5", long.class),
+            new ObjectStreamField("pad6", long.class),
+            new ObjectStreamField("pad7", long.class) };
+
+    /**
+     * Saves the {@code ThreadLocalRandom} to a stream (that is, serializes it).
+     */
+    private void writeObject(java.io.ObjectOutputStream out)
+        throws java.io.IOException {
+
+        java.io.ObjectOutputStream.PutField fields = out.putFields();
+        fields.put("rnd", 0L);
+        fields.put("initialized", true);
+        fields.put("pad0", 0L);
+        fields.put("pad1", 0L);
+        fields.put("pad2", 0L);
+        fields.put("pad3", 0L);
+        fields.put("pad4", 0L);
+        fields.put("pad5", 0L);
+        fields.put("pad6", 0L);
+        fields.put("pad7", 0L);
+        out.writeFields();
+    }
+
+    /**
+     * Returns the {@link #current() current} thread's {@code ThreadLocalRandom}.
+     */
+    private Object readResolve() {
+        return current();
+    }
+
+    // Unsafe mechanics
+    private static final sun.misc.Unsafe UNSAFE;
+    private static final long SEED;
+    private static final long PROBE;
+    private static final long SECONDARY;
+    static {
+        try {
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class<?> tk = Thread.class;
+            SEED = UNSAFE.objectFieldOffset
+                (tk.getDeclaredField("threadLocalRandomSeed"));
+            PROBE = UNSAFE.objectFieldOffset
+                (tk.getDeclaredField("threadLocalRandomProbe"));
+            SECONDARY = UNSAFE.objectFieldOffset
+                (tk.getDeclaredField("threadLocalRandomSecondarySeed"));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
 }

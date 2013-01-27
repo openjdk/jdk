@@ -33,6 +33,7 @@ import java.net.PasswordAuthentication;
 import java.net.UnknownHostException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.util.Base64;
 
 import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
@@ -230,7 +231,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
 
     private String buildType1Msg () {
         byte[] msg = client.type1();
-        String result = "NTLM " + (new B64Encoder()).encode (msg);
+        String result = "NTLM " + Base64.getEncoder().encodeToString(msg);
         return result;
     }
 
@@ -239,18 +240,12 @@ public class NTLMAuthentication extends AuthenticationInfo {
         /* First decode the type2 message to get the server nonce */
         /* nonce is located at type2[24] for 8 bytes */
 
-        byte[] type2 = (new sun.misc.BASE64Decoder()).decodeBuffer (challenge);
+        byte[] type2 = Base64.getDecoder().decode(challenge);
         byte[] nonce = new byte[8];
         new java.util.Random().nextBytes(nonce);
         byte[] msg = client.type3(type2, nonce);
-        String result = "NTLM " + (new B64Encoder()).encode (msg);
+        String result = "NTLM " + Base64.getEncoder().encodeToString(msg);
         return result;
     }
 }
 
-class B64Encoder extends sun.misc.BASE64Encoder {
-    /* to force it to to the entire encoding in one line */
-    protected int bytesPerLine () {
-        return 1024;
-    }
-}

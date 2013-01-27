@@ -34,6 +34,8 @@
  */
 
 package java.util.concurrent.atomic;
+import java.util.function.UnaryOperator;
+import java.util.function.BinaryOperator;
 import sun.misc.Unsafe;
 
 /**
@@ -139,6 +141,92 @@ public class AtomicReference<V> implements java.io.Serializable {
     @SuppressWarnings("unchecked")
     public final V getAndSet(V newValue) {
         return (V)unsafe.getAndSetObject(this, valueOffset, newValue);
+    }
+
+    /**
+     * Atomically updates the current value with the results of
+     * applying the given function, returning the previous value. The
+     * function should be side-effect-free, since it may be re-applied
+     * when attempted updates fail due to contention among threads.
+     *
+     * @param updateFunction a side-effect-free function
+     * @return the previous value
+     * @since 1.8
+     */
+    public final V getAndUpdate(UnaryOperator<V> updateFunction) {
+        V prev, next;
+        do {
+            prev = get();
+            next = updateFunction.operate(prev);
+        } while (!compareAndSet(prev, next));
+        return prev;
+    }
+
+    /**
+     * Atomically updates the current value with the results of
+     * applying the given function, returning the updated value. The
+     * function should be side-effect-free, since it may be re-applied
+     * when attempted updates fail due to contention among threads.
+     *
+     * @param updateFunction a side-effect-free function
+     * @return the updated value
+     * @since 1.8
+     */
+    public final V updateAndGet(UnaryOperator<V> updateFunction) {
+        V prev, next;
+        do {
+            prev = get();
+            next = updateFunction.operate(prev);
+        } while (!compareAndSet(prev, next));
+        return next;
+    }
+
+    /**
+     * Atomically updates the current value with the results of
+     * applying the given function to the current and given values,
+     * returning the previous value. The function should be
+     * side-effect-free, since it may be re-applied when attempted
+     * updates fail due to contention among threads.  The function
+     * is applied with the current value as its first argument,
+     * and the given update as the second argument.
+     *
+     * @param x the update value
+     * @param accumulatorFunction a side-effect-free function of two arguments
+     * @return the previous value
+     * @since 1.8
+     */
+    public final V getAndAccumulate(V x,
+                                    BinaryOperator<V> accumulatorFunction) {
+        V prev, next;
+        do {
+            prev = get();
+            next = accumulatorFunction.operate(prev, x);
+        } while (!compareAndSet(prev, next));
+        return prev;
+    }
+
+    /**
+     * Atomically updates the current value with the results of
+     * applying the given function to the current and given values,
+     * returning the updated value. The function should be
+     * side-effect-free, since it may be re-applied when attempted
+     * updates fail due to contention among threads.  The function
+     * is applied with the current value as its first argument,
+     * and the given update as the second argument.
+     *
+     * @param x the update value
+     * @param accumulatorFunction a side-effect-free function of two arguments
+     * @return the updated value
+     * @since 1.8
+     */
+    public final V accumulateAndGet(V x,
+                                    BinaryOperator<V> accumulatorFunction) {
+        V prev, next;
+        do {
+            prev = get();
+            next = accumulatorFunction.operate(prev, x);
+        } while (!compareAndSet(prev, next));
+        return next;
     }
 
     /**

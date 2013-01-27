@@ -37,5 +37,6 @@ case "${OS}" in
         ;;
 esac
 
-JAVAC=${TESTJAVA}/bin/javac
-${JAVAC} -d ${TESTCLASSES} -sourcepath ${TESTSRC}${SEP}. ${TESTSRC}/EnclosingClassTest.java
+JAVAC=${COMPILEJAVA}/bin/javac
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES} -sourcepath ${TESTSRC}${SEP}. \
+    ${TESTSRC}/EnclosingClassTest.java

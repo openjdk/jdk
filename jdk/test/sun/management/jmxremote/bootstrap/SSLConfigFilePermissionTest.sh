@@ -88,7 +88,7 @@ createSSLConfigFile ${SSL} ${TESTSRC}/ssl/keystore
 
 # Compile test
 
-${TESTJAVA}/bin/javac -d ${TESTCLASSES} ${TESTCLASSES}/Dummy.java
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES} ${TESTCLASSES}/Dummy.java
 
 JAVA=${TESTJAVA}/bin/java
 CLASSPATH=${TESTCLASSES}
