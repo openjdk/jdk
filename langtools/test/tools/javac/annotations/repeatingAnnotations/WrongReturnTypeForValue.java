@@ -6,15 +6,13 @@
  * @compile/fail/ref=WrongReturnTypeForValue.out -XDrawDiagnostics WrongReturnTypeForValue.java
  */
 
-import java.lang.annotation.ContainedBy;
-import java.lang.annotation.ContainerFor;
+import java.lang.annotation.Repeatable;
 
-@ContainedBy(FooContainer.class)
+@Repeatable(FooContainer.class)
 @interface Foo {
     int getNumbers();
 }
 
-@ContainerFor(Foo.class)
 @interface FooContainer{
     Foo value();     // wrong return type
 }

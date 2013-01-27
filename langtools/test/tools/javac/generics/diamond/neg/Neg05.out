@@ -1,25 +1,25 @@
 Neg05.java:19:48: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:19:35: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>)
 Neg05.java:20:58: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:20:45: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>)
 Neg05.java:21:43: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:21:30: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>)
 Neg05.java:22:56: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:22:43: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>)
 Neg05.java:24:48: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:24:35: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>)
 Neg05.java:25:58: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:25:45: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>)
 Neg05.java:26:43: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:26:30: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>)
 Neg05.java:27:56: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:27:43: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>)
 Neg05.java:31:37: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:31:44: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg05.Foo), (compiler.misc.infer.no.conforming.instance.exists: V, Neg05.Foo<V>, Neg05<?>.Foo<java.lang.String>))
 Neg05.java:32:47: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:32:54: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg05.Foo), (compiler.misc.infer.no.conforming.instance.exists: V, Neg05.Foo<V>, Neg05<?>.Foo<? extends java.lang.String>))
 Neg05.java:33:32: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:33:39: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg05.Foo), (compiler.misc.infer.no.conforming.instance.exists: V, Neg05.Foo<V>, Neg05<?>.Foo<?>))
 Neg05.java:34:45: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:34:52: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg05.Foo), (compiler.misc.infer.no.conforming.instance.exists: V, Neg05.Foo<V>, Neg05<?>.Foo<? super java.lang.String>))
 Neg05.java:36:37: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:36:44: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg05.Foo), (compiler.misc.infer.no.conforming.instance.exists: V,Z, Neg05.Foo<V>, Neg05<?>.Foo<java.lang.String>))
 Neg05.java:37:47: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:37:54: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg05.Foo), (compiler.misc.infer.no.conforming.instance.exists: V,Z, Neg05.Foo<V>, Neg05<?>.Foo<? extends java.lang.String>))
 Neg05.java:38:32: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:38:39: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg05.Foo), (compiler.misc.infer.no.conforming.instance.exists: V,Z, Neg05.Foo<V>, Neg05<?>.Foo<?>))
 Neg05.java:39:45: compiler.err.improperly.formed.type.inner.raw.param
+Neg05.java:39:52: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: Neg05.Foo), (compiler.misc.infer.no.conforming.instance.exists: V,Z, Neg05.Foo<V>, Neg05<?>.Foo<? super java.lang.String>))
 24 errors

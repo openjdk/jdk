@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public class CodeWriter extends BasicWriter {
         stackMapWriter = StackMapWriter.instance(context);
         localVariableTableWriter = LocalVariableTableWriter.instance(context);
         localVariableTypeTableWriter = LocalVariableTypeTableWriter.instance(context);
+        typeAnnotationWriter = TypeAnnotationWriter.instance(context);
         options = Options.instance(context);
     }
 
@@ -265,6 +266,11 @@ public class CodeWriter extends BasicWriter {
             detailWriters.add(tryBlockWriter);
         }
 
+        if (options.details.contains(InstructionDetailWriter.Kind.TYPE_ANNOS)) {
+            typeAnnotationWriter.reset(attr);
+            detailWriters.add(typeAnnotationWriter);
+        }
+
         return detailWriters;
     }
 
@@ -273,6 +279,7 @@ public class CodeWriter extends BasicWriter {
     private ConstantWriter constantWriter;
     private LocalVariableTableWriter localVariableTableWriter;
     private LocalVariableTypeTableWriter localVariableTypeTableWriter;
+    private TypeAnnotationWriter typeAnnotationWriter;
     private SourceWriter sourceWriter;
     private StackMapWriter stackMapWriter;
     private TryBlockWriter tryBlockWriter;

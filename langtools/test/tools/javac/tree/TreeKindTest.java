@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 import com.sun.source.tree.*;
 
-public class TreeKindTest{
+public class TreeKindTest {
     public static void main(String... args) {
         boolean ok = true;
 
@@ -106,6 +106,11 @@ public class TreeKindTest{
             case ENUM:
             case CLASS:
                 ok = ok & verify(k, i, i == ClassTree.class);
+                break;
+
+            case ANNOTATION:
+            case TYPE_ANNOTATION:
+                ok = ok & verify(k, i, i == AnnotationTree.class);
                 break;
 
             case OTHER:

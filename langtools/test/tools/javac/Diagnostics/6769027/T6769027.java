@@ -23,13 +23,17 @@
 
 /**
  * @test
- * @bug     6769027
+ * @bug     6769027 8006694
  * @summary Source line should be displayed immediately after the first diagnostic line
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @author  Maurizio Cimadamore
  * @library ../../lib
  * @build JavacTestingAbstractThreadedTest
  * @run main/othervm T6769027
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.regex.Matcher;
@@ -488,7 +492,7 @@ public class T6769027
         }
 
         if (!msg.equals(errorLine)) {
-            printInfo(msg, errorLine);
+//            printInfo(msg, errorLine);
             errCount.incrementAndGet();
         }
     }

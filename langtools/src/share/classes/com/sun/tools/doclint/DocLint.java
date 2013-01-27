@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class DocLint implements Plugin {
 
         if (javacFiles.isEmpty()) {
             if (!needHelp)
-                System.out.println("no files given");
+                out.println("no files given");
         }
 
         JavacTool tool = JavacTool.create();
@@ -179,11 +179,11 @@ public class DocLint implements Plugin {
                 }
             } else if (arg.equals(STATS)) {
                 env.messages.setStatsEnabled(true);
-            } else if (arg.matches("-bootclasspath") && i + 1 < args.length) {
+            } else if (arg.equals("-bootclasspath") && i + 1 < args.length) {
                 javacBootClassPath = splitPath(args[++i]);
-            } else if (arg.matches("-classpath") && i + 1 < args.length) {
+            } else if (arg.equals("-classpath") && i + 1 < args.length) {
                 javacClassPath = splitPath(args[++i]);
-            } else if (arg.matches("-sourcepath") && i + 1 < args.length) {
+            } else if (arg.equals("-sourcepath") && i + 1 < args.length) {
                 javacSourcePath = splitPath(args[++i]);
             } else if (arg.equals(XMSGS_OPTION)) {
                 env.messages.setOptions(null);
@@ -234,6 +234,8 @@ public class DocLint implements Plugin {
         out.println("    equivalent to -Xmsgs:all/protected, meaning that");
         out.println("    all messages are reported for protected and public");
         out.println("    declarations only. ");
+        out.println("  -stats");
+        out.println("    Report statistics on the reported issues.");
         out.println("  -h -help --help -usage -?");
         out.println("    Show this message.");
         out.println("");
@@ -247,7 +249,7 @@ public class DocLint implements Plugin {
 
     List<File> splitPath(String path) {
         List<File> files = new ArrayList<File>();
-        for (String f: path.split(File.separator)) {
+        for (String f: path.split(File.pathSeparator)) {
             if (f.length() > 0)
                 files.add(new File(f));
         }

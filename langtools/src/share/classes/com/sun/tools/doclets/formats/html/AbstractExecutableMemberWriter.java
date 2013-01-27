@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,15 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             tree.addContent(param.name());
         }
     }
+
+    protected void addReceiverAnnotations(ExecutableMemberDoc member,
+            Content tree) {
+        if (member.receiverAnnotations().length > 0) {
+            tree.addContent(writer.getSpace());
+            writer.addReceiverAnnotationInfo(member, tree);
+        }
+    }
+
 
     /**
      * Add all the parameters for the executable member.

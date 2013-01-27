@@ -1,2 +1,2 @@
-TargetType27.java:18:9: compiler.err.cant.apply.symbol: kindname.method, m, TargetType27.F<A,R>, @490, kindname.class, TargetType27, (compiler.misc.cyclic.inference: R)
+TargetType27.java:18:10: compiler.err.prob.found.req: (compiler.misc.cyclic.inference: R)
 1 error
