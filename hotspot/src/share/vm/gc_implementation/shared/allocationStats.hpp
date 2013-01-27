@@ -25,11 +25,12 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_ALLOCATIONSTATS_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_ALLOCATIONSTATS_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 class AllocationStats VALUE_OBJ_CLASS_SPEC {
   // A duration threshold (in ms) used to filter

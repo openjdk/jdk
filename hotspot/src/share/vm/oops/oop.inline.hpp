@@ -40,6 +40,7 @@
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "utilities/macros.hpp"
 #ifdef TARGET_ARCH_x86
 # include "bytes_x86.hpp"
 #endif
@@ -760,7 +761,7 @@ inline int oopDesc::oop_iterate_no_header(OopClosure* blk, MemRegion mr) {
 ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DEFN)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
                                                                            \
 inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
@@ -770,6 +771,6 @@ inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_BACKWARDS_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_BACKWARDS_DEFN)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #endif // SHARE_VM_OOPS_OOP_INLINE_HPP

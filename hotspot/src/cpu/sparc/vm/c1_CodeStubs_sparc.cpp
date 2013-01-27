@@ -30,10 +30,11 @@
 #include "c1/c1_Runtime1.hpp"
 #include "nativeInst_sparc.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/macros.hpp"
 #include "vmreg_sparc.inline.hpp"
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #define __ ce->masm()->
 
@@ -420,7 +421,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
 void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
   // At this point we know that marking is in progress.
@@ -483,7 +484,7 @@ void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
   __ delayed()->nop();
 }
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 ///////////////////////////////////////////////////////////////////////////////////
 
 #undef __

@@ -35,11 +35,12 @@
 #include "runtime/orderAccess.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/accessFlags.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
 #include "gc_implementation/g1/g1OopClosures.hpp"
 #include "gc_implementation/parNew/parOopClosures.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 //
 // A Klass provides:
@@ -625,13 +626,13 @@ class Klass : public Metadata {
     return oop_oop_iterate(obj, blk);
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // In case we don't have a specialized backward scanner use forward
   // iteration.
   virtual int oop_oop_iterate_backwards_v(oop obj, ExtendedOopClosure* blk) {
     return oop_oop_iterate_v(obj, blk);
   }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Iterates "blk" over all the oops in "obj" (of type "this") within "mr".
   // (I don't see why the _m should be required, but without it the Solaris
@@ -663,7 +664,7 @@ class Klass : public Metadata {
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_DECL)
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_DECL)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define Klass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)      \
   virtual int oop_oop_iterate_backwards##nv_suffix(oop obj,                  \
                                                    OopClosureType* blk) {    \
@@ -673,7 +674,7 @@ class Klass : public Metadata {
 
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   virtual void array_klasses_do(void f(Klass* k)) {}
   virtual void with_array_klasses_do(void f(Klass* k));
