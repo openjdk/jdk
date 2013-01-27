@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.Iterator;
+
 import com.sun.tools.javac.util.*;
 
 /** A type annotation position.
@@ -34,12 +36,92 @@ import com.sun.tools.javac.util.*;
 *  This code and its internal interfaces are subject to change or
 *  deletion without notice.</b>
 */
+// Code duplicated in com.sun.tools.classfile.TypeAnnotation.Position
 public class TypeAnnotationPosition {
+
+    public enum TypePathEntryKind {
+        ARRAY(0),
+        INNER_TYPE(1),
+        WILDCARD(2),
+        TYPE_ARGUMENT(3);
+
+        public final int tag;
+
+        private TypePathEntryKind(int tag) {
+            this.tag = tag;
+        }
+    }
+
+    public static class TypePathEntry {
+        /** The fixed number of bytes per TypePathEntry. */
+        public static final int bytesPerEntry = 2;
+
+        public final TypePathEntryKind tag;
+        public final int arg;
+
+        public static final TypePathEntry ARRAY = new TypePathEntry(TypePathEntryKind.ARRAY);
+        public static final TypePathEntry INNER_TYPE = new TypePathEntry(TypePathEntryKind.INNER_TYPE);
+        public static final TypePathEntry WILDCARD = new TypePathEntry(TypePathEntryKind.WILDCARD);
+
+        private TypePathEntry(TypePathEntryKind tag) {
+            Assert.check(tag == TypePathEntryKind.ARRAY ||
+                    tag == TypePathEntryKind.INNER_TYPE ||
+                    tag == TypePathEntryKind.WILDCARD,
+                    "Invalid TypePathEntryKind: " + tag);
+            this.tag = tag;
+            this.arg = 0;
+        }
+
+        public TypePathEntry(TypePathEntryKind tag, int arg) {
+            Assert.check(tag == TypePathEntryKind.TYPE_ARGUMENT,
+                    "Invalid TypePathEntryKind: " + tag);
+            this.tag = tag;
+            this.arg = arg;
+        }
+
+        public static TypePathEntry fromBinary(int tag, int arg) {
+            Assert.check(arg == 0 || tag == TypePathEntryKind.TYPE_ARGUMENT.tag,
+                    "Invalid TypePathEntry tag/arg: " + tag + "/" + arg);
+            switch (tag) {
+            case 0:
+                return ARRAY;
+            case 1:
+                return INNER_TYPE;
+            case 2:
+                return WILDCARD;
+            case 3:
+                return new TypePathEntry(TypePathEntryKind.TYPE_ARGUMENT, arg);
+            default:
+                Assert.error("Invalid TypePathEntryKind tag: " + tag);
+                return null;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return tag.toString() +
+                    (tag == TypePathEntryKind.TYPE_ARGUMENT ? ("(" + arg + ")") : "");
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (! (other instanceof TypePathEntry)) {
+                return false;
+            }
+            TypePathEntry tpe = (TypePathEntry) other;
+            return this.tag == tpe.tag && this.arg == tpe.arg;
+        }
+
+        @Override
+        public int hashCode() {
+            return this.tag.hashCode() * 17 + this.arg;
+        }
+    }
 
     public TargetType type = TargetType.UNKNOWN;
 
     // For generic/array types.
-    public List<Integer> location = List.nil();
+    public List<TypePathEntry> location = List.nil();
 
     // Tree position.
     public int pos = -1;
@@ -59,11 +141,13 @@ public class TypeAnnotationPosition {
     // For type parameter and method parameter
     public int parameter_index = Integer.MIN_VALUE;
 
-    // For class extends, implements, and throws classes
+    // For class extends, implements, and throws clauses
     public int type_index = Integer.MIN_VALUE;
 
-    // For wildcards
-    public TypeAnnotationPosition wildcard_position = null;
+    // For exception parameters, index into exception table
+    public int exception_index = Integer.MIN_VALUE;
+
+    public TypeAnnotationPosition() {}
 
     @Override
     public String toString() {
@@ -72,27 +156,27 @@ public class TypeAnnotationPosition {
         sb.append(type);
 
         switch (type) {
-        // type case
-        case TYPECAST:
-        case TYPECAST_GENERIC_OR_ARRAY:
-            // object creation
+        // type cast
+        case CAST:
+        // instanceof
         case INSTANCEOF:
-        case INSTANCEOF_GENERIC_OR_ARRAY:
-            // new expression
+        // new expression
         case NEW:
-        case NEW_GENERIC_OR_ARRAY:
-        case NEW_TYPE_ARGUMENT:
-        case NEW_TYPE_ARGUMENT_GENERIC_OR_ARRAY:
             sb.append(", offset = ");
             sb.append(offset);
             break;
-            // local variable
+        // local variable
         case LOCAL_VARIABLE:
-        case LOCAL_VARIABLE_GENERIC_OR_ARRAY:
+        // resource variable
+        case RESOURCE_VARIABLE:
+            if (lvarOffset == null) {
+                sb.append(", lvarOffset is null!");
+                break;
+            }
             sb.append(", {");
             for (int i = 0; i < lvarOffset.length; ++i) {
                 if (i != 0) sb.append("; ");
-                sb.append(", start_pc = ");
+                sb.append("start_pc = ");
                 sb.append(lvarOffset[i]);
                 sb.append(", length = ");
                 sb.append(lvarLength[i]);
@@ -101,73 +185,72 @@ public class TypeAnnotationPosition {
             }
             sb.append("}");
             break;
-            // method receiver
+        // method receiver
         case METHOD_RECEIVER:
             // Do nothing
             break;
-            // type parameters
+        // type parameter
         case CLASS_TYPE_PARAMETER:
         case METHOD_TYPE_PARAMETER:
             sb.append(", param_index = ");
             sb.append(parameter_index);
             break;
-            // type parameters bound
+        // type parameter bound
         case CLASS_TYPE_PARAMETER_BOUND:
-        case CLASS_TYPE_PARAMETER_BOUND_GENERIC_OR_ARRAY:
         case METHOD_TYPE_PARAMETER_BOUND:
-        case METHOD_TYPE_PARAMETER_BOUND_GENERIC_OR_ARRAY:
             sb.append(", param_index = ");
             sb.append(parameter_index);
             sb.append(", bound_index = ");
             sb.append(bound_index);
             break;
-            // wildcard
-        case WILDCARD_BOUND:
-        case WILDCARD_BOUND_GENERIC_OR_ARRAY:
-            sb.append(", wild_card = ");
-            sb.append(wildcard_position);
-            break;
-            // Class extends and implements clauses
+        // class extends or implements clause
         case CLASS_EXTENDS:
-        case CLASS_EXTENDS_GENERIC_OR_ARRAY:
             sb.append(", type_index = ");
             sb.append(type_index);
             break;
-            // throws
+        // throws
         case THROWS:
             sb.append(", type_index = ");
             sb.append(type_index);
             break;
-        case CLASS_LITERAL:
-        case CLASS_LITERAL_GENERIC_OR_ARRAY:
-            sb.append(", offset = ");
-            sb.append(offset);
+        // exception parameter
+        case EXCEPTION_PARAMETER:
+            sb.append(", exception_index = ");
+            sb.append(exception_index);
             break;
-            // method parameter: not specified
-        case METHOD_PARAMETER_GENERIC_OR_ARRAY:
+        // method parameter
+        case METHOD_FORMAL_PARAMETER:
             sb.append(", param_index = ");
             sb.append(parameter_index);
             break;
-            // method type argument: wasn't specified
-        case METHOD_TYPE_ARGUMENT:
-        case METHOD_TYPE_ARGUMENT_GENERIC_OR_ARRAY:
+        // method/constructor/reference type argument
+        case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
+        case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case METHOD_REFERENCE_TYPE_ARGUMENT:
             sb.append(", offset = ");
             sb.append(offset);
             sb.append(", type_index = ");
             sb.append(type_index);
             break;
-            // We don't need to worry abut these
-        case METHOD_RETURN_GENERIC_OR_ARRAY:
-        case FIELD_GENERIC_OR_ARRAY:
+        // We don't need to worry about these
+        case METHOD_RETURN:
+        case FIELD:
+            break;
+        // lambda formal parameter
+        case LAMBDA_FORMAL_PARAMETER:
+            // TODO: also needs an offset?
+            sb.append(", param_index = ");
+            sb.append(parameter_index);
             break;
         case UNKNOWN:
+            sb.append(", position UNKNOWN!");
             break;
         default:
-            //                throw new AssertionError("unknown type: " + type);
+            Assert.error("Unknown target type: " + type);
         }
 
         // Append location data for generics/arrays.
-        if (type.hasLocation()) {
+        if (!location.isEmpty()) {
             sb.append(", location = (");
             sb.append(location);
             sb.append(")");
@@ -186,10 +269,33 @@ public class TypeAnnotationPosition {
      * @return true if the target has not been optimized away
      */
     public boolean emitToClassfile() {
-        if (type == TargetType.WILDCARD_BOUND
-            || type == TargetType.WILDCARD_BOUND_GENERIC_OR_ARRAY)
-            return wildcard_position.isValidOffset;
-        else
-            return !type.isLocal() || isValidOffset;
+        return !type.isLocal() || isValidOffset;
+    }
+
+    /**
+     * Decode the binary representation for a type path and set
+     * the {@code location} field.
+     *
+     * @param list The bytecode representation of the type path.
+     */
+    public static List<TypePathEntry> getTypePathFromBinary(java.util.List<Integer> list) {
+        ListBuffer<TypePathEntry> loc = ListBuffer.lb();
+        Iterator<Integer> iter = list.iterator();
+        while (iter.hasNext()) {
+            Integer fst = iter.next();
+            Assert.check(iter.hasNext(), "Could not decode type path: " + list);
+            Integer snd = iter.next();
+            loc = loc.append(TypePathEntry.fromBinary(fst, snd));
+        }
+        return loc.toList();
+    }
+
+    public static List<Integer> getBinaryFromTypePath(java.util.List<TypePathEntry> locs) {
+        ListBuffer<Integer> loc = ListBuffer.lb();
+        for (TypePathEntry tpe : locs) {
+            loc = loc.append(tpe.tag.tag);
+            loc = loc.append(tpe.arg);
+        }
+        return loc.toList();
     }
 }

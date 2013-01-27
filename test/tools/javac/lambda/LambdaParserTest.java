@@ -23,14 +23,17 @@
 
 /*
  * @test
- * @bug 7115050
- * @bug 8003280
+ * @bug 7115050 8003280 8005852 8006694
  * @summary Add lambda tests
  *  Add parser support for lambda expressions
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main LambdaParserTest
+ * @run main/othervm LambdaParserTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;
@@ -46,12 +49,12 @@ public class LambdaParserTest
     enum LambdaKind {
         NILARY_EXPR("()->x"),
         NILARY_STMT("()->{ return x; }"),
-        ONEARY_SHORT_EXPR("x->x"),
-        ONEARY_SHORT_STMT("x->{ return x; }"),
-        ONEARY_EXPR("(#M1 #T1 x)->x"),
-        ONEARY_STMT("(#M1 #T1 x)->{ return x; }"),
-        TWOARY_EXPR("(#M1 #T1 x, #M2 #T2 y)->x"),
-        TWOARY_STMT("(#M1 #T1 x, #M2 #T2 y)->{ return x; }");
+        ONEARY_SHORT_EXPR("#PN->x"),
+        ONEARY_SHORT_STMT("#PN->{ return x; }"),
+        ONEARY_EXPR("(#M1 #T1 #PN)->x"),
+        ONEARY_STMT("(#M1 #T1 #PN)->{ return x; }"),
+        TWOARY_EXPR("(#M1 #T1 #PN, #M2 #T2 y)->x"),
+        TWOARY_STMT("(#M1 #T1 #PN, #M2 #T2 y)->{ return x; }");
 
         String lambdaTemplate;
 
@@ -60,11 +63,12 @@ public class LambdaParserTest
         }
 
         String getLambdaString(LambdaParameterKind pk1, LambdaParameterKind pk2,
-                ModifierKind mk1, ModifierKind mk2) {
+                ModifierKind mk1, ModifierKind mk2, LambdaParameterName pn) {
             return lambdaTemplate.replaceAll("#M1", mk1.modifier)
                     .replaceAll("#M2", mk2.modifier)
                     .replaceAll("#T1", pk1.parameterType)
-                    .replaceAll("#T2", pk2.parameterType);
+                    .replaceAll("#T2", pk2.parameterType)
+                    .replaceAll("#PN", pn.nameStr);
         }
 
         int arity() {
@@ -84,6 +88,17 @@ public class LambdaParserTest
         boolean isShort() {
             return this == ONEARY_SHORT_EXPR ||
                     this == ONEARY_SHORT_STMT;
+        }
+    }
+
+    enum LambdaParameterName {
+        IDENT("x"),
+        UNDERSCORE("_");
+
+        String nameStr;
+
+        LambdaParameterName(String nameStr) {
+            this.nameStr = nameStr;
         }
     }
 
@@ -151,8 +166,8 @@ public class LambdaParserTest
         }
 
         String expressionString(LambdaParameterKind pk1, LambdaParameterKind pk2,
-                ModifierKind mk1, ModifierKind mk2, LambdaKind lk, SubExprKind sk) {
-            return expressionTemplate.replaceAll("#L", lk.getLambdaString(pk1, pk2, mk1, mk2))
+                ModifierKind mk1, ModifierKind mk2, LambdaKind lk, LambdaParameterName pn, SubExprKind sk) {
+            return expressionTemplate.replaceAll("#L", lk.getLambdaString(pk1, pk2, mk1, mk2, pn))
                     .replaceAll("#S", sk.subExpression);
         }
     }
@@ -174,25 +189,27 @@ public class LambdaParserTest
 
     public static void main(String... args) throws Exception {
         for (LambdaKind lk : LambdaKind.values()) {
-            for (LambdaParameterKind pk1 : LambdaParameterKind.values()) {
-                if (lk.arity() < 1 && pk1 != LambdaParameterKind.IMPLICIT)
-                    continue;
-                for (LambdaParameterKind pk2 : LambdaParameterKind.values()) {
-                    if (lk.arity() < 2 && pk2 != LambdaParameterKind.IMPLICIT)
+            for (LambdaParameterName pn : LambdaParameterName.values()) {
+                for (LambdaParameterKind pk1 : LambdaParameterKind.values()) {
+                    if (lk.arity() < 1 && pk1 != LambdaParameterKind.IMPLICIT)
                         continue;
-                    for (ModifierKind mk1 : ModifierKind.values()) {
-                        if (mk1 != ModifierKind.NONE && lk.isShort())
+                    for (LambdaParameterKind pk2 : LambdaParameterKind.values()) {
+                        if (lk.arity() < 2 && pk2 != LambdaParameterKind.IMPLICIT)
                             continue;
-                        if (lk.arity() < 1 && mk1 != ModifierKind.NONE)
-                            continue;
-                        for (ModifierKind mk2 : ModifierKind.values()) {
-                            if (lk.arity() < 2 && mk2 != ModifierKind.NONE)
+                        for (ModifierKind mk1 : ModifierKind.values()) {
+                            if (mk1 != ModifierKind.NONE && lk.isShort())
                                 continue;
-                            for (SubExprKind sk : SubExprKind.values()) {
-                                for (ExprKind ek : ExprKind.values()) {
-                                    pool.execute(
-                                        new LambdaParserTest(pk1, pk2, mk1,
-                                                             mk2, lk, sk, ek));
+                            if (lk.arity() < 1 && mk1 != ModifierKind.NONE)
+                                continue;
+                            for (ModifierKind mk2 : ModifierKind.values()) {
+                                if (lk.arity() < 2 && mk2 != ModifierKind.NONE)
+                                    continue;
+                                for (SubExprKind sk : SubExprKind.values()) {
+                                    for (ExprKind ek : ExprKind.values()) {
+                                        pool.execute(
+                                            new LambdaParserTest(pk1, pk2, mk1,
+                                                                 mk2, lk, sk, ek, pn));
+                                    }
                                 }
                             }
                         }
@@ -209,6 +226,7 @@ public class LambdaParserTest
     ModifierKind mk1;
     ModifierKind mk2;
     LambdaKind lk;
+    LambdaParameterName pn;
     SubExprKind sk;
     ExprKind ek;
     JavaSource source;
@@ -216,12 +234,13 @@ public class LambdaParserTest
 
     LambdaParserTest(LambdaParameterKind pk1, LambdaParameterKind pk2,
             ModifierKind mk1, ModifierKind mk2, LambdaKind lk,
-            SubExprKind sk, ExprKind ek) {
+            SubExprKind sk, ExprKind ek, LambdaParameterName pn) {
         this.pk1 = pk1;
         this.pk2 = pk2;
         this.mk1 = mk1;
         this.mk2 = mk2;
         this.lk = lk;
+        this.pn = pn;
         this.sk = sk;
         this.ek = ek;
         this.source = new JavaSource();
@@ -239,7 +258,7 @@ public class LambdaParserTest
         public JavaSource() {
             super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
             source = template.replaceAll("#E",
-                    ek.expressionString(pk1, pk2, mk1, mk2, lk, sk));
+                    ek.expressionString(pk1, pk2, mk1, mk2, lk, pn, sk));
         }
 
         @Override
@@ -271,6 +290,9 @@ public class LambdaParserTest
                 pk1.isVarargs())) {
             errorExpected = true;
         }
+
+        errorExpected |= pn == LambdaParameterName.UNDERSCORE &&
+                lk.arity() > 0;
 
         if (errorExpected != diagChecker.errorFound) {
             throw new Error("invalid diagnostics for source:\n" +
