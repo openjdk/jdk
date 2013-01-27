@@ -23,15 +23,19 @@
 
 /**
  * @test
- * @bug 8003280
+ * @bug 8003280 8006694
  * @summary Add lambda tests
  *  perform automated checks in type inference in lambda expressions
  *  in different contexts
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../../lib
  * @build JavacTestingAbstractThreadedTest
  * @compile  TypeInferenceComboTest.java
- * @run main/timeout=360 TypeInferenceComboTest
+ * @run main/othervm/timeout=360 TypeInferenceComboTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;
@@ -256,16 +260,6 @@ public class TypeInferenceComboTest
     };
 
     public void run() {
-        outWriter.println("kk:");
-        StringBuilder sb = new StringBuilder("SamKind:");
-        sb.append(samKind).append(" SamTargetType:")
-            .append(samTargetType).append(" ParameterType:").append(parameterType)
-            .append(" ReturnType:").append(returnType).append(" Context:")
-            .append(context).append(" LambdaKind:").append(lambdaKind)
-            .append(" LambdaBodyType:").append(lambdaBodyType)
-            .append(" ParameterKind:").append(parameterKind).append(" Keyword:")
-            .append(keyword);
-        outWriter.println(sb);
         DiagnosticChecker dc = new DiagnosticChecker();
         JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), dc,
                 null, null, Arrays.asList(samSourceFile, clientSourceFile));

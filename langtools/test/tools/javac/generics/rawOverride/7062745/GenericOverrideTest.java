@@ -23,13 +23,17 @@
 
 /*
  * @test
- * @bug 7062745
+ * @bug 7062745 8006694
  * @summary  Regression: difference in overload resolution when two methods
- * are maximally specific
+ *  are maximally specific
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main GenericOverrideTest
+ * @run main/othervm GenericOverrideTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;

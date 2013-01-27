@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public class DocRootSlash
         String srcdir = System.getProperty("test.src", ".");
 
         runJavadoc(new String[] {"-d", TMPDIR_STRING1,
+                                 "-Xdoclint:none",
                                  "-overview", (srcdir + FS + "overview.html"),
                                  "-header", "<A HREF=\"{@docroot}/package-list\">{&#064;docroot}</A> <A HREF=\"{@docRoot}/help-doc\">{&#064;docRoot}</A>",
                                  "-sourcepath", srcdir,

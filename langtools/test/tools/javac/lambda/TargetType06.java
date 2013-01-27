@@ -4,7 +4,7 @@
  * @summary Add lambda tests
  *  check complex case of target typing
  * @author  Maurizio Cimadamore
- * @compile/fail/ref=TargetType06.out -XDrawDiagnostics TargetType06.java
+ * @compile TargetType06.java
  */
 
 import java.util.List;
