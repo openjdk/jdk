@@ -35,6 +35,7 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/diagnosticCommand_ext.hpp"
+#include "utilities/macros.hpp"
 
 class HelpDCmd : public DCmdWithParser {
 protected:

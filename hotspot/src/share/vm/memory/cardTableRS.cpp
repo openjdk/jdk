@@ -31,10 +31,11 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 CardTableRS::CardTableRS(MemRegion whole_heap,
                          int max_covered_regions) :
@@ -42,7 +43,7 @@ CardTableRS::CardTableRS(MemRegion whole_heap,
   _cur_youngergen_card_val(youngergenP1_card),
   _regions_to_iterate(max_covered_regions - 1)
 {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   if (UseG1GC) {
       _ct_bs = new G1SATBCardTableLoggingModRefBS(whole_heap,
                                                   max_covered_regions);

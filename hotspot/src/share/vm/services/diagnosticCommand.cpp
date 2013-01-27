@@ -30,6 +30,7 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
+#include "utilities/macros.hpp"
 
 void DCmdRegistrant::register_dcmds(){
   // Registration of the diagnostic commands

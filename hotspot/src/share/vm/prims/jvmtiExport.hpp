@@ -34,6 +34,7 @@
 #include "runtime/handles.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 
 // Must be included after jvmti.h.
 #include "code/jvmticmlr.h"

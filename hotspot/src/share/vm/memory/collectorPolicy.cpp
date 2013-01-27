@@ -39,10 +39,11 @@
 #include "runtime/java.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // CollectorPolicy methods.
 

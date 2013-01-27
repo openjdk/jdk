@@ -27,6 +27,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/macros.hpp"
 
 #if INCLUDE_SERVICES
 

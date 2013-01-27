@@ -40,9 +40,10 @@
 #include "services/heapDumper.hpp"
 #include "services/threadService.hpp"
 #include "utilities/ostream.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 /*
  * HPROF binary format - description copied from:

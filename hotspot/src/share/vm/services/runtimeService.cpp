@@ -29,6 +29,7 @@
 #include "services/runtimeService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
 #ifndef USDT2
 HS_DTRACE_PROBE_DECL(hs_private, safepoint__begin);
