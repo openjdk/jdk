@@ -54,6 +54,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * <code>DecimalFormat</code> is a concrete subclass of
@@ -394,28 +395,17 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getPercentInstance
      */
     public DecimalFormat() {
+        // Get the pattern for the default locale.
         Locale def = Locale.getDefault(Locale.Category.FORMAT);
-        // try to get the pattern from the cache
-        String pattern = cachedLocaleData.get(def);
-        if (pattern == null) {  /* cache miss */
-            // Get the pattern for the default locale.
-            LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(NumberFormatProvider.class, def);
-            switch (adapter.getAdapterType()) {
-            case HOST:
-            case SPI:
-                adapter = LocaleProviderAdapter.getResourceBundleBased();
-                break;
-            }
-            ResourceBundle rb = adapter.getLocaleData().getNumberFormatData(def);
-            String[] all = rb.getStringArray("NumberPatterns");
-            pattern = all[0];
-            /* update cache */
-            cachedLocaleData.putIfAbsent(def, pattern);
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(NumberFormatProvider.class, def);
+        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
+            adapter = LocaleProviderAdapter.getResourceBundleBased();
         }
+        String[] all = adapter.getLocaleResources(def).getNumberPatterns();
 
         // Always applyPattern after the symbols are set
         this.symbols = DecimalFormatSymbols.getInstance(def);
-        applyPattern(pattern, false);
+        applyPattern(all[0], false);
     }
 
 
@@ -4154,10 +4144,4 @@ public class DecimalFormat extends NumberFormat {
 
     // Proclaim JDK 1.1 serial compatibility.
     static final long serialVersionUID = 864413376551465018L;
-
-    /**
-     * Cache to hold the NumberPattern of a Locale.
-     */
-    private static final ConcurrentMap<Locale, String> cachedLocaleData
-        = new ConcurrentHashMap<>(3);
 }

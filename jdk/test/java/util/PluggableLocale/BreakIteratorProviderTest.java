@@ -67,8 +67,7 @@ public class BreakIteratorProviderTest extends ProviderTest {
 
         for (Locale target: availloc) {
             // pure JRE implementation
-            ResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getBundle(
-                        "sun.text.resources.BreakIteratorInfo", target);
+            ResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getBreakIteratorInfo(target);
             String[] classNames = rb.getStringArray("BreakIteratorClasses");
             boolean jreSupportsLocale = jreimplloc.contains(target);
 

@@ -38,6 +38,12 @@ then
   exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
@@ -50,16 +56,16 @@ then
   exit 1
 fi
 
-JAR="${TESTJAVA}"/bin/jar
-JAVAC="${TESTJAVA}"/bin/javac
+JAR="${COMPILEJAVA}"/bin/jar
+JAVAC="${COMPILEJAVA}"/bin/javac
 JAVA="${TESTJAVA}"/bin/java
 
-"${JAVAC}" -d . \
+"${JAVAC}"  ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d .\
     "${TESTSRC}"/TestClass1.java \
     "${TESTSRC}"/TestClass2.java \
     "${TESTSRC}"/TestClass3.java
 
-"${JAR}" cvf Test.jar Test*.class
+"${JAR}" ${TESTTOOLVMOPTS} cvf Test.jar Test*.class
 # Removing the test class files is important. If these
 # .class files are available on the classpath other
 # than via Test.jar, then the deadlock will not reproduce.

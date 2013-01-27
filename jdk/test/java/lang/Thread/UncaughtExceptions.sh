@@ -34,7 +34,7 @@
 # To run this test manually, simply do ./UncaughtExceptions.sh
 
  java="${TESTJAVA+${TESTJAVA}/bin/}java"
-javac="${TESTJAVA+${TESTJAVA}/bin/}javac"
+javac="${COMPILEJAVA+${COMPILEJAVA}/bin/}javac"
 
 failed=""
 Fail() { echo "FAIL: $1"; failed="${failed}."; }
@@ -121,7 +121,7 @@ public class Seppuku extends Thread implements Runnable {
 }
 EOJAVA
 
-    Sys "$javac" "Seppuku.java"
+    Sys "$javac" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} "Seppuku.java"
     CheckCommandResults "$expectedRC" "$expectedOut" "$expectedErr" \
 	"$java" "Seppuku"
     Cleanup

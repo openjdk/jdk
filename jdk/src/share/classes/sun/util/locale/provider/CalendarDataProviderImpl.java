@@ -24,10 +24,7 @@
  */
 package sun.util.locale.provider;
 
-import java.util.Calendar;
-import static java.util.Calendar.*;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.spi.CalendarDataProvider;
 
@@ -49,12 +46,14 @@ public class CalendarDataProviderImpl extends CalendarDataProvider implements Av
 
     @Override
     public int getFirstDayOfWeek(Locale locale) {
-        return getIntData(CalendarDataUtility.FIRST_DAY_OF_WEEK, locale);
+        return LocaleProviderAdapter.forType(type).getLocaleResources(locale)
+                   .getCalendarData(CalendarDataUtility.FIRST_DAY_OF_WEEK);
     }
 
     @Override
     public int getMinimalDaysInFirstWeek(Locale locale) {
-        return getIntData(CalendarDataUtility.MINIMAL_DAYS_IN_FIRST_WEEK, locale);
+        return LocaleProviderAdapter.forType(type).getLocaleResources(locale)
+                   .getCalendarData(CalendarDataUtility.MINIMAL_DAYS_IN_FIRST_WEEK);
     }
 
     @Override
@@ -65,14 +64,5 @@ public class CalendarDataProviderImpl extends CalendarDataProvider implements Av
     @Override
     public Set<String> getAvailableLanguageTags() {
         return langtags;
-    }
-
-    private int getIntData(String key, Locale locale) {
-        ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getCalendarData(locale);
-        if (rb.containsKey(key)) {
-            String firstday = rb.getString(key);
-            return Integer.parseInt(firstday);
-        }
-        return 0;
     }
 }

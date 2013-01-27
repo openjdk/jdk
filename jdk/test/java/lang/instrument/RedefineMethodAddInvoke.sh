@@ -37,6 +37,12 @@ then
   exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
@@ -49,18 +55,18 @@ then
   exit 1
 fi
 
-JAVAC="${TESTJAVA}"/bin/javac
+JAVAC="${COMPILEJAVA}"/bin/javac
 JAVA="${TESTJAVA}"/bin/java
 
 cp "${TESTSRC}"/RedefineMethodAddInvokeTarget_1.java \
     RedefineMethodAddInvokeTarget.java
-"${JAVAC}" -d . RedefineMethodAddInvokeTarget.java
+"${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . RedefineMethodAddInvokeTarget.java
 mv RedefineMethodAddInvokeTarget.java RedefineMethodAddInvokeTarget_1.java
 mv RedefineMethodAddInvokeTarget.class RedefineMethodAddInvokeTarget_1.class
 
 cp "${TESTSRC}"/RedefineMethodAddInvokeTarget_2.java \
     RedefineMethodAddInvokeTarget.java
-"${JAVAC}" -d . RedefineMethodAddInvokeTarget.java
+"${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . RedefineMethodAddInvokeTarget.java
 mv RedefineMethodAddInvokeTarget.java RedefineMethodAddInvokeTarget_2.java
 mv RedefineMethodAddInvokeTarget.class RedefineMethodAddInvokeTarget_2.class
 
