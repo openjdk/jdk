@@ -2302,6 +2302,15 @@ JVM_QUICK_ENTRY(jboolean, JVM_IsConstructorIx(JNIEnv *env, jclass cls, int metho
 JVM_END
 
 
+JVM_QUICK_ENTRY(jboolean, JVM_IsVMGeneratedMethodIx(JNIEnv *env, jclass cls, int method_index))
+  JVMWrapper("JVM_IsVMGeneratedMethodIx");
+  ResourceMark rm(THREAD);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
+  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  return method->is_overpass();
+JVM_END
+
 JVM_ENTRY(const char*, JVM_GetMethodIxNameUTF(JNIEnv *env, jclass cls, jint method_index))
   JVMWrapper("JVM_GetMethodIxIxUTF");
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
