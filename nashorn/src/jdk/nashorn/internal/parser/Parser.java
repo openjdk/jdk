@@ -147,7 +147,7 @@ public class Parser extends AbstractParser {
     public FunctionNode parse(final String scriptName) {
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, stream, context._scripting);
+            lexer  = new Lexer(source, stream, context._scripting && !context._no_syntax_extensions);
 
             // Set up first token (skips opening EOL.)
             k = -1;
@@ -1065,7 +1065,7 @@ loop:
 
             // Nashorn extension: for each expression.
             // iterate property values rather than property names.
-            if (type == IDENT && "each".equals(getValue())) {
+            if (!context._no_syntax_extensions && type == IDENT && "each".equals(getValue())) {
                 forNode.setIsForEach();
                 next();
             }
@@ -2312,7 +2312,8 @@ loop:
             arguments = new ArrayList<>();
         }
 
-        // This is to support the following interface impl. syntax:
+        // Nashorn extension: This is to support the following interface implementation
+        // syntax:
         //
         //     var r = new java.lang.Runnable() {
         //         run: function() { println("run"); }
@@ -2321,7 +2322,7 @@ loop:
         // The object literal following the "new Constructor()" expresssion
         // is passed as an additional (last) argument to the constructor.
 
-        if (type == LBRACE) {
+        if (!context._no_syntax_extensions && type == LBRACE) {
             arguments.add(objectLiteral());
         }
 
@@ -2475,8 +2476,11 @@ loop:
         if (type == IDENT || isNonStrictModeIdent()) {
             name = getIdent();
             verifyStrictIdent(name, "function name");
-        } else if (isStatement && !context._anon_functions) {
-            expect(IDENT);
+        } else if (isStatement) {
+            // Nashorn extension: anonymous function statements
+            if (context._no_syntax_extensions || !context._anon_functions) {
+                expect(IDENT);
+            }
         }
 
         // name is null, generate anonymous name
@@ -2613,7 +2617,7 @@ loop:
             functionNode.setFirstToken(firstToken);
 
             // Nashorn extension: expression closures
-            if (type != LBRACE) {
+            if (!context._no_syntax_extensions && type != LBRACE) {
                 /*
                  * Example:
                  *

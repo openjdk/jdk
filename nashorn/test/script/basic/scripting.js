@@ -78,4 +78,4 @@ EOD y = "No we don't";
 print(y);
 
 
-print(read(__FILE__));
+print(readFully(__FILE__));

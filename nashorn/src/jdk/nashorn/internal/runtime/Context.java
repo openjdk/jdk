@@ -229,6 +229,9 @@ public final class Context {
     /** Create a new class loaded for each compilation */
     public final boolean _loader_per_compile;
 
+    /** Do not support non-standard syntax extensions. */
+    public final boolean _no_syntax_extensions;
+
     /** Package to which generated class files are added */
     public final String  _package;
 
@@ -341,29 +344,30 @@ public final class Context {
         this.out       = out;
         this.err       = err;
 
-        _anon_functions     = options.getBoolean("anon.functions");
-        _class_cache_size   = options.getInteger("class.cache.size");
-        _compile_only       = options.getBoolean("compile.only");
-        _debug_lines        = options.getBoolean("debug.lines");
-        _dest_dir           = options.getString("d");
-        _dump_on_error      = options.getBoolean("doe");
-        _early_lvalue_error = options.getBoolean("early.lvalue.error");
-        _empty_statements   = options.getBoolean("empty.statements");
-        _fullversion        = options.getBoolean("fullversion");
-        _loader_per_compile = options.getBoolean("loader.per.compile");
-        _package            = options.getString("package");
-        _parse_only         = options.getBoolean("parse.only");
-        _print_ast          = options.getBoolean("print.ast");
-        _print_lower_ast    = options.getBoolean("print.lower.ast");
-        _print_code         = options.getBoolean("print.code");
-        _print_no_newline   = options.getBoolean("print.no.newline");
-        _print_parse        = options.getBoolean("print.parse");
-        _print_lower_parse  = options.getBoolean("print.lower.parse");
-        _print_symbols      = options.getBoolean("print.symbols");
-        _scripting          = options.getBoolean("scripting");
-        _strict             = options.getBoolean("strict");
-        _version            = options.getBoolean("version");
-        _verify_code        = options.getBoolean("verify.code");
+        _anon_functions       = options.getBoolean("anon.functions");
+        _class_cache_size     = options.getInteger("class.cache.size");
+        _compile_only         = options.getBoolean("compile.only");
+        _debug_lines          = options.getBoolean("debug.lines");
+        _dest_dir             = options.getString("d");
+        _dump_on_error        = options.getBoolean("doe");
+        _early_lvalue_error   = options.getBoolean("early.lvalue.error");
+        _empty_statements     = options.getBoolean("empty.statements");
+        _fullversion          = options.getBoolean("fullversion");
+        _loader_per_compile   = options.getBoolean("loader.per.compile");
+        _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
+        _package              = options.getString("package");
+        _parse_only           = options.getBoolean("parse.only");
+        _print_ast            = options.getBoolean("print.ast");
+        _print_lower_ast      = options.getBoolean("print.lower.ast");
+        _print_code           = options.getBoolean("print.code");
+        _print_no_newline     = options.getBoolean("print.no.newline");
+        _print_parse          = options.getBoolean("print.parse");
+        _print_lower_parse    = options.getBoolean("print.lower.parse");
+        _print_symbols        = options.getBoolean("print.symbols");
+        _scripting            = options.getBoolean("scripting");
+        _strict               = options.getBoolean("strict");
+        _version              = options.getBoolean("version");
+        _verify_code          = options.getBoolean("verify.code");
 
         int callSiteFlags = 0;
         if (options.getBoolean("profile.callsites")) {
