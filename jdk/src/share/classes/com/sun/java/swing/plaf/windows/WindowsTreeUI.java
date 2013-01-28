@@ -93,6 +93,11 @@ public class WindowsTreeUI extends BasicTreeUI {
                             counter = endRow;
                         }
                     }
+
+                    if (testRect == null) {
+                        return;
+                    }
+
                     tree.scrollRectToVisible(new Rectangle(visRect.x, beginY, 1,
                                                       testRect.y + testRect.height-
                                                       beginY));

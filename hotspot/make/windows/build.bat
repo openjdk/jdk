@@ -1,6 +1,6 @@
 @echo off
 REM
-REM Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+REM Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 REM DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 REM
 REM This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ goto usage
 
 :test1
 if "%2" == "core"      goto test2
-if "%2" == "kernel"    goto test2
 if "%2" == "compiler1" goto test2
 if "%2" == "compiler2" goto test2
 if "%2" == "tiered"    goto test2
@@ -109,7 +108,7 @@ echo Usage: build flavor version workspace bootstrap_dir [build_id] [windbg_home
 echo.
 echo where:
 echo flavor is "product", "debug" or "fastdebug",
-echo version is "core", "kernel", "compiler1", "compiler2", or "tiered",
+echo version is "core", "compiler1", "compiler2", or "tiered",
 echo workspace is source directory without trailing slash, 
 echo bootstrap_dir is a full path to a JDK in which bin/java 
 echo   and bin/javac are present and working, and build_id is an 

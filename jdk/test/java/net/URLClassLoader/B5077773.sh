@@ -58,7 +58,8 @@ esac
 
 cp ${TESTSRC}${FS}foo.jar .
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}B5077773.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
+    ${TESTSRC}${FS}B5077773.java
 
 WD=`pwd`
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} B5077773

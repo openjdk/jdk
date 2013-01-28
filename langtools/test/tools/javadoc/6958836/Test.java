@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class Test {
         // Force en_US locale in lieu of something like -XDrawDiagnostics.
         // For some reason, this must be the first option when used.
         opts.addAll(list("-locale", "en_US"));
+        opts.add("-Xdoclint:none");
         opts.addAll(list("-classpath", System.getProperty("test.src")));
         opts.addAll(list("-d", testOutDir.getPath()));
         opts.addAll(testOpts);

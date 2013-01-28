@@ -1,2 +1,2 @@
-InferenceTest_neg5.java:14:13: compiler.err.cant.apply.symbol: kindname.method, method1, InferenceTest_neg5.SAM1<X>, @419, kindname.class, InferenceTest_neg5, (compiler.misc.cyclic.inference: X)
+InferenceTest_neg5.java:14:21: compiler.err.prob.found.req: (compiler.misc.cyclic.inference: X)
 1 error

@@ -43,7 +43,6 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
-import sun.util.resources.LocaleData;
 
 /**
  * An abstract parent class for the
@@ -143,11 +142,6 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
 
     @Override
     public LocaleResources getLocaleResources(Locale locale) {
-        return null;
-    }
-
-    @Override
-    public LocaleData getLocaleData() {
         return null;
     }
 

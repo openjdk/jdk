@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,9 @@ enum band_number {
     e_method_Exceptions_RC,
     e_method_Signature_RS,
     e_method_metadata_bands,
+    e_method_MethodParameters_NB,
+    e_method_MethodParameters_name_RUN,
+    e_method_MethodParameters_flag_I,
     e_method_attr_bands,
 
     e_class_flags_hi,
@@ -388,6 +391,9 @@ enum band_number {
 #define method_Exceptions_N all_bands[e_method_Exceptions_N]
 #define method_Exceptions_RC all_bands[e_method_Exceptions_RC]
 #define method_Signature_RS all_bands[e_method_Signature_RS]
+#define method_MethodParameters_NB all_bands[e_method_MethodParameters_NB]
+#define method_MethodParameters_name_RUN all_bands[e_method_MethodParameters_name_RUN]
+#define method_MethodParameters_flag_I all_bands[e_method_MethodParameters_flag_I]
 #define method_attr_bands all_bands[e_method_attr_bands]
 #define class_flags_hi all_bands[e_class_flags_hi]
 #define class_flags_lo all_bands[e_class_flags_lo]
