@@ -26,6 +26,11 @@
 # If NEWBUILD is defined, use the new build-infra Makefiles and configure.
 #     See NewMakefile.gmk for more information.
 
+# If not specified, select what the default build is
+ifndef NEWBUILD
+  NEWBUILD=true
+endif
+
 ifeq ($(NEWBUILD),true)
 
   # The new top level Makefile
