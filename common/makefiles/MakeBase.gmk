@@ -51,8 +51,9 @@ decompress_paths=$(SED) -f $(SRC_ROOT)/common/makefiles/support/ListPathsSafely-
 		     -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(SRC_ROOT)|g' \
 		     -e 's|X00|X|g' | tr '\n' '$2'
 
+# Subst in an extra $ to prevent it from disappearing.
 define ListPathsSafely_If
-    $(if $(word $3,$($1)),$(eval $1_LPS$3:=$(call compress_paths,$(wordlist $3,$4,$($1)))))
+    $(if $(word $3,$($1)),$(eval $1_LPS$3:=$(call compress_paths,$(subst $$,$$$$,$(wordlist $3,$4,$($1))))))
 endef
 
 define ListPathsSafely_Printf
