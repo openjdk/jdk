@@ -31,6 +31,7 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import jdk.nashorn.internal.runtime.Version;
+import sun.reflect.Reflection;
 
 /**
  * JSR-223 compliant script engine factory for Nashorn. The engine answers for:
@@ -136,7 +137,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
 
     @Override
     public ScriptEngine getScriptEngine() {
-        return new NashornScriptEngine(this);
+        return new NashornScriptEngine(this, getAppClassLoader());
     }
 
     /**
@@ -146,7 +147,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      * @return newly created script engine.
      */
     public ScriptEngine getScriptEngine(final String[] args) {
-        return new NashornScriptEngine(this, args);
+        return new NashornScriptEngine(this, args, getAppClassLoader());
     }
 
     // -- Internals only below this point
@@ -175,5 +176,45 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
 
     private static List<String> immutableList(final String... elements) {
         return Collections.unmodifiableList(Arrays.asList(elements));
+    }
+
+    private static ClassLoader getAppClassLoader() {
+        if (System.getSecurityManager() == null) {
+            return ClassLoader.getSystemClassLoader();
+        }
+
+        // Try to determine the caller class loader. Use that if it can be
+        // found. If not, use the class loader of nashorn itself as the
+        // "application" class loader for scripts.
+
+        // User could have called ScriptEngineFactory.getScriptEngine()
+        //
+        // <caller>
+        //  <factory.getScriptEngine()>
+        //   <factory.getAppClassLoader()>
+        //    <Reflection.getCallerClass()>
+        //
+        // or used one of the getEngineByABC methods of ScriptEngineManager.
+        //
+        // <caller>
+        //  <ScriptEngineManager.getEngineByName()>
+        //   <factory.getScriptEngine()>
+        //    <factory.getAppClassLoader()>
+        //     <Reflection.getCallerClass()>
+
+        // So, stack depth is 3 or 4 (recall it is zero based). We try
+        // stack depths 3, 4 and look for non-bootstrap caller.
+        Class<?> caller = null;
+        for (int depth = 3; depth < 5; depth++) {
+            caller = Reflection.getCallerClass(depth);
+            if (caller != null && caller.getClassLoader() != null) {
+                // found a non-bootstrap caller
+                break;
+            }
+        }
+
+        final ClassLoader ccl = (caller == null)? null : caller.getClassLoader();
+        // if caller loader is null, then use nashorn's own loader
+        return (ccl == null)? NashornScriptEngineFactory.class.getClassLoader() : ccl;
     }
 }
