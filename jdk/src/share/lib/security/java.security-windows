@@ -157,7 +157,8 @@ package.access=sun.,\
                com.sun.org.apache.xerces.internal.utils.,\
                com.sun.org.apache.xalan.internal.utils.,\
                com.sun.org.glassfish.external.,\
-               com.sun.org.glassfish.gmbal.
+               com.sun.org.glassfish.gmbal.,\
+	       jdk.internal.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -180,7 +181,8 @@ package.definition=sun.,\
                    com.sun.org.apache.xerces.internal.utils.,\
                    com.sun.org.apache.xalan.internal.utils.,\
                    com.sun.org.glassfish.external.,\
-                   com.sun.org.glassfish.gmbal.
+                   com.sun.org.glassfish.gmbal.,\
+		   jdk.internal.
 
 #
 # Determines whether this properties file can be appended to

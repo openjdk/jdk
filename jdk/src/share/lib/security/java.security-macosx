@@ -158,6 +158,7 @@ package.access=sun.,\
                com.sun.org.apache.xalan.internal.utils.,\
                com.sun.org.glassfish.external.,\
                com.sun.org.glassfish.gmbal.,\
+	       jdk.internal.,\
                apple.
 
 #
@@ -182,6 +183,7 @@ package.definition=sun.,\
                    com.sun.org.apache.xalan.internal.utils.,\
                    com.sun.org.glassfish.external.,\
                    com.sun.org.glassfish.gmbal.,\
+		   jdk.internal.,\
                    apple.
 
 #
