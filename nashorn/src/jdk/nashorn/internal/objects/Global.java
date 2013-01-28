@@ -1456,8 +1456,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         value = ScriptFunctionImpl.makeFunction("readLine", ScriptingFunctions.READLINE);
         addOwnProperty("readLine", Attribute.NOT_ENUMERABLE, value);
 
-        value = ScriptFunctionImpl.makeFunction("read", ScriptingFunctions.READ);
-        addOwnProperty("read", Attribute.NOT_ENUMERABLE, value);
+        value = ScriptFunctionImpl.makeFunction("readFully", ScriptingFunctions.READFULLY);
+        addOwnProperty("readFully", Attribute.NOT_ENUMERABLE, value);
 
         value = ScriptFunctionImpl.makeFunction("quit", ScriptingFunctions.QUIT);
         addOwnProperty("quit", Attribute.NOT_ENUMERABLE, value);

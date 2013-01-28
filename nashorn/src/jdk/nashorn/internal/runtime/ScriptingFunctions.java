@@ -44,8 +44,8 @@ public class ScriptingFunctions {
     /** Handle to implementation of {@link ScriptingFunctions#read} - Nashorn extension */
     public static final MethodHandle READLINE = findOwnMH("readLine", Object.class, Object.class);
 
-    /** Handle to implementation of {@link ScriptingFunctions#read} - Nashorn extension */
-    public static final MethodHandle READ = findOwnMH("read",     Object.class, Object.class, Object.class);
+    /** Handle to implementation of {@link ScriptingFunctions#readFully} - Nashorn extension */
+    public static final MethodHandle READFULLY = findOwnMH("readFully",     Object.class, Object.class, Object.class);
 
     /** Handle to implementation of {@link ScriptingFunctions#read} - Nashorn extension */
     public static final MethodHandle QUIT = findOwnMH("quit",     Object.class, Object.class, Object.class);
@@ -78,7 +78,7 @@ public class ScriptingFunctions {
      *
      * @throws IOException if an exception occurs
      */
-    public static Object read(final Object self, final Object file) throws IOException {
+    public static Object readFully(final Object self, final Object file) throws IOException {
         File f = null;
 
         if (file instanceof File) {
