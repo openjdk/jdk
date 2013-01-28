@@ -7660,3 +7660,6 @@ FormatData/zh/DayNarrows/6=\u516d
 
 # bug 7195759
 CurrencyNames//ZMW=ZMW
+
+# bug 7114053
+LocaleNames/sq/sq=shqip

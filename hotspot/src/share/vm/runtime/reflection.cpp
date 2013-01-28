@@ -771,6 +771,10 @@ oop Reflection::new_method(methodHandle method, bool intern_name, bool for_const
     typeArrayOop an_oop = Annotations::make_java_array(method->annotation_default(), CHECK_NULL);
     java_lang_reflect_Method::set_annotation_default(mh(), an_oop);
   }
+  if (java_lang_reflect_Method::has_type_annotations_field()) {
+    typeArrayOop an_oop = Annotations::make_java_array(method->type_annotations(), CHECK_NULL);
+    java_lang_reflect_Method::set_type_annotations(mh(), an_oop);
+  }
   return mh();
 }
 
@@ -849,6 +853,21 @@ oop Reflection::new_field(fieldDescriptor* fd, bool intern_name, TRAPS) {
     typeArrayOop an_oop = Annotations::make_java_array(fd->annotations(), CHECK_NULL);
     java_lang_reflect_Field::set_annotations(rh(), an_oop);
   }
+  if (java_lang_reflect_Field::has_type_annotations_field()) {
+    typeArrayOop an_oop = Annotations::make_java_array(fd->type_annotations(), CHECK_NULL);
+    java_lang_reflect_Field::set_type_annotations(rh(), an_oop);
+  }
+  return rh();
+}
+
+oop Reflection::new_parameter(Handle method, int index, Symbol* sym,
+                              int flags, TRAPS) {
+  Handle name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
+  Handle rh = java_lang_reflect_Parameter::create(CHECK_NULL);
+  java_lang_reflect_Parameter::set_name(rh(), name());
+  java_lang_reflect_Parameter::set_modifiers(rh(), flags);
+  java_lang_reflect_Parameter::set_executable(rh(), method());
+  java_lang_reflect_Parameter::set_index(rh(), index);
   return rh();
 }
 
