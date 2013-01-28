@@ -68,6 +68,7 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   Symbol* generic_signature()     const;
   int index()                     const    { return _index; }
   AnnotationArray* annotations()  const;
+  AnnotationArray* type_annotations()  const;
 
   // Initial field value
   bool has_initial_value()        const    { return field()->initval_index() != 0; }

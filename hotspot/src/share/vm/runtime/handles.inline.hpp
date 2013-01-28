@@ -80,6 +80,8 @@ inline name##Handle::name##Handle(const name##Handle &h) {             \
       _thread = Thread::current();                                     \
     }                                                                  \
     _thread->metadata_handles()->push((Metadata*)_value);              \
+  } else {                                                             \
+    _thread = NULL;                                                    \
   }                                                                    \
 }                                                                      \
 inline name##Handle& name##Handle::operator=(const name##Handle &s) {  \
@@ -94,6 +96,8 @@ inline name##Handle& name##Handle::operator=(const name##Handle &s) {  \
       _thread = Thread::current();                                     \
     }                                                                  \
     _thread->metadata_handles()->push((Metadata*)_value);              \
+  } else {                                                             \
+    _thread = NULL;                                                    \
   }                                                                    \
   return *this;                                                        \
 }                                                                      \

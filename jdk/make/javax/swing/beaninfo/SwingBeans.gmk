@@ -124,10 +124,10 @@ $(BEANSRCDIR)/text/%BeanInfo.java: $(FAKESRC)/$(SWINGPKG)/text/%.java
 $(BEANSRCDIR)/%BeanInfo.java: $(FAKESRC)/$(SWINGPKG)/%.java
 	@$(ECHO) $< >> $(TEMPDIR)/.beans.list
 
-$(BEANSRCDIR)/SwingBeanInfoBase.java: $(DOCLETSRC)/beaninfo/SwingBeanInfoBase.java
+$(BEANSRCDIR)/SwingBeanInfoBase.java: $(DOCLETSRC)/javax/swing/SwingBeanInfoBase.java
 	$(CP) $< $@
 
-$(BEANSRCDIR)/BeanInfoUtils.java: $(DOCLETSRC)/beaninfo/BeanInfoUtils.java
+$(BEANSRCDIR)/BeanInfoUtils.java: $(DOCLETSRC)/sun/swing/BeanInfoUtils.java
 	$(CP) $< $@
 
 #
