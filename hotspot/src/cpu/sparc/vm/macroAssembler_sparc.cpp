@@ -1224,7 +1224,7 @@ void  MacroAssembler::set_narrow_oop(jobject obj, Register d) {
   // Relocation with special format (see relocInfo_sparc.hpp).
   relocate(rspec, 1);
   // Assembler::sethi(0x3fffff, d);
-  emit_long( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(0x3fffff) );
+  emit_int32( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(0x3fffff) );
   // Don't add relocation for 'add'. Do patching during 'sethi' processing.
   add(d, 0x3ff, d);
 
@@ -1240,7 +1240,7 @@ void  MacroAssembler::set_narrow_klass(Klass* k, Register d) {
   // Relocation with special format (see relocInfo_sparc.hpp).
   relocate(rspec, 1);
   // Assembler::sethi(encoded_k, d);
-  emit_long( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(encoded_k) );
+  emit_int32( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(encoded_k) );
   // Don't add relocation for 'add'. Do patching during 'sethi' processing.
   add(d, low10(encoded_k), d);
 

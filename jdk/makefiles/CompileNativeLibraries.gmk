@@ -35,6 +35,9 @@ include Setup.gmk
 # Copy files (can now depend on $(COPY_FILES))
 include CopyFiles.gmk
 
+# Prepare the find cache. Only used if running on windows.
+$(eval $(call FillCacheFind,$(JDK_TOPDIR)/src))
+
 # Build tools
 include Tools.gmk
 
@@ -2607,7 +2610,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBSUNMSCAPI,\
 		LIBRARY:=sunmscapi,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
 		SRC:=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/mscapi,\
-		INCLUDE_FILES:=security.cpp, \
 		LANG:=C++,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \

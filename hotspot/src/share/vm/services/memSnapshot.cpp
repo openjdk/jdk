@@ -384,6 +384,7 @@ MemSnapshot::MemSnapshot() {
   _staging_area.init();
   _lock = new (std::nothrow) Mutex(Monitor::max_nonleaf - 1, "memSnapshotLock");
   NOT_PRODUCT(_untracked_count = 0;)
+  _number_of_classes = 0;
 }
 
 MemSnapshot::~MemSnapshot() {
@@ -479,7 +480,7 @@ bool MemSnapshot::merge(MemRecorder* rec) {
 
 
 // promote data to next generation
-bool MemSnapshot::promote() {
+bool MemSnapshot::promote(int number_of_classes) {
   assert(_alloc_ptrs != NULL && _vm_ptrs != NULL, "Just check");
   assert(_staging_area.malloc_data() != NULL && _staging_area.vm_data() != NULL,
          "Just check");
@@ -496,6 +497,7 @@ bool MemSnapshot::promote() {
 
   NOT_PRODUCT(check_malloc_pointers();)
   _staging_area.clear();
+  _number_of_classes = number_of_classes;
   return promoted;
 }
 

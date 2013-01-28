@@ -549,7 +549,10 @@ else
   _WSCRIPT2 :=$(DEVTOOLS_PATH)wscript.exe
   WSCRIPT  :=$(call FileExists,$(_WSCRIPT1),$(_WSCRIPT2))
 endif
+# If CONFIGURE_BUILD is defined, checks were already done by configure.
+ifndef CONFIGURE_BUILD
 WSCRIPT:=$(call AltCheckSpaces,WSCRIPT)
+endif #! CONFIGURE_BUILD
 # batch mode no modal dialogs on errors, please.
 WSCRIPT += -B
 
@@ -562,7 +565,10 @@ else
   _CSCRIPT2 :=$(DEVTOOLS_PATH)cscript.exe
   CSCRIPT  :=$(call FileExists,$(_CSCRIPT1),$(_CSCRIPT2))
 endif
+# If CONFIGURE_BUILD is defined, checks were already done by configure.
+ifndef CONFIGURE_BUILD
 CSCRIPT:=$(call AltCheckSpaces,CSCRIPT)
+endif #! CONFIGURE_BUILD
 
 # CABARC: path to cabarc.exe (used in creating install bundles)
 ifdef ALT_CABARC
@@ -584,7 +590,10 @@ else
   _MSICERT2 :=$(DEVTOOLS_PATH)msicert.exe
   MSICERT   :=$(call FileExists,$(_MSICERT1),$(_MSICERT2))
 endif
+# If CONFIGURE_BUILD is defined, checks were already done by configure.
+ifndef CONFIGURE_BUILD
 MSICERT:=$(call AltCheckSpaces,MSICERT)
+endif #! CONFIGURE_BUILD
 
 # Import JDK images allow for partial builds, components not built are
 #    imported (or copied from) these import areas when needed.
