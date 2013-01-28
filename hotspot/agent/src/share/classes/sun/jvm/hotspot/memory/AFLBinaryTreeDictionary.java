@@ -1,6 +1,5 @@
 /*
- * @(#)FreeList.java
- *
+ * @(#)BinaryTreeDictionary.java
  * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +30,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.runtime.*;
 
-public class FreeList extends VMObject {
+public class AFLBinaryTreeDictionary extends VMObject {
    static {
       VM.registerVMInitializedObserver(new Observer() {
          public void update(Observable o, Object data) {
@@ -41,32 +40,20 @@ public class FreeList extends VMObject {
    }
 
    private static synchronized void initialize(TypeDataBase db) {
-      Type type = db.lookupType("FreeList<FreeChunk>");
-      sizeField = type.getCIntegerField("_size");
-      countField = type.getCIntegerField("_count");
-      headerSize = type.getSize();
+      Type type = db.lookupType("AFLBinaryTreeDictionary");
+      totalSizeField = type.getCIntegerField("_total_size");
    }
 
    // Fields
-   private static CIntegerField sizeField;
-   private static CIntegerField countField;
-   private static long          headerSize;
-
-   //Constructor
-   public FreeList(Address address) {
-     super(address);
-   }
+   private static CIntegerField totalSizeField;
 
    // Accessors
    public long size() {
-      return sizeField.getValue(addr);
+      return totalSizeField.getValue(addr);
    }
 
-   public long count() {
-      return  countField.getValue(addr);
+   // Constructor
+   public AFLBinaryTreeDictionary(Address addr) {
+      super(addr);
    }
-
-   public static long sizeOf() {
-     return headerSize;
-  }
 }

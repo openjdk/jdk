@@ -2472,10 +2472,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump", &tail)) {
-#if defined(KERNEL)
-      vm_exit_during_initialization(
-          "Dumping a shared archive is not supported on the Kernel JVM.", NULL);
-#elif !INCLUDE_CDS
+#if !INCLUDE_CDS
       vm_exit_during_initialization(
           "Dumping a shared archive is not supported in this VM.", NULL);
 #else
@@ -3462,36 +3459,6 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
 
   PropertyList_add(plist, k, v);
 }
-
-#ifdef KERNEL
-char *Arguments::get_kernel_properties() {
-  // Find properties starting with kernel and append them to string
-  // We need to find out how long they are first because the URL's that they
-  // might point to could get long.
-  int length = 0;
-  SystemProperty* prop;
-  for (prop = _system_properties; prop != NULL; prop = prop->next()) {
-    if (strncmp(prop->key(), "kernel.", 7 ) == 0) {
-      length += (strlen(prop->key()) + strlen(prop->value()) + 5);  // "-D ="
-    }
-  }
-  // Add one for null terminator.
-  char *props = AllocateHeap(length + 1, mtInternal);
-  if (length != 0) {
-    int pos = 0;
-    for (prop = _system_properties; prop != NULL; prop = prop->next()) {
-      if (strncmp(prop->key(), "kernel.", 7 ) == 0) {
-        jio_snprintf(&props[pos], length-pos,
-                     "-D%s=%s ", prop->key(), prop->value());
-        pos = strlen(props);
-      }
-    }
-  }
-  // null terminate props in case of null
-  props[length] = '\0';
-  return props;
-}
-#endif // KERNEL
 
 // Copies src into buf, replacing "%%" with "%" and "%p" with pid
 // Returns true if all of the source pointed by src has been copied over to

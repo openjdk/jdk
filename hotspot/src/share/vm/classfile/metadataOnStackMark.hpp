@@ -1,6 +1,5 @@
 /*
- * @(#)BinaryTreeDictionary.java
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +22,24 @@
  *
  */
 
-package sun.jvm.hotspot.memory;
+#ifndef SHARE_VM_CLASSFILE_METADATAONSTACKMARK_HPP
+#define SHARE_VM_CLASSFILE_METADATAONSTACKMARK_HPP
 
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.runtime.*;
+#include "memory/allocation.hpp"
 
-public class BinaryTreeDictionary extends VMObject {
-   static {
-      VM.registerVMInitializedObserver(new Observer() {
-         public void update(Observable o, Object data) {
-            initialize(VM.getVM().getTypeDataBase());
-         }
-      });
-   }
+class Metadata;
 
-   private static synchronized void initialize(TypeDataBase db) {
-      Type type = db.lookupType("BinaryTreeDictionary");
-      totalSizeField = type.getCIntegerField("_totalSize");
-   }
+// Helper class to mark and unmark metadata used on the stack as either handles
+// or executing methods, so that it can't be deleted during class redefinition
+// and class unloading.
+// This is also used for other things that can be deallocated, like class
+// metadata during parsing, relocated methods, and methods in backtraces.
+class MetadataOnStackMark : public StackObj {
+  NOT_PRODUCT(static bool _is_active;)
+ public:
+  MetadataOnStackMark();
+  ~MetadataOnStackMark();
+  static void record(Metadata* m);
+};
 
-   // Fields
-   private static CIntegerField totalSizeField;
-
-   // Accessors
-   public long size() {
-      return totalSizeField.getValue(addr);
-   }
-
-   // Constructor
-   public BinaryTreeDictionary(Address addr) {
-      super(addr);
-   }
-}
+#endif // SHARE_VM_CLASSFILE_METADATAONSTACKMARK_HPP

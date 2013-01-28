@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,17 +487,4 @@ class VM_RedefineClasses: public VM_Operation {
   // and redefine implementation
   static bool is_modifiable_class(oop klass_mirror);
 };
-
-
-// Helper class to mark and unmark metadata used on the stack as either handles
-// or executing methods, so that it can't be deleted during class redefinition
-// and class unloading.
-class MetadataOnStackMark : public StackObj {
-  NOT_PRODUCT(static bool _is_active;)
- public:
-  MetadataOnStackMark() NOT_JVMTI_RETURN;
-  ~MetadataOnStackMark() NOT_JVMTI_RETURN;
-  static void record(Metadata* m) NOT_JVMTI_RETURN;
-};
-
 #endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP

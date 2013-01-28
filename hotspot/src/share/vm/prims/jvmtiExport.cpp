@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,7 +677,6 @@ void JvmtiExport::report_unsupported(bool on) {
 }
 
 
-#ifndef JVMTI_KERNEL
 static inline Klass* oop_to_klass(oop obj) {
   Klass* k = obj->klass();
 
@@ -2178,7 +2177,6 @@ extern "C" {
   typedef jint (JNICALL *OnAttachEntry_t)(JavaVM*, char *, void *);
 }
 
-#ifndef SERVICES_KERNEL
 jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
   char ebuf[1024];
   char buffer[JVM_MAXPATHLEN];
@@ -2259,7 +2257,6 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
   }
   return result;
 }
-#endif // SERVICES_KERNEL
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2457,4 +2454,3 @@ JvmtiGCMarker::~JvmtiGCMarker() {
     JvmtiExport::post_garbage_collection_finish();
   }
 }
-#endif // JVMTI_KERNEL

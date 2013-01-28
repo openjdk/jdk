@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
 #include "code/codeCache.hpp"
@@ -114,43 +115,6 @@ bool VM_RedefineClasses::doit_prologue() {
   RC_TIMER_STOP(_timer_vm_op_prologue);
   return true;
 }
-
-// Keep track of marked on-stack metadata so it can be cleared.
-GrowableArray<Metadata*>* _marked_objects = NULL;
-NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
-
-// Walk metadata on the stack and mark it so that redefinition doesn't delete
-// it.  Class unloading also walks the previous versions and might try to
-// delete it, so this class is used by class unloading also.
-MetadataOnStackMark::MetadataOnStackMark() {
-  assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
-  NOT_PRODUCT(_is_active = true;)
-  if (_marked_objects == NULL) {
-    _marked_objects = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(1000, true);
-  }
-  Threads::metadata_do(Metadata::mark_on_stack);
-  CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
-  CompileBroker::mark_on_stack();
-}
-
-MetadataOnStackMark::~MetadataOnStackMark() {
-  assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
-  // Unmark everything that was marked.   Can't do the same walk because
-  // redefine classes messes up the code cache so the set of methods
-  // might not be the same.
-  for (int i = 0; i< _marked_objects->length(); i++) {
-    _marked_objects->at(i)->set_on_stack(false);
-  }
-  _marked_objects->clear();   // reuse growable array for next time.
-  NOT_PRODUCT(_is_active = false;)
-}
-
-// Record which objects are marked so we can unmark the same objects.
-void MetadataOnStackMark::record(Metadata* m) {
-  assert(_is_active, "metadata on stack marking is active");
-  _marked_objects->push(m);
-}
-
 
 void VM_RedefineClasses::doit() {
   Thread *thread = Thread::current();
@@ -1158,6 +1122,8 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
       }
     } // end for each old_cp entry
 
+    ConstantPool::copy_operands(old_cp, *merge_cp_p, CHECK_0);
+
     // We don't need to sanity check that *merge_cp_length_p is within
     // *merge_cp_p bounds since we have the minimum on-entry check above.
     (*merge_cp_length_p) = old_i;
@@ -1341,8 +1307,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   _index_map_count = 0;
   _index_map_p = new intArray(scratch_cp->length(), -1);
 
+  // reference to the cp holder is needed for copy_operands()
+  merge_cp->set_pool_holder(scratch_class());
   bool result = merge_constant_pools(old_cp, scratch_cp, &merge_cp,
                   &merge_cp_length, THREAD);
+  merge_cp->set_pool_holder(NULL);
+
   if (!result) {
     // The merge can fail due to memory allocation failure or due
     // to robustness checks.
@@ -2416,13 +2386,14 @@ void VM_RedefineClasses::set_new_constant_pool(
   assert(version != 0, "sanity check");
   smaller_cp->set_version(version);
 
+  // attach klass to new constant pool
+  // reference to the cp holder is needed for copy_operands()
+  smaller_cp->set_pool_holder(scratch_class());
+
   scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
   scratch_cp = smaller_cp;
 
   // attach new constant pool to klass
-  scratch_cp->set_pool_holder(scratch_class());
-
-  // attach klass to new constant pool
   scratch_class->set_constants(scratch_cp());
 
   int i;  // for portability
@@ -3140,11 +3111,9 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   Klass* the_class_oop = java_lang_Class::as_Klass(the_class_mirror);
   instanceKlassHandle the_class = instanceKlassHandle(THREAD, the_class_oop);
 
-#ifndef JVMTI_KERNEL
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   jvmti_breakpoints.clearall_in_class_at_safepoint(the_class_oop);
-#endif // !JVMTI_KERNEL
 
   if (the_class_oop == Universe::reflect_invoke_cache()->klass()) {
     // We are redefining java.lang.reflect.Method. Method.invoke() is
