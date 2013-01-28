@@ -74,27 +74,18 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     // default options passed to Nashorn Options object
     private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-af", "-doe" };
 
-    NashornScriptEngine(final NashornScriptEngineFactory factory) {
-        this(factory, DEFAULT_OPTIONS);
+    NashornScriptEngine(final NashornScriptEngineFactory factory, final ClassLoader appLoader) {
+        this(factory, DEFAULT_OPTIONS, appLoader);
     }
 
     @SuppressWarnings("LeakingThisInConstructor")
-    NashornScriptEngine(final NashornScriptEngineFactory factory, final String[] args) {
+    NashornScriptEngine(final NashornScriptEngineFactory factory, final String[] args, final ClassLoader appLoader) {
         this.factory = factory;
         final Options options = new Options("nashorn");
         options.process(args);
 
         // throw ParseException on first error from script
         final ErrorManager errMgr = new Context.ThrowErrorManager();
-        // application loader for the context
-        ClassLoader tmp;
-        try {
-            tmp = Thread.currentThread().getContextClassLoader();
-        } catch (final SecurityException se) {
-            tmp = null;
-        }
-        final ClassLoader appLoader = tmp;
-
         // create new Nashorn Context
         this.nashornContext = AccessController.doPrivileged(new PrivilegedAction<Context>() {
             @Override
