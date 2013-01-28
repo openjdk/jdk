@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,16 @@ public interface Type {
      * @since 1.5
      */
     WildcardType asWildcardType();
+
+    /**
+     * Returns this type as a <code>AnnotatedType</code> if it represents
+     * an annotated type.
+     *
+     * @return a <code>AnnotatedType</code> if the type if an annotated type,
+     *         or null if it is not
+     * @since 1.8
+     */
+    AnnotatedType asAnnotatedType();
 
     /**
      * Return this type as an <code>AnnotationTypeDoc</code> if it represents

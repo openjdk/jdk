@@ -1,4 +1,0 @@
-TargetType11.java:16:61: compiler.warn.unchecked.varargs.non.reifiable.type: TargetType11.Predicate<? super T>
-TargetType11.java:20:32: compiler.err.cant.apply.symbol: kindname.method, and, TargetType11.Predicate<? super T>[], @706,@718, kindname.class, TargetType11.Test, (compiler.misc.cyclic.inference: T)
-1 error
-1 warning

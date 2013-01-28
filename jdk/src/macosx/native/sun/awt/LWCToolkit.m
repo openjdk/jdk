@@ -415,13 +415,9 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_LWCToolkit_isApplicationActive
 
 JNF_COCOA_ENTER(env);
 
-    if ([NSThread isMainThread]) {
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
         active = (jboolean)[NSRunningApplication currentApplication].active;
-    } else {
-        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^() {
-            active = (jboolean)[NSRunningApplication currentApplication].active;
-        }];
-    }
+    }];
 
 JNF_COCOA_EXIT(env);
 

@@ -39,6 +39,10 @@ then
   echo "TESTJAVA not set.  Test cannot execute.  Failed."
   exit 1
 fi
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 echo "TESTJAVA=${TESTJAVA}"
 if [ "${TESTCLASSES}" = "" ]
 then
@@ -92,8 +96,9 @@ EOF
 mk ${SPIDIR}${FS}dest${FS}META-INF${FS}services${FS}java.util.spi.TimeZoneNameProvider << EOF
 tznp
 EOF
-${TESTJAVA}${FS}bin${FS}javac -d ${SPIDIR}${FS}dest ${SPIDIR}${FS}src${FS}tznp.java
-${TESTJAVA}${FS}bin${FS}jar cvf ${SPIDIR}${FS}tznp.jar -C ${SPIDIR}${FS}dest .
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${SPIDIR}${FS}dest \
+    ${SPIDIR}${FS}src${FS}tznp.java
+${COMPILEJAVA}${FS}bin${FS}jar ${TESTTOOLVMOPTS} cvf ${SPIDIR}${FS}tznp.jar -C ${SPIDIR}${FS}dest .
 
 # get the platform default locales
 PLATDEF=`${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale display`

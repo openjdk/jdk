@@ -126,7 +126,7 @@ public:
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const;
 #ifndef PRODUCT
-  virtual void dump_req() const;
+  virtual void dump_req(outputStream *st = tty) const;
 #endif
 };
 
@@ -147,7 +147,7 @@ class RethrowNode : public Node {
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
 #ifndef PRODUCT
-  virtual void dump_req() const;
+  virtual void dump_req(outputStream *st = tty) const;
 #endif
 };
 
@@ -579,7 +579,7 @@ public:
   virtual uint match_edge(uint idx) const;
 
 #ifndef PRODUCT
-  virtual void        dump_req()  const;
+  virtual void        dump_req(outputStream *st = tty) const;
   virtual void        dump_spec(outputStream *st) const;
 #endif
 };

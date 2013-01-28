@@ -52,10 +52,10 @@ class SolarisAclFileAttributeView
     /**
      * typedef struct ace {
      *     uid_t        a_who;
-     *     uitn32_t     a_access_mark;
+     *     uint32_t     a_access_mask;
      *     uint16_t     a_flags;
      *     uint16_t     a_type;
-     * } act_t;
+     * } ace_t;
      */
     private static final short SIZEOF_ACE_T     = 12;
     private static final short OFFSETOF_UID     = 0;
@@ -209,21 +209,16 @@ class SolarisAclFileAttributeView
 
             // map uid and flags to UserPrincipal
             UnixUserPrincipals.User who = null;
-            if (uid == -1) {
-                if ((flags & ACE_OWNER) > 0)
-                    who = UnixUserPrincipals.SPECIAL_OWNER;
-                if ((flags & ACE_GROUP) > 0)
-                    who = UnixUserPrincipals.SPECIAL_GROUP;
-                if ((flags & ACE_EVERYONE) > 0)
-                    who = UnixUserPrincipals.SPECIAL_EVERYONE;
-                if (who == null)
-                    throw new AssertionError("ACE who not handled");
+            if ((flags & ACE_OWNER) > 0) {
+                who = UnixUserPrincipals.SPECIAL_OWNER;
+            } else if ((flags & ACE_GROUP) > 0) {
+                who = UnixUserPrincipals.SPECIAL_GROUP;
+            } else if ((flags & ACE_EVERYONE) > 0) {
+                who = UnixUserPrincipals.SPECIAL_EVERYONE;
+            } else if ((flags & ACE_IDENTIFIER_GROUP) > 0) {
+                who = UnixUserPrincipals.fromGid(uid);
             } else {
-                // can be gid
-                if ((flags & ACE_IDENTIFIER_GROUP) > 0)
-                    who = UnixUserPrincipals.fromGid(uid);
-                else
-                    who = UnixUserPrincipals.fromUid(uid);
+                who = UnixUserPrincipals.fromUid(uid);
             }
 
             AclEntryType aceType = null;

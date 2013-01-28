@@ -39,6 +39,9 @@ if [ "${TESTJAVA}" = "" ] ; then
   echo "FAILED!!!"
   exit 1
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 
 # set platform-dependent variables
 PF=""
@@ -103,7 +106,7 @@ echo "==================================================="
 
 # the test code
 
-${TESTJAVA}${FS}bin${FS}javac -target 1.4 -source 1.4 \
+${COMPILEJAVA}${FS}bin${FS}javac -target 1.4 -source 1.4 \
         -d . ${TESTSRC}${FS}SerialTest.java || exit 10
 
 # You can set ALT_JAVA_RE_JDK to another location that contains the

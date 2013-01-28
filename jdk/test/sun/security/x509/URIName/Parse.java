@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6500133
- * @summary CRL Distribution Point URIs with spaces or backslashes should be
- *          parseable
+ * @bug 8005389
+ * @summary CRL Distribution Point URIs with spaces or backslashes should
+ *          not be parseable
  */
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import sun.security.util.DerValue;
@@ -90,27 +91,45 @@ public class Parse {
     }
 
     public static void main(String[] args) throws Exception {
-        /* Parse a CRLDistributionPointsExtension URI with a space. */
-        CRLDistributionPointsExtensionTest(certWithSpaceInCDPStr);
-        System.out.println("Parsed CRLDistributionPointsExtension uri with "
-                            + "a space.");
+        /* Try to parse a CRLDistributionPointsExtension URI with a space. */
+        try {
+            CRLDistributionPointsExtensionTest(certWithSpaceInCDPStr);
+            throw new RuntimeException("Illegally parsed a "
+                    + "CRLDistributionPointsExtension uri with a space.");
+        } catch (IOException e) {
+            System.out.println("Caught the correct exception.");
 
-        /* Parse a CRLDistributionPointsExtension URI with backslashes. */
-        CRLDistributionPointsExtensionTest(certWithBackslashesInCDPStr);
-        System.out.println("Parsed CRLDistributionPointsExtension uri with "
-                            + "backslashes.");
+        }
 
-        /* Constructor a URIName from a uri with a space. */
+        /* Try to parse a CRLDistributionPointsExtension URI with backslashes. */
+        try {
+            CRLDistributionPointsExtensionTest(certWithBackslashesInCDPStr);
+            throw new RuntimeException("Illegally parsed a "
+                    + "CRLDistributionPointsExtension uri with a backslashes.");
+        } catch (IOException e) {
+            System.out.println("Caught the correct exception.");
+        }
+
+        /* Try to construct a URIName from a uri with a space. */
         String uriWithSpace = "file://crl file.crl";
-        URIName name = new URIName(uriWithSpace);
-        System.out.println("URI re-encoded from " + uriWithSpace
-                            + " to " + name.getName());
+        URIName name;
+        try {
+            name = new URIName(uriWithSpace);
+            throw new RuntimeException("Illegally created a URIName "
+                    + "from a uri with a space.");
+        } catch (IOException e) {
+            System.out.println("Caught the correct exception.");
+        }
 
-        /* Construct a URIName from a uri with backslashes. */
+        /* Try to construct a URIName from a uri with backslashes. */
         String uriWithBackslashes = "file://\\\\CRL\\crl_file.crl";
-        name = new URIName(uriWithBackslashes);
-        System.out.println("URI re-encoded from " + uriWithBackslashes
-                            + " to " + name.getName());
+        try {
+            name = new URIName(uriWithBackslashes);
+            throw new RuntimeException("Illegally created a URIName "
+                    + "from a uri with backslashes.");
+        } catch (IOException e) {
+            System.out.println("Caught the correct exception.");
+        }
 
         System.out.println("Tests passed.");
     }
