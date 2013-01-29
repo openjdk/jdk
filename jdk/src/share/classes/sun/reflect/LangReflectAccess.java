@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,9 @@ public interface LangReflectAccess {
         java.lang.reflect.Constructor */
     public void setConstructorAccessor(Constructor<?> c,
                                        ConstructorAccessor accessor);
+
+    /** Gets the byte[] that encodes TypeAnnotations on an Executable. */
+    public byte[] getExecutableTypeAnnotationBytes(Executable ex);
 
     /** Gets the "slot" field from a Constructor (used for serialization) */
     public int getConstructorSlot(Constructor<?> c);
