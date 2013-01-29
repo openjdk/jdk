@@ -141,6 +141,16 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
     }
 
     /**
+     * Create a new Script engine initialized by given class loader.
+     *
+     * @param appLoader class loader to be used as script "app" class loader.
+     * @return newly created script engine.
+     */
+    public ScriptEngine getScriptEngine(final ClassLoader appLoader) {
+        return new NashornScriptEngine(this, appLoader);
+    }
+
+    /**
      * Create a new Script engine initialized by given arguments.
      *
      * @param args arguments array passed to script engine.
@@ -148,6 +158,17 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      */
     public ScriptEngine getScriptEngine(final String[] args) {
         return new NashornScriptEngine(this, args, getAppClassLoader());
+    }
+
+    /**
+     * Create a new Script engine initialized by given arguments.
+     *
+     * @param args arguments array passed to script engine.
+     * @param appLoader class loader to be used as script "app" class loader.
+     * @return newly created script engine.
+     */
+    public ScriptEngine getScriptEngine(final String[] args, final ClassLoader appLoader) {
+        return new NashornScriptEngine(this, args, appLoader);
     }
 
     // -- Internals only below this point
@@ -180,7 +201,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
 
     private static ClassLoader getAppClassLoader() {
         if (System.getSecurityManager() == null) {
-            return ClassLoader.getSystemClassLoader();
+            return Thread.currentThread().getContextClassLoader();
         }
 
         // Try to determine the caller class loader. Use that if it can be
