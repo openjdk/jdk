@@ -39,7 +39,14 @@ JDK_CLASSES := $(JDK_OUTPUTDIR)/classes
 DYNALINK_JAR := $(NASHORN_TOPDIR)/build/dynalink/dynalink.jar
 
 NASHORN_JAR := $(NASHORN_DIST)/nashorn.jar
-NASHORN_VERSION := 0.1
+NASHORN_VERSION := $(JDK_VERSION)
+NASHORN_FULL_VERSION := $(FULL_VERSION)
+
+ifdef MILESTONE
+  ifeq ($(MILESTONE),internal)
+    NASHORN_VERSION = $(FULL_VERSION)
+  endif
+endif
 
 # Need to use source and target 7 for nasgen to work.
 $(eval $(call SetupJavaCompiler,COMPILER_SETUP,\
@@ -97,12 +104,12 @@ $(VERSION_FILE): $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run
 $(VERSION_FILE): $(NASHORN_TOPDIR)/src/jdk/nashorn/internal/runtime/resources/version.properties-template
 	$(ECHO) Creating version.properties
 	$(MKDIR) -p $(@D)
-	$(CAT) $< | $(SED) -e 's/$$(FULL_VERSION)/$(NASHORN_VERSION)/g' \
+	$(CAT) $< | $(SED) -e 's/$$(FULL_VERSION)/$(NASHORN_FULL_VERSION)/g' \
 		-e 's/$$(RELEASE)/$(NASHORN_VERSION)/g' \
 		-e '/^#.*$$/d' -e '/^$$/d'  > $@
 
 
-MANIFEST_ATTRIBUTES:=Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\nImplementation-Version: $(NASHORN_VERSION)
+MANIFEST_ATTRIBUTES:=Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\nImplementation-Version: $(NASHORN_FULL_VERSION)
 
 # Create nashorn.jar from the final classes dir
 $(eval $(call SetupArchive,BUILD_NASHORN_JAR,\
@@ -117,5 +124,5 @@ $(eval $(call SetupArchive,BUILD_NASHORN_JAR,\
     JAR:=$(NASHORN_JAR)))
 
 all: $(NASHORN_JAR)
-
+    
 .PHONY: all
