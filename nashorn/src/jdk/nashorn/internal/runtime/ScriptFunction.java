@@ -892,7 +892,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
     @SuppressWarnings("unused")
     private static Object newFilter(final Object result, final Object allocation) {
-        return result instanceof ScriptObject ? result : allocation;
+        return (result instanceof ScriptObject || !JSType.isPrimitive(result))? result : allocation;
     }
 
     /**
