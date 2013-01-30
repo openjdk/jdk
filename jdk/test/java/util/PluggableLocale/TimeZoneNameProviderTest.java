@@ -52,7 +52,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
 
         for (Locale target: available) {
             // pure JRE implementation
-            OpenListResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getTimeZoneNames(target);
+            OpenListResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getTimeZoneNames(target);
             boolean jreSupportsTarget = jreimplloc.contains(target);
 
             for (String id: ids) {

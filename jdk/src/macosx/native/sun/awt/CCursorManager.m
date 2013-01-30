@@ -74,7 +74,6 @@ Java_sun_lwawt_macosx_CCursorManager_nativeSetBuiltInCursor
 (JNIEnv *env, jclass class, jint type, jstring name)
 {
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     NSString *cursorName = JNFJavaToNSString(env, name);
     SEL cursorSelector = (type == sun_lwawt_macosx_CCursorManager_NAMED_CURSOR) ? lookupCursorSelectorForName(cursorName) : lookupCursorSelectorForType(type);
@@ -87,9 +86,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
         [JNFException raise:env as:kNoSuchMethodException reason:"missing NSCursor selector"];
     }
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         setCursorOnAppKitThread([[NSCursor class] performSelector:cursorSelector]);
     }];
 
@@ -101,12 +98,9 @@ Java_sun_lwawt_macosx_CCursorManager_nativeSetCustomCursor
 (JNIEnv *env, jclass class, jlong imgPtr, jdouble x, jdouble y)
 {
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
     NSImage *image = (NSImage *)jlong_to_ptr(imgPtr);
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         NSCursor *cursor = [[NSCursor alloc] initWithImage:image
                                                    hotSpot:(NSPoint){ x, y }];
         setCursorOnAppKitThread(cursor);
@@ -127,8 +121,6 @@ JNF_COCOA_ENTER(env);
     __block NSPoint pt = NSZeroPoint;
     
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-            AWT_ASSERT_APPKIT_THREAD;
-        
             pt = ConvertNSScreenPoint(env, [NSEvent mouseLocation]);
     }];
     
@@ -144,13 +136,11 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CCursorManager_nativeSetAllowsCursorSetInBackground
 (JNIEnv *env, jclass class, jboolean allows)
 {
-
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     SEL allowsSetInBackground_SEL = @selector(javaSetAllowsCursorSetInBackground:);
     if ([[NSCursor class] respondsToSelector:allowsSetInBackground_SEL]) {
-        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+        [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
             NSMethodSignature *allowsSetInBackground_sig =
                 [[NSCursor class] methodSignatureForSelector:allowsSetInBackground_SEL];
             NSInvocation *invocation =

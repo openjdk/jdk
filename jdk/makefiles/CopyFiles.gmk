@@ -42,7 +42,7 @@ H_TARGET_FILES =$(INCLUDEDIR)/jdwpTransport.h		\
 		$(INCLUDEDIR)/jvmticmlr.h		\
 		$(INCLUDEDIR)/classfile_constants.h	\
 		$(INCLUDEDIR)/jawt.h			\
-		$(OPENJDK_TARGET_OS_INCLUDE)/jni_md.h		\
+		$(OPENJDK_TARGET_OS_INCLUDE)/jni_md.h	\
 		$(OPENJDK_TARGET_OS_INCLUDE)/jawt_md.h
 
 $(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/share/javavm/export/%.h
@@ -56,6 +56,27 @@ $(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)
 	$(CP) $< $@
 
 COPY_FILES = $(H_TARGET_FILES)
+
+##########################################################################################
+
+ifndef OPENJDK
+ifeq ($(OPENJDK_TARGET_OS), windows)
+    COPY_FILES += $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgeCallbacks.h \
+		  $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgeCalls.h \
+		  $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgePackages.h \
+		  $(OPENJDK_TARGET_OS_INCLUDE)/bridge/AccessBridgeCalls.c \
+		  $(JDK_OUTPUTDIR)/lib/accessibility.properties
+
+    $(OPENJDK_TARGET_OS_INCLUDE)/bridge/%: \
+		$(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/%
+	$(install-file)
+
+    $(JDK_OUTPUTDIR)/lib/accessibility.properties: \
+		$(JDK_TOPDIR)/src/closed/windows/native/sun/bridge/accessibility.properties
+	$(install-file)
+
+endif
+endif
 
 ##########################################################################################
 

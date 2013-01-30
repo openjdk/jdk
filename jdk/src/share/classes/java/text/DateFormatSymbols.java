@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
 import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
@@ -680,13 +681,10 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         // Initialize the fields from the ResourceBundle for locale.
         LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateFormatSymbolsProvider.class, locale);
         // Avoid any potential recursions
-        switch (adapter.getAdapterType()) {
-        case HOST:
-        case SPI:
+        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
             adapter = LocaleProviderAdapter.getResourceBundleBased();
-            break;
         }
-        ResourceBundle resource = adapter.getLocaleData().getDateFormatData(locale);
+        ResourceBundle resource = ((ResourceBundleBasedAdapter)adapter).getLocaleData().getDateFormatData(locale);
 
         // JRE and CLDR use different keys
         // JRE: Eras, short.Eras and narrow.Eras

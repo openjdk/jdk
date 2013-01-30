@@ -104,7 +104,6 @@ JNF_COCOA_EXIT(env);
 }
 
 - (void) setJavaLabel:(NSString *)theLabel shortcut:(NSString *)theKeyEquivalent modifierMask:(jint)modifiers {
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     NSUInteger modifierMask = 0;
 
@@ -126,8 +125,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
         modifierMask = JavaModifiersToNsKeyModifiers(modifiers, NO);
     }
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         [fMenuItem setKeyEquivalent:theKeyEquivalent];
         [fMenuItem setKeyEquivalentModifierMask:modifierMask];
         [fMenuItem setTitle:theLabel];
@@ -135,32 +133,23 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 }
 
 - (void) setJavaImage:(NSImage *)theImage {
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [fMenuItem setImage:theImage];
     }];
 }
 
 - (void) setJavaToolTipText:(NSString *)theText {
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [fMenuItem setToolTip:theText];
     }];
 }
 
 
 - (void)setJavaEnabled:(BOOL) enabled {
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         @synchronized(self) {
             fIsEnabled = enabled;
 
@@ -173,7 +162,6 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 }
 
 - (BOOL)isEnabled {
-    // AWT_ASSERT_ANY_THREAD;
 
     BOOL enabled = NO;
     @synchronized(self) {
@@ -184,11 +172,8 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 
 
 - (void)setJavaState:(BOOL)newState {
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-AWT_ASSERT_APPKIT_THREAD;
-
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [fMenuItem setState:(newState ? NSOnState : NSOffState)];
     }];
 }

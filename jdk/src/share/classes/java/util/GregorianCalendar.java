@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ package java.util;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.calendar.BaseCalendar;
 import sun.util.calendar.CalendarDate;
 import sun.util.calendar.CalendarSystem;
@@ -720,6 +719,18 @@ public class GregorianCalendar extends Calendar {
         // should be changed to set() when this constructor is made
         // public.
         this.internalSet(MILLISECOND, millis);
+    }
+
+    /**
+     * Constructs an empty GregorianCalendar.
+     *
+     * @param zone    the given time zone
+     * @param aLocale the given locale
+     * @param flag    the flag requesting an empty instance
+     */
+    GregorianCalendar(TimeZone zone, Locale locale, boolean flag) {
+        super(zone, locale);
+        gdate = (BaseCalendar.Date) gcal.newCalendarDate(getZone());
     }
 
 /////////////////

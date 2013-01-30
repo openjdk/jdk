@@ -35,6 +35,10 @@ then
         exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]; then
+        COMPILEJAVA="${TESTJAVA}"
+fi
+
 if [ "${TESTSRC}" = "" ]
 then
         TESTSRC="."
@@ -63,12 +67,12 @@ set -ex
 #
 # Compile the tests, package into their respective jars
 #
-${TESTJAVA}${FILESEP}bin${FILESEP}javac -d . \
+${COMPILEJAVA}${FILESEP}bin${FILESEP}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
     ${TESTSRC}${FILESEP}NotifyHandshakeTest.java \
     ${TESTSRC}${FILESEP}NotifyHandshakeTestHeyYou.java
-${TESTJAVA}${FILESEP}bin${FILESEP}jar -cvf com.jar \
+${COMPILEJAVA}${FILESEP}bin${FILESEP}jar ${TESTTOOLVMOPTS} -cvf com.jar \
     com${FILESEP}NotifyHandshakeTest*.class
-${TESTJAVA}${FILESEP}bin${FILESEP}jar -cvf edu.jar \
+${COMPILEJAVA}${FILESEP}bin${FILESEP}jar ${TESTTOOLVMOPTS} -cvf edu.jar \
     edu${FILESEP}NotifyHandshakeTestHeyYou.class
 
 #
