@@ -265,7 +265,7 @@ public final class NativeJSON extends ScriptObject {
 
        if (node instanceof LiteralNode) {
             // check for array literal
-            if (node.tokenType() == TokenType.LBRACKET) {
+            if (node.tokenType() == TokenType.ARRAY) {
                 assert node instanceof ArrayLiteralNode;
                 final Node[] elements = ((ArrayLiteralNode)node).getValue();
 

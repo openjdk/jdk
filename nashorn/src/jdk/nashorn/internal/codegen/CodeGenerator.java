@@ -56,7 +56,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -524,28 +523,6 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         return method;
     }
 
-    /**
-     * Create a new function object, including generating its stub code.
-     *
-     * @param functionNode  FunctionNode to utilize.
-     */
-    private void newFunctionObject(final FunctionNode functionNode) {
-         // Turn thisProperties into keys and symbols for the FunctionAnalyzer
-        final Map<String, Node> thisProperties = functionNode.getThisProperties();
-
-        final List<String> keys    = new ArrayList<>();
-        final List<Symbol> symbols = new ArrayList<>();
-
-        /* TODO - Predefine known properties.
-        for (final Entry<String, Node> entry : thisProperties.entrySet()) {
-            keys.add(entry.getKey());
-            symbols.add(entry.getValue().getSymbol());
-        }
-        */
-
-        new FunctionObjectCreator(this, functionNode, keys, symbols).makeObject(method);
-    }
-
     @Override
     public Node enter(final CallNode callNode) {
         if (callNode.testResolved()) {
@@ -603,12 +580,12 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
                 final CallNode.EvalArgs evalArgs = callNode.getEvalArgs();
                 // load evaluated code
-                load(evalArgs.code);
+                load(evalArgs.getCode());
                 method.convert(Type.OBJECT);
                 // special/extra 'eval' arguments
-                load(evalArgs.evalThis);
-                method.load(evalArgs.location);
-                method.load(evalArgs.strictMode);
+                load(evalArgs.getThis());
+                method.load(evalArgs.getLocation());
+                method.load(evalArgs.getStrictMode());
                 method.convert(Type.OBJECT);
 
                 // direct call to Global.directEval
@@ -683,7 +660,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 }
 
                 if (callee.needsCallee()) { // TODO: always true
-                    newFunctionObject(callee); // TODO: if callee not needed, function object is used only to pass scope (could be optimized). if neither the scope nor the function object is needed by the callee, we can pass null instead.
+                    new FunctionObjectCreator(CodeGenerator.this, callee).makeObject(method); // TODO: if callee not needed, function object is used only to pass scope (could be optimized). if neither the scope nor the function object is needed by the callee, we can pass null instead.
                 }
 
                 loadArgs(args, signature, isVarArg, argCount);
@@ -1300,6 +1277,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
     @SuppressWarnings("rawtypes")
     @Override
     public Node enter(final LiteralNode literalNode) {
+        assert literalNode.getSymbol() != null : literalNode + " has no symbol";
         load(literalNode).store(literalNode.getSymbol());
         return null;
     }
@@ -1410,7 +1388,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             return null;
         }
 
-        newFunctionObject(referenceNode.getReference());
+        new FunctionObjectCreator(this, referenceNode.getReference()).makeObject(method);
 
         return null;
     }
@@ -1561,15 +1539,12 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         /*
          * First check if this should be something other than a runtime node
          * AccessSpecializer might have changed the type
+         *
+         * TODO - remove this - Access Specializer will always know after Attr/Lower
          */
-        if (runtimeNode.isPrimitive()) {
-
+        if (runtimeNode.isPrimitive() && !runtimeNode.isFinal()) {
             final Node lhs = runtimeNode.getArgs().get(0);
-            Node rhs = null;
-
-            if (runtimeNode.getArgs().size() > 1) {
-                rhs = runtimeNode.getArgs().get(1);
-            }
+            final Node rhs = runtimeNode.getArgs().size() > 1 ? runtimeNode.getArgs().get(1) : null;
 
             final Type   type   = runtimeNode.getType();
             final Symbol symbol = runtimeNode.getSymbol();
@@ -1590,7 +1565,15 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             case GT:
                 return enterCmp(lhs, rhs, Condition.GT, type, symbol);
             case ADD:
-                return enterNumericAdd(lhs, rhs, type, symbol);
+                Type widest = Type.widest(lhs.getType(), rhs.getType());
+                load(lhs);
+                method.convert(widest);
+                load(rhs);
+                method.convert(widest);
+                method.add();
+                method.convert(type);
+                method.store(symbol);
+                return null;
             default:
                 // it's ok to send this one on with only primitive arguments, maybe INSTANCEOF(true, true) or similar
                 // assert false : runtimeNode + " has all primitive arguments. This is an inconsistent state";
@@ -1605,7 +1588,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             return null;
         }
 
-        if (specializationCheck(runtimeNode.getRequest(), runtimeNode, args)) {
+        if (!runtimeNode.isFinal() && specializationCheck(runtimeNode.getRequest(), runtimeNode, args)) {
             return null;
         }
 
@@ -2029,7 +2012,6 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         if (needsScope) {
             method.loadScope();
         }
-
         load(init);
 
         if (needsScope) {
@@ -2324,12 +2306,11 @@ public final class CodeGenerator extends NodeOperatorVisitor {
     }
 
     private Node enterNumericAdd(final Node lhs, final Node rhs, final Type type, final Symbol symbol) {
-        assert lhs.getType().equals(rhs.getType()) && lhs.getType().equals(type);
+        assert lhs.getType().equals(rhs.getType()) && lhs.getType().equals(type) : lhs.getType() + " != " + rhs.getType() + " != " + type + " " + new ASTWriter(lhs) + " " + new ASTWriter(rhs);
         load(lhs);
         load(rhs);
         method.add();
         method.store(symbol);
-
         return null;
     }
 
@@ -3152,17 +3133,19 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             /**
              * Take the original target args from the stack and use them
              * together with the value to be stored to emit the store code
+             *
+             * The case that targetSymbol is in scope (!hasSlot) and we actually
+             * need to do a conversion on non-equivalent types exists, but is
+             * very rare. See for example test/script/basic/access-specializer.js
              */
-            if (targetSymbol.hasSlot()) {
-                method.convert(target.getType());
-            }
+            method.convert(target.getType());
 
             target.accept(new NodeVisitor(compileUnit, method) {
                 @Override
                 public Node enter(final IdentNode node) {
                     final Symbol symbol = target.getSymbol();
                     if (symbol.isScope()) {
-                        if(symbol.isFastScope(currentFunction)) {
+                        if (symbol.isFastScope(currentFunction)) {
                             storeFastScopeVar(target.getType(), symbol, CALLSITE_SCOPE | getCallSiteFlags());
                         } else {
                             method.dynamicSet(target.getType(), node.getName(), CALLSITE_SCOPE | getCallSiteFlags());

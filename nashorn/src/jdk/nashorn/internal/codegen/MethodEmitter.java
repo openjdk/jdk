@@ -929,7 +929,7 @@ public class MethodEmitter implements Emitter {
      */
     public MethodEmitter loadCallee() {
         debug("load callee " + functionNode.getCalleeNode().getSymbol());
-        assert functionNode.getCalleeNode().getSymbol().getSlot() != 0;
+        assert functionNode.getCalleeNode().getSymbol().getSlot() != 0 : "callee has wrong slot " + functionNode.getCalleeNode().getSymbol().getSlot() + " in " + functionNode.getName();
 
         return load(functionNode.getCalleeNode().getSymbol());
     }
@@ -992,7 +992,7 @@ public class MethodEmitter implements Emitter {
      * @param symbol symbol to store stack to
      */
     public void store(final Symbol symbol) {
-        assert symbol != null;
+        assert symbol != null : "No symbol to store";
         if (symbol.hasSlot()) {
             debug("store", symbol);
             popType(symbol.getSymbolType()).store(method, symbol.getSlot());
@@ -1558,7 +1558,7 @@ public class MethodEmitter implements Emitter {
             label.setStack(stack.clone());
             return;
         }
-        assert stacksEquivalent(stack, labelStack);
+        assert stacksEquivalent(stack, labelStack) : "stacks " + stack + " is not equivalent with " + labelStack + " at join point";
     }
 
     /**

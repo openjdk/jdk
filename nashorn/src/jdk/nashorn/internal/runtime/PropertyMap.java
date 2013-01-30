@@ -635,7 +635,13 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
 
             sb.append(ScriptRuntime.safeToString(property.getKey()));
             final Class<?> ctype = property.getCurrentType();
-            sb.append(" <" + property.getClass().getSimpleName() + ":" + (ctype == null ? "undefined" : ctype.getSimpleName()) + ">");
+            sb.append(" <").
+                append(property.getClass().getSimpleName()).
+                append(':').
+                append(ctype == null ?
+                    "undefined" :
+                    ctype.getSimpleName()).
+                append('>');
         }
 
         sb.append(']');

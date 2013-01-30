@@ -28,7 +28,9 @@ package jdk.nashorn.internal.ir;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -57,16 +59,83 @@ public class CallNode extends Node implements TypeOverride {
      */
     public static class EvalArgs {
         /** evaluated code */
-        public Node    code;
+        private Node code;
+
         /** 'this' passed to evaluated code */
-        public Node    evalThis;
+        private IdentNode evalThis;
+
         /** location string for the eval call */
-        public String  location;
+        final private String location;
+
         /** is this call from a strict context? */
-        public boolean strictMode;
+        final private boolean strictMode;
+
+        /**
+         * Constructor
+         *
+         * @param code       code to evaluate
+         * @param evalThis   this node
+         * @param location   location for the eval call
+         * @param strictMode is this a call from a strict context?
+         */
+        public EvalArgs(final Node code, final IdentNode evalThis, final String location, final boolean strictMode) {
+            this.code = code;
+            this.evalThis = evalThis;
+            this.location = location;
+            this.strictMode = strictMode;
+        }
+
+        /**
+         * Return the code that is to be eval:ed by this eval function
+         * @return code as an AST node
+         */
+        public Node getCode() {
+            return code;
+        }
+
+        /**
+         * Set the code that is to be eval.ed by this eval function
+         * @param code the code as an AST node
+         */
+        public void setCode(final Node code) {
+            this.code = code;
+        }
+
+        /**
+         * Get the {@code this} symbol used to invoke this eval call
+         * @return the {@code this} symbol
+         */
+        public IdentNode getThis() {
+            return this.evalThis;
+        }
+
+        /**
+         * Set the {@code this} symbol used to invoke this eval call
+         * @param evalThis the {@code this} symbol
+         */
+        public void setThis(final IdentNode evalThis) {
+            this.evalThis = evalThis;
+        }
+
+        /**
+         * Get the human readable location for this eval call
+         * @return the location
+         */
+        public String getLocation() {
+            return this.location;
+        }
+
+        /**
+         * Check whether this eval call is executed in strict mode
+         * @return true if executed in strict mode, false otherwise
+         */
+        public boolean getStrictMode() {
+            return this.strictMode;
+        }
     }
 
     /** arguments for 'eval' call. Non-null only if this call node is 'eval' */
+    @Ignore
     private EvalArgs evalArgs;
 
     /**

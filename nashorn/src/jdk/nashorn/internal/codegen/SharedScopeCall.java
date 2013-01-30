@@ -159,7 +159,9 @@ public class SharedScopeCall {
             int slot = 2;
             for (final Type type : paramTypes) {
                 method.load(type, slot++);
-                if (type == Type.NUMBER || type == Type.LONG) slot++;
+                if (type == Type.NUMBER || type == Type.LONG) {
+                    slot++;
+                }
             }
             method.dynamicCall(returnType, paramTypes.length, flags);
         }

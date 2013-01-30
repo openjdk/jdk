@@ -113,8 +113,8 @@ public final class ASTWriter {
             status += " Goto ";
         }
 
-        if (node.getSymbol() != null && node.getSymbol().hasSlot()) {
-            status += " Slot " + node.getSymbol();
+        if (node.getSymbol() != null) {
+            status += node.getSymbol();
         }
 
         status = status.trim();

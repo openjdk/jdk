@@ -587,8 +587,6 @@ loop:
         script.setLastToken(token);
         script.setFinish(source.getLength() - 1);
 
-        block.addStatement(lineNumber());
-
         return script;
     }
 
@@ -610,6 +608,24 @@ loop:
                     // Make sure that we don't unescape anything. Return as seen in source!
                     return source.getString(lit.getStart(), Token.descLength(litToken));
                 }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return last node in a statement list.
+     *
+     * @param statements Statement list.
+     *
+     * @return Last (non-debug) statement or null if empty block.
+     */
+    private static Node lastStatement(final List<Node> statements) {
+        for (int lastIndex = statements.size() - 1; lastIndex >= 0; lastIndex--) {
+            final Node node = statements.get(lastIndex);
+            if (!node.isDebug()) {
+                return node;
             }
         }
 
@@ -645,7 +661,7 @@ loop:
                     // check for directive prologues
                     if (checkDirective) {
                         // skip any debug statement like line number to get actual first line
-                        final Node lastStatement = Node.lastStatement(block.getStatements());
+                        final Node lastStatement = lastStatement(block.getStatements());
 
                         // get directive prologue, if any
                         final String directive = getDirective(lastStatement);
@@ -677,7 +693,7 @@ loop:
                                     }
 
                                     // verify that function name as well as parameter names
-                                    // satisfystrict mode restrictions.
+                                    // satisfy strict mode restrictions.
                                     verifyStrictIdent(function.getIdent(), "function name");
                                     for (final IdentNode param : function.getParameters()) {
                                         verifyStrictIdent(param, "function parameter");
@@ -2628,12 +2644,12 @@ loop:
                 // just expression as function body
                 final Node expr = expression();
 
-                // create a return statement
-                final ReturnNode  returnNode  = new ReturnNode(source, expr.getToken(), finish, expr, null);
-                final ExecuteNode executeNode = new ExecuteNode(source, returnNode.getToken(), finish, returnNode);
+                // create a return statement - this creates code in itself and does not need to be
+                // wrapped into an ExecuteNode
+                final ReturnNode  returnNode = new ReturnNode(source, expr.getToken(), finish, expr, null);
 
                 // add the return statement
-                functionNode.addStatement(executeNode);
+                functionNode.addStatement(returnNode);
                 functionNode.setLastToken(token);
                 functionNode.setFinish(Token.descPosition(token) + Token.descLength(token));
 
@@ -2648,8 +2664,6 @@ loop:
                 functionNode.setFinish(finish);
 
             }
-
-            block.addStatement(lineNumber());
         } finally {
             restoreBlock();
         }

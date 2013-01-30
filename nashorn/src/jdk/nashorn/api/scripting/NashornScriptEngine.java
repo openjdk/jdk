@@ -327,6 +327,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         try {
             final InputStream is = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<InputStream>() {
+                        @Override
                         public InputStream run() throws Exception {
                             final URL url = NashornScriptEngine.class.getResource(script);
                             return url.openStream();

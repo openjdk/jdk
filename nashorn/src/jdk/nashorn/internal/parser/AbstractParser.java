@@ -96,11 +96,6 @@ public abstract class AbstractParser {
         this.token        = Token.toDesc(EOL, 0, 1);
         this.type         = EOL;
         this.last         = EOL;
-        this.start        = 0;
-        this.finish       = 0;
-        this.line         = 0;
-        this.linePosition = 0;
-        this.lexer        = null;
         this.isStrictMode = strict;
     }
 

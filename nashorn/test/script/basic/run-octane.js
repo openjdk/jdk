@@ -65,11 +65,7 @@ function endsWith(str, suffix) {
 
 function run_one_benchmark(arg, iters) {
 
-    load(path + 'base.js');
-    load(arg);
-
     var file_name;
-
     var file = arg.split('/');
     if (file.length == 1) {
         file = arg.split('\\');
@@ -80,9 +76,17 @@ function run_one_benchmark(arg, iters) {
 	file.pop();
     }
     file_name = file[file.length - 1];
+
+    if (typeof compile_only !== 'undefined') {
+	print("Compiling... " + file_name);
+    }
+
+    load(path + 'base.js');
+    load(arg);
     
     if (typeof compile_only !== 'undefined') {
 	print("Compiled OK: " + file_name);
+	print("");
 	return;
     }
     

@@ -26,6 +26,10 @@
 package jdk.nashorn.internal.ir;
 
 import java.io.PrintWriter;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.StringTokenizer;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -46,7 +50,7 @@ public final class Symbol implements Comparable<Symbol> {
     /** Is this a constant */
     public static final int IS_CONSTANT = 0b0000_0101;
 
-    static final int KINDMASK    = 0b0000_1111;
+    static final int KINDMASK = 0b0000_1111;
 
     /** Is this scope */
     public static final int IS_SCOPE         = 0b0000_0001_0000;
@@ -85,8 +89,33 @@ public final class Symbol implements Comparable<Symbol> {
     /** Number of times this symbol is used in code */
     private int useCount;
 
-    /** Debugging option - dump info and stack trace when a symbol with a given name is manipulated */
-    private static final String TRACE_SYMBOL = Options.getStringProperty("nashorn.compiler.symbol.trace", null);
+    /** Debugging option - dump info and stack trace when symbols with given names are manipulated */
+    private static final Set<String> TRACE_SYMBOLS;
+    private static final Set<String> TRACE_SYMBOLS_STACKTRACE;
+
+    static {
+        final String stacktrace = Options.getStringProperty("nashorn.compiler.symbol.stacktrace", null);
+        final String trace;
+        if (stacktrace != null) {
+            trace = stacktrace; //stacktrace always implies trace as well
+            TRACE_SYMBOLS_STACKTRACE = new HashSet<>();
+            for (StringTokenizer st = new StringTokenizer(stacktrace, ","); st.hasMoreTokens(); ) {
+                TRACE_SYMBOLS_STACKTRACE.add(st.nextToken());
+            }
+        } else {
+            trace = Options.getStringProperty("nashorn.compiler.symbol.trace", null);
+            TRACE_SYMBOLS_STACKTRACE = null;
+        }
+
+        if (trace != null) {
+            TRACE_SYMBOLS = new HashSet<>();
+            for (StringTokenizer st = new StringTokenizer(trace, ","); st.hasMoreTokens(); ) {
+                TRACE_SYMBOLS.add(st.nextToken());
+            }
+        } else {
+            TRACE_SYMBOLS = null;
+        }
+    }
 
     /**
      * Constructor
@@ -106,6 +135,7 @@ public final class Symbol implements Comparable<Symbol> {
         this.type       = type;
         this.slot       = slot;
         this.fieldIndex = -1;
+        trace("CREATE SYMBOL");
     }
 
     /**
@@ -135,7 +165,7 @@ public final class Symbol implements Comparable<Symbol> {
         final StringBuilder sb = new StringBuilder();
         sb.append(string.substring(0, Math.min(string.length(), max)));
 
-        while (sb.length () < max) {
+        while (sb.length() < max) {
             sb.append(' ');
         }
         return sb.toString();
@@ -263,6 +293,23 @@ public final class Symbol implements Comparable<Symbol> {
         return name.hashCode() ^ block.hashCode();
     }
 
+    private static String type(final String desc) {
+        switch (desc.charAt(desc.length() - 1)) {
+        case ';':
+            return desc;//"obj";
+        case 'D':
+            return "double";
+        case 'I':
+            return "int";
+        case 'J':
+            return "long";
+        case 'Z':
+            return "boolean";
+        default:
+            return "UNKNOWN";
+        }
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb   = new StringBuilder();
@@ -270,8 +317,8 @@ public final class Symbol implements Comparable<Symbol> {
 
         sb.append(name).
             append(' ').
-            append("(type=").
-            append(desc.charAt(desc.length() - 1) == ';' ? 'O' : desc).
+            append('(').
+            append(type(desc)).
             append(')');
 
         if (hasSlot()) {
@@ -602,10 +649,13 @@ public final class Symbol implements Comparable<Symbol> {
         return block instanceof FunctionNode && ((FunctionNode) block).isScript();
     }
 
+
     private void trace(final String desc) {
-        if (TRACE_SYMBOL != null && TRACE_SYMBOL.equals(name)) {
+        if (TRACE_SYMBOLS != null && (TRACE_SYMBOLS.isEmpty() || TRACE_SYMBOLS.contains(name))) {
             Context.err("SYMBOL: '" + name + "' " + desc);
-            new Throwable().printStackTrace(Context.getCurrentErr());
+            if (TRACE_SYMBOLS_STACKTRACE != null && (TRACE_SYMBOLS_STACKTRACE.isEmpty() || TRACE_SYMBOLS_STACKTRACE.contains(name))) {
+                new Throwable().printStackTrace(Context.getContext().getErr());
+            }
         }
     }
 }

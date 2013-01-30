@@ -257,6 +257,9 @@ public class RuntimeNode extends Node implements TypeOverride {
     /** Call site override - e.g. we know that a ScriptRuntime.ADD will return an int */
     private Type callSiteType;
 
+    /** is final - i.e. may not be removed again, lower in the code pipeline */
+    private boolean isFinal;
+
     /**
      * Constructor
      *
@@ -286,6 +289,51 @@ public class RuntimeNode extends Node implements TypeOverride {
         this(source, token, finish, request, Arrays.asList(args));
     }
 
+    /**
+     * Constructor
+     *
+     * @param parent  parent node from which to inherit source, token, finish
+     * @param request the request
+     * @param args    arguments to request
+     */
+    public RuntimeNode(final Node parent, final Request request, final Node... args) {
+        this(parent, request, Arrays.asList(args));
+    }
+
+    /**
+     * Constructor
+     *
+     * @param parent  parent node from which to inherit source, token, finish
+     * @param request the request
+     * @param args    arguments to request
+     */
+    public RuntimeNode(final Node parent, final Request request, final List<Node> args) {
+        super(parent);
+
+        this.request = request;
+        this.args    = args;
+    }
+
+    /**
+     * Constructor
+     *
+     * @param parent  parent node from which to inherit source, token, finish and arguments
+     * @param request the request
+     */
+    public RuntimeNode(final UnaryNode parent, final Request request) {
+        this(parent, request, parent.rhs());
+    }
+
+    /**
+     * Constructor
+     *
+     * @param parent  parent node from which to inherit source, token, finish and arguments
+     * @param request the request
+     */
+    public RuntimeNode(final BinaryNode parent, final Request request) {
+        this(parent, request, parent.lhs(), parent.rhs());
+    }
+
     private RuntimeNode(final RuntimeNode runtimeNode, final CopyState cs) {
         super(runtimeNode);
 
@@ -298,6 +346,21 @@ public class RuntimeNode extends Node implements TypeOverride {
         this.request      = runtimeNode.request;
         this.args         = newArgs;
         this.callSiteType = runtimeNode.callSiteType;
+    }
+
+    /**
+     * Is this node final - i.e. it can never be replaced with other nodes again
+     * @return true if final
+     */
+    public boolean isFinal() {
+        return isFinal;
+    }
+
+    /**
+     * Flag this node as final - i.e it may never be replaced with other nodes again
+     */
+    public void setIsFinal() {
+        this.isFinal = true;
     }
 
     @Override

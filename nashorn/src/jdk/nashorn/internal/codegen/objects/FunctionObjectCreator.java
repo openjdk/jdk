@@ -33,8 +33,9 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup
 import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
+
 import jdk.nashorn.internal.codegen.CodeGenerator;
 import jdk.nashorn.internal.codegen.FunctionSignature;
 import jdk.nashorn.internal.codegen.MethodEmitter;
@@ -61,11 +62,9 @@ public class FunctionObjectCreator extends ObjectCreator {
      *
      * @param codegen      the code generator
      * @param functionNode the function node to turn into a ScriptFunction implementation
-     * @param keys         initial keys for the object map
-     * @param symbols      corresponding initial symbols for object map
      */
-    public FunctionObjectCreator(final CodeGenerator codegen, final FunctionNode functionNode, final List<String> keys, final List<Symbol> symbols) {
-        super(codegen, keys, symbols, false, false);
+    public FunctionObjectCreator(final CodeGenerator codegen, final FunctionNode functionNode) {
+        super(codegen, new ArrayList<String>(), new ArrayList<Symbol>(), false, false);
         this.functionNode = functionNode;
     }
 

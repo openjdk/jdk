@@ -47,14 +47,22 @@ public class ExecuteNode extends Node {
      */
     public ExecuteNode(final Source source, final long token, final int finish, final Node expression) {
         super(source, token, finish);
+        this.expression = expression;
+    }
 
+    /**
+     * Constructor
+     *
+     * @param expression an expression to wrap, from which source, tokens and finish are also inherited
+     */
+    public ExecuteNode(final Node expression) {
+        super(expression.getSource(), expression.getToken(), expression.getFinish());
         this.expression = expression;
     }
 
     private ExecuteNode(final ExecuteNode executeNode, final CopyState cs) {
         super(executeNode);
-
-        expression = cs.existingOrCopy(executeNode.expression);
+        this.expression = cs.existingOrCopy(executeNode.expression);
     }
 
     @Override
