@@ -120,9 +120,6 @@ public class SubjectDelegation3Test {
             System.out.println("Create SimpleStandard MBean");
             SimpleStandard s = new SimpleStandard("delegate");
             mbs.registerMBean(s, new ObjectName("MBeans:type=SimpleStandard"));
-            // Set Security Manager
-            //
-            System.setSecurityManager(new SecurityManager());
             // Create Properties containing the username/password entries
             //
             Properties props = new Properties();
@@ -133,6 +130,9 @@ public class SubjectDelegation3Test {
             HashMap env = new HashMap();
             env.put("jmx.remote.authenticator",
                     new JMXPluggableAuthenticator(props));
+            // Set Security Manager
+            //
+            System.setSecurityManager(new SecurityManager());
             // Create an RMI connector server
             //
             System.out.println("Create an RMI connector server");

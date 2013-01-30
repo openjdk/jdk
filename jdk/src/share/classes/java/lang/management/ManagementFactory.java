@@ -802,20 +802,20 @@ public class ManagementFactory {
      */
     private static void addMXBean(final MBeanServer mbs, final PlatformManagedObject pmo) {
         // Make DynamicMBean out of MXBean by wrapping it with a StandardMBean
-        final DynamicMBean dmbean;
-        if (pmo instanceof DynamicMBean) {
-            dmbean = DynamicMBean.class.cast(pmo);
-        } else if (pmo instanceof NotificationEmitter) {
-            dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
-        } else {
-            dmbean = new StandardMBean(pmo, null, true);
-        }
-
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                 public Void run() throws InstanceAlreadyExistsException,
                                          MBeanRegistrationException,
                                          NotCompliantMBeanException {
+                    final DynamicMBean dmbean;
+                    if (pmo instanceof DynamicMBean) {
+                        dmbean = DynamicMBean.class.cast(pmo);
+                    } else if (pmo instanceof NotificationEmitter) {
+                        dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
+                    } else {
+                        dmbean = new StandardMBean(pmo, null, true);
+                    }
+
                     mbs.registerMBean(dmbean, pmo.getObjectName());
                     return null;
                 }
