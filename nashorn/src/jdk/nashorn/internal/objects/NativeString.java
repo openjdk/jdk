@@ -1096,8 +1096,8 @@ public final class NativeString extends ScriptObject {
      */
     @SpecializedConstructor
     public static Object constructor(final boolean newObj, final Object self, final Object arg) {
-        final CharSequence cs = JSType.toCharSequence(arg);
-        return newObj ? newObj(self, cs) : cs;
+        final CharSequence str = JSType.toCharSequence(arg);
+        return newObj ? newObj(self, str) : str.toString();
     }
 
     /**
@@ -1113,7 +1113,7 @@ public final class NativeString extends ScriptObject {
      */
     @SpecializedConstructor
     public static Object constructor(final boolean newObj, final Object self, final int arg) {
-        final CharSequence str = JSType.toCharSequence(arg);
+        final String str = JSType.toString(arg);
         return newObj ? newObj(self, str) : str;
     }
 
