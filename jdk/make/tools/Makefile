@@ -53,6 +53,7 @@ SUBDIRS =                   \
   makeclasslist             \
   strip_properties          \
   spp                       \
+  tzdb                      \
   CharsetMapping
 
 ifndef DISABLE_NIMBUS

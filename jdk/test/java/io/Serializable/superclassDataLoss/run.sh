@@ -29,22 +29,28 @@
 
 if [ "${TESTJAVA}" = "" ]
 then
-	echo "TESTJAVA not set.  Test cannot execute.  Failed."
+    echo "TESTJAVA not set.  Test cannot execute.  Failed."
 exit 1
+fi
+
+if [ "${COMPILEJAVA}" = "" ] ; then
+    COMPILEJAVA="${TESTJAVA}"
 fi
 
 if [ "${TESTSRC}" = "" ]
 then
-	TESTSRC="."
+    TESTSRC="."
 fi
 
 set -ex
 
-${TESTJAVA}/bin/javac -d . ${TESTSRC}/A.java ${TESTSRC}/B.java
-${TESTJAVA}/bin/jar cf cb1.jar A.class B.class
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
+    ${TESTSRC}/A.java ${TESTSRC}/B.java
+${COMPILEJAVA}/bin/jar ${TESTTOOLVMOPTS} cf cb1.jar A.class B.class
 cp cb1.jar cb2.jar
 rm -f A.class B.class
 
-${TESTJAVA}/bin/javac -d . ${TESTSRC}/Test.java
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
+    ${TESTSRC}/Test.java
 ${TESTJAVA}/bin/java ${TESTVMOPTS} Test
 rm -f *.class *.jar

@@ -34,6 +34,8 @@
  */
 
 package java.util.concurrent.atomic;
+import java.util.function.LongUnaryOperator;
+import java.util.function.LongBinaryOperator;
 import sun.misc.Unsafe;
 
 /**
@@ -215,6 +217,92 @@ public class AtomicLong extends Number implements java.io.Serializable {
      */
     public final long addAndGet(long delta) {
         return getAndAdd(delta) + delta;
+    }
+
+    /**
+     * Atomically updates the current value with the results of
+     * applying the given function, returning the previous value. The
+     * function should be side-effect-free, since it may be re-applied
+     * when attempted updates fail due to contention among threads.
+     *
+     * @param updateFunction a side-effect-free function
+     * @return the previous value
+     * @since 1.8
+     */
+    public final long getAndUpdate(LongUnaryOperator updateFunction) {
+        long prev, next;
+        do {
+            prev = get();
+            next = updateFunction.operateAsLong(prev);
+        } while (!compareAndSet(prev, next));
+        return prev;
+    }
+
+    /**
+     * Atomically updates the current value with the results of
+     * applying the given function, returning the updated value. The
+     * function should be side-effect-free, since it may be re-applied
+     * when attempted updates fail due to contention among threads.
+     *
+     * @param updateFunction a side-effect-free function
+     * @return the updated value
+     * @since 1.8
+     */
+    public final long updateAndGet(LongUnaryOperator updateFunction) {
+        long prev, next;
+        do {
+            prev = get();
+            next = updateFunction.operateAsLong(prev);
+        } while (!compareAndSet(prev, next));
+        return next;
+    }
+
+    /**
+     * Atomically updates the current value with the results of
+     * applying the given function to the current and given values,
+     * returning the previous value. The function should be
+     * side-effect-free, since it may be re-applied when attempted
+     * updates fail due to contention among threads.  The function
+     * is applied with the current value as its first argument,
+     * and the given update as the second argument.
+     *
+     * @param x the update value
+     * @param accumulatorFunction a side-effect-free function of two arguments
+     * @return the previous value
+     * @since 1.8
+     */
+    public final long getAndAccumulate(long x,
+                                       LongBinaryOperator accumulatorFunction) {
+        long prev, next;
+        do {
+            prev = get();
+            next = accumulatorFunction.operateAsLong(prev, x);
+        } while (!compareAndSet(prev, next));
+        return prev;
+    }
+
+    /**
+     * Atomically updates the current value with the results of
+     * applying the given function to the current and given values,
+     * returning the updated value. The function should be
+     * side-effect-free, since it may be re-applied when attempted
+     * updates fail due to contention among threads.  The function
+     * is applied with the current value as its first argument,
+     * and the given update as the second argument.
+     *
+     * @param x the update value
+     * @param accumulatorFunction a side-effect-free function of two arguments
+     * @return the updated value
+     * @since 1.8
+     */
+    public final long accumulateAndGet(long x,
+                                       LongBinaryOperator accumulatorFunction) {
+        long prev, next;
+        do {
+            prev = get();
+            next = accumulatorFunction.operateAsLong(prev, x);
+        } while (!compareAndSet(prev, next));
+        return next;
     }
 
     /**

@@ -31,8 +31,8 @@ import java.net.URISyntaxException;
 import java.net.PasswordAuthentication;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Base64;
 import sun.net.www.HeaderParser;
-import sun.misc.BASE64Encoder;
 
 /**
  * BasicAuthentication: Encapsulate an http server authentication using
@@ -76,7 +76,7 @@ class BasicAuthentication extends AuthenticationInfo {
         System.arraycopy(nameBytes, 0, concat, 0, nameBytes.length);
         System.arraycopy(passwdBytes, 0, concat, nameBytes.length,
                          passwdBytes.length);
-        this.auth = "Basic " + (new BasicBASE64Encoder()).encode(concat);
+        this.auth = "Basic " + Base64.getEncoder().encodeToString(concat);
         this.pw = pw;
     }
 
@@ -116,7 +116,7 @@ class BasicAuthentication extends AuthenticationInfo {
         System.arraycopy(nameBytes, 0, concat, 0, nameBytes.length);
         System.arraycopy(passwdBytes, 0, concat, nameBytes.length,
                          passwdBytes.length);
-        this.auth = "Basic " + (new BasicBASE64Encoder()).encode(concat);
+        this.auth = "Basic " + Base64.getEncoder().encodeToString(concat);
         this.pw = pw;
     }
 
@@ -201,12 +201,5 @@ class BasicAuthentication extends AuthenticationInfo {
         /*should not reach here. If we do simply return npath*/
         return npath;
     }
-
-    /* It is never expected that the header value will exceed the bytesPerLine */
-    private class BasicBASE64Encoder extends BASE64Encoder {
-        @Override
-        protected int bytesPerLine() {
-            return (10000);
-        }
-    }
 }
+

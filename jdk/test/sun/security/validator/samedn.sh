@@ -33,6 +33,7 @@ fi
 if [ "${TESTJAVA}" = "" ] ; then
   JAVAC_CMD=`which javac`
   TESTJAVA=`dirname $JAVAC_CMD`/..
+  COMPILEJAVA="${TESTJAVA}"
 fi
 
 # set platform-dependent variables
@@ -48,7 +49,7 @@ esac
 
 KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit \
     -keypass changeit -keystore samedn.jks"
-JAVAC=$TESTJAVA${FS}bin${FS}javac
+JAVAC=$COMPILEJAVA${FS}bin${FS}javac
 JAVA=$TESTJAVA${FS}bin${FS}java
 
 rm -rf samedn.jks 2> /dev/null
@@ -77,6 +78,6 @@ $KT -delete -alias user
 # 5. Build and run test. Make sure the CA certs are ignored for validity check.
 # Check both, one of them might be dropped out of map in old codes.
 
-$JAVAC -d . ${TESTSRC}${FS}CertReplace.java
+$JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}CertReplace.java
 $JAVA ${TESTVMOPTS} CertReplace samedn.jks samedn1.certs || exit 1
 $JAVA ${TESTVMOPTS} CertReplace samedn.jks samedn2.certs || exit 2

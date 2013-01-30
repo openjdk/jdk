@@ -65,7 +65,8 @@ EOF
 echo "public class Bar { }" > "${BAR}"
 
 (cd "${OTHERDIR}"; \
-  $JAVAC Foo.java Bar.java; $JAR cf "${OTHERDIR}"/Bar.jar Bar.class; \
+  $JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} Foo.java Bar.java; \
+  $JAR ${TESTTOOLVMOPTS} cf "${OTHERDIR}"/Bar.jar Bar.class; \
   rm -f Bar.class)
 
 # Create the manifest
@@ -74,7 +75,7 @@ rm -f "${MANIFEST}"
 echo "Premain-Class: ClassUnloadTest" > "${MANIFEST}"
 
 # Setup test case as an agent
-$JAR -cfm "${TESTCLASSES}"/ClassUnloadTest.jar "${MANIFEST}" \
+$JAR ${TESTTOOLVMOPTS} -cfm "${TESTCLASSES}"/ClassUnloadTest.jar "${MANIFEST}" \
   -C "${TESTCLASSES}" ClassUnloadTest.class
 
 # Finally we run the test

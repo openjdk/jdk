@@ -47,6 +47,9 @@ GENDATA += $(GENDATA_FONT_CONFIG)
 include GendataTimeZone.gmk
 GENDATA += $(GENDATA_TIMEZONE)
 
+include GendataTZDB.gmk
+GENDATA += $(GENDATA_TZDB)
+
 include GendataHtml32dtd.gmk
 GENDATA += $(GENDATA_HTML32DTD)
 

@@ -46,6 +46,10 @@ then
   echo "TESTJAVA not set.  Test cannot execute.  Failed."
   exit 1
 fi
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 echo "TESTJAVA=${TESTJAVA}"
 if [ "${TESTCLASSES}" = "" ]
 then
@@ -99,7 +103,8 @@ esac
 # compile
 cp ${TESTSRC}${FS}ProviderTest.java .
 cp ${TESTSRC}${FS}$2.java .
-COMPILE="${TESTJAVA}${FS}bin${FS}javac -XDignore.symbol.file -d . -classpath ${CLASSPATHARG} $2.java"
+COMPILE="${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
+    -XDignore.symbol.file -d . -classpath ${CLASSPATHARG} $2.java"
 echo ${COMPILE}
 ${COMPILE}
 result=$?

@@ -64,7 +64,7 @@ JNF_COCOA_ENTER(env);
 
     jobject cPeerObjGlobal = JNFNewGlobalRef(env, peer);
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         aCPopupMenu = [[CPopupMenu alloc] initWithPeer:cPeerObjGlobal];
         CFRetain(aCPopupMenu);
         [aCPopupMenu release];
@@ -82,7 +82,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPopupMenu_nativeShowPopupMenu
 
     CPopupMenu* cPopupMenu = (CPopupMenu*)jlong_to_ptr(menuPtr);
 
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         NSPoint loc = ConvertNSScreenPoint(env, NSMakePoint(x, y));
 
         [[cPopupMenu menu] popUpMenuPositioningItem: nil

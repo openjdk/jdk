@@ -43,7 +43,7 @@ checkExit () {
     fi
 }
 
-${TESTJAVA}/bin/javac -d . ${TESTSRC}/Test.java
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}/Test.java
 cp ${TESTSRC}/test.jar .
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} Test
