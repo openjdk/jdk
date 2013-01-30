@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,13 +279,7 @@ public class DocCommentParser {
         try {
             nextChar();
             if (isIdentifierStart(ch)) {
-                int namePos = bp;
-                nextChar();
-                while (isIdentifierPart(ch))
-                    nextChar();
-                int nameLen = bp - namePos;
-
-                Name name = names.fromChars(buf, namePos, nameLen);
+                Name name = readIdentifier();
                 TagParser tp = tagParsers.get(name);
                 if (tp == null) {
                     List<DCTree> content = blockContent();
@@ -334,14 +328,9 @@ public class DocCommentParser {
         try {
             nextChar();
             if (isIdentifierStart(ch)) {
-                int namePos = bp;
-                nextChar();
-                while (isIdentifierPart(ch))
-                    nextChar();
-                int nameLen = bp - namePos;
+                Name name = readIdentifier();
                 skipWhitespace();
 
-                Name name = names.fromChars(buf, namePos, nameLen);
                 TagParser tp = tagParsers.get(name);
                 if (tp == null) {
                     DCTree text = inlineText();
@@ -575,10 +564,8 @@ public class DocCommentParser {
         int pos = bp;
 
         if (isJavaIdentifierStart(ch)) {
-            nextChar();
-            while (isJavaIdentifierPart(ch))
-                nextChar();
-            return m.at(pos).Identifier(names.fromChars(buf, pos, bp - pos));
+            Name name = readJavaIdentifier();
+            return m.at(pos).Identifier(name);
         }
 
         throw new ParseException("dc.identifier.expected");
@@ -703,39 +690,36 @@ public class DocCommentParser {
     protected DCTree entity() {
         int p = bp;
         nextChar();
-        int namep = bp;
+        Name name = null;
         boolean checkSemi = false;
         if (ch == '#') {
+            int namep = bp;
             nextChar();
             if (isDecimalDigit(ch)) {
                 nextChar();
                 while (isDecimalDigit(ch))
                     nextChar();
-                checkSemi = true;
+                name = names.fromChars(buf, namep, bp - namep);
             } else if (ch == 'x' || ch == 'X') {
                 nextChar();
                 if (isHexDigit(ch)) {
                     nextChar();
                     while (isHexDigit(ch))
                         nextChar();
-                    checkSemi = true;
+                    name = names.fromChars(buf, namep, bp - namep);
                 }
             }
         } else if (isIdentifierStart(ch)) {
-            nextChar();
-            while (isIdentifierPart(ch))
-                nextChar();
-            checkSemi = true;
+            name = readIdentifier();
         }
 
-        if (checkSemi && ch == ';') {
+        if (name == null)
+            return erroneous("dc.bad.entity", p);
+        else {
+            if (ch != ';')
+                return erroneous("dc.missing.semicolon", p);
             nextChar();
-            return m.at(p).Entity(names.fromChars(buf, namep, bp - namep - 1));
-        } else {
-            String code = checkSemi
-                    ? "dc.missing.semicolon"
-                    : "dc.bad.entity";
-            return erroneous(code, p);
+            return m.at(p).Entity(name);
         }
     }
 
@@ -747,11 +731,7 @@ public class DocCommentParser {
         int p = bp;
         nextChar();
         if (isIdentifierStart(ch)) {
-            int namePos = bp;
-            nextChar();
-            while (isIdentifierPart(ch))
-                nextChar();
-            int nameLen = bp - namePos;
+            Name name = readIdentifier();
             List<DCTree> attrs = htmlAttrs();
             if (attrs != null) {
                 boolean selfClosing = false;
@@ -761,22 +741,16 @@ public class DocCommentParser {
                 }
                 if (ch == '>') {
                     nextChar();
-                    Name name = names.fromChars(buf, namePos, nameLen);
                     return m.at(p).StartElement(name, attrs, selfClosing);
                 }
             }
         } else if (ch == '/') {
             nextChar();
             if (isIdentifierStart(ch)) {
-                int namePos = bp;
-                nextChar();
-                while (isIdentifierPart(ch))
-                    nextChar();
-                int nameLen = bp - namePos;
+                Name name = readIdentifier();
                 skipWhitespace();
                 if (ch == '>') {
                     nextChar();
-                    Name name = names.fromChars(buf, namePos, nameLen);
                     return m.at(p).EndElement(name);
                 }
             }
@@ -822,10 +796,7 @@ public class DocCommentParser {
         loop:
         while (isIdentifierStart(ch)) {
             int namePos = bp;
-            nextChar();
-            while (isIdentifierPart(ch))
-                nextChar();
-            int nameLen = bp - namePos;
+            Name name = readIdentifier();
             skipWhitespace();
             List<DCTree> value = null;
             ValueKind vkind = ValueKind.EMPTY;
@@ -862,7 +833,6 @@ public class DocCommentParser {
                 skipWhitespace();
                 value = v.toList();
             }
-            Name name = names.fromChars(buf, namePos, nameLen);
             DCAttribute attr = m.at(namePos).Attribute(name, vkind, value);
             attrs.add(attr);
         }
@@ -897,7 +867,7 @@ public class DocCommentParser {
     protected DCErroneous erroneous(String code, int pos) {
         int i = bp - 1;
         loop:
-        while (i > 0) {
+        while (i > pos) {
             switch (buf[i]) {
                 case '\f': case '\n': case '\r':
                     newline = true;
@@ -926,16 +896,24 @@ public class DocCommentParser {
         return Character.isUnicodeIdentifierStart(ch);
     }
 
-    protected boolean isIdentifierPart(char ch) {
-        return Character.isUnicodeIdentifierPart(ch);
+    protected Name readIdentifier() {
+        int start = bp;
+        nextChar();
+        while (bp < buflen && Character.isUnicodeIdentifierPart(ch))
+            nextChar();
+        return names.fromChars(buf, start, bp - start);
     }
 
     protected boolean isJavaIdentifierStart(char ch) {
         return Character.isJavaIdentifierStart(ch);
     }
 
-    protected boolean isJavaIdentifierPart(char ch) {
-        return Character.isJavaIdentifierPart(ch);
+    protected Name readJavaIdentifier() {
+        int start = bp;
+        nextChar();
+        while (bp < buflen && Character.isJavaIdentifierPart(ch))
+            nextChar();
+        return names.fromChars(buf, start, bp - start);
     }
 
     protected boolean isDecimalDigit(char ch) {
