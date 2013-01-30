@@ -178,7 +178,7 @@ public class Shell {
      * @return null if there are problems with option parsing.
      */
     @SuppressWarnings("resource")
-    private Context makeContext(final InputStream in, final OutputStream out, final OutputStream err, final String[] args) {
+    private static Context makeContext(final InputStream in, final OutputStream out, final OutputStream err, final String[] args) {
         final PrintStream pout = out instanceof PrintStream ? (PrintStream) out : new PrintStream(out);
         final PrintStream perr = err instanceof PrintStream ? (PrintStream) err : new PrintStream(err);
         final PrintWriter wout = new PrintWriter(pout, true);
@@ -230,7 +230,7 @@ public class Shell {
      * @return error code
      * @throws IOException when any script file read results in I/O error
      */
-    private int compileScripts(final Context context, final ScriptObject global, final List<String> files) throws IOException {
+    private static int compileScripts(final Context context, final ScriptObject global, final List<String> files) throws IOException {
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         try {
@@ -330,7 +330,7 @@ public class Shell {
      * @return return code
      */
     @SuppressWarnings("resource")
-    private int readEvalPrint(final Context context, final ScriptObject global) {
+    private static int readEvalPrint(final Context context, final ScriptObject global) {
         final String prompt = bundle.getString("shell.prompt");
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         final PrintWriter err = context.getErr();

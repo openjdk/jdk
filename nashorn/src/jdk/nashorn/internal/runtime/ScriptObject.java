@@ -1044,6 +1044,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         set(key, value, getContext()._strict);
     }
 
+    /**
+     * Return true if the script object context is strict
+     * @return true if strict context
+     */
     public final boolean isStrictContext() {
         return getContext()._strict;
     }
@@ -1419,7 +1423,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return (flags & IS_SCOPE) != 0;
     }
 
-    // java.util.Map-like methods to help ScriptObjectMirror implementation
+    /**
+     * Clears the properties from a ScriptObject
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     */
     public void clear() {
         final boolean strict = getContext()._strict;
         final Iterator<String> iter = propertyIterator();
@@ -1428,10 +1435,24 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
     }
 
+    /**
+     * Checks if a property with a given key is present in a ScriptObject
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @param key the key to check for
+     * @return true if a property with the given key exists, false otherwise
+     */
     public boolean containsKey(final Object key) {
         return has(key);
     }
 
+    /**
+     * Checks if a property with a given value is present in a ScriptObject
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @param value value to check for
+     * @return true if a property with the given value exists, false otherwise
+     */
     public boolean containsValue(final Object value) {
         final Iterator<Object> iter = valueIterator();
         while (iter.hasNext()) {
@@ -1442,6 +1463,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return false;
     }
 
+    /**
+     * Returns the set of <property, value> entries that make up this
+     * ScriptObject's properties
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @return an entry set of all the properties in this object
+     */
     public Set<Map.Entry<Object, Object>> entrySet() {
         final Iterator<String> iter = propertyIterator();
         final Set<Map.Entry<Object, Object>> entries = new HashSet<>();
@@ -1452,10 +1480,23 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return Collections.unmodifiableSet(entries);
     }
 
+    /**
+     * Check whether a ScriptObject contains no properties
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @return true if object has no properties
+     */
     public boolean isEmpty() {
         return !propertyIterator().hasNext();
     }
 
+    /**
+     * Return the set of keys (property names) for all properties
+     * in this ScriptObject
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @return keySet of this ScriptObject
+     */
     public Set<Object> keySet() {
         final Iterator<String> iter = propertyIterator();
         final Set<Object> keySet = new HashSet<>();
@@ -1465,12 +1506,27 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return Collections.unmodifiableSet(keySet);
     }
 
+    /**
+     * Put a property in the ScriptObject
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @param key property key
+     * @param value property value
+     * @return oldValue if property with same key existed already
+     */
     public Object put(final Object key, final Object value) {
         final Object oldValue = get(key);
         set(key, value, getContext()._strict);
         return oldValue;
     }
 
+    /**
+     * Put several properties in the ScriptObject given a mapping
+     * of their keys to their values
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @param otherMap a <key,value> map of properties to add
+     */
     public void putAll(final Map<?, ?> otherMap) {
         final boolean strict = getContext()._strict;
         for (final Map.Entry<?, ?> entry : otherMap.entrySet()) {
@@ -1478,12 +1534,26 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
     }
 
+    /**
+     * Remove a property from the ScriptObject.
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @param key the key of the property
+     * @return the oldValue of the removed property
+     */
     public Object remove(final Object key) {
         final Object oldValue = get(key);
         delete(key, getContext()._strict);
         return oldValue;
     }
 
+    /**
+     * Return the size of the ScriptObject - i.e. the number of properties
+     * it contains
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @return number of properties in ScriptObject
+     */
     public int size() {
         int n = 0;
         for (final Iterator<String> iter = propertyIterator(); iter.hasNext(); iter.next()) {
@@ -1492,6 +1562,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return n;
     }
 
+    /**
+     * Return the values of the properties in the ScriptObject
+     * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @return collection of values for the properties in this ScriptObject
+     */
     public Collection<Object> values() {
         final List<Object>     values = new ArrayList<>(size());
         final Iterator<Object> iter   = valueIterator();

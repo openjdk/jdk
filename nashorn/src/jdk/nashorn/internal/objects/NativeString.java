@@ -789,6 +789,7 @@ public final class NativeString extends ScriptObject {
      *
      * @param self  self reference
      * @param start start position for slice
+     * @param end   end position for slice
      * @return sliced out substring
      */
     @SpecializedFunction
@@ -808,6 +809,7 @@ public final class NativeString extends ScriptObject {
      *
      * @param self  self reference
      * @param start start position for slice
+     * @param end   end position for slice
      * @return sliced out substring
      */
     @SpecializedFunction
@@ -843,9 +845,8 @@ public final class NativeString extends ScriptObject {
     }
 
     private static Object splitString(String str, String separator, long limit) {
-
-        if (separator.equals("")) {
-            Object[] array = new Object[str.length()];
+        if (separator.isEmpty()) {
+            final Object[] array = new Object[str.length()];
             for (int i = 0; i < array.length; i++) {
                 array[i] = String.valueOf(str.charAt(i));
             }
@@ -856,18 +857,18 @@ public final class NativeString extends ScriptObject {
         final int strLength = str.length();
         final int sepLength = separator.length();
         int pos = 0;
-        int count = 0;
+        int n = 0;
 
-        while (pos < strLength && count < limit) {
+        while (pos < strLength && n < limit) {
             int found = str.indexOf(separator, pos);
             if (found == -1) {
                 break;
             }
             elements.add(str.substring(pos, found));
-            count++;
+            n++;
             pos = found + sepLength;
         }
-        if (pos <= strLength && count < limit) {
+        if (pos <= strLength && n < limit) {
             elements.add(str.substring(pos));
         }
 
@@ -963,9 +964,8 @@ public final class NativeString extends ScriptObject {
 
         if (validStart < validEnd) {
             return str.substring(validStart, validEnd);
-        } else {
-            return str.substring(validEnd, validStart);
         }
+        return str.substring(validEnd, validStart);
     }
 
     /**

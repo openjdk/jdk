@@ -32,8 +32,10 @@ import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Lexer.LexerToken;
+import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.Undefined;
 
@@ -200,6 +202,15 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     }
 
     /**
+     * Test if tha value is a number
+     *
+     * @return True if value is a number
+     */
+    public boolean isNumeric() {
+        return value instanceof Number;
+    }
+
+    /**
      * Assist in IR navigation.
      *
      * @param visitor IR navigating visitor.
@@ -240,16 +251,49 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<Node> newInstance(final Source source, final long token, final int finish) {
-        return new LiteralNode<Node>(source, token, finish, null) {
-            @Override
-            protected Node copy(final CopyState cs) {
-                return LiteralNode.newInstance(getSource(), getToken(), getFinish());
-            }
-            @Override
-            public Type getType() {
-                return Type.OBJECT;
-            }
-        };
+        return new NodeLiteralNode(source, token, finish);
+    }
+
+    /**
+     * Create a new null literal based on a parent node (source, token, finish)
+     *
+     * @param parent parent node
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<?> newInstance(final Node parent) {
+        return new NodeLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish());
+    }
+
+    private static class BooleanLiteralNode extends LiteralNode<Boolean> {
+
+        private BooleanLiteralNode(final Source source, final long token, final int finish, final boolean value) {
+            super(source, Token.recast(token, value ? TokenType.TRUE : TokenType.FALSE), finish, value);
+        }
+
+        private BooleanLiteralNode(final BooleanLiteralNode literalNode) {
+            super(literalNode);
+        }
+
+        @Override
+        protected Node copy(final CopyState cs) {
+            return new BooleanLiteralNode(this);
+        }
+
+        @Override
+        public boolean isTrue() {
+            return value;
+        }
+
+        @Override
+        public Type getType() {
+            return Type.BOOLEAN;
+        }
+
+        @Override
+        public Type getWidestOperationType() {
+            return Type.BOOLEAN;
+        }
     }
 
     /**
@@ -263,29 +307,63 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<Boolean> newInstance(final Source source, final long token, final int finish, final boolean value) {
-        return new LiteralNode<Boolean>(source, token, finish, value) {
-            @Override
-            protected Node copy(final CopyState cs) {
-                return LiteralNode.newInstance(getSource(), getToken(), getFinish(), getValue());
-            }
-
-            @Override
-            public boolean isTrue() {
-                return value;
-            }
-
-            @Override
-            public Type getType() {
-                return Type.BOOLEAN;
-            }
-
-            @Override
-            public Type getWidestOperationType() {
-                return Type.BOOLEAN;
-            }
-        };
+        return new BooleanLiteralNode(source, token,  finish, value);
     }
 
+    /**
+     * Create a new boolean literal based on a parent node (source, token, finish)
+     *
+     * @param parent parent node
+     * @param value  true or false
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<?> newInstance(final Node parent, final boolean value) {
+        return new BooleanLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+    }
+
+    private static class NumberLiteralNode extends LiteralNode<Number> {
+
+        private final Type type = numberGetType(value);
+
+        private NumberLiteralNode(final Source source, final long token, final int finish, final Number value) {
+            super(source, Token.recast(token, TokenType.DECIMAL), finish, value);
+        }
+
+        private NumberLiteralNode(final NumberLiteralNode literalNode) {
+            super(literalNode);
+        }
+
+        private static Type numberGetType(final Number number) {
+            if (number instanceof Integer) {
+                return Type.INT;
+            } else if (number instanceof Long) {
+                return Type.LONG;
+            } else if (number instanceof Double) {
+                return Type.NUMBER;
+            } else {
+                assert false;
+            }
+
+            return null;
+        }
+
+        @Override
+        protected Node copy(final CopyState cs) {
+            return new NumberLiteralNode(this);
+        }
+
+        @Override
+        public Type getType() {
+            return type;
+        }
+
+        @Override
+        public Type getWidestOperationType() {
+            return getType();
+        }
+
+    }
     /**
      * Create a new number literal
      *
@@ -297,40 +375,34 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<Number> newInstance(final Source source, final long token, final int finish, final Number value) {
-        return new LiteralNode<Number>(source, token, finish, value) {
+        return new NumberLiteralNode(source, token, finish, value);
+    }
 
-            private Type numberGetType(final Number number) {
-                if (number instanceof Integer) {
-                    return Type.INT;
-                } else if (number instanceof Long) {
-                    return Type.LONG;
-                } else if (number instanceof Double) {
-                    return Type.NUMBER;
-                } else {
-                    assert false;
-                }
+    /**
+     * Create a new number literal based on a parent node (source, token, finish)
+     *
+     * @param parent parent node
+     * @param value  literal value
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<?> newInstance(final Node parent, final Number value) {
+        return new NumberLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+    }
 
-                return null;
-            }
+    private static class UndefinedLiteralNode extends LiteralNode<Undefined> {
+        private UndefinedLiteralNode(final Source source, final long token, final int finish) {
+            super(source, Token.recast(token, TokenType.OBJECT), finish, ScriptRuntime.UNDEFINED);
+        }
 
-            private final Type type = numberGetType(value);
+        private UndefinedLiteralNode(final UndefinedLiteralNode literalNode) {
+            super(literalNode);
+        }
 
-            @Override
-            protected Node copy(final CopyState cs) {
-                return LiteralNode.newInstance(getSource(), getToken(), getFinish(), getValue());
-            }
-
-            @Override
-            public Type getType() {
-                return type;
-            }
-
-            @Override
-            public Type getWidestOperationType() {
-                return getType();
-            }
-
-        };
+        @Override
+        protected Node copy(final CopyState cs) {
+            return new UndefinedLiteralNode(this);
+        }
     }
 
     /**
@@ -344,12 +416,41 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<Undefined> newInstance(final Source source, final long token, final int finish, final Undefined value) {
-        return new LiteralNode<Undefined>(source, token, finish, value) {
-            @Override
-            protected Node copy(final CopyState cs) {
-                return LiteralNode.newInstance(getSource(), getToken(), getFinish(), getValue());
-            }
-        };
+        return new UndefinedLiteralNode(source, token, finish);
+    }
+
+    /**
+     * Create a new null literal based on a parent node (source, token, finish)
+     *
+     * @param parent parent node
+     * @param value  undefined value
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<?> newInstance(final Node parent, final Undefined value) {
+        return new UndefinedLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish());
+    }
+
+    private static class StringLiteralNode extends LiteralNode<String> {
+        private StringLiteralNode(final Source source, final long token, final int finish, final String value) {
+            super(source, Token.recast(token, TokenType.STRING), finish, value);
+        }
+
+        private StringLiteralNode(final StringLiteralNode literalNode) {
+            super(literalNode);
+        }
+
+        @Override
+        protected Node copy(final CopyState cs) {
+            return new StringLiteralNode(this);
+        }
+
+        @Override
+        public void toString(final StringBuilder sb) {
+            sb.append('\"');
+            sb.append(value);
+            sb.append('\"');
+        }
     }
 
     /**
@@ -363,19 +464,39 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<String> newInstance(final Source source, final long token, final int finish, final String value) {
-        return new LiteralNode<String>(source, token, finish, value) {
-            @Override
-            protected Node copy(final CopyState cs) {
-                return LiteralNode.newInstance(getSource(), getToken(), getFinish(), getValue());
-            }
+        return new StringLiteralNode(source, token, finish, value);
+    }
 
-            @Override
-            public void toString(final StringBuilder sb) {
-                sb.append('\"');
-                sb.append(value);
-                sb.append('\"');
-            }
-        };
+    /**
+     * Create a new String literal based on a parent node (source, token, finish)
+     *
+     * @param parent parent node
+     * @param value  string value
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<?> newInstance(final Node parent, final String value) {
+        return new StringLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+    }
+
+    private static class LexerTokenLiteralNode extends LiteralNode<LexerToken> {
+        private LexerTokenLiteralNode(final Source source, final long token, final int finish, final LexerToken value) {
+            super(source, Token.recast(token, TokenType.STRING), finish, value); //TODO is string the correct token type here?
+        }
+
+        private LexerTokenLiteralNode(final LexerTokenLiteralNode literalNode) {
+            super(literalNode);
+        }
+
+        @Override
+        protected Node copy(final CopyState cs) {
+            return new LexerTokenLiteralNode(this);
+        }
+
+        @Override
+        public void toString(final StringBuilder sb) {
+            sb.append(value.toString());
+        }
     }
 
     /**
@@ -389,22 +510,65 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<LexerToken> newInstance(final Source source, final long token, final int finish, final LexerToken value) {
-        return new LiteralNode<LexerToken>(source, token, finish, value) {
-            @Override
-            protected Node copy(final CopyState cs) {
-                return LiteralNode.newInstance(getSource(), getToken(), getFinish(), getValue());
-            }
-
-
-            @Override
-            public void toString(final StringBuilder sb) {
-                sb.append(value.toString());
-            }
-        };
+        return new LexerTokenLiteralNode(source, token, finish, value);
     }
 
     /**
-     * Create a new array for an arbitrary node
+     * Create a new lexer token literal based on a parent node (source, token, finish)
+     *
+     * @param parent parent node
+     * @param value  lexer token
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<?> newInstance(final Node parent, final LexerToken value) {
+        return new LexerTokenLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+    }
+
+    private static class NodeLiteralNode extends LiteralNode<Node> {
+
+        private NodeLiteralNode(final Source source, final long token, final int finish) {
+            this(source, token, finish, null);
+        }
+
+        private NodeLiteralNode(final Source source, final long token, final int finish, final Node value) {
+            super(source, Token.recast(token, TokenType.OBJECT), finish, value);
+        }
+
+        private NodeLiteralNode(final LiteralNode<Node> literalNode) {
+            super(literalNode);
+        }
+
+        @Override
+        protected Node copy(final CopyState cs) {
+            return new NodeLiteralNode(this);
+        }
+
+        @Override
+        public Node accept(final NodeVisitor visitor) {
+            if (visitor.enter(this) != null) {
+                if (value != null) {
+                    value = value.accept(visitor);
+                }
+                return visitor.leave(this);
+            }
+
+            return this;
+        }
+
+        @Override
+        public Type getType() {
+            return value == null ? Type.OBJECT : super.getType();
+        }
+
+        @Override
+        public Type getWidestOperationType() {
+            return value == null ? Type.OBJECT : value.getWidestOperationType();
+        }
+
+    }
+    /**
+     * Create a new node literal for an arbitrary node
      *
      * @param source  the source
      * @param token   token
@@ -414,33 +578,19 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<Node> newInstance(final Source source, final long token, final int finish, final Node value) {
-        return new LiteralNode<Node>(source, token, finish, value) {
-            @Override
-            protected Node copy(final CopyState cs) {
-                return LiteralNode.newInstance(getSource(), getToken(), getFinish(), getValue());
-            }
+        return new NodeLiteralNode(source, token, finish, value);
+    }
 
-            @Override
-            public Node accept(final NodeVisitor visitor) {
-                if (visitor.enter(this) != null) {
-                    value = value.accept(visitor);
-                    return visitor.leave(this);
-                }
-
-                return this;
-            }
-
-            @Override
-            public void toString(final StringBuilder sb) {
-                value.toString(sb);
-            }
-
-            @Override
-            public Type getWidestOperationType() {
-                return value.getWidestOperationType();
-            }
-
-        };
+    /**
+     * Create a new node literal based on a parent node (source, token, finish)
+     *
+     * @param parent parent node
+     * @param value  node value
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<?> newInstance(final Node parent, final Node value) {
+        return new NodeLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
     }
 
     /**
@@ -521,8 +671,7 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
          * @param value   array literal value, a Node array
          */
         protected ArrayLiteralNode(final Source source, final long token, final int finish, final Node[] value) {
-            super(source, token, finish, value);
-
+            super(source, Token.recast(token, TokenType.ARRAY), finish, value);
             this.elementType = Type.UNKNOWN;
         }
 
@@ -530,13 +679,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
          * Copy constructor
          * @param node source array literal node
          */
-        protected ArrayLiteralNode(final LiteralNode<Node[]> node) {
+        protected ArrayLiteralNode(final ArrayLiteralNode node) {
             super(node);
+            this.elementType = node.elementType;
         }
 
         @Override
         protected Node copy(final CopyState cs) {
-            return LiteralNode.newInstance(getSource(), getToken(), getFinish(), getValue());
+            return new ArrayLiteralNode(this);
         }
 
         /**
@@ -767,6 +917,19 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      */
     public static LiteralNode<Node[]> newInstance(final Source source, final long token, final int finish, final List<Node> value) {
         return new ArrayLiteralNode(source, token, finish, value.toArray(new Node[value.size()]));
+    }
+
+
+    /**
+     * Create a new array literal based on a parent node (source, token, finish)
+     *
+     * @param parent parent node
+     * @param value  literal value list
+     *
+     * @return the new literal node
+     */
+    public static LiteralNode<?> newInstance(final Node parent, final List<Node> value) {
+        return new ArrayLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value.toArray(new Node[value.size()]));
     }
 
     /**

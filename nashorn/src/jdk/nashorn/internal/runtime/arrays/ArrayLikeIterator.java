@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import java.util.Iterator;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 

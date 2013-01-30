@@ -48,6 +48,9 @@ import java.util.regex.Pattern;
  */
 public final class Formatter {
 
+    private Formatter() {
+    }
+
     /**
      * Method which converts javascript types to java types for the
      * String.format method (jrunscript function sprintf).
@@ -149,7 +152,9 @@ public final class Formatter {
         if (s != null) {
             try {
                 index = Integer.parseInt(s.substring(0, s.length() - 1));
-            } catch (NumberFormatException e) { }
+            } catch (final NumberFormatException e) {
+                //ignored
+            }
         } else {
             index = 0;
         }

@@ -41,6 +41,8 @@ public class DebugLogger {
 
     private int indent;
 
+    private static final int INDENT_SPACE = 4;
+
     /**
      * Constructor
      *
@@ -93,7 +95,24 @@ public class DebugLogger {
      */
     public void indent(final int pos) {
         if (isEnabled) {
-           indent += pos * 4;
+           indent += pos * INDENT_SPACE;
+        }
+    }
+
+    /**
+     * Add an indent position
+     */
+    public void indent() {
+        indent += INDENT_SPACE;
+    }
+
+    /**
+     * Unindent a position
+     */
+    public void unindent() {
+        indent -= INDENT_SPACE;
+        if (indent < 0) {
+            indent = 0;
         }
     }
 

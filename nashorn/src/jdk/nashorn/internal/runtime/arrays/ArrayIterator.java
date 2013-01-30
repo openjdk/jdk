@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**

@@ -41,13 +41,13 @@ import java.lang.invoke.MethodHandles;
  */
 public class ScriptingFunctions {
 
-    /** Handle to implementation of {@link ScriptingFunctions#read} - Nashorn extension */
+    /** Handle to implementation of {@link ScriptingFunctions#readLine} - Nashorn extension */
     public static final MethodHandle READLINE = findOwnMH("readLine", Object.class, Object.class);
 
     /** Handle to implementation of {@link ScriptingFunctions#readFully} - Nashorn extension */
     public static final MethodHandle READFULLY = findOwnMH("readFully",     Object.class, Object.class, Object.class);
 
-    /** Handle to implementation of {@link ScriptingFunctions#read} - Nashorn extension */
+    /** Handle to implementation of {@link ScriptingFunctions#quit} - Nashorn extension */
     public static final MethodHandle QUIT = findOwnMH("quit",     Object.class, Object.class, Object.class);
 
     private ScriptingFunctions() {

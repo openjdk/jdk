@@ -57,7 +57,7 @@ public class CatchNode extends Node {
      * @param body               catch body
      */
     public CatchNode(final Source source, final long token, final int finish, final IdentNode exception, final Node exceptionCondition, final Block body) {
-        super (source, token, finish);
+        super(source, token, finish);
 
         this.exception          = exception;
         this.exceptionCondition = exceptionCondition;

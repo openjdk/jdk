@@ -478,11 +478,11 @@ public final class Context {
         return _timezone;
     }
 
-    /*
+    /**
      * Get the PropertyMap of the current global scope
      * @return the property map of the current global scope
      */
-    public PropertyMap getGlobalMap() {
+    public static PropertyMap getGlobalMap() {
         return Context.getGlobalTrusted().getMap();
     }
 

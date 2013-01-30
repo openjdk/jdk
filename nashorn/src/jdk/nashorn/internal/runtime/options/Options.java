@@ -416,7 +416,7 @@ public final class Options {
                     System.setProperty(value.substring(0, eq), value.substring(eq + 1));
                 } else {
                     // -Dfoo is fine. Set System property "foo" with "" as it's value
-                    if (!value.equals("")) {
+                    if (!value.isEmpty()) {
                         System.setProperty(value, "");
                     } else {
                         // do not allow empty property name

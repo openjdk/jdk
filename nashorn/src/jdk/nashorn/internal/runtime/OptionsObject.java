@@ -106,6 +106,11 @@ public final class OptionsObject {
     /** time zone for this context */
     public final TimeZone _timezone;
 
+    /**
+     * Constructor
+     *
+     * @param context a context
+     */
     public OptionsObject(final Context context) {
         this._anon_functions = context._anon_functions;
         this._callsite_flags = context._callsite_flags;

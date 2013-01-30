@@ -56,6 +56,9 @@ public class TryNode extends Node {
     /** Exception symbol. */
     private Symbol exception;
 
+    /** Catchall exception for finally expansion, where applicable */
+    private Symbol finallyCatchAll;
+
     /**
      * Constructor
      *
@@ -181,6 +184,23 @@ public class TryNode extends Node {
      */
     public void setException(final Symbol exception) {
         this.exception = exception;
+    }
+
+    /**
+     * Get the catch all symbol for this try block
+     * @return catch all symbol
+     */
+    public Symbol getFinallyCatchAll() {
+        return this.finallyCatchAll;
+    }
+
+    /**
+     * If a finally block exists, the synthetic catchall needs another symbol to
+     * store its throwable
+     * @param finallyCatchAll a symbol for the finally catch all exception
+     */
+    public void setFinallyCatchAll(final Symbol finallyCatchAll) {
+        this.finallyCatchAll = finallyCatchAll;
     }
 
     /**

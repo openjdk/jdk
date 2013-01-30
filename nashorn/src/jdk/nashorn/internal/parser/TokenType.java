@@ -171,6 +171,8 @@ public enum TokenType {
     IDENT          (LITERAL,  null),
     REGEX          (LITERAL,  null),
     XML            (LITERAL,  null),
+    OBJECT         (LITERAL,  null),
+    ARRAY          (LITERAL,  null),
 
     COMMALEFT      (IR,       null),
     CONVERT        (IR,       null),

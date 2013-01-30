@@ -41,9 +41,6 @@ public class VarNode extends Node implements Assignment<IdentNode> {
     /** Is this a function var node */
     private boolean isFunctionVarNode;
 
-    /** Should append VarNode to statement list? */
-    private final boolean shouldAppend;
-
     /**
      * Constructor
      *
@@ -54,25 +51,10 @@ public class VarNode extends Node implements Assignment<IdentNode> {
      * @param init   init node or null if just a declaration
      */
     public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init) {
-        this(source, token, finish, name, init, true);
-    }
-
-    /**
-     * Constructor
-     *
-     * @param source the source
-     * @param token  token
-     * @param finish finish
-     * @param name   name of variable
-     * @param init   init node or null if just a declaration
-     * @param shouldAppend should this turn into explicit code, like if it were an ExecuteNode
-     */
-    public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init, final boolean shouldAppend) {
         super(source, token, finish);
 
         this.name  = name;
         this.init  = init;
-        this.shouldAppend = shouldAppend;
         if (init != null) {
             this.name.setIsInitializedHere();
         }
@@ -83,7 +65,6 @@ public class VarNode extends Node implements Assignment<IdentNode> {
 
         this.name = (IdentNode)cs.existingOrCopy(varNode.name);
         this.init = cs.existingOrCopy(varNode.init);
-        this.shouldAppend = varNode.shouldAppend;
     }
 
     @Override
@@ -115,7 +96,6 @@ public class VarNode extends Node implements Assignment<IdentNode> {
     public void setAssignmentSource(final Node source) {
         setInit(source);
     }
-
 
     /**
      * Does this variable declaration have an init value
@@ -235,15 +215,4 @@ public class VarNode extends Node implements Assignment<IdentNode> {
         this.isFunctionVarNode = true;
     }
 
-    /**
-     * Is this the var for a for-in node or other construct that means
-     * manual or no appends of this varNode to the statement list in
-     * Lower? The default is yes as most VarNodes are auto-append to
-     * the end of the statement list when lowered
-     *
-     * @return should compiler append var node to statement list
-     */
-    public boolean shouldAppend() {
-        return shouldAppend;
-    }
 }

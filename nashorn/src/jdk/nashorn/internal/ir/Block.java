@@ -35,11 +35,11 @@ import static jdk.nashorn.internal.ir.Symbol.KINDMASK;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 import jdk.nashorn.internal.codegen.Frame;
 import jdk.nashorn.internal.codegen.MethodEmitter.Label;
 import jdk.nashorn.internal.ir.annotations.Ignore;
@@ -287,7 +287,7 @@ public class Block extends Node {
 
         for (Block block = this; block != null; block = block.getParent()) {
             // Find name.
-            final Symbol symbol = block.getSymbols().get(name);
+            final Symbol symbol = block.symbols.get(name);
             // If found then we are good.
             if (symbol != null) {
                 return symbol;
@@ -307,7 +307,7 @@ public class Block extends Node {
         // Search up block chain to locate symbol.
         for (Block block = this; block != null; block = block.getParent()) {
             // Find name.
-            final Symbol symbol = block.getSymbols().get(name);
+            final Symbol symbol = block.symbols.get(name);
             // If found then we are good.
             if (symbol != null) {
                 return symbol;
@@ -458,14 +458,22 @@ public class Block extends Node {
     }
 
     /**
-     * Print symbols in block (debugging.)
+     * Print symbols in block in alphabetical order, sorted on name
+     * Used for debugging, see the --print-symbols flag
      *
      * @param stream print writer to output symbols to
      *
      * @return true if symbols were found
      */
     public boolean printSymbols(final PrintWriter stream) {
-        final Collection<Symbol> values = symbols.values();
+        final List<Symbol> values = new ArrayList<>(symbols.values());
+
+        Collections.sort(values, new Comparator<Symbol>() {
+            @Override
+            public int compare(final Symbol s0, final Symbol s1) {
+                return s0.getName().compareTo(s1.getName());
+            }
+        });
 
         for (final Symbol symbol : values) {
             symbol.print(stream);
@@ -561,15 +569,6 @@ public class Block extends Node {
      */
     public void putSymbol(final String name, final Symbol symbol) {
         symbols.put(name, symbol);
-    }
-
-    /**
-     * Get the symbol table for this block
-     *
-     * @return a symbol table, which is a map from symbol name to symbol.
-     */
-    private Map<String, Symbol> getSymbols() {
-        return symbols;
     }
 
     /**

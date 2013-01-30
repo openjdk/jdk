@@ -26,7 +26,7 @@
 package jdk.nashorn.internal.ir;
 
 import java.util.IdentityHashMap;
-import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
@@ -38,7 +38,7 @@ import jdk.nashorn.internal.runtime.Source;
  */
 public abstract class Node extends Location {
     /** Node symbol. */
-    private Symbol nodeSymbol;
+    private Symbol symbol;
 
     /** Start of source range. */
     protected int start;
@@ -68,7 +68,7 @@ public abstract class Node extends Location {
     public Node(final Source source, final long token, final int finish) {
         super(source, token);
 
-        start  = Token.descPosition(token);
+        this.start  = Token.descPosition(token);
         this.finish = finish;
     }
 
@@ -80,7 +80,7 @@ public abstract class Node extends Location {
     protected Node(final Node node) {
         super(node);
 
-        this.nodeSymbol    = node.nodeSymbol;
+        this.symbol        = node.symbol;
         this.isResolved    = node.isResolved;
         this.isTerminal    = node.isTerminal;
         this.hasGoto       = node.hasGoto;
@@ -107,8 +107,8 @@ public abstract class Node extends Location {
      * @return the type of the node.
      */
     public Type getType() {
-        assert hasType();
-        return nodeSymbol.getSymbolType();
+        assert hasType() : this + " has no type";
+        return symbol.getSymbolType();
     }
 
     /**
@@ -379,7 +379,7 @@ public abstract class Node extends Location {
      * @return the symbol
      */
     public Symbol getSymbol() {
-        return nodeSymbol;
+        return symbol;
     }
 
     /**
@@ -389,7 +389,7 @@ public abstract class Node extends Location {
      * @param symbol the symbol
      */
     public void setSymbol(final Symbol symbol) {
-        nodeSymbol = symbol;
+        this.symbol = symbol;
     }
 
     /**
@@ -412,21 +412,4 @@ public abstract class Node extends Location {
         this.isTerminal = isTerminal;
     }
 
-    /**
-     * Return last node in a statement list.
-     *
-     * @param statements Statement list.
-     *
-     * @return Last (non-debug) statement or null if empty block.
-     */
-    public static Node lastStatement(final List<Node> statements) {
-        for (int lastIndex = statements.size() - 1; lastIndex >= 0; lastIndex--) {
-            final Node node = statements.get(lastIndex);
-            if (!node.isDebug()) {
-                return node;
-            }
-        }
-
-        return null;
-    }
 }

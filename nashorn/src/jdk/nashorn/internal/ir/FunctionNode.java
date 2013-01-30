@@ -32,10 +32,8 @@ import static jdk.nashorn.internal.ir.Symbol.IS_TEMP;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
@@ -126,9 +124,6 @@ public class FunctionNode extends Block {
     @Ignore
     private IdentNode varArgsNode;
 
-    /** this access properties. */
-    private final LinkedHashMap<String, Node> thisProperties;
-
     /** Pending label list. */
     private final Stack<LabelNode> labelStack;
 
@@ -146,6 +141,10 @@ public class FunctionNode extends Block {
     /** Line number for function declaration */
     @Ignore
     private LineNumberNode funcVarLineNumberNode;
+
+    /** Initializer var func = __callee__, where applicable */
+    @Ignore
+    private Node selfSymbolInit;
 
     /** Function flags. */
     private int flags;
@@ -183,7 +182,7 @@ public class FunctionNode extends Block {
     private static final int NEEDS_SCOPE           = HAS_ALL_VARS_IN_SCOPE | IS_VAR_ARG;
 
     /** What is the return type of this function? */
-    private Type returnType = Type.OBJECT;
+    private Type returnType = Type.UNKNOWN;
 
     /**
      * Used to keep track of a function's parent blocks.
@@ -216,7 +215,6 @@ public class FunctionNode extends Block {
         this.firstToken        = token;
         this.lastToken         = token;
         this.namespace         = new Namespace(compiler.getNamespace().getParent());
-        this.thisProperties    = new LinkedHashMap<>();
         this.labelStack        = new Stack<>();
         this.controlStack      = new Stack<>();
         this.declarations      = new ArrayList<>();
@@ -249,7 +247,6 @@ public class FunctionNode extends Block {
         this.argumentsNode     = (IdentNode)cs.existingOrCopy(functionNode.argumentsNode);
         this.varArgsNode       = (IdentNode)cs.existingOrCopy(functionNode.varArgsNode);
         this.calleeNode        = (IdentNode)cs.existingOrCopy(functionNode.calleeNode);
-        this.thisProperties    = new LinkedHashMap<>();
         this.labelStack        = new Stack<>();
         this.controlStack      = new Stack<>();
         this.declarations      = new ArrayList<>();
@@ -372,30 +369,44 @@ public class FunctionNode extends Block {
     /**
      * Create a temporary variable to the current frame.
      *
+     * @param currentFrame Frame to add to - defaults to current function frame
      * @param type  Strong type of symbol.
      * @param node  Primary node to use symbol.
      *
      * @return Symbol used.
      */
-    public Symbol newTemporary(final Type type, final Node node) {
-        Symbol sym = node.getSymbol();
+    public Symbol newTemporary(final Frame currentFrame, final Type type, final Node node) {
+        assert currentFrame != null;
+        Symbol symbol = node.getSymbol();
 
         // If no symbol already present.
-        if (sym == null) {
+        if (symbol == null) {
             final String uname = uniqueName(TEMP_PREFIX.tag());
-            sym = new Symbol(uname, IS_TEMP, type);
-            sym.setNode(node);
+            symbol = new Symbol(uname, IS_TEMP, type);
+            symbol.setNode(node);
         }
 
         // Assign a slot if it doesn't have one.
-        if (!sym.hasSlot()) {
-            frames.addSymbol(sym);
+        if (!symbol.hasSlot()) {
+            currentFrame.addSymbol(symbol);
         }
 
         // Set symbol to node.
-        node.setSymbol(sym);
+        node.setSymbol(symbol);
 
-        return sym;
+        return symbol;
+    }
+
+    /**
+     * Add a new temporary variable to the current frame
+     *
+     * @param type Strong type of symbol
+     * @param node Primary node to use symbol
+     *
+     * @return symbol used
+     */
+    public Symbol newTemporary(final Type type, final Node node) {
+        return newTemporary(frames, type, node);
     }
 
     /**
@@ -414,22 +425,13 @@ public class FunctionNode extends Block {
         return sym;
     }
 
-    /**
-     * Add a property to the constructor (function) based on this.x usage.
-     *
-     * @param key  Name of property.
-     * @param node Value node (has type.)
-     */
-    public void addThisProperty(final String key, final Node node) {
-        if (node == null) {
-            return;
-        }
-
-        thisProperties.put(key, node);
-    }
-
     @Override
     public void toString(final StringBuilder sb) {
+        sb.append('[');
+        sb.append(returnType);
+        sb.append(']');
+        sb.append(' ');
+
         sb.append("function");
 
         if (ident != null) {
@@ -872,11 +874,22 @@ public class FunctionNode extends Block {
     }
 
     /**
+     * Get the initializer statement for the __callee__ variable, where applicable
+     * for self references
+     * @return initialization
+     */
+    public Node getSelfSymbolInit() {
+        return this.selfSymbolInit;
+    }
+
+    /**
      * Flag the function as needing a self symbol. This is needed only for
      * self referring functions
+     * @param selfSymbolInit initialization expression for self symbol
      */
-    public void setNeedsSelfSymbol() {
+    public void setNeedsSelfSymbol(final Node selfSymbolInit) {
         this.flags |= NEEDS_SELF_SYMBOL;
+        this.selfSymbolInit = selfSymbolInit;
     }
 
     /**
@@ -942,16 +955,6 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Get a all properties accessed with {@code this} used as a base in this
-     * function - the map is ordered upon assignment order in the control flow
-     *
-     * @return map a map of property name to node mapping for this accesses
-     */
-    public Map<String, Node> getThisProperties() {
-        return Collections.unmodifiableMap(thisProperties);
-    }
-
-    /**
      * Get the namespace this function uses for its symbols
      * @return the namespace
      */
@@ -984,11 +987,7 @@ public class FunctionNode extends Block {
         //we never bother with object types narrower than objects, that will lead to byte code verification errors
         //as for instance even if we know we are returning a string from a method, the code generator will always
         //treat it as an object, at least for now
-        this.returnType = returnType.isObject() ? Type.OBJECT : returnType;
-        // Adjust type of result node symbol
-        if (returnType != Type.UNKNOWN) {
-            resultNode.getSymbol().setTypeOverride(this.returnType);
-        }
+        this.returnType = Type.widest(this.returnType,  returnType.isObject() ? Type.OBJECT : returnType);
     }
 
     /**
@@ -1010,15 +1009,13 @@ public class FunctionNode extends Block {
 
     /**
      * Set the lowered state
-     *
-     * @param isLowered lowered state
      */
-    public void setIsLowered(final boolean isLowered) {
-        flags = isLowered ? flags | IS_LOWERED : flags & ~IS_LOWERED;
+    public void setIsLowered() {
+        flags |= IS_LOWERED;
     }
 
     /**
-     * Get the lowered
+     * Get the lowered state
      *
      * @return true if function is lowered
      */
@@ -1075,22 +1072,6 @@ public class FunctionNode extends Block {
     public List<VarNode> getDeclarations() {
         return Collections.unmodifiableList(declarations);
     }
-
-    /**
-     * @return the unit index
-     */
-//    public int getUnit() {
- //       return unit;
- //   }
-
-    /**
-     * Set the index of this function's compile unit. Used by splitter.
-     * @see Splitter
-     * @param unit the unit index
-     */
-//    public void setUnit(final int unit) {
-//        this.unit = unit;
-//    }
 
     /**
      * Get the compile unit used to compile this function

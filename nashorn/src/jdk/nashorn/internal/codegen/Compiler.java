@@ -70,8 +70,16 @@ public final class Compiler {
         INITIALIZED,
         /** method has been parsed */
         PARSED,
+        /** constant folding pass */
+        CONSTANT_FOLDED,
         /** method has been lowered */
         LOWERED,
+        /** method hass been attributed */
+        ATTR,
+        /** method has been split */
+        SPLIT,
+        /** method has had its types finalized */
+        FINALIZED,
         /** method has been emitted to bytecode */
         EMITTED
     }
@@ -136,25 +144,6 @@ public final class Compiler {
     private static final boolean LAZY_JIT = false;
 
     /**
-     * Should we use integers for literals and all operations
-     * that are based in constant and parameter assignment as
-     * long as they can be proven not to overflow? With this enabled
-     * var x = 17 would tag x as an integer, rather than a double,
-     * but as soon as it is used in an operation that may potentially
-     * overflow, such as an add, we conservatively widen it to double
-     * (number type). This is because overflow checks in the code
-     * are likely much more expensive that method specialization
-     *
-     * @return true if numbers should start as ints, false if they should
-     *   start as doubles
-     */
-    static boolean shouldUseIntegers() {
-        return USE_INTS;
-    }
-
-    private static final boolean USE_INTS;
-
-    /**
      * Should we use integers for arithmetic operations as well?
      * TODO: We currently generate no overflow checks so this is
      * disabled
@@ -165,13 +154,12 @@ public final class Compiler {
      *   operands by default.
      */
     static boolean shouldUseIntegerArithmetic() {
-        return Compiler.shouldUseIntegers() && USE_INT_ARITH;
+        return USE_INT_ARITH;
     }
 
     private static final boolean USE_INT_ARITH;
 
     static {
-        USE_INTS       = !Options.getBooleanProperty("nashorn.compiler.ints.disable");
         USE_INT_ARITH  =  Options.getBooleanProperty("nashorn.compiler.intarithmetic");
 
         assert !USE_INT_ARITH : "Integer arithmetic is not enabled";
@@ -338,46 +326,93 @@ public final class Compiler {
         try {
             strict |= functionNode.isStrictMode();
 
-            if (!state.contains(State.LOWERED)) {
-                debugPrintAST();
+            /*
+             * These are the compile phases:
+             *
+             * Constant folding pass
+             *   Simple constant folding that will make elementary constructs go away
+             *
+             * Lower (Control flow pass)
+             *   Finalizes the control flow. Clones blocks for finally constructs and
+             *   similar things. Establishes termination criteria for nodes
+             *   Guarantee return instructions to method making sure control flow
+             *   cannot fall off the end. Replacing high level nodes with lower such
+             *   as runtime nodes where applicable.
+             *
+             * Attr
+             *   Assign symbols and types to all nodes.
+             *
+             * Splitter
+             *   Split the AST into several compile units based on a size heuristic
+             *   Splitter needs attributed AST for weight calculations (e.g. is
+             *   a + b a ScriptRuntime.ADD with call overhead or a dadd with much
+             *   less). Split IR can lead to scope information being changed.
+             *
+             * Contract: all variables must have slot assignments and scope assignments
+             * before lowering.
+             *
+             * FinalizeTypes
+             *   This pass finalizes the types for nodes. If Attr created wider types than
+             *   known during the first pass, convert nodes are inserted or access nodes
+             *   are specialized where scope accesses.
+             *
+             *   Runtime nodes may be removed and primitivized or reintroduced depending
+             *   on information that was established in Attr.
+             *
+             * CodeGeneration
+             *   Emit bytecode
+             *
+             */
+
+            debugPrintAST();
+
+            if (!state.contains(State.FINALIZED)) {
+                LOG.info("Folding constants in '" + functionNode.getName() + "'");
+                functionNode.accept(new FoldConstants());
+                state.add(State.CONSTANT_FOLDED);
+
                 LOG.info("Lowering '" + functionNode.getName() + "'");
                 functionNode.accept(new Lower(this));
                 state.add(State.LOWERED);
+
+                LOG.info("Attributing types '" + functionNode.getName() + "'");
+                functionNode.accept(new Attr(this));
+                state.add(State.ATTR);
+
+                this.scriptName = computeNames();
+
+                // Main script code always goes to this compile unit. Note that since we start this with zero weight
+                // and add script code last this class may end up slightly larger than others, but reserving one class
+                // just for the main script seems wasteful.
+                final CompileUnit scriptCompileUnit = addCompileUnit(firstCompileUnitName(), 0L);
+                LOG.info("Splitting '" + functionNode.getName() + "'");
+                new Splitter(this, functionNode, scriptCompileUnit).split();
+                state.add(State.SPLIT);
+                assert functionNode.getCompileUnit() == scriptCompileUnit;
+
+                assert strict == functionNode.isStrictMode() : "strict == " + strict + " but functionNode == " + functionNode.isStrictMode();
+                if (functionNode.isStrictMode()) {
+                    strict = true;
+                }
+
+                LOG.info("Finalizing types for '" + functionNode.getName() + "'");
+                functionNode.accept(new FinalizeTypes(this));
+                state.add(State.FINALIZED);
+
+                // print ast and parse if --print-lower-ast and/or --print-lower-parse are selected
+                debugPrintAST();
+                debugPrintParse();
 
                 if (errors.hasErrors()) {
                     return false;
                 }
             }
 
-            scriptName = computeNames();
-
-            // Main script code always goes to this compile unit. Note that since we start this with zero weight
-            // and add script code last this class may end up slightly larger than others, but reserving one class
-            // just for the main script seems wasteful.
-            final CompileUnit scriptCompileUnit = addCompileUnit(firstCompileUnitName(), 0l);
-            LOG.info("Splitting '" + functionNode.getName() + "'");
-            new Splitter(this, functionNode, scriptCompileUnit).split();
-            assert functionNode.getCompileUnit() == scriptCompileUnit;
-
-            /** Compute compile units */
-            assert strict == functionNode.isStrictMode() : "strict == " + strict + " but functionNode == " + functionNode.isStrictMode();
-            if (functionNode.isStrictMode()) {
-                strict = true;
-            }
-
-            LOG.info("Adjusting slot and scope information for symbols for '" + functionNode.getName() + "'");
-            functionNode.accept(new Lower.FinalizeSymbols());
-
-            LOG.info("Specializing callsite types for '" + functionNode.getName() + "'");
-            functionNode.accept(new AccessSpecializer());
-
             try {
                 LOG.info("Emitting bytecode for '" + functionNode.getName() + "'");
                 final CodeGenerator codegen = new CodeGenerator(this);
                 functionNode.accept(codegen);
                 codegen.generateScopeCalls();
-                debugPrintAST();
-                debugPrintParse();
             } catch (final VerifyError e) {
                 if (context._verify_code || context._print_code) {
                     context.getErr().println(e.getClass().getSimpleName() + ": " + e.getMessage());
