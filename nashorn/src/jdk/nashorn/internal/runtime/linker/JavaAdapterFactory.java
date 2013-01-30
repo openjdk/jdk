@@ -286,8 +286,8 @@ public final class JavaAdapterFactory {
 
     private static String getGeneratedClassName(final Class<?> superType, final List<Class<?>> interfaces) {
         // The class we use to primarily name our adapter is either the superclass, or if it is Object (meaning we're
-        // just implementing interfaces), then the first implemented interface.
-        final Class<?> namingType = superType == Object.class ? interfaces.get(0) : superType;
+        // just implementing interfaces or extending Object), then the first implemented interface or Object.
+        final Class<?> namingType = superType == Object.class ? (interfaces.isEmpty()? Object.class : interfaces.get(0)) : superType;
         final Package pkg = namingType.getPackage();
         final String namingTypeName = Type.getInternalName(namingType);
         final StringBuilder buf = new StringBuilder();
