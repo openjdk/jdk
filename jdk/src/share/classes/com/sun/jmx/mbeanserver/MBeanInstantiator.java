@@ -32,11 +32,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.Permission;
 import java.util.Map;
 import java.util.logging.Level;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
+import javax.management.MBeanPermission;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
@@ -44,7 +46,7 @@ import javax.management.ReflectionException;
 import javax.management.RuntimeErrorException;
 import javax.management.RuntimeMBeanException;
 import javax.management.RuntimeOperationsException;
-
+import sun.reflect.misc.ConstructorUtil;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -56,7 +58,6 @@ import sun.reflect.misc.ReflectUtil;
  * @since 1.5
  */
 public class MBeanInstantiator {
-
     private final ModifiableClassLoaderRepository clr;
     //    private MetaData meta = null;
 
@@ -88,6 +89,7 @@ public class MBeanInstantiator {
                              "Exception occurred during object instantiation");
         }
 
+        ReflectUtil.checkPackageAccess(className);
         try {
             if (clr == null) throw new ClassNotFoundException(className);
             theClass = clr.loadClass(className);
@@ -162,6 +164,7 @@ public class MBeanInstantiator {
                     continue;
                 }
 
+                ReflectUtil.checkPackageAccess(signature[i]);
                 // Ok we do not have a primitive type ! We need to build
                 // the signature of the method
                 //
@@ -205,6 +208,9 @@ public class MBeanInstantiator {
      */
     public Object instantiate(Class<?> theClass)
         throws ReflectionException, MBeanException {
+
+        checkMBeanPermission(theClass, null, null, "instantiate");
+
         Object moi;
 
 
@@ -260,6 +266,9 @@ public class MBeanInstantiator {
     public Object instantiate(Class<?> theClass, Object params[],
                               String signature[], ClassLoader loader)
         throws ReflectionException, MBeanException {
+
+        checkMBeanPermission(theClass, null, null, "instantiate");
+
         // Instantiate the new object
 
         // ------------------------------
@@ -407,6 +416,8 @@ public class MBeanInstantiator {
             throw new  RuntimeOperationsException(new
              IllegalArgumentException(), "Null className passed in parameter");
         }
+
+        ReflectUtil.checkPackageAccess(className);
         Class<?> theClass;
         if (loaderName == null) {
             // Load the class using the agent class loader
@@ -619,13 +630,13 @@ public class MBeanInstantiator {
      **/
     static Class<?> loadClass(String className, ClassLoader loader)
         throws ReflectionException {
-
         Class<?> theClass;
         if (className == null) {
             throw new RuntimeOperationsException(new
                 IllegalArgumentException("The class name cannot be null"),
                               "Exception occurred during object instantiation");
         }
+        ReflectUtil.checkPackageAccess(className);
         try {
             if (loader == null)
                 loader = MBeanInstantiator.class.getClassLoader();
@@ -676,6 +687,7 @@ public class MBeanInstantiator {
                 // We need to load the class through the class
                 // loader of the target object.
                 //
+                ReflectUtil.checkPackageAccess(signature[i]);
                 tab[i] = Class.forName(signature[i], false, aLoader);
             }
         } catch (ClassNotFoundException e) {
@@ -701,7 +713,7 @@ public class MBeanInstantiator {
 
     private Constructor<?> findConstructor(Class<?> c, Class<?>[] params) {
         try {
-            return c.getConstructor(params);
+            return ConstructorUtil.getConstructor(c, params);
         } catch (Exception e) {
             return null;
         }
@@ -714,5 +726,19 @@ public class MBeanInstantiator {
                                           long.class, float.class, double.class,
                                           char.class, boolean.class})
             primitiveClasses.put(c.getName(), c);
+    }
+
+    private static void checkMBeanPermission(Class<?> clazz,
+                                             String member,
+                                             ObjectName objectName,
+                                             String actions) {
+        SecurityManager sm = System.getSecurityManager();
+        if (clazz != null && sm != null) {
+            Permission perm = new MBeanPermission(clazz.getName(),
+                                                  member,
+                                                  objectName,
+                                                  actions);
+            sm.checkPermission(perm);
+        }
     }
 }
