@@ -123,7 +123,7 @@ public class TextArea extends TextComponent {
      * Cache the Sets of forward and backward traversal keys so we need not
      * look them up each time.
      */
-    private static Set forwardTraversalKeys, backwardTraversalKeys;
+    private static Set<AWTKeyStroke> forwardTraversalKeys, backwardTraversalKeys;
 
     /*
      * JDK 1.1 serialVersionUID
@@ -143,10 +143,10 @@ public class TextArea extends TextComponent {
         }
         forwardTraversalKeys = KeyboardFocusManager.initFocusTraversalKeysSet(
             "ctrl TAB",
-            new HashSet());
+            new HashSet<AWTKeyStroke>());
         backwardTraversalKeys = KeyboardFocusManager.initFocusTraversalKeysSet(
             "ctrl shift TAB",
-            new HashSet());
+            new HashSet<AWTKeyStroke>());
     }
 
     /**

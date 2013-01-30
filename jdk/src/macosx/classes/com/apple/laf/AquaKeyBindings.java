@@ -142,6 +142,21 @@ public class AquaKeyBindings {
         }));
     }
 
+    LateBoundInputMap getPasswordFieldInputMap() {
+        return new LateBoundInputMap(new SimpleBinding(getTextFieldInputMap().getBindings()),
+                // nullify all the bindings that may discover space characters in the text
+                new SimpleBinding(new String[] {
+                        "alt LEFT", null,
+                        "alt KP_LEFT", null,
+                        "alt RIGHT", null,
+                        "alt KP_RIGHT", null,
+                        "shift alt LEFT", null,
+                        "shift alt KP_LEFT", null,
+                        "shift alt RIGHT", null,
+                        "shift alt KP_RIGHT", null,
+                }));
+    }
+
     LateBoundInputMap getMultiLineTextInputMap() {
         return new LateBoundInputMap(new SimpleBinding(commonTextEditorBindings), new SimpleBinding(new String[] {
             "ENTER", DefaultEditorKit.insertBreakAction,
