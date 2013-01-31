@@ -22,7 +22,7 @@
  */
 
 /**
- * @test 4235519 8004212
+ * @test 4235519 8004212 8005394 8007298
  * @summary tests java.util.Base64
  */
 
@@ -109,6 +109,9 @@ public class TestBase64 {
 
         // test return value from decode(ByteBuffer, ByteBuffer)
         testDecBufRet();
+
+        // test single-non-base64 character for mime decoding
+        testSingleNonBase64MimeDec();
     }
 
     private static sun.misc.BASE64Encoder sunmisc = new sun.misc.BASE64Encoder();
@@ -295,6 +298,7 @@ public class TestBase64 {
         checkNull(new Runnable() { public void run() { enc.encode(bb_null); }});
         checkNull(new Runnable() { public void run() { enc.encode(bb_null, ByteBuffer.allocate(10), 0); }});
         checkNull(new Runnable() { public void run() { enc.encode(ByteBuffer.allocate(10), bb_null, 0); }});
+        checkNull(new Runnable() { public void run() { enc.wrap(null); }});
     }
 
     private static void testNull(final Base64.Decoder dec) {
@@ -305,6 +309,7 @@ public class TestBase64 {
         checkNull(new Runnable() { public void run() { dec.decode(bb_null); }});
         checkNull(new Runnable() { public void run() { dec.decode(bb_null, ByteBuffer.allocate(10)); }});
         checkNull(new Runnable() { public void run() { dec.decode(ByteBuffer.allocate(10), bb_null); }});
+        checkNull(new Runnable() { public void run() { dec.wrap(null); }});
     }
 
     private static interface Testable {
@@ -354,6 +359,19 @@ public class TestBase64 {
         } catch (IllegalArgumentException iae) {}
     }
 
+    // single-non-base64-char should be ignored for mime decoding, but
+    // iae for basic decoding
+    private static void testSingleNonBase64MimeDec() throws Throwable {
+        for (String nonBase64 : new String[] {"#", "(", "!", "\\", "-", "_"}) {
+            if (Base64.getMimeDecoder().decode(nonBase64).length != 0) {
+                throw new RuntimeException("non-base64 char is not ignored");
+            }
+            try {
+                Base64.getDecoder().decode(nonBase64);
+                throw new RuntimeException("No IAE for single non-base64 char");
+            } catch (IllegalArgumentException iae) {}
+        }
+    }
 
     private static void testDecBufRet() throws Throwable {
         Random rnd = new java.util.Random();

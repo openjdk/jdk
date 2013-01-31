@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@ package java.lang.annotation;
 import java.util.Objects;
 
 /**
- * Thrown to indicate that an annotation type whose declaration is
- * (meta-)annotated with a {@link ContainerFor} annotation is not, in
- * fact, the <em>containing annotation type of the type named by {@link
- * ContainerFor}</em>.
+ * Thrown to indicate that an annotation type expected to act as a
+ * container for another annotation type by virture of an @Repeatable
+ * annotation, does not act as a container.
  *
  * @see   java.lang.reflect.AnnotatedElement
  * @since 1.8
