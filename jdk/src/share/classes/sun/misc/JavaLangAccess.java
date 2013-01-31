@@ -97,9 +97,4 @@ public interface JavaLangAccess {
      * Returns the ith StackTraceElement for the given throwable.
      */
     StackTraceElement getStackTraceElement(Throwable t, int i);
-
-    /**
-     * Returns a directly present annotation.
-     */
-    public <A extends Annotation> A getDirectDeclaredAnnotation(Class<?> klass, Class<A> anno);
 }

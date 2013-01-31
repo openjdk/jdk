@@ -233,8 +233,7 @@ public final class Parameter implements AnnotatedElement {
      */
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-
-        return AnnotationSupport.getOneAnnotation(declaredAnnotations(), annotationClass);
+        return annotationClass.cast(declaredAnnotations().get(annotationClass));
     }
 
     /**

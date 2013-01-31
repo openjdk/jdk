@@ -3075,11 +3075,12 @@ public final
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
         initAnnotationsIfNecessary();
-        return AnnotationSupport.getOneAnnotation(annotations, annotationClass);
+        return (A) annotations.get(annotationClass);
     }
 
     /**
@@ -3108,18 +3109,19 @@ public final
      */
     public Annotation[] getAnnotations() {
         initAnnotationsIfNecessary();
-        return AnnotationSupport.unpackToArray(annotations);
+        return AnnotationParser.toArray(annotations);
     }
 
     /**
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
+    @SuppressWarnings("unchecked")
     public <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
         initAnnotationsIfNecessary();
-        return AnnotationSupport.getOneAnnotation(declaredAnnotations, annotationClass);
+        return (A) declaredAnnotations.get(annotationClass);
     }
 
     /**
@@ -3138,17 +3140,7 @@ public final
      */
     public Annotation[] getDeclaredAnnotations()  {
         initAnnotationsIfNecessary();
-        return AnnotationSupport.unpackToArray(declaredAnnotations);
-    }
-
-    /** Returns one "directly" present annotation or null */
-    <A extends Annotation> A getDirectDeclaredAnnotation(Class<A> annotationClass) {
-        Objects.requireNonNull(annotationClass);
-
-        initAnnotationsIfNecessary();
-        @SuppressWarnings("unchecked") // TODO check safe
-        A ret = (A)declaredAnnotations.get(annotationClass);
-        return ret;
+        return AnnotationParser.toArray(declaredAnnotations);
     }
 
     // Annotations cache
