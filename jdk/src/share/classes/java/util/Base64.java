@@ -413,6 +413,7 @@ public class Base64 {
          *          specified Base64 encoded format
          */
         public OutputStream wrap(OutputStream os) {
+            Objects.requireNonNull(os);
             return new EncOutputStream(os, isURL ? toBase64URL : toBase64,
                                        newline, linemax);
         }
@@ -866,6 +867,7 @@ public class Base64 {
          *          byte stream
          */
         public InputStream wrap(InputStream is) {
+            Objects.requireNonNull(is);
             return new DecInputStream(is, isURL ? fromBase64URL : fromBase64, isMIME);
         }
 

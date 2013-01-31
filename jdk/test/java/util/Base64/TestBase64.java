@@ -22,7 +22,7 @@
  */
 
 /**
- * @test 4235519 8004212
+ * @test 4235519 8004212 8005394
  * @summary tests java.util.Base64
  */
 
@@ -295,6 +295,7 @@ public class TestBase64 {
         checkNull(new Runnable() { public void run() { enc.encode(bb_null); }});
         checkNull(new Runnable() { public void run() { enc.encode(bb_null, ByteBuffer.allocate(10), 0); }});
         checkNull(new Runnable() { public void run() { enc.encode(ByteBuffer.allocate(10), bb_null, 0); }});
+        checkNull(new Runnable() { public void run() { enc.wrap(null); }});
     }
 
     private static void testNull(final Base64.Decoder dec) {
@@ -305,6 +306,7 @@ public class TestBase64 {
         checkNull(new Runnable() { public void run() { dec.decode(bb_null); }});
         checkNull(new Runnable() { public void run() { dec.decode(bb_null, ByteBuffer.allocate(10)); }});
         checkNull(new Runnable() { public void run() { dec.decode(ByteBuffer.allocate(10), bb_null); }});
+        checkNull(new Runnable() { public void run() { dec.wrap(null); }});
     }
 
     private static interface Testable {
