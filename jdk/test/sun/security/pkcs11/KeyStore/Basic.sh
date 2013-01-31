@@ -54,9 +54,13 @@ fi
 if [ "${TESTJAVA}" = "" ] ; then
     TESTJAVA="/net/radiant/export1/charlie/mustang/build/solaris-sparc"
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
+echo echo COMPILEJAVA=${COMPILEJAVA}
 echo ""
 
 # get command from input args -
@@ -163,7 +167,7 @@ fi
 # compile test
 
 if [ "${RECOMPILE}" = "yes" ] ; then
-    ${TESTJAVA}${FS}bin${FS}javac \
+    ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
 	-classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
 	-d ${TESTCLASSES} \
 	${TESTSRC}${FS}Basic.java

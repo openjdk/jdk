@@ -72,6 +72,13 @@ JARS+=$(IMAGES_OUTPUTDIR)/lib/ext/dnsns.jar
 
 ##########################################################################################
 
+$(IMAGES_OUTPUTDIR)/lib/tzdb.jar: $(JDK_OUTPUTDIR)/lib/tzdb.jar
+	$(install-file)
+
+JARS += $(IMAGES_OUTPUTDIR)/lib/tzdb.jar 
+
+##########################################################################################
+
 LOCALEDATA_INCLUDE_LOCALES := ar be bg ca cs da de el es et fi fr ga hi hr hu in is it \
                               iw ja ko lt lv mk ms mt nl no pl pt ro ru sk sl sq sr sv \
                               th tr uk vi zh
@@ -134,6 +141,7 @@ RT_JAR_EXCLUDES := \
 	com/sun/crypto/provider \
 	com/sun/istack/internal/tools \
 	com/sun/jarsigner \
+	com/sun/java/accessibility \
 	com/sun/javadoc \
 	com/sun/jdi \
 	com/sun/net/ssl/internal/ssl \
@@ -931,6 +939,47 @@ $(eval $(call SetupZipArchive,BUILD_SRC_ZIP,\
 		EXTRA_DEPS:=$(LAUNCHER_ZIP_SRC)))
 
 JARS+=$(IMAGES_OUTPUTDIR)/src.zip
+
+##########################################################################################
+
+ifndef OPENJDK
+ifeq ($(OPENJDK_TARGET_OS), windows)
+
+    $(eval $(call SetupArchive,BUILD_JACCESS_JAR,,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes,\
+		INCLUDES:=com/sun/java/accessibility/util,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/jaccess.jar,\
+		SKIP_METAINF:=true))
+
+    JARS += $(IMAGES_OUTPUTDIR)/lib/ext/jaccess.jar
+
+    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+        $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_32_JAR,,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/32bit $(JDK_OUTPUTDIR)/classes,\
+		INCLUDES:=com/sun/java/accessibility,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge-32.jar,\
+		SKIP_METAINF:=true))
+
+        $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_LEGACY_JAR,,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/legacy $(JDK_OUTPUTDIR)/classes,\
+		INCLUDES:=com/sun/java/accessibility,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge.jar,\
+		SKIP_METAINF:=true))
+
+        JARS += $(IMAGES_OUTPUTDIR)/lib/ext/access-bridge-32.jar \
+		$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge.jar
+    else
+        $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_64_JAR,,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/64bit $(JDK_OUTPUTDIR)/classes,\
+		INCLUDES:=com/sun/java/accessibility,\
+		EXCLUDES:=com/sun/java/accessibility/util/java,\
+		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge-64.jar,\
+		SKIP_METAINF:=true))
+
+        JARS += $(IMAGES_OUTPUTDIR)/lib/ext/access-bridge-64.jar
+    endif
+endif
+endif
 
 ##########################################################################################
 

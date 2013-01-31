@@ -207,6 +207,7 @@ COMMON_JAVADOCFLAGS =					\
 		-quiet					\
                 -use					\
                 -keywords				\
+		-Xdoclint:none				\
 		$(ADDITIONAL_JAVADOCFLAGS)
 
 ifdef OPENJDK

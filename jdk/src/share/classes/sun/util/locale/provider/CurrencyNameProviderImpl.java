@@ -26,7 +26,6 @@
 package sun.util.locale.provider;
 
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.spi.CurrencyNameProvider;
 
@@ -120,11 +119,6 @@ public class CurrencyNameProviderImpl extends CurrencyNameProvider
             throw new NullPointerException();
         }
 
-        ResourceBundle bundle = LocaleProviderAdapter.forType(type).getLocaleData().getCurrencyNames(locale);
-        if (bundle.containsKey(key)) {
-                return bundle.getString(key);
-            }
-
-        return null;
+        return LocaleProviderAdapter.forType(type).getLocaleResources(locale).getCurrencyName(key);
     }
 }

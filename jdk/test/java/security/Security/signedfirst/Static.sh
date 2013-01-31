@@ -43,6 +43,10 @@ if [ "${TESTJAVA}" = "" ] ; then
    exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]; then
+   COMPILEJAVA="${TESTJAVA}"
+fi
+
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
@@ -77,7 +81,7 @@ cd ${TESTCLASSES}${FILESEP}
 rm StaticSignedProvFirst.class
 
 # compile the test program
-${TESTJAVA}${FILESEP}bin${FILESEP}javac \
+${COMPILEJAVA}${FILESEP}bin${FILESEP}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -classpath "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}exp.jar" \
         -d ${TESTCLASSES}${FILESEP} \
         ${TESTSRC}${FILESEP}StaticSignedProvFirst.java
