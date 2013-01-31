@@ -23,13 +23,17 @@
 
 /*
  * @test
- * @bug 8003280
+ * @bug 8003280 8006694
  * @summary Add lambda tests
  *  Automatic test for checking correctness of structural most specific test routine
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main/timeout=600 StructuralMostSpecificTest
+ * @run main/othervm/timeout=600 StructuralMostSpecificTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;

@@ -56,6 +56,7 @@ Metachunk* Metachunk::initialize(MetaWord* ptr, size_t word_size) {
   assert(chunk_end > chunk_bottom, "Chunk must be too small");
   chunk->set_end(chunk_end);
   chunk->set_next(NULL);
+  chunk->set_prev(NULL);
   chunk->set_word_size(word_size);
 #ifdef ASSERT
   size_t data_word_size = pointer_delta(chunk_end, chunk_bottom, sizeof(MetaWord));
@@ -76,15 +77,15 @@ MetaWord* Metachunk::allocate(size_t word_size) {
 }
 
 // _bottom points to the start of the chunk including the overhead.
-size_t Metachunk::used_word_size() {
+size_t Metachunk::used_word_size() const {
   return pointer_delta(_top, _bottom, sizeof(MetaWord));
 }
 
-size_t Metachunk::free_word_size() {
+size_t Metachunk::free_word_size() const {
   return pointer_delta(_end, _top, sizeof(MetaWord));
 }
 
-size_t Metachunk::capacity_word_size() {
+size_t Metachunk::capacity_word_size() const {
   return pointer_delta(_end, _bottom, sizeof(MetaWord));
 }
 
@@ -93,6 +94,10 @@ void Metachunk::print_on(outputStream* st) const {
                " bottom " PTR_FORMAT " top " PTR_FORMAT
                " end " PTR_FORMAT " size " SIZE_FORMAT,
                bottom(), top(), end(), word_size());
+  if (Verbose) {
+    st->print_cr("    used " SIZE_FORMAT " free " SIZE_FORMAT,
+                 used_word_size(), free_word_size());
+  }
 }
 
 #ifndef PRODUCT

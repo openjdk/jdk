@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,29 +243,32 @@ void os::Bsd::initialize_system_info() {
   int mib[2];
   size_t len;
   int cpu_val;
-  u_long mem_val;
+  julong mem_val;
 
   /* get processors count via hw.ncpus sysctl */
   mib[0] = CTL_HW;
   mib[1] = HW_NCPU;
   len = sizeof(cpu_val);
   if (sysctl(mib, 2, &cpu_val, &len, NULL, 0) != -1 && cpu_val >= 1) {
+       assert(len == sizeof(cpu_val), "unexpected data size");
        set_processor_count(cpu_val);
   }
   else {
        set_processor_count(1);   // fallback
   }
 
-  /* get physical memory via hw.usermem sysctl (hw.usermem is used
-   * instead of hw.physmem because we need size of allocatable memory
+  /* get physical memory via hw.memsize sysctl (hw.memsize is used
+   * since it returns a 64 bit value)
    */
   mib[0] = CTL_HW;
-  mib[1] = HW_USERMEM;
+  mib[1] = HW_MEMSIZE;
   len = sizeof(mem_val);
-  if (sysctl(mib, 2, &mem_val, &len, NULL, 0) != -1)
+  if (sysctl(mib, 2, &mem_val, &len, NULL, 0) != -1) {
+       assert(len == sizeof(mem_val), "unexpected data size");
        _physical_memory = mem_val;
-  else
+  } else {
        _physical_memory = 256*1024*1024;       // fallback (XXXBSD?)
+  }
 
 #ifdef __OpenBSD__
   {
@@ -298,12 +301,12 @@ void os::init_system_properties_values() {
 
   // The next steps are taken in the product version:
   //
-  // Obtain the JAVA_HOME value from the location of libjvm[_g].so.
+  // Obtain the JAVA_HOME value from the location of libjvm.so.
   // This library should be located at:
-  // <JAVA_HOME>/jre/lib/<arch>/{client|server}/libjvm[_g].so.
+  // <JAVA_HOME>/jre/lib/<arch>/{client|server}/libjvm.so.
   //
   // If "/jre/lib/" appears at the right place in the path, then we
-  // assume libjvm[_g].so is installed in a JDK and we use this path.
+  // assume libjvm.so is installed in a JDK and we use this path.
   //
   // Otherwise exit with message: "Could not create the Java virtual machine."
   //
@@ -313,9 +316,9 @@ void os::init_system_properties_values() {
   // instead of exit check for $JAVA_HOME environment variable.
   //
   // If it is defined and we are able to locate $JAVA_HOME/jre/lib/<arch>,
-  // then we append a fake suffix "hotspot/libjvm[_g].so" to this path so
-  // it looks like libjvm[_g].so is installed there
-  // <JAVA_HOME>/jre/lib/<arch>/hotspot/libjvm[_g].so.
+  // then we append a fake suffix "hotspot/libjvm.so" to this path so
+  // it looks like libjvm.so is installed there
+  // <JAVA_HOME>/jre/lib/<arch>/hotspot/libjvm.so.
   //
   // Otherwise exit.
   //
@@ -1228,7 +1231,7 @@ const char* os::get_current_directory(char *buf, int buflen) {
   return getcwd(buf, buflen);
 }
 
-// check if addr is inside libjvm[_g].so
+// check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
   Dl_info dlinfo;
@@ -1689,7 +1692,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 
 static char saved_jvm_path[MAXPATHLEN] = {0};
 
-// Find the full path to the current module, libjvm or libjvm_g
+// Find the full path to the current module, libjvm
 void os::jvm_path(char *buf, jint buflen) {
   // Error checking.
   if (buflen < MAXPATHLEN) {
@@ -1732,10 +1735,9 @@ void os::jvm_path(char *buf, jint buflen) {
         char* jrelib_p;
         int len;
 
-        // Check the current module name "libjvm" or "libjvm_g".
+        // Check the current module name "libjvm"
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
-        p = strstr(p, "_g") ? "_g" : "";
 
         rp = realpath(java_home_var, buf);
         if (rp == NULL)
@@ -1764,11 +1766,9 @@ void os::jvm_path(char *buf, jint buflen) {
         // to complete the path to JVM being overridden.  Otherwise fallback
         // to the path to the current library.
         if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm[_g]" instead of
-          // "libjvm"debug_only("_g")"" since for fastdebug version
-          // we should have "libjvm" but debug_only("_g") adds "_g"!
+          // Use current module name "libjvm"
           len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/libjvm%s%s", p, JNI_LIB_SUFFIX);
+          snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
         } else {
           // Fall back to path of current library
           rp = realpath(dli_fname, buf);
@@ -4094,11 +4094,12 @@ void os::PlatformEvent::park() {       // AKA "down()"
      }
      -- _nParked ;
 
-    // In theory we could move the ST of 0 into _Event past the unlock(),
-    // but then we'd need a MEMBAR after the ST.
     _Event = 0 ;
      status = pthread_mutex_unlock(_mutex);
      assert_status(status == 0, status, "mutex_unlock");
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other.
+    OrderAccess::fence();
   }
   guarantee (_Event >= 0, "invariant") ;
 }
@@ -4161,40 +4162,44 @@ int os::PlatformEvent::park(jlong millis) {
   status = pthread_mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");
   assert (_nParked == 0, "invariant") ;
+  // Paranoia to ensure our locked and lock-free paths interact
+  // correctly with each other.
+  OrderAccess::fence();
   return ret;
 }
 
 void os::PlatformEvent::unpark() {
-  int v, AnyWaiters ;
-  for (;;) {
-      v = _Event ;
-      if (v > 0) {
-         // The LD of _Event could have reordered or be satisfied
-         // by a read-aside from this processor's write buffer.
-         // To avoid problems execute a barrier and then
-         // ratify the value.
-         OrderAccess::fence() ;
-         if (_Event == v) return ;
-         continue ;
-      }
-      if (Atomic::cmpxchg (v+1, &_Event, v) == v) break ;
+  // Transitions for _Event:
+  //    0 :=> 1
+  //    1 :=> 1
+  //   -1 :=> either 0 or 1; must signal target thread
+  //          That is, we can safely transition _Event from -1 to either
+  //          0 or 1. Forcing 1 is slightly more efficient for back-to-back
+  //          unpark() calls.
+  // See also: "Semaphores in Plan 9" by Mullender & Cox
+  //
+  // Note: Forcing a transition from "-1" to "1" on an unpark() means
+  // that it will take two back-to-back park() calls for the owning
+  // thread to block. This has the benefit of forcing a spurious return
+  // from the first park() call after an unpark() call which will help
+  // shake out uses of park() and unpark() without condition variables.
+
+  if (Atomic::xchg(1, &_Event) >= 0) return;
+
+  // Wait for the thread associated with the event to vacate
+  int status = pthread_mutex_lock(_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+  int AnyWaiters = _nParked;
+  assert(AnyWaiters == 0 || AnyWaiters == 1, "invariant");
+  if (AnyWaiters != 0 && WorkAroundNPTLTimedWaitHang) {
+    AnyWaiters = 0;
+    pthread_cond_signal(_cond);
   }
-  if (v < 0) {
-     // Wait for the thread associated with the event to vacate
-     int status = pthread_mutex_lock(_mutex);
-     assert_status(status == 0, status, "mutex_lock");
-     AnyWaiters = _nParked ;
-     assert (AnyWaiters == 0 || AnyWaiters == 1, "invariant") ;
-     if (AnyWaiters != 0 && WorkAroundNPTLTimedWaitHang) {
-        AnyWaiters = 0 ;
-        pthread_cond_signal (_cond);
-     }
-     status = pthread_mutex_unlock(_mutex);
-     assert_status(status == 0, status, "mutex_unlock");
-     if (AnyWaiters != 0) {
-        status = pthread_cond_signal(_cond);
-        assert_status(status == 0, status, "cond_signal");
-     }
+  status = pthread_mutex_unlock(_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+  if (AnyWaiters != 0) {
+    status = pthread_cond_signal(_cond);
+    assert_status(status == 0, status, "cond_signal");
   }
 
   // Note that we signal() _after dropping the lock for "immortal" Events.
@@ -4280,13 +4285,14 @@ static void unpackTime(struct timespec* absTime, bool isAbsolute, jlong time) {
 }
 
 void Parker::park(bool isAbsolute, jlong time) {
+  // Ideally we'd do something useful while spinning, such
+  // as calling unpackTime().
+
   // Optional fast-path check:
   // Return immediately if a permit is available.
-  if (_counter > 0) {
-      _counter = 0 ;
-      OrderAccess::fence();
-      return ;
-  }
+  // We depend on Atomic::xchg() having full barrier semantics
+  // since we are doing a lock-free update to _counter.
+  if (Atomic::xchg(0, &_counter) > 0) return;
 
   Thread* thread = Thread::current();
   assert(thread->is_Java_thread(), "Must be JavaThread");
@@ -4327,6 +4333,8 @@ void Parker::park(bool isAbsolute, jlong time) {
     _counter = 0;
     status = pthread_mutex_unlock(_mutex);
     assert (status == 0, "invariant") ;
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other and Java-level accesses.
     OrderAccess::fence();
     return;
   }
@@ -4363,12 +4371,14 @@ void Parker::park(bool isAbsolute, jlong time) {
   _counter = 0 ;
   status = pthread_mutex_unlock(_mutex) ;
   assert_status(status == 0, status, "invariant") ;
+  // Paranoia to ensure our locked and lock-free paths interact
+  // correctly with each other and Java-level accesses.
+  OrderAccess::fence();
+
   // If externally suspended while waiting, re-suspend
   if (jt->handle_special_suspend_equivalent_condition()) {
     jt->java_suspend_self();
   }
-
-  OrderAccess::fence();
 }
 
 void Parker::unpark() {

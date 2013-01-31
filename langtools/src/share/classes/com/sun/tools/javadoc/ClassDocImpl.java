@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1182,6 +1182,13 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * Return null, as this is not a wildcard type.
      */
     public WildcardType asWildcardType() {
+        return null;
+    }
+
+    /**
+     * Returns null, as this is not an annotated type.
+     */
+    public AnnotatedType asAnnotatedType() {
         return null;
     }
 

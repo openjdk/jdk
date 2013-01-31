@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,6 @@ class java_lang_String : AllStatic {
 
 #define CLASS_INJECTED_FIELDS(macro)                                       \
   macro(java_lang_Class, klass,                  intptr_signature,  false) \
-  macro(java_lang_Class, resolved_constructor,   intptr_signature,  false) \
   macro(java_lang_Class, array_klass,            intptr_signature,  false) \
   macro(java_lang_Class, oop_size,               int_signature,     false) \
   macro(java_lang_Class, static_oop_field_count, int_signature,     false)
@@ -218,7 +217,6 @@ class java_lang_Class : AllStatic {
   // The fake offsets are added by the class loader when java.lang.Class is loaded
 
   static int _klass_offset;
-  static int _resolved_constructor_offset;
   static int _array_klass_offset;
 
   static int _oop_size_offset;
@@ -254,15 +252,11 @@ class java_lang_Class : AllStatic {
   static bool is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
-  // JVM_NewInstance support
-  static Method* resolved_constructor(oop java_class);
-  static void set_resolved_constructor(oop java_class, Method* constructor);
   // JVM_NewArray support
   static Klass* array_klass(oop java_class);
   static void set_array_klass(oop java_class, Klass* klass);
   // compiler support for class operations
   static int klass_offset_in_bytes()                { return _klass_offset; }
-  static int resolved_constructor_offset_in_bytes() { return _resolved_constructor_offset; }
   static int array_klass_offset_in_bytes()          { return _array_klass_offset; }
   // Support for classRedefinedCount field
   static int classRedefinedCount(oop the_class_mirror);
@@ -469,8 +463,7 @@ class java_lang_Throwable: AllStatic {
   static int static_unassigned_stacktrace_offset;
 
   // Printing
-  static char* print_stack_element_to_buffer(Method* method, int bci);
-  static void print_to_stream(Handle stream, const char* str);
+  static char* print_stack_element_to_buffer(Handle mirror, int method, int version, int bci);
   // StackTrace (programmatic access, new since 1.4)
   static void clear_stacktrace(oop throwable);
   // No stack trace available
@@ -490,12 +483,9 @@ class java_lang_Throwable: AllStatic {
   static oop message(oop throwable);
   static oop message(Handle throwable);
   static void set_message(oop throwable, oop value);
-  // Print stack trace stored in exception by call-back to Java
-  // Note: this is no longer used in Merlin, but we still suppport
-  // it for compatibility.
-  static void print_stack_trace(oop throwable, oop print_stream);
-  static void print_stack_element(Handle stream, Method* method, int bci);
-  static void print_stack_element(outputStream *st, Method* method, int bci);
+  static void print_stack_element(outputStream *st, Handle mirror, int method,
+                                  int version, int bci);
+  static void print_stack_element(outputStream *st, methodHandle method, int bci);
   static void print_stack_usage(Handle stream);
 
   // Allocate space for backtrace (created but stack trace not filled in)
@@ -554,6 +544,7 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static int annotations_offset;
   static int parameter_annotations_offset;
   static int annotation_default_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -599,6 +590,10 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop method);
+  static void set_type_annotations(oop method, oop value);
+
   // Debugging
   friend class JavaClasses;
 };
@@ -618,6 +613,7 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static int signature_offset;
   static int annotations_offset;
   static int parameter_annotations_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -653,6 +649,10 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static oop parameter_annotations(oop method);
   static void set_parameter_annotations(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop constructor);
+  static void set_type_annotations(oop constructor, oop value);
+
   // Debugging
   friend class JavaClasses;
 };
@@ -671,6 +671,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int modifiers_offset;
   static int signature_offset;
   static int annotations_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -710,7 +711,42 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop field);
+  static void set_type_annotations(oop field, oop value);
+
   // Debugging
+  friend class JavaClasses;
+};
+
+class java_lang_reflect_Parameter {
+ private:
+  // Note that to reduce dependencies on the JDK we compute these
+  // offsets at run-time.
+  static int name_offset;
+  static int modifiers_offset;
+  static int index_offset;
+  static int executable_offset;
+
+  static void compute_offsets();
+
+ public:
+  // Allocation
+  static Handle create(TRAPS);
+
+  // Accessors
+  static oop name(oop field);
+  static void set_name(oop field, oop value);
+
+  static int index(oop reflect);
+  static void set_index(oop reflect, int value);
+
+  static int modifiers(oop reflect);
+  static void set_modifiers(oop reflect, int value);
+
+  static oop executable(oop constructor);
+  static void set_executable(oop constructor, oop value);
+
   friend class JavaClasses;
 };
 
@@ -1217,7 +1253,8 @@ class java_lang_StackTraceElement: AllStatic {
   static void set_lineNumber(oop element, int value);
 
   // Create an instance of StackTraceElement
-  static oop create(methodHandle m, int bci, TRAPS);
+  static oop create(Handle mirror, int method, int version, int bci, TRAPS);
+  static oop create(methodHandle method, int bci, TRAPS);
 
   // Debugging
   friend class JavaClasses;

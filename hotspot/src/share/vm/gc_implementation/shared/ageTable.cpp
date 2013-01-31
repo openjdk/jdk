@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
 
     if (PrintTenuringDistribution) {
       gclog_or_tty->cr();
-      gclog_or_tty->print_cr("Desired survivor size %ld bytes, new threshold %u (max %u)",
+      gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold %u (max %u)",
         desired_survivor_size*oopSize, result, MaxTenuringThreshold);
     }
 
