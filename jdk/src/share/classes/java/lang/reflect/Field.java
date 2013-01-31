@@ -1021,8 +1021,7 @@ class Field extends AccessibleObject implements Member {
      */
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-
-        return AnnotationSupport.getOneAnnotation(declaredAnnotations(), annotationClass);
+        return annotationClass.cast(declaredAnnotations().get(annotationClass));
     }
 
     /**
@@ -1040,7 +1039,7 @@ class Field extends AccessibleObject implements Member {
      * {@inheritDoc}
      */
     public Annotation[] getDeclaredAnnotations()  {
-        return AnnotationSupport.unpackToArray(declaredAnnotations());
+        return AnnotationParser.toArray(declaredAnnotations());
     }
 
     private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;

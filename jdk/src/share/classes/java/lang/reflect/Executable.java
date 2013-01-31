@@ -26,7 +26,6 @@
 package java.lang.reflect;
 
 import java.lang.annotation.*;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import sun.reflect.annotation.AnnotationParser;
@@ -438,8 +437,7 @@ public abstract class Executable extends AccessibleObject
      */
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-
-        return AnnotationSupport.getOneAnnotation(declaredAnnotations(), annotationClass);
+        return annotationClass.cast(declaredAnnotations().get(annotationClass));
     }
 
     /**
@@ -457,7 +455,7 @@ public abstract class Executable extends AccessibleObject
      * {@inheritDoc}
      */
     public Annotation[] getDeclaredAnnotations()  {
-        return AnnotationSupport.unpackToArray(declaredAnnotations());
+        return AnnotationParser.toArray(declaredAnnotations());
     }
 
     private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
