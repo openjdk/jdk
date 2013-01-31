@@ -696,7 +696,7 @@ public class Base64 {
          * using the {@link Base64} encoding scheme.
          *
          * <p> An invocation of this method has exactly the same effect as invoking
-         * {@code return decode(src.getBytes(StandardCharsets.ISO_8859_1))}
+         * {@code decode(src.getBytes(StandardCharsets.ISO_8859_1))}
          *
          * @param   src
          *          the string to decode
@@ -1014,9 +1014,12 @@ public class Base64 {
             int len = sl - sp;
             if (len == 0)
                 return 0;
-            if (len < 2)
+            if (len < 2) {
+                if (isMIME && base64[0] == -1)
+                    return 0;
                 throw new IllegalArgumentException(
                     "Input byte[] should at least have 2 bytes for base64 bytes");
+            }
             if (src[sl - 1] == '=') {
                 paddings++;
                 if (src[sl - 2] == '=')
