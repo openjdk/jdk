@@ -268,7 +268,7 @@ public final class PropertyHashMap implements Map <String, Property> {
      *
      * @return Array of all properties.
      */
-    public Property[] getProperties() {
+    Property[] getProperties() {
         if (properties == null) {
             final Property[] array = new Property[size];
             int i = size;

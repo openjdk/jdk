@@ -44,6 +44,9 @@ public class NashornException extends RuntimeException {
     // script column number
     private int         column;
 
+    // script source name used for "engine.js"
+    protected static final String ENGINE_SCRIPT_SOURCE_NAME = "nashorn:engine/resources/engine.js";
+
     /**
      * Constructor
      *

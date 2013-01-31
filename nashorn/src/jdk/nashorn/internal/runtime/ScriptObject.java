@@ -1937,11 +1937,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final boolean      scopeCall = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find == null) {
-            if (scopeCall) {
-                ECMAErrors.referenceError("not.defined", name);
-                throw new AssertionError(); // never reached
-            }
-            return createEmptyGetter(desc, name);
+            return noSuchProperty(desc, request);
         }
 
         final ScriptFunction func = (ScriptFunction)getObjectValue(find);
@@ -3335,10 +3331,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /** This is updated only in debug mode - counts number of {@code ScriptObject} instances created */
-    protected static int count;
+    private static int count;
 
     /** This is updated only in debug mode - counts number of {@code ScriptObject} instances created that are scope */
-    protected static int scopeCount;
+    private static int scopeCount;
 
     /**
      * Get number of {@code ScriptObject} instances created. If not running in debug

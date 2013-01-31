@@ -275,7 +275,7 @@ public enum TokenType {
         return name != null && name.length() > 0 && name.charAt(0) == c;
     }
 
-    public static TokenType[] getValues() {
+    static TokenType[] getValues() {
        return values;
     }
 

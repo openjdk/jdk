@@ -27,6 +27,56 @@
  * often used functionality is supported.
  */
 
+// JavaAdapter
+Object.defineProperty(this, "JavaAdapter", {
+    configurable: true, enumerable: false, writable: true,
+    value: function() {
+        if (arguments.length < 2) {
+            throw new TypeError("JavaAdapter requires atleast two arguments");
+        }
+            
+        var types = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+        var NewType = Java.extend.apply(Java, types);
+        return new NewType(arguments[arguments.length - 1]);
+    }
+});
+
+// importPackage
+Object.defineProperty(this, "importPackage", {
+    configurable: true, enumerable: false, writable: true,
+    value: (function() {
+        var _packages = [];
+        var global = this;
+        var oldNoSuchProperty = global.__noSuchProperty__;
+        global.__noSuchProperty__ = function(name) {
+            for (var i in _packages) {
+                try {
+                    var type = Java.type(_packages[i] + "." + name);
+                    global[name] = type;
+                    return type;
+                } catch (e) {}
+            }
+            
+            return oldNoSuchProperty? oldNoSuchProperty(name) : undefined;
+        }
+        
+        var prefix = "[JavaPackage ";
+        return function() {
+            for (var i in arguments) {
+                var pkgName = arguments[i];
+                if ((typeof pkgName) != 'string') {
+                    pkgName = String(pkgName);
+                    // extract name from JavaPackage object
+                    if (pkgName.startsWith(prefix)) {
+                        pkgName = pkgName.substring(prefix.length, pkgName.length - 1);
+                    }
+                }
+                _packages.push(pkgName);
+            }
+        }
+    })()
+});
+
 // Object.prototype.__defineGetter__
 Object.defineProperty(Object.prototype, "__defineGetter__", {
     configurable: true, enumerable: false, writable: true,

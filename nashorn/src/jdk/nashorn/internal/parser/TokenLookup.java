@@ -32,7 +32,7 @@ import static jdk.nashorn.internal.parser.TokenType.IDENT;
  * Fast lookup of operators and keywords.
  *
  */
-public class TokenLookup {
+public final class TokenLookup {
     /**
      * Lookup table for tokens.
      */
