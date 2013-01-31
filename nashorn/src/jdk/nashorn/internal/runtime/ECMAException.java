@@ -58,15 +58,9 @@ public final class ECMAException extends NashornException {
 
     /** We assume that compiler generates script classes into the known package. */
     private static final String scriptPackage;
-
-    /** Package (internal) name where Nashorn script engine implementation lives */
-    private static final String enginePackageInternal;
-
     static {
         String name = JS$.class.getName();
         scriptPackage = name.substring(0, name.lastIndexOf('.'));
-        name = NashornScriptEngine.class.getName();
-        enginePackageInternal = name.substring(0, name.lastIndexOf('.')).replace(".", "/");
     }
 
     /** Object thrown. */
@@ -168,7 +162,7 @@ public final class ECMAException extends NashornException {
              * also, we don't want to report JavaScript code that lives in script engine implementation
              * We want to report only user's own scripts and not any of our own scripts like "engine.js"
              */
-            return source != null && !source.endsWith(".java") && !source.contains(enginePackageInternal);
+            return source != null && !source.endsWith(".java") && !source.contains(ENGINE_SCRIPT_SOURCE_NAME);
         }
         return false;
     }

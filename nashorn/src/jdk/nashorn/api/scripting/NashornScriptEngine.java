@@ -242,41 +242,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         return UNDEFINED;
     }
 
-    /**
-     * This hook is used to call js global functions exposed from Java code.
-     *
-     * @param self 'this' passed from the script
-     * @param ctxt current ScriptContext in which method is searched
-     * @param name name of the method
-     * @param args arguments to be passed to the method
-     * @return return value of the called method
-     */
-    public Object __noSuchMethod__(final Object self, final ScriptContext ctxt, final String name, final Object args) {
-        final int scope = ctxt.getAttributesScope(name);
-        final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
-        Object value;
-
-        if (scope != -1) {
-            value = ctxt.getAttribute(name, scope);
-        } else {
-            if (self == UNDEFINED) {
-                referenceError(ctxtGlobal, "not.defined", name);
-            } else {
-                typeError(ctxtGlobal, "no.such.function", name, ScriptRuntime.safeToString(ctxtGlobal));
-            }
-            return UNDEFINED;
-        }
-
-        value = ScriptObjectMirror.unwrap(value, ctxtGlobal);
-        if (value instanceof ScriptFunction) {
-            return ScriptObjectMirror.unwrap(ScriptRuntime.apply((ScriptFunction)value, ctxtGlobal, args), ctxtGlobal);
-        }
-
-        typeError(ctxtGlobal, "not.a.function", ScriptRuntime.safeToString(name));
-
-        return UNDEFINED;
-    }
-
     private ScriptObject getNashornGlobalFrom(final ScriptContext ctxt) {
         final Bindings bindings = ctxt.getBindings(ScriptContext.ENGINE_SCOPE);
         if (bindings instanceof ScriptObjectMirror) {
@@ -320,10 +285,10 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private void evalEngineScript() throws ScriptException {
-        evalSupportScript("resources/engine.js");
+        evalSupportScript("resources/engine.js", NashornException.ENGINE_SCRIPT_SOURCE_NAME);
     }
 
-    private void evalSupportScript(final String script) throws ScriptException {
+    private void evalSupportScript(final String script, final String name) throws ScriptException {
         try {
             final InputStream is = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<InputStream>() {
@@ -333,7 +298,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                             return url.openStream();
                         }
                     });
-            put(ScriptEngine.FILENAME, "<engine>:" + script);
+            put(ScriptEngine.FILENAME, name);
             try (final InputStreamReader isr = new InputStreamReader(is)) {
                 eval(isr);
             }
@@ -427,7 +392,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             // NOTE: FIXME: If this is jrunscript's init.js, we want to run the replacement.
             // This should go away once we fix jrunscript's copy of init.js.
             if ("<system-init>".equals(fileName)) {
-                evalSupportScript("resources/init.js");
+                evalSupportScript("resources/init.js", "nashorn:engine/resources/init.js");
                 return null;
             }
 
