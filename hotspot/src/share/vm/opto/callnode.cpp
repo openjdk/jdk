@@ -165,13 +165,13 @@ uint ReturnNode::match_edge(uint idx) const {
 
 
 #ifndef PRODUCT
-void ReturnNode::dump_req() const {
+void ReturnNode::dump_req(outputStream *st) const {
   // Dump the required inputs, enclosed in '(' and ')'
   uint i;                       // Exit value of loop
-  for( i=0; i<req(); i++ ) {    // For all required inputs
-    if( i == TypeFunc::Parms ) tty->print("returns");
-    if( in(i) ) tty->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
-    else tty->print("_ ");
+  for (i = 0; i < req(); i++) {    // For all required inputs
+    if (i == TypeFunc::Parms) st->print("returns");
+    if (in(i)) st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
+    else st->print("_ ");
   }
 }
 #endif
@@ -208,13 +208,13 @@ uint RethrowNode::match_edge(uint idx) const {
 }
 
 #ifndef PRODUCT
-void RethrowNode::dump_req() const {
+void RethrowNode::dump_req(outputStream *st) const {
   // Dump the required inputs, enclosed in '(' and ')'
   uint i;                       // Exit value of loop
-  for( i=0; i<req(); i++ ) {    // For all required inputs
-    if( i == TypeFunc::Parms ) tty->print("exception");
-    if( in(i) ) tty->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
-    else tty->print("_ ");
+  for (i = 0; i < req(); i++) {    // For all required inputs
+    if (i == TypeFunc::Parms) st->print("exception");
+    if (in(i)) st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
+    else st->print("_ ");
   }
 }
 #endif
@@ -330,7 +330,8 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
     st->print(" %s%d]=#ScObj" INT32_FORMAT, msg, i, sco_n);
     return;
   }
-  if( OptoReg::is_valid(regalloc->get_reg_first(n))) { // Check for undefined
+  if (regalloc->node_regs_max_index() > 0 &&
+      OptoReg::is_valid(regalloc->get_reg_first(n))) { // Check for undefined
     char buf[50];
     regalloc->dump_register(n,buf);
     st->print(" %s%d]=%s",msg,i,buf);
@@ -381,7 +382,7 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
 //------------------------------format-----------------------------------------
 void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) const {
   st->print("        #");
-  if( _method ) {
+  if (_method) {
     _method->print_short_name(st);
     st->print(" @ bci:%d ",_bci);
   } else {
@@ -393,21 +394,22 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
     MachSafePointNode *mcall = n->as_MachSafePoint();
     uint i;
     // Print locals
-    for( i = 0; i < (uint)loc_size(); i++ )
-      format_helper( regalloc, st, mcall->local(this, i), "L[", i, &scobjs );
+    for (i = 0; i < (uint)loc_size(); i++)
+      format_helper(regalloc, st, mcall->local(this, i), "L[", i, &scobjs);
     // Print stack
     for (i = 0; i < (uint)stk_size(); i++) {
       if ((uint)(_stkoff + i) >= mcall->len())
         st->print(" oob ");
       else
-       format_helper( regalloc, st, mcall->stack(this, i), "STK[", i, &scobjs );
+       format_helper(regalloc, st, mcall->stack(this, i), "STK[", i, &scobjs);
     }
     for (i = 0; (int)i < nof_monitors(); i++) {
       Node *box = mcall->monitor_box(this, i);
       Node *obj = mcall->monitor_obj(this, i);
-      if ( OptoReg::is_valid(regalloc->get_reg_first(box)) ) {
+      if (regalloc->node_regs_max_index() > 0 &&
+          OptoReg::is_valid(regalloc->get_reg_first(box))) {
         box = BoxLockNode::box_node(box);
-        format_helper( regalloc, st, box, "MON-BOX[", i, &scobjs );
+        format_helper(regalloc, st, box, "MON-BOX[", i, &scobjs);
       } else {
         OptoReg::Name box_reg = BoxLockNode::reg(box);
         st->print(" MON-BOX%d=%s+%d",
@@ -420,7 +422,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
         if (BoxLockNode::box_node(box)->is_eliminated())
           obj_msg = "MON-OBJ(LOCK ELIMINATED)[";
       }
-      format_helper( regalloc, st, obj, obj_msg, i, &scobjs );
+      format_helper(regalloc, st, obj, obj_msg, i, &scobjs);
     }
 
     for (i = 0; i < (uint)scobjs.length(); i++) {
@@ -463,9 +465,9 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
           st->print(" [");
           cifield = iklass->nonstatic_field_at(0);
           cifield->print_name_on(st);
-          format_helper( regalloc, st, fld_node, ":", 0, &scobjs );
+          format_helper(regalloc, st, fld_node, ":", 0, &scobjs);
         } else {
-          format_helper( regalloc, st, fld_node, "[", 0, &scobjs );
+          format_helper(regalloc, st, fld_node, "[", 0, &scobjs);
         }
         for (uint j = 1; j < nf; j++) {
           fld_node = mcall->in(first_ind+j);
@@ -473,9 +475,9 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
             st->print(", [");
             cifield = iklass->nonstatic_field_at(j);
             cifield->print_name_on(st);
-            format_helper( regalloc, st, fld_node, ":", j, &scobjs );
+            format_helper(regalloc, st, fld_node, ":", j, &scobjs);
           } else {
-            format_helper( regalloc, st, fld_node, ", [", j, &scobjs );
+            format_helper(regalloc, st, fld_node, ", [", j, &scobjs);
           }
         }
       }
@@ -483,7 +485,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
     }
   }
   st->print_cr("");
-  if (caller() != NULL)  caller()->format(regalloc, n, st);
+  if (caller() != NULL) caller()->format(regalloc, n, st);
 }
 
 
@@ -586,15 +588,15 @@ JVMState* JVMState::clone_deep(Compile* C) const {
 uint CallNode::cmp( const Node &n ) const
 { return _tf == ((CallNode&)n)._tf && _jvms == ((CallNode&)n)._jvms; }
 #ifndef PRODUCT
-void CallNode::dump_req() const {
+void CallNode::dump_req(outputStream *st) const {
   // Dump the required inputs, enclosed in '(' and ')'
   uint i;                       // Exit value of loop
-  for( i=0; i<req(); i++ ) {    // For all required inputs
-    if( i == TypeFunc::Parms ) tty->print("(");
-    if( in(i) ) tty->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
-    else tty->print("_ ");
+  for (i = 0; i < req(); i++) {    // For all required inputs
+    if (i == TypeFunc::Parms) st->print("(");
+    if (in(i)) st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
+    else st->print("_ ");
   }
-  tty->print(")");
+  st->print(")");
 }
 
 void CallNode::dump_spec(outputStream *st) const {

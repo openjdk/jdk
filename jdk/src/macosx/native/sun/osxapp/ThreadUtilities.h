@@ -98,8 +98,6 @@ do {                                           \
     }                                          \
 } while (0)
 
-#define AWT_ASSERT_ANY_THREAD
-
 #endif /* AWT_THREAD_ASSERTS_MESSAGES */
 
 #ifdef AWT_THREAD_ASSERTS_WAIT
@@ -114,15 +112,12 @@ do {                                  \
     while (pthread_main_np() != 0) {} \
 } while (0)
 
-#define AWT_ASSERT_ANY_THREAD
-
 #endif /* AWT_THREAD_ASSERTS_WAIT */
 
 #else /* AWT_THREAD_ASSERTS */
 
 #define AWT_ASSERT_APPKIT_THREAD     do {} while (0)
 #define AWT_ASSERT_NOT_APPKIT_THREAD do {} while (0)
-#define AWT_ASSERT_ANY_THREAD
 
 #endif /* AWT_THREAD_ASSERTS */
 // --------------------------------------------------------------------------
@@ -139,7 +134,10 @@ __attribute__((visibility("default")))
 + (JNIEnv*)getJNIEnvUncached;
 
 + (void)performOnMainThread:(SEL)aSelector onObject:(id)target withObject:(id)arg waitUntilDone:(BOOL)wait awtMode:(BOOL)inAWT;
+
+//Wrappers for the corresponding JNFRunLoop methods with a check for main thread
 + (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block;
++ (void)performOnMainThread:(SEL)aSelector on:(id)target withObject:(id)arg waitUntilDone:(BOOL)wait;
 @end
 
 void OSXAPP_SetJavaVM(JavaVM *vm);

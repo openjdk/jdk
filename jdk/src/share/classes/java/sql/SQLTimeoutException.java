@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package java.sql;
 
 /**
- * <P>The subclass of {@link SQLException} thrown when the timeout specified by <code>Statement</code>
- *  has expired.
+ * <P>The subclass of {@link SQLException} thrown when the timeout specified by
+ * {@code Statement.setQueryTimeout}, {@code DriverManager.setLoginTimeout},
+ * {@code DataSource.setLoginTimeout},{@code XADataSource.setLoginTimeout}
+ * has expired.
  * <P> This exception does not correspond to a standard SQLState.
  *
  * @since 1.6

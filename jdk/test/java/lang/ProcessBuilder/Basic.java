@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2218,7 +2218,7 @@ public class Basic {
             start = System.nanoTime();
             p.waitFor(1000, TimeUnit.MILLISECONDS);
             end = System.nanoTime();
-            if ((end - start) > 100000000)
+            if ((end - start) > 900000000)
                 fail("Test failed: waitFor took too long on a dead process.");
         } catch (Throwable t) { unexpected(t); }
 
@@ -2231,11 +2231,13 @@ public class Basic {
             childArgs.add("sleep");
             final Process p = new ProcessBuilder(childArgs).start();
             final long start = System.nanoTime();
+            final CountDownLatch latch = new CountDownLatch(1);
 
             final Thread thread = new Thread() {
                 public void run() {
                     try {
                         try {
+                            latch.countDown();
                             p.waitFor(10000, TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             return;
@@ -2244,6 +2246,7 @@ public class Basic {
                     } catch (Throwable t) { unexpected(t); }}};
 
             thread.start();
+            latch.await();
             Thread.sleep(1000);
             thread.interrupt();
             p.destroy();

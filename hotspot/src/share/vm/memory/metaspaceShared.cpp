@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,17 +373,44 @@ void VM_PopulateDumpSharedSpace::doit() {
   md_top = wc.get_top();
 
   // Print shared spaces all the time
-  const char* fmt = "%s space: " PTR_FORMAT " out of " PTR_FORMAT " words allocated at " PTR_FORMAT ".";
+  const char* fmt = "%s space: %9d [ %4.1f%% of total] out of %9d bytes [%4.1f%% used] at " PTR_FORMAT;
   Metaspace* ro_space = _loader_data->ro_metaspace();
   Metaspace* rw_space = _loader_data->rw_metaspace();
-  tty->print_cr(fmt, "ro", ro_space->used_words(Metaspace::NonClassType),
-                ro_space->capacity_words(Metaspace::NonClassType),
-                ro_space->bottom());
-  tty->print_cr(fmt, "rw", rw_space->used_words(Metaspace::NonClassType),
-                rw_space->capacity_words(Metaspace::NonClassType),
-                rw_space->bottom());
-  tty->print_cr(fmt, "md", md_top - md_low, md_end-md_low, md_low);
-  tty->print_cr(fmt, "mc", mc_top - mc_low, mc_end-mc_low, mc_low);
+  const size_t BPW = BytesPerWord;
+
+  // Allocated size of each space (may not be all occupied)
+  const size_t ro_alloced = ro_space->capacity_words(Metaspace::NonClassType) * BPW;
+  const size_t rw_alloced = rw_space->capacity_words(Metaspace::NonClassType) * BPW;
+  const size_t md_alloced = md_end-md_low;
+  const size_t mc_alloced = mc_end-mc_low;
+  const size_t total_alloced = ro_alloced + rw_alloced + md_alloced + mc_alloced;
+
+  // Occupied size of each space.
+  const size_t ro_bytes = ro_space->used_words(Metaspace::NonClassType) * BPW;
+  const size_t rw_bytes = rw_space->used_words(Metaspace::NonClassType) * BPW;
+  const size_t md_bytes = size_t(md_top - md_low);
+  const size_t mc_bytes = size_t(mc_top - mc_low);
+
+  // Percent of total size
+  const size_t total_bytes = ro_bytes + rw_bytes + md_bytes + mc_bytes;
+  const double ro_t_perc = ro_bytes / double(total_bytes) * 100.0;
+  const double rw_t_perc = rw_bytes / double(total_bytes) * 100.0;
+  const double md_t_perc = md_bytes / double(total_bytes) * 100.0;
+  const double mc_t_perc = mc_bytes / double(total_bytes) * 100.0;
+
+  // Percent of fullness of each space
+  const double ro_u_perc = ro_bytes / double(ro_alloced) * 100.0;
+  const double rw_u_perc = rw_bytes / double(rw_alloced) * 100.0;
+  const double md_u_perc = md_bytes / double(md_alloced) * 100.0;
+  const double mc_u_perc = mc_bytes / double(mc_alloced) * 100.0;
+  const double total_u_perc = total_bytes / double(total_alloced) * 100.0;
+
+  tty->print_cr(fmt, "ro", ro_bytes, ro_t_perc, ro_alloced, ro_u_perc, ro_space->bottom());
+  tty->print_cr(fmt, "rw", rw_bytes, rw_t_perc, rw_alloced, rw_u_perc, rw_space->bottom());
+  tty->print_cr(fmt, "md", md_bytes, md_t_perc, md_alloced, md_u_perc, md_low);
+  tty->print_cr(fmt, "mc", mc_bytes, mc_t_perc, mc_alloced, mc_u_perc, mc_low);
+  tty->print_cr("total   : %9d [100.0%% of total] out of %9d bytes [%4.1f%% used]",
+                 total_bytes, total_alloced, total_u_perc);
 
   // Update the vtable pointers in all of the Klass objects in the
   // heap. They should point to newly generated vtable.

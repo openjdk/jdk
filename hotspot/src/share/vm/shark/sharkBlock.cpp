@@ -1032,7 +1032,7 @@ void SharkBlock::do_field_access(bool is_get, bool is_field) {
     check_null(value);
     object = value->generic_value();
   }
-  if (is_get && field->is_constant()) {
+  if (is_get && field->is_constant() && field->is_static()) {
     SharkConstant *constant = SharkConstant::for_field(iter());
     if (constant->is_loaded())
       value = constant->value(builder());
@@ -1044,10 +1044,17 @@ void SharkBlock::do_field_access(bool is_get, bool is_field) {
     BasicType   basic_type = field->type()->basic_type();
     Type *stack_type = SharkType::to_stackType(basic_type);
     Type *field_type = SharkType::to_arrayType(basic_type);
-
+    Type *type = field_type;
+    if (field->is_volatile()) {
+      if (field_type == SharkType::jfloat_type()) {
+        type = SharkType::jint_type();
+      } else if (field_type == SharkType::jdouble_type()) {
+        type = SharkType::jlong_type();
+      }
+    }
     Value *addr = builder()->CreateAddressOfStructEntry(
       object, in_ByteSize(field->offset_in_bytes()),
-      PointerType::getUnqual(field_type),
+      PointerType::getUnqual(type),
       "addr");
 
     // Do the access
@@ -1055,6 +1062,7 @@ void SharkBlock::do_field_access(bool is_get, bool is_field) {
       Value* field_value;
       if (field->is_volatile()) {
         field_value = builder()->CreateAtomicLoad(addr);
+        field_value = builder()->CreateBitCast(field_value, field_type);
       } else {
         field_value = builder()->CreateLoad(addr);
       }
@@ -1074,6 +1082,7 @@ void SharkBlock::do_field_access(bool is_get, bool is_field) {
       }
 
       if (field->is_volatile()) {
+        field_value = builder()->CreateBitCast(field_value, type);
         builder()->CreateAtomicStore(field_value, addr);
       } else {
         builder()->CreateStore(field_value, addr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,9 @@ class Constants {
 
     public final static Package.Version JAVA7_PACKAGE_VERSION =
             Package.Version.of(170, 1);
+
+    public final static Package.Version JAVA8_PACKAGE_VERSION =
+            Package.Version.of(171, 0);
 
     // upper limit, should point to the latest class version
     public final static Package.Version JAVA_MAX_CLASS_VERSION =
@@ -158,6 +161,7 @@ class Constants {
         METHOD_ATTR_RuntimeInvisibleParameterAnnotations = 24,
         CLASS_ATTR_ClassFile_version = 24,
         METHOD_ATTR_AnnotationDefault = 25,
+        METHOD_ATTR_MethodParameters = 26,
         CODE_ATTR_StackMapTable = 0,  // new in Java 6
         CODE_ATTR_LineNumberTable = 1,
         CODE_ATTR_LocalVariableTable = 2,
