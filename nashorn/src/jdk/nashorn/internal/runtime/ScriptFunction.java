@@ -128,7 +128,28 @@ public abstract class ScriptFunction extends ScriptObject {
             final PropertyMap map,
             final ScriptObject scope,
             final MethodHandle[] specs) {
-        this(name, methodHandle, map, scope, null, 0, false, specs);
+        this(name, methodHandle, map, scope, null, 0, needsCallee(methodHandle), specs);
+    }
+
+    /**
+     * Heuristic to figure out if the method handle has a callee argument. If it's type is either
+     * {@code (boolean, Object, ScriptFunction, ...)} or {@code (Object, ScriptFunction, ...)}, then we'll assume it has
+     * a callee argument. We need this as the constructor above is not passed this information, and can't just blindly
+     * assume it's false (notably, it's being invoked for creation of new scripts, and scripts have scopes, therefore
+     * they also always receive a callee.
+     * @param methodHandle the examined method handle
+     * @return true if the method handle expects a callee, false otherwise
+     */
+    private static boolean needsCallee(MethodHandle methodHandle) {
+        final MethodType type = methodHandle.type();
+        final int len = type.parameterCount();
+        if(len == 0) {
+            return false;
+        }
+        if(type.parameterType(0) == boolean.class) {
+            return len > 2 && type.parameterType(2) == ScriptFunction.class;
+        }
+        return len > 1 && type.parameterType(1) == ScriptFunction.class;
     }
 
     /**
@@ -193,27 +214,27 @@ public abstract class ScriptFunction extends ScriptObject {
             constructorCount++;
         }
 
-        // needCallee => scope != null
-        assert !needsCallee || scope != null;
         this.name   = name;
         this.source = source;
         this.token  = token;
         this.scope  = scope;
+        if(needsCallee) {
+            setHasCalleeParameter();
+        }
 
         final MethodType type       = methodHandle.type();
         final int        paramCount = type.parameterCount();
         final boolean    isVarArg   = type.parameterType(paramCount - 1).isArray();
 
-        final MethodHandle mh = MH.asType(methodHandle, adaptType(type, scope != null, isVarArg));
+        final MethodHandle mh = MH.asType(methodHandle, adaptType(type, needsCallee, isVarArg));
 
         this.arity = isVarArg ? -1 : paramCount - 1; //drop the self param for arity
 
+        if (needsCallee && !isVarArg) {
+            this.arity--;
+        }
+
         if (scope != null) {
-            if (needsCallee) {
-                if (!isVarArg) {
-                    this.arity--;
-                }
-            }
             this.invokeHandle    = mh;
             this.constructHandle = mh;
         } else if (isConstructor(mh)) {
@@ -698,9 +719,8 @@ public abstract class ScriptFunction extends ScriptObject {
         return hasCalleeParameter() ? MH.bindTo(bound, this) : bound;
     }
 
-    private boolean hasCalleeParameter() {
-        return scope != null;
-    }
+    protected abstract boolean hasCalleeParameter();
+    protected abstract void setHasCalleeParameter();
 
     /**
      * Get the construct handle - the most generic (and if no specializations are in place, only) constructor
@@ -878,12 +898,9 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle handle = MH.foldArguments(MH.dropArguments(NEWFILTER, 2, ctorArgs), constructor);
 
         if (hasCalleeParameter()) {
-            final MethodHandle allocate = MH.bindTo(MethodHandles.exactInvoker(ALLOCATE.type()), ScriptFunction.ALLOCATE);
-            handle = MH.foldArguments(handle, allocate);
-            handle = MH.asType(handle, handle.type().changeParameterType(0, Object.class)); // ScriptFunction => Object
+            handle = MH.foldArguments(handle, ALLOCATE);
         } else {
-            final MethodHandle allocate = MH.dropArguments(MH.bindTo(ScriptFunction.ALLOCATE, this), 0, Object.class);
-            handle = MH.filterArguments(handle, 0, allocate);
+            handle = MH.filterArguments(handle, 0, ALLOCATE);
         }
 
         final MethodHandle filterIn = MH.asType(pairArguments(handle, type), type);

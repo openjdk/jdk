@@ -47,6 +47,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.UserAccessorProperty;
+import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
  * IR representation for function (or script.)
@@ -150,36 +151,40 @@ public class FunctionNode extends Block {
     private int flags;
 
     /** Is anonymous function flag. */
-    private static final int IS_ANONYMOUS            = 0b0000_0000_0000_0001;
+    private static final int IS_ANONYMOUS                = 0b0000_0000_0000_0001;
     /** Is statement flag */
-    private static final int IS_STATEMENT            = 0b0000_0000_0000_0010;
+    private static final int IS_STATEMENT                = 0b0000_0000_0000_0010;
     /** is this a strict mode function? */
-    private static final int IS_STRICT_MODE          = 0b0000_0000_0000_0100;
-    /** is this is a vararg function? */
-    private static final int IS_VAR_ARG              = 0b0000_0000_0000_1000;
+    private static final int IS_STRICT_MODE              = 0b0000_0000_0000_0100;
+    /** Does the function use the "arguments" identifier ? */
+    private static final int USES_ARGUMENTS              = 0b0000_0000_0000_1000;
     /** Are we lowered ? */
-    private static final int IS_LOWERED              = 0b0000_0000_0001_0000;
+    private static final int IS_LOWERED                  = 0b0000_0000_0001_0000;
     /** Has this node been split because it was too large? */
-    private static final int IS_SPLIT                = 0b0000_0000_0010_0000;
+    private static final int IS_SPLIT                    = 0b0000_0000_0010_0000;
     /** Is this function lazily compiled? */
-    private static final int IS_LAZY                 = 0b0000_0000_0100_0000;
-    /** Does the function contain eval? */
-    private static final int HAS_EVAL                = 0b0000_0000_1000_0000;
+    private static final int IS_LAZY                     = 0b0000_0000_0100_0000;
+    /** Does the function call eval? */
+    private static final int HAS_EVAL                    = 0b0000_0000_1000_0000;
     /** Does the function contain a with block ? */
-    private static final int HAS_WITH                = 0b0000_0001_0000_0000;
-    /** Does a child function contain a with or eval? */
-    private static final int HAS_CHILD_WITH_OR_EVAL  = 0b0000_0010_0000_0000;
-    /** Hide arguments? */
-    private static final int HIDE_ARGS               = 0b0000_0100_0000_0000;
+    private static final int HAS_WITH                    = 0b0000_0001_0000_0000;
+    /** Does a descendant function contain a with or eval? */
+    private static final int HAS_DESCENDANT_WITH_OR_EVAL = 0b0000_0010_0000_0000;
+    /** Does the function define "arguments" identifier as a parameter of nested function name? */
+    private static final int DEFINES_ARGUMENTS           = 0b0000_0100_0000_0000;
     /** Does the function need a self symbol? */
-    private static final int NEEDS_SELF_SYMBOL       = 0b0000_1000_0000_0000;
+    private static final int NEEDS_SELF_SYMBOL           = 0b0000_1000_0000_0000;
+    /** Does this function or any of its descendants use variables from an ancestor function's scope (incl. globals)? */
+    private static final int USES_ANCESTOR_SCOPE         = 0b0001_0000_0000_0000;
 
     /** Does this function or any nested functions contain a with or an eval? */
-    private static final int HAS_DEEP_WITH_OR_EVAL = HAS_EVAL | HAS_WITH | HAS_CHILD_WITH_OR_EVAL;
+    private static final int HAS_DEEP_WITH_OR_EVAL = HAS_EVAL | HAS_WITH | HAS_DESCENDANT_WITH_OR_EVAL;
     /** Does this function need to store all its variables in scope? */
     private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_WITH_OR_EVAL | IS_SPLIT;
-    /** Does this function need a scope object? */
-    private static final int NEEDS_SCOPE           = HAS_ALL_VARS_IN_SCOPE | IS_VAR_ARG;
+    /** Does this function potentially need "arguments"? Note that this is not a full test, as further negative check of REDEFINES_ARGS is needed. */
+    private static final int MAYBE_NEEDS_ARGUMENTS = USES_ARGUMENTS | HAS_EVAL;
+    /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep with or eval. */
+    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_WITH_OR_EVAL;
 
     /** What is the return type of this function? */
     private Type returnType = Type.UNKNOWN;
@@ -332,6 +337,11 @@ public class FunctionNode extends Block {
             sb.append(getName());
             sb.append("$");
         }
+    }
+
+    @Override
+    public boolean needsScope() {
+        return super.needsScope() || isScript();
     }
 
     /*
@@ -503,12 +513,29 @@ public class FunctionNode extends Block {
      * Flag this function as using the {@code with} keyword
      */
     public void setHasWith() {
-        this.flags |= HAS_WITH;
-        // with requires scope in parents.
-        FunctionNode parentFunction = findParentFunction();
-        while (parentFunction != null) {
-            parentFunction.setHasNestedWithOrEval();
-            parentFunction = parentFunction.findParentFunction();
+        if(!hasWith()) {
+            this.flags |= HAS_WITH;
+            // with requires scope in parents.
+            // TODO: refine this. with should not force all variables in parents to be in scope, only those that are
+            // actually referenced as identifiers by name
+            markParentForWithOrEval();
+        }
+    }
+
+    private void markParentForWithOrEval() {
+        // If this is invoked, then either us or a descendant uses with or eval, meaning we must have our own scope.
+        setNeedsScope();
+
+        final FunctionNode parentFunction = findParentFunction();
+        if(parentFunction != null) {
+            parentFunction.setDescendantHasWithOrEval();
+        }
+    }
+
+    private void setDescendantHasWithOrEval() {
+        if((flags & HAS_DESCENDANT_WITH_OR_EVAL) == 0) {
+            flags |= HAS_DESCENDANT_WITH_OR_EVAL;
+            markParentForWithOrEval();
         }
     }
 
@@ -522,20 +549,13 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Flag this function as using the {@code eval} keyword
+     * Flag this function as calling the {@code eval} function
      */
     public void setHasEval() {
-        this.flags |= HAS_EVAL;
-        // eval requires scope in parents.
-        FunctionNode parentFunction = findParentFunction();
-        while (parentFunction != null) {
-            parentFunction.setHasNestedWithOrEval();
-            parentFunction = parentFunction.findParentFunction();
+        if(!hasEval()) {
+            this.flags |= HAS_EVAL;
+            markParentForWithOrEval();
         }
-    }
-
-    private void setHasNestedWithOrEval() {
-        flags |= HAS_CHILD_WITH_OR_EVAL;
     }
 
     /**
@@ -623,11 +643,13 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Check if this function needs the {@code callee} parameter
-     * @return true if the function uses {@code callee}
+     * Check if this function's generated Java method needs a {@code callee} parameter. Functions that need access to
+     * their parent scope, functions that reference themselves, and non-strict functions that need an Arguments object
+     * (since it exposes {@code arguments.callee} property) will need to have a callee parameter.
+     * @return true if the function's generated Java method needs a {@code callee} parameter.
      */
     public boolean needsCallee() {
-        return getCalleeNode() != null;
+        return needsParentScope() || needsSelfSymbol() || (needsArguments() && !isStrictMode());
     }
 
     /**
@@ -666,37 +688,60 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Check if this function needs to use var args, which is the case for
-     * e.g. {@code eval} and functions where {@code arguments} is used
-     *
-     * @return true if the function needs to use var args
+     * Does this function's method needs to be variable arity (gather all script-declared parameters in a final
+     * {@code Object[]} parameter. Functions that need to have the "arguments" object as well as functions that simply
+     * declare too many arguments for JVM to handle with fixed arity will need to be variable arity.
+     * @return true if the Java method in the generated code that implements this function needs to be variable arity.
+     * @see #needsArguments()
+     * @see LinkerCallSite#ARGLIMIT
      */
     public boolean isVarArg() {
-        return (flags & IS_VAR_ARG) != 0 && !isScript();
+        return needsArguments() || parameters.size() > LinkerCallSite.ARGLIMIT;
     }
 
     /**
-     * Flag this function as needing to use var args vector
+     * Flag this function as one that defines the identifier "arguments" as a function parameter or nested function
+     * name. This precludes it from needing to have an Arguments object defined as "arguments" local variable. Note that
+     * defining a local variable named "arguments" still requires construction of the Arguments object (see
+     * ECMAScript 5.1 Chapter 10.5).
+     * @see #needsArguments()
      */
-    public void setIsVarArg() {
-        this.flags |= IS_VAR_ARG;
+    public void setDefinesArguments() {
+        this.flags |= DEFINES_ARGUMENTS;
     }
 
     /**
-     * Ugly special case:
-     * Tells the compiler if {@code arguments} variable should be hidden and given
-     * a unique name, for example if it is used as an explicit parameter name
-     * @return true of {@code arguments} should be hidden
+     * Returns true if this function needs to have an Arguments object defined as a local variable named "arguments".
+     * Functions that use "arguments" as identifier and don't define it as a name of a parameter or a nested function
+     * (see ECMAScript 5.1 Chapter 10.5), as well as any function that uses eval or with, or has a nested function that
+     * does the same, will have an "arguments" object. Also, if this function is a script, it will not have an
+     * "arguments" object, because it does not have local variables; rather the Global object will have an explicit
+     * "arguments" property that provides command-line arguments for the script.
+     * @return true if this function needs an arguments object.
      */
-    public boolean hideArguments() {
-        return (flags & HIDE_ARGS) != 0;
+    public boolean needsArguments() {
+        // uses "arguments" or calls eval, but it does not redefine "arguments", and finally, it's not a script, since
+        // for top-level script, "arguments" is picked up from Context by Global.init() instead.
+        return (flags & MAYBE_NEEDS_ARGUMENTS) != 0 && (flags & DEFINES_ARGUMENTS) == 0 && !isScript();
     }
 
     /**
-     * Flag this function as needing to hide the {@code arguments} vectir
+     * Flags this function as one that uses the "arguments" identifier.
+     * @see #needsArguments()
      */
-    public void setHideArguments() {
-        this.flags |= HIDE_ARGS;
+    public void setUsesArguments() {
+        flags |= USES_ARGUMENTS;
+    }
+
+    /**
+     * Returns true if this function needs access to its parent scope. Functions referencing variables outside their
+     * scope (including global variables), as well as functions that call eval or have a with block, or have nested
+     * functions that call eval or have a with block, will need a parent scope. Top-level script functions also need a
+     * parent scope since they might be used from within eval, and eval will need an externally passed scope.
+     * @return true if the function needs parent scope.
+     */
+    public boolean needsParentScope() {
+        return (flags & NEEDS_PARENT_SCOPE) != 0 || isScript();
     }
 
     /**
@@ -749,14 +794,9 @@ public class FunctionNode extends Block {
         this.name = name;
     }
 
-    @Override
-    public boolean needsScope() {
-        return needsScope || isScript() || (flags & NEEDS_SCOPE) != 0;
-    }
-
     /**
-     * Check if this function should have all its variables in scope, regardless
-     * of other properties.
+     * Check if this function should have all its variables in its own scope. Scripts, split sub-functions, and
+     * functions having with and/or eval blocks are such.
      *
      * @return true if all variables should be in scope
      */
@@ -780,6 +820,7 @@ public class FunctionNode extends Block {
      */
     public void setIsSplit() {
         this.flags |= IS_SPLIT;
+        setNeedsScope();
     }
 
     /**
@@ -890,6 +931,38 @@ public class FunctionNode extends Block {
     public void setNeedsSelfSymbol(final Node selfSymbolInit) {
         this.flags |= NEEDS_SELF_SYMBOL;
         this.selfSymbolInit = selfSymbolInit;
+    }
+
+    /**
+     * Marks this function as one using any global symbol. The function and all its parent functions will all be marked
+     * as needing parent scope.
+     * @see #needsParentScope()
+     */
+    public void setUsesGlobalSymbol() {
+        this.flags |= USES_ANCESTOR_SCOPE;
+        final FunctionNode parentFn = findParentFunction();
+        if(parentFn != null) {
+            parentFn.setUsesGlobalSymbol();
+        }
+    }
+
+    /**
+     * Marks this function as using a specified scoped symbol. The function and its parent functions up to but not
+     * including the function defining the symbol will be marked as needing parent scope. The function defining the
+     * symbol will be marked as one that needs to have its own scope.
+     * @param symbol the symbol being used.
+     * @see #needsParentScope()
+     */
+    public void setUsesScopeSymbol(final Symbol symbol) {
+        if(symbol.getBlock() == this) {
+            setNeedsScope();
+        } else {
+            this.flags |= USES_ANCESTOR_SCOPE;
+            final FunctionNode parentFn = findParentFunction();
+            if(parentFn != null) {
+                parentFn.setUsesScopeSymbol(symbol);
+            }
+        }
     }
 
     /**

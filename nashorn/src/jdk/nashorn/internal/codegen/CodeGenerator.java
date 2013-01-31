@@ -201,6 +201,9 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         final Symbol symbol = identNode.getSymbol();
 
         if (!symbol.isScope()) {
+            if(symbol.isParam()) {
+                return method.loadParam(symbol);
+            }
             assert symbol.hasSlot() && symbol.getSlot() != 0 || symbol.isThis();
             return method.load(symbol);
         }
@@ -383,7 +386,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         for (final Symbol symbol : symbols) {
             /*
              * The following symbols are guaranteed to be defined and thus safe
-             * from having unsigned written to them: parameters internals this
+             * from having undefined written to them: parameters internals this
              *
              * Otherwise we must, unless we perform control/escape analysis,
              * assign them undefined.
@@ -843,6 +846,15 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         /* Fix the predefined slots so they have numbers >= 0, like varargs. */
         frame.realign();
 
+        if (isFunctionNode) {
+            if (function.needsParentScope()) {
+                initParentScope();
+            }
+            if (function.needsArguments()) {
+                initArguments(function);
+            }
+        }
+
         /*
          * Determine if block needs scope, if not, just do initSymbols for this block.
          */
@@ -851,7 +863,6 @@ public final class CodeGenerator extends NodeOperatorVisitor {
              * Determine if function is varargs and consequently variables have to
              * be in the scope.
              */
-            final boolean isVarArg    = function.isVarArg();
             final boolean varsInScope = function.varsInScope();
 
             // TODO for LET we can do better: if *block* does not contain any eval/with, we don't need its vars in scope.
@@ -859,39 +870,34 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             final List<String> nameList = new ArrayList<>();
             final List<Symbol> locals   = new ArrayList<>();
 
-            // If there are variable arguments, we need to load them (functions only).
-            if (isFunctionNode && isVarArg) {
-                method.loadVarArgs();
-                method.loadCallee();
-                method.load(function.getParameters().size());
-                globalAllocateArguments();
-                method.storeArguments();
-            }
 
             // Initalize symbols and values
             final List<Symbol> newSymbols = new ArrayList<>();
             final List<Symbol> values     = new ArrayList<>();
 
+            final boolean hasArguments = function.needsArguments();
             for (final Symbol symbol : symbols) {
                 if (symbol.isInternal() || symbol.isThis()) {
                     continue;
                 }
 
-                if (symbol.isVar() && (varsInScope || symbol.isScope())) {
+                if (symbol.isVar()) {
+                    if(varsInScope || symbol.isScope()) {
+                        nameList.add(symbol.getName());
+                        newSymbols.add(symbol);
+                        values.add(null);
+                        assert symbol.isScope()   : "scope for " + symbol + " should have been set in Lower already " + function.getName();
+                        assert !symbol.hasSlot()  : "slot for " + symbol + " should have been removed in Lower already" + function.getName();
+                    } else {
+                        assert symbol.hasSlot() : symbol + " should have a slot only, no scope";
+                        locals.add(symbol);
+                    }
+                } else if (symbol.isParam() && (varsInScope || hasArguments || symbol.isScope())) {
                     nameList.add(symbol.getName());
                     newSymbols.add(symbol);
-                    values.add(null);
-                    assert symbol.isScope()   : "scope for " + symbol + " should have been set in Lower already " + function.getName();
-                    assert !symbol.hasSlot()  : "slot for " + symbol + " should have been removed in Lower already" + function.getName();
-                } else if (symbol.isVar()) {
-                    assert symbol.hasSlot() : symbol + " should have a slot only, no scope";
-                    locals.add(symbol);
-                } else if (symbol.isParam() && (varsInScope || isVarArg || symbol.isScope())) {
-                    nameList.add(symbol.getName());
-                    newSymbols.add(symbol);
-                    values.add(isVarArg ? null : symbol);
-                    assert symbol.isScope()   : "scope for " + symbol + " should have been set in Lower already " + function.getName() + " varsInScope="+varsInScope+" isVarArg="+isVarArg+" symbol.isScope()=" + symbol.isScope();
-                    assert !(isVarArg && symbol.hasSlot())  : "slot for " + symbol + " should have been removed in Lower already " + function.getName();
+                    values.add(hasArguments ? null : symbol);
+                    assert symbol.isScope()   : "scope for " + symbol + " should have been set in Lower already " + function.getName() + " varsInScope="+varsInScope+" hasArguments="+hasArguments+" symbol.isScope()=" + symbol.isScope();
+                    assert !(hasArguments && symbol.hasSlot())  : "slot for " + symbol + " should have been removed in Lower already " + function.getName();
                 }
             }
 
@@ -901,15 +907,11 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             // we may have locals that need to be initialized
             initSymbols(locals);
 
-            if (isFunctionNode) {
-                initScope();
-            }
-
             /*
              * Create a new object based on the symbols and values, generate
              * bootstrap code for object
              */
-            final FieldObjectCreator<Symbol> foc = new FieldObjectCreator<Symbol>(this, nameList, newSymbols, values, true, isVarArg) {
+            final FieldObjectCreator<Symbol> foc = new FieldObjectCreator<Symbol>(this, nameList, newSymbols, values, true, hasArguments) {
                 @Override
                 protected Type getValueType(final Symbol value) {
                     return value.getSymbolType();
@@ -918,6 +920,15 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 @Override
                 protected void loadValue(final Symbol value) {
                     method.load(value);
+                }
+
+                @Override
+                protected void loadScope(MethodEmitter m) {
+                    if(function.needsParentScope()) {
+                        m.loadScope();
+                    } else {
+                        m.loadNull();
+                    }
                 }
             };
             foc.makeObject(method);
@@ -929,18 +940,37 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
             method.storeScope();
         } else {
-            initSymbols(symbols);
-
-            if (isFunctionNode) {
-                initScope();
+            // Since we don't have a scope, parameters didn't get assigned array indices by the FieldObjectCreator, so
+            // we need to assign them separately here.
+            int nextParam = 0;
+            if (isFunctionNode && function.isVarArg()) {
+                for (final IdentNode param : function.getParameters()) {
+                    param.getSymbol().setFieldIndex(nextParam++);
+                }
             }
+            initSymbols(symbols);
         }
 
         // Debugging: print symbols? @see --print-symbols flag
         printSymbols(block, (isFunctionNode ? "Function " : "Block in ") + (function.getIdent() == null ? "<anonymous>" : function.getIdent().getName()));
     }
 
-    private void initScope() {
+    private void initArguments(final FunctionNode function) {
+        method.loadVarArgs();
+        if(function.needsCallee()) {
+            method.loadCallee();
+        } else {
+            // If function is strict mode, "arguments.callee" is not populated, so we don't necessarily need the
+            // caller.
+            assert function.isStrictMode();
+            method.loadNull();
+        }
+        method.load(function.getParameters().size());
+        globalAllocateArguments();
+        method.storeArguments();
+    }
+
+    private void initParentScope() {
         method.loadCallee();
         method.invoke(ScriptFunction.GET_SCOPE);
         method.storeScope();
@@ -1622,7 +1652,8 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         final String name       = splitNode.getName();
 
         final Class<?>   rtype  = fn.getReturnType().getTypeClass();
-        final Class<?>[] ptypes = fn.isVarArg() ?
+        final boolean needsArguments = fn.needsArguments();
+        final Class<?>[] ptypes = needsArguments ?
                 new Class<?>[] {Object.class, ScriptFunction.class, ScriptObject.class, Object.class} :
                 new Class<?>[] {Object.class, ScriptFunction.class, ScriptObject.class};
 
@@ -1647,9 +1678,13 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
         final MethodEmitter caller = splitNode.getCaller();
         caller.loadThis();
-        caller.loadCallee();
+        if(fn.needsCallee()) {
+            caller.loadCallee();
+        } else {
+            caller.loadNull();
+        }
         caller.loadScope();
-        if (fn.isVarArg()) {
+        if (needsArguments) {
             caller.loadArguments();
         }
         caller.invoke(splitCall);
@@ -3142,17 +3177,34 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
             target.accept(new NodeVisitor(compileUnit, method) {
                 @Override
+                protected Node enterDefault(Node node) {
+                    throw new AssertionError("Unexpected node " + node + " in store epilogue");
+                };
+
+                @Override
+                public Node enter(final UnaryNode node) {
+                    if(node.tokenType() == TokenType.CONVERT && node.getSymbol() != null) {
+                        method.convert(node.rhs().getType());
+                    }
+                    return node;
+                }
+
+                @Override
                 public Node enter(final IdentNode node) {
-                    final Symbol symbol = target.getSymbol();
+                    final Symbol symbol = node.getSymbol();
                     if (symbol.isScope()) {
                         if (symbol.isFastScope(currentFunction)) {
-                            storeFastScopeVar(target.getType(), symbol, CALLSITE_SCOPE | getCallSiteFlags());
+                            storeFastScopeVar(node.getType(), symbol, CALLSITE_SCOPE | getCallSiteFlags());
                         } else {
-                            method.dynamicSet(target.getType(), node.getName(), CALLSITE_SCOPE | getCallSiteFlags());
+                            method.dynamicSet(node.getType(), node.getName(), CALLSITE_SCOPE | getCallSiteFlags());
                         }
                     } else {
-                        assert targetSymbol != null;
-                        method.store(targetSymbol);
+                        assert symbol != null;
+                        if(symbol.isParam()) {
+                            method.storeParam(symbol);
+                        } else {
+                            method.store(symbol);
+                        }
                     }
                     return null;
 
@@ -3203,7 +3255,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
     }
 
     private MethodEmitter globalAllocateArguments() {
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "allocateArguments", methodDescriptor(Object.class, Object[].class, Object.class, int.class));
+        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "allocateArguments", methodDescriptor(ScriptObject.class, Object[].class, Object.class, int.class));
     }
 
     private MethodEmitter globalNewRegExp() {

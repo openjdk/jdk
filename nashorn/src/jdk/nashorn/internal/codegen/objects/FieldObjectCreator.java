@@ -70,17 +70,25 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
     /**
      * Constructor
      *
-     * @param codegen  code generator
-     * @param keys     keys for fields in object
-     * @param symbols  symbols for fields in object
-     * @param values   values (or null where no value) to be written to the fields
-     * @param isScope  is this a scope object
-     * @param isVarArg is this a vararg object
+     * @param codegen      code generator
+     * @param keys         keys for fields in object
+     * @param symbols      symbols for fields in object
+     * @param values       values (or null where no value) to be written to the fields
+     * @param isScope      is this a scope object
+     * @param hasArguments does the created object have an "arguments" object
      */
-    public FieldObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<T> values, final boolean isScope, final boolean isVarArg) {
-        super(codegen, keys, symbols, isScope, isVarArg);
+    public FieldObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<T> values, final boolean isScope, final boolean hasArguments) {
+        super(codegen, keys, symbols, isScope, hasArguments);
         this.values        = values;
         this.callSiteFlags = codegen.getCallSiteFlags();
+    }
+
+    /**
+     * Loads the scope on the stack through the passed method emitter.
+     * @param method the method emitter to use
+     */
+    protected void loadScope(final MethodEmitter method) {
+        method.loadScope();
     }
 
     /**
@@ -96,7 +104,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
         loadMap(method); //load the map
 
         if (isScope()) {
-            method.loadScope();
+            loadScope(method);
 
             if (isVarArg()) {
                 method.loadArguments();

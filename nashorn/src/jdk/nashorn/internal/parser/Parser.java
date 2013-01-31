@@ -98,7 +98,6 @@ import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
-import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
  * Builds the IR.
@@ -334,7 +333,6 @@ loop:
 
         if (EVAL.tag().equals(name)) {
             function.setHasEval();
-            function.setIsVarArg();
         }
     }
 
@@ -346,7 +344,7 @@ loop:
         final String name = ident.getName();
 
         if (ARGUMENTS.tag().equals(name)) {
-            function.setIsVarArg();
+            function.setUsesArguments();
         }
     }
 
@@ -2517,6 +2515,9 @@ loop:
 
         if (isStatement && !isInWithBlock()) {
             functionNode.setIsStatement();
+            if(ARGUMENTS.tag().equals(name.getName())) {
+                functionNode.findParentFunction().setDefinesArguments();
+            }
         }
 
         if (isAnonymous) {
@@ -2536,7 +2537,7 @@ loop:
                 String parameterName = parameter.getName();
 
                 if (ARGUMENTS.tag().equals(parameterName)) {
-                    functionNode.setHideArguments();
+                    functionNode.setDefinesArguments();
                 }
 
                 if (parametersSet.contains(parameterName)) {
@@ -2555,12 +2556,8 @@ loop:
             }
         } else if (arity == 1) {
             if (ARGUMENTS.tag().equals(parameters.get(0).getName())) {
-                functionNode.setHideArguments();
+                functionNode.setDefinesArguments();
             }
-        }
-
-        if (arity > LinkerCallSite.ARGLIMIT) {
-            functionNode.setIsVarArg();
         }
 
         if (isStatement) {
