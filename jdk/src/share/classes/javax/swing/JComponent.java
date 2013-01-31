@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3644,26 +3644,6 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     /**
-     * The <code>AccessibleContext</code> associated with this
-     * <code>JComponent</code>.
-     */
-    protected AccessibleContext accessibleContext = null;
-
-    /**
-     * Returns the <code>AccessibleContext</code> associated with this
-     * <code>JComponent</code>.  The method implemented by this base
-     * class returns null.  Classes that extend <code>JComponent</code>
-     * should implement this method to return the
-     * <code>AccessibleContext</code> associated with the subclass.
-     *
-     * @return the <code>AccessibleContext</code> of this
-     *          <code>JComponent</code>
-     */
-    public AccessibleContext getAccessibleContext() {
-        return accessibleContext;
-    }
-
-    /**
      * Inner class of JComponent used to provide default support for
      * accessibility.  This class is not meant to be used directly by
      * application developers, but is instead meant only to be
@@ -3689,7 +3669,18 @@ public abstract class JComponent extends Container implements Serializable,
             super();
         }
 
-        protected ContainerListener accessibleContainerHandler = null;
+        /**
+         * Number of PropertyChangeListener objects registered. It's used
+         * to add/remove ContainerListener and FocusListener to track
+         * target JComponent's state
+         */
+        private volatile transient int propertyListenersCount = 0;
+
+        /**
+         * This field duplicates the one in java.awt.Component.AccessibleAWTComponent,
+         * so it has been deprecated.
+         */
+        @Deprecated
         protected FocusListener accessibleFocusHandler = null;
 
         /**
@@ -3747,10 +3738,12 @@ public abstract class JComponent extends Container implements Serializable,
         public void addPropertyChangeListener(PropertyChangeListener listener) {
             if (accessibleFocusHandler == null) {
                 accessibleFocusHandler = new AccessibleFocusHandler();
-                JComponent.this.addFocusListener(accessibleFocusHandler);
             }
             if (accessibleContainerHandler == null) {
                 accessibleContainerHandler = new AccessibleContainerHandler();
+            }
+            if (propertyListenersCount++ == 0) {
+                JComponent.this.addFocusListener(accessibleFocusHandler);
                 JComponent.this.addContainerListener(accessibleContainerHandler);
             }
             super.addPropertyChangeListener(listener);
@@ -3764,9 +3757,9 @@ public abstract class JComponent extends Container implements Serializable,
          * @param listener  the PropertyChangeListener to be removed
          */
         public void removePropertyChangeListener(PropertyChangeListener listener) {
-            if (accessibleFocusHandler != null) {
+            if (--propertyListenersCount == 0) {
                 JComponent.this.removeFocusListener(accessibleFocusHandler);
-                accessibleFocusHandler = null;
+                JComponent.this.removeContainerListener(accessibleContainerHandler);
             }
             super.removePropertyChangeListener(listener);
         }
