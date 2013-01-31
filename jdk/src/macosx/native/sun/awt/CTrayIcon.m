@@ -303,10 +303,9 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CTrayIcon_nativeCreate
     __block AWTTrayIcon *trayIcon = nil;
 
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     jobject thePeer = JNFNewGlobalRef(env, peer);
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         trayIcon = [[AWTTrayIcon alloc] initWithPeer:thePeer];
     }];
 
@@ -334,11 +333,10 @@ JNIEXPORT void JNICALL Java_java_awt_TrayIcon_initIDs
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_nativeSetToolTip
 (JNIEnv *env, jobject self, jlong model, jstring jtooltip) {
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
     NSString *tooltip = JNFJavaToNSString(env, jtooltip);
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [icon setTooltip:tooltip];
     }];
 
@@ -353,10 +351,9 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_setNativeImage
 (JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize) {
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize];
     }];
 
@@ -369,13 +366,10 @@ Java_sun_lwawt_macosx_CTrayIcon_nativeGetIconLocation
     jobject jpt = NULL;
 
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     __block NSPoint pt = NSZeroPoint;
     AWTTrayIcon *icon = jlong_to_ptr(model);
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         NSPoint loc = [icon getLocationOnScreen];
         pt = ConvertNSScreenPoint(env, loc);
     }];

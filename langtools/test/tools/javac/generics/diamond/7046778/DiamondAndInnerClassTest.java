@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 7046778
+ * @bug 7046778 8006694
  * @summary Project Coin: problem with diamond and member inner classes
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main DiamondAndInnerClassTest
+ * @run main/othervm DiamondAndInnerClassTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import com.sun.source.util.JavacTask;
 import java.net.URI;

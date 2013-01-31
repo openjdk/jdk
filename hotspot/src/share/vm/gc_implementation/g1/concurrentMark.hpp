@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,15 +478,18 @@ protected:
   // It resets the global marking data structures, as well as the
   // task local ones; should be called during initial mark.
   void reset();
-  // It resets all the marking data structures.
-  void clear_marking_state(bool clear_overflow = true);
+
+  // Resets all the marking data structures. Called when we have to restart
+  // marking or when marking completes (via set_non_marking_state below).
+  void reset_marking_state(bool clear_overflow = true);
+
+  // We do this after we're done with marking so that the marking data
+  // structures are initialised to a sensible and predictable state.
+  void set_non_marking_state();
 
   // It should be called to indicate which phase we're in (concurrent
   // mark or remark) and how many threads are currently active.
   void set_phase(uint active_tasks, bool concurrent);
-  // We do this after we're done with marking so that the marking data
-  // structures are initialised to a sensible and predictable state.
-  void set_non_marking_state();
 
   // prints all gathered CM-related statistics
   void print_stats();

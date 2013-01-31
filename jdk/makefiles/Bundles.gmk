@@ -68,24 +68,25 @@ else
 endif
 
 
-JDK_FILE_LIST := $(shell $(FIND) $(JDK_IMAGE_DIR) ! -type d)
-JRE_FILE_LIST := $(shell $(FIND) $(JRE_IMAGE_DIR) ! -type d)
+JDK_FILE_LIST := $(shell $(FIND) $(JDK_IMAGE_DIR))
+JRE_FILE_LIST := $(shell $(FIND) $(JRE_IMAGE_DIR))
 
-JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR),$(JDK_BUNDLE_DIR)/Home,$(JDK_FILE_LIST))
-JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR),$(JRE_BUNDLE_DIR)/Home,$(JRE_FILE_LIST))
+JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_BUNDLE_DIR)/Home/,$(JDK_FILE_LIST))
+JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_BUNDLE_DIR)/Home/,$(JRE_FILE_LIST))
 
 # The old builds implementation of this did not preserve symlinks so
 # make sure they are followed and the contents copied instead.
-# To fix this, just replace copy with install-file macro.
+# To fix this, remove -L
+# Copy empty directories (jre/lib/applet).
 $(JDK_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
-	$(CP) -f -R -L '$<' '$@'
+	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -L '$<' '$@'; fi
 
 $(JRE_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
-	$(CP) -f -R -L '$<' '$@'
+	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -L '$<' '$@'; fi
 
 $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib:
 	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@)

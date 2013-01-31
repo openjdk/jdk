@@ -60,9 +60,9 @@ public class MethodReference43 {
 
 
     static void m(SAM1 s) { assertTrue(false); }
-    static void m(SAM2 s) { assertTrue(true); }
+    static void m(SAM2 s) { assertTrue(false); }
     static void m(SAM3 s) { assertTrue(false); }
-    static void m(SAM4 s) { assertTrue(false); }
+    static void m(SAM4 s) { assertTrue(true); }
 
     public static void main(String[] args) {
         m(Foo::new);

@@ -66,7 +66,11 @@ class MetadataFactory : AllStatic {
     if (data != NULL) {
       assert(loader_data != NULL, "shouldn't pass null");
       int size = data->size();
-      loader_data->metaspace_non_null()->deallocate((MetaWord*)data, size, false);
+      if (DumpSharedSpaces) {
+        loader_data->ro_metaspace()->deallocate((MetaWord*)data, size, false);
+      } else {
+        loader_data->metaspace_non_null()->deallocate((MetaWord*)data, size, false);
+      }
     }
   }
 
@@ -77,6 +81,7 @@ class MetadataFactory : AllStatic {
       assert(loader_data != NULL, "shouldn't pass null");
       int size = md->size();
       // Call metadata's deallocate function which will call deallocate fields
+      assert(!DumpSharedSpaces, "cannot deallocate metadata when dumping CDS archive");
       assert(!md->on_stack(), "can't deallocate things on stack");
       md->deallocate_contents(loader_data);
       loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, md->is_klass());

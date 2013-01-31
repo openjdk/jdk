@@ -29,6 +29,29 @@
 #include <string.h>
 #include <malloc.h>
 
+void report_error()
+{
+  LPVOID lpMsgBuf;
+  DWORD dw = GetLastError();
+
+  FormatMessage(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM |
+      FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL,
+      dw,
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      (LPTSTR) &lpMsgBuf,
+      0,
+      NULL);
+
+  fprintf(stderr,
+          "Could not start process!  Failed with error %d: %s\n",
+          dw, lpMsgBuf);
+
+  LocalFree(lpMsgBuf);
+}
+
 /*
  * Test if pos points to /cygdrive/_/ where _ can
  * be any character.
@@ -256,7 +279,7 @@ int main(int argc, char **argv)
     DWORD exitCode;
 
     if (argc<3 || argv[1][0] != '-' || (argv[1][1] != 'c' && argv[1][1] != 'm')) {
-        fprintf(stderr, "Usage: fixpath -c|m<path@path@...> /cygdrive/c/WINDOWS/notepad.exe /cygdrive/c/x/test.txt");
+        fprintf(stderr, "Usage: fixpath -c|m<path@path@...> /cygdrive/c/WINDOWS/notepad.exe /cygdrive/c/x/test.txt\n");
         exit(0);
     }
 
@@ -308,11 +331,10 @@ int main(int argc, char **argv)
                        0,
                        &si,
                        &pi);
-    if(!rc)
-    {
-      //Could not start process;
-      fprintf(stderr, "Could not start process!\n");
-      exit(-1);
+    if(!rc) {
+      // Could not start process for some reason.  Try to report why:
+      report_error();
+      exit(rc);
     }
 
     WaitForSingleObject(pi.hProcess,INFINITE);
