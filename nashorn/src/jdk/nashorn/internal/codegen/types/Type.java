@@ -779,13 +779,13 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     };
 
     /** Singleton for method handle arrays used for properties etc. */
-    public static final ArrayType METHODHANDLE_ARRAY = new ArrayType(new MethodHandle[0].getClass());
+    public static final ArrayType METHODHANDLE_ARRAY = new ArrayType(MethodHandle[].class);
 
     /** This is the singleton for string arrays */
-    public static final ArrayType STRING_ARRAY = new ArrayType(new String[0].getClass());
+    public static final ArrayType STRING_ARRAY = new ArrayType(String[].class);
 
     /** This is the singleton for object arrays */
-    public static final ArrayType OBJECT_ARRAY = new ArrayType(new Object[0].getClass());
+    public static final ArrayType OBJECT_ARRAY = new ArrayType(Object[].class);
 
     /** This type, always an object type, just a toString override */
     public static final Type THIS = new ObjectType() {

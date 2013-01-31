@@ -83,7 +83,7 @@ public final class Symbol implements Comparable<Symbol> {
     /** Local variable slot. -1 indicates external property. */
     private int slot;
 
-    /** Field number in scope or property. */
+    /** Field number in scope or property; array index in varargs when not using arguments object. */
     private int fieldIndex;
 
     /** Number of times this symbol is used in code */
@@ -330,7 +330,11 @@ public final class Symbol implements Comparable<Symbol> {
         }
 
         if (isScope()) {
-            sb.append(" S");
+            if(isGlobal()) {
+                sb.append(" G");
+            } else {
+                sb.append(" S");
+            }
         }
 
         if (canBePrimitive()) {
@@ -382,7 +386,9 @@ public final class Symbol implements Comparable<Symbol> {
             trace("SET IS SCOPE");
         }
         flags |= IS_SCOPE;
-        getBlock().setNeedsScope();
+        if(!isGlobal()) {
+            getBlock().setNeedsScope();
+        }
     }
 
     /**

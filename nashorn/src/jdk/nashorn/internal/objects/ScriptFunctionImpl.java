@@ -49,6 +49,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // per-function object flags
     private static final int IS_STRICT  = 0b0000_0001;
     private static final int IS_BUILTIN = 0b0000_0010;
+    private static final int HAS_CALLEE = 0b0000_0100;
 
     // set this function to be a builtin function
     private void setIsBuiltin() {
@@ -218,6 +219,16 @@ public class ScriptFunctionImpl extends ScriptFunction {
     @Override
     public final boolean isStrict() {
         return (flags & IS_STRICT) != 0;
+    }
+
+    @Override
+    public final boolean hasCalleeParameter() {
+        return (flags & HAS_CALLEE) != 0;
+    }
+
+    @Override
+    protected void setHasCalleeParameter() {
+        flags |= HAS_CALLEE;
     }
 
     @Override

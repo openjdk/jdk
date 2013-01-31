@@ -1213,7 +1213,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      *
      * @return the new array
      */
-    public static Object allocateArguments(final Object[] arguments, final Object callee, final int numParams) {
+    public static ScriptObject allocateArguments(final Object[] arguments, final Object callee, final int numParams) {
         return NativeArguments.allocate(arguments, (ScriptFunction)callee, numParams);
     }
 

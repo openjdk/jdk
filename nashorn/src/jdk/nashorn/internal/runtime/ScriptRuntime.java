@@ -566,13 +566,12 @@ public final class ScriptRuntime {
      * This is 'delete' that always fails. We have to check strict mode and throw error.
      * That is why this is a runtime function. Or else we could have inlined 'false'.
      *
-     * @param obj       object with property to delete
      * @param property  property to delete
      * @param strict    are we in strict mode
      *
      * @return false always
      */
-    public static boolean FAIL_DELETE(final Object obj, final Object property, final Object strict) {
+    public static boolean FAIL_DELETE(final Object property, final Object strict) {
         if (Boolean.TRUE.equals(strict)) {
             syntaxError("strict.cant.delete", safeToString(property));
         }

@@ -86,10 +86,12 @@ import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.runtime.ArgumentSetter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Scope;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.dynalang.dynalink.support.NameCodec;
@@ -273,7 +275,7 @@ public class MethodEmitter implements Emitter {
      */
     private ArrayType popArray() {
         final Type type = stack.pop();
-        assert type.isArray();
+        assert type.isArray() : type;
         return (ArrayType)type;
     }
 
@@ -311,6 +313,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     public MethodEmitter _new(final String classDescriptor) {
+        debug("new", classDescriptor);
         method.visitTypeInsn(NEW, classDescriptor);
         pushType(Type.OBJECT);
         return this;
@@ -833,6 +836,42 @@ public class MethodEmitter implements Emitter {
     }
 
     /**
+     * Push a non-scope function parameter to the stack. Function parameters always arrive into a function as either
+     * explicit parameters on the stack, or collected into a final variable-arity {@code Object[]} parameter. If they
+     * end up being scoped (i.e. referenced from a child function or eval), then they're loaded as scoped symbols and
+     * this function is not invoked for them. If they aren't scoped, then they will be loaded from one of three places.
+     * First, if the function has an Arguments object, they're loaded from it. Otherwise, if the parameters come in a
+     * {@code Object[]} array, they are loaded from the array. Finally, if neither is the case, they're simply loaded
+     * from their bytecode slot.
+     *
+     * @param symbol the symbol representing the parameter.
+     *
+     * @return the method emitter
+     */
+    public MethodEmitter loadParam(final Symbol symbol) {
+        assert symbol != null && symbol.isParam() && !symbol.isScope();
+        if(symbol.hasSlot()) {
+            // Check that we aren't vararg, except if we're loading "this"
+            assert symbol.isThis() || !functionNode.isVarArg() : "Symbol=" + symbol + " functionNode=" + functionNode.getName();
+            // Just load it from a local variable
+            return load(symbol);
+        }
+        assert functionNode.isVarArg();
+        if(functionNode.needsArguments()) {
+            // ScriptObject.getArgument(int) on arguments
+            loadArguments();
+            load(symbol.getFieldIndex());
+            ScriptObject.GET_ARGUMENT.invoke(this);
+        } else {
+            // array load from __varargs__
+            loadVarArgs();
+            load(symbol.getFieldIndex());
+            arrayload();
+        }
+        return this;
+    }
+
+    /**
      * Push a local variable to the stack, given an explicit bytecode slot
      * This is used e.g. for stub generation where we know where items like
      * "this" and "scope" reside.
@@ -917,7 +956,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     public MethodEmitter loadArguments() {
-        debug("load arguments " + functionNode.getVarArgsNode().getSymbol());
+        debug("load arguments ", functionNode.getArgumentsNode().getSymbol());
         assert functionNode.getArgumentsNode().getSymbol().getSlot() != 0;
         return load(functionNode.getArgumentsNode().getSymbol());
     }
@@ -998,6 +1037,40 @@ public class MethodEmitter implements Emitter {
             popType(symbol.getSymbolType()).store(method, symbol.getSlot());
         }
     }
+
+    /**
+     * Pop a value from the stack and store it in a non-scope function parameter. Function parameters always arrive into
+     * a function as either explicit parameters on th stack, or collected into a final variable-arity {@code Object[]}
+     * parameter. If they end up being scoped (i.e. referenced from a child function or eval), then they're stored as
+     * scoped symbols are and this function is not invoked for them. If they aren't scoped, then they will be stored
+     * to one of three places. First, if the function has an Arguments object, they're stored to it. Otherwise, if the
+     * parameters come in a {@code Object[]} array, they are stored to the array. Finally, if neither is the case,
+     * they're simply stored to their bytecode slot.
+     *
+     * @param symbol the symbol representing the parameter.
+     *
+     */
+    public void storeParam(final Symbol symbol) {
+        assert symbol != null && symbol.isParam() && !symbol.isScope();
+        if(symbol.hasSlot()) {
+            assert !functionNode.isVarArg();
+            // Just store it to a local variable
+            store(symbol);
+            return;
+        }
+        assert functionNode.isVarArg();
+        if(functionNode.needsArguments()) {
+            loadArguments();
+            load(symbol.getFieldIndex());
+            ArgumentSetter.SET_ARGUMENT.invoke(this);
+        } else {
+            // varargs without arguments object - just do array store to __varargs__
+            loadVarArgs();
+            load(symbol.getFieldIndex());
+            ArgumentSetter.SET_ARRAY_ELEMENT.invoke(this);
+        }
+    }
+
 
     /**
      * Pop a value from the stack and store it in a given local variable

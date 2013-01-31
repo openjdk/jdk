@@ -26,7 +26,7 @@
 package jdk.nashorn.internal.codegen.objects;
 
 import static jdk.nashorn.internal.codegen.ClassEmitter.Flag.HANDLE_STATIC;
-import static jdk.nashorn.internal.codegen.Compiler.SCRIPTOBJECT_IMPL_OBJECT;
+import static jdk.nashorn.internal.codegen.Compiler.SCRIPTFUNCTION_IMPL_OBJECT;
 import static jdk.nashorn.internal.codegen.CompilerConstants.ALLOCATE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
@@ -93,10 +93,14 @@ public class FunctionObjectCreator extends ObjectCreator {
          * Instantiate the function object, must be referred to by name as
          * class is not available at compile time
          */
-        method._new(SCRIPTOBJECT_IMPL_OBJECT).dup();
+        method._new(SCRIPTFUNCTION_IMPL_OBJECT).dup();
         method.load(functionNode.isAnonymous() ? "" : identNode.getName());
         loadHandle(method, signature);
-        method.loadScope();
+        if(functionNode.needsParentScope()) {
+            method.loadScope();
+        } else {
+            method.loadNull();
+        }
         method.getStatic(compileUnit.getUnitClassName(), SOURCE.tag(), SOURCE.descriptor());
         method.load(token);
         method.loadHandle(getClassName(), ALLOCATE.tag(), methodDescriptor(ScriptObject.class, PropertyMap.class), EnumSet.of(HANDLE_STATIC));
@@ -111,7 +115,7 @@ public class FunctionObjectCreator extends ObjectCreator {
          */
         method.load(functionNode.needsCallee());
         method.load(functionNode.isStrictMode());
-        method.invoke(constructorNoLookup(SCRIPTOBJECT_IMPL_OBJECT,
+        method.invoke(constructorNoLookup(SCRIPTFUNCTION_IMPL_OBJECT,
                     String.class,
                     MethodHandle.class,
                     ScriptObject.class,

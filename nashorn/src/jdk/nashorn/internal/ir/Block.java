@@ -584,7 +584,7 @@ public class Block extends Node {
      * Set the needs scope flag.
      */
     public void setNeedsScope() {
-        this.needsScope = true;
+        needsScope = true;
     }
 
 }

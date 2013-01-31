@@ -111,8 +111,8 @@ public final class Compiler {
     /** Name of the Global object, cannot be referred to as .class, @see CodeGenerator */
     public static final String GLOBAL_OBJECT = OBJECTS_PACKAGE + '/' + "Global";
 
-    /** Name of the ScriptObjectImpl, cannot be referred to as .class @see FunctionObjectCreator */
-    public static final String SCRIPTOBJECT_IMPL_OBJECT = OBJECTS_PACKAGE + '/' + "ScriptFunctionImpl";
+    /** Name of the ScriptFunctionImpl, cannot be referred to as .class @see FunctionObjectCreator */
+    public static final String SCRIPTFUNCTION_IMPL_OBJECT = OBJECTS_PACKAGE + '/' + "ScriptFunctionImpl";
 
     /** Name of the Trampoline, cannot be referred to as .class @see FunctionObjectCreator */
     public static final String TRAMPOLINE_OBJECT = OBJECTS_PACKAGE + '/' + "Trampoline";
@@ -374,6 +374,7 @@ public final class Compiler {
                 LOG.info("Lowering '" + functionNode.getName() + "'");
                 functionNode.accept(new Lower(this));
                 state.add(State.LOWERED);
+                debugPrintAST();
 
                 LOG.info("Attributing types '" + functionNode.getName() + "'");
                 functionNode.accept(new Attr(this));

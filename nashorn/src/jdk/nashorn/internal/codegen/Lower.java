@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
-
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -956,14 +955,16 @@ final class Lower extends NodeOperatorVisitor {
         final long token  = functionNode.getToken();
         final int  finish = functionNode.getFinish();
 
-        LOG.info("Init this, scope, result, callee, varargs and argument for " + functionNode.getName());
-
         functionNode.setThisNode(new IdentNode(source, token, finish, THIS.tag()));
         functionNode.setScopeNode(new IdentNode(source, token, finish, SCOPE.tag()));
         functionNode.setResultNode(new IdentNode(source, token, finish, SCRIPT_RETURN.tag()));
         functionNode.setCalleeNode(new IdentNode(source, token, finish, CALLEE.tag()));
-        functionNode.setVarArgsNode(new IdentNode(source, token, finish, VARARGS.tag()));
-        functionNode.setArgumentsNode(new IdentNode(source, token, finish, functionNode.hideArguments() ? compiler.uniqueName('$' + ARGUMENTS.tag()) : ARGUMENTS.tag()));
+        if(functionNode.isVarArg()) {
+            functionNode.setVarArgsNode(new IdentNode(source, token, finish, VARARGS.tag()));
+            if(functionNode.needsArguments()) {
+                functionNode.setArgumentsNode(new IdentNode(source, token, finish, ARGUMENTS.tag()));
+            }
+        }
     }
 
 }

@@ -551,7 +551,8 @@ public final class NativeArguments extends ScriptObject {
      * @return Arguments Object
      */
     public static ScriptObject allocate(final Object[] arguments, final ScriptFunction callee, final int numParams) {
-        final boolean isStrict = callee.isStrict();
+        // Strict functions won't always have a callee for arguments, and will pass null instead.
+        final boolean isStrict = callee == null || callee.isStrict();
         return isStrict ? new NativeStrictArguments(arguments, numParams) : new NativeArguments(arguments, callee, numParams);
     }
 

@@ -45,7 +45,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -413,6 +412,13 @@ final class Attr extends NodeOperatorVisitor {
             // we have never seen this before, it can be undefined
             newType(symbol, Type.OBJECT); // TODO unknown -we have explicit casts anyway?
             symbol.setCanBeUndefined();
+            symbol.setIsScope();
+        }
+
+        if(symbol.isGlobal()) {
+            getCurrentFunctionNode().setUsesGlobalSymbol();
+        } else if(symbol.isScope()) {
+            getCurrentFunctionNode().setUsesScopeSymbol(symbol);
         }
 
         if (symbol != oldSymbol && !identNode.isInitializedHere()) {
@@ -666,7 +672,9 @@ final class Attr extends NodeOperatorVisitor {
             }
             final Node literalNode = LiteralNode.newInstance(unaryNode, name).accept(this);
 
-            args.add(currentFunctionNode.getScopeNode());
+            if (!failDelete) {
+                args.add(currentFunctionNode.getScopeNode());
+            }
             args.add(literalNode);
             args.add(strictFlagNode);
 
@@ -1157,21 +1165,24 @@ final class Attr extends NodeOperatorVisitor {
         //return symbol is always object as it's the __return__ thing. What returnType is is another matter though
     }
 
-    private static void initVarArg(final FunctionNode functionNode) {
-        assert functionNode.getCalleeNode() != null;
+    private void initVarArg(final FunctionNode functionNode) {
+        if (functionNode.isVarArg()) {
+            final Symbol varArgsSymbol = functionNode.defineSymbol(VARARGS.tag(), IS_PARAM | IS_INTERNAL, null);
+            varArgsSymbol.setTypeOverride(Type.OBJECT_ARRAY);
+            varArgsSymbol.setNeedsSlot(true);
+            functionNode.getVarArgsNode().setSymbol(varArgsSymbol);
+            LOG.info("Initialized varargs symbol: " + varArgsSymbol);
 
-        final Symbol varArgsSymbol = functionNode.defineSymbol(VARARGS.tag(), IS_PARAM | IS_INTERNAL, null);
-        newType(varArgsSymbol, Type.OBJECT_ARRAY);
-        varArgsSymbol.setNeedsSlot(true);
-        functionNode.getVarArgsNode().setSymbol(varArgsSymbol);
-        LOG.info("Initialized varargs symbol: " + varArgsSymbol);
-
-        final String    argumentsName   = functionNode.getArgumentsNode().getName();
-        final Symbol    argumentsSymbol = functionNode.defineSymbol(argumentsName, IS_PARAM | IS_INTERNAL, null);
-        newType(argumentsSymbol, Type.OBJECT);
-        argumentsSymbol.setNeedsSlot(true);
-        functionNode.getArgumentsNode().setSymbol(argumentsSymbol);
-        LOG.info("Initialized vararg varArgsSymbol=" + varArgsSymbol + " argumentsSymbol=" + argumentsSymbol);
+            if (functionNode.needsArguments()) {
+                final String    argumentsName   = functionNode.getArgumentsNode().getName();
+                final Symbol    argumentsSymbol = functionNode.defineSymbol(argumentsName, IS_VAR | IS_INTERNAL, null);
+                newType(argumentsSymbol, Type.typeFor(ScriptObject.class));
+                argumentsSymbol.setNeedsSlot(true);
+                functionNode.getArgumentsNode().setSymbol(argumentsSymbol);
+                addLocalDef(argumentsName);
+                LOG.info("Initialized vararg varArgsSymbol=" + varArgsSymbol + " argumentsSymbol=" + argumentsSymbol);
+            }
+        }
     }
 
     private static void initCallee(final FunctionNode functionNode) {
@@ -1238,7 +1249,7 @@ final class Attr extends NodeOperatorVisitor {
             LOG.info("parameter specialization possible: " + functionNode.getName() + " " + paramSpecializations);
         }
 
-        // parameters should not be slots for a vararg function, make sure this is the case
+        // parameters should not be slots for a function that uses variable arity signature
         if (functionNode.isVarArg()) {
             for (final IdentNode param : functionNode.getParameters()) {
                 param.getSymbol().setNeedsSlot(false);

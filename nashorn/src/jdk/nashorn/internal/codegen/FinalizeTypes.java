@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.HashSet;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.Assignment;
@@ -425,6 +424,19 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node enter(final FunctionNode functionNode) {
+        // If the function doesn't need a callee, we ensure its __callee__ symbol doesn't get a slot. We can't do
+        // this earlier, as access to scoped variables, self symbol, etc. in previous phases can all trigger the
+        // need for the callee.
+        if(!functionNode.needsCallee()) {
+            functionNode.getCalleeNode().getSymbol().setNeedsSlot(false);
+        }
+        // Similar reasoning applies to __scope__ symbol: if the function doesn't need either parent scope or its
+        // own scope, we ensure it doesn't get a slot, but we can't determine whether it needs a scope earlier than
+        // this phase.
+        if(!(functionNode.needsScope() || functionNode.needsParentScope())) {
+            functionNode.getScopeNode().getSymbol().setNeedsSlot(false);
+        }
+
         updateSymbols(functionNode);
         return functionNode;
     }
@@ -548,7 +560,6 @@ final class FinalizeTypes extends NodeOperatorVisitor {
      * @param block block for which to to finalize type info.
      */
     private static void updateSymbols(final Block block) {
-
         if (!block.needsScope()) {
             return; // nothing to do
         }
