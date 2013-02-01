@@ -241,6 +241,7 @@ JAVAC_DIRS = \
 	javax/annotation/processing \
 	javax/lang/model \
 	javax/tools \
+        jdk/ \
 	com/sun/source \
 	com/sun/tools/javac 
 
