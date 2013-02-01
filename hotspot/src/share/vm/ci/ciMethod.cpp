@@ -1178,6 +1178,7 @@ ciMethodBlocks  *ciMethod::get_method_blocks() {
 
 void ciMethod::dump_replay_data(outputStream* st) {
   ASSERT_IN_VM;
+  ResourceMark rm;
   Method* method = get_Method();
   Klass*  holder = method->method_holder();
   st->print_cr("ciMethod %s %s %s %d %d %d %d %d",
