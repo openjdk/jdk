@@ -1879,6 +1879,20 @@ public class BasicTreeUI extends TreeUI
                     visRect.x -= i.left;
                     visRect.y -= i.top;
                 }
+                // we should consider a non-visible area above
+                Component component = SwingUtilities.getUnwrappedParent(tree);
+                if (component instanceof JViewport) {
+                    component = component.getParent();
+                    if (component instanceof JScrollPane) {
+                        JScrollPane pane = (JScrollPane) component;
+                        JScrollBar bar = pane.getHorizontalScrollBar();
+                        if ((bar != null) && bar.isVisible()) {
+                            int height = bar.getHeight();
+                            visRect.y -= height;
+                            visRect.height += height;
+                        }
+                    }
+                }
                 preferredSize.width = treeState.getPreferredWidth(visRect);
             }
             else {
@@ -4504,7 +4518,7 @@ public class BasicTreeUI extends TreeUI
             }
         }
 
-        private void home(JTree tree, BasicTreeUI ui, int direction,
+        private void home(JTree tree, final BasicTreeUI ui, int direction,
                           boolean addToSelection, boolean changeSelection) {
 
             // disable moving of lead unless in discontiguous mode
@@ -4514,7 +4528,7 @@ public class BasicTreeUI extends TreeUI
                 changeSelection = true;
             }
 
-            int rowCount = ui.getRowCount(tree);
+            final int rowCount = ui.getRowCount(tree);
 
             if (rowCount > 0) {
                 if(direction == -1) {
@@ -4565,6 +4579,13 @@ public class BasicTreeUI extends TreeUI
                     else {
                         ui.setLeadSelectionPath(ui.getPathForRow(tree,
                                                           rowCount - 1), true);
+                    }
+                    if (ui.isLargeModel()){
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                ui.ensureRowsAreVisible(rowCount - 1, rowCount - 1);
+                            }
+                        });
                     }
                 }
             }

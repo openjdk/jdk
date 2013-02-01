@@ -84,7 +84,7 @@ public class DateFormatProviderTest extends ProviderTest {
                     break;
             }
             // pure JRE implementation
-            ResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getDateFormatData(target);
+            ResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getDateFormatData(target);
             boolean jreSupportsLocale = jreimplloc.contains(target);
 
             // JRE string arrays

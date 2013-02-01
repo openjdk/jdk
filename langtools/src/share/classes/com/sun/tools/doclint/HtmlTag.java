@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,16 +57,22 @@ public enum HtmlTag {
     B(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    BLOCKQUOTE,
+    BIG(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT)),
+
+    BLOCKQUOTE(BlockType.BLOCK, EndKind.REQUIRED,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     BODY(BlockType.OTHER, EndKind.REQUIRED),
 
     BR(BlockType.INLINE, EndKind.NONE,
             attrs(AttrKind.USE_CSS, CLEAR)),
 
-    CAPTION(EnumSet.of(Flag.EXPECT_CONTENT)),
+    CAPTION(BlockType.TABLE_ITEM, EndKind.REQUIRED,
+            EnumSet.of(Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT)),
 
-    CENTER,
+    CENTER(BlockType.BLOCK, EndKind.REQUIRED,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     CITE(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
@@ -74,17 +80,23 @@ public enum HtmlTag {
     CODE(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    DD(BlockType.BLOCK, EndKind.OPTIONAL,
-            EnumSet.of(Flag.EXPECT_CONTENT)),
+    DD(BlockType.LIST_ITEM, EndKind.OPTIONAL,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT)),
 
-    DIV,
+    DIV(BlockType.BLOCK, EndKind.REQUIRED,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     DL(BlockType.BLOCK, EndKind.REQUIRED,
-            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_TEXT),
-            attrs(AttrKind.USE_CSS, COMPACT)),
+            EnumSet.of(Flag.EXPECT_CONTENT),
+            attrs(AttrKind.USE_CSS, COMPACT)) {
+        @Override
+        public boolean accepts(HtmlTag t) {
+            return (t == DT) || (t == DD);
+        }
+    },
 
-    DT(BlockType.BLOCK, EndKind.OPTIONAL,
-            EnumSet.of(Flag.EXPECT_CONTENT)),
+    DT(BlockType.LIST_ITEM, EndKind.OPTIONAL,
+            EnumSet.of(Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT)),
 
     EM(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.NO_NEST)),
@@ -97,12 +109,12 @@ public enum HtmlTag {
 
     FRAMESET(BlockType.OTHER, EndKind.REQUIRED),
 
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
+    H1(BlockType.BLOCK, EndKind.REQUIRED),
+    H2(BlockType.BLOCK, EndKind.REQUIRED),
+    H3(BlockType.BLOCK, EndKind.REQUIRED),
+    H4(BlockType.BLOCK, EndKind.REQUIRED),
+    H5(BlockType.BLOCK, EndKind.REQUIRED),
+    H6(BlockType.BLOCK, EndKind.REQUIRED),
 
     HEAD(BlockType.OTHER, EndKind.REQUIRED),
 
@@ -118,31 +130,54 @@ public enum HtmlTag {
             attrs(AttrKind.OBSOLETE, NAME),
             attrs(AttrKind.USE_CSS, ALIGN, HSPACE, VSPACE, BORDER)),
 
-    LI(BlockType.BLOCK, EndKind.OPTIONAL),
+    LI(BlockType.LIST_ITEM, EndKind.OPTIONAL,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     LINK(BlockType.OTHER, EndKind.NONE),
 
-    MENU,
+    MENU(BlockType.BLOCK, EndKind.REQUIRED) {
+        @Override
+        public boolean accepts(HtmlTag t) {
+            return (t == LI);
+        }
+    },
 
     META(BlockType.OTHER, EndKind.NONE),
 
     NOFRAMES(BlockType.OTHER, EndKind.REQUIRED),
 
-    NOSCRIPT(BlockType.OTHER, EndKind.REQUIRED),
+    NOSCRIPT(BlockType.BLOCK, EndKind.REQUIRED),
 
     OL(BlockType.BLOCK, EndKind.REQUIRED,
-            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_TEXT),
-            attrs(AttrKind.USE_CSS, START, TYPE)),
+            EnumSet.of(Flag.EXPECT_CONTENT),
+            attrs(AttrKind.USE_CSS, START, TYPE)){
+        @Override
+        public boolean accepts(HtmlTag t) {
+            return (t == LI);
+        }
+    },
 
     P(BlockType.BLOCK, EndKind.OPTIONAL,
             EnumSet.of(Flag.EXPECT_CONTENT),
             attrs(AttrKind.USE_CSS, ALIGN)),
 
-    PRE(EnumSet.of(Flag.EXPECT_CONTENT)),
+    PRE(BlockType.BLOCK, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT)) {
+        @Override
+        public boolean accepts(HtmlTag t) {
+            switch (t) {
+                case IMG: case BIG: case SMALL: case SUB: case SUP:
+                    return false;
+                default:
+                    return (t.blockType == BlockType.INLINE);
+            }
+        }
+    },
 
     SCRIPT(BlockType.OTHER, EndKind.REQUIRED),
 
-    SMALL(BlockType.INLINE, EndKind.REQUIRED),
+    SMALL(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT)),
 
     SPAN(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
@@ -157,37 +192,70 @@ public enum HtmlTag {
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     TABLE(BlockType.BLOCK, EndKind.REQUIRED,
-            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_TEXT),
+            EnumSet.of(Flag.EXPECT_CONTENT),
             attrs(AttrKind.OK, SUMMARY, Attr.FRAME, RULES, BORDER,
                 CELLPADDING, CELLSPACING),
-            attrs(AttrKind.USE_CSS, ALIGN, WIDTH, BGCOLOR)),
+            attrs(AttrKind.USE_CSS, ALIGN, WIDTH, BGCOLOR)) {
+        @Override
+        public boolean accepts(HtmlTag t) {
+            switch (t) {
+                case CAPTION:
+                case THEAD: case TBODY: case TFOOT:
+                case TR: // HTML 3.2
+                    return true;
+                default:
+                    return false;
+            }
+        }
+    },
 
-    TBODY(BlockType.BLOCK, EndKind.REQUIRED,
-            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_TEXT),
-            attrs(AttrKind.OK, ALIGN, CHAR, CHAROFF, VALIGN)),
+    TBODY(BlockType.TABLE_ITEM, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT),
+            attrs(AttrKind.OK, ALIGN, CHAR, CHAROFF, VALIGN)) {
+        @Override
+        public boolean accepts(HtmlTag t) {
+            return (t == TR);
+        }
+    },
 
-    TD(BlockType.BLOCK, EndKind.OPTIONAL,
+    TD(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, ABBR, AXIS,
                 ALIGN, CHAR, CHAROFF, VALIGN),
             attrs(AttrKind.USE_CSS, WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
 
-    TFOOT(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.OK, ALIGN, CHAR, CHAROFF, VALIGN)),
+    TFOOT(BlockType.TABLE_ITEM, EndKind.REQUIRED,
+            attrs(AttrKind.OK, ALIGN, CHAR, CHAROFF, VALIGN)) {
+        @Override
+        public boolean accepts(HtmlTag t) {
+            return (t == TR);
+        }
+    },
 
-    TH(BlockType.BLOCK, EndKind.OPTIONAL,
+    TH(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, ABBR, AXIS,
                 ALIGN, CHAR, CHAROFF, VALIGN),
             attrs(AttrKind.USE_CSS, WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
 
-    THEAD(BlockType.BLOCK, EndKind.REQUIRED,
-            attrs(AttrKind.OK, ALIGN, CHAR, CHAROFF, VALIGN)),
+    THEAD(BlockType.TABLE_ITEM, EndKind.REQUIRED,
+            attrs(AttrKind.OK, ALIGN, CHAR, CHAROFF, VALIGN)) {
+        @Override
+        public boolean accepts(HtmlTag t) {
+            return (t == TR);
+        }
+    },
 
     TITLE(BlockType.OTHER, EndKind.REQUIRED),
 
-    TR(BlockType.BLOCK, EndKind.OPTIONAL,
-            EnumSet.of(Flag.NO_TEXT),
+    TR(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             attrs(AttrKind.OK, ALIGN, CHAR, CHAROFF, VALIGN),
-            attrs(AttrKind.USE_CSS, BGCOLOR)),
+            attrs(AttrKind.USE_CSS, BGCOLOR)) {
+        @Override
+        public boolean accepts(HtmlTag t) {
+            return (t == TH) || (t == TD);
+        }
+    },
 
     TT(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
@@ -196,8 +264,13 @@ public enum HtmlTag {
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     UL(BlockType.BLOCK, EndKind.REQUIRED,
-            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_TEXT),
-            attrs(AttrKind.USE_CSS, COMPACT, TYPE)),
+            EnumSet.of(Flag.EXPECT_CONTENT),
+            attrs(AttrKind.USE_CSS, COMPACT, TYPE)){
+        @Override
+        public boolean accepts(HtmlTag t) {
+            return (t == LI);
+        }
+    },
 
     VAR(BlockType.INLINE, EndKind.REQUIRED);
 
@@ -207,6 +280,8 @@ public enum HtmlTag {
     public static enum BlockType {
         BLOCK,
         INLINE,
+        LIST_ITEM,
+        TABLE_ITEM,
         OTHER;
     }
 
@@ -220,9 +295,10 @@ public enum HtmlTag {
     }
 
     public static enum Flag {
+        ACCEPTS_BLOCK,
+        ACCEPTS_INLINE,
         EXPECT_CONTENT,
-        NO_NEST,
-        NO_TEXT
+        NO_NEST
     }
 
     public static enum Attr {
@@ -273,7 +349,7 @@ public enum HtmlTag {
         static final Map<String,Attr> index = new HashMap<String,Attr>();
         static {
             for (Attr t: values()) {
-                index.put(t.name().toLowerCase(), t);
+                index.put(t.getText(), t);
             }
         }
     }
@@ -300,28 +376,49 @@ public enum HtmlTag {
     public final Set<Flag> flags;
     private final Map<Attr,AttrKind> attrs;
 
-
-    HtmlTag() {
-        this(BlockType.BLOCK, EndKind.REQUIRED);
-    }
-
-    HtmlTag(Set<Flag> flags) {
-        this(BlockType.BLOCK, EndKind.REQUIRED, flags);
-    }
-
     HtmlTag(BlockType blockType, EndKind endKind, AttrMap... attrMaps) {
         this(blockType, endKind, Collections.<Flag>emptySet(), attrMaps);
     }
 
     HtmlTag(BlockType blockType, EndKind endKind, Set<Flag> flags, AttrMap... attrMaps) {
         this.blockType = blockType;
-        this.endKind = endKind;this.flags = flags;
+        this.endKind = endKind;
+        this.flags = flags;
         this.attrs = new EnumMap<Attr,AttrKind>(Attr.class);
         for (Map<Attr,AttrKind> m: attrMaps)
             this.attrs.putAll(m);
         attrs.put(Attr.CLASS, AttrKind.OK);
         attrs.put(Attr.ID, AttrKind.OK);
         attrs.put(Attr.STYLE, AttrKind.OK);
+    }
+
+    public boolean accepts(HtmlTag t) {
+        if (flags.contains(Flag.ACCEPTS_BLOCK) && flags.contains(Flag.ACCEPTS_INLINE)) {
+            return (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
+        } else if (flags.contains(Flag.ACCEPTS_BLOCK)) {
+            return (t.blockType == BlockType.BLOCK);
+        } else if (flags.contains(Flag.ACCEPTS_INLINE)) {
+            return (t.blockType == BlockType.INLINE);
+        } else
+            switch (blockType) {
+                case BLOCK:
+                case INLINE:
+                    return (t.blockType == BlockType.INLINE);
+                case OTHER:
+                    // OTHER tags are invalid in doc comments, and will be
+                    // reported separately, so silently accept/ignore any content
+                    return true;
+                default:
+                    // any combination which could otherwise arrive here
+                    // ought to have been handled in an overriding method
+                    throw new AssertionError(this + ":" + t);
+            }
+    }
+
+    public boolean acceptsText() {
+        // generally, anywhere we can put text we can also put inline tag
+        // so check if a typical inline tag is allowed
+        return accepts(B);
     }
 
     public String getText() {
@@ -346,7 +443,7 @@ public enum HtmlTag {
     private static final Map<String,HtmlTag> index = new HashMap<String,HtmlTag>();
     static {
         for (HtmlTag t: values()) {
-            index.put(t.name().toLowerCase(), t);
+            index.put(t.getText(), t);
         }
     }
 

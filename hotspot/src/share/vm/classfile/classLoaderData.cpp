@@ -724,13 +724,13 @@ void ClassLoaderDataGraph::dump_on(outputStream * const out) {
   }
   MetaspaceAux::dump(out);
 }
+#endif // PRODUCT
 
 void ClassLoaderData::print_value_on(outputStream* out) const {
   if (class_loader() == NULL) {
-    out->print_cr("NULL class_loader");
+    out->print("NULL class_loader");
   } else {
     out->print("class loader "PTR_FORMAT, this);
     class_loader()->print_value_on(out);
   }
 }
-#endif // PRODUCT

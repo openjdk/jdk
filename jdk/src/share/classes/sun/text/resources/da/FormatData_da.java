@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,42 @@
  * This notice and attribution to Taligent may not be removed.
  * Taligent is a registered trademark of Taligent, Inc.
  *
+ */
+
+/*
+ * COPYRIGHT AND PERMISSION NOTICE
+ *
+ * Copyright (C) 1991-2012 Unicode, Inc. All rights reserved. Distributed under
+ * the Terms of Use in http://www.unicode.org/copyright.html.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of the Unicode data files and any associated documentation (the "Data
+ * Files") or Unicode software and any associated documentation (the
+ * "Software") to deal in the Data Files or Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, and/or sell copies of the Data Files or Software, and
+ * to permit persons to whom the Data Files or Software are furnished to do so,
+ * provided that (a) the above copyright notice(s) and this permission notice
+ * appear with all copies of the Data Files or Software, (b) both the above
+ * copyright notice(s) and this permission notice appear in associated
+ * documentation, and (c) there is clear notice in each modified Data File or
+ * in the Software as well as in the documentation associated with the Data
+ * File(s) or Software that the data or software has been modified.
+ *
+ * THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+ * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+ * THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS
+ * INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR
+ * CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THE DATA FILES OR SOFTWARE.
+ *
+ * Except as contained in this notice, the name of a copyright holder shall not
+ * be used in advertising or otherwise to promote the sale, use or other
+ * dealings in these Data Files or Software without prior written authorization
+ * of the copyright holder.
  */
 
 package sun.text.resources.da;
@@ -172,6 +208,64 @@ public class FormatData_da extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GuMtkHmsSEDFwWahKzZ" },
+            { "cldr.japanese.DatePatterns",
+                new String[] {
+                    "EEEE d. MMMM y G",
+                    "d. MMMM y G",
+                    "d. MMM y G",
+                    "d/M/y GGGGG",
+                }
+            },
+            { "cldr.roc.DatePatterns",
+                new String[] {
+                    "EEEE d. MMMM y G",
+                    "d. MMMM y G",
+                    "d. MMM y G",
+                    "d/M/y GGGGG",
+                }
+            },
+            { "roc.DatePatterns",
+                new String[] {
+                    "EEEE d. MMMM y GGGG",
+                    "d. MMMM y GGGG",
+                    "d. MMM y GGGG",
+                    "d/M/y G",
+                }
+            },
+            { "cldr.islamic.DatePatterns",
+                new String[] {
+                    "EEEE d. MMMM y G",
+                    "d. MMMM y G",
+                    "d. MMM y G",
+                    "d/M/y G",
+                }
+            },
+            { "islamic.DatePatterns",
+                new String[] {
+                    "EEEE d. MMMM y GGGG",
+                    "d. MMMM y GGGG",
+                    "d. MMM y GGGG",
+                    "d/M/y GGGG",
+                }
+            },
+            { "calendarname.islamic-civil", "verdslig islamisk kalender" },
+            { "calendarname.islamicc", "verdslig islamisk kalender" },
+            { "calendarname.roc", "kalender for Republikken Kina" },
+            { "calendarname.islamic", "islamisk kalender" },
+            { "calendarname.buddhist", "buddhistisk kalender" },
+            { "calendarname.japanese", "japansk kalender" },
+            { "calendarname.gregorian", "gregoriansk kalender" },
+            { "calendarname.gregory", "gregoriansk kalender" },
+            { "field.era", "\u00e6ra" },
+            { "field.year", "\u00e5r" },
+            { "field.month", "m\u00e5ned" },
+            { "field.week", "uge" },
+            { "field.weekday", "ugedag" },
+            { "field.dayperiod", "dagtid" },
+            { "field.hour", "time" },
+            { "field.minute", "minut" },
+            { "field.second", "sekund" },
+            { "field.zone", "tidszone" },
         };
     }
 }

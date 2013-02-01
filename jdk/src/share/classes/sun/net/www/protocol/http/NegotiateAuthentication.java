@@ -28,10 +28,9 @@ package sun.net.www.protocol.http;
 import java.net.URL;
 import java.io.IOException;
 import java.net.Authenticator.RequestorType;
+import java.util.Base64;
 import java.util.HashMap;
 import sun.net.www.HeaderParser;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
 import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
 
@@ -151,9 +150,9 @@ class NegotiateAuthentication extends AuthenticationInfo {
             byte[] incoming = null;
             String[] parts = raw.split("\\s+");
             if (parts.length > 1) {
-                incoming = new BASE64Decoder().decodeBuffer(parts[1]);
+                incoming = Base64.getDecoder().decode(parts[1]);
             }
-            response = hci.scheme + " " + new B64Encoder().encode(
+            response = hci.scheme + " " + Base64.getEncoder().encodeToString(
                         incoming==null?firstToken():nextToken(incoming));
 
             conn.setAuthenticationProperty(getHeaderName(), response);
@@ -199,12 +198,6 @@ class NegotiateAuthentication extends AuthenticationInfo {
      */
     private byte[] nextToken(byte[] token) throws IOException {
         return negotiator.nextToken(token);
-    }
-
-    class B64Encoder extends BASE64Encoder {
-        protected int bytesPerLine () {
-            return 100000;  // as big as it can be, maybe INT_MAX
-        }
     }
 
     // MS will send a final WWW-Authenticate even if the status is already

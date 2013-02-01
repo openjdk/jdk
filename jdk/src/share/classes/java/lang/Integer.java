@@ -1513,6 +1513,47 @@ public final class Integer extends Number implements Comparable<Integer> {
                ((i << 24));
     }
 
+    /**
+     * Adds two integers together as per the + operator.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the sum of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 1.8
+     */
+    public static int sum(int a, int b) {
+        return a + b;
+    }
+
+    /**
+     * Returns the greater of two {@code int} values
+     * as if by calling {@link Math#max(int, int) Math.max}.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the greater of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 1.8
+     */
+    public static int max(int a, int b) {
+        return Math.max(a, b);
+    }
+
+    /**
+     * Returns the smaller of two {@code int} values
+     * as if by calling {@link Math#min(int, int) Math.min}.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the smaller of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 1.8
+     */
+    public static int min(int a, int b) {
+        return Math.min(a, b);
+    }
+
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     @Native private static final long serialVersionUID = 1360826667806852920L;
 }
