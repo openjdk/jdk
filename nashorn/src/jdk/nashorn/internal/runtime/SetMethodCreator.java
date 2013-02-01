@@ -33,7 +33,6 @@ import java.lang.invoke.MethodHandle;
 import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
 import jdk.nashorn.internal.runtime.linker.Lookup;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
-import jdk.nashorn.internal.runtime.linker.NashornGuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
 import org.dynalang.dynalink.CallSiteDescriptor;
@@ -41,8 +40,8 @@ import org.dynalang.dynalink.linker.GuardedInvocation;
 
 /**
  * Instances of this class are quite ephemeral; they only exist for the duration of an invocation of
- * {@link ScriptObject#findSetMethod(CallSiteDescriptor, boolean)} and serve as the actual encapsulation of the
- * algorithm for creating an appropriate property setter method.
+ * {@link ScriptObject#findSetMethod(CallSiteDescriptor, org.dynalang.dynalink.linker.LinkRequest)} and
+ * serve as the actual encapsulation of the algorithm for creating an appropriate property setter method.
  */
 class SetMethodCreator {
     // See constructor parameters for description of fields
@@ -89,19 +88,16 @@ class SetMethodCreator {
     private class SetMethod {
         private final MethodHandle methodHandle;
         private final Property property;
-        private final boolean nonStrict;
 
         /**
          * Creates a new lookup result.
          * @param methodHandle the actual method handle
          * @param property the property object. Can be null in case we're creating a new property in the global object.
-         * @param nonStrict True if an existing property with a non-strict function as property setter is discovered.
          */
-        SetMethod(final MethodHandle methodHandle, final Property property, final boolean nonStrict) {
+        SetMethod(final MethodHandle methodHandle, final Property property) {
             assert methodHandle != null;
             this.methodHandle = methodHandle;
             this.property = property;
-            this.nonStrict = nonStrict;
         }
 
         /**
@@ -109,7 +105,7 @@ class SetMethodCreator {
          * @return the composed guarded invocation that represents the dynamic setter method for the property.
          */
         GuardedInvocation createGuardedInvocation() {
-            return new NashornGuardedInvocation(methodHandle, null, getGuard(), nonStrict);
+            return new GuardedInvocation(methodHandle, getGuard());
         }
 
         private MethodHandle getGuard() {
@@ -162,17 +158,12 @@ class SetMethodCreator {
         } else {
             boundHandle = methodHandle;
         }
-        return new SetMethod(boundHandle, property, getExistingSetterNonStrictFlag());
-    }
-
-    private boolean getExistingSetterNonStrictFlag() {
-        final ScriptFunction setter = find.getSetterFunction();
-        return setter != null && setter.isNonStrictFunction();
+        return new SetMethod(boundHandle, property);
     }
 
     private SetMethod createGlobalPropertySetter() {
         final ScriptObject global = Context.getGlobalTrusted();
-        return new SetMethod(ScriptObject.bindTo(global.addSpill(getName()), global), null, false);
+        return new SetMethod(ScriptObject.bindTo(global.addSpill(getName()), global), null);
     }
 
     private SetMethod createNewPropertySetter() {
@@ -192,7 +183,7 @@ class SetMethodCreator {
         final int nextSpill = getMap().getSpillLength();
 
         final Property property = createSpillProperty(nextSpill);
-        return new SetMethod(createSpillMethodHandle(nextSpill, property), property, false);
+        return new SetMethod(createSpillMethodHandle(nextSpill, property), property);
     }
 
     private Property createSpillProperty(final int nextSpill) {
@@ -222,7 +213,7 @@ class SetMethodCreator {
         final Property property = new SpillProperty(getName(), 0, nextEmbed, ScriptObject.GET_EMBED[nextEmbed], ScriptObject.SET_EMBED[nextEmbed]);
         //TODO specfields
         final MethodHandle methodHandle = MH.insertArguments(ScriptObject.SETEMBED, 0, desc, getMap(), getNewMap(property), property.getSetter(Object.class, getMap()), nextEmbed);
-        return new SetMethod(methodHandle, property, false);
+        return new SetMethod(methodHandle, property);
     }
 
     private PropertyMap getNewMap(Property property) {

@@ -101,7 +101,7 @@ public class PrimitiveLookup {
         if (link != null) {
             MethodHandle method = link.getInvocation();
             final Class<?> receiverType = method.type().parameterType(0);
-            if (receiverType != Object.class || NashornGuardedInvocation.isNonStrict(link)) {
+            if (receiverType != Object.class) {
                 final MethodType wrapType = wrapFilter.type();
                 assert receiverType.isAssignableFrom(wrapType.returnType());
                 method = MH.filterArguments(method, 0, MH.asType(wrapFilter, wrapType.changeReturnType(receiverType)));

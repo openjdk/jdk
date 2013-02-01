@@ -40,7 +40,6 @@ import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
-import jdk.nashorn.internal.runtime.linker.NashornGuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.dynalang.dynalink.CallSiteDescriptor;
@@ -68,6 +67,8 @@ public abstract class ScriptFunction extends ScriptObject {
     public static final MethodHandle ALLOCATE     = findOwnMH("allocate", Object.class);
 
     private static final MethodHandle NEWFILTER = findOwnMH("newFilter", Object.class, Object.class, Object.class);
+
+    private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", Object.class, Object.class);
 
     /** method handle to arity setter for this ScriptFunction */
     public static final Call SET_ARITY = virtualCallNoLookup(ScriptFunction.class, "setArity", void.class, int.class);
@@ -352,7 +353,7 @@ public abstract class ScriptFunction extends ScriptObject {
     public abstract boolean isBuiltin();
 
     /**
-     * Is this a non-strict (not built-in) script function?
+     * Is this a non-strict and not-built-in script function?
      * @return true if neither strict nor built-in
      */
     public boolean isNonStrictFunction() {
@@ -371,42 +372,43 @@ public abstract class ScriptFunction extends ScriptObject {
             invokes++;
         }
 
+        final Object selfObj = convertThisObject(self);
         final Object[] args = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
 
         if (isVarArg(invokeHandle)) {
             if (hasCalleeParameter()) {
-                return invokeHandle.invokeExact(self, this, args);
+                return invokeHandle.invokeExact(selfObj, this, args);
             }
-            return invokeHandle.invokeExact(self, args);
+            return invokeHandle.invokeExact(selfObj, args);
         }
 
         final int paramCount = invokeHandle.type().parameterCount();
         if (hasCalleeParameter()) {
             switch (paramCount) {
             case 2:
-                return invokeHandle.invokeExact(self, this);
+                return invokeHandle.invokeExact(selfObj, this);
             case 3:
-                return invokeHandle.invokeExact(self, this, getArg(args, 0));
+                return invokeHandle.invokeExact(selfObj, this, getArg(args, 0));
             case 4:
-                return invokeHandle.invokeExact(self, this, getArg(args, 0), getArg(args, 1));
+                return invokeHandle.invokeExact(selfObj, this, getArg(args, 0), getArg(args, 1));
             case 5:
-                return invokeHandle.invokeExact(self, this, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+                return invokeHandle.invokeExact(selfObj, this, getArg(args, 0), getArg(args, 1), getArg(args, 2));
             default:
-                return invokeHandle.invokeWithArguments(withArguments(self, this, paramCount, args));
+                return invokeHandle.invokeWithArguments(withArguments(selfObj, this, paramCount, args));
             }
         }
 
         switch (paramCount) {
         case 1:
-            return invokeHandle.invokeExact(self);
+            return invokeHandle.invokeExact(selfObj);
         case 2:
-            return invokeHandle.invokeExact(self, getArg(args, 0));
+            return invokeHandle.invokeExact(selfObj, getArg(args, 0));
         case 3:
-            return invokeHandle.invokeExact(self, getArg(args, 0), getArg(args, 1));
+            return invokeHandle.invokeExact(selfObj, getArg(args, 0), getArg(args, 1));
         case 4:
-            return invokeHandle.invokeExact(self, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+            return invokeHandle.invokeExact(selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2));
         default:
-            return invokeHandle.invokeWithArguments(withArguments(self, null, paramCount, args));
+            return invokeHandle.invokeWithArguments(withArguments(selfObj, null, paramCount, args));
         }
     }
 
@@ -912,6 +914,14 @@ public abstract class ScriptFunction extends ScriptObject {
         return (result instanceof ScriptObject || !JSType.isPrimitive(result))? result : allocation;
     }
 
+    @SuppressWarnings("unused")
+    private static Object wrapFilter(final Object obj) {
+        if (obj instanceof ScriptObject || !isPrimitiveThis(obj)) {
+            return obj;
+        }
+        return ((GlobalObject) Context.getGlobalTrusted()).wrapAsObject(obj);
+    }
+
     /**
      * dyn:call call site signature: (callee, thiz, [args...])
      * generated method signature:   (thiz, callee, [args...])
@@ -933,11 +943,13 @@ public abstract class ScriptFunction extends ScriptObject {
             final MethodHandle collector = MH.asCollector(ScriptRuntime.APPLY.methodHandle(), Object[].class,
                     type.parameterCount() - 2);
 
-            return new GuardedInvocation(addPrimitiveWrap(collector, desc, request),
+            return new GuardedInvocation(collector,
                     desc.getMethodType().parameterType(0) == ScriptFunction.class ? null : NashornGuards.getScriptFunctionGuard());
         }
 
         MethodHandle boundHandle;
+        MethodHandle guard = null;
+
         if (hasCalleeParameter()) {
             final MethodHandle callHandle = getBestSpecializedInvokeHandle(type);
 
@@ -956,14 +968,23 @@ public abstract class ScriptFunction extends ScriptObject {
                 assert reorder[1] == 0;
                 final MethodType newType = oldType.changeParameterType(0, oldType.parameterType(1)).changeParameterType(1, oldType.parameterType(0));
                 boundHandle = MethodHandles.permuteArguments(callHandle, newType, reorder);
-                // thiz argument may be a JS primitive needing a wrapper
-                boundHandle = addPrimitiveWrap(boundHandle, desc, request);
+
+                // For non-strict functions, check whether this-object is primitive type.
+                // If so add a to-object-wrapper argument filter.
+                // Else install a guard that will trigger a relink when the argument becomes primitive.
+                if (isNonStrictFunction()) {
+                    if (isPrimitiveThis(request.getArguments()[1])) {
+                        boundHandle = MH.filterArguments(boundHandle, 1, WRAPFILTER);
+                    } else {
+                        guard = NashornGuards.getNonStrictFunctionGuard(this);
+                    }
+                }
             }
         } else {
             final MethodHandle callHandle = getBestSpecializedInvokeHandle(type.dropParameterTypes(0, 1));
 
             if(NashornCallSiteDescriptor.isScope(desc)) {
-                boundHandle = MH.bindTo(callHandle, isNonStrictFunction()? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
+                boundHandle = MH.bindTo(callHandle, isNonStrictFunction() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
                 boundHandle = MH.dropArguments(boundHandle, 0, Object.class, Object.class);
             } else {
                 boundHandle = MH.dropArguments(callHandle, 0, Object.class);
@@ -971,7 +992,7 @@ public abstract class ScriptFunction extends ScriptObject {
         }
 
         boundHandle = pairArguments(boundHandle, type);
-        return new NashornGuardedInvocation(boundHandle, null, NashornGuards.getFunctionGuard(this), isNonStrictFunction());
+        return new GuardedInvocation(boundHandle, guard == null ? NashornGuards.getFunctionGuard(this) : guard);
    }
 
     /**
@@ -997,16 +1018,25 @@ public abstract class ScriptFunction extends ScriptObject {
         return pairArguments(methodHandle, type);
     }
 
-    private MethodHandle addPrimitiveWrap(final MethodHandle mh, final CallSiteDescriptor desc, final LinkRequest request) {
-        // Check whether thiz is a JS primitive type and needs an object wrapper for non-strict function
-        if (!NashornCallSiteDescriptor.isScope(desc) && isNonStrictFunction()) {
-            Object self = request.getArguments()[1];
-            if (isPrimitiveThis(self)) {
-                MethodHandle wrapFilter = ((GlobalObject) Context.getGlobalTrusted()).getWrapFilter(self);
-                return MH.filterArguments(mh, 1, MH.asType(wrapFilter, wrapFilter.type().changeReturnType(Object.class)));
+    /**
+     * Convert this argument for non-strict functions according to ES 10.4.3
+     *
+     * @param thiz the this argument
+     *
+     * @return the converted this object
+     */
+    protected Object convertThisObject(final Object thiz) {
+        if (!(thiz instanceof ScriptObject) && isNonStrictFunction()) {
+            if (JSType.nullOrUndefined(thiz)) {
+                return Context.getGlobalTrusted();
+            }
+
+            if (isPrimitiveThis(thiz)) {
+                return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(thiz);
             }
         }
-        return mh;
+
+        return thiz;
     }
 
     private static boolean isPrimitiveThis(Object obj) {

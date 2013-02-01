@@ -64,7 +64,6 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.Lookup;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
-import jdk.nashorn.internal.runtime.linker.NashornGuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
@@ -1712,11 +1711,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (methodHandle != null) {
             assert methodHandle.type().returnType().equals(returnType);
             final ScriptFunction getter = find.getGetterFunction();
-            final boolean nonStrict = getter != null && getter.isNonStrictFunction();
             if (find.isSelf()) {
-                return new NashornGuardedInvocation(methodHandle, null, ObjectClassGenerator.OBJECT_FIELDS_ONLY &&
-                        NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType() ? null : guard,
-                            nonStrict);
+                return new GuardedInvocation(methodHandle, ObjectClassGenerator.OBJECT_FIELDS_ONLY &&
+                        NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType() ? null : guard);
             }
 
             final ScriptObject prototype = find.getOwner();
@@ -1724,7 +1721,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (!property.hasGetterFunction()) {
                 methodHandle = bindTo(methodHandle, prototype);
             }
-            return new NashornGuardedInvocation(methodHandle, getMap().getProtoGetSwitchPoint(name), guard, nonStrict);
+            return new GuardedInvocation(methodHandle, getMap().getProtoGetSwitchPoint(name), guard);
         }
 
         assert !NashornCallSiteDescriptor.isFastScope(desc);
