@@ -1087,21 +1087,30 @@ public class DPrinter {
      */
     static class Main {
         public static void main(String... args) throws IOException {
+            Main m = new Main();
             PrintWriter out = new PrintWriter(System.out);
             try {
                 if (args.length == 0)
-                    usage(out);
+                    m.usage(out);
                 else
-                    new Main().run(out, args);
+                    m.run(out, args);
             } finally {
                 out.flush();
             }
         }
 
-        static void usage(PrintWriter out) {
+        void usage(PrintWriter out) {
             out.println("Usage:");
             out.println("  java " + Main.class.getName() + " mode [options] [javac-options]");
-            out.println("where options include:");
+            out.print("where mode is one of: ");
+            String sep = "";
+            for (Handler h: getHandlers().values()) {
+                out.print(sep);
+                out.print(h.name);
+                sep = ", ";
+            }
+            out.println();
+            out.println("and where options include:");
             out.println("  -before PARSE|ENTER|ANALYZE|GENERATE|ANNOTATION_PROCESSING|ANNOTATION_PROCESSING_ROUND");
             out.println("  -after PARSE|ENTER|ANALYZE|GENERATE|ANNOTATION_PROCESSING|ANNOTATION_PROCESSING_ROUND");
             out.println("  -showPositions");
