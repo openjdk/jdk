@@ -571,19 +571,14 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
     _sleep_factor             =     0.0;
     _marking_task_overhead    =     1.0;
   } else {
-    if (ConcGCThreads > 0) {
-      // notice that ConcGCThreads overwrites G1MarkingOverheadPercent
+    if (!FLAG_IS_DEFAULT(ConcGCThreads) && ConcGCThreads > 0) {
+      // Note: ConcGCThreads has precedence over G1MarkingOverheadPercent
       // if both are set
-
-      _parallel_marking_threads = (uint) ConcGCThreads;
-      _max_parallel_marking_threads = _parallel_marking_threads;
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
     } else if (G1MarkingOverheadPercent > 0) {
-      // we will calculate the number of parallel marking threads
-      // based on a target overhead with respect to the soft real-time
-      // goal
-
+      // We will calculate the number of parallel marking threads based
+      // on a target overhead with respect to the soft real-time goal
       double marking_overhead = (double) G1MarkingOverheadPercent / 100.0;
       double overall_cm_overhead =
         (double) MaxGCPauseMillis * marking_overhead /
@@ -596,16 +591,21 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
       double sleep_factor =
                          (1.0 - marking_task_overhead) / marking_task_overhead;
 
-      _parallel_marking_threads = (uint) marking_thread_num;
-      _max_parallel_marking_threads = _parallel_marking_threads;
+      FLAG_SET_ERGO(uintx, ConcGCThreads, (uint) marking_thread_num);
       _sleep_factor             = sleep_factor;
       _marking_task_overhead    = marking_task_overhead;
     } else {
-      _parallel_marking_threads = scale_parallel_threads((uint)ParallelGCThreads);
-      _max_parallel_marking_threads = _parallel_marking_threads;
+      // Calculate the number of parallel marking threads by scaling
+      // the number of parallel GC threads.
+      uint marking_thread_num = scale_parallel_threads((uint) ParallelGCThreads);
+      FLAG_SET_ERGO(uintx, ConcGCThreads, marking_thread_num);
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
     }
+
+    assert(ConcGCThreads > 0, "Should have been set");
+    _parallel_marking_threads = (uint) ConcGCThreads;
+    _max_parallel_marking_threads = _parallel_marking_threads;
 
     if (parallel_marking_threads() > 1) {
       _cleanup_task_overhead = 1.0;
