@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public abstract class DCTree implements DocTree {
 
     }
 
-    public static abstract class DCBlockTag extends DCTree implements InlineTagTree {
+    public static abstract class DCBlockTag extends DCTree implements BlockTagTree {
         public String getTagName() {
             return getKind().tagName;
         }
@@ -169,7 +169,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCAuthor extends DCInlineTag implements AuthorTree {
+    public static class DCAuthor extends DCBlockTag implements AuthorTree {
         public final List<DCTree> name;
 
         DCAuthor(List<DCTree> name) {
@@ -640,7 +640,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCSince extends DCInlineTag implements SinceTree {
+    public static class DCSince extends DCBlockTag implements SinceTree {
         public final List<DCTree> body;
 
         DCSince(List<DCTree> body) {
