@@ -489,6 +489,71 @@ void awt_freeParsedImage(BufImageS_t *imageP, int freeImageP) {
     }
 }
 
+static void
+awt_getBIColorOrder(int type, int *colorOrder) {
+    switch(type) {
+        case java_awt_image_BufferedImage_TYPE_INT_ARGB:
+        case java_awt_image_BufferedImage_TYPE_INT_ARGB_PRE:
+#ifdef _LITTLE_ENDIAN
+            colorOrder[0] = 2;
+            colorOrder[1] = 1;
+            colorOrder[2] = 0;
+            colorOrder[3] = 3;
+#else
+            colorOrder[0] = 1;
+            colorOrder[1] = 2;
+            colorOrder[2] = 3;
+            colorOrder[3] = 0;
+#endif
+            break;
+        case java_awt_image_BufferedImage_TYPE_INT_BGR:
+#ifdef _LITTLE_ENDIAN
+            colorOrder[0] = 0;
+            colorOrder[1] = 1;
+            colorOrder[2] = 2;
+#else
+            colorOrder[0] = 3;
+            colorOrder[1] = 2;
+            colorOrder[2] = 1;
+#endif
+            break;
+        case java_awt_image_BufferedImage_TYPE_INT_RGB:
+#ifdef _LITTLE_ENDIAN
+            colorOrder[0] = 2;
+            colorOrder[1] = 1;
+            colorOrder[2] = 0;
+#else
+            colorOrder[0] = 1;
+            colorOrder[1] = 2;
+            colorOrder[2] = 3;
+#endif
+            break;
+        case java_awt_image_BufferedImage_TYPE_4BYTE_ABGR:
+        case java_awt_image_BufferedImage_TYPE_4BYTE_ABGR_PRE:
+            colorOrder[0] = 3;
+            colorOrder[1] = 2;
+            colorOrder[2] = 1;
+            colorOrder[3] = 0;
+            break;
+        case java_awt_image_BufferedImage_TYPE_3BYTE_BGR:
+            colorOrder[0] = 2;
+            colorOrder[1] = 1;
+            colorOrder[2] = 0;
+            break;
+        case java_awt_image_BufferedImage_TYPE_USHORT_565_RGB:
+        case java_awt_image_BufferedImage_TYPE_USHORT_555_RGB:
+            colorOrder[0] = 0;
+            colorOrder[1] = 1;
+            colorOrder[2] = 2;
+            break;
+        case java_awt_image_BufferedImage_TYPE_BYTE_GRAY:
+        case java_awt_image_BufferedImage_TYPE_USHORT_GRAY:
+        case java_awt_image_BufferedImage_TYPE_BYTE_BINARY:
+        case java_awt_image_BufferedImage_TYPE_BYTE_INDEXED:
+            colorOrder[0] = 0;
+            break;
+    }
+}
 
 static int
 setHints(JNIEnv *env, BufImageS_t *imageP) {
