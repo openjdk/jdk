@@ -210,7 +210,7 @@ public class DPrinter {
                     return;
             }
 
-            printString(label, "");
+            printString(label, hashString(annotations));
 
             indent(+1);
             if (attributes == DECL_NOT_STARTED)
@@ -383,11 +383,12 @@ public class DPrinter {
             case FULL:
                 indent();
                 out.print(label);
-                out.println(": " + String.format("0x%x", sym.kind)
-                        + "--" + Kinds.kindName(sym).name()
-                        + " " + sym.getKind()
+                out.println(": " +
+                        info(sym.getClass(),
+                            String.format("0x%x--%s", sym.kind, Kinds.kindName(sym)),
+                            sym.getKind())
                         + " " + sym.name
-                        + " " + String.format("#%x", sym.hashCode()));
+                        + " " + hashString(sym));
 
                 indent(+1);
                 if (showSrc) {
@@ -401,7 +402,7 @@ public class DPrinter {
                 printSymbol("owner", sym.owner, Details.SUMMARY);
                 printType("type", sym.type, Details.SUMMARY);
                 printType("erasure", sym.erasure_field, Details.SUMMARY);
-                sym.accept(symVisitor, true);
+                sym.accept(symVisitor, null);
                 printAnnotations("annotations", sym.annotations, Details.SUMMARY);
                 indent(-1);
             }
@@ -417,7 +418,13 @@ public class DPrinter {
             printNull(label);
         } else {
             indent();
-            out.print(label + ": " + tree.getTag());
+            String ext;
+            try {
+                ext = tree.getKind().name();
+            } catch (Throwable t) {
+                ext = "n/a";
+            }
+            out.print(label + ": " + info(tree.getClass(), tree.getTag(), ext));
             if (showPositions) {
                 // We can always get start position, but to get end position
                 // and/or line+offset, we would need a JCCompilationUnit
@@ -456,13 +463,13 @@ public class DPrinter {
                 case FULL:
                     indent();
                     out.print(label);
-                    out.println(": " + type.getTag()
-                            + " " + String.format("#%x", type.hashCode()));
+                    out.println(": " + info(type.getClass(), type.getTag(), type.getKind())
+                            + " " + hashString(type));
 
                     indent(+1);
                     printSymbol("tsym", type.tsym, Details.SUMMARY);
                     printObject("constValue", type.constValue(), Details.SUMMARY);
-                    type.accept(typeVisitor, true);
+                    type.accept(typeVisitor, null);
                     indent(-1);
             }
         }
@@ -470,6 +477,14 @@ public class DPrinter {
 
     protected String toString(Type type) {
         return (printer != null) ? printer.visit(type, locale) : String.valueOf(type);
+    }
+
+    protected String hashString(Object obj) {
+        return String.format("#%x", obj.hashCode());
+    }
+
+    protected String info(Class<?> clazz, Object internal, Object external) {
+        return String.format("%s,%s,%s", clazz.getSimpleName(), internal, external);
     }
 
     private int indent = 0;
@@ -853,17 +868,16 @@ public class DPrinter {
 
     // <editor-fold defaultstate="collapsed" desc="Symbol visitor">
 
-    protected Symbol.Visitor<Void,Boolean> symVisitor = new SymbolVisitor();
+    protected Symbol.Visitor<Void,Void> symVisitor = new SymbolVisitor();
 
     /**
      * Default visitor class for Symbol objects.
      * Note: each visitXYZ method ends by calling the corresponding
      * visit method for its superclass.
      */
-    class SymbolVisitor implements Symbol.Visitor<Void,Boolean> {
+    class SymbolVisitor implements Symbol.Visitor<Void,Void> {
         @Override
-        public Void visitClassSymbol(ClassSymbol sym, Boolean impl) {
-            if (impl) printImplClass(sym, ClassSymbol.class);
+        public Void visitClassSymbol(ClassSymbol sym, Void ignore) {
             printName("fullname", sym.fullname);
             printName("flatname", sym.flatname);
             printScope("members", sym.members_field);
@@ -871,55 +885,49 @@ public class DPrinter {
             printFileObject("classfile", sym.classfile);
             // trans-local?
             // pool?
-            return visitTypeSymbol(sym, false);
+            return visitTypeSymbol(sym, null);
         }
 
         @Override
-        public Void visitMethodSymbol(MethodSymbol sym, Boolean impl) {
-            if (impl) printImplClass(sym, MethodSymbol.class);
+        public Void visitMethodSymbol(MethodSymbol sym, Void ignore) {
             // code
             printList("params", sym.params);
             printList("savedParameterNames", sym.savedParameterNames);
-            return visitSymbol(sym, false);
+            return visitSymbol(sym, null);
         }
 
         @Override
-        public Void visitPackageSymbol(PackageSymbol sym, Boolean impl) {
-            if (impl) printImplClass(sym, PackageSymbol.class);
+        public Void visitPackageSymbol(PackageSymbol sym, Void ignore) {
             printName("fullname", sym.fullname);
             printScope("members", sym.members_field);
             printSymbol("package-info", sym.package_info, Details.SUMMARY);
-            return visitTypeSymbol(sym, false);
+            return visitTypeSymbol(sym, null);
         }
 
         @Override
-        public Void visitOperatorSymbol(OperatorSymbol sym, Boolean impl) {
-            if (impl) printImplClass(sym, OperatorSymbol.class);
+        public Void visitOperatorSymbol(OperatorSymbol sym, Void ignore) {
             printInt("opcode", sym.opcode);
-            return visitMethodSymbol(sym, false);
+            return visitMethodSymbol(sym, null);
         }
 
         @Override
-        public Void visitVarSymbol(VarSymbol sym, Boolean impl) {
-            if (impl) printImplClass(sym, VarSymbol.class);
+        public Void visitVarSymbol(VarSymbol sym, Void ignore) {
             printInt("pos", sym.pos);
             printInt("adm", sym.adr);
             // data is a private field, and the standard accessors may
             // mutate it as part of lazy evaluation. Therefore, use
             // reflection to get the raw data.
             printObject("data", getField(sym, VarSymbol.class, "data"), Details.SUMMARY);
-            return visitSymbol(sym, false);
+            return visitSymbol(sym, null);
         }
 
         @Override
-        public Void visitTypeSymbol(TypeSymbol sym, Boolean impl) {
-            if (impl) printImplClass(sym, TypeSymbol.class);
-            return visitSymbol(sym, false);
+        public Void visitTypeSymbol(TypeSymbol sym, Void ignore) {
+            return visitSymbol(sym, null);
         }
 
         @Override
-        public Void visitSymbol(Symbol sym, Boolean impl) {
-            if (impl) printImplClass(sym, Symbol.class);
+        public Void visitSymbol(Symbol sym, Void ignore) {
             return null;
         }
     }
@@ -928,71 +936,62 @@ public class DPrinter {
 
     // <editor-fold defaultstate="collapsed" desc="Type visitor">
 
-    protected Type.Visitor<Void,Boolean> typeVisitor = new TypeVisitor();
+    protected Type.Visitor<Void,Void> typeVisitor = new TypeVisitor();
 
     /**
      * Default visitor class for Type objects.
      * Note: each visitXYZ method ends by calling the corresponding
      * visit method for its superclass.
      */
-    public class TypeVisitor implements Type.Visitor<Void,Boolean> {
-        public Void visitAnnotatedType(AnnotatedType type, Boolean impl) {
-            if (impl) printImplClass(type, AnnotatedType.class);
+    public class TypeVisitor implements Type.Visitor<Void,Void> {
+        public Void visitAnnotatedType(AnnotatedType type, Void ignore) {
             printList("typeAnnotations", type.typeAnnotations);
             printType("underlyingType", type.underlyingType, Details.FULL);
-            return visitType(type, false);
+            return visitType(type, null);
         }
 
-        public Void visitArrayType(ArrayType type, Boolean impl) {
-            if (impl) printImplClass(type, ArrayType.class);
+        public Void visitArrayType(ArrayType type, Void ignore) {
             printType("elemType", type.elemtype, Details.FULL);
-            return visitType(type, false);
+            return visitType(type, null);
         }
 
-        public Void visitCapturedType(CapturedType type, Boolean impl) {
-            if (impl) printImplClass(type, CapturedType.class);
+        public Void visitCapturedType(CapturedType type, Void ignore) {
             printType("wildcard", type.wildcard, Details.FULL);
-            return visitTypeVar(type, false);
+            return visitTypeVar(type, null);
         }
 
-        public Void visitClassType(ClassType type, Boolean impl) {
-            if (impl) printImplClass(type, ClassType.class);
+        public Void visitClassType(ClassType type, Void ignore) {
             printType("outer", type.getEnclosingType(), Details.SUMMARY);
             printList("typarams", type.typarams_field);
             printList("allparams", type.allparams_field);
             printType("supertype", type.supertype_field, Details.SUMMARY);
             printList("interfaces", type.interfaces_field);
             printList("allinterfaces", type.all_interfaces_field);
-            return visitType(type, false);
+            return visitType(type, null);
         }
 
-        public Void visitErrorType(ErrorType type, Boolean impl) {
-            if (impl) printImplClass(type, ErrorType.class);
+        public Void visitErrorType(ErrorType type, Void ignore) {
             printType("originalType", type.getOriginalType(), Details.FULL);
-            return visitClassType(type, false);
+            return visitClassType(type, null);
         }
 
-        public Void visitForAll(ForAll type, Boolean impl) {
-            if (impl) printImplClass(type, ForAll.class);
+        public Void visitForAll(ForAll type, Void ignore) {
             printList("tvars", type.tvars);
             return visitDelegatedType(type);
         }
 
-        public Void visitMethodType(MethodType type, Boolean impl) {
-            if (impl) printImplClass(type, MethodType.class);
+        public Void visitMethodType(MethodType type, Void ignore) {
             printList("argtypes", type.argtypes);
             printType("restype", type.restype, Details.FULL);
             printList("thrown", type.thrown);
-            return visitType(type, false);
+            return visitType(type, null);
         }
 
-        public Void visitPackageType(PackageType type, Boolean impl) {
-            if (impl) printImplClass(type, PackageType.class);
-            return visitType(type, false);
+        public Void visitPackageType(PackageType type, Void ignore) {
+            return visitType(type, null);
         }
 
-        public Void visitTypeVar(TypeVar type, Boolean impl) {
-            if (impl) printImplClass(type, TypeVar.class);
+        public Void visitTypeVar(TypeVar type, Void ignore) {
             // For TypeVars (and not subtypes), the bound should always be
             // null or bot. So, only print the bound for subtypes of TypeVar,
             // or if the bound is (erroneously) not null or bot.
@@ -1001,32 +1000,29 @@ public class DPrinter {
                 printType("bound", type.bound, Details.FULL);
             }
             printType("lower", type.lower, Details.FULL);
-            return visitType(type, false);
+            return visitType(type, null);
         }
 
-        public Void visitUndetVar(UndetVar type, Boolean impl) {
-            if (impl) printImplClass(type, UndetVar.class);
+        public Void visitUndetVar(UndetVar type, Void ignore) {
             for (UndetVar.InferenceBound ib: UndetVar.InferenceBound.values())
                 printList("bounds." + ib, type.getBounds(ib));
             printType("inst", type.inst, Details.SUMMARY);
             return visitDelegatedType(type);
         }
 
-        public Void visitWildcardType(WildcardType type, Boolean impl) {
-            if (impl) printImplClass(type, WildcardType.class);
+        public Void visitWildcardType(WildcardType type, Void ignore) {
             printType("type", type.type, Details.SUMMARY);
             printString("kind", type.kind.name());
             printType("bound", type.bound, Details.SUMMARY);
-            return visitType(type, false);
+            return visitType(type, null);
         }
 
         protected Void visitDelegatedType(DelegatedType type) {
             printType("qtype", type.qtype, Details.FULL);
-            return visitType(type, false);
+            return visitType(type, null);
         }
 
-        public Void visitType(Type type, Boolean impl) {
-            if (impl) printImplClass(type, Type.class);
+        public Void visitType(Type type, Void ignore) {
             return null;
         }
     }
