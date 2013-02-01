@@ -293,7 +293,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
             allArgs = ScriptRuntime.EMPTY_ARRAY;
         }
 
-        final MethodHandle   boundMethod = MH.insertArguments(BOUND_FUNCTION, 0, this, thiz, allArgs);
+        final Object boundThiz = convertThisObject(thiz);
+        final MethodHandle   boundMethod = MH.insertArguments(BOUND_FUNCTION, 0, this, boundThiz, allArgs);
         final ScriptFunction boundFunc   = makeFunction("", boundMethod, null, true);
 
         MethodHandle consHandle  = this.getConstructHandle();

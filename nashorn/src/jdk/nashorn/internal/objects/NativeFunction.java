@@ -66,17 +66,6 @@ public final class NativeFunction {
         return ((ScriptFunction)self).toSource();
     }
 
-    private static Object convertThis(final ScriptFunction func, final Object thiz) {
-        if (!(thiz instanceof ScriptObject) && func.isNonStrictFunction()) {
-            if (thiz == UNDEFINED || thiz == null) {
-                return Global.instance();
-            }
-            return JSType.toScriptObject(thiz);
-        }
-
-        return thiz;
-    }
-
     /**
      * ECMA 15.3.4.3 Function.prototype.apply (thisArg, argArray)
      *
@@ -125,12 +114,7 @@ public final class NativeFunction {
             typeError("function.apply.expects.array");
         }
 
-        final ScriptFunction func = (ScriptFunction)self;
-        // As per ECMA 5.1 spec, "this" is passed "as is". But the spec.
-        // says 'this' is transformed when callee frame is created if callee
-        // is a non-strict function. So, we convert 'this' here if callee is
-        // not strict and not builtin function.
-        return ScriptRuntime.apply(func, convertThis(func, thiz), args);
+        return ScriptRuntime.apply((ScriptFunction)self, thiz, args);
     }
 
     /**
@@ -157,15 +141,7 @@ public final class NativeFunction {
             arguments = ScriptRuntime.EMPTY_ARRAY;
         }
 
-        final ScriptFunction func = (ScriptFunction)self;
-
-        // As per ECMA 5.1 spec, "this" is passed "as is". But the spec.
-        // says 'this' is transformed when callee frame is created if callee
-        // is a non-strict function. So, we convert 'this' here if callee is
-        // not strict and not builtin function.
-        thiz = convertThis(func, thiz);
-
-        return ScriptRuntime.apply(func, thiz, arguments);
+        return ScriptRuntime.apply((ScriptFunction)self, thiz, arguments);
     }
 
     /**
@@ -182,12 +158,7 @@ public final class NativeFunction {
             return UNDEFINED;
         }
 
-        // As per ECMA 5.1 spec, "this" is passed "as is". But the spec.
-        // says 'this' is transformed when callee frame is created if callee
-        // is a non-strict function. So, we convert 'this' here if callee is
-        // not strict. Note that all builtin functions are marked as strict and
-        // so 'this' transformation is not done for such functions.
-        final Object thiz = convertThis((ScriptFunction)self, (args.length == 0) ? UNDEFINED : args[0]);
+        final Object thiz = (args.length == 0) ? UNDEFINED : args[0];
 
         Object[] arguments;
         if (args.length > 1) {

@@ -70,15 +70,6 @@ public interface GlobalObject {
 
 
     /**
-     * Get a MethodHandle that converts the argument to its JavaScript object representation
-     *
-     * @param obj a JavaScript primitive object (String, Number, or Boolean)
-     *
-     * @return wrap filter methodhandle
-     */
-   public MethodHandle getWrapFilter(Object obj);
-
-    /**
      * Wrapper for {@link jdk.nashorn.internal.objects.Global#primitiveLookup(LinkRequest, Object)}
      *
      * @param request the link request for the dynamic call site.
