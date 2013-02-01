@@ -1542,6 +1542,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
       case Bytecodes::_getfield       : // fall through
       case Bytecodes::_getstatic      : // fall through
       case Bytecodes::_instanceof     : // fall through
+      case Bytecodes::_invokedynamic  : // fall through
       case Bytecodes::_invokeinterface: // fall through
       case Bytecodes::_invokespecial  : // fall through
       case Bytecodes::_invokestatic   : // fall through
