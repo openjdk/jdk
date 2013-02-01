@@ -29,6 +29,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.*;
+import java.awt.event.MouseWheelEvent;
 import java.awt.peer.ScrollPanePeer;
 import java.util.List;
 
@@ -49,6 +50,21 @@ final class LWScrollPanePeer extends LWContainerPeer<ScrollPane, JScrollPane>
         sp.setBorder(BorderFactory.createEmptyBorder());
         sp.getViewport().addChangeListener(this);
         return sp;
+    }
+
+    @Override
+    public void handleEvent(AWTEvent e) {
+        if (e instanceof MouseWheelEvent) {
+            MouseWheelEvent wheelEvent = (MouseWheelEvent) e;
+            //java.awt.ScrollPane consumes the event
+            // in case isWheelScrollingEnabled() is true,
+            // forcibly send the consumed event to the delegate
+            if (getTarget().isWheelScrollingEnabled() && wheelEvent.isConsumed()) {
+                sendEventToDelegate(wheelEvent);
+            }
+        } else {
+            super.handleEvent(e);
+        }
     }
 
     @Override

@@ -88,7 +88,7 @@ public abstract class SurfaceManager {
         imgaccessor.setSurfaceManager(img, mgr);
     }
 
-    private ConcurrentHashMap cacheMap;
+    private ConcurrentHashMap<Object,Object> cacheMap;
 
     /**
      * Return an arbitrary cached object for an arbitrary cache key.
@@ -123,7 +123,7 @@ public abstract class SurfaceManager {
         if (cacheMap == null) {
             synchronized (this) {
                 if (cacheMap == null) {
-                    cacheMap = new ConcurrentHashMap(2);
+                    cacheMap = new ConcurrentHashMap<>(2);
                 }
             }
         }
@@ -245,7 +245,7 @@ public abstract class SurfaceManager {
 
     synchronized void flush(boolean deaccelerate) {
         if (cacheMap != null) {
-            Iterator i = cacheMap.values().iterator();
+            Iterator<Object> i = cacheMap.values().iterator();
             while (i.hasNext()) {
                 Object o = i.next();
                 if (o instanceof FlushableCacheData) {

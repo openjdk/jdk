@@ -54,7 +54,7 @@ import sun.util.resources.LocaleData;
  * @author Naoto Sato
  * @author Masayoshi Okutsu
  */
-public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
+public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements ResourceBundleBasedAdapter {
 
     private static final String LOCALE_DATA_JAR_NAME = "localedata.jar";
 
@@ -296,6 +296,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
         return lr;
     }
 
+    // ResourceBundleBasedAdapter method implementation
     @Override
     public LocaleData getLocaleData() {
         if (localeData == null) {

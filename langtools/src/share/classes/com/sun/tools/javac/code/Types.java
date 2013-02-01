@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import javax.lang.model.type.TypeKind;
+
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Scope.*;
@@ -354,8 +355,29 @@ public class Types {
                 return descSym;
             }
 
-            public Type getType(Type origin) {
-                return memberType(origin, descSym);
+            public Type getType(Type site) {
+                if (capture(site) != site) {
+                    Type formalInterface = site.tsym.type;
+                    ListBuffer<Type> typeargs = ListBuffer.lb();
+                    List<Type> actualTypeargs = site.getTypeArguments();
+                    //simply replace the wildcards with its bound
+                    for (Type t : formalInterface.getTypeArguments()) {
+                        if (actualTypeargs.head.hasTag(WILDCARD)) {
+                            WildcardType wt = (WildcardType)actualTypeargs.head;
+                            typeargs.append(wt.type);
+                        } else {
+                            typeargs.append(actualTypeargs.head);
+                        }
+                        actualTypeargs = actualTypeargs.tail;
+                    }
+                    site = subst(formalInterface, formalInterface.getTypeArguments(), typeargs.toList());
+                    if (!chk.checkValidGenericType(site)) {
+                        //if the inferred functional interface type is not well-formed,
+                        //or if it's not a subtype of the original target, issue an error
+                        throw failure(diags.fragment("no.suitable.functional.intf.inst", site));
+                    }
+                }
+                return memberType(site, descSym);
             }
         }
 
@@ -392,9 +414,9 @@ public class Types {
          * Compute the function descriptor associated with a given functional interface
          */
         public FunctionDescriptor findDescriptorInternal(TypeSymbol origin, CompoundScope membersCache) throws FunctionDescriptorLookupError {
-            if (!origin.isInterface()) {
+            if (!origin.isInterface() || (origin.flags() & ANNOTATION) != 0) {
                 //t must be an interface
-                throw failure("not.a.functional.intf");
+                throw failure("not.a.functional.intf", origin);
             }
 
             final ListBuffer<Symbol> abstracts = ListBuffer.lb();
@@ -406,13 +428,13 @@ public class Types {
                     abstracts.append(sym);
                 } else {
                     //the target method(s) should be the only abstract members of t
-                    throw failure("not.a.functional.intf.1",
+                    throw failure("not.a.functional.intf.1",  origin,
                             diags.fragment("incompatible.abstracts", Kinds.kindName(origin), origin));
                 }
             }
             if (abstracts.isEmpty()) {
                 //t must define a suitable non-generic method
-                throw failure("not.a.functional.intf.1",
+                throw failure("not.a.functional.intf.1", origin,
                             diags.fragment("no.abstracts", Kinds.kindName(origin), origin));
             } else if (abstracts.size() == 1) {
                 return new FunctionDescriptor(abstracts.first());
@@ -553,6 +575,15 @@ public class Types {
             return false;
         }
     }
+
+    public boolean isFunctionalInterface(Type site) {
+        try {
+            findDescriptorType(site);
+            return true;
+        } catch (FunctionDescriptorLookupError ex) {
+            return false;
+        }
+    }
     // </editor-fold>
 
    /**
@@ -654,6 +685,8 @@ public class Types {
     //where
         private boolean isSubtypeUncheckedInternal(Type t, Type s, Warner warn) {
             if (t.hasTag(ARRAY) && s.hasTag(ARRAY)) {
+                t = t.unannotatedType();
+                s = s.unannotatedType();
                 if (((ArrayType)t).elemtype.isPrimitive()) {
                     return isSameType(elemtype(t), elemtype(s));
                 } else {
@@ -679,7 +712,10 @@ public class Types {
         }
 
         private void checkUnsafeVarargsConversion(Type t, Type s, Warner warn) {
-            if (t.tag != ARRAY || isReifiable(t)) return;
+            if (t.tag != ARRAY || isReifiable(t))
+                return;
+            t = t.unannotatedType();
+            s = s.unannotatedType();
             ArrayType from = (ArrayType)t;
             boolean shouldWarn = false;
             switch (s.tag) {
@@ -709,6 +745,12 @@ public class Types {
         return isSubtype(t, s, false);
     }
     public boolean isSubtype(Type t, Type s, boolean capture) {
+        if (t == s)
+            return true;
+
+        t = t.unannotatedType();
+        s = s.unannotatedType();
+
         if (t == s)
             return true;
 
@@ -1653,6 +1695,7 @@ public class Types {
         case WILDCARD:
             return elemtype(upperBound(t));
         case ARRAY:
+            t = t.unannotatedType();
             return ((ArrayType)t).elemtype;
         case FORALL:
             return elemtype(((ForAll)t).qtype);
@@ -1980,6 +2023,11 @@ public class Types {
             @Override
             public Type visitErrorType(ErrorType t, Boolean recurse) {
                 return t;
+            }
+
+            @Override
+            public Type visitAnnotatedType(AnnotatedType t, Boolean recurse) {
+                return new AnnotatedType(t.typeAnnotations, erasure(t.underlyingType, recurse));
             }
         };
 
@@ -2923,6 +2971,7 @@ public class Types {
      * graph. Undefined for all but reference types.
      */
     public int rank(Type t) {
+        t = t.unannotatedType();
         switch(t.tag) {
         case CLASS: {
             ClassType cls = (ClassType)t;
@@ -3624,6 +3673,7 @@ public class Types {
                 t = subst(type1, t.tsym.type.getTypeArguments(), t.getTypeArguments());
             }
         }
+        t = t.unannotatedType();
         ClassType cls = (ClassType)t;
         if (cls.isRaw() || !cls.isParameterized())
             return cls;
@@ -4142,6 +4192,8 @@ public class Types {
         public R visitForAll(ForAll t, S s)             { return visitType(t, s); }
         public R visitUndetVar(UndetVar t, S s)         { return visitType(t, s); }
         public R visitErrorType(ErrorType t, S s)       { return visitType(t, s); }
+        // Pretend annotations don't exist
+        public R visitAnnotatedType(AnnotatedType t, S s) { return visit(t.underlyingType, s); }
     }
 
     /**

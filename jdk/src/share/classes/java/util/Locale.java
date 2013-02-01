@@ -50,7 +50,6 @@ import java.text.MessageFormat;
 import java.util.spi.LocaleNameProvider;
 
 import sun.security.action.GetPropertyAction;
-import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
 import sun.util.locale.LanguageTag;
@@ -61,7 +60,9 @@ import sun.util.locale.LocaleSyntaxException;
 import sun.util.locale.LocaleUtils;
 import sun.util.locale.ParseStatus;
 import sun.util.locale.provider.LocaleProviderAdapter;
-import sun.util.resources.OpenListResourceBundle;
+import sun.util.locale.provider.LocaleResources;
+import sun.util.locale.provider.LocaleServiceProviderPool;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * A <code>Locale</code> object represents a specific geographical, political,
@@ -1779,20 +1780,15 @@ public final class Locale implements Cloneable, Serializable {
         if (baseLocale.getVariant().length() == 0)
             return "";
 
-        OpenListResourceBundle bundle = LocaleProviderAdapter.forJRE().getLocaleData().getLocaleNames(inLocale);
+        LocaleResources lr = LocaleProviderAdapter.forJRE().getLocaleResources(inLocale);
 
-        String names[] = getDisplayVariantArray(bundle, inLocale);
+        String names[] = getDisplayVariantArray(inLocale);
 
         // Get the localized patterns for formatting a list, and use
         // them to format the list.
-        String listPattern = null;
-        String listCompositionPattern = null;
-        try {
-            listPattern = bundle.getString("ListPattern");
-            listCompositionPattern = bundle.getString("ListCompositionPattern");
-        } catch (MissingResourceException e) {
-        }
-        return formatList(names, listPattern, listCompositionPattern);
+        return formatList(names,
+                          lr.getLocaleName("ListPattern"),
+                          lr.getLocaleName("ListCompositionPattern"));
     }
 
     /**
@@ -1837,23 +1833,17 @@ public final class Locale implements Cloneable, Serializable {
      * @throws NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayName(Locale inLocale) {
-        OpenListResourceBundle bundle = LocaleProviderAdapter.forJRE().getLocaleData().getLocaleNames(inLocale);
+        LocaleResources lr =  LocaleProviderAdapter.forJRE().getLocaleResources(inLocale);
 
         String languageName = getDisplayLanguage(inLocale);
         String scriptName = getDisplayScript(inLocale);
         String countryName = getDisplayCountry(inLocale);
-        String[] variantNames = getDisplayVariantArray(bundle, inLocale);
+        String[] variantNames = getDisplayVariantArray(inLocale);
 
         // Get the localized patterns for formatting a display name.
-        String displayNamePattern = null;
-        String listPattern = null;
-        String listCompositionPattern = null;
-        try {
-            displayNamePattern = bundle.getString("DisplayNamePattern");
-            listPattern = bundle.getString("ListPattern");
-            listCompositionPattern = bundle.getString("ListCompositionPattern");
-        } catch (MissingResourceException e) {
-        }
+        String displayNamePattern = lr.getLocaleName("DisplayNamePattern");
+        String listPattern = lr.getLocaleName("ListPattern");
+        String listCompositionPattern = lr.getLocaleName("ListCompositionPattern");
 
         // The display name consists of a main name, followed by qualifiers.
         // Typically, the format is "MainName (Qualifier, Qualifier)" but this
@@ -2005,7 +1995,7 @@ public final class Locale implements Cloneable, Serializable {
      * @param bundle the ResourceBundle to use to get the display names
      * @return an array of display names, possible of zero length.
      */
-    private String[] getDisplayVariantArray(OpenListResourceBundle bundle, Locale inLocale) {
+    private String[] getDisplayVariantArray(Locale inLocale) {
         // Split the variant name into tokens separated by '_'.
         StringTokenizer tokenizer = new StringTokenizer(baseLocale.getVariant(), "_");
         String[] names = new String[tokenizer.countTokens()];

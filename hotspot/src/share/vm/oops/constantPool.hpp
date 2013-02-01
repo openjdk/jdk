@@ -80,6 +80,7 @@ class CPSlot VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+class KlassSizeStats;
 class ConstantPool : public Metadata {
   friend class VMStructs;
   friend class BytecodeInterpreter;  // Directly extracts an oop in the pool for fast instanceof/checkcast
@@ -684,9 +685,13 @@ class ConstantPool : public Metadata {
     return 0 <= index && index < length();
   }
 
+  // Sizing (in words)
   static int header_size()             { return sizeof(ConstantPool)/HeapWordSize; }
   static int size(int length)          { return align_object_size(header_size() + length); }
   int size() const                     { return size(length()); }
+#if INCLUDE_SERVICES
+  void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   friend class ClassFileParser;
   friend class SystemDictionary;
@@ -781,6 +786,7 @@ class ConstantPool : public Metadata {
   }
   static void copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS);
   static void copy_entry_to(constantPoolHandle from_cp, int from_i, constantPoolHandle to_cp, int to_i, TRAPS);
+  static void copy_operands(constantPoolHandle from_cp, constantPoolHandle to_cp, TRAPS);
   int  find_matching_entry(int pattern_i, constantPoolHandle search_cp, TRAPS);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
@@ -264,9 +265,38 @@ public class TreeInfo {
         }
     }
 
-    public static boolean isExplicitLambda(JCLambda lambda) {
-        return lambda.params.isEmpty() ||
-                lambda.params.head.vartype != null;
+    /** set 'polyKind' on given tree */
+    public static void setPolyKind(JCTree tree, PolyKind pkind) {
+        switch (tree.getTag()) {
+            case APPLY:
+                ((JCMethodInvocation)tree).polyKind = pkind;
+                break;
+            case NEWCLASS:
+                ((JCNewClass)tree).polyKind = pkind;
+                break;
+            case REFERENCE:
+                ((JCMemberReference)tree).refPolyKind = pkind;
+                break;
+            default:
+                throw new AssertionError("Unexpected tree: " + tree);
+        }
+    }
+
+    /** set 'varargsElement' on given tree */
+    public static void setVarargsElement(JCTree tree, Type varargsElement) {
+        switch (tree.getTag()) {
+            case APPLY:
+                ((JCMethodInvocation)tree).varargsElement = varargsElement;
+                break;
+            case NEWCLASS:
+                ((JCNewClass)tree).varargsElement = varargsElement;
+                break;
+            case REFERENCE:
+                ((JCMemberReference)tree).varargsElement = varargsElement;
+                break;
+            default:
+                throw new AssertionError("Unexpected tree: " + tree);
+        }
     }
 
     /** Return true if the tree corresponds to an expression statement */
@@ -423,6 +453,19 @@ public class TreeInfo {
             case POSTINC:
             case POSTDEC:
                 return getStartPos(((JCUnary) tree).arg);
+            case ANNOTATED_TYPE: {
+                JCAnnotatedType node = (JCAnnotatedType) tree;
+                if (node.annotations.nonEmpty()) {
+                    if (node.underlyingType.hasTag(TYPEARRAY) ||
+                            node.underlyingType.hasTag(SELECT)) {
+                        return getStartPos(node.underlyingType);
+                    } else {
+                        return getStartPos(node.annotations.head);
+                    }
+                } else {
+                    return getStartPos(node.underlyingType);
+                }
+            }
             case NEWCLASS: {
                 JCNewClass node = (JCNewClass)tree;
                 if (node.encl != null)
@@ -530,6 +573,8 @@ public class TreeInfo {
                 return getEndPos(((JCUnary) tree).arg, endPosTable);
             case WHILELOOP:
                 return getEndPos(((JCWhileLoop) tree).body, endPosTable);
+            case ANNOTATED_TYPE:
+                return getEndPos(((JCAnnotatedType) tree).underlyingType, endPosTable);
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty())
@@ -769,6 +814,8 @@ public class TreeInfo {
             return ((JCFieldAccess) tree).sym;
         case TYPEAPPLY:
             return symbol(((JCTypeApply) tree).clazz);
+        case ANNOTATED_TYPE:
+            return symbol(((JCAnnotatedType) tree).underlyingType);
         default:
             return null;
         }
@@ -1006,17 +1053,24 @@ public class TreeInfo {
         case NULLCHK:
             return Tree.Kind.OTHER;
 
+        case ANNOTATION:
+            return Tree.Kind.ANNOTATION;
+        case TYPE_ANNOTATION:
+            return Tree.Kind.TYPE_ANNOTATION;
+
         default:
             return null;
         }
     }
 
     /**
-     * Returns the underlying type of the tree if it is annotated type,
-     * or the tree itself otherwise
+     * Returns the underlying type of the tree if it is an annotated type,
+     * or the tree itself otherwise.
      */
     public static JCExpression typeIn(JCExpression tree) {
         switch (tree.getTag()) {
+        case ANNOTATED_TYPE:
+            return ((JCAnnotatedType)tree).underlyingType;
         case IDENT: /* simple names */
         case TYPEIDENT: /* primitive name */
         case SELECT: /* qualified name */
@@ -1024,20 +1078,55 @@ public class TreeInfo {
         case WILDCARD: /* wild cards */
         case TYPEPARAMETER: /* type parameters */
         case TYPEAPPLY: /* parameterized types */
+        case ERRONEOUS: /* error tree TODO: needed for BadCast JSR308 test case. Better way? */
             return tree;
         default:
             throw new AssertionError("Unexpected type tree: " + tree);
         }
     }
 
+    /* Return the inner-most type of a type tree.
+     * For an array that contains an annotated type, return that annotated type.
+     * TODO: currently only used by Pretty. Describe behavior better.
+     */
     public static JCTree innermostType(JCTree type) {
-        switch (type.getTag()) {
-        case TYPEARRAY:
-            return innermostType(((JCArrayTypeTree)type).elemtype);
-        case WILDCARD:
-            return innermostType(((JCWildcard)type).inner);
-        default:
-            return type;
+        JCTree lastAnnotatedType = null;
+        JCTree cur = type;
+        loop: while (true) {
+            switch (cur.getTag()) {
+            case TYPEARRAY:
+                lastAnnotatedType = null;
+                cur = ((JCArrayTypeTree)cur).elemtype;
+                break;
+            case WILDCARD:
+                lastAnnotatedType = null;
+                cur = ((JCWildcard)cur).inner;
+                break;
+            case ANNOTATED_TYPE:
+                lastAnnotatedType = cur;
+                cur = ((JCAnnotatedType)cur).underlyingType;
+                break;
+            default:
+                break loop;
+            }
         }
+        if (lastAnnotatedType!=null) {
+            return lastAnnotatedType;
+        } else {
+            return cur;
+        }
+    }
+
+    private static class TypeAnnotationFinder extends TreeScanner {
+        public boolean foundTypeAnno = false;
+        public void visitAnnotation(JCAnnotation tree) {
+            foundTypeAnno = foundTypeAnno || tree.hasTag(TYPE_ANNOTATION);
+        }
+    }
+
+    public static boolean containsTypeAnnotation(JCTree e) {
+        TypeAnnotationFinder finder = new TypeAnnotationFinder();
+        finder.scan(e);
+        return finder.foundTypeAnno;
     }
 }

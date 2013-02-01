@@ -470,7 +470,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @since 1.4
      */
     public synchronized ItemListener[] getItemListeners() {
-        return (ItemListener[]) (getListeners(ItemListener.class));
+        return getListeners(ItemListener.class);
     }
 
     /**

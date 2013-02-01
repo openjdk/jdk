@@ -42,6 +42,12 @@ then
 fi
 echo "TESTJAVA=${TESTJAVA}"
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."
@@ -51,7 +57,7 @@ fi
 echo "TESTCLASSES=${TESTCLASSES}"
 echo "CLASSPATH=${CLASSPATH}"
 
-JAVAC="${TESTJAVA}/bin/javac -g"
+JAVAC="${COMPILEJAVA}/bin/javac -g"
 
 mkdir -p hidden
 mv ${TESTCLASSES}/ExampleForBootClassPath.class hidden

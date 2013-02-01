@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /** The char reader used by the javac lexer/tokenizer. Returns the sequence of
  * characters contained in the input stream, handling unicode escape accordingly.
- * Additionally, it provide features for saving chars into a buffer and to retrieve
+ * Additionally, it provides features for saving chars into a buffer and to retrieve
  * them at a later stage.
  *
  *  <p><b>This is NOT part of any supported API.

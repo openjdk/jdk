@@ -30,6 +30,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/constantPool.hpp"
@@ -1098,32 +1099,9 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
 } // end compare_entry_to()
 
 
-// Copy this constant pool's entries at start_i to end_i (inclusive)
-// to the constant pool to_cp's entries starting at to_i. A total of
-// (end_i - start_i) + 1 entries are copied.
-void ConstantPool::copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i,
-       constantPoolHandle to_cp, int to_i, TRAPS) {
-
-  int dest_i = to_i;  // leave original alone for debug purposes
-
-  for (int src_i = start_i; src_i <= end_i; /* see loop bottom */ ) {
-    copy_entry_to(from_cp, src_i, to_cp, dest_i, CHECK);
-
-    switch (from_cp->tag_at(src_i).value()) {
-    case JVM_CONSTANT_Double:
-    case JVM_CONSTANT_Long:
-      // double and long take two constant pool entries
-      src_i += 2;
-      dest_i += 2;
-      break;
-
-    default:
-      // all others take one constant pool entry
-      src_i++;
-      dest_i++;
-      break;
-    }
-  }
+void ConstantPool::copy_operands(constantPoolHandle from_cp,
+                                 constantPoolHandle to_cp,
+                                 TRAPS) {
 
   int from_oplen = operand_array_length(from_cp->operands());
   int old_oplen  = operand_array_length(to_cp->operands());
@@ -1179,8 +1157,39 @@ void ConstantPool::copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int 
       to_cp->set_operands(new_operands);
     }
   }
+} // end copy_operands()
 
-} // end copy_cp_to()
+
+// Copy this constant pool's entries at start_i to end_i (inclusive)
+// to the constant pool to_cp's entries starting at to_i. A total of
+// (end_i - start_i) + 1 entries are copied.
+void ConstantPool::copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i,
+       constantPoolHandle to_cp, int to_i, TRAPS) {
+
+
+  int dest_i = to_i;  // leave original alone for debug purposes
+
+  for (int src_i = start_i; src_i <= end_i; /* see loop bottom */ ) {
+    copy_entry_to(from_cp, src_i, to_cp, dest_i, CHECK);
+
+    switch (from_cp->tag_at(src_i).value()) {
+    case JVM_CONSTANT_Double:
+    case JVM_CONSTANT_Long:
+      // double and long take two constant pool entries
+      src_i += 2;
+      dest_i += 2;
+      break;
+
+    default:
+      // all others take one constant pool entry
+      src_i++;
+      dest_i++;
+      break;
+    }
+  }
+  copy_operands(from_cp, to_cp, CHECK);
+
+} // end copy_cp_to_impl()
 
 
 // Copy this constant pool's entry at from_i to the constant pool
@@ -1946,6 +1955,20 @@ void ConstantPool::print_value_on(outputStream* st) const {
   }
 }
 
+#if INCLUDE_SERVICES
+// Size Statistics
+void ConstantPool::collect_statistics(KlassSizeStats *sz) const {
+  sz->_cp_all_bytes += (sz->_cp_bytes          = sz->count(this));
+  sz->_cp_all_bytes += (sz->_cp_tags_bytes     = sz->count_array(tags()));
+  sz->_cp_all_bytes += (sz->_cp_cache_bytes    = sz->count(cache()));
+  sz->_cp_all_bytes += (sz->_cp_operands_bytes = sz->count_array(operands()));
+  sz->_cp_all_bytes += (sz->_cp_refmap_bytes   = sz->count_array(reference_map()));
+
+  sz->_ro_bytes += sz->_cp_operands_bytes + sz->_cp_tags_bytes +
+                   sz->_cp_refmap_bytes;
+  sz->_rw_bytes += sz->_cp_bytes + sz->_cp_cache_bytes;
+}
+#endif // INCLUDE_SERVICES
 
 // Verification
 

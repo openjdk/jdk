@@ -2302,6 +2302,15 @@ JVM_QUICK_ENTRY(jboolean, JVM_IsConstructorIx(JNIEnv *env, jclass cls, int metho
 JVM_END
 
 
+JVM_QUICK_ENTRY(jboolean, JVM_IsVMGeneratedMethodIx(JNIEnv *env, jclass cls, int method_index))
+  JVMWrapper("JVM_IsVMGeneratedMethodIx");
+  ResourceMark rm(THREAD);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
+  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  return method->is_overpass();
+JVM_END
+
 JVM_ENTRY(const char*, JVM_GetMethodIxNameUTF(JNIEnv *env, jclass cls, jint method_index))
   JVMWrapper("JVM_GetMethodIxIxUTF");
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
@@ -4519,10 +4528,6 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   // consider to expose this new capability in the sun.rt.jvmCapabilities jvmstat
   // counter defined in runtimeService.cpp.
   info->is_attachable = AttachListener::is_attach_supported();
-#ifdef KERNEL
-  info->is_kernel_jvm = 1; // true;
-#else  // KERNEL
   info->is_kernel_jvm = 0; // false;
-#endif // KERNEL
 }
 JVM_END
