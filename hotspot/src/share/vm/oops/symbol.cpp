@@ -152,6 +152,7 @@ char* Symbol::as_C_string_flexible_buffer(Thread* t,
 }
 
 void Symbol::print_symbol_on(outputStream* st) const {
+  ResourceMark rm;
   st = st ? st : tty;
   st->print("%s", as_quoted_ascii());
 }
