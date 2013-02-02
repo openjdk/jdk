@@ -76,4 +76,9 @@ public class WhiteBox {
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
   public native Object[]    parseCommandLine(String commandline, DiagnosticCommand[] args);
+
+  // NMT
+  public native boolean NMTAllocTest();
+  public native boolean NMTFreeTestMemory();
+  public native boolean NMTWaitForDataMerge();
 }
