@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,90 +28,55 @@
  */
 
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RequestProperties {
-    public static void main (String args[]) throws Exception {
-        URL url0 = new URL ("http://foo.com/bar/");
-        URL url1 = new URL ("file:/etc/passwd");
-        URL url2 = new URL ("ftp://foo:bar@foobar.com/etc/passwd");
-        URL url3 = new URL ("jar:http://foo.com/bar.html!/foo/bar");
-        URLConnection urlc0 = url0.openConnection ();
-        URLConnection urlc1 = url1.openConnection ();
-        URLConnection urlc2 = url2.openConnection ();
-        URLConnection urlc3 = url3.openConnection ();
-        int count = 0;
-        String s = null;
-        try {
-            urlc0.setRequestProperty (null, null);
-            System.out.println ("http: setRequestProperty (null,) did not throw NPE");
-        } catch (NullPointerException e) {
-            count ++;
-        }
-        try {
-            urlc0.addRequestProperty (null, null);
-            System.out.println ("http: addRequestProperty (null,) did not throw NPE");
-        } catch (NullPointerException e) {
-            count ++;
-        }
-        try {
-            urlc1.setRequestProperty (null, null);
-            System.out.println ("file: setRequestProperty (null,) did not throw NPE");
-        } catch (NullPointerException e) {
-            count ++;
-        }
-        try {
-            urlc1.addRequestProperty (null, null);
-            System.out.println ("file: addRequestProperty (null,) did not throw NPE");
-        } catch (NullPointerException e) {
-            count ++;
-        }
-        try {
-            urlc2.setRequestProperty (null, null);
-            System.out.println ("ftp: setRequestProperty (null,) did not throw NPE");
-        } catch (NullPointerException e) {
-            count ++;
-        }
-        try {
-            urlc2.addRequestProperty (null, null);
-            System.out.println ("ftp: addRequestProperty (null,) did not throw NPE");
-        } catch (NullPointerException e) {
-            count ++;
-        }
-        try {
-            urlc3.setRequestProperty (null, null);
-            System.out.println ("jar: setRequestProperty (null,) did not throw NPE");
-        } catch (NullPointerException e) {
-            count ++;
-        }
-        try {
-            urlc3.addRequestProperty (null, null);
-            System.out.println ("jar: addRequestProperty (null,) did not throw NPE");
-        } catch (NullPointerException e) {
-            count ++;
-        }
-        if (urlc0.getRequestProperty (null) != null) {
-            System.out.println ("http: getRequestProperty (null,) did not return null");
-        } else {
-            count ++;
-        }
-        if (urlc1.getRequestProperty (null) != null) {
-            System.out.println ("file: getRequestProperty (null,) did not return null");
-        } else {
-            count ++;
-        }
-        if (urlc2.getRequestProperty (null) != null) {
-            System.out.println ("ftp: getRequestProperty (null,) did not return null");
-        } else {
-            count ++;
-        }
-        if (urlc2.getRequestProperty (null) != null) {
-            System.out.println ("jar: getRequestProperty (null,) did not return null");
-        } else {
-            count ++;
-        }
+    static int failed;
 
-        if (count != 12) {
-            throw new RuntimeException ((12 -count) + " errors") ;
+    public static void main (String args[]) throws Exception {
+        List<String> urls = new ArrayList<>();
+        urls.add("http://foo.com/bar/");
+        urls.add("jar:http://foo.com/bar.html!/foo/bar");
+        urls.add("file:/etc/passwd");
+        if (hasFtp())
+            urls.add("ftp://foo:bar@foobar.com/etc/passwd");
+
+        for (String urlStr : urls)
+            test(new URL(urlStr));
+
+        if (failed != 0)
+            throw new RuntimeException(failed + " errors") ;
+    }
+
+    static void test(URL url) throws Exception {
+        URLConnection urlc = url.openConnection();
+        try {
+            urlc.setRequestProperty(null, null);
+            System.out.println(url.getProtocol()
+                               + ": setRequestProperty(null,) did not throw NPE");
+            failed++;
+        } catch (NullPointerException e) { /* Expected */ }
+        try {
+            urlc.addRequestProperty(null, null);
+            System.out.println(url.getProtocol()
+                               + ": addRequestProperty(null,) did not throw NPE");
+            failed++;
+        } catch (NullPointerException e)  { /* Expected */ }
+
+        if (urlc.getRequestProperty(null) != null) {
+            System.out.println(url.getProtocol()
+                               + ": getRequestProperty(null,) did not return null");
+            failed++;
+        }
+    }
+
+    private static boolean hasFtp() {
+        try {
+            return new java.net.URL("ftp://") != null;
+        } catch (java.net.MalformedURLException x) {
+            System.out.println("FTP not supported by this runtime.");
+            return false;
         }
     }
 }
