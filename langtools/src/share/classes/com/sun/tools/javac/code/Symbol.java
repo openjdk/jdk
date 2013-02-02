@@ -496,9 +496,9 @@ public abstract class Symbol implements Element {
         return l.toList();
     }
 
-    public static class DelegatedSymbol extends Symbol {
-        protected Symbol other;
-        public DelegatedSymbol(Symbol other) {
+    public static class DelegatedSymbol<T extends Symbol> extends Symbol {
+        protected T other;
+        public DelegatedSymbol(T other) {
             super(other.kind, other.flags_field, other.name, other.type, other.owner);
             this.other = other;
         }
@@ -531,6 +531,10 @@ public abstract class Symbol implements Element {
 
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitSymbol(other, p);
+        }
+
+        public T getUnderlyingSymbol() {
+            return other;
         }
     }
 
