@@ -482,10 +482,8 @@ public class ClassWriter extends ClassFile {
         while (i < pool.pp) {
             Object value = pool.pool[i];
             Assert.checkNonNull(value);
-            if (value instanceof Method)
-                value = ((Method)value).m;
-            else if (value instanceof Variable)
-                value = ((Variable)value).v;
+            if (value instanceof Method || value instanceof Variable)
+                value = ((DelegatedSymbol)value).getUnderlyingSymbol();
 
             if (value instanceof MethodSymbol) {
                 MethodSymbol m = (MethodSymbol)value;
