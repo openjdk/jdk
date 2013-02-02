@@ -300,8 +300,7 @@ void ConcurrentMarkSweepThread::desynchronize(bool is_cms_thread) {
   }
 }
 
-// Wait until the next synchronous GC, a concurrent full gc request,
-// or a timeout, whichever is earlier.
+// Wait until any cms_lock event
 void ConcurrentMarkSweepThread::wait_on_cms_lock(long t_millis) {
   MutexLockerEx x(CGC_lock,
                   Mutex::_no_safepoint_check_flag);
@@ -315,15 +314,100 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock(long t_millis) {
          "Should not be set");
 }
 
+// Wait until the next synchronous GC, a concurrent full gc request,
+// or a timeout, whichever is earlier.
+void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
+  // Wait time in millis or 0 value representing infinite wait for a scavenge
+  assert(t_millis >= 0, "Wait time for scavenge should be 0 or positive");
+
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  double start_time_secs = os::elapsedTime();
+  double end_time_secs = start_time_secs + (t_millis / ((double) MILLIUNITS));
+
+  // Total collections count before waiting loop
+  unsigned int before_count;
+  {
+    MutexLockerEx hl(Heap_lock, Mutex::_no_safepoint_check_flag);
+    before_count = gch->total_collections();
+  }
+
+  unsigned int loop_count = 0;
+
+  while(!_should_terminate) {
+    double now_time = os::elapsedTime();
+    long wait_time_millis;
+
+    if(t_millis != 0) {
+      // New wait limit
+      wait_time_millis = (long) ((end_time_secs - now_time) * MILLIUNITS);
+      if(wait_time_millis <= 0) {
+        // Wait time is over
+        break;
+      }
+    } else {
+      // No wait limit, wait if necessary forever
+      wait_time_millis = 0;
+    }
+
+    // Wait until the next event or the remaining timeout
+    {
+      MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
+
+      if (_should_terminate || _collector->_full_gc_requested) {
+        return;
+      }
+      set_CMS_flag(CMS_cms_wants_token);   // to provoke notifies
+      assert(t_millis == 0 || wait_time_millis > 0, "Sanity");
+      CGC_lock->wait(Mutex::_no_safepoint_check_flag, wait_time_millis);
+      clear_CMS_flag(CMS_cms_wants_token);
+      assert(!CMS_flag_is_set(CMS_cms_has_token | CMS_cms_wants_token),
+             "Should not be set");
+    }
+
+    // Extra wait time check before entering the heap lock to get the collection count
+    if(t_millis != 0 && os::elapsedTime() >= end_time_secs) {
+      // Wait time is over
+      break;
+    }
+
+    // Total collections count after the event
+    unsigned int after_count;
+    {
+      MutexLockerEx hl(Heap_lock, Mutex::_no_safepoint_check_flag);
+      after_count = gch->total_collections();
+    }
+
+    if(before_count != after_count) {
+      // There was a collection - success
+      break;
+    }
+
+    // Too many loops warning
+    if(++loop_count == 0) {
+      warning("wait_on_cms_lock_for_scavenge() has looped %u times", loop_count - 1);
+    }
+  }
+}
+
 void ConcurrentMarkSweepThread::sleepBeforeNextCycle() {
   while (!_should_terminate) {
     if (CMSIncrementalMode) {
       icms_wait();
+      if(CMSWaitDuration >= 0) {
+        // Wait until the next synchronous GC, a concurrent full gc
+        // request or a timeout, whichever is earlier.
+        wait_on_cms_lock_for_scavenge(CMSWaitDuration);
+      }
       return;
     } else {
-      // Wait until the next synchronous GC, a concurrent full gc
-      // request or a timeout, whichever is earlier.
-      wait_on_cms_lock(CMSWaitDuration);
+      if(CMSWaitDuration >= 0) {
+        // Wait until the next synchronous GC, a concurrent full gc
+        // request or a timeout, whichever is earlier.
+        wait_on_cms_lock_for_scavenge(CMSWaitDuration);
+      } else {
+        // Wait until any cms_lock event or check interval not to call shouldConcurrentCollect permanently
+        wait_on_cms_lock(CMSCheckInterval);
+      }
     }
     // Check if we should start a CMS collection cycle
     if (_collector->shouldConcurrentCollect()) {
