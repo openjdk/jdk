@@ -421,9 +421,10 @@ class VM_RedefineClasses: public VM_Operation {
   // and in all direct and indirect subclasses.
   void increment_class_counter(InstanceKlass *ik, TRAPS);
 
-  // Support for constant pool merging (these routines are in alpha
-  // order):
+  // Support for constant pool merging (these routines are in alpha order):
   void append_entry(constantPoolHandle scratch_cp, int scratch_i,
+    constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS);
+  int find_or_append_indirect_entry(constantPoolHandle scratch_cp, int scratch_i,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS);
   int find_new_index(int old_index);
   bool is_unresolved_class_mismatch(constantPoolHandle cp1, int index1,
