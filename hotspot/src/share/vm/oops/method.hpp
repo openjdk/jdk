@@ -128,8 +128,8 @@ class Method : public Metadata {
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequencey-based optimizations
 
 #ifdef TIERED
-  jlong             _prev_time;                   // Previous time the rate was acquired
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
+  jlong             _prev_time;                   // Previous time the rate was acquired
 #endif
 
 #ifndef PRODUCT
