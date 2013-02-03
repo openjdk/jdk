@@ -570,10 +570,19 @@ public class Lower extends TreeTranslator {
      *  @param flags    The class symbol's flags
      *  @param owner    The class symbol's owner
      */
-    ClassSymbol makeEmptyClass(long flags, ClassSymbol owner) {
+    JCClassDecl makeEmptyClass(long flags, ClassSymbol owner) {
+        return makeEmptyClass(flags, owner, null, true);
+    }
+
+    JCClassDecl makeEmptyClass(long flags, ClassSymbol owner, Name flatname,
+            boolean addToDefs) {
         // Create class symbol.
         ClassSymbol c = reader.defineClass(names.empty, owner);
-        c.flatname = chk.localClassName(c);
+        if (flatname != null) {
+            c.flatname = flatname;
+        } else {
+            c.flatname = chk.localClassName(c);
+        }
         c.sourcefile = owner.sourcefile;
         c.completer = null;
         c.members_field = new Scope(c);
@@ -597,9 +606,8 @@ public class Lower extends TreeTranslator {
         cdef.type = c.type;
 
         // Append class definition tree to owner's definitions.
-        odef.defs = odef.defs.prepend(cdef);
-
-        return c;
+        if (addToDefs) odef.defs = odef.defs.prepend(cdef);
+        return cdef;
     }
 
 /**************************************************************************
@@ -706,7 +714,7 @@ public class Lower extends TreeTranslator {
      * and synthethise a class (with makeEmptyClass) if one is not available.
      * However, there is a small possibility that an existing class will not
      * be generated as expected if it is inside a conditional with a constant
-     * expression. If that is found to be the case, create an empty class here.
+     * expression. If that is found to be the case, create an empty class tree here.
      */
     private void checkAccessConstructorTags() {
         for (List<ClassSymbol> l = accessConstrTags; l.nonEmpty(); l = l.tail) {
@@ -714,14 +722,10 @@ public class Lower extends TreeTranslator {
             if (isTranslatedClassAvailable(c))
                 continue;
             // Create class definition tree.
-            JCClassDecl cdef = make.ClassDef(
-                make.Modifiers(STATIC | SYNTHETIC), names.empty,
-                List.<JCTypeParameter>nil(),
-                null, List.<JCExpression>nil(), List.<JCTree>nil());
-            cdef.sym = c;
-            cdef.type = c.type;
-            // add it to the list of classes to be generated
-            translated.append(cdef);
+            JCClassDecl cdec = makeEmptyClass(STATIC | SYNTHETIC,
+                    c.outermostClass(), c.flatname, false);
+            swapAccessConstructorTag(c, cdec.sym);
+            translated.append(cdec);
         }
     }
     // where
@@ -733,6 +737,19 @@ public class Lower extends TreeTranslator {
             }
         }
         return false;
+    }
+
+    void swapAccessConstructorTag(ClassSymbol oldCTag, ClassSymbol newCTag) {
+        for (MethodSymbol methodSymbol : accessConstrs.values()) {
+            Assert.check(methodSymbol.type.hasTag(METHOD));
+            MethodType oldMethodType =
+                    (MethodType)methodSymbol.type;
+            if (oldMethodType.argtypes.head.tsym == oldCTag)
+                methodSymbol.type =
+                    types.createMethodTypeWithParameters(oldMethodType,
+                        oldMethodType.getParameterTypes().tail
+                            .prepend(newCTag.erasure(types)));
+        }
     }
 
 /**************************************************************************
@@ -1211,7 +1228,7 @@ public class Lower extends TreeTranslator {
                                          "1");
         ClassSymbol ctag = chk.compiled.get(flatname);
         if (ctag == null)
-            ctag = makeEmptyClass(STATIC | SYNTHETIC, topClass);
+            ctag = makeEmptyClass(STATIC | SYNTHETIC, topClass).sym;
         // keep a record of all tags, to verify that all are generated as required
         accessConstrTags = accessConstrTags.prepend(ctag);
         return ctag;
@@ -1778,7 +1795,7 @@ public class Lower extends TreeTranslator {
             if (e.sym.kind == TYP &&
                 e.sym.name == names.empty &&
                 (e.sym.flags() & INTERFACE) == 0) return (ClassSymbol) e.sym;
-        return makeEmptyClass(STATIC | SYNTHETIC, clazz);
+        return makeEmptyClass(STATIC | SYNTHETIC, clazz).sym;
     }
 
     /** Return symbol for "class$" method. If there is no method definition
