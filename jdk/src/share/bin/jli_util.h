@@ -66,7 +66,7 @@ int     JLI_GetStdArgc();
 #include <io.h>
 #define JLI_StrCaseCmp(p1, p2)          stricmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strnicmp((p1), (p2), (p3))
-#define JLI_Snprintf                    _snprintf
+int  JLI_Snprintf(char *buffer, size_t size, const char *format, ...);
 void JLI_CmdToArgs(char *cmdline);
 #define JLI_Lseek                       _lseeki64
 #else  /* NIXES */

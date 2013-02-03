@@ -13,6 +13,7 @@ grant {
     permission java.io.FilePermission ".${/}-", "read,write,delete";
 
     permission java.lang.RuntimePermission "createClassLoader";
+    permission java.lang.RuntimePermission "getClassLoader";
     permission java.lang.RuntimePermission "setContextClassLoader";
 
     // used by TestLibrary to determine test environment

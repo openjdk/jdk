@@ -153,7 +153,7 @@ public final class CGIHandler {
                     returnServerError(e.getMessage());
                 }
             else
-                returnClientError("invalid command: " + command);
+                returnClientError("invalid command.");
         } catch (Exception e) {
             returnServerError("internal error: " + e.getMessage());
         }
@@ -225,7 +225,7 @@ final class CGIForwardCommand implements CGICommandHandler {
         try {
             port = Integer.parseInt(param);
         } catch (NumberFormatException e) {
-            throw new CGIClientException("invalid port number: " + param);
+            throw new CGIClientException("invalid port number.");
         }
         if (port <= 0 || port > 0xFFFF)
             throw new CGIClientException("invalid port: " + port);
@@ -293,11 +293,14 @@ final class CGIForwardCommand implements CGICommandHandler {
                     "unexpected EOF reading server response");
 
             if (line.toLowerCase().startsWith(key)) {
-                // if contentLengthFound is true
-                // we should probably do something here
-                responseContentLength =
-                    Integer.parseInt(line.substring(key.length()).trim());
-                contentLengthFound = true;
+                if (contentLengthFound) {
+                    throw new CGIServerException(
+                            "Multiple Content-length entries found.");
+                } else {
+                    responseContentLength =
+                        Integer.parseInt(line.substring(key.length()).trim());
+                    contentLengthFound = true;
+                }
             }
         } while ((line.length() != 0) &&
                  (line.charAt(0) != '\r') && (line.charAt(0) != '\n'));

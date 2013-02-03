@@ -41,6 +41,8 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.*;
 
+import sun.security.util.KeyUtil;
+
 /**
  * This class implements the Diffie-Hellman key agreement protocol between
  * any number of parties.
@@ -199,6 +201,9 @@ extends KeyAgreementSpi {
         if (pub_g != null && !(init_g.equals(pub_g))) {
             throw new InvalidKeyException("Incompatible parameters");
         }
+
+        // validate the Diffie-Hellman public key
+        KeyUtil.validate(dhPubKey);
 
         // store the y value
         this.y = dhPubKey.getY();

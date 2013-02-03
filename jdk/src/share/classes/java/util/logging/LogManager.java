@@ -35,6 +35,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.beans.PropertyChangeListener;
+import java.net.URL;
+import sun.misc.JavaAWTAccess;
+import sun.misc.SharedSecrets;
+import sun.security.action.GetPropertyAction;
 
 /**
  * There is a single global LogManager object that is used to
@@ -152,10 +156,9 @@ public class LogManager {
     // count to allow for cases where the same listener is registered many times.
     private final Map<Object,Integer> listenerMap = new HashMap<>();
 
-    // Table of named Loggers that maps names to Loggers.
-    private Hashtable<String,LoggerWeakRef> namedLoggers = new Hashtable<>();
-    // Tree of named Loggers
-    private LogNode root = new LogNode(null);
+    // LoggerContext for system loggers and user loggers
+    private final LoggerContext systemContext = new SystemLoggerContext();
+    private final LoggerContext userContext = new UserLoggerContext();
     private Logger rootLogger;
 
     // Have we done the primordial reading of the configuration file?
@@ -193,12 +196,13 @@ public class LogManager {
 
                     // Create and retain Logger for the root of the namespace.
                     manager.rootLogger = manager.new RootLogger();
-                    manager.addLogger(manager.rootLogger);
+                    manager.systemContext.addLogger(manager.rootLogger);
+                    manager.userContext.addLogger(manager.rootLogger);
 
                     // Adding the global Logger. Doing so in the Logger.<clinit>
                     // would deadlock with the LogManager.<clinit>.
                     Logger.getGlobal().setLogManager(manager);
-                    manager.addLogger(Logger.getGlobal());
+                    manager.systemContext.addLogger(Logger.getGlobal());
 
                     // We don't call readConfiguration() here, as we may be running
                     // very early in the JVM startup sequence.  Instead readConfiguration
@@ -276,14 +280,14 @@ public class LogManager {
                         return;
                     }
                     readPrimordialConfiguration = true;
+
                     try {
-                        AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                                public Object run() throws Exception {
+                        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                                public Void run() throws Exception {
                                     readConfiguration();
 
                                     // Platform loggers begin to delegate to java.util.logging.Logger
                                     sun.util.logging.PlatformLogger.redirectPlatformLoggers();
-
                                     return null;
                                 }
                             });
@@ -367,62 +371,290 @@ public class LogManager {
         }
     }
 
-    // Package-level method.
-    // Find or create a specified logger instance. If a logger has
-    // already been created with the given name it is returned.
-    // Otherwise a new logger instance is created and registered
-    // in the LogManager global namespace.
+    // Returns the LoggerContext for the user code (i.e. application or AppContext).
+    // Loggers are isolated from each AppContext.
+    LoggerContext getUserContext() {
+        LoggerContext context = null;
 
-    // This method will always return a non-null Logger object.
-    // Synchronization is not required here. All synchronization for
-    // adding a new Logger object is handled by addLogger().
-    Logger demandLogger(String name) {
-        Logger result = getLogger(name);
-        if (result == null) {
-            // only allocate the new logger once
-            Logger newLogger = new Logger(name, null);
-            do {
-                if (addLogger(newLogger)) {
-                    // We successfully added the new Logger that we
-                    // created above so return it without refetching.
-                    return newLogger;
+        SecurityManager sm = System.getSecurityManager();
+        JavaAWTAccess javaAwtAccess = SharedSecrets.getJavaAWTAccess();
+        if (sm != null && javaAwtAccess != null) {
+            synchronized (javaAwtAccess) {
+                // AppContext.getAppContext() returns the system AppContext if called
+                // from a system thread but Logger.getLogger might be called from
+                // an applet code. Instead, find the AppContext of the applet code
+                // from the execution stack.
+                Object ecx = javaAwtAccess.getExecutionContext();
+                if (ecx == null) {
+                    // fall back to AppContext.getAppContext()
+                    ecx = javaAwtAccess.getContext();
                 }
-
-                // We didn't add the new Logger that we created above
-                // because another thread added a Logger with the same
-                // name after our null check above and before our call
-                // to addLogger(). We have to refetch the Logger because
-                // addLogger() returns a boolean instead of the Logger
-                // reference itself. However, if the thread that created
-                // the other Logger is not holding a strong reference to
-                // the other Logger, then it is possible for the other
-                // Logger to be GC'ed after we saw it in addLogger() and
-                // before we can refetch it. If it has been GC'ed then
-                // we'll just loop around and try again.
-                result = getLogger(name);
-            } while (result == null);
+                context = (LoggerContext)javaAwtAccess.get(ecx, LoggerContext.class);
+                if (context == null) {
+                    if (javaAwtAccess.isMainAppContext()) {
+                        context = userContext;
+                    } else {
+                        context = new UserLoggerContext();
+                        context.addLogger(manager.rootLogger);
+                    }
+                    javaAwtAccess.put(ecx, LoggerContext.class, context);
+                }
+            }
+        } else {
+            context = userContext;
         }
-        return result;
+        return context;
     }
 
-    // If logger.getUseParentHandlers() returns 'true' and any of the logger's
-    // parents have levels or handlers defined, make sure they are instantiated.
-    private void processParentHandlers(Logger logger, String name) {
-        int ix = 1;
-        for (;;) {
-            int ix2 = name.indexOf(".", ix);
-            if (ix2 < 0) {
-                break;
-            }
-            String pname = name.substring(0,ix2);
+    LoggerContext getSystemContext() {
+        return systemContext;
+    }
 
-            if (getProperty(pname+".level")    != null ||
-                getProperty(pname+".handlers") != null) {
-                // This pname has a level/handlers definition.
-                // Make sure it exists.
-                demandLogger(pname);
+    private List<LoggerContext> contexts() {
+        List<LoggerContext> cxs = new ArrayList<>();
+        cxs.add(systemContext);
+        cxs.add(getUserContext());
+        return cxs;
+    }
+
+    static class LoggerContext {
+        // Table of named Loggers that maps names to Loggers.
+        private final Hashtable<String,LoggerWeakRef> namedLoggers = new Hashtable<>();
+        // Tree of named Loggers
+        private final LogNode root;
+
+        private LoggerContext() {
+            this.root = new LogNode(null, this);
+        }
+
+        synchronized Logger findLogger(String name) {
+            LoggerWeakRef ref = namedLoggers.get(name);
+            if (ref == null) {
+                return null;
             }
-            ix = ix2+1;
+            Logger logger = ref.get();
+            if (logger == null) {
+                // Hashtable holds stale weak reference
+                // to a logger which has been GC-ed.
+                removeLogger(name);
+            }
+            return logger;
+        }
+
+        synchronized boolean addLogger(Logger logger) {
+            final String name = logger.getName();
+            if (name == null) {
+                throw new NullPointerException();
+            }
+
+            // cleanup some Loggers that have been GC'ed
+            manager.drainLoggerRefQueueBounded();
+
+            LoggerWeakRef ref = namedLoggers.get(name);
+            if (ref != null) {
+                if (ref.get() == null) {
+                    // It's possible that the Logger was GC'ed after the
+                    // drainLoggerRefQueueBounded() call above so allow
+                    // a new one to be registered.
+                    removeLogger(name);
+                } else {
+                    // We already have a registered logger with the given name.
+                    return false;
+                }
+            }
+
+            // We're adding a new logger.
+            // Note that we are creating a weak reference here.
+            ref = manager.new LoggerWeakRef(logger);
+            namedLoggers.put(name, ref);
+
+            // Apply any initial level defined for the new logger.
+            Level level = manager.getLevelProperty(name + ".level", null);
+            if (level != null) {
+                doSetLevel(logger, level);
+            }
+
+            // Do we have a per logger handler too?
+            // Note: this will add a 200ms penalty
+            manager.loadLoggerHandlers(logger, name, name + ".handlers");
+            processParentHandlers(logger, name);
+
+            // Find the new node and its parent.
+            LogNode node = getNode(name);
+            node.loggerRef = ref;
+            Logger parent = null;
+            LogNode nodep = node.parent;
+            while (nodep != null) {
+                LoggerWeakRef nodeRef = nodep.loggerRef;
+                if (nodeRef != null) {
+                    parent = nodeRef.get();
+                    if (parent != null) {
+                        break;
+                    }
+                }
+                nodep = nodep.parent;
+            }
+
+            if (parent != null) {
+                doSetParent(logger, parent);
+            }
+            // Walk over the children and tell them we are their new parent.
+            node.walkAndSetParent(logger);
+            // new LogNode is ready so tell the LoggerWeakRef about it
+            ref.setNode(node);
+            return true;
+        }
+
+        void removeLogger(String name) {
+            namedLoggers.remove(name);
+        }
+
+        synchronized Enumeration<String> getLoggerNames() {
+            return namedLoggers.keys();
+        }
+
+        Logger demandLogger(String name) {
+            return demandLogger(name, null);
+        }
+
+        // Find or create a specified logger instance. If a logger has
+        // already been created with the given name it is returned.
+        // Otherwise a new logger instance is created and registered
+        // in the LogManager global namespace.
+
+        // This method will always return a non-null Logger object.
+        // Synchronization is not required here. All synchronization for
+        // adding a new Logger object is handled by addLogger().
+        Logger demandLogger(String name, String resourceBundleName) {
+            Logger result = findLogger(name);
+            if (result == null) {
+                // only allocate the new logger once
+                Logger newLogger = new Logger(name, resourceBundleName);
+                do {
+                    if (addLogger(newLogger)) {
+                        // We successfully added the new Logger that we
+                        // created above so return it without refetching.
+                        return newLogger;
+                    }
+
+                    // We didn't add the new Logger that we created above
+                    // because another thread added a Logger with the same
+                    // name after our null check above and before our call
+                    // to addLogger(). We have to refetch the Logger because
+                    // addLogger() returns a boolean instead of the Logger
+                    // reference itself. However, if the thread that created
+                    // the other Logger is not holding a strong reference to
+                    // the other Logger, then it is possible for the other
+                    // Logger to be GC'ed after we saw it in addLogger() and
+                    // before we can refetch it. If it has been GC'ed then
+                    // we'll just loop around and try again.
+                    result = findLogger(name);
+                } while (result == null);
+            }
+            return result;
+        }
+
+        // If logger.getUseParentHandlers() returns 'true' and any of the logger's
+        // parents have levels or handlers defined, make sure they are instantiated.
+        private void processParentHandlers(Logger logger, String name) {
+            int ix = 1;
+            for (;;) {
+                int ix2 = name.indexOf(".", ix);
+                if (ix2 < 0) {
+                    break;
+                }
+                String pname = name.substring(0, ix2);
+
+                if (manager.getProperty(pname + ".level") != null ||
+                    manager.getProperty(pname + ".handlers") != null) {
+                    // This pname has a level/handlers definition.
+                    // Make sure it exists.
+                    demandLogger(pname);
+                }
+                ix = ix2+1;
+            }
+        }
+
+        // Gets a node in our tree of logger nodes.
+        // If necessary, create it.
+        LogNode getNode(String name) {
+            if (name == null || name.equals("")) {
+                return root;
+            }
+            LogNode node = root;
+            while (name.length() > 0) {
+                int ix = name.indexOf(".");
+                String head;
+                if (ix > 0) {
+                    head = name.substring(0, ix);
+                    name = name.substring(ix + 1);
+                } else {
+                    head = name;
+                    name = "";
+                }
+                if (node.children == null) {
+                    node.children = new HashMap<>();
+                }
+                LogNode child = node.children.get(head);
+                if (child == null) {
+                    child = new LogNode(node, this);
+                    node.children.put(head, child);
+                }
+                node = child;
+            }
+            return node;
+        }
+    }
+
+    static class SystemLoggerContext extends LoggerContext {
+        // Default resource bundle for all system loggers
+        Logger demandLogger(String name) {
+            // default to use the system logger's resource bundle
+            return super.demandLogger(name, Logger.SYSTEM_LOGGER_RB_NAME);
+        }
+    }
+
+    static class UserLoggerContext extends LoggerContext {
+        /**
+         * Returns a Logger of the given name if there is one registered
+         * in this context.  Otherwise, it will return the one registered
+         * in the system context if there is one.  The returned Logger
+         * instance may be initialized with a different resourceBundleName.
+         * If no such logger exists, a new Logger instance will be created
+         * and registered in this context.
+         */
+        Logger demandLogger(String name, String resourceBundleName) {
+            Logger result = findLogger(name);
+            if (result == null) {
+                // use the system logger if exists; or allocate a new logger.
+                // The system logger is added to the app logger context so that
+                // any child logger created in the app logger context can have
+                // a system logger as its parent if already exist.
+                Logger logger = manager.systemContext.findLogger(name);
+                Logger newLogger =
+                    logger != null ? logger : new Logger(name, resourceBundleName);
+                do {
+                    if (addLogger(newLogger)) {
+                        // We successfully added the new Logger that we
+                        // created above so return it without refetching.
+                        return newLogger;
+                    }
+
+                    // We didn't add the new Logger that we created above
+                    // because another thread added a Logger with the same
+                    // name after our null check above and before our call
+                    // to addLogger(). We have to refetch the Logger because
+                    // addLogger() returns a boolean instead of the Logger
+                    // reference itself. However, if the thread that created
+                    // the other Logger is not holding a strong reference to
+                    // the other Logger, then it is possible for the other
+                    // Logger to be GC'ed after we saw it in addLogger() and
+                    // before we can refetch it. If it has been GC'ed then
+                    // we'll just loop around and try again.
+                    result = findLogger(name);
+                } while (result == null);
+            }
+            return result;
         }
     }
 
@@ -447,16 +679,17 @@ public class LogManager {
                     try {
                         Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
                         Handler  hdl = (Handler) clz.newInstance();
-                        try {
-                            // Check if there is a property defining the
-                            // this handler's level.
-                            String levs = getProperty(word + ".level");
-                            if (levs != null) {
-                                hdl.setLevel(Level.parse(levs));
+                        // Check if there is a property defining the
+                        // this handler's level.
+                        String levs = getProperty(word + ".level");
+                        if (levs != null) {
+                            Level l = Level.findLevel(levs);
+                            if (l != null) {
+                                hdl.setLevel(l);
+                            } else {
+                                // Probably a bad level. Drop through.
+                                System.err.println("Can't set level for " + word);
                             }
-                        } catch (Exception ex) {
-                            System.err.println("Can't set level for " + word);
-                            // Probably a bad level. Drop through.
                         }
                         // Add this Handler to the logger
                         logger.addHandler(hdl);
@@ -512,7 +745,7 @@ public class LogManager {
             if (node != null) {
                 // if we have a LogNode, then we were a named Logger
                 // so clear namedLoggers weak ref to us
-                manager.namedLoggers.remove(name);
+                node.context.removeLogger(name);
                 name = null;  // clear our ref to the Logger's name
 
                 node.loggerRef = null;  // clear LogNode's weak ref to us
@@ -601,70 +834,15 @@ public class LogManager {
      *          false if a logger of that name already exists.
      * @exception NullPointerException if the logger name is null.
      */
-    public synchronized boolean addLogger(Logger logger) {
+    public boolean addLogger(Logger logger) {
         final String name = logger.getName();
         if (name == null) {
             throw new NullPointerException();
         }
-
-        // cleanup some Loggers that have been GC'ed
-        drainLoggerRefQueueBounded();
-
-        LoggerWeakRef ref = namedLoggers.get(name);
-        if (ref != null) {
-            if (ref.get() == null) {
-                // It's possible that the Logger was GC'ed after the
-                // drainLoggerRefQueueBounded() call above so allow
-                // a new one to be registered.
-                namedLoggers.remove(name);
-            } else {
-                // We already have a registered logger with the given name.
-                return false;
-            }
+        if (systemContext.findLogger(name) != null) {
+            return false;
         }
-
-        // We're adding a new logger.
-        // Note that we are creating a weak reference here.
-        ref = new LoggerWeakRef(logger);
-        namedLoggers.put(name, ref);
-
-        // Apply any initial level defined for the new logger.
-        Level level = getLevelProperty(name+".level", null);
-        if (level != null) {
-            doSetLevel(logger, level);
-        }
-
-        // Do we have a per logger handler too?
-        // Note: this will add a 200ms penalty
-        loadLoggerHandlers(logger, name, name+".handlers");
-        processParentHandlers(logger, name);
-
-        // Find the new node and its parent.
-        LogNode node = findNode(name);
-        node.loggerRef = ref;
-        Logger parent = null;
-        LogNode nodep = node.parent;
-        while (nodep != null) {
-            LoggerWeakRef nodeRef = nodep.loggerRef;
-            if (nodeRef != null) {
-                parent = nodeRef.get();
-                if (parent != null) {
-                    break;
-                }
-            }
-            nodep = nodep.parent;
-        }
-
-        if (parent != null) {
-            doSetParent(logger, parent);
-        }
-        // Walk over the children and tell them we are their new parent.
-        node.walkAndSetParent(logger);
-
-        // new LogNode is ready so tell the LoggerWeakRef about it
-        ref.setNode(node);
-
-        return true;
+        return getUserContext().addLogger(logger);
     }
 
 
@@ -706,36 +884,6 @@ public class LogManager {
             }});
     }
 
-    // Find a node in our tree of logger nodes.
-    // If necessary, create it.
-    private LogNode findNode(String name) {
-        if (name == null || name.equals("")) {
-            return root;
-        }
-        LogNode node = root;
-        while (name.length() > 0) {
-            int ix = name.indexOf(".");
-            String head;
-            if (ix > 0) {
-                head = name.substring(0,ix);
-                name = name.substring(ix+1);
-            } else {
-                head = name;
-                name = "";
-            }
-            if (node.children == null) {
-                node.children = new HashMap<>();
-            }
-            LogNode child = node.children.get(head);
-            if (child == null) {
-                child = new LogNode(node);
-                node.children.put(head, child);
-            }
-            node = child;
-        }
-        return node;
-    }
-
     /**
      * Method to find a named logger.
      * <p>
@@ -751,18 +899,16 @@ public class LogManager {
      * @param name name of the logger
      * @return  matching logger or null if none is found
      */
-    public synchronized Logger getLogger(String name) {
-        LoggerWeakRef ref = namedLoggers.get(name);
-        if (ref == null) {
-            return null;
-        }
-        Logger logger = ref.get();
-        if (logger == null) {
-            // Hashtable holds stale weak reference
-            // to a logger which has been GC-ed.
-            namedLoggers.remove(name);
-        }
-        return logger;
+    public Logger getLogger(String name) {
+        // return the first logger added
+        //
+        // once a system logger is added in the system context, no one can
+        // adds a logger with the same name in the global context
+        // (see LogManager.addLogger).  So if there is a logger in the global
+        // context with the same name as one in the system context, it must be
+        // added before the system logger was created.
+        Logger logger = getUserContext().findLogger(name);
+        return logger != null ? logger : systemContext.findLogger(name);
     }
 
     /**
@@ -781,8 +927,11 @@ public class LogManager {
      * <p>
      * @return  enumeration of logger name strings
      */
-    public synchronized Enumeration<String> getLoggerNames() {
-        return namedLoggers.keys();
+    public Enumeration<String> getLoggerNames() {
+        // only return unique names
+        Set<String> names = new HashSet<>(Collections.list(systemContext.getLoggerNames()));
+        names.addAll(Collections.list(getUserContext().getLoggerNames()));
+        return Collections.enumeration(names);
     }
 
     /**
@@ -867,20 +1016,20 @@ public class LogManager {
             // the global handlers, if they haven't been initialized yet.
             initializedGlobalHandlers = true;
         }
-        Enumeration<String> enum_ = getLoggerNames();
-        while (enum_.hasMoreElements()) {
-            String name = enum_.nextElement();
-            resetLogger(name);
+        for (LoggerContext cx : contexts()) {
+            Enumeration<String> enum_ = cx.getLoggerNames();
+            while (enum_.hasMoreElements()) {
+                String name = enum_.nextElement();
+                Logger logger = cx.findLogger(name);
+                if (logger != null) {
+                    resetLogger(logger);
+                }
+            }
         }
     }
 
-
     // Private method to reset an individual target logger.
-    private void resetLogger(String name) {
-        Logger logger = getLogger(name);
-        if (logger == null) {
-            return;
-        }
+    private void resetLogger(Logger logger) {
         // Close all the Logger's handlers.
         Handler[] targets = logger.getHandlers();
         for (int i = 0; i < targets.length; i++) {
@@ -892,6 +1041,7 @@ public class LogManager {
                 // Problems closing a handler?  Keep going...
             }
         }
+        String name = logger.getName();
         if (name != null && name.equals("")) {
             // This is the root logger.
             logger.setLevel(defaultLevel);
@@ -1057,11 +1207,8 @@ public class LogManager {
         if (val == null) {
             return defaultValue;
         }
-        try {
-            return Level.parse(val.trim());
-        } catch (Exception ex) {
-            return defaultValue;
-        }
+        Level l = Level.findLevel(val.trim());
+        return l != null ? l : defaultValue;
     }
 
     // Package private method to get a filter property.
@@ -1151,9 +1298,11 @@ public class LogManager {
         HashMap<String,LogNode> children;
         LoggerWeakRef loggerRef;
         LogNode parent;
+        final LoggerContext context;
 
-        LogNode(LogNode parent) {
+        LogNode(LogNode parent, LoggerContext context) {
             this.parent = parent;
+            this.context = context;
         }
 
         // Recursive method to walk the tree below a node and set
@@ -1226,11 +1375,13 @@ public class LogManager {
                 System.err.println("Bad level value for property: " + key);
                 continue;
             }
-            Logger l = getLogger(name);
-            if (l == null) {
-                continue;
+            for (LoggerContext cx : contexts()) {
+                Logger l = cx.findLogger(name);
+                if (l == null) {
+                    continue;
+                }
+                l.setLevel(level);
             }
-            l.setLevel(level);
         }
     }
 
