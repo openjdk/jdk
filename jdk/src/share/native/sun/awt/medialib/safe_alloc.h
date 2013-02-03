@@ -41,5 +41,10 @@
     (((w) > 0) && ((h) > 0) && ((sz) > 0) &&                               \
      (((0xffffffffu / ((juint)(w))) / ((juint)(h))) > ((juint)(sz))))
 
+#define SAFE_TO_MULT(a, b) \
+    (((a) > 0) && ((b) >= 0) && ((0x7fffffff / (a)) > (b)))
+
+#define SAFE_TO_ADD(a, b) \
+    (((a) >= 0) && ((b) >= 0) && ((0x7fffffff - (a)) > (b)))
 
 #endif // __SAFE_ALLOC_H__

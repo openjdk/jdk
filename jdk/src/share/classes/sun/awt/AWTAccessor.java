@@ -34,6 +34,8 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Point2D;
 import java.awt.peer.ComponentPeer;
+
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 
 import java.io.File;
@@ -476,6 +478,12 @@ public final class AWTAccessor {
          * appeared.
          */
         void wakeup(EventQueue eventQueue, boolean isShutdown);
+
+        /**
+         * Static in EventQueue
+         */
+        void invokeAndWait(Object source, Runnable r)
+            throws InterruptedException, InvocationTargetException;
     }
 
     /*
