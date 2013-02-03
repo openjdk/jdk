@@ -257,6 +257,16 @@ class JMXStartRemoteDCmd : public DCmdWithParser {
   DCmdArgument<char *> _jmxremote_ssl_need_client_auth;
   DCmdArgument<char *> _jmxremote_ssl_config_file;
 
+  // JDP support
+  // Keep autodiscovery char* not bool to pass true/false
+  // as property value to java level.
+  DCmdArgument<char *> _jmxremote_autodiscovery;
+  DCmdArgument<jlong>  _jdp_port;
+  DCmdArgument<char *> _jdp_address;
+  DCmdArgument<char *> _jdp_source_addr;
+  DCmdArgument<jlong>  _jdp_ttl;
+  DCmdArgument<jlong>  _jdp_pause;
+
 public:
   JMXStartRemoteDCmd(outputStream *output, bool heap_allocated);
 
