@@ -122,12 +122,7 @@ class ExceptionTableElement VALUE_OBJ_CLASS_SPEC {
 class MethodParametersElement VALUE_OBJ_CLASS_SPEC {
  public:
   u2 name_cp_index;
-  // This has to happen, otherwise it will cause SIGBUS from a
-  // misaligned u4 on some architectures (ie SPARC)
-  // because MethodParametersElements are only aligned mod 2
-  // within the ConstMethod container  u2 flags_hi;
-  u2 flags_hi;
-  u2 flags_lo;
+  u2 flags;
 };
 
 class KlassSizeStats;
