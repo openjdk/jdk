@@ -1794,10 +1794,15 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
 
   if (ejvms == NULL) {
     // No exception edges to simply kill off those paths
-    C->gvn_replace_by(callprojs.catchall_catchproj, C->top());
-    C->gvn_replace_by(callprojs.catchall_memproj,   C->top());
-    C->gvn_replace_by(callprojs.catchall_ioproj,    C->top());
-
+    if (callprojs.catchall_catchproj != NULL) {
+      C->gvn_replace_by(callprojs.catchall_catchproj, C->top());
+    }
+    if (callprojs.catchall_memproj != NULL) {
+      C->gvn_replace_by(callprojs.catchall_memproj,   C->top());
+    }
+    if (callprojs.catchall_ioproj != NULL) {
+      C->gvn_replace_by(callprojs.catchall_ioproj,    C->top());
+    }
     // Replace the old exception object with top
     if (callprojs.exobj != NULL) {
       C->gvn_replace_by(callprojs.exobj, C->top());
@@ -1809,10 +1814,15 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
     SafePointNode* ex_map = ekit.combine_and_pop_all_exception_states();
 
     Node* ex_oop = ekit.use_exception_state(ex_map);
-
-    C->gvn_replace_by(callprojs.catchall_catchproj, ekit.control());
-    C->gvn_replace_by(callprojs.catchall_memproj,   ekit.reset_memory());
-    C->gvn_replace_by(callprojs.catchall_ioproj,    ekit.i_o());
+    if (callprojs.catchall_catchproj != NULL) {
+      C->gvn_replace_by(callprojs.catchall_catchproj, ekit.control());
+    }
+    if (callprojs.catchall_memproj != NULL) {
+      C->gvn_replace_by(callprojs.catchall_memproj,   ekit.reset_memory());
+    }
+    if (callprojs.catchall_ioproj != NULL) {
+      C->gvn_replace_by(callprojs.catchall_ioproj,    ekit.i_o());
+    }
 
     // Replace the old exception object with the newly created one
     if (callprojs.exobj != NULL) {

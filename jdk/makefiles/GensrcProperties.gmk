@@ -23,6 +23,9 @@
 # questions.
 #
 
+# Prepare the find cache. This is only used on windows.
+$(eval $(call FillCacheFind,$(JDK_TOPDIR)/src/share/classes $(JDK_TOPDIR)/src/windows/classes))
+
 # All .properties files to be compiled are appended to this variable.
 ALL_COMPILED_PROPSOURCES:=
 # All generated .java files from compilation are appended to this variable.
@@ -117,44 +120,54 @@ endef
 #com/apple/laf/resources
 ifeq ($(OPENJDK_TARGET_OS),macosx)
     $(eval $(call add_properties_to_compile,COM_APPLE_LAF,\
-	$(shell find $(JDK_TOPDIR)/src/macosx/classes/com/apple/laf/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/macosx/classes/com/apple/laf/resources)),\
+	ListResourceBundle))
 endif
 
 #com/sun/accessibility/internal/resources
 $(eval $(call add_properties_to_compile,COM_SUN_ACCESSIBILITY,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/accessibility/internal/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/accessibility/internal/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,COM_SUN_ACCESSIBILITY_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/accessibility/internal/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/accessibility/internal/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/imageio/plugins/common
 $(eval $(call add_properties_to_clean,COM_SUN_IMAGEIO,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/imageio -name "*.properties")))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/imageio))))
 #com/sun/java/swing/plaf/gtk/resources
 ifneq ($(OPENJDK_TARGET_OS), windows)
 # Only compile GTK resource bundles on Solaris/Linux
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_GTK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_GTK_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 endif
 #com/sun/java/swing/plaf/motif/resources
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_MOTIF,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_MOTIF_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/java/swing/plaf/windows/resources
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_WINDOWS,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_WINDOWS_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/java/util/jar/pack
 $(eval $(call add_properties_to_clean,JNDI_COSNAMING,\
 	$(JDK_TOPDIR)/src/share/classes/com/sun/java/util/jar/pack/intrinsic.properties))
@@ -169,138 +182,171 @@ $(eval $(call add_properties_to_clean,JNDI_COSNAMING,\
 #FIXME: The "xmlsecurity*.properties" pattern is not ideal; we might want to find
 #a better way to select the properties files that are needed.
 $(eval $(call add_properties_to_clean,XML_SECURITY,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/org/apache/xml/internal/security/resource -name "xmlsecurity*.properties")))
+	$(filter $(JDK_TOPDIR)/src/share/classes/com/sun/org/apache/xml/internal/security/resource/xmlsecurity%.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/org/apache/xml/internal/security/resource))))
 
 #com/sun/rowset
 $(eval $(call add_properties_to_clean,COM_SUN_ROWSET,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/rowset -name "*.properties")))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/rowset))))
 $(eval $(call add_properties_to_clean,COM_SUN_ROWSET_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/rowset -name "*zh_TW.properties"),\
+	$(filter %zh_TW.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/rowset)),\
 	%zh_TW,%zh_HK))
 
 #com/sun/servicetag/resources
 #com/sun/swing/internal/plaf/basic/resources
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_BASIC,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_BASIC_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/swing/internal/plaf/metal/resources
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_METAL,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_METAL_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/swing/internal/plaf/synth/resources
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_SYNTH,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_SYNTH_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 
 #com/sun/tools/jdi/resources
 $(eval $(call add_properties_to_compile,COM_SUN_TOOLS_JDI,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/tools/jdi/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/tools/jdi/resources)),\
+	ListResourceBundle))
 
 #com/sun/tools/script/shell
 #java/util
 #javax/sql/rowset
 $(eval $(call add_properties_to_clean,JAVAX_SQL_ROWSET,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/javax/sql/rowset -name "*.properties")))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/javax/sql/rowset))))
 #sun/awt/resources
 $(eval $(call add_properties_to_compile,SUN_AWT,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/awt/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/awt/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,SUN_AWT_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/awt/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/awt/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #sun/awt/windows/
 ifeq ($(OPENJDK_TARGET_OS),windows)
     $(eval $(call add_properties_to_compile,SUN_AWT,\
-	$(shell find $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows -name "awtLocalization*.properties"),\
-		ListResourceBundle))
+	$(filter $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows/awtLocalization%.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/windows/classes/sun/awt/windows)),\
+	ListResourceBundle))
     $(eval $(call add_properties_to_compile,SUN_AWT_HK,\
-	$(shell find $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows -name "awtLocalization*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows/awtLocalization%.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/windows/classes/sun/awt/windows)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 endif
 
 #sun/launcher/resources
 $(eval $(call add_properties_to_compile,SUN_LAUNCHER,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/launcher/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/launcher/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,SUN_LAUNCHER_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/launcher/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/launcher/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #sun/management/resources
 $(eval $(call add_properties_to_compile,SUN_MANAGEMENT,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/management/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/management/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,SUN_MANAGEMENT_KH,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/management/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/management/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #sun/print
 #sun/print/resources
 $(eval $(call add_properties_to_compile,SUN_PRINT,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/print/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/print/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,SUN_PRINT_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/print/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/print/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 #sun/rmi/registry/resources
 $(eval $(call add_properties_to_clean,SUN_RMI_REGISTRY,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/rmi/registry/resources -name "*.properties")))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/rmi/registry/resources))))
 $(eval $(call add_properties_to_clean,SUN_RMI_REGISTRY_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/rmi/registry/resources -name "*zh_TW.properties"),\
+	$(filter %zh_TW.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/rmi/registry/resources)),\
 	%zh_TW,%zh_HK))
 
 #sun/rmi/rmic/resources
 $(eval $(call add_properties_to_clean,SUN_RMI_RMIC,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/rmi/rmic/resources -name "*.properties")))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/rmi/rmic/resources))))
 
 #sun/rmi/server/resources
 $(eval $(call add_properties_to_clean,SUN_RMI_SERVER,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/rmi/server/resources -name "*.properties")))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/rmi/server/resources))))
 $(eval $(call add_properties_to_clean,SUN_RMI_SERVER_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/rmi/server/resources -name "*zh_TW.properties"),\
+	$(filter %zh_TW.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/rmi/server/resources)),\
 	%zh_TW,%zh_HK))
 
 # sun/tools/jar/resources
 $(eval $(call add_properties_to_compile,SUN_TOOLS_JAR,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/tools/jar/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/tools/jar/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,SUN_TOOLS_JAR_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/tools/jar/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/tools/jar/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 
 #sun/tools/javac/resources
 # It's unclear if the other localized property files here are supposed to be copied or not
 # but the old build system didn't copy them.
 $(eval $(call add_properties_to_clean,SUN_TOOLS_SERIALVER,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/tools/javac/resources -name "javac.properties")))
+	$(filter %javac.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/tools/javac/resources))))
 
 #sun/tools/jconsole/resources
 $(eval $(call add_properties_to_clean,SUN_TOOLS_JCONSOLE,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/resources -name "*.properties")))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/resources))))
 
 #sun/tools/serialver
 $(eval $(call add_properties_to_clean,SUN_TOOLS_SERIALVER,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/tools/serialver -name "*.properties"),,,resources))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/tools/serialver)),,,resources))
 
 #sun/util/logging/resources
 $(eval $(call add_properties_to_compile,SUN_UTIL_LOGGING,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/util/logging/resources -name "*.properties"),\
-		ListResourceBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/util/logging/resources)),\
+	ListResourceBundle))
 $(eval $(call add_properties_to_compile,SUN_UTIL_LOGGING_HK,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/util/logging/resources -name "*.properties"),\
-		ListResourceBundle,%zh_TW,%zh_HK))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/util/logging/resources)),\
+	ListResourceBundle,%zh_TW,%zh_HK))
 # sun/util/resources
 $(eval $(call add_properties_to_compile,SUN_UTIL,\
-	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/util/resources -name "*.properties"),\
-		sun.util.resources.LocaleNamesBundle))
+	$(filter %.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/sun/util/resources)),\
+	sun.util.resources.LocaleNamesBundle))
 
 # Now setup the rule for the generation of the resource bundles.
 $(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties : $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS)

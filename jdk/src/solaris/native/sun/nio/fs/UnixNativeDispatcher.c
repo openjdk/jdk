@@ -90,9 +90,12 @@ static jfieldID attrs_st_nlink;
 static jfieldID attrs_st_uid;
 static jfieldID attrs_st_gid;
 static jfieldID attrs_st_size;
-static jfieldID attrs_st_atime;
-static jfieldID attrs_st_mtime;
-static jfieldID attrs_st_ctime;
+static jfieldID attrs_st_atime_sec;
+static jfieldID attrs_st_atime_nsec;
+static jfieldID attrs_st_mtime_sec;
+static jfieldID attrs_st_mtime_nsec;
+static jfieldID attrs_st_ctime_sec;
+static jfieldID attrs_st_ctime_nsec;
 
 static jfieldID attrs_f_frsize;
 static jfieldID attrs_f_blocks;
@@ -183,9 +186,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     attrs_st_uid = (*env)->GetFieldID(env, clazz, "st_uid", "I");
     attrs_st_gid = (*env)->GetFieldID(env, clazz, "st_gid", "I");
     attrs_st_size = (*env)->GetFieldID(env, clazz, "st_size", "J");
-    attrs_st_atime = (*env)->GetFieldID(env, clazz, "st_atime", "J");
-    attrs_st_mtime = (*env)->GetFieldID(env, clazz, "st_mtime", "J");
-    attrs_st_ctime = (*env)->GetFieldID(env, clazz, "st_ctime", "J");
+    attrs_st_atime_sec = (*env)->GetFieldID(env, clazz, "st_atime_sec", "J");
+    attrs_st_atime_nsec = (*env)->GetFieldID(env, clazz, "st_atime_nsec", "J");
+    attrs_st_mtime_sec = (*env)->GetFieldID(env, clazz, "st_mtime_sec", "J");
+    attrs_st_mtime_nsec = (*env)->GetFieldID(env, clazz, "st_mtime_nsec", "J");
+    attrs_st_ctime_sec = (*env)->GetFieldID(env, clazz, "st_ctime_sec", "J");
+    attrs_st_ctime_nsec = (*env)->GetFieldID(env, clazz, "st_ctime_nsec", "J");
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileStoreAttributes");
     if (clazz == NULL) {
@@ -395,9 +401,15 @@ static void prepAttributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
     (*env)->SetIntField(env, attrs, attrs_st_uid, (jint)buf->st_uid);
     (*env)->SetIntField(env, attrs, attrs_st_gid, (jint)buf->st_gid);
     (*env)->SetLongField(env, attrs, attrs_st_size, (jlong)buf->st_size);
-    (*env)->SetLongField(env, attrs, attrs_st_atime, (jlong)buf->st_atime);
-    (*env)->SetLongField(env, attrs, attrs_st_mtime, (jlong)buf->st_mtime);
-    (*env)->SetLongField(env, attrs, attrs_st_ctime, (jlong)buf->st_ctime);
+    (*env)->SetLongField(env, attrs, attrs_st_atime_sec, (jlong)buf->st_atime);
+    (*env)->SetLongField(env, attrs, attrs_st_mtime_sec, (jlong)buf->st_mtime);
+    (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->st_ctime);
+
+#if (_POSIX_C_SOURCE >= 200809L) || defined(__solaris__)
+    (*env)->SetLongField(env, attrs, attrs_st_atime_nsec, (jlong)buf->st_atim.tv_nsec);
+    (*env)->SetLongField(env, attrs, attrs_st_mtime_nsec, (jlong)buf->st_mtim.tv_nsec);
+    (*env)->SetLongField(env, attrs, attrs_st_ctime_nsec, (jlong)buf->st_ctim.tv_nsec);
+#endif
 }
 
 JNIEXPORT void JNICALL

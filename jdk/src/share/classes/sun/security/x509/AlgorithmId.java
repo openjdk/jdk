@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,6 +502,11 @@ public class AlgorithmId implements Serializable, DerEncoder {
             return AlgorithmId.ECDH_oid;
         }
 
+        // Secret key algorithms
+        if (name.equalsIgnoreCase("AES")) {
+            return AlgorithmId.AES_oid;
+        }
+
         // Common signature types
         if (name.equalsIgnoreCase("MD5withRSA")
             || name.equalsIgnoreCase("MD5/RSA")) {
@@ -659,6 +664,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier ECDH_oid = oid(1, 3, 132, 1, 12);
     public static final ObjectIdentifier RSA_oid;
     public static final ObjectIdentifier RSAEncryption_oid;
+
+    /*
+     * COMMON SECRET KEY TYPES
+     */
+    public static final ObjectIdentifier AES_oid =
+                                            oid(2, 16, 840, 1, 101, 3, 4, 1);
 
     /*
      * COMMON SIGNATURE ALGORITHMS
@@ -892,6 +903,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(DSA_OIW_oid, "DSA");
         nameTable.put(EC_oid, "EC");
         nameTable.put(ECDH_oid, "ECDH");
+
+        nameTable.put(AES_oid, "AES");
 
         nameTable.put(sha1WithECDSA_oid, "SHA1withECDSA");
         nameTable.put(sha224WithECDSA_oid, "SHA224withECDSA");

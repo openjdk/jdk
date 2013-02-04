@@ -2,7 +2,7 @@
 <html>
 <head>
 <!--
- Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ The reader/writer facility, available through the
 use and update data from a spread sheet, flat file, or any other tabular 
 data source.
 <P>
-<h2>What the JDBC<sup><font size=-2>TM</font></sup> 4.1 API Includes</h2>
-The JDBC<sup><font size=-2>TM</font></sup> 4.1 API includes both
+<h2>What the JDBC<sup><font size=-2>TM</font></sup> 4.2 API Includes</h2>
+The JDBC<sup><font size=-2>TM</font></sup> 4.2 API includes both
 the <code>java.sql</code> package, referred to as the JDBC core API,
 and the <code>javax.sql</code> package, referred to as the JDBC Optional
 Package API. This complete JDBC API
@@ -58,16 +58,17 @@ of the Java<sup><font size=-2>TM</font></sup>  Enterprise Edition
 (Java EE<sup><font size=-2>TM</font></sup>) technology. 
 <P>
 <h2>Versions</h2>
-The JDBC 4.1 API incorporates all of the previous JDBC API versions:
+The JDBC 4.2 API incorporates all of the previous JDBC API versions:
 <UL>
- <LI> The JDBC 4.0 API
- <LI> The JDBC 3.0 API
- <LI> The JDBC 2.1 core API
+    <LI> The JDBC 4.1 API</li>
+    <LI> The JDBC 4.0 API</li>
+    <LI> The JDBC 3.0 API</li>
+    <LI> The JDBC 2.1 core API</li>
  <LI> The JDBC 2.0 Optional Package API<br>
       (Note that the JDBC 2.1 core API and the JDBC 2.0 Optional Package
-      API together are referred to as the JDBC 2.0 API.)
- <LI> The JDBC 1.2 API
- <LI> The JDBC 1.0 API
+      API together are referred to as the JDBC 2.0 API.)</li>
+ <LI> The JDBC 1.2 API</li>
+ <LI> The JDBC 1.0 API</li>
 </UL>
 <P>
 Classes, interfaces, methods, fields, constructors, and exceptions 
@@ -76,16 +77,18 @@ into the Java platform. When these "since" tags are used in
 Javadoc<sup><font size=-2>TM</font></sup> comments for the JDBC API,
 they indicate the following:
 <UL>
+    <LI>Since 1.8 -- new in the JDBC 4.2 API and part of the Java SE platform,
+        version 8</li>
  <LI>Since 1.7 -- new in the JDBC 4.1 API and part of the Java SE platform,
-     version 7
+     version 7</li>
 <LI>Since 1.6 -- new in the JDBC 4.0 API and part of the Java SE platform,
-     version 6
+    version 6</li>
  <LI>Since 1.4 -- new in the JDBC 3.0 API and part of the J2SE platform, 
-     version 1.4
+     version 1.4</li>
  <LI>Since 1.2 -- new in the JDBC 2.0 API and part of the J2SE platform, 
-     version 1.2
+     version 1.2</li>
  <LI>Since 1.1 or no "since" tag -- in the original JDBC 1.0 API and part of
-      the JDK<sup><font size=-2>TM</font></sup>, version 1.1
+     the JDK<sup><font size=-2>TM</font></sup>, version 1.1</li>
 </UL>
 <P>
 <b>NOTE:</b> Many of the new features are optional; consequently, there is 
@@ -177,6 +180,17 @@ The <code>java.sql</code> package contains API for the following:
 	  <LI><code>BatchUpdateException</code> -- thrown to indicate that not all
 		 commands in a batch update executed successfully
 	</UL>
+</UL>
+<P>
+    <h3><code>java.sql</code> and <code>javax.sql</code> Features Introduced in the JDBC 4.2 API</h3>
+<UL>
+    <LI>Added <code>JDBCType</code>  enum and <code>SQLType</code> interface</li>
+    <LI>Support for <code>REF CURSORS</code> in <code>CallableStatement</code> 
+    </LI>
+    <LI><code>DatabaseMetaData</code> methods to return maximum Logical LOB size
+        and if Ref Cursors are supported</LI>
+    <LI>Added support for large update counts</LI>
+
 </UL>
 <P>
     <h3><code>java.sql</code> and <code>javax.sql</code> Features Introduced in the JDBC 4.1 API</h3>

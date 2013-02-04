@@ -74,7 +74,7 @@ public class MaxWarns {
     String javadoc(File f) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        String[] args = { "-d", "api", f.getPath() };
+        String[] args = { "-Xdoclint:none", "-d", "api", f.getPath() };
         int rc = com.sun.tools.javadoc.Main.execute("javadoc", pw, pw, pw,
                 com.sun.tools.doclets.standard.Standard.class.getName(), args);
         pw.flush();

@@ -808,8 +808,9 @@ void PSYoungGen::print_on(outputStream* st) const {
   st->print("  to  "); to_space()->print_on(st);
 }
 
+// Note that a space is not printed before the [NAME:
 void PSYoungGen::print_used_change(size_t prev_used) const {
-  gclog_or_tty->print(" [%s:", name());
+  gclog_or_tty->print("[%s:", name());
   gclog_or_tty->print(" "  SIZE_FORMAT "K"
                       "->" SIZE_FORMAT "K"
                       "("  SIZE_FORMAT "K)",

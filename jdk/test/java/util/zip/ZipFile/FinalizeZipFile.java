@@ -67,9 +67,14 @@ public class FinalizeZipFile {
         new InstrumentedZipFile(jars[rnd.nextInt(jars.length)]).close();
 
         // Create a ZipFile and get an input stream from it
-        ZipFile zf = new InstrumentedZipFile(jars[rnd.nextInt(jars.length)]);
-        ZipEntry ze = zf.getEntry("META-INF/MANIFEST.MF");
-        InputStream is = zf.getInputStream(ze);
+        for (int i = 0; i < jars.length + 10; i++) {
+            ZipFile zf = new InstrumentedZipFile(jars[rnd.nextInt(jars.length)]);
+            ZipEntry ze = zf.getEntry("META-INF/MANIFEST.MF");
+            if (ze != null) {
+                InputStream is = zf.getInputStream(ze);
+                break;
+            }
+        }
     }
 
     public static void realMain(String[] args) throws Throwable {
@@ -97,4 +102,3 @@ public class FinalizeZipFile {
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
 }
-

@@ -429,7 +429,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -446,6 +446,7 @@ void VM_Version::get_processor_features() {
                (supports_avx()    ? ", avx" : ""),
                (supports_avx2()   ? ", avx2" : ""),
                (supports_aes()    ? ", aes" : ""),
+               (supports_erms()   ? ", erms" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
                (supports_lzcnt()   ? ", lzcnt": ""),
@@ -660,6 +661,14 @@ void VM_Version::get_processor_features() {
       }
     }
   }
+#if defined(COMPILER2) && defined(_ALLBSD_SOURCE)
+    if (MaxVectorSize > 16) {
+      // Limit vectors size to 16 bytes on BSD until it fixes
+      // restoring upper 128bit of YMM registers on return
+      // from signal handler.
+      FLAG_SET_DEFAULT(MaxVectorSize, 16);
+    }
+#endif // COMPILER2
 
   // Use population count instruction if available.
   if (supports_popcnt()) {
@@ -669,6 +678,16 @@ void VM_Version::get_processor_features() {
   } else if (UsePopCountInstruction) {
     warning("POPCNT instruction is not available on this CPU");
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+  }
+
+  // Use fast-string operations if available.
+  if (supports_erms()) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      UseFastStosb = true;
+    }
+  } else if (UseFastStosb) {
+    warning("fast-string operations are not available on this CPU");
+    FLAG_SET_DEFAULT(UseFastStosb, false);
   }
 
 #ifdef COMPILER2
@@ -734,6 +753,10 @@ void VM_Version::get_processor_features() {
   PrefetchFieldsAhead         = prefetch_fields_ahead();
 #endif
 
+  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
+     (cache_line_size > ContendedPaddingWidth))
+     ContendedPaddingWidth = cache_line_size;
+
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("Logical CPUs per core: %u",
@@ -779,6 +802,9 @@ void VM_Version::get_processor_features() {
     }
     if (PrefetchFieldsAhead > 0) {
       tty->print_cr("PrefetchFieldsAhead %d", PrefetchFieldsAhead);
+    }
+    if (ContendedPaddingWidth > 0) {
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
     }
   }
 #endif // !PRODUCT
