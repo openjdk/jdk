@@ -102,7 +102,7 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   // temporarily disabled).
   switch (dictionaryChoice) {
     case FreeBlockDictionary<FreeChunk>::dictionaryBinaryTree:
-      _dictionary = new BinaryTreeDictionary<FreeChunk, AdaptiveFreeList>(mr);
+      _dictionary = new AFLBinaryTreeDictionary(mr);
       break;
     case FreeBlockDictionary<FreeChunk>::dictionarySplayTree:
     case FreeBlockDictionary<FreeChunk>::dictionarySkipList:
@@ -122,7 +122,8 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   // moved to its new location before the klass is moved.
   // Set the _refillSize for the linear allocation blocks
   if (!use_adaptive_freelists) {
-    FreeChunk* fc = _dictionary->get_chunk(mr.word_size());
+    FreeChunk* fc = _dictionary->get_chunk(mr.word_size(),
+                                           FreeBlockDictionary<FreeChunk>::atLeast);
     // The small linAB initially has all the space and will allocate
     // a chunk of any size.
     HeapWord* addr = (HeapWord*) fc;
@@ -1647,7 +1648,8 @@ CompactibleFreeListSpace::getChunkFromIndexedFreeListHelper(size_t size,
 FreeChunk*
 CompactibleFreeListSpace::getChunkFromDictionary(size_t size) {
   assert_locked();
-  FreeChunk* fc = _dictionary->get_chunk(size);
+  FreeChunk* fc = _dictionary->get_chunk(size,
+                                         FreeBlockDictionary<FreeChunk>::atLeast);
   if (fc == NULL) {
     return NULL;
   }
@@ -1664,7 +1666,8 @@ CompactibleFreeListSpace::getChunkFromDictionary(size_t size) {
 FreeChunk*
 CompactibleFreeListSpace::getChunkFromDictionaryExact(size_t size) {
   assert_locked();
-  FreeChunk* fc = _dictionary->get_chunk(size);
+  FreeChunk* fc = _dictionary->get_chunk(size,
+                                         FreeBlockDictionary<FreeChunk>::atLeast);
   if (fc == NULL) {
     return fc;
   }
@@ -1677,7 +1680,8 @@ CompactibleFreeListSpace::getChunkFromDictionaryExact(size_t size) {
   if (fc->size() < size + MinChunkSize) {
     // Return the chunk to the dictionary and go get a bigger one.
     returnChunkToDictionary(fc);
-    fc = _dictionary->get_chunk(size + MinChunkSize);
+    fc = _dictionary->get_chunk(size + MinChunkSize,
+                                FreeBlockDictionary<FreeChunk>::atLeast);
     if (fc == NULL) {
       return NULL;
     }
