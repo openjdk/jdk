@@ -1620,7 +1620,7 @@ JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
       // For a 0 index, give a NULL symbol
       Symbol* const sym = 0 != params[i].name_cp_index ?
         mh->constants()->symbol_at(params[i].name_cp_index) : NULL;
-      int flags = build_int_from_shorts(params[i].flags_lo, params[i].flags_hi);
+      int flags = params[i].flags;
       oop param = Reflection::new_parameter(reflected_method, i, sym,
                                             flags, CHECK_NULL);
       result->obj_at_put(i, param);
