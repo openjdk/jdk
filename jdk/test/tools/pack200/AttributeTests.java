@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 import java.io.File;
-import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import static java.nio.file.StandardOpenOption.*;
 /*
  * @test
- * @bug 6746111
+ * @bug 6746111 8005252
  * @summary tests various classfile format and attribute handling by pack200
  * @compile -XDignore.symbol.file Utils.java AttributeTests.java
  * @run main AttributeTests
@@ -37,8 +39,46 @@ public class AttributeTests {
 
     public static void main(String... args) throws Exception {
         test6746111();
+        testMethodParameters();
     }
 
+    /*
+     * this tests ensure that MethodParameters produces by javac is packed
+     * correctly. Usually this is not the case as new attributes are available
+     * in the sdk jars, since MethodParameters happens to be an optional
+     * attribute, thus this test.
+     */
+    static void testMethodParameters() throws Exception {
+        List<String> scratch = new ArrayList<>();
+        final String fname = "MP";
+        String javaFileName = fname + Utils.JAVA_FILE_EXT;
+        String javaClassName = fname + Utils.CLASS_FILE_EXT;
+        scratch.add("class " + fname + " {");
+        scratch.add("void foo2(int j, final int k){}");
+        scratch.add("}");
+        File cwd = new File(".");
+        File javaFile = new File(cwd, javaFileName);
+        Files.write(javaFile.toPath(), scratch, Charset.defaultCharset(),
+                CREATE, TRUNCATE_EXISTING);
+
+        Utils.compiler(javaFile.getName(), "-parameters");
+
+        // jar the file up
+        File testjarFile = new File(cwd, "test" + Utils.JAR_FILE_EXT);
+        Utils.jar("cvf", testjarFile.getName(), javaClassName);
+
+        // pack using --repack
+        File outjarFile = new File(cwd, "out" + Utils.JAR_FILE_EXT);
+        scratch.clear();
+        scratch.add(Utils.getPack200Cmd());
+        scratch.add("--repack");
+        scratch.add("--unknown-attribute=error");
+        scratch.add(outjarFile.getName());
+        scratch.add(testjarFile.getName());
+        Utils.runExec(scratch);
+
+        Utils.doCompareVerify(testjarFile, outjarFile);
+    }
     /*
      * this test checks to see if we get the expected strings for output
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,37 +147,53 @@ class ISO_8859_1
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
 
+        // JVM may replace this method with intrinsic code.
+        private static int encodeISOArray(char[] sa, int sp,
+                                          byte[] da, int dp, int len)
+        {
+            int i = 0;
+            for (; i < len; i++) {
+                char c = sa[sp++];
+                if (c > '\u00FF')
+                    break;
+                da[dp++] = (byte)c;
+            }
+            return i;
+        }
+
         private CoderResult encodeArrayLoop(CharBuffer src,
                                             ByteBuffer dst)
         {
             char[] sa = src.array();
-            int sp = src.arrayOffset() + src.position();
-            int sl = src.arrayOffset() + src.limit();
+            int soff = src.arrayOffset();
+            int sp = soff + src.position();
+            int sl = soff + src.limit();
             assert (sp <= sl);
             sp = (sp <= sl ? sp : sl);
             byte[] da = dst.array();
-            int dp = dst.arrayOffset() + dst.position();
-            int dl = dst.arrayOffset() + dst.limit();
+            int doff = dst.arrayOffset();
+            int dp = doff + dst.position();
+            int dl = doff + dst.limit();
             assert (dp <= dl);
             dp = (dp <= dl ? dp : dl);
+            int dlen = dl - dp;
+            int slen = sl - sp;
+            int len  = (dlen < slen) ? dlen : slen;
             try {
-                while (sp < sl) {
-                    char c = sa[sp];
-                    if (c <= '\u00FF') {
-                        if (dp >= dl)
-                            return CoderResult.OVERFLOW;
-                        da[dp++] = (byte)c;
-                        sp++;
-                        continue;
-                    }
-                    if (sgp.parse(c, sa, sp, sl) < 0)
+                int ret = encodeISOArray(sa, sp, da, dp, len);
+                sp = sp + ret;
+                dp = dp + ret;
+                if (ret != len) {
+                    if (sgp.parse(sa[sp], sa, sp, sl) < 0)
                         return sgp.error();
                     return sgp.unmappableResult();
                 }
+                if (len < slen)
+                    return CoderResult.OVERFLOW;
                 return CoderResult.UNDERFLOW;
             } finally {
-                src.position(sp - src.arrayOffset());
-                dst.position(dp - dst.arrayOffset());
+                src.position(sp - soff);
+                dst.position(dp - doff);
             }
         }
 
@@ -221,22 +237,25 @@ class ISO_8859_1
 
         public int encode(char[] src, int sp, int len, byte[] dst) {
             int dp = 0;
-            int sl = sp + Math.min(len, dst.length);
+            int slen = Math.min(len, dst.length);
+            int sl = sp + slen;
             while (sp < sl) {
-                char c = src[sp++];
-                if (c <= '\u00FF') {
-                    dst[dp++] = (byte)c;
-                    continue;
-                }
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                    Character.isLowSurrogate(src[sp])) {
-                    if (len > dst.length) {
-                        sl++;
-                        len--;
+                int ret = encodeISOArray(src, sp, dst, dp, slen);
+                sp = sp + ret;
+                dp = dp + ret;
+                if (ret != slen) {
+                    char c = src[sp++];
+                    if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(src[sp])) {
+                        if (len > dst.length) {
+                            sl++;
+                            len--;
+                        }
+                        sp++;
                     }
-                    sp++;
+                    dst[dp++] = repl;
+                    slen = Math.min((sl - sp), (dst.length - dp));
                 }
-                dst[dp++] = repl;
             }
             return dp;
         }

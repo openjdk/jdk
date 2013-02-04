@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public class JNIWriter {
             return false;
 
         /* temporary code for backwards compatibility */
-        for (Attribute.Compound a: c.annotations.getAttributes()) {
+        for (Attribute.Compound a: c.annotations.getDeclarationAttributes()) {
             if (a.type.tsym == syms.nativeHeaderType_old.tsym)
                 return true;
         }
@@ -167,7 +167,7 @@ public class JNIWriter {
         for (Scope.Entry i = c.members_field.elems; i != null; i = i.sibling) {
             if (i.sym.kind == Kinds.MTH && (i.sym.flags() & Flags.NATIVE) != 0)
                 return true;
-            for (Attribute.Compound a: i.sym.annotations.getAttributes()) {
+            for (Attribute.Compound a: i.sym.annotations.getDeclarationAttributes()) {
                 if (a.type.tsym == syms.nativeHeaderType.tsym)
                     return true;
             }

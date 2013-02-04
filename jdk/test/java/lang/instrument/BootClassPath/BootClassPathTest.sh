@@ -34,6 +34,12 @@ then
   exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
@@ -46,30 +52,32 @@ then
   exit 1
 fi
 
-JAVAC="${TESTJAVA}"/bin/javac
+JAVAC="${COMPILEJAVA}"/bin/javac
 JAVA="${TESTJAVA}"/bin/java
-JAR="${TESTJAVA}"/bin/jar
+JAR="${COMPILEJAVA}"/bin/jar
 
 echo "Creating manifest file..."
 
-"$JAVAC" -d "${TESTCLASSES}" "${TESTSRC}"/Setup.java
+"$JAVAC" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d "${TESTCLASSES}" "${TESTSRC}"/Setup.java
 
 # java Setup <workdir> <premain-class>
 # - outputs boot class path to boot.dir
 
-"$JAVA" -classpath "${TESTCLASSES}" Setup "${TESTCLASSES}" Agent
+"$JAVA" ${TESTVMOPTS} -classpath "${TESTCLASSES}" Setup "${TESTCLASSES}" Agent
 BOOTDIR=`cat ${TESTCLASSES}/boot.dir`
 
 echo "Created ${BOOTDIR}"
 
 echo "Building test classes..."
 
-"$JAVAC" -d "${TESTCLASSES}" "${TESTSRC}"/Agent.java "${TESTSRC}"/DummyMain.java
-"$JAVAC" -d "${BOOTDIR}" "${TESTSRC}"/AgentSupport.java
+"$JAVAC" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d "${TESTCLASSES}" \
+    "${TESTSRC}"/Agent.java "${TESTSRC}"/DummyMain.java
+"$JAVAC" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d "${BOOTDIR}" \
+    "${TESTSRC}"/AgentSupport.java
 
 echo "Creating agent jar file..."
 
-"$JAR" -cvfm "${TESTCLASSES}"/Agent.jar "${TESTCLASSES}"/MANIFEST.MF \
+"$JAR" ${TESTTOOLVMOPTS} -cvfm "${TESTCLASSES}"/Agent.jar "${TESTCLASSES}"/MANIFEST.MF \
     -C "${TESTCLASSES}" Agent.class || exit 1
 
 echo "Running test..."
@@ -79,7 +87,8 @@ result=$?
 
 echo "Cleanup..."
 
-"$JAVAC" -d "${TESTCLASSES}" "${TESTSRC}"/Cleanup.java
-"$JAVA" -classpath "${TESTCLASSES}" Cleanup "${BOOTDIR}"
+"$JAVAC" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d "${TESTCLASSES}" \
+    "${TESTSRC}"/Cleanup.java
+"$JAVA" ${TESTTOOLVMOPTS} -classpath "${TESTCLASSES}" Cleanup "${BOOTDIR}"
 
 exit $result

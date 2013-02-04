@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+// this test has been disabled because of timeout issues.
+// see JDK-8006746
 
 package org.openjdk.tests.vm;
 
@@ -91,7 +94,7 @@ public class FDSeparateCompilationTest extends TestHarness {
     private static final ConcreteMethod canonicalMethod = new ConcreteMethod(
             "String", "m", "returns " + EMPTY + ";", AccessFlag.PUBLIC);
 
-    @Test(groups = "vm", dataProvider = "allShapes")
+    @Test(enabled = false, groups = "vm", dataProvider = "allShapes")
     public void separateCompilationTest(Hierarchy hs) {
         ClassCase cc = hs.root;
         Type type = sourceTypeFrom(hs.root);

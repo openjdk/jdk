@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 7093325
+ * @bug 7093325 8006694
  * @summary Redundant entry in bytecode exception table
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library lib
  * @build JavacTestingAbstractThreadedTest
- * @run main T7093325
+ * @run main/othervm T7093325
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.io.File;
 import java.net.URI;
@@ -170,8 +174,6 @@ public class T7093325
         if (!lastInlined) {
             gapsCount++;
         }
-
-        //System.out.printf("gaps %d \n %s \n", gapsCount, source.toString());
 
         File compiledTest = new File(String.format("Test%s.class", id));
         try {

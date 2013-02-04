@@ -136,7 +136,7 @@ int Compile::intrinsic_insertion_index(ciMethod* m, bool is_virtual) {
 
 void Compile::register_intrinsic(CallGenerator* cg) {
   if (_intrinsics == NULL) {
-    _intrinsics = new GrowableArray<CallGenerator*>(60);
+    _intrinsics = new (comp_arena())GrowableArray<CallGenerator*>(comp_arena(), 60, 0, NULL);
   }
   // This code is stolen from ciObjectFactory::insert.
   // Really, GrowableArray should have methods for
@@ -365,6 +365,21 @@ void Compile::update_dead_node_list(Unique_Node_List &useful) {
   }
 }
 
+void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful) {
+  int shift = 0;
+  for (int i = 0; i < inlines->length(); i++) {
+    CallGenerator* cg = inlines->at(i);
+    CallNode* call = cg->call_node();
+    if (shift > 0) {
+      inlines->at_put(i-shift, cg);
+    }
+    if (!useful.member(call)) {
+      shift++;
+    }
+  }
+  inlines->trunc_to(inlines->length()-shift);
+}
+
 // Disconnect all useless nodes by disconnecting those at the boundary.
 void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   uint next = 0;
@@ -394,6 +409,9 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       remove_macro_node(n);
     }
   }
+  // clean up the late inline lists
+  remove_useless_late_inlines(&_string_late_inlines, useful);
+  remove_useless_late_inlines(&_late_inlines, useful);
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
 
@@ -611,6 +629,12 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _printer(IdealGraphPrinter::printer()),
 #endif
                   _congraph(NULL),
+                  _late_inlines(comp_arena(), 2, 0, NULL),
+                  _string_late_inlines(comp_arena(), 2, 0, NULL),
+                  _late_inlines_pos(0),
+                  _number_of_mh_late_inlines(0),
+                  _inlining_progress(false),
+                  _inlining_incrementally(false),
                   _print_inlining_list(NULL),
                   _print_inlining(0) {
   C = this;
@@ -668,7 +692,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
 
-  if (PrintInlining) {
+  if (PrintInlining  || PrintIntrinsics NOT_PRODUCT( || PrintOptoInlining)) {
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
   }
   { // Scope for timing the parser
@@ -737,29 +761,13 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       rethrow_exceptions(kit.transfer_exceptions_into_jvms());
     }
 
-    if (!failing() && has_stringbuilder()) {
-      {
-        // remove useless nodes to make the usage analysis simpler
-        ResourceMark rm;
-        PhaseRemoveUseless pru(initial_gvn(), &for_igvn);
-      }
+    assert(IncrementalInline || (_late_inlines.length() == 0 && !has_mh_late_inlines()), "incremental inlining is off");
 
-      {
-        ResourceMark rm;
-        print_method("Before StringOpts", 3);
-        PhaseStringOpts pso(initial_gvn(), &for_igvn);
-        print_method("After StringOpts", 3);
-      }
-
-      // now inline anything that we skipped the first time around
-      while (_late_inlines.length() > 0) {
-        CallGenerator* cg = _late_inlines.pop();
-        cg->do_late_inline();
-        if (failing())  return;
-      }
+    if (_late_inlines.length() == 0 && !has_mh_late_inlines() && !failing() && has_stringbuilder()) {
+      inline_string_calls(true);
     }
-    assert(_late_inlines.length() == 0, "should have been processed");
-    dump_inlining();
+
+    if (failing())  return;
 
     print_method("Before RemoveUseless", 3);
 
@@ -906,6 +914,9 @@ Compile::Compile( ciEnv* ci_env,
     _dead_node_list(comp_arena()),
     _dead_node_count(0),
     _congraph(NULL),
+    _number_of_mh_late_inlines(0),
+    _inlining_progress(false),
+    _inlining_incrementally(false),
     _print_inlining_list(NULL),
     _print_inlining(0) {
   C = this;
@@ -1760,6 +1771,124 @@ void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
   assert(predicate_count()==0, "should be clean!");
 }
 
+// StringOpts and late inlining of string methods
+void Compile::inline_string_calls(bool parse_time) {
+  {
+    // remove useless nodes to make the usage analysis simpler
+    ResourceMark rm;
+    PhaseRemoveUseless pru(initial_gvn(), for_igvn());
+  }
+
+  {
+    ResourceMark rm;
+    print_method("Before StringOpts", 3);
+    PhaseStringOpts pso(initial_gvn(), for_igvn());
+    print_method("After StringOpts", 3);
+  }
+
+  // now inline anything that we skipped the first time around
+  if (!parse_time) {
+    _late_inlines_pos = _late_inlines.length();
+  }
+
+  while (_string_late_inlines.length() > 0) {
+    CallGenerator* cg = _string_late_inlines.pop();
+    cg->do_late_inline();
+    if (failing())  return;
+  }
+  _string_late_inlines.trunc_to(0);
+}
+
+void Compile::inline_incrementally_one(PhaseIterGVN& igvn) {
+  assert(IncrementalInline, "incremental inlining should be on");
+  PhaseGVN* gvn = initial_gvn();
+
+  set_inlining_progress(false);
+  for_igvn()->clear();
+  gvn->replace_with(&igvn);
+
+  int i = 0;
+
+  for (; i <_late_inlines.length() && !inlining_progress(); i++) {
+    CallGenerator* cg = _late_inlines.at(i);
+    _late_inlines_pos = i+1;
+    cg->do_late_inline();
+    if (failing())  return;
+  }
+  int j = 0;
+  for (; i < _late_inlines.length(); i++, j++) {
+    _late_inlines.at_put(j, _late_inlines.at(i));
+  }
+  _late_inlines.trunc_to(j);
+
+  {
+    ResourceMark rm;
+    PhaseRemoveUseless pru(C->initial_gvn(), C->for_igvn());
+  }
+
+  igvn = PhaseIterGVN(gvn);
+}
+
+// Perform incremental inlining until bound on number of live nodes is reached
+void Compile::inline_incrementally(PhaseIterGVN& igvn) {
+  PhaseGVN* gvn = initial_gvn();
+
+  set_inlining_incrementally(true);
+  set_inlining_progress(true);
+  uint low_live_nodes = 0;
+
+  while(inlining_progress() && _late_inlines.length() > 0) {
+
+    if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
+      if (low_live_nodes < (uint)LiveNodeCountInliningCutoff * 8 / 10) {
+        // PhaseIdealLoop is expensive so we only try it once we are
+        // out of loop and we only try it again if the previous helped
+        // got the number of nodes down significantly
+        PhaseIdealLoop ideal_loop( igvn, false, true );
+        if (failing())  return;
+        low_live_nodes = live_nodes();
+        _major_progress = true;
+      }
+
+      if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
+        break;
+      }
+    }
+
+    inline_incrementally_one(igvn);
+
+    if (failing())  return;
+
+    igvn.optimize();
+
+    if (failing())  return;
+  }
+
+  assert( igvn._worklist.size() == 0, "should be done with igvn" );
+
+  if (_string_late_inlines.length() > 0) {
+    assert(has_stringbuilder(), "inconsistent");
+    for_igvn()->clear();
+    initial_gvn()->replace_with(&igvn);
+
+    inline_string_calls(false);
+
+    if (failing())  return;
+
+    {
+      ResourceMark rm;
+      PhaseRemoveUseless pru(initial_gvn(), for_igvn());
+    }
+
+    igvn = PhaseIterGVN(gvn);
+
+    igvn.optimize();
+  }
+
+  set_inlining_incrementally(false);
+}
+
+
 //------------------------------Optimize---------------------------------------
 // Given a graph, optimize it.
 void Compile::Optimize() {
@@ -1789,6 +1918,12 @@ void Compile::Optimize() {
   }
 
   print_method("Iter GVN 1", 2);
+
+  if (failing())  return;
+
+  inline_incrementally(igvn);
+
+  print_method("Incremental Inline", 2);
 
   if (failing())  return;
 
@@ -1914,6 +2049,7 @@ void Compile::Optimize() {
 
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
+  dump_inlining();
   // A method with only infinite loops has no edges entering loops from root
   {
     NOT_PRODUCT( TracePhase t2("graphReshape", &_t_graphReshaping, TimeCompiler); )
@@ -3361,7 +3497,29 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
 }
 
 void Compile::dump_inlining() {
-  if (PrintInlining) {
+  if (PrintInlining || PrintIntrinsics NOT_PRODUCT( || PrintOptoInlining)) {
+    // Print inlining message for candidates that we couldn't inline
+    // for lack of space or non constant receiver
+    for (int i = 0; i < _late_inlines.length(); i++) {
+      CallGenerator* cg = _late_inlines.at(i);
+      cg->print_inlining_late("live nodes > LiveNodeCountInliningCutoff");
+    }
+    Unique_Node_List useful;
+    useful.push(root());
+    for (uint next = 0; next < useful.size(); ++next) {
+      Node* n  = useful.at(next);
+      if (n->is_Call() && n->as_Call()->generator() != NULL && n->as_Call()->generator()->call_node() == n) {
+        CallNode* call = n->as_Call();
+        CallGenerator* cg = call->generator();
+        cg->print_inlining_late("receiver not constant");
+      }
+      uint max = n->len();
+      for ( uint i = 0; i < max; ++i ) {
+        Node *m = n->in(i);
+        if ( m == NULL ) continue;
+        useful.push(m);
+      }
+    }
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       tty->print(_print_inlining_list->at(i).ss()->as_string());
     }

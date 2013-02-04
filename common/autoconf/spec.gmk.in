@@ -434,6 +434,12 @@ NATIVE2ASCII=@FIXPATH@ $(BOOT_JDK)/bin/native2ascii
 
 JARSIGNER=@FIXPATH@ $(BOOT_JDK)/bin/jarsigner
 
+# You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
+BOOTSTRAP_JAVAC_JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
+BOOTSTRAP_JAVAC_ARGS:="-Xbootclasspath/p:$(BOOTSTRAP_JAVAC_JAR)" -cp $(BOOTSTRAP_JAVAC_JAR)
+NEW_JAVAC   = $(BOOTSTRAP_JAVAC_ARGS) com.sun.tools.javac.Main
+NEW_JAVADOC = $(BOOTSTRAP_JAVAC_ARGS) com.sun.tools.javadoc.Main
+
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple
 # times.

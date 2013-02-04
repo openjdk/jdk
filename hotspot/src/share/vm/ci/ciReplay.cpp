@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -645,7 +645,7 @@ class CompileReplay : public StackObj {
         java_mirror->bool_field_put(fd.offset(), value);
       } else if (strcmp(field_signature, "J") == 0) {
         jlong value;
-        if (sscanf(string_value, INT64_FORMAT, &value) != 1) {
+        if (sscanf(string_value, JLONG_FORMAT, &value) != 1) {
           fprintf(stderr, "Error parsing long: %s\n", string_value);
           return;
         }

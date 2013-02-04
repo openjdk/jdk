@@ -51,7 +51,8 @@ _compile(){
     rm -f ${_testclasses}/JMXStartStopTest.class
 
     # Compile testcase
-    ${TESTJAVA}/bin/javac -d ${_testclasses} JMXStartStopDoSomething.java JMXStartStopTest.java 
+    ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${_testclasses} \
+	JMXStartStopDoSomething.java JMXStartStopTest.java 
 
     if [ ! -f ${_testclasses}/JMXStartStopTest.class ]
     then
@@ -82,7 +83,7 @@ _app_start(){
 }
 
 _get_pid(){
-    ${TESTJAVA}/bin/jps | sed -n "/JMXStartStopDoSomething/s/ .*//p"
+    ${COMPILEJAVA}/bin/jps ${TESTTOOLVMOPTS} | sed -n "/JMXStartStopDoSomething/s/ .*//p"
 }
 
 _app_stop(){
@@ -115,7 +116,7 @@ _testme(){
 
   
 _jcmd(){
-  ${TESTJAVA}/bin/jcmd JMXStartStopDoSomething $* > /dev/null 2>/dev/null
+  ${TESTJAVA}/bin/jcmd ${TESTTOOLVMOPTS} JMXStartStopDoSomething $* > /dev/null 2>/dev/null
 } 
 
 _echo(){
@@ -445,7 +446,7 @@ test_11(){
 
     _jcmd ManagementAgent.stop
 
-    pid=`${TESTJAVA}/bin/jps | sed -n "/JMXStartStopDoSomething/s/ .*//p"`
+    pid=`${COMPILEJAVA}/bin/jps ${TESTTOOLVMOPTS} | sed -n "/JMXStartStopDoSomething/s/ .*//p"`
     res2=`_testme local ${pid}`
 
     if [ "${res1}" = "OK_CONN" -a "${res2}" = "OK_CONN" ] 
@@ -528,6 +529,7 @@ if [ ! -x "${TESTJAVA}/bin/jcmd" ]
 then
   echo "${TESTJAVA}/bin/jcmd"
   echo "Doesn't exist or not an executable"
+  exit
 fi
 
 

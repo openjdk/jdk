@@ -56,7 +56,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.spi.LocaleServiceProvider;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
-import sun.util.resources.LocaleData;
 
 /**
  * <code>NumberFormat</code> is the abstract base class for all number

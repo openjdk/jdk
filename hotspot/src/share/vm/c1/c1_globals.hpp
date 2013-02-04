@@ -147,7 +147,7 @@
           "Inline methods containing exception handlers "                   \
           "(NOTE: does not work with current backend)")                     \
                                                                             \
-  develop(bool, InlineSynchronizedMethods, true,                            \
+  product(bool, InlineSynchronizedMethods, true,                            \
           "Inline synchronized methods")                                    \
                                                                             \
   develop(bool, InlineNIOCheckIndex, true,                                  \
