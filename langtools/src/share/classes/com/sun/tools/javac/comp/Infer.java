@@ -66,6 +66,9 @@ public class Infer {
     Log log;
     JCDiagnostic.Factory diags;
 
+    /** Should we inject return-type constraints earlier? */
+    boolean allowEarlyReturnConstraints;
+
     public static Infer instance(Context context) {
         Infer instance = context.get(inferKey);
         if (instance == null)
@@ -83,6 +86,7 @@ public class Infer {
         chk = Check.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         inferenceException = new InferenceException(diags);
+        allowEarlyReturnConstraints = Source.instance(context).allowEarlyReturnConstraints();
     }
 
    /**
@@ -188,19 +192,6 @@ public class Infer {
             MethodType mtype,
             Attr.ResultInfo resultInfo,
             Warner warn) throws InferenceException {
-        Type to = resultInfo.pt;
-        if (to.hasTag(NONE) || resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
-            to = mtype.getReturnType().isPrimitiveOrVoid() ?
-                    mtype.getReturnType() : syms.objectType;
-        }
-        Type qtype1 = inferenceContext.asFree(mtype.getReturnType(), types);
-        if (!types.isSubtype(qtype1,
-                qtype1.hasTag(UNDETVAR) ? types.boxedTypeOrType(to) : to)) {
-            throw inferenceException
-                    .setMessage("infer.no.conforming.instance.exists",
-                    inferenceContext.restvars(), mtype.getReturnType(), to);
-        }
-
         while (true) {
             boolean stuck = true;
             for (Type t : inferenceContext.undetvars) {
@@ -283,6 +274,11 @@ public class Infer {
         try {
             methodCheck.argumentsAcceptable(env, deferredAttrContext, argtypes, mt.getParameterTypes(), warn);
 
+            if (resultInfo != null && allowEarlyReturnConstraints &&
+                    !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+                generateReturnConstraints(mt, inferenceContext, resultInfo);
+            }
+
             deferredAttrContext.complete();
 
             // minimize as yet undetermined type variables
@@ -298,6 +294,9 @@ public class Infer {
 
             if (!restvars.isEmpty()) {
                 if (resultInfo != null && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+                    if (!allowEarlyReturnConstraints) {
+                        generateReturnConstraints(mt, inferenceContext, resultInfo);
+                    }
                     instantiateUninferred(env.tree.pos(), inferenceContext, mt, resultInfo, warn);
                     checkWithinBounds(inferenceContext, warn);
                     mt = (MethodType)inferenceContext.asInstType(mt, types);
@@ -313,6 +312,25 @@ public class Infer {
             inferenceContext.notifyChange(types);
         }
     }
+    //where
+        void generateReturnConstraints(Type mt, InferenceContext inferenceContext, Attr.ResultInfo resultInfo) {
+            if (resultInfo != null) {
+                Type to = resultInfo.pt;
+                if (to.hasTag(NONE) || resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
+                    to = mt.getReturnType().isPrimitiveOrVoid() ?
+                            mt.getReturnType() : syms.objectType;
+                }
+                Type qtype1 = inferenceContext.asFree(mt.getReturnType(), types);
+                Warner retWarn = new Warner();
+                if (!resultInfo.checkContext.compatible(qtype1, qtype1.hasTag(UNDETVAR) ? types.boxedTypeOrType(to) : to, retWarn) ||
+                        //unchecked conversion is not allowed
+                        retWarn.hasLint(Lint.LintCategory.UNCHECKED)) {
+                    throw inferenceException
+                            .setMessage("infer.no.conforming.instance.exists",
+                            inferenceContext.restvars(), mt.getReturnType(), to);
+                }
+            }
+        }
 
     /** check that type parameters are within their bounds.
      */
@@ -461,52 +479,40 @@ public class Infer {
             Type formalInterface = funcInterface.tsym.type;
             InferenceContext funcInterfaceContext =
                     new InferenceContext(funcInterface.tsym.type.getTypeArguments(), this, false);
-            if (paramTypes != null) {
-                //get constraints from explicit params (this is done by
-                //checking that explicit param types are equal to the ones
-                //in the functional interface descriptors)
-                List<Type> descParameterTypes = types.findDescriptorType(formalInterface).getParameterTypes();
-                if (descParameterTypes.size() != paramTypes.size()) {
-                    checkContext.report(pos, diags.fragment("incompatible.arg.types.in.lambda"));
+            Assert.check(paramTypes != null);
+            //get constraints from explicit params (this is done by
+            //checking that explicit param types are equal to the ones
+            //in the functional interface descriptors)
+            List<Type> descParameterTypes = types.findDescriptorType(formalInterface).getParameterTypes();
+            if (descParameterTypes.size() != paramTypes.size()) {
+                checkContext.report(pos, diags.fragment("incompatible.arg.types.in.lambda"));
+                return types.createErrorType(funcInterface);
+            }
+            for (Type p : descParameterTypes) {
+                if (!types.isSameType(funcInterfaceContext.asFree(p, types), paramTypes.head)) {
+                    checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
                     return types.createErrorType(funcInterface);
                 }
-                for (Type p : descParameterTypes) {
-                    if (!types.isSameType(funcInterfaceContext.asFree(p, types), paramTypes.head)) {
-                        checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
-                        return types.createErrorType(funcInterface);
-                    }
-                    paramTypes = paramTypes.tail;
-                }
-                for (Type t : funcInterfaceContext.undetvars) {
-                    UndetVar uv = (UndetVar)t;
-                    minimizeInst(uv, types.noWarnings);
-                    if (uv.inst == null &&
-                            Type.filter(uv.getBounds(InferenceBound.UPPER), boundFilter).nonEmpty()) {
-                        maximizeInst(uv, types.noWarnings);
-                    }
-                }
-
-                formalInterface = funcInterfaceContext.asInstType(formalInterface, types);
+                paramTypes = paramTypes.tail;
             }
-            ListBuffer<Type> typeargs = ListBuffer.lb();
             List<Type> actualTypeargs = funcInterface.getTypeArguments();
-            //for remaining uninferred type-vars in the functional interface type,
-            //simply replace the wildcards with its bound
-            for (Type t : formalInterface.getTypeArguments()) {
-                if (actualTypeargs.head.hasTag(WILDCARD)) {
-                    WildcardType wt = (WildcardType)actualTypeargs.head;
-                    typeargs.append(wt.type);
-                } else {
-                    typeargs.append(actualTypeargs.head);
+            for (Type t : funcInterfaceContext.undetvars) {
+                UndetVar uv = (UndetVar)t;
+                minimizeInst(uv, types.noWarnings);
+                if (uv.inst == null &&
+                        Type.filter(uv.getBounds(InferenceBound.UPPER), boundFilter).nonEmpty()) {
+                    maximizeInst(uv, types.noWarnings);
+                }
+                if (uv.inst == null) {
+                    uv.inst = actualTypeargs.head;
                 }
                 actualTypeargs = actualTypeargs.tail;
             }
-            Type owntype = types.subst(formalInterface, funcInterfaceContext.inferenceVars(), typeargs.toList());
+            Type owntype = funcInterfaceContext.asInstType(formalInterface, types);
             if (!chk.checkValidGenericType(owntype)) {
                 //if the inferred functional interface type is not well-formed,
                 //or if it's not a subtype of the original target, issue an error
                 checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
-                return types.createErrorType(funcInterface);
             }
             return owntype;
         }

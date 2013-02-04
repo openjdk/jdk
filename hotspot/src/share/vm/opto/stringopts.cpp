@@ -265,7 +265,8 @@ void StringConcat::eliminate_unneeded_control() {
     } else if (n->is_IfTrue()) {
       Compile* C = _stringopts->C;
       C->gvn_replace_by(n, n->in(0)->in(0));
-      C->gvn_replace_by(n->in(0), C->top());
+      // get rid of the other projection
+      C->gvn_replace_by(n->in(0)->as_If()->proj_out(false), C->top());
     }
   }
 }
@@ -439,7 +440,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       }
       // Find the constructor call
       Node* result = alloc->result_cast();
-      if (result == NULL || !result->is_CheckCastPP()) {
+      if (result == NULL || !result->is_CheckCastPP() || alloc->in(TypeFunc::Memory)->is_top()) {
         // strange looking allocation
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
@@ -834,6 +835,9 @@ bool StringConcat::validate_control_flow() {
           ptr->in(1)->in(0) != NULL && ptr->in(1)->in(0)->is_If()) {
         // Simple diamond.
         // XXX should check for possibly merging stores.  simple data merges are ok.
+        // The IGVN will make this simple diamond go away when it
+        // transforms the Region. Make sure it sees it.
+        Compile::current()->record_for_igvn(ptr);
         ptr = ptr->in(1)->in(0)->in(0);
         continue;
       }

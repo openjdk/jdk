@@ -1287,19 +1287,24 @@ class Attribute implements Comparable<Attribute> {
                 if (localRef == 0) {
                     globalRef = null;  // N.B. global null reference is -1
                 } else {
-                    globalRef = holder.getCPMap()[localRef];
-                    if (e.refKind == CONSTANT_Signature
+                    Entry[] cpMap = holder.getCPMap();
+                    globalRef = (localRef >= 0 && localRef < cpMap.length
+                                    ? cpMap[localRef]
+                                    : null);
+                    byte tag = e.refKind;
+                    if (globalRef != null && tag == CONSTANT_Signature
                         && globalRef.getTag() == CONSTANT_Utf8) {
                         // Cf. ClassReader.readSignatureRef.
                         String typeName = globalRef.stringValue();
                         globalRef = ConstantPool.getSignatureEntry(typeName);
-                    } else if (e.refKind == CONSTANT_FieldSpecific) {
-                        assert(globalRef.getTag() >= CONSTANT_Integer);
-                        assert(globalRef.getTag() <= CONSTANT_String ||
-                               globalRef.getTag() >= CONSTANT_MethodHandle);
-                        assert(globalRef.getTag() <= CONSTANT_MethodType);
-                    } else if (e.refKind < CONSTANT_GroupFirst) {
-                        assert(e.refKind == globalRef.getTag());
+                    }
+                    String got = (globalRef == null
+                        ? "invalid CP index"
+                        : "type=" + ConstantPool.tagName(globalRef.tag));
+                    if (globalRef == null || !globalRef.tagMatches(tag)) {
+                        throw new IllegalArgumentException(
+                                "Bad constant, expected type=" +
+                                ConstantPool.tagName(tag) + " got " + got);
                     }
                 }
                 out.putRef(bandIndex, globalRef);

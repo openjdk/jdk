@@ -64,7 +64,8 @@ import java.nio.charset.StandardCharsets;
  *     RFC 2045 for encoding and decoding operation. The encoded output
  *     must be represented in lines of no more than 76 characters each
  *     and uses a carriage return {@code '\r'} followed immediately by
- *     a linefeed {@code '\n'} as the line separator. All line separators
+ *     a linefeed {@code '\n'} as the line separator. No line separator
+ *     is added to the end of the encoded output. All line separators
  *     or other characters not found in the base64 alphabet table are
  *     ignored in decoding operation.</p></li>
  * </ul>
@@ -413,6 +414,7 @@ public class Base64 {
          *          specified Base64 encoded format
          */
         public OutputStream wrap(OutputStream os) {
+            Objects.requireNonNull(os);
             return new EncOutputStream(os, isURL ? toBase64URL : toBase64,
                                        newline, linemax);
         }
@@ -613,6 +615,13 @@ public class Base64 {
      * This class implements a decoder for decoding byte data using the
      * Base64 encoding scheme as specified in RFC 4648 and RFC 2045.
      *
+     * <p> The Base64 padding character {@code '='} is accepted and
+     * interpreted as the end of the encoded byte data, but is not
+     * required. So if the final unit of the encoded byte data only has
+     * two or three Base64 characters (without the corresponding padding
+     * character(s) padded), they are decoded as if followed by padding
+     * character(s).
+     *
      * <p> Instances of {@link Decoder} class are safe for use by
      * multiple concurrent threads.
      *
@@ -695,7 +704,7 @@ public class Base64 {
          * using the {@link Base64} encoding scheme.
          *
          * <p> An invocation of this method has exactly the same effect as invoking
-         * {@code return decode(src.getBytes(StandardCharsets.ISO_8859_1))}
+         * {@code decode(src.getBytes(StandardCharsets.ISO_8859_1))}
          *
          * @param   src
          *          the string to decode
@@ -856,6 +865,9 @@ public class Base64 {
         /**
          * Returns an input stream for decoding {@link Base64} encoded byte stream.
          *
+         * <p> The {@code read}  methods of the returned {@code InputStream} will
+         * throw {@code IOException} when reading bytes that cannot be decoded.
+         *
          * <p> Closing the returned input stream will close the underlying
          * input stream.
          *
@@ -866,6 +878,7 @@ public class Base64 {
          *          byte stream
          */
         public InputStream wrap(InputStream is) {
+            Objects.requireNonNull(is);
             return new DecInputStream(is, isURL ? fromBase64URL : fromBase64, isMIME);
         }
 
@@ -881,13 +894,16 @@ public class Base64 {
             int    dl = dst.arrayOffset() + dst.limit();
             int    dp0 = dp;
             int    mark = sp;
-            boolean padding = false;
             try {
                 while (sp < sl) {
                     int b = sa[sp++] & 0xff;
                     if ((b = base64[b]) < 0) {
                         if (b == -2) {   // padding byte
-                            padding = true;
+                            if (shiftto == 6 && (sp == sl || sa[sp++] != '=') ||
+                                shiftto == 18) {
+                                throw new IllegalArgumentException(
+                                     "Input byte array has wrong 4-byte ending unit");
+                            }
                             break;
                         }
                         if (isMIME)     // skip if for rfc2045
@@ -913,24 +929,23 @@ public class Base64 {
                 if (shiftto == 6) {
                     if (dl - dp < 1)
                         return dp - dp0;
-                    if (padding && (sp + 1 != sl || sa[sp++] != '='))
-                        throw new IllegalArgumentException(
-                            "Input buffer has wrong 4-byte ending unit");
                     da[dp++] = (byte)(bits >> 16);
-                    mark = sp;
                 } else if (shiftto == 0) {
                     if (dl - dp < 2)
                         return dp - dp0;
-                    if (padding && sp != sl)
-                        throw new IllegalArgumentException(
-                            "Input buffer has wrong 4-byte ending unit");
                     da[dp++] = (byte)(bits >> 16);
                     da[dp++] = (byte)(bits >>  8);
-                    mark = sp;
-                } else if (padding || shiftto != 18) {
+                } else if (shiftto == 12) {
                     throw new IllegalArgumentException(
                         "Last unit does not have enough valid bits");
                 }
+                while (sp < sl) {
+                    if (isMIME && base64[sa[sp++]] < 0)
+                        continue;
+                    throw new IllegalArgumentException(
+                        "Input byte array has incorrect ending byte at " + sp);
+                }
+                mark = sp;
                 return dp - dp0;
             } finally {
                 src.position(mark);
@@ -948,14 +963,16 @@ public class Base64 {
             int    dl = dst.limit();
             int    dp0 = dp;
             int    mark = sp;
-            boolean padding = false;
-
             try {
                 while (sp < sl) {
                     int b = src.get(sp++) & 0xff;
                     if ((b = base64[b]) < 0) {
                         if (b == -2) {  // padding byte
-                            padding = true;
+                            if (shiftto == 6 && (sp == sl || src.get(sp++) != '=') ||
+                                shiftto == 18) {
+                                throw new IllegalArgumentException(
+                                     "Input byte array has wrong 4-byte ending unit");
+                            }
                             break;
                         }
                         if (isMIME)     // skip if for rfc2045
@@ -981,24 +998,23 @@ public class Base64 {
                 if (shiftto == 6) {
                     if (dl - dp < 1)
                         return dp - dp0;
-                    if (padding && (sp + 1 != sl || src.get(sp++) != '='))
-                        throw new IllegalArgumentException(
-                            "Input buffer has wrong 4-byte ending unit");
                      dst.put(dp++, (byte)(bits >> 16));
-                     mark = sp;
                 } else if (shiftto == 0) {
                     if (dl - dp < 2)
                         return dp - dp0;
-                    if (padding && sp != sl)
-                        throw new IllegalArgumentException(
-                            "Input buffer has wrong 4-byte ending unit");
                     dst.put(dp++, (byte)(bits >> 16));
                     dst.put(dp++, (byte)(bits >>  8));
-                    mark = sp;
-                } else if (padding || shiftto != 18) {
+                } else if (shiftto == 12) {
                     throw new IllegalArgumentException(
                         "Last unit does not have enough valid bits");
                 }
+                while (sp < sl) {
+                    if (isMIME && base64[src.get(sp++)] < 0)
+                        continue;
+                    throw new IllegalArgumentException(
+                        "Input byte array has incorrect ending byte at " + sp);
+                }
+                mark = sp;
                 return dp - dp0;
             } finally {
                 src.position(mark);
@@ -1012,9 +1028,12 @@ public class Base64 {
             int len = sl - sp;
             if (len == 0)
                 return 0;
-            if (len < 2)
+            if (len < 2) {
+                if (isMIME && base64[0] == -1)
+                    return 0;
                 throw new IllegalArgumentException(
                     "Input byte[] should at least have 2 bytes for base64 bytes");
+            }
             if (src[sl - 1] == '=') {
                 paddings++;
                 if (src[sl - 2] == '=')
@@ -1043,12 +1062,20 @@ public class Base64 {
             int dp = 0;
             int bits = 0;
             int shiftto = 18;       // pos of first byte of 4-byte atom
-            boolean padding = false;
             while (sp < sl) {
                 int b = src[sp++] & 0xff;
                 if ((b = base64[b]) < 0) {
-                    if (b == -2) {     // padding byte
-                        padding = true;
+                    if (b == -2) {     // padding byte '='
+                        // xx=   shiftto==6&&sp==sl missing last =
+                        // xx=y  shiftto==6 last is not =
+                        // =     shiftto==18 unnecessary padding
+                        // x=    shiftto==12 be taken care later
+                        //       together with single x, invalid anyway
+                        if (shiftto == 6 && (sp == sl || src[sp++] != '=') ||
+                            shiftto == 18) {
+                            throw new IllegalArgumentException(
+                                "Input byte array has wrong 4-byte ending unit");
+                        }
                         break;
                     }
                     if (isMIME)    // skip if for rfc2045
@@ -1068,22 +1095,23 @@ public class Base64 {
                     bits = 0;
                 }
             }
-            // reach end of byte arry or hit padding '=' characters.
-            // if '=' presents, they must be the last one or two.
-            if (shiftto == 6) {           // xx==
-                if (padding && (sp + 1 != sl || src[sp] != '='))
-                    throw new IllegalArgumentException(
-                        "Input byte array has wrong 4-byte ending unit");
+            // reached end of byte array or hit padding '=' characters.
+            if (shiftto == 6) {
                 dst[dp++] = (byte)(bits >> 16);
-            } else if (shiftto == 0) {    // xxx=
-                if (padding && sp != sl)
-                    throw new IllegalArgumentException(
-                        "Input byte array has wrong 4-byte ending unit");
+            } else if (shiftto == 0) {
                 dst[dp++] = (byte)(bits >> 16);
                 dst[dp++] = (byte)(bits >>  8);
-            } else if (padding || shiftto != 18) {
-                    throw new IllegalArgumentException(
-                        "last unit does not have enough bytes");
+            } else if (shiftto == 12) {
+                throw new IllegalArgumentException(
+                    "Last unit does not have enough valid bits");
+            }
+            // anything left is invalid, if is not MIME.
+            // if MIME, ignore all non-base64 character
+            while (sp < sl) {
+                if (isMIME && base64[src[sp++]] < 0)
+                    continue;
+                throw new IllegalArgumentException(
+                    "Input byte array has incorrect ending byte at " + sp);
             }
             return dp;
         }
@@ -1247,8 +1275,22 @@ public class Base64 {
                 int v = is.read();
                 if (v == -1) {
                     eof = true;
-                    if (nextin != 18)
-                        throw new IOException("Base64 stream has un-decoded dangling byte(s).");
+                    if (nextin != 18) {
+                        if (nextin == 12)
+                            throw new IOException("Base64 stream has one un-decoded dangling byte.");
+                        // treat ending xx/xxx without padding character legal.
+                        // same logic as v == 'v' below
+                        b[off++] = (byte)(bits >> (16));
+                        len--;
+                        if (nextin == 0) {           // only one padding byte
+                            if (len == 0) {          // no enough output space
+                                bits >>= 8;          // shift to lowest byte
+                                nextout = 0;
+                            } else {
+                                b[off++] = (byte) (bits >>  8);
+                            }
+                        }
+                    }
                     if (off == oldOff)
                         return -1;
                     else

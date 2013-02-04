@@ -57,8 +57,10 @@ import com.sun.tools.classfile.MethodParameters_attribute;
 import com.sun.tools.classfile.Opcode;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
+import com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
+import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
 import com.sun.tools.classfile.Signature_attribute;
 import com.sun.tools.classfile.SourceDebugExtension_attribute;
 import com.sun.tools.classfile.SourceFile_attribute;
@@ -1213,6 +1215,21 @@ class AttributeVisitor implements Attribute.Visitor<Element, Element> {
         e.trimToSize();
         p.add(e);
         return null;
+    }
+
+    /*
+     * TODO
+     * add these two for now to keep the compiler happy, we will implement
+     * these along with the JSR-308 changes.
+     */
+    @Override
+    public Element visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute rvta, Element p) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Element visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute rita, Element p) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
 

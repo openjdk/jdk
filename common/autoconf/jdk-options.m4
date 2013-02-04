@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -235,7 +235,7 @@ HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
 # from configure, but only server is valid anyway. Fix this
 # when hotspot makefiles are rewritten.
 if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_product
+    HOTSPOT_TARGET=universal_${HOTSPOT_EXPORT}
 fi
 
 #####
@@ -247,46 +247,50 @@ AC_SUBST(DEBUG_CLASSFILES)
 AC_SUBST(BUILD_VARIANT_RELEASE)
 ])
 
-AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
-[
 
 ###############################################################################
 #
 # Should we build only OpenJDK even if closed sources are present?
 #
-AC_ARG_ENABLE([openjdk-only], [AS_HELP_STRING([--enable-openjdk-only],
-    [supress building closed source even if present @<:@disabled@:>@])],,[enable_openjdk_only="no"])
+AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
+[
+  AC_ARG_ENABLE([openjdk-only], [AS_HELP_STRING([--enable-openjdk-only],
+    [suppress building custom source even if present @<:@disabled@:>@])],,[enable_openjdk_only="no"])
 
-AC_MSG_CHECKING([for presence of closed sources])
-if test -d "$SRC_ROOT/jdk/src/closed"; then
+  AC_MSG_CHECKING([for presence of closed sources])
+  if test -d "$SRC_ROOT/jdk/src/closed"; then
     CLOSED_SOURCE_PRESENT=yes
-else
-    CLOSED_SOURCE_PRESENT=no
-fi
-AC_MSG_RESULT([$CLOSED_SOURCE_PRESENT])
-
-AC_MSG_CHECKING([if closed source is supressed (openjdk-only)])
-SUPRESS_CLOSED_SOURCE="$enable_openjdk_only"
-AC_MSG_RESULT([$SUPRESS_CLOSED_SOURCE])
-
-if test "x$CLOSED_SOURCE_PRESENT" = xno; then
-  OPENJDK=true
-  if test "x$SUPRESS_CLOSED_SOURCE" = "xyes"; then
-    AC_MSG_WARN([No closed source present, --enable-openjdk-only makes no sense])
-  fi
-else
-  if test "x$SUPRESS_CLOSED_SOURCE" = "xyes"; then
-    OPENJDK=true
   else
-    OPENJDK=false
+    CLOSED_SOURCE_PRESENT=no
   fi
-fi
+  AC_MSG_RESULT([$CLOSED_SOURCE_PRESENT])
 
-if test "x$OPENJDK" = "xtrue"; then
+  AC_MSG_CHECKING([if closed source is suppressed (openjdk-only)])
+  SUPPRESS_CLOSED_SOURCE="$enable_openjdk_only"
+  AC_MSG_RESULT([$SUPPRESS_CLOSED_SOURCE])
+
+  if test "x$CLOSED_SOURCE_PRESENT" = xno; then
+    OPENJDK=true
+    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
+      AC_MSG_WARN([No closed source present, --enable-openjdk-only makes no sense])
+    fi
+  else
+    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
+      OPENJDK=true
+    else
+      OPENJDK=false
+    fi
+  fi
+
+  if test "x$OPENJDK" = "xtrue"; then
     SET_OPENJDK="OPENJDK=true"
-fi
+  fi
 
-AC_SUBST(SET_OPENJDK)
+  AC_SUBST(SET_OPENJDK)
+])
+
+AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
+[
 
 ###############################################################################
 #
@@ -369,13 +373,52 @@ COMPRESS_JARS=false
 AC_SUBST(COMPRESS_JARS)
 ])
 
+###############################################################################
+#
+# Setup version numbers
+#
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
 [
 # Source the version numbers
-. $AUTOCONF_DIR/version.numbers
-if test "x$OPENJDK" = "xfalse"; then
-    . $AUTOCONF_DIR/closed.version.numbers
+. $AUTOCONF_DIR/version-numbers
+
+# Get the settings from parameters
+AC_ARG_WITH(milestone, [AS_HELP_STRING([--with-milestone], 
+                       [Set milestone value for build @<:@internal@:>@])])
+if test "x$with_milestone" = xyes; then
+  AC_MSG_ERROR([Milestone must have a value])
+elif test "x$with_milestone" != x; then
+    MILESTONE="$with_milestone"
 fi
+if test "x$MILESTONE" = x; then
+  MILESTONE=internal
+fi
+
+AC_ARG_WITH(build-number, [AS_HELP_STRING([--with-build-number], 
+                          [Set build number value for build @<:@b00@:>@])])
+if test "x$with_build_number" = xyes; then
+  AC_MSG_ERROR([Build number must have a value])
+elif test "x$with_build_number" != x; then
+  JDK_BUILD_NUMBER="$with_build_number"
+fi
+if test "x$JDK_BUILD_NUMBER" = x; then
+  JDK_BUILD_NUMBER=b00
+fi
+
+AC_ARG_WITH(user-release-suffix, [AS_HELP_STRING([--with-user-release-suffix], 
+        [Add a custom string to the version string if build number isn't set.@<:@username_builddateb00@:>@])])
+if test "x$with_user_release_suffix" = xyes; then
+  AC_MSG_ERROR([Release suffix must have a value])
+elif test "x$with_user_release_suffix" != x; then
+  USER_RELEASE_SUFFIX="$with_user_release_suffix"
+else
+  BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
+  # Avoid [:alnum:] since it depends on the locale.
+  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
+  USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+fi
+AC_SUBST(USER_RELEASE_SUFFIX)
+
 # Now set the JDK version, milestone, build number etc.
 AC_SUBST(JDK_MAJOR_VERSION)
 AC_SUBST(JDK_MINOR_VERSION)
@@ -394,34 +437,13 @@ AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 COPYRIGHT_YEAR=`date +'%Y'`
 AC_SUBST(COPYRIGHT_YEAR)
 
-RUNTIME_NAME="$PRODUCT_NAME $PRODUCT_SUFFIX"
-AC_SUBST(RUNTIME_NAME)
-
 if test "x$JDK_UPDATE_VERSION" != x; then
-    JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}_${JDK_UPDATE_VERSION}"
+  JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}_${JDK_UPDATE_VERSION}"
 else
-    JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}"
+  JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}"
 fi
 AC_SUBST(JDK_VERSION)
 
-if test "x$MILESTONE" != x; then
-    RELEASE="${JDK_VERSION}-${MILESTONE}${BUILD_VARIANT_RELEASE}"
-else
-    RELEASE="${JDK_VERSION}${BUILD_VARIANT_RELEASE}"
-fi
-AC_SUBST(RELEASE)
-
-if test "x$JDK_BUILD_NUMBER" != x; then
-    FULL_VERSION="${RELEASE}-${JDK_BUILD_NUMBER}"
-else
-    JDK_BUILD_NUMBER=b00
-    BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
-    # Avoid [:alnum:] since it depends on the locale.
-    CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
-    USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-    FULL_VERSION="${RELEASE}-${USER_RELEASE_SUFFIX}-${JDK_BUILD_NUMBER}"
-fi
-AC_SUBST(FULL_VERSION)
 COOKED_BUILD_NUMBER=`$ECHO $JDK_BUILD_NUMBER | $SED -e 's/^b//' -e 's/^0//'`
 AC_SUBST(COOKED_BUILD_NUMBER)
 ])
@@ -434,7 +456,7 @@ AC_SUBST(HOTSPOT_MAKE_ARGS)
 # The name of the Service Agent jar.
 SALIB_NAME="${LIBRARY_PREFIX}saproc${SHARED_LIBRARY_SUFFIX}"
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
+  SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
 fi
 AC_SUBST(SALIB_NAME)
 
