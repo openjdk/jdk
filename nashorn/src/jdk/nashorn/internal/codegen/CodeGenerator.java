@@ -490,15 +490,15 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         return null;
     }
 
-    private MethodEmitter loadArgs(final List<Node> args) {
+    private int loadArgs(final List<Node> args) {
         return loadArgs(args, null, false, args.size());
     }
 
-    private MethodEmitter loadArgs(final List<Node> args, final String signature, final boolean isVarArg, final int argCount) {
+    private int loadArgs(final List<Node> args, final String signature, final boolean isVarArg, final int argCount) {
         // arg have already been converted to objects here.
         if (isVarArg || argCount > LinkerCallSite.ARGLIMIT) {
             loadArgsArray(args);
-            return method;
+            return 1;
         }
 
         // pad with undefined if size is too short. argCount is the real number of args
@@ -520,7 +520,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             n++;
         }
 
-        return method;
+        return argCount;
     }
 
     @Override
@@ -556,9 +556,8 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 load(node);
                 method.convert(Type.OBJECT); // foo() makes no sense if foo == 3
                 // ScriptFunction will see CALLSITE_SCOPE and will bind scope accordingly.
-                method.loadNull();
-                loadArgs(args);
-                method.dynamicCall(callNode.getType(), args.size(), flags);
+                method.loadNull(); //the 'this'
+                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), flags);
             }
 
             private void evalCall(final IdentNode node, final int flags) {
@@ -597,8 +596,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 // This is some scope 'eval' or global eval replaced by user
                 // but not the built-in ECMAScript 'eval' function call
                 method.loadNull();
-                loadArgs(args);
-                method.dynamicCall(callNode.getType(), args.size(), flags);
+                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), flags);
 
                 method.label(eval_done);
             }
@@ -638,8 +636,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 method.dup();
                 method.dynamicGet(node.getType(), node.getProperty().getName(), getCallSiteFlags(), true);
                 method.swap();
-                loadArgs(args);
-                method.dynamicCall(callNode.getType(), args.size(), getCallSiteFlags());
+                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags());
                 assert method.peekType().equals(callNode.getType());
 
                 return null;
@@ -682,8 +679,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 }
                 method.dynamicGetIndex(node.getType(), getCallSiteFlags(), true);
                 method.swap();
-                loadArgs(args);
-                method.dynamicCall(callNode.getType(), args.size(), getCallSiteFlags());
+                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags());
                 assert method.peekType().equals(callNode.getType());
 
                 return null;
@@ -695,9 +691,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 load(function);
                 method.convert(Type.OBJECT); //TODO, e.g. booleans can be used as functions
                 method.loadNull(); // ScriptFunction will figure out the correct this when it sees CALLSITE_SCOPE
-
-                loadArgs(args);
-                method.dynamicCall(callNode.getType(), args.size(), getCallSiteFlags() | CALLSITE_SCOPE);
+                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags() | CALLSITE_SCOPE);
                 assert method.peekType().equals(callNode.getType());
 
                 return null;
@@ -1611,7 +1605,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         // Get the request arguments.
         final List<Node> args = runtimeNode.getArgs();
 
-        if (nullCheck(runtimeNode, args, new FunctionSignature(false, runtimeNode.getType(), args).toString())) {
+        if (nullCheck(runtimeNode, args, new FunctionSignature(false, false, runtimeNode.getType(), args).toString())) {
             return null;
         }
 
@@ -1627,6 +1621,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             CompilerConstants.className(ScriptRuntime.class),
             runtimeNode.getRequest().toString(),
             new FunctionSignature(
+                false,
                 false,
                 runtimeNode.getType(),
                 runtimeNode.getArgs().size()).toString());
@@ -2292,10 +2287,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         // Load function reference.
         load(callNode.getFunction()).convert(Type.OBJECT); // must detect type error
 
-        // Load arguments.
-        loadArgs(args);
-
-        method.dynamicNew(args.size(), getCallSiteFlags());
+        method.dynamicNew(1 + loadArgs(args), getCallSiteFlags());
         method.store(unaryNode.getSymbol());
 
         return null;
@@ -2884,7 +2876,10 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         final Label  falseLabel = new Label("ternary_false");
         final Label  exitLabel  = new Label("ternary_exit");
 
-        final Type widest = Type.widest(rhs.getType(), third.getType());
+        Type widest = Type.widest(rhs.getType(), third.getType());
+        if (rhs.getType().isArray() || third.getType().isArray()) { //loadArray creates a Java array type on the stack, calls global allocate, which creates a native array type
+            widest = Type.OBJECT;
+        }
 
         load(lhs);
         assert lhs.getType().isBoolean() : "lhs in ternary must be boolean";
@@ -3159,7 +3154,6 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         }
 
         private void epilogue() {
-            final Symbol targetSymbol = target.getSymbol();
             final FunctionNode currentFunction = getCurrentFunctionNode();
 
             /**
@@ -3176,7 +3170,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 @Override
                 protected Node enterDefault(Node node) {
                     throw new AssertionError("Unexpected node " + node + " in store epilogue");
-                };
+                }
 
                 @Override
                 public Node enter(final UnaryNode node) {
@@ -3261,7 +3255,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
     private MethodEmitter globalAllocateArray(final ArrayType type) {
         //make sure the native array is treated as an array type
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "allocate", methodDescriptor(Object.class, type.getTypeClass()), type);
+        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "allocate", "(" + type.getDescriptor() + ")Ljdk/nashorn/internal/objects/NativeArray;");
     }
 
     private MethodEmitter globalIsEval() {

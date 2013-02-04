@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.NashornException;
-import jdk.nashorn.api.scripting.NashornScriptEngine;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.CompilerConstants.FieldAccess;
 import jdk.nashorn.internal.scripts.JS$;

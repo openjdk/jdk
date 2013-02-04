@@ -721,7 +721,15 @@ public abstract class ScriptFunction extends ScriptObject {
         return hasCalleeParameter() ? MH.bindTo(bound, this) : bound;
     }
 
+    /**
+     * Check whether the ScriptFunction has callee parameter
+     * @return true if callee parameter
+     */
     protected abstract boolean hasCalleeParameter();
+
+    /**
+     * Flag ScriptFunction as needing a callee parameter
+     */
     protected abstract void setHasCalleeParameter();
 
     /**

@@ -54,19 +54,6 @@ public final class FunctionSignature {
      *
      * Create a FunctionSignature given arguments as AST Nodes
      *
-     * @param hasSelf does the function have a self slot?
-     * @param retType what is the return type
-     * @param args    argument list of AST Nodes
-     */
-    public FunctionSignature(final boolean hasSelf, final Type retType, final List<? extends Node> args) {
-        this(hasSelf, false, retType, FunctionSignature.typeArray(args));
-    }
-
-    /**
-     * Constructor
-     *
-     * Create a FunctionSignature given arguments as AST Nodes
-     *
      * @param hasSelf   does the function have a self slot?
      * @param hasCallee does the function need a callee variable
      * @param retType   what is the return type
@@ -82,11 +69,12 @@ public final class FunctionSignature {
      * Create a FunctionSignature given arguments as AST Nodes
      *
      * @param hasSelf does the function have a self slot?
+     * @param hasCallee does the function need a callee variable
      * @param retType what is the return type
      * @param nArgs   number of arguments
      */
-    public FunctionSignature(final boolean hasSelf, final Type retType, final int nArgs) {
-        this(hasSelf, false, retType, FunctionSignature.objectArgs(nArgs));
+    public FunctionSignature(final boolean hasSelf, final boolean hasCallee, final Type retType, final int nArgs) {
+        this(hasSelf, hasCallee, retType, FunctionSignature.objectArgs(nArgs));
     }
 
     /**
@@ -99,7 +87,7 @@ public final class FunctionSignature {
      * @param retType   what is the return type
      * @param argTypes  argument list of AST Nodes
      */
-    public FunctionSignature(final boolean hasSelf, final boolean hasCallee, final Type retType, final Type... argTypes) {
+    private FunctionSignature(final boolean hasSelf, final boolean hasCallee, final Type retType, final Type... argTypes) {
         final boolean isVarArg;
 
         int count = 1;

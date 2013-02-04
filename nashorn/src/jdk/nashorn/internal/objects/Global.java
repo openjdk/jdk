@@ -1158,7 +1158,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @param initial object values.
      * @return the new array
      */
-    public static Object allocate(final Object[] initial) {
+    public static NativeArray allocate(final Object[] initial) {
         return new NativeArray(initial);
     }
 
@@ -1168,7 +1168,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @param initial number values.
      * @return the new array
      */
-    public static Object allocate(final double[] initial) {
+    public static NativeArray allocate(final double[] initial) {
         return new NativeArray(initial);
     }
 
@@ -1178,7 +1178,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @param initial number values.
      * @return the new array
      */
-    public static Object allocate(final long[] initial) {
+    public static NativeArray allocate(final long[] initial) {
         return new NativeArray(initial);
     }
 
@@ -1188,7 +1188,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @param initial number values.
      * @return the new array
      */
-    public static Object allocate(final int[] initial) {
+    public static NativeArray allocate(final int[] initial) {
         return new NativeArray(initial);
     }
 

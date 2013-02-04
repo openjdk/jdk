@@ -86,7 +86,6 @@ import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
  * </ul>
  */
 
-
 public abstract class ScriptObject extends PropertyListenerManager implements PropertyAccess {
 
     /** Search fall back routine name for "no such method" */
@@ -1710,7 +1709,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (methodHandle != null) {
             assert methodHandle.type().returnType().equals(returnType);
-            final ScriptFunction getter = find.getGetterFunction();
             if (find.isSelf()) {
                 return new GuardedInvocation(methodHandle, ObjectClassGenerator.OBJECT_FIELDS_ONLY &&
                         NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType() ? null : guard);

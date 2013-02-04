@@ -1759,23 +1759,19 @@ public class MethodEmitter implements Emitter {
      *
      * @return function signature for stack contents
      */
-    private String getDynamicSignature(final Type returnType, final int argCount, final boolean hasSelf) {
-        final Iterator<Type> iter     = stack.iterator();
-        final Type[]         argTypes = new Type[argCount];
+    private String getDynamicSignature(final Type returnType, final int argCount) {
+        final Iterator<Type> iter       = stack.iterator();
+        final Type[]         paramTypes = new Type[argCount];
 
         for (int i = argCount - 1; i >= 0; i--) {
-            argTypes[i] = iter.next();
+            paramTypes[i] = iter.next();
         }
-
-        final FunctionSignature sig = new FunctionSignature(hasSelf, false, returnType, argTypes);
+        final String descriptor = Type.getMethodDescriptor(returnType, paramTypes);
         for (int i = 0; i < argCount; i++) {
-            popType(argTypes[argCount - i - 1]);
-        }
-        for (int i = 0 ; i < sig.size() - argTypes.length; i++) {
-            popType(Type.OBJECT);
+            popType(paramTypes[argCount - i - 1]);
         }
 
-        return sig.toString();
+        return descriptor;
     }
 
     /**
@@ -1788,7 +1784,7 @@ public class MethodEmitter implements Emitter {
      */
     public MethodEmitter dynamicNew(final int argCount, final int flags) {
         debug("dynamic_new", "argcount=" + argCount);
-        final String signature = getDynamicSignature(Type.OBJECT, argCount, true);
+        final String signature = getDynamicSignature(Type.OBJECT, argCount);
         method.visitInvokeDynamicInsn("dyn:new", signature, LINKERBOOTSTRAP, flags);
         pushType(Type.OBJECT); //TODO fix result type
         return this;
@@ -1805,7 +1801,7 @@ public class MethodEmitter implements Emitter {
      */
     public MethodEmitter dynamicCall(final Type returnType, final int argCount, final int flags) {
         debug("dynamic_call", "args=" + argCount, "returnType=" + returnType);
-        final String signature = getDynamicSignature(returnType, argCount + 1, true);
+        final String signature = getDynamicSignature(returnType, argCount); // +1 because the function itself is the 1st parameter for dynamic calls (what you call - call target)
         debug("   signature", signature);
         method.visitInvokeDynamicInsn("dyn:call", signature, LINKERBOOTSTRAP, flags);
         pushType(returnType);
@@ -1824,7 +1820,7 @@ public class MethodEmitter implements Emitter {
      */
     public MethodEmitter dynamicRuntimeCall(final String name, final Type returnType, final RuntimeNode.Request request) {
         debug("dynamic_runtime_call", name, "args=" + request.getArity(), "returnType=" + returnType);
-        final String signature = getDynamicSignature(returnType, request.getArity(), false);
+        final String signature = getDynamicSignature(returnType, request.getArity());
         debug("   signature", signature);
         method.visitInvokeDynamicInsn(name, signature, RUNTIMEBOOTSTRAP);
         pushType(returnType);
@@ -2198,6 +2194,11 @@ public class MethodEmitter implements Emitter {
                         sb.append("this");
                     } else if (t.isObject()) {
                         String desc = t.getDescriptor();
+                        int i;
+                        for (i = 0; desc.charAt(i) == '[' && i < desc.length(); i++) {
+                            sb.append('[');
+                        }
+                        desc = desc.substring(i);
                         final int slash = desc.lastIndexOf('/');
                         if (slash != -1) {
                             desc = desc.substring(slash + 1, desc.length() - 1);
