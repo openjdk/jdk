@@ -3731,7 +3731,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1358901036
+DATE_WHEN_GENERATED=1359938124
 
 ###############################################################################
 #
@@ -10786,7 +10786,8 @@ if test "x$with_milestone" = xyes; then
   as_fn_error $? "Milestone must have a value" "$LINENO" 5
 elif test "x$with_milestone" != x; then
     MILESTONE="$with_milestone"
-else
+fi
+if test "x$MILESTONE" = x; then
   MILESTONE=internal
 fi
 
@@ -29254,6 +29255,12 @@ fi
 
 fi
 
+
+# AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
+# this doesn't make sense so we remove it.
+if test "x$COMPILE_TYPE" = xcross; then
+  X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[^ ]*//g'`
+fi
 
 if test "x$no_x" = xyes && test "x$X11_NOT_NEEDED" != xyes; then
 

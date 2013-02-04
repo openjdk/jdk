@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ NOT_PRODUCT(static THRTYPE uThread = -1;)
 
 unpacker* unpacker::non_mt_current = null;
 unpacker* unpacker::current() {
-  assert(uThread == THREAD_SELF);
+  //assert(uThread == THREAD_SELF);
   return non_mt_current;
 }
 static void set_current_unpacker(unpacker* u) {

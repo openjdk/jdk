@@ -64,6 +64,10 @@ package java.lang;
  * use by multiple threads. If such synchronization is required then it is
  * recommended that {@link java.lang.StringBuffer} be used.
  *
+ * <p>Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
+ *
  * @author      Michael McCloskey
  * @see         java.lang.StringBuffer
  * @see         java.lang.String
@@ -103,7 +107,6 @@ public final class StringBuilder
      * {@code 16} plus the length of the string argument.
      *
      * @param   str   the initial contents of the buffer.
-     * @throws    NullPointerException if {@code str} is {@code null}
      */
     public StringBuilder(String str) {
         super(str.length() + 16);
@@ -117,7 +120,6 @@ public final class StringBuilder
      * {@code CharSequence} argument.
      *
      * @param      seq   the sequence to copy.
-     * @throws    NullPointerException if {@code seq} is {@code null}
      */
     public StringBuilder(CharSequence seq) {
         this(seq.length() + 16);
@@ -373,33 +375,21 @@ public final class StringBuilder
         return this;
     }
 
-    /**
-     * @throws NullPointerException {@inheritDoc}
-     */
     @Override
     public int indexOf(String str) {
         return super.indexOf(str);
     }
 
-    /**
-     * @throws NullPointerException {@inheritDoc}
-     */
     @Override
     public int indexOf(String str, int fromIndex) {
         return super.indexOf(str, fromIndex);
     }
 
-    /**
-     * @throws NullPointerException {@inheritDoc}
-     */
     @Override
     public int lastIndexOf(String str) {
         return super.lastIndexOf(str);
     }
 
-    /**
-     * @throws NullPointerException {@inheritDoc}
-     */
     @Override
     public int lastIndexOf(String str, int fromIndex) {
         return super.lastIndexOf(str, fromIndex);

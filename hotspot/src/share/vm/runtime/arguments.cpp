@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,7 +532,7 @@ char* SysClassPath::add_jars_to_path(char* path, const char* directory) {
 // Parses a memory size specification string.
 static bool atomull(const char *s, julong* result) {
   julong n = 0;
-  int args_read = sscanf(s, os::julong_format_specifier(), &n);
+  int args_read = sscanf(s, JULONG_FORMAT, &n);
   if (args_read != 1) {
     return false;
   }
@@ -1083,10 +1083,6 @@ static void disable_adaptive_size_policy(const char* collector_name) {
   }
 }
 
-// If the user has chosen ParallelGCThreads > 0, we set UseParNewGC
-// if it's not explictly set or unset. If the user has chosen
-// UseParNewGC and not explicitly set ParallelGCThreads we
-// set it, unless this is a single cpu machine.
 void Arguments::set_parnew_gc_flags() {
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC && !UseG1GC,
          "control point invariant");
@@ -1095,42 +1091,41 @@ void Arguments::set_parnew_gc_flags() {
   // Turn off AdaptiveSizePolicy for parnew until it is complete.
   disable_adaptive_size_policy("UseParNewGC");
 
-  if (ParallelGCThreads == 0) {
-    FLAG_SET_DEFAULT(ParallelGCThreads,
-                     Abstract_VM_Version::parallel_worker_threads());
-    if (ParallelGCThreads == 1) {
-      FLAG_SET_DEFAULT(UseParNewGC, false);
-      FLAG_SET_DEFAULT(ParallelGCThreads, 0);
-    }
+  if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
+    FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
+    assert(ParallelGCThreads > 0, "We should always have at least one thread by default");
+  } else if (ParallelGCThreads == 0) {
+    jio_fprintf(defaultStream::error_stream(),
+        "The ParNew GC can not be combined with -XX:ParallelGCThreads=0\n");
+    vm_exit(1);
   }
-  if (UseParNewGC) {
-    // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 respectively,
-    // these settings are default for Parallel Scavenger. For ParNew+Tenured configuration
-    // we set them to 1024 and 1024.
-    // See CR 6362902.
-    if (FLAG_IS_DEFAULT(YoungPLABSize)) {
-      FLAG_SET_DEFAULT(YoungPLABSize, (intx)1024);
-    }
-    if (FLAG_IS_DEFAULT(OldPLABSize)) {
-      FLAG_SET_DEFAULT(OldPLABSize, (intx)1024);
-    }
 
-    // AlwaysTenure flag should make ParNew promote all at first collection.
-    // See CR 6362902.
-    if (AlwaysTenure) {
-      FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, 0);
-    }
-    // When using compressed oops, we use local overflow stacks,
-    // rather than using a global overflow list chained through
-    // the klass word of the object's pre-image.
-    if (UseCompressedOops && !ParGCUseLocalOverflow) {
-      if (!FLAG_IS_DEFAULT(ParGCUseLocalOverflow)) {
-        warning("Forcing +ParGCUseLocalOverflow: needed if using compressed references");
-      }
-      FLAG_SET_DEFAULT(ParGCUseLocalOverflow, true);
-    }
-    assert(ParGCUseLocalOverflow || !UseCompressedOops, "Error");
+  // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 respectively,
+  // these settings are default for Parallel Scavenger. For ParNew+Tenured configuration
+  // we set them to 1024 and 1024.
+  // See CR 6362902.
+  if (FLAG_IS_DEFAULT(YoungPLABSize)) {
+    FLAG_SET_DEFAULT(YoungPLABSize, (intx)1024);
   }
+  if (FLAG_IS_DEFAULT(OldPLABSize)) {
+    FLAG_SET_DEFAULT(OldPLABSize, (intx)1024);
+  }
+
+  // AlwaysTenure flag should make ParNew promote all at first collection.
+  // See CR 6362902.
+  if (AlwaysTenure) {
+    FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, 0);
+  }
+  // When using compressed oops, we use local overflow stacks,
+  // rather than using a global overflow list chained through
+  // the klass word of the object's pre-image.
+  if (UseCompressedOops && !ParGCUseLocalOverflow) {
+    if (!FLAG_IS_DEFAULT(ParGCUseLocalOverflow)) {
+      warning("Forcing +ParGCUseLocalOverflow: needed if using compressed references");
+    }
+    FLAG_SET_DEFAULT(ParGCUseLocalOverflow, true);
+  }
+  assert(ParGCUseLocalOverflow || !UseCompressedOops, "Error");
 }
 
 // Adjust some sizes to suit CMS and/or ParNew needs; these work well on
@@ -1331,14 +1326,14 @@ bool verify_object_alignment() {
   // then a saved space from compressed oops.
   if ((int)ObjectAlignmentInBytes > 256) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must not be greater then 256\n",
+                "error: ObjectAlignmentInBytes=%d must not be greater than 256\n",
                 (int)ObjectAlignmentInBytes);
     return false;
   }
   // In case page size is very small.
   if ((int)ObjectAlignmentInBytes >= os::vm_page_size()) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: ObjectAlignmentInBytes=%d must be less then page size %d\n",
+                "error: ObjectAlignmentInBytes=%d must be less than page size %d\n",
                 (int)ObjectAlignmentInBytes, os::vm_page_size());
     return false;
   }
@@ -1459,30 +1454,34 @@ void Arguments::set_parallel_gc_flags() {
 
   // If no heap maximum was requested explicitly, use some reasonable fraction
   // of the physical memory, up to a maximum of 1GB.
-  if (UseParallelGC) {
-    FLAG_SET_DEFAULT(ParallelGCThreads,
-                     Abstract_VM_Version::parallel_worker_threads());
+  FLAG_SET_DEFAULT(ParallelGCThreads,
+                   Abstract_VM_Version::parallel_worker_threads());
+  if (ParallelGCThreads == 0) {
+    jio_fprintf(defaultStream::error_stream(),
+        "The Parallel GC can not be combined with -XX:ParallelGCThreads=0\n");
+    vm_exit(1);
+  }
 
-    // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
-    // SurvivorRatio has been set, reset their default values to SurvivorRatio +
-    // 2.  By doing this we make SurvivorRatio also work for Parallel Scavenger.
-    // See CR 6362902 for details.
-    if (!FLAG_IS_DEFAULT(SurvivorRatio)) {
-      if (FLAG_IS_DEFAULT(InitialSurvivorRatio)) {
-         FLAG_SET_DEFAULT(InitialSurvivorRatio, SurvivorRatio + 2);
-      }
-      if (FLAG_IS_DEFAULT(MinSurvivorRatio)) {
-        FLAG_SET_DEFAULT(MinSurvivorRatio, SurvivorRatio + 2);
-      }
+
+  // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
+  // SurvivorRatio has been set, reset their default values to SurvivorRatio +
+  // 2.  By doing this we make SurvivorRatio also work for Parallel Scavenger.
+  // See CR 6362902 for details.
+  if (!FLAG_IS_DEFAULT(SurvivorRatio)) {
+    if (FLAG_IS_DEFAULT(InitialSurvivorRatio)) {
+       FLAG_SET_DEFAULT(InitialSurvivorRatio, SurvivorRatio + 2);
     }
+    if (FLAG_IS_DEFAULT(MinSurvivorRatio)) {
+      FLAG_SET_DEFAULT(MinSurvivorRatio, SurvivorRatio + 2);
+    }
+  }
 
-    if (UseParallelOldGC) {
-      // Par compact uses lower default values since they are treated as
-      // minimums.  These are different defaults because of the different
-      // interpretation and are not ergonomically set.
-      if (FLAG_IS_DEFAULT(MarkSweepDeadRatio)) {
-        FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
-      }
+  if (UseParallelOldGC) {
+    // Par compact uses lower default values since they are treated as
+    // minimums.  These are different defaults because of the different
+    // interpretation and are not ergonomically set.
+    if (FLAG_IS_DEFAULT(MarkSweepDeadRatio)) {
+      FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
     }
   }
 }
@@ -1781,6 +1780,24 @@ bool Arguments::check_gc_consistency() {
   }
 
   return status;
+}
+
+void Arguments::check_deprecated_gcs() {
+  if (UseConcMarkSweepGC && !UseParNewGC) {
+    warning("Using the DefNew young collector with the CMS collector is deprecated "
+        "and will likely be removed in a future release");
+  }
+
+  if (UseParNewGC && !UseConcMarkSweepGC) {
+    // !UseConcMarkSweepGC means that we are using serial old gc. Unfortunately we don't
+    // set up UseSerialGC properly, so that can't be used in the check here.
+    warning("Using the ParNew young collector with the Serial old collector is deprecated "
+        "and will likely be removed in a future release");
+  }
+
+  if (CMSIncrementalMode) {
+    warning("Using incremental CMS is deprecated and will likely be removed in a future release");
+  }
 }
 
 // Check stack pages settings
@@ -2997,11 +3014,6 @@ void Arguments::set_shared_spaces_flags() {
     FLAG_SET_DEFAULT(UseLargePages, false);
   }
 
-  // Add 2M to any size for SharedReadOnlySize to get around the JPRT setting
-  if (DumpSharedSpaces && !FLAG_IS_DEFAULT(SharedReadOnlySize)) {
-    SharedReadOnlySize = 14*M;
-  }
-
   if (DumpSharedSpaces) {
     if (RequireSharedSpaces) {
       warning("cannot dump shared archive while using shared archive");
@@ -3038,7 +3050,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   strcpy(shared_archive_path, jvm_path);
   strcat(shared_archive_path, os::file_separator());
   strcat(shared_archive_path, "classes");
-  DEBUG_ONLY(strcat(shared_archive_path, "_g");)
   strcat(shared_archive_path, ".jsa");
   SharedArchivePath = shared_archive_path;
 
@@ -3247,6 +3258,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   } else if (UseG1GC) {
     set_g1_gc_flags();
   }
+  check_deprecated_gcs();
 #endif // INCLUDE_ALTERNATE_GCS
 
 #ifdef SERIALGC
@@ -3290,6 +3302,18 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
   if (!EliminateLocks) {
     EliminateNestedLocks = false;
+  }
+  if (!Inline) {
+    IncrementalInline = false;
+  }
+#ifndef PRODUCT
+  if (!IncrementalInline) {
+    AlwaysIncrementalInline = false;
+  }
+#endif
+  if (IncrementalInline && FLAG_IS_DEFAULT(MaxNodeLimit)) {
+    // incremental inlining: bump MaxNodeLimit
+    FLAG_SET_DEFAULT(MaxNodeLimit, (intx)75000);
   }
 #endif
 

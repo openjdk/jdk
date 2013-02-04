@@ -10374,14 +10374,31 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
                   rFlagsReg cr)
 %{
+  predicate(!UseFastStosb);
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
 
-  format %{ "xorl    rax, rax\t# ClearArray:\n\t"
-            "rep stosq\t# Store rax to *rdi++ while rcx--" %}
-  ins_encode(opc_reg_reg(0x33, RAX, RAX), // xorl %eax, %eax
-             Opcode(0xF3), Opcode(0x48), Opcode(0xAB)); // rep REX_W stos
+  format %{ "xorq    rax, rax\t# ClearArray:\n\t"
+            "rep     stosq\t# Store rax to *rdi++ while rcx--" %}
+  ins_encode %{ 
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
+  %}
   ins_pipe(pipe_slow);
+%}
+
+instruct rep_fast_stosb(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
+                        rFlagsReg cr)
+%{
+  predicate(UseFastStosb);
+  match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
+  format %{ "xorq    rax, rax\t# ClearArray:\n\t"
+            "shlq    rcx,3\t# Convert doublewords to bytes\n\t"
+            "rep     stosb\t# Store rax to *rdi++ while rcx--" %}
+  ins_encode %{ 
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 instruct string_compare(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
@@ -10477,6 +10494,23 @@ instruct array_equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
   %}
   ins_pipe( pipe_slow );
 %}
+
+// encode char[] to byte[] in ISO_8859_1
+instruct encode_iso_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
+                          regD tmp1, regD tmp2, regD tmp3, regD tmp4,
+                          rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
+
+  format %{ "Encode array $src,$dst,$len -> $result    // KILL RCX, RDX, $tmp1, $tmp2, $tmp3, $tmp4, RSI, RDI " %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 
 //----------Control Flow Instructions------------------------------------------
 // Signed compare Instructions

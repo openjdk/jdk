@@ -34,28 +34,29 @@
 
 #define DBG_EINPROGRESS         -150
 #define DBG_ETIMEOUT            -200
+#ifdef WIN32
+typedef int socklen_t;
+#endif
 
 int dbgsysSocketClose(int fd);
-int dbgsysConnect(int fd, struct sockaddr *him, int len);
-int dbgsysFinishConnect(int fd, long timeout);
-int dbgsysAccept(int fd, struct sockaddr *him, int *len);
-int dbgsysSendTo(int fd, char *buf, int len, int flags, struct sockaddr *to,
-              int tolen);
-int dbgsysRecvFrom(int fd, char *buf, int nbytes, int flags,
-                struct sockaddr *from, int *fromlen);
+int dbgsysConnect(int fd, struct sockaddr *him, socklen_t len);
+int dbgsysFinishConnect(int fd, int timeout);
+int dbgsysAccept(int fd, struct sockaddr *him, socklen_t *len);
+int dbgsysSendTo(int fd, char *buf, size_t len, int flags, struct sockaddr *to, socklen_t tolen);
+int dbgsysRecvFrom(int fd, char *buf, size_t nBytes, int flags, struct sockaddr *from, socklen_t *fromlen);
 int dbgsysListen(int fd, int backlog);
-int dbgsysRecv(int fd, char *buf, int nBytes, int flags);
-int dbgsysSend(int fd, char *buf, int nBytes, int flags);
+int dbgsysRecv(int fd, char *buf, size_t nBytes, int flags);
+int dbgsysSend(int fd, char *buf, size_t nBytes, int flags);
 struct hostent *dbgsysGetHostByName(char *hostname);
 int dbgsysSocket(int domain, int type, int protocol);
-int dbgsysBind(int fd, struct sockaddr *name, int namelen);
+int dbgsysBind(int fd, struct sockaddr *name, socklen_t namelen);
 int dbgsysSetSocketOption(int fd, jint cmd, jboolean on, jvalue value);
 uint32_t dbgsysInetAddr(const char* cp);
 uint32_t dbgsysHostToNetworkLong(uint32_t hostlong);
 unsigned short dbgsysHostToNetworkShort(unsigned short hostshort);
 uint32_t dbgsysNetworkToHostLong(uint32_t netlong);
 unsigned short dbgsysNetworkToHostShort(unsigned short netshort);
-int dbgsysGetSocketName(int fd, struct sockaddr *him, int *len);
+int dbgsysGetSocketName(int fd, struct sockaddr *him, socklen_t *len);
 int dbgsysConfigureBlocking(int fd, jboolean blocking);
 int dbgsysPoll(int fd, jboolean rd, jboolean wr, long timeout);
 int dbgsysGetLastIOError(char *buf, jint size);

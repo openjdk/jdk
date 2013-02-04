@@ -33,6 +33,7 @@ import com.sun.tools.javac.parser.Tokens.Token.Tag;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Names;
 
@@ -74,7 +75,6 @@ public class Tokens {
     protected Tokens(Context context) {
         context.put(tokensKey, this);
         names = Names.instance(context);
-
         for (TokenKind t : TokenKind.values()) {
             if (t.name != null)
                 enterKeyword(t.name, t);
@@ -113,7 +113,7 @@ public class Tokens {
      * This enum defines all tokens used by the javac scanner. A token is
      * optionally associated with a name.
      */
-    public enum TokenKind implements Formattable {
+    public enum TokenKind implements Formattable, Filter<TokenKind> {
         EOF(),
         ERROR(),
         IDENTIFIER(Tag.NAMED),
@@ -176,6 +176,7 @@ public class Tokens {
         TRUE("true", Tag.NAMED),
         FALSE("false", Tag.NAMED),
         NULL("null", Tag.NAMED),
+        UNDERSCORE("_", Tag.NAMED),
         ARROW("->"),
         COLCOL("::"),
         LPAREN("("),
@@ -282,6 +283,11 @@ public class Tokens {
 
         public String toString(Locale locale, Messages messages) {
             return name != null ? toString() : messages.getLocalizedString(locale, "compiler.misc." + toString());
+        }
+
+        @Override
+        public boolean accepts(TokenKind that) {
+            return this == that;
         }
     }
 

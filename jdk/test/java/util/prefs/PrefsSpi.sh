@@ -39,10 +39,13 @@ if [ -z "$TESTJAVA" ]; then
     TESTSRC="`pwd`"
     TESTCLASSES="`pwd`"
 fi
+if [ -z "$COMPILEJAVA" ]; then
+    COMPILEJAVA="${TESTJAVA}"
+fi
 
  java="$TESTJAVA/bin/java"
-javac="$TESTJAVA/bin/javac"
-  jar="$TESTJAVA/bin/jar"
+javac="$COMPILEJAVA/bin/javac"
+  jar="$COMPILEJAVA/bin/jar"
 
 Die() { printf "%s\n" "$*"; exit 1; }
 
@@ -81,9 +84,9 @@ Sys rm -rf jarDir extDir
 Sys mkdir -p jarDir/META-INF/services extDir
 echo "StubPreferencesFactory" \
   > "jarDir/META-INF/services/java.util.prefs.PreferencesFactory"
-Sys "$javac" -d jarDir StubPreferencesFactory.java StubPreferences.java
+Sys "$javac" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d jarDir StubPreferencesFactory.java StubPreferences.java
 
-(cd jarDir && "$jar" "cf" "../extDir/PrefsSpi.jar" ".")
+(cd jarDir && "$jar" ${TESTTOOLVMOPTS} "cf" "../extDir/PrefsSpi.jar" ".")
 
 case "`uname`" in Windows*|CYGWIN* ) CPS=';';; *) CPS=':';; esac
 

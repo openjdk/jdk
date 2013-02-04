@@ -498,6 +498,11 @@ JDK_DEFAULT_TARGETS += jdk_math
 jdk_math: $(call TestDirs, java/math)
 	$(call RunAgentvmBatch)
 
+# Stable agentvm testruns (TestNG)
+JDK_DEFAULT_TARGETS += jdk_time
+jdk_time: $(call TestDirs, java/time)
+	$(call RunOthervmBatch)
+
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_other
 JDK_DEFAULT_TARGETS += jdk_other
