@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6493690
+ * @bug 6493690 8007490
  * @summary javadoc should have a javax.tools.Tool service provider
  * @build APITest
  * @run main RunTest
@@ -31,6 +31,7 @@
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import javax.tools.DocumentationTool;
 import javax.tools.ToolProvider;
 
@@ -46,7 +47,7 @@ public class RunTest extends APITest {
      * Verify that run method can be invoked.
      */
     @Test
-    public void testRun() throws Exception {
+    public void testRunOK() throws Exception {
         File testSrc = new File(System.getProperty("test.src"));
         File srcFile = new File(testSrc, "pkg/C.java");
         File outDir = getOutDir();
@@ -77,7 +78,7 @@ public class RunTest extends APITest {
      * Verify that run method can be invoked.
      */
     @Test
-    public void testRun2() throws Exception {
+    public void testRunFail() throws Exception {
         File outDir = getOutDir();
         String badfile = "badfile.java";
         String[] args = { "-d", outDir.getPath(), badfile };
@@ -100,5 +101,48 @@ public class RunTest extends APITest {
         }
     }
 
+    /**
+     * Verify that null args are accepted.
+     */
+    @Test
+    public void testNullArgs() throws Exception {
+        File testSrc = new File(System.getProperty("test.src"));
+        File srcFile = new File(testSrc, "pkg/C.java");
+        File outDir = getOutDir();
+        String[] args = { "-d", outDir.getPath(), srcFile.getPath() };
+
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        PrintStream prevStdout = System.out;
+        System.setOut(new PrintStream(stdout));
+
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        PrintStream prevStderr = System.err;
+        System.setErr(new PrintStream(stderr));
+
+        int rc ;
+        try {
+            DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
+            rc = tool.run(null, null, null, args);
+        } finally {
+            System.setOut(prevStdout);
+            System.setErr(prevStderr);
+        }
+
+        System.err.println("stdout >>" + stdout.toString() + "<<");
+        System.err.println("stderr >>" + stderr.toString() + "<<");
+
+        if (rc == 0) {
+            System.err.println("call succeeded");
+            checkFiles(outDir, standardExpectFiles);
+            String out = stdout.toString();
+            for (String f: standardExpectFiles) {
+                String f1 = f.replace('/', File.separatorChar);
+                if (f1.endsWith(".html") && !out.contains(f1))
+                    error("expected string not found: " + f1);
+            }
+        } else {
+            error("call failed");
+        }
+    }
 }
 
