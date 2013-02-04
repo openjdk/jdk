@@ -135,11 +135,11 @@ jboolean XShared_initIDs(JNIEnv *env, jboolean allowShmPixmaps)
           useMitShmPixmaps = JNI_FALSE;
         }
     }
-
-    return JNI_TRUE;
 #endif /* MITSHM */
 
 #endif /* !HEADLESS */
+
+    return JNI_TRUE;
 }
 
 
@@ -468,8 +468,8 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
         return JNI_FALSE;
     }
 
-    return JNI_TRUE;
 #endif /* !HEADLESS */
+    return JNI_TRUE;
 }
 
 
