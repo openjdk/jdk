@@ -86,7 +86,7 @@ public class Verify {
          * Should fail with NoSuchAlgorithmException.
          */
         try {
-            verifyCert(selfSignedCertPubKey, "SunPCSC");
+            verifyCert(selfSignedCertPubKey, "SunJCE");
             throw new RuntimeException("Didn't catch the exception properly");
         } catch (NoSuchAlgorithmException e) {
             System.out.println("Caught the correct exception.");
@@ -134,6 +134,10 @@ public class Verify {
             throws CertificateException, NoSuchAlgorithmException,
             InvalidKeyException, SignatureException {
         Provider provider = Security.getProvider(providerName);
+        if (provider == null) {
+            throw new RuntimeException("Provider " + providerName
+                                                   + " not found.");
+        }
         cert.verify(key, provider);
     }
 }

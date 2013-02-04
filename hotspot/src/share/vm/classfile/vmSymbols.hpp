@@ -735,6 +735,11 @@
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
    do_name(     checkIndex_name,                                 "checkIndex")                                          \
                                                                                                                         \
+  do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
+  do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \
+   do_name(     encodeISOArray_name,                             "encodeISOArray")                                      \
+   do_signature(encodeISOArray_signature,                        "([CI[BII)I")                                          \
+                                                                                                                        \
   /* java/lang/ref/Reference */                                                                                         \
   do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
                                                                                                                         \

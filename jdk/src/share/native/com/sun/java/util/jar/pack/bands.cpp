@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,9 @@ const band_init all_band_inits[] = {
   BAND_INIT(method_Exceptions_RC, UNSIGNED5_spec, INDEX(CONSTANT_Class)),
   BAND_INIT(method_Signature_RS, UNSIGNED5_spec, INDEX(CONSTANT_Signature)),
   BAND_INIT(method_metadata_bands, -1, -1),
+  BAND_INIT(method_MethodParameters_NB, BYTE1_spec, 0),
+  BAND_INIT(method_MethodParameters_name_RUN, UNSIGNED5_spec, NULL_OR_INDEX(CONSTANT_Utf8)),
+  BAND_INIT(method_MethodParameters_flag_I, UNSIGNED5_spec, 0),
   BAND_INIT(method_attr_bands, -1, -1),
   BAND_INIT(class_flags_hi, UNSIGNED5_spec, 0),
   BAND_INIT(class_flags_lo, UNSIGNED5_spec, 0),

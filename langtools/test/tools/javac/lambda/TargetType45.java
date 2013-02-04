@@ -3,7 +3,7 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  compiler crashes during flow analysis as it fails to report diagnostics during attribution
- * @compile/fail/ref=TargetType45.out -XDrawDiagnostics TargetType45.java
+ * @compile TargetType45.java
  */
 class TargetType45 {
 

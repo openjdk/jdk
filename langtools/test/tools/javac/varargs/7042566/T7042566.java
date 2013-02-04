@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 7042566
+ * @bug 7042566 8006694
  * @summary Unambiguous varargs method calls flagged as ambiguous
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main T7042566
+ * @run main/othervm T7042566
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.io.File;
 import java.net.URI;

@@ -161,7 +161,7 @@ public class Container extends Component {
     private boolean focusTraversalPolicyProvider;
 
     // keeps track of the threads that are printing this component
-    private transient Set printingThreads;
+    private transient Set<Thread> printingThreads;
     // True if there is at least one thread that's printing this component
     private transient boolean printing = false;
 
@@ -275,7 +275,7 @@ public class Container extends Component {
      */
     public Container() {
     }
-
+    @SuppressWarnings({"unchecked","rawtypes"})
     void initializeFocusTraversalKeys() {
         focusTraversalKeys = new Set[4];
     }
@@ -2006,7 +2006,7 @@ public class Container extends Component {
             try {
                 synchronized (getObjectLock()) {
                     if (printingThreads == null) {
-                        printingThreads = new HashSet();
+                        printingThreads = new HashSet<>();
                     }
                     printingThreads.add(t);
                     printing = true;
@@ -2148,7 +2148,7 @@ public class Container extends Component {
      * @since 1.4
      */
     public synchronized ContainerListener[] getContainerListeners() {
-        return (ContainerListener[]) (getListeners(ContainerListener.class));
+        return getListeners(ContainerListener.class);
     }
 
     /**
@@ -2599,9 +2599,9 @@ public class Container extends Component {
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
-        PointerInfo pi = (PointerInfo)java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
+        PointerInfo pi = java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<PointerInfo>() {
+                public PointerInfo run() {
                     return MouseInfo.getPointerInfo();
                 }
             }
@@ -2682,7 +2682,7 @@ public class Container extends Component {
                                                                  y - comp.y,
                                                                  ignoreEnabled);
                 } else {
-                    comp = comp.locate(x - comp.x, y - comp.y);
+                    comp = comp.getComponentAt(x - comp.x, y - comp.y);
                 }
                 if (comp != null && comp.visible &&
                     (ignoreEnabled || comp.enabled))
@@ -2700,7 +2700,7 @@ public class Container extends Component {
                                                                  y - comp.y,
                                                                  ignoreEnabled);
                 } else {
-                    comp = comp.locate(x - comp.x, y - comp.y);
+                    comp = comp.getComponentAt(x - comp.x, y - comp.y);
                 }
                 if (comp != null && comp.visible &&
                     (ignoreEnabled || comp.enabled))
@@ -4637,7 +4637,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     private void startListeningForOtherDrags() {
         //System.out.println("Adding AWTEventListener");
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
+            new java.security.PrivilegedAction<Object>() {
                 public Object run() {
                     nativeContainer.getToolkit().addAWTEventListener(
                         LightweightDispatcher.this,
@@ -4652,7 +4652,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     private void stopListeningForOtherDrags() {
         //System.out.println("Removing AWTEventListener");
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
+            new java.security.PrivilegedAction<Object>() {
                 public Object run() {
                     nativeContainer.getToolkit().removeAWTEventListener(LightweightDispatcher.this);
                     return null;

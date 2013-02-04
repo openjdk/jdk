@@ -1,0 +1,19 @@
+EntitiesTest.java:300: error: invalid entity &bad;
+     * &bad;
+       ^
+EntitiesTest.java:305: error: invalid entity &#31;
+     * &#31;
+       ^
+EntitiesTest.java:306: error: invalid entity &#2127;
+     * &#2127;
+       ^
+EntitiesTest.java:311: error: invalid entity &#8213;
+     * &#8213;
+       ^
+EntitiesTest.java:312: error: invalid entity &#9003;
+     * &#9003;
+       ^
+EntitiesTest.java:313: error: invalid entity &#xffff;
+     * &#xffff;
+       ^
+6 errors

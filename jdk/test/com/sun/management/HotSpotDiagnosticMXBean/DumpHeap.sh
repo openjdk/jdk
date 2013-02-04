@@ -32,13 +32,13 @@
 # @build DumpHeap
 # @run shell DumpHeap.sh
 
-#Set appropriate jdk
-                                                                                
-if [ ! -z "${TESTJAVA}" ] ; then
-     jdk="$TESTJAVA"
-else
+if [ "${TESTJAVA}" = "" ] ; then
      echo "--Error: TESTJAVA must be defined as the pathname of a jdk to test."
      exit 1
+fi
+
+if [ "${COMPILEJAVA}" = "" ] ; then
+    COMPILEJAVA="${TESTJAVA}"
 fi
 
 failed=0
@@ -50,7 +50,7 @@ ${TESTJAVA}/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES \
     DumpHeap ${DUMPFILE} || exit 2
 
 # check that heap dump is parsable
-${TESTJAVA}/bin/jhat -parseonly true ${DUMPFILE}
+${COMPILEJAVA}/bin/jhat ${TESTTOOLVMOPTS} -parseonly true ${DUMPFILE}
 if [ $? != 0 ]; then failed=1; fi
 
 # dump file is large so remove it

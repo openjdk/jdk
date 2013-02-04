@@ -1,0 +1,68 @@
+#
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# Makefile for building tzdb compiler utility.
+#
+
+BUILDDIR = ../..
+PACKAGE = sun.tzdb
+PRODUCT = sun
+include $(BUILDDIR)/common/Defs.gmk
+
+# This program must contain a manifest that defines the execution level
+# needed to follow standard Vista User Access Control Guidelines
+# This must be set before Program.gmk is included
+#
+BUILD_MANIFEST=true
+
+#
+# Time zone data file creation
+#
+TZDATA_DIR := ../javazic/tzdata
+TZDATA_VER := $(subst tzdata,,$(shell $(GREP) '^tzdata' $(TZDATA_DIR)/VERSION))
+TZFILE := africa antarctica asia australasia europe northamerica southamerica backward etcetera
+TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZFILE))
+
+TZDB_JAR = tzdb.jar
+
+#
+# Rules
+#
+include $(BUILDDIR)/common/Classes.gmk
+
+#
+# Add to the build rule
+#
+build: $(LIBDIR)/$(TZDB_JAR)
+
+$(LIBDIR)/$(TZDB_JAR): $(TZFILES)
+	$(prep-target)
+	echo build tzdb from version $(TZDATA_VER)
+	$(BOOT_JAVA_CMD) -jar $(BUILDTOOLJARDIR)/tzdb.jar -verbose \
+	  -version $(TZDATA_VER) -srcdir $(TZDATA_DIR) -dstdir $(LIBDIR) $(TZFILE)
+
+clean clobber::
+	$(RM) $(LIBDIR)/$(TZDB_JAR)

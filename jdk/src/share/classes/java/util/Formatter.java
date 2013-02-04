@@ -50,6 +50,21 @@ import java.text.NumberFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.Queries;
+import java.time.temporal.OffsetDate;
+import java.time.temporal.OffsetDateTime;
+import java.time.temporal.OffsetTime;
+import java.time.temporal.ChronoZonedDateTime;
+import java.time.format.TextStyle;
+import java.time.zone.ZoneRules;
+
 import sun.misc.DoubleConsts;
 import sun.misc.FormattedFloatingDecimal;
 
@@ -254,8 +269,8 @@ import sun.misc.FormattedFloatingDecimal;
  * </ol>
  *
  * <li> <b>Date/Time</b> - may be applied to Java types which are capable of
- * encoding a date or time: {@code long}, {@link Long}, {@link Calendar}, and
- * {@link Date}.
+ * encoding a date or time: {@code long}, {@link Long}, {@link Calendar},
+ * {@link Date} and {@link TemporalAccessor TemporalAccessor}
  *
  * <li> <b>Percent</b> - produces a literal {@code '%'}
  * (<tt>'&#92;u0025'</tt>)
@@ -1488,7 +1503,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <h4><a name="ddt">Date/Time</a></h4>
  *
  * <p> This conversion may be applied to {@code long}, {@link Long}, {@link
- * Calendar}, and {@link Date}.
+ * Calendar}, {@link Date} and {@link TemporalAccessor TemporalAccessor}
  *
  * <table cellpadding=5 summary="DTConv">
  *
@@ -2782,6 +2797,9 @@ public final class Formatter implements Closeable, Flushable {
             } else if (arg instanceof Calendar) {
                 cal = (Calendar) ((Calendar)arg).clone();
                 cal.setLenient(true);
+            } else if (arg instanceof TemporalAccessor) {
+                print((TemporalAccessor)arg, c, l);
+                return;
             } else {
                 failConversion(c, arg);
             }
@@ -3827,7 +3845,6 @@ public final class Formatter implements Closeable, Flushable {
                                  Locale l)
             throws IOException
         {
-            assert(width == -1);
             if (sb == null)
                 sb = new StringBuilder();
             switch (c) {
@@ -4029,6 +4046,242 @@ public final class Formatter implements Closeable, Flushable {
             }
             default:
                 assert false;
+            }
+            return sb;
+        }
+
+        private void print(TemporalAccessor t, char c, Locale l)  throws IOException {
+            StringBuilder sb = new StringBuilder();
+            print(sb, t, c, l);
+            // justify based on width
+            String s = justify(sb.toString());
+            if (f.contains(Flags.UPPERCASE))
+                s = s.toUpperCase();
+            a.append(s);
+        }
+
+        private Appendable print(StringBuilder sb, TemporalAccessor t, char c,
+                                 Locale l) throws IOException {
+            if (sb == null)
+                sb = new StringBuilder();
+            try {
+                switch (c) {
+                case DateTime.HOUR_OF_DAY_0: {  // 'H' (00 - 23)
+                    int i = t.get(ChronoField.HOUR_OF_DAY);
+                    sb.append(localizedMagnitude(null, i, Flags.ZERO_PAD, 2, l));
+                    break;
+                }
+                case DateTime.HOUR_OF_DAY: {   // 'k' (0 - 23) -- like H
+                    int i = t.get(ChronoField.HOUR_OF_DAY);
+                    sb.append(localizedMagnitude(null, i, Flags.NONE, 2, l));
+                    break;
+                }
+                case DateTime.HOUR_0:      {  // 'I' (01 - 12)
+                    int i = t.get(ChronoField.CLOCK_HOUR_OF_AMPM);
+                    sb.append(localizedMagnitude(null, i, Flags.ZERO_PAD, 2, l));
+                    break;
+                }
+                case DateTime.HOUR:        { // 'l' (1 - 12) -- like I
+                    int i = t.get(ChronoField.CLOCK_HOUR_OF_AMPM);
+                    sb.append(localizedMagnitude(null, i, Flags.NONE, 2, l));
+                    break;
+                }
+                case DateTime.MINUTE:      { // 'M' (00 - 59)
+                    int i = t.get(ChronoField.MINUTE_OF_HOUR);
+                    Flags flags = Flags.ZERO_PAD;
+                    sb.append(localizedMagnitude(null, i, flags, 2, l));
+                    break;
+                }
+                case DateTime.NANOSECOND:  { // 'N' (000000000 - 999999999)
+                    int i = t.get(ChronoField.MILLI_OF_SECOND) * 1000000;
+                    Flags flags = Flags.ZERO_PAD;
+                    sb.append(localizedMagnitude(null, i, flags, 9, l));
+                    break;
+                }
+                case DateTime.MILLISECOND: { // 'L' (000 - 999)
+                    int i = t.get(ChronoField.MILLI_OF_SECOND);
+                    Flags flags = Flags.ZERO_PAD;
+                    sb.append(localizedMagnitude(null, i, flags, 3, l));
+                    break;
+                }
+                case DateTime.MILLISECOND_SINCE_EPOCH: { // 'Q' (0 - 99...?)
+                    long i = t.getLong(ChronoField.INSTANT_SECONDS) * 1000L +
+                             t.getLong(ChronoField.MILLI_OF_SECOND);
+                    Flags flags = Flags.NONE;
+                    sb.append(localizedMagnitude(null, i, flags, width, l));
+                    break;
+                }
+                case DateTime.AM_PM:       { // 'p' (am or pm)
+                    // Calendar.AM = 0, Calendar.PM = 1, LocaleElements defines upper
+                    String[] ampm = { "AM", "PM" };
+                    if (l != null && l != Locale.US) {
+                        DateFormatSymbols dfs = DateFormatSymbols.getInstance(l);
+                        ampm = dfs.getAmPmStrings();
+                    }
+                    String s = ampm[t.get(ChronoField.AMPM_OF_DAY)];
+                    sb.append(s.toLowerCase(l != null ? l : Locale.US));
+                    break;
+                }
+                case DateTime.SECONDS_SINCE_EPOCH: { // 's' (0 - 99...?)
+                    long i = t.getLong(ChronoField.INSTANT_SECONDS);
+                    Flags flags = Flags.NONE;
+                    sb.append(localizedMagnitude(null, i, flags, width, l));
+                    break;
+                }
+                case DateTime.SECOND:      { // 'S' (00 - 60 - leap second)
+                    int i = t.get(ChronoField.SECOND_OF_MINUTE);
+                    Flags flags = Flags.ZERO_PAD;
+                    sb.append(localizedMagnitude(null, i, flags, 2, l));
+                    break;
+                }
+                case DateTime.ZONE_NUMERIC: { // 'z' ({-|+}####) - ls minus?
+                    int i = t.get(ChronoField.OFFSET_SECONDS);
+                    boolean neg = i < 0;
+                    sb.append(neg ? '-' : '+');
+                    if (neg)
+                        i = -i;
+                    int min = i / 60;
+                    // combine minute and hour into a single integer
+                    int offset = (min / 60) * 100 + (min % 60);
+                    Flags flags = Flags.ZERO_PAD;
+                    sb.append(localizedMagnitude(null, offset, flags, 4, l));
+                    break;
+                }
+                case DateTime.ZONE:        { // 'Z' (symbol)
+                    ZoneId zid = t.query(Queries.zone());
+                    if (zid == null) {
+                        throw new IllegalFormatConversionException(c, t.getClass());
+                    }
+                    if (!(zid instanceof ZoneOffset) &&
+                        t.isSupported(ChronoField.INSTANT_SECONDS)) {
+                        Instant instant = Instant.from(t);
+                        sb.append(TimeZone.getTimeZone(zid.getId())
+                                          .getDisplayName(zid.getRules().isDaylightSavings(instant),
+                                                          TimeZone.SHORT,
+                                                          (l == null) ? Locale.US : l));
+                        break;
+                    }
+                    sb.append(zid.getId());
+                    break;
+                }
+                // Date
+                case DateTime.NAME_OF_DAY_ABBREV:     // 'a'
+                case DateTime.NAME_OF_DAY:          { // 'A'
+                    int i = t.get(ChronoField.DAY_OF_WEEK) % 7 + 1;
+                    Locale lt = ((l == null) ? Locale.US : l);
+                    DateFormatSymbols dfs = DateFormatSymbols.getInstance(lt);
+                    if (c == DateTime.NAME_OF_DAY)
+                        sb.append(dfs.getWeekdays()[i]);
+                    else
+                        sb.append(dfs.getShortWeekdays()[i]);
+                    break;
+                }
+                case DateTime.NAME_OF_MONTH_ABBREV:   // 'b'
+                case DateTime.NAME_OF_MONTH_ABBREV_X: // 'h' -- same b
+                case DateTime.NAME_OF_MONTH:        { // 'B'
+                    int i = t.get(ChronoField.MONTH_OF_YEAR) - 1;
+                    Locale lt = ((l == null) ? Locale.US : l);
+                    DateFormatSymbols dfs = DateFormatSymbols.getInstance(lt);
+                    if (c == DateTime.NAME_OF_MONTH)
+                        sb.append(dfs.getMonths()[i]);
+                    else
+                        sb.append(dfs.getShortMonths()[i]);
+                    break;
+                }
+                case DateTime.CENTURY:                // 'C' (00 - 99)
+                case DateTime.YEAR_2:                 // 'y' (00 - 99)
+                case DateTime.YEAR_4:               { // 'Y' (0000 - 9999)
+                    int i = t.get(ChronoField.YEAR);
+                    int size = 2;
+                    switch (c) {
+                    case DateTime.CENTURY:
+                        i /= 100;
+                        break;
+                    case DateTime.YEAR_2:
+                        i %= 100;
+                        break;
+                    case DateTime.YEAR_4:
+                        size = 4;
+                        break;
+                    }
+                    Flags flags = Flags.ZERO_PAD;
+                    sb.append(localizedMagnitude(null, i, flags, size, l));
+                    break;
+                }
+                case DateTime.DAY_OF_MONTH_0:         // 'd' (01 - 31)
+                case DateTime.DAY_OF_MONTH:         { // 'e' (1 - 31) -- like d
+                    int i = t.get(ChronoField.DAY_OF_MONTH);
+                    Flags flags = (c == DateTime.DAY_OF_MONTH_0
+                                   ? Flags.ZERO_PAD
+                                   : Flags.NONE);
+                    sb.append(localizedMagnitude(null, i, flags, 2, l));
+                    break;
+                }
+                case DateTime.DAY_OF_YEAR:          { // 'j' (001 - 366)
+                    int i = t.get(ChronoField.DAY_OF_YEAR);
+                    Flags flags = Flags.ZERO_PAD;
+                    sb.append(localizedMagnitude(null, i, flags, 3, l));
+                    break;
+                }
+                case DateTime.MONTH:                { // 'm' (01 - 12)
+                    int i = t.get(ChronoField.MONTH_OF_YEAR);
+                    Flags flags = Flags.ZERO_PAD;
+                    sb.append(localizedMagnitude(null, i, flags, 2, l));
+                    break;
+                }
+
+                // Composites
+                case DateTime.TIME:         // 'T' (24 hour hh:mm:ss - %tH:%tM:%tS)
+                case DateTime.TIME_24_HOUR:    { // 'R' (hh:mm same as %H:%M)
+                    char sep = ':';
+                    print(sb, t, DateTime.HOUR_OF_DAY_0, l).append(sep);
+                    print(sb, t, DateTime.MINUTE, l);
+                    if (c == DateTime.TIME) {
+                        sb.append(sep);
+                        print(sb, t, DateTime.SECOND, l);
+                    }
+                    break;
+                }
+                case DateTime.TIME_12_HOUR:    { // 'r' (hh:mm:ss [AP]M)
+                    char sep = ':';
+                    print(sb, t, DateTime.HOUR_0, l).append(sep);
+                    print(sb, t, DateTime.MINUTE, l).append(sep);
+                    print(sb, t, DateTime.SECOND, l).append(' ');
+                    // this may be in wrong place for some locales
+                    StringBuilder tsb = new StringBuilder();
+                    print(tsb, t, DateTime.AM_PM, l);
+                    sb.append(tsb.toString().toUpperCase(l != null ? l : Locale.US));
+                    break;
+                }
+                case DateTime.DATE_TIME:    { // 'c' (Sat Nov 04 12:02:33 EST 1999)
+                    char sep = ' ';
+                    print(sb, t, DateTime.NAME_OF_DAY_ABBREV, l).append(sep);
+                    print(sb, t, DateTime.NAME_OF_MONTH_ABBREV, l).append(sep);
+                    print(sb, t, DateTime.DAY_OF_MONTH_0, l).append(sep);
+                    print(sb, t, DateTime.TIME, l).append(sep);
+                    print(sb, t, DateTime.ZONE, l).append(sep);
+                    print(sb, t, DateTime.YEAR_4, l);
+                    break;
+                }
+                case DateTime.DATE:            { // 'D' (mm/dd/yy)
+                    char sep = '/';
+                    print(sb, t, DateTime.MONTH, l).append(sep);
+                    print(sb, t, DateTime.DAY_OF_MONTH_0, l).append(sep);
+                    print(sb, t, DateTime.YEAR_2, l);
+                    break;
+                }
+                case DateTime.ISO_STANDARD_DATE: { // 'F' (%Y-%m-%d)
+                    char sep = '-';
+                    print(sb, t, DateTime.YEAR_4, l).append(sep);
+                    print(sb, t, DateTime.MONTH, l).append(sep);
+                    print(sb, t, DateTime.DAY_OF_MONTH_0, l);
+                    break;
+                }
+                default:
+                    assert false;
+                }
+            } catch (DateTimeException x) {
+                throw new IllegalFormatConversionException(c, t.getClass());
             }
             return sb;
         }

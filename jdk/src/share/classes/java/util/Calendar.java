@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,9 +151,9 @@ import sun.util.locale.provider.CalendarDataUtility;
  * calendar field values to determine the date and time in the
  * following way.
  *
- * <p>If there is any conflict in calendar field values,
+ * <p><a name="resolution">If there is any conflict in calendar field values,
  * <code>Calendar</code> gives priorities to calendar fields that have been set
- * more recently. The following are the default combinations of the
+ * more recently.</a> The following are the default combinations of the
  * calendar fields. The most recent combination, as determined by the
  * most recently set single field, will be used.
  *
@@ -1020,6 +1020,556 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     final static int DST_OFFSET_MASK    = (1 << DST_OFFSET);
 
     /**
+     * {@code Calendar.Builder} is used for creating a {@code Calendar} from
+     * various date-time parameters.
+     *
+     * <p>There are two ways to set a {@code Calendar} to a date-time value. One
+     * is to set the instant parameter to a millisecond offset from the <a
+     * href="Calendar.html#Epoch">Epoch</a>. The other is to set individual
+     * field parameters, such as {@link Calendar#YEAR YEAR}, to their desired
+     * values. These two ways can't be mixed. Trying to set both the instant and
+     * individual fields will cause an {@link IllegalStateException} to be
+     * thrown. However, it is permitted to override previous values of the
+     * instant or field parameters.
+     *
+     * <p>If no enough field parameters are given for determining date and/or
+     * time, calendar specific default values are used when building a
+     * {@code Calendar}. For example, if the {@link Calendar#YEAR YEAR} value
+     * isn't given for the Gregorian calendar, 1970 will be used. If there are
+     * any conflicts among field parameters, the <a
+     * href="Calendar.html#resolution"> resolution rules</a> are applied.
+     * Therefore, the order of field setting matters.
+     *
+     * <p>In addition to the date-time parameters,
+     * the {@linkplain #setLocale(Locale) locale},
+     * {@linkplain #setTimeZone(TimeZone) time zone},
+     * {@linkplain #setWeekDefinition(int, int) week definition}, and
+     * {@linkplain #setLenient(boolean) leniency mode} parameters can be set.
+     *
+     * <p><b>Examples</b>
+     * <p>The following are sample usages. Sample code assumes that the
+     * {@code Calendar} constants are statically imported.
+     *
+     * <p>The following code produces a {@code Calendar} with date 2012-12-31
+     * (Gregorian) because Monday is the first day of a week with the <a
+     * href="GregorianCalendar.html#iso8601_compatible_setting"> ISO 8601
+     * compatible week parameters</a>.
+     * <pre>
+     *   Calendar cal = new Calendar.Builder().setCalendarType("iso8601")
+     *                        .setWeekDate(2013, 1, MONDAY).build();</pre>
+     * <p>The following code produces a Japanese {@code Calendar} with date
+     * 1989-01-08 (Gregorian), assuming that the default {@link Calendar#ERA ERA}
+     * is <em>Heisei</em> that started on that day.
+     * <pre>
+     *   Calendar cal = new Calendar.Builder().setCalendarType("japanese")
+     *                        .setFields(YEAR, 1, DAY_OF_YEAR, 1).build();</pre>
+     *
+     * @since 1.8
+     * @see Calendar#getInstance(TimeZone, Locale)
+     * @see Calendar#fields
+     */
+    public static class Builder {
+        private static final int NFIELDS = FIELD_COUNT + 1; // +1 for WEEK_YEAR
+        private static final int WEEK_YEAR = FIELD_COUNT;
+
+        private long instant;
+        // Calendar.stamp[] (lower half) and Calendar.fields[] (upper half) combined
+        private int[] fields;
+        // Pseudo timestamp starting from MINIMUM_USER_STAMP.
+        // (COMPUTED is used to indicate that the instant has been set.)
+        private int nextStamp;
+        // maxFieldIndex keeps the max index of fields which have been set.
+        // (WEEK_YEAR is never included.)
+        private int maxFieldIndex;
+        private String type;
+        private TimeZone zone;
+        private boolean lenient = true;
+        private Locale locale;
+        private int firstDayOfWeek, minimalDaysInFirstWeek;
+
+        /**
+         * Constructs a {@code Calendar.Builder}.
+         */
+        public Builder() {
+        }
+
+        /**
+         * Sets the instant parameter to the given {@code instant} value that is
+         * a millisecond offset from <a href="Calendar.html#Epoch">the
+         * Epoch</a>.
+         *
+         * @param instant a millisecond offset from the Epoch
+         * @return this {@code Calendar.Builder}
+         * @throws IllegalStateException if any of the field parameters have
+         *                               already been set
+         * @see Calendar#setTime(Date)
+         * @see Calendar#setTimeInMillis(long)
+         * @see Calendar#time
+         */
+        public Builder setInstant(long instant) {
+            if (fields != null) {
+                throw new IllegalStateException();
+            }
+            this.instant = instant;
+            nextStamp = COMPUTED;
+            return this;
+        }
+
+        /**
+         * Sets the instant parameter to the {@code instant} value given by a
+         * {@link Date}. This method is equivalent to a call to
+         * {@link #setInstant(long) setInstant(instant.getTime())}.
+         *
+         * @param instant a {@code Date} representing a millisecond offset from
+         *                the Epoch
+         * @return this {@code Calendar.Builder}
+         * @throws NullPointerException  if {@code instant} is {@code null}
+         * @throws IllegalStateException if any of the field parameters have
+         *                               already been set
+         * @see Calendar#setTime(Date)
+         * @see Calendar#setTimeInMillis(long)
+         * @see Calendar#time
+         */
+        public Builder setInstant(Date instant) {
+            return setInstant(instant.getTime()); // NPE if instant == null
+        }
+
+        /**
+         * Sets the {@code field} parameter to the given {@code value}.
+         * {@code field} is an index to the {@link Calendar#fields}, such as
+         * {@link Calendar#DAY_OF_MONTH DAY_OF_MONTH}. Field value validation is
+         * not performed in this method. Any out of range values are either
+         * normalized in lenient mode or detected as an invalid value in
+         * non-lenient mode when building a {@code Calendar}.
+         *
+         * @param field an index to the {@code Calendar} fields
+         * @param value the field value
+         * @return this {@code Calendar.Builder}
+         * @throws IllegalArgumentException if {@code field} is invalid
+         * @throws IllegalStateException if the instant value has already been set,
+         *                      or if fields have been set too many
+         *                      (approximately {@link Integer#MAX_VALUE}) times.
+         * @see Calendar#set(int, int)
+         */
+        public Builder set(int field, int value) {
+            // Note: WEEK_YEAR can't be set with this method.
+            if (field < 0 || field >= FIELD_COUNT) {
+                throw new IllegalArgumentException("field is invalid");
+            }
+            if (isInstantSet()) {
+                throw new IllegalStateException("instant has been set");
+            }
+            allocateFields();
+            internalSet(field, value);
+            return this;
+        }
+
+        /**
+         * Sets field parameters to their values given by
+         * {@code fieldValuePairs} that are pairs of a field and its value.
+         * For example,
+         * <pre>
+         *   setFeilds(Calendar.YEAR, 2013,
+         *             Calendar.MONTH, Calendar.DECEMBER,
+         *             Calendar.DAY_OF_MONTH, 23);</pre>
+         * is equivalent to the sequence of the following
+         * {@link #set(int, int) set} calls:
+         * <pre>
+         *   set(Calendar.YEAR, 2013)
+         *   .set(Calendar.MONTH, Calendar.DECEMBER)
+         *   .set(Calendar.DAY_OF_MONTH, 23);</pre>
+         *
+         * @param fieldValuePairs field-value pairs
+         * @return this {@code Calendar.Builder}
+         * @throws NullPointerException if {@code fieldValuePairs} is {@code null}
+         * @throws IllegalArgumentException if any of fields are invalid,
+         *             or if {@code fieldValuePairs.length} is an odd number.
+         * @throws IllegalStateException    if the instant value has been set,
+         *             or if fields have been set too many (approximately
+         *             {@link Integer#MAX_VALUE}) times.
+         */
+        public Builder setFields(int... fieldValuePairs) {
+            int len = fieldValuePairs.length;
+            if ((len % 2) != 0) {
+                throw new IllegalArgumentException();
+            }
+            if (isInstantSet()) {
+                throw new IllegalStateException("instant has been set");
+            }
+            if ((nextStamp + len / 2) < 0) {
+                throw new IllegalStateException("stamp counter overflow");
+            }
+            allocateFields();
+            for (int i = 0; i < len; ) {
+                int field = fieldValuePairs[i++];
+                // Note: WEEK_YEAR can't be set with this method.
+                if (field < 0 || field >= FIELD_COUNT) {
+                    throw new IllegalArgumentException("field is invalid");
+                }
+                internalSet(field, fieldValuePairs[i++]);
+            }
+            return this;
+        }
+
+        /**
+         * Sets the date field parameters to the values given by {@code year},
+         * {@code month}, and {@code dayOfMonth}. This method is equivalent to
+         * a call to:
+         * <pre>
+         *   setFields(Calendar.YEAR, year,
+         *             Calendar.MONTH, month,
+         *             Calendar.DAY_OF_MONTH, dayOfMonth);</pre>
+         *
+         * @param year       the {@link Calendar#YEAR YEAR} value
+         * @param month      the {@link Calendar#MONTH MONTH} value
+         *                   (the month numbering is <em>0-based</em>).
+         * @param dayOfMonth the {@link Calendar#DAY_OF_MONTH DAY_OF_MONTH} value
+         * @return this {@code Calendar.Builder}
+         */
+        public Builder setDate(int year, int month, int dayOfMonth) {
+            return setFields(YEAR, year, MONTH, month, DAY_OF_MONTH, dayOfMonth);
+        }
+
+        /**
+         * Sets the time of day field parameters to the values given by
+         * {@code hourOfDay}, {@code minute}, and {@code second}. This method is
+         * equivalent to a call to:
+         * <pre>
+         *   setTimeOfDay(hourOfDay, minute, second, 0);</pre>
+         *
+         * @param hourOfDay the {@link Calendar#HOUR_OF_DAY HOUR_OF_DAY} value
+         *                  (24-hour clock)
+         * @param minute    the {@link Calendar#MINUTE MINUTE} value
+         * @param second    the {@link Calendar#SECOND SECOND} value
+         * @return this {@code Calendar.Builder}
+         */
+        public Builder setTimeOfDay(int hourOfDay, int minute, int second) {
+            return setTimeOfDay(hourOfDay, minute, second, 0);
+        }
+
+        /**
+         * Sets the time of day field parameters to the values given by
+         * {@code hourOfDay}, {@code minute}, {@code second}, and
+         * {@code millis}. This method is equivalent to a call to:
+         * <pre>
+         *   setFields(Calendar.HOUR_OF_DAY, hourOfDay,
+         *             Calendar.MINUTE, minute,
+         *             Calendar.SECOND, second,
+         *             Calendar.MILLISECOND, millis);</pre>
+         *
+         * @param hourOfDay the {@link Calendar#HOUR_OF_DAY HOUR_OF_DAY} value
+         *                  (24-hour clock)
+         * @param minute    the {@link Calendar#MINUTE MINUTE} value
+         * @param second    the {@link Calendar#SECOND SECOND} value
+         * @param millis    the {@link Calendar#MILLISECOND MILLISECOND} value
+         * @return this {@code Calendar.Builder}
+         */
+        public Builder setTimeOfDay(int hourOfDay, int minute, int second, int millis) {
+            return setFields(HOUR_OF_DAY, hourOfDay, MINUTE, minute,
+                             SECOND, second, MILLISECOND, millis);
+        }
+
+        /**
+         * Sets the week-based date parameters to the values with the given
+         * date specifiers - week year, week of year, and day of week.
+         *
+         * <p>If the specified calendar doesn't support week dates, the
+         * {@link #build() build} method will throw an {@link IllegalArgumentException}.
+         *
+         * @param weekYear   the week year
+         * @param weekOfYear the week number based on {@code weekYear}
+         * @param dayOfWeek  the day of week value: one of the constants
+         *     for the {@link Calendar#DAY_OF_WEEK DAY_OF_WEEK} field:
+         *     {@link Calendar#SUNDAY SUNDAY}, ..., {@link Calendar#SATURDAY SATURDAY}.
+         * @return this {@code Calendar.Builder}
+         * @see Calendar#setWeekDate(int, int, int)
+         * @see Calendar#isWeekDateSupported()
+         */
+        public Builder setWeekDate(int weekYear, int weekOfYear, int dayOfWeek) {
+            allocateFields();
+            internalSet(WEEK_YEAR, weekYear);
+            internalSet(WEEK_OF_YEAR, weekOfYear);
+            internalSet(DAY_OF_WEEK, dayOfWeek);
+            return this;
+        }
+
+        /**
+         * Sets the time zone parameter to the given {@code zone}. If no time
+         * zone parameter is given to this {@code Caledar.Builder}, the
+         * {@linkplain TimeZone#getDefault() default
+         * <code>TimeZone</code>} will be used in the {@link #build() build}
+         * method.
+         *
+         * @param zone the {@link TimeZone}
+         * @return this {@code Calendar.Builder}
+         * @throws NullPointerException if {@code zone} is {@code null}
+         * @see Calendar#setTimeZone(TimeZone)
+         */
+        public Builder setTimeZone(TimeZone zone) {
+            if (zone == null) {
+                throw new NullPointerException();
+            }
+            this.zone = zone;
+            return this;
+        }
+
+        /**
+         * Sets the lenient mode parameter to the value given by {@code lenient}.
+         * If no lenient parameter is given to this {@code Calendar.Builder},
+         * lenient mode will be used in the {@link #build() build} method.
+         *
+         * @param lenient {@code true} for lenient mode;
+         *                {@code false} for non-lenient mode
+         * @return this {@code Calendar.Builder}
+         * @see Calendar#setLenient(boolean)
+         */
+        public Builder setLenient(boolean lenient) {
+            this.lenient = lenient;
+            return this;
+        }
+
+        /**
+         * Sets the calendar type parameter to the given {@code type}. The
+         * calendar type given by this method has precedence over any explicit
+         * or implicit calendar type given by the
+         * {@linkplain #setLocale(Locale) locale}.
+         *
+         * <p>In addition to the available calendar types returned by the
+         * {@link Calendar#getAvailableCalendarTypes() Calendar.getAvailableCalendarTypes}
+         * method, {@code "gregorian"} and {@code "iso8601"} as aliases of
+         * {@code "gregory"} can be used with this method.
+         *
+         * @param type the calendar type
+         * @return this {@code Calendar.Builder}
+         * @throws NullPointerException if {@code type} is {@code null}
+         * @throws IllegalArgumentException if {@code type} is unknown
+         * @throws IllegalStateException if another calendar type has already been set
+         * @see Calendar#getCalendarType()
+         * @see Calendar#getAvailableCalendarTypes()
+         */
+        public Builder setCalendarType(String type) {
+            if (type.equals("gregorian")) { // NPE if type == null
+                type = "gregory";
+            }
+            if (!Calendar.getAvailableCalendarTypes().contains(type)
+                    && !type.equals("iso8601")) {
+                throw new IllegalArgumentException("unknown calendar type: " + type);
+            }
+            if (this.type == null) {
+                this.type = type;
+            } else {
+                if (!this.type.equals(type)) {
+                    throw new IllegalStateException("calendar type override");
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Sets the locale parameter to the given {@code locale}. If no locale
+         * is given to this {@code Calendar.Builder}, the {@linkplain
+         * Locale#getDefault(Locale.Category) default <code>Locale</code>}
+         * for {@link Locale.Category#FORMAT} will be used.
+         *
+         * <p>If no calendar type is explicitly given by a call to the
+         * {@link #setCalendarType(String) setCalendarType} method,
+         * the {@code Locale} value is used to determine what type of
+         * {@code Calendar} to be built.
+         *
+         * <p>If no week definition parameters are explicitly given by a call to
+         * the {@link #setWeekDefinition(int,int) setWeekDefinition} method, the
+         * {@code Locale}'s default values are used.
+         *
+         * @param locale the {@link Locale}
+         * @throws NullPointerException if {@code locale} is {@code null}
+         * @return this {@code Calendar.Builder}
+         * @see Calendar#getInstance(Locale)
+         */
+        public Builder setLocale(Locale locale) {
+            if (locale == null) {
+                throw new NullPointerException();
+            }
+            this.locale = locale;
+            return this;
+        }
+
+        /**
+         * Sets the week definition parameters to the values given by
+         * {@code firstDayOfWeek} and {@code minimalDaysInFirstWeek} that are
+         * used to determine the <a href="Calendar.html#First_Week">first
+         * week</a> of a year. The parameters given by this method have
+         * precedence over the default values given by the
+         * {@linkplain #setLocale(Locale) locale}.
+         *
+         * @param firstDayOfWeek the first day of a week; one of
+         *                       {@link Calendar#SUNDAY} to {@link Calendar#SATURDAY}
+         * @param minimalDaysInFirstWeek the minimal number of days in the first
+         *                               week (1..7)
+         * @return this {@code Calendar.Builder}
+         * @throws IllegalArgumentException if {@code firstDayOfWeek} or
+         *                                  {@code minimalDaysInFirstWeek} is invalid
+         * @see Calendar#getFirstDayOfWeek()
+         * @see Calendar#getMinimalDaysInFirstWeek()
+         */
+        public Builder setWeekDefinition(int firstDayOfWeek, int minimalDaysInFirstWeek) {
+            if (!isValidWeekParameter(firstDayOfWeek)
+                    || !isValidWeekParameter(minimalDaysInFirstWeek)) {
+                throw new IllegalArgumentException();
+            }
+            this.firstDayOfWeek = firstDayOfWeek;
+            this.minimalDaysInFirstWeek = minimalDaysInFirstWeek;
+            return this;
+        }
+
+        /**
+         * Returns a {@code Calendar} built from the parameters set by the
+         * setter methods. The calendar type given by the {@link #setCalendarType(String)
+         * setCalendarType} method or the {@linkplain #setLocale(Locale) locale} is
+         * used to determine what {@code Calendar} to be created. If no explicit
+         * calendar type is given, the locale's default calendar is created.
+         *
+         * <p>If the calendar type is {@code "iso8601"}, the
+         * {@linkplain GregorianCalendar#setGregorianChange(Date) Gregorian change date}
+         * of a {@link GregorianCalendar} is set to {@code Date(Long.MIN_VALUE)}
+         * to be the <em>proleptic</em> Gregorian calendar. Its week definition
+         * parameters are also set to be <a
+         * href="GregorianCalendar.html#iso8601_compatible_setting">compatible
+         * with the ISO 8601 standard</a>. Note that the
+         * {@link GregorianCalendar#getCalendarType() getCalendarType} method of
+         * a {@code GregorianCalendar} created with {@code "iso8601"} returns
+         * {@code "gregory"}.
+         *
+         * <p>The default values are used for locale and time zone if these
+         * parameters haven't been given explicitly.
+         *
+         * <p>Any out of range field values are either normalized in lenient
+         * mode or detected as an invalid value in non-lenient mode.
+         *
+         * @return a {@code Calendar} built with parameters of this {@code
+         *         Calendar.Builder}
+         * @throws IllegalArgumentException if the calendar type is unknown, or
+         *             if any invalid field values are given in non-lenient mode, or
+         *             if a week date is given for the calendar type that doesn't
+         *             support week dates.
+         * @see Calendar#getInstance(TimeZone, Locale)
+         * @see Locale#getDefault(Locale.Category)
+         * @see TimeZone#getDefault()
+         */
+        public Calendar build() {
+            if (locale == null) {
+                locale = Locale.getDefault();
+            }
+            if (zone == null) {
+                zone = TimeZone.getDefault();
+            }
+            Calendar cal;
+            if (type == null) {
+                type = locale.getUnicodeLocaleType("ca");
+            }
+            if (type == null) {
+                if (locale.getCountry() == "TH"
+                    && locale.getLanguage() == "th") {
+                    type = "buddhist";
+                } else {
+                    type = "gregory";
+                }
+            }
+            switch (type) {
+            case "gregory":
+                cal = new GregorianCalendar(zone, locale, true);
+                break;
+            case "iso8601":
+                GregorianCalendar gcal = new GregorianCalendar(zone, locale, true);
+                // make gcal a proleptic Gregorian
+                gcal.setGregorianChange(new Date(Long.MIN_VALUE));
+                // and week definition to be compatible with ISO 8601
+                setWeekDefinition(MONDAY, 4);
+                cal = gcal;
+                break;
+            case "buddhist":
+                cal = new BuddhistCalendar(zone, locale);
+                cal.clear();
+                break;
+            case "japanese":
+                cal = new JapaneseImperialCalendar(zone, locale, true);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown calendar type: " + type);
+            }
+            cal.setLenient(lenient);
+            if (firstDayOfWeek != 0) {
+                cal.setFirstDayOfWeek(firstDayOfWeek);
+                cal.setMinimalDaysInFirstWeek(minimalDaysInFirstWeek);
+            }
+            if (isInstantSet()) {
+                cal.setTimeInMillis(instant);
+                cal.complete();
+                return cal;
+            }
+
+            if (fields != null) {
+                boolean weekDate = isSet(WEEK_YEAR)
+                                       && fields[WEEK_YEAR] > fields[YEAR];
+                if (weekDate && !cal.isWeekDateSupported()) {
+                    throw new IllegalArgumentException("week date is unsupported by " + type);
+                }
+
+                // Set the fields from the min stamp to the max stamp so that
+                // the fields resolution works in the Calendar.
+                for (int stamp = MINIMUM_USER_STAMP; stamp < nextStamp; stamp++) {
+                    for (int index = 0; index <= maxFieldIndex; index++) {
+                        if (fields[index] == stamp) {
+                            cal.set(index, fields[NFIELDS + index]);
+                            break;
+                        }
+                    }
+                }
+
+                if (weekDate) {
+                    int weekOfYear = isSet(WEEK_OF_YEAR) ? fields[NFIELDS + WEEK_OF_YEAR] : 1;
+                    int dayOfWeek = isSet(DAY_OF_WEEK)
+                                    ? fields[NFIELDS + DAY_OF_WEEK] : cal.getFirstDayOfWeek();
+                    cal.setWeekDate(fields[NFIELDS + WEEK_YEAR], weekOfYear, dayOfWeek);
+                }
+                cal.complete();
+            }
+
+            return cal;
+        }
+
+        private void allocateFields() {
+            if (fields == null) {
+                fields = new int[NFIELDS * 2];
+                nextStamp = MINIMUM_USER_STAMP;
+                maxFieldIndex = -1;
+            }
+        }
+
+        private void internalSet(int field, int value) {
+            fields[field] = nextStamp++;
+            if (nextStamp < 0) {
+                throw new IllegalStateException("stamp counter overflow");
+            }
+            fields[NFIELDS + field] = value;
+            if (field > maxFieldIndex && field < WEEK_YEAR) {
+                maxFieldIndex = field;
+            }
+        }
+
+        private boolean isInstantSet() {
+            return nextStamp == COMPUTED;
+        }
+
+        private boolean isSet(int index) {
+            return fields != null && fields[index] > UNSET;
+        }
+
+        private boolean isValidWeekParameter(int value) {
+            return value > 0 && value <= 7;
+        }
+    }
+
+    /**
      * Constructs a Calendar with the default time zone
      * and locale.
      * @see     TimeZone#getDefault
@@ -1109,7 +1659,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         Calendar cal = null;
 
         if (aLocale.hasExtensions()) {
-        String caltype = aLocale.getUnicodeLocaleType("ca");
+            String caltype = aLocale.getUnicodeLocaleType("ca");
             if (caltype != null) {
                 switch (caltype) {
                 case "buddhist":
@@ -1999,6 +2549,38 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             return UNSET;
         }
         return (stamp_a > stamp_b) ? stamp_a : stamp_b;
+    }
+
+    /**
+     * Returns an unmodifiable {@code Set} containing all calendar types
+     * supported by {@code Calendar} in the runtime environment. The available
+     * calendar types can be used for the <a
+     * href="Locale.html#def_locale_extension">Unicode locale extensions</a>.
+     * The {@code Set} returned contains at least {@code "gregory"}. The
+     * calendar types don't include aliases, such as {@code "gregorian"} for
+     * {@code "gregory"}.
+     *
+     * @return an unmodifiable {@code Set} containing all available calendar types
+     * @since 1.8
+     * @see #getCalendarType()
+     * @see Calendar.Builder#setCalendarType(String)
+     * @see Locale#getUnicodeLocaleType(String)
+     */
+    public static Set<String> getAvailableCalendarTypes() {
+        return AvailableCalendarTypes.SET;
+    }
+
+    private static class AvailableCalendarTypes {
+        private static final Set<String> SET;
+        static {
+            Set<String> set = new HashSet<>(3);
+            set.add("gregory");
+            set.add("buddhist");
+            set.add("japanese");
+            SET = Collections.unmodifiableSet(set);
+        }
+        private AvailableCalendarTypes() {
+        }
     }
 
     /**

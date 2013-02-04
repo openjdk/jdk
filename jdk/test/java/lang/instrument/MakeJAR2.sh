@@ -41,6 +41,12 @@ then
 fi
 echo "TESTJAVA=${TESTJAVA}"
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."
@@ -64,8 +70,8 @@ case "$OS" in
       ;;
 esac
 
-JAVAC="${TESTJAVA}/bin/javac -g"
-JAR="${TESTJAVA}/bin/jar"
+JAVAC="${COMPILEJAVA}/bin/javac -g"
+JAR="${COMPILEJAVA}/bin/jar"
 
 cp ${TESTSRC}/${AGENT}.java .
 cp ${TESTSRC}/${APP}.java .
@@ -77,11 +83,11 @@ mkdir -p bootpath/bootreporter
 cp ${TESTSRC}/bootreporter/*.java bootpath/bootreporter
 
 cd bootpath
-${JAVAC} bootreporter/*.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} bootreporter/*.java
 cd ..
 
-${JAVAC} ${AGENT}.java ilib/*.java
-${JAVAC} -classpath .${PATHSEP}bootpath ${APP}.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${AGENT}.java ilib/*.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -classpath .${PATHSEP}bootpath ${APP}.java
 
 echo "Manifest-Version: 1.0"    >  ${AGENT}.mf
 echo Premain-Class: ${AGENT} >> ${AGENT}.mf
@@ -92,6 +98,6 @@ while [ $# != 0 ] ; do
   shift
 done
 
-${JAR} cvfm ${AGENT}.jar ${AGENT}.mf ${AGENT}*.class ilib/*.class
+${JAR} ${TESTTOOLVMOPTS} cvfm ${AGENT}.jar ${AGENT}.mf ${AGENT}*.class ilib/*.class
 
 # rm -rf  ${AGENT}.java ilib ${AGENT}.mf ${AGENT}*.class

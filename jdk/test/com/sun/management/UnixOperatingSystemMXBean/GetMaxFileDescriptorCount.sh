@@ -30,19 +30,19 @@
 # @run shell GetMaxFileDescriptorCount.sh
 #
 
-#Set appropriate jdk
-
-if [ ! -z "${TESTJAVA}" ] ; then
-     jdk="$TESTJAVA"
-else
+if [ "${TESTJAVA}" = "" ] ; then
      echo "--Error: TESTJAVA must be defined as the pathname of a jdk to test."
      exit 1
+fi
+if [ "${COMPILEJAVA}" = "" ]; then
+    COMPILEJAVA="${TESTJAVA}"
 fi
 
 runOne()
 { 
    echo "runOne $@"
-   $TESTJAVA/bin/javac -d $TESTCLASSES $TESTSRC/$@.java || exit 2
+   $COMPILEJAVA/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d $TESTCLASSES \
+       $TESTSRC/$@.java || exit 2
    $TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES $@        || exit 3
 }
 

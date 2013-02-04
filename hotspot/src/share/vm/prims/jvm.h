@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,9 +211,6 @@ JVM_IsNaN(jdouble d);
  */
 JNIEXPORT void JNICALL
 JVM_FillInStackTrace(JNIEnv *env, jobject throwable);
-
-JNIEXPORT void JNICALL
-JVM_PrintStackTrace(JNIEnv *env, jobject throwable, jobject printable);
 
 JNIEXPORT jint JNICALL
 JVM_GetStackTraceDepth(JNIEnv *env, jobject throwable);
