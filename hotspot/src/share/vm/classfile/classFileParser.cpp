@@ -1802,11 +1802,9 @@ ClassFileParser::AnnotationCollector::ID
 ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_data,
                                                                 Symbol* name) {
   vmSymbols::SID sid = vmSymbols::find_sid(name);
-  bool privileged = false;
-  if (loader_data->is_the_null_class_loader_data()) {
-    // Privileged code can use all annotations.  Other code silently drops some.
-    privileged = true;
-  }
+  // Privileged code can use all annotations.  Other code silently drops some.
+  bool privileged = loader_data->is_the_null_class_loader_data() ||
+                    loader_data->is_anonymous();
   switch (sid) {
   case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_ForceInline_signature):
     if (_location != _in_method)  break;  // only allow for methods

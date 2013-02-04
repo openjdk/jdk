@@ -1,2 +1,2 @@
-BaseAnnoAsContainerAnno.java:15:11: compiler.err.cyclic.annotation.element
+BaseAnnoAsContainerAnno.java:13:11: compiler.err.cyclic.annotation.element
 1 error

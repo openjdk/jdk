@@ -661,6 +661,14 @@ void VM_Version::get_processor_features() {
       }
     }
   }
+#if defined(COMPILER2) && defined(_ALLBSD_SOURCE)
+    if (MaxVectorSize > 16) {
+      // Limit vectors size to 16 bytes on BSD until it fixes
+      // restoring upper 128bit of YMM registers on return
+      // from signal handler.
+      FLAG_SET_DEFAULT(MaxVectorSize, 16);
+    }
+#endif // COMPILER2
 
   // Use population count instruction if available.
   if (supports_popcnt()) {

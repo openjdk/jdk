@@ -45,8 +45,6 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.text.spi.CollatorProvider;
 import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import java.util.Set;
 
 /**
@@ -102,14 +100,7 @@ public class CollatorProviderImpl extends CollatorProvider implements AvailableL
 
         // Load the resource of the desired locale from resource
         // manager.
-        String colString = "";
-        try {
-            ResourceBundle resource = LocaleProviderAdapter.forType(type).getLocaleData().getCollationData(locale);
-
-            colString = resource.getString("Rule");
-        } catch (MissingResourceException e) {
-            // Use default values
-        }
+        String colString = LocaleProviderAdapter.forType(type).getLocaleResources(locale).getCollationData();
         try
         {
             result = new RuleBasedCollator(CollationRules.DEFAULTRULES +

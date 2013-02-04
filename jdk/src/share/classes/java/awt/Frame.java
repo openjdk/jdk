@@ -353,7 +353,7 @@ public class Frame extends Window implements MenuContainer {
      * @serial
      * @see java.awt.Window#ownedWindowList
      */
-    Vector ownedWindows;
+    Vector<Window> ownedWindows;
 
     private static final String base = "frame";
     private static int nameCounter = 0;
@@ -1242,7 +1242,7 @@ public class Frame extends Window implements MenuContainer {
       //
       if (ownedWindows != null) {
           for (int i = 0; i < ownedWindows.size(); i++) {
-              connectOwnedWindow((Window) ownedWindows.elementAt(i));
+              connectOwnedWindow(ownedWindows.elementAt(i));
           }
           ownedWindows = null;
       }

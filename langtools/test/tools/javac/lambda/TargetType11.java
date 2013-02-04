@@ -4,7 +4,7 @@
  * @summary Add lambda tests
  *  check that wildcards in the target method of a lambda conversion is handled correctly
  * @author  Maurizio Cimadamore
- * @compile/fail/ref=TargetType11.out -Xlint:unchecked -XDrawDiagnostics TargetType11.java
+ * @compile TargetType11.java
  */
 
 class TargetType11 {

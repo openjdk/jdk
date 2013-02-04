@@ -153,7 +153,7 @@ JNIEXPORT jobject JNICALL Java_sun_lwawt_macosx_CInputMethod_nativeGetCurrentInp
     __block NSString *keyboardInfo = NULL;
 JNF_COCOA_ENTER(env);
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         keyboardInfo = [inputMethodController performSelector:@selector(currentInputMethodName)];
         [keyboardInfo retain];
     }];
@@ -177,7 +177,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CInputMethod_nativeNotifyPeer
 JNF_COCOA_ENTER(env);
     AWTView *view = (AWTView *)jlong_to_ptr(nativePeer);
     JNFJObjectWrapper *inputMethodWrapper = [[JNFJObjectWrapper alloc] initWithJObject:inputMethod withEnv:env];
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [CInputMethod _nativeNotifyPeerWithView:view inputMethod:inputMethodWrapper];
     }];
 
@@ -196,7 +196,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CInputMethod_nativeEndComposition
 JNF_COCOA_ENTER(env);
    AWTView *view = (AWTView *)jlong_to_ptr(nativePeer);
 
-   [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+   [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [CInputMethod _nativeEndComposition:view];
     }];
 
@@ -216,7 +216,7 @@ JNIEXPORT jobject JNICALL Java_sun_lwawt_macosx_CInputMethod_getNativeLocale
     __block NSString *isoAbbreviation;
 JNF_COCOA_ENTER(env);
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         isoAbbreviation = (NSString *) [inputMethodController performSelector:@selector(currentInputMethodLocale)];
         [isoAbbreviation retain];
     }];
@@ -259,7 +259,7 @@ JNF_COCOA_ENTER(env);
     NSString *localeStr = JNFJavaToNSString(env, locale);
     [localeStr retain];
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         [CInputMethod setKeyboardLayout:localeStr];
     }];
 
@@ -293,7 +293,7 @@ JNIEXPORT jobject JNICALL Java_sun_lwawt_macosx_CInputMethodDescriptor_nativeGet
     __block NSArray *selectableArray = nil;
 JNF_COCOA_ENTER(env);
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         selectableArray = (NSArray *)[inputMethodController performSelector:@selector(availableInputMethodLocales)];
         [selectableArray retain];
     }];

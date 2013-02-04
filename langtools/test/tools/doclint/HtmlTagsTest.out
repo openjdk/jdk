@@ -34,5 +34,11 @@ HtmlTagsTest.java:54: error: unexpected end tag: </b>
 HtmlTagsTest.java:54: warning: empty <i> tag
      * <i> </b> </i>
                 ^
-11 errors
+HtmlTagsTest.java:59: error: text not allowed in <ul> element
+     * <ul> text <li> ... </li> </ul>
+           ^
+HtmlTagsTest.java:64: error: tag not allowed here: <b>
+     * <ul> <b>text</b> <li> ... </li> </ul>
+            ^
+13 errors
 1 warning
