@@ -1285,13 +1285,15 @@ static void merge_in_new_methods(InstanceKlass* klass,
 
   enum { ANNOTATIONS, PARAMETERS, DEFAULTS, NUM_ARRAYS };
 
-  Array<AnnotationArray*>* original_annots[NUM_ARRAYS];
+  Array<AnnotationArray*>* original_annots[NUM_ARRAYS] = { NULL };
 
   Array<Method*>* original_methods = klass->methods();
   Annotations* annots = klass->annotations();
-  original_annots[ANNOTATIONS] = annots->methods_annotations();
-  original_annots[PARAMETERS]  = annots->methods_parameter_annotations();
-  original_annots[DEFAULTS]    = annots->methods_default_annotations();
+  if (annots != NULL) {
+    original_annots[ANNOTATIONS] = annots->methods_annotations();
+    original_annots[PARAMETERS]  = annots->methods_parameter_annotations();
+    original_annots[DEFAULTS]    = annots->methods_default_annotations();
+  }
 
   Array<int>* original_ordering = klass->method_ordering();
   Array<int>* merged_ordering = Universe::the_empty_int_array();
@@ -1370,9 +1372,15 @@ static void merge_in_new_methods(InstanceKlass* klass,
 
   // Replace klass methods with new merged lists
   klass->set_methods(merged_methods);
-  annots->set_methods_annotations(merged_annots[ANNOTATIONS]);
-  annots->set_methods_parameter_annotations(merged_annots[PARAMETERS]);
-  annots->set_methods_default_annotations(merged_annots[DEFAULTS]);
+  if (annots != NULL) {
+    annots->set_methods_annotations(merged_annots[ANNOTATIONS]);
+    annots->set_methods_parameter_annotations(merged_annots[PARAMETERS]);
+    annots->set_methods_default_annotations(merged_annots[DEFAULTS]);
+  } else {
+    assert(merged_annots[ANNOTATIONS] == NULL, "Must be");
+    assert(merged_annots[PARAMETERS] == NULL, "Must be");
+    assert(merged_annots[DEFAULTS] == NULL, "Must be");
+  }
 
   ClassLoaderData* cld = klass->class_loader_data();
   MetadataFactory::free_array(cld, original_methods);

@@ -44,6 +44,10 @@ if [ "${TESTJAVA}" = "" ] ; then
    exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]; then
+    COMPILEJAVA="${TESTJAVA}"
+fi
+
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
@@ -81,15 +85,15 @@ if [ ! -d ${TESTCLASSES}${FS}app ]; then
 fi
 
 cd ${TESTSRC}${FS}
-${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}${FS}boot \
         ${TESTSRC}${FS}NoArgPermission.java
-${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}${FS}boot \
         ${TESTSRC}${FS}OneArgPermission.java
-${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}${FS}boot \
         ${TESTSRC}${FS}TwoArgPermission.java
-${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}${FS}boot \
         ${TESTSRC}${FS}TwoArgNullActionsPermission.java
-${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}app \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}${FS}app \
         ${TESTSRC}${FS}GetInstance.java
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS}  \

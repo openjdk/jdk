@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -817,9 +817,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** The set of package-info files to be processed this round. */
         List<PackageSymbol> packageInfoFiles;
 
-        /** The number of Messager errors generated in this round. */
-        int nMessagerErrors;
-
         /** Create a round (common code). */
         private Round(Context context, int number, int priorErrors, int priorWarnings,
                 Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
@@ -829,7 +826,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             compiler = JavaCompiler.instance(context);
             log = Log.instance(context);
             log.nerrors = priorErrors;
-            log.nwarnings += priorWarnings;
+            log.nwarnings = priorWarnings;
             if (number == 1) {
                 Assert.checkNonNull(deferredDiagnosticHandler);
                 this.deferredDiagnosticHandler = deferredDiagnosticHandler;
@@ -870,7 +867,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 Set<JavaFileObject> newSourceFiles, Map<String,JavaFileObject> newClassFiles) {
             this(prev.nextContext(),
                     prev.number+1,
-                    prev.nMessagerErrors,
+                    prev.compiler.log.nerrors,
                     prev.compiler.log.nwarnings,
                     null);
             this.genClassFiles = prev.genClassFiles;
@@ -911,15 +908,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Create the compiler to be used for the final compilation. */
-        JavaCompiler finalCompiler(boolean errorStatus) {
+        JavaCompiler finalCompiler() {
             try {
                 Context nextCtx = nextContext();
                 JavacProcessingEnvironment.this.context = nextCtx;
                 JavaCompiler c = JavaCompiler.instance(nextCtx);
-                c.log.nwarnings += compiler.log.nwarnings;
-                if (errorStatus) {
-                    c.log.nerrors += compiler.log.nerrors;
-                }
+                c.log.initRound(compiler.log);
                 return c;
             } finally {
                 compiler.close(false);
@@ -1027,8 +1021,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 if (!taskListener.isEmpty())
                     taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
             }
-
-            nMessagerErrors = messager.errorCount();
         }
 
         void showDiagnostics(boolean showAll) {
@@ -1107,9 +1099,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             next.put(Tokens.tokensKey, tokens);
 
             Log nextLog = Log.instance(next);
-            // propogate the log's writers directly, instead of going through context
-            nextLog.setWriters(log);
-            nextLog.setSourceMap(log);
+            nextLog.initRound(log);
 
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
             JavaCompiler nextCompiler = JavaCompiler.instance(next);
@@ -1206,7 +1196,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 new LinkedHashSet<JavaFileObject>(filer.getGeneratedSourceFileObjects());
         roots = cleanTrees(round.roots);
 
-        JavaCompiler compiler = round.finalCompiler(errorStatus);
+        JavaCompiler compiler = round.finalCompiler();
 
         if (newSourceFiles.size() > 0)
             roots = roots.appendList(compiler.parseFiles(newSourceFiles));
@@ -1311,7 +1301,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         if (procNames != null)
             return true;
 
-        String procPath;
         URL[] urls = new URL[1];
         for(File pathElement : workingpath) {
             try {
@@ -1381,6 +1370,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             public void visitIdent(JCIdent node) {
                 node.sym = null;
                 super.visitIdent(node);
+            }
+            public void visitAnnotation(JCAnnotation node) {
+                node.attribute = null;
+                super.visitAnnotation(node);
             }
         };
 

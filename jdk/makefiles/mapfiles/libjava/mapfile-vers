@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,7 @@ SUNWprivate_1.1 {
 		Java_java_lang_reflect_Array_setInt;
 		Java_java_lang_reflect_Array_setLong;
 		Java_java_lang_reflect_Array_setShort;
+		Java_java_lang_reflect_Executable_getParameters0;
 		Java_java_lang_Runtime_freeMemory;
                 Java_java_lang_Runtime_maxMemory;
 		Java_java_lang_Runtime_gc;

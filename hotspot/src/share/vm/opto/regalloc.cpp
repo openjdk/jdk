@@ -40,6 +40,7 @@ PhaseRegAlloc::PhaseRegAlloc( uint unique, PhaseCFG &cfg,
                Phase(Register_Allocation), _cfg(cfg), _matcher(matcher),
                _node_oops(Thread::current()->resource_area()),
                _node_regs(0),
+               _node_regs_max_index(0),
                _framesize(0xdeadbeef)
 {
     int i;

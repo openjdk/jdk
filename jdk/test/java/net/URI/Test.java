@@ -24,6 +24,7 @@
 /* @test
  * @summary Unit test for java.net.URI
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
+ *      7171415
  * @author Mark Reinhold
  */
 
@@ -1337,7 +1338,7 @@ public class Test {
     }
 
 
-    static void eq0(Comparable u, Comparable v) throws URISyntaxException {
+    static void eq0(URI u, URI v) throws URISyntaxException {
         testCount++;
         if (!u.equals(v))
             throw new RuntimeException("Not equal: " + u + " " + v);
@@ -1352,7 +1353,7 @@ public class Test {
                     + "  [" + Integer.toHexString(uh) + "]");
     }
 
-    static void cmp0(Comparable u, Comparable v, boolean same)
+    static void cmp0(URI u, URI v, boolean same)
         throws URISyntaxException
     {
         int c = u.compareTo(v);
@@ -1361,18 +1362,18 @@ public class Test {
                                        + " " + c);
     }
 
-    static void eq(Comparable u, Comparable v) throws URISyntaxException {
+    static void eq(URI u, URI v) throws URISyntaxException {
         eq0(u, v);
         cmp0(u, v, true);
     }
 
-    static void eqeq(Comparable u, Comparable v) {
+    static void eqeq(URI u, URI v) {
         testCount++;
         if (u != v)
             throw new RuntimeException("Not ==: " + u + " " + v);
     }
 
-    static void ne0(Comparable u, Comparable v) throws URISyntaxException {
+    static void ne0(URI u, URI v) throws URISyntaxException {
         testCount++;
         if (u.equals(v))
             throw new RuntimeException("Equal: " + u + " " + v);
@@ -1383,17 +1384,17 @@ public class Test {
                     + "]");
     }
 
-    static void ne(Comparable u, Comparable v) throws URISyntaxException {
+    static void ne(URI u, URI v) throws URISyntaxException {
         ne0(u, v);
         cmp0(u, v, false);
     }
 
-    static void lt(Comparable u, Comparable v) throws URISyntaxException {
+    static void lt(URI u, URI v) throws URISyntaxException {
         ne0(u, v);
         int c = u.compareTo(v);
         if (c >= 0) {
-            show((URI)u);
-            show((URI)v);
+            show(u);
+            show(v);
             throw new RuntimeException("Not less than: " + u + " " + v
                                        + " " + c);
         }
@@ -1404,7 +1405,7 @@ public class Test {
         lt(new URI(s), new URI(t));
     }
 
-    static void gt(Comparable u, Comparable v) throws URISyntaxException {
+   static void gt(URI u, URI v) throws URISyntaxException {
         lt(v, u);
     }
 
@@ -1430,6 +1431,8 @@ public class Test {
         lt(s, new URI("http://jag:cafebabe@java.sun.com:94/b/c/d?q#g"));
         eq(new URI("http://host/a%00bcd"), new URI("http://host/a%00bcd"));
         ne(new URI("http://host/a%00bcd"), new URI("http://host/aZ00bcd"));
+        eq0(new URI("http://host/abc%e2def%C3ghi"),
+            new URI("http://host/abc%E2def%c3ghi"));
 
         lt("p", "s:p");
         lt("s:p", "T:p");
@@ -1465,7 +1468,7 @@ public class Test {
         ObjectInputStream oi = new ObjectInputStream(bi);
         try {
             Object o = oi.readObject();
-            eq(u, (Comparable)o);
+            eq(u, (URI)o);
         } catch (ClassNotFoundException x) {
             x.printStackTrace();
             throw new RuntimeException(x.toString());

@@ -149,8 +149,7 @@ public class SamConversionComboTest {
                 return false; //ambiguous target type
             }
             else if(lambdaBody == LambdaBody.IMPLICIT) {
-                if(returnValue != ReturnValue.INTEGER) //ambiguous target type
-                    return false;
+                return false;
             }
             else { //explicit parameter type
                 if(fInterface.getParameterType().equals("Integer")) //ambiguous target type

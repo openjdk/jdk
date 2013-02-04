@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1563,7 +1563,7 @@ void LIR_Const::print_value_on(outputStream* out) const {
   switch (type()) {
     case T_ADDRESS:out->print("address:%d",as_jint());          break;
     case T_INT:    out->print("int:%d",   as_jint());           break;
-    case T_LONG:   out->print("lng:%lld", as_jlong());          break;
+    case T_LONG:   out->print("lng:" JLONG_FORMAT, as_jlong()); break;
     case T_FLOAT:  out->print("flt:%f",   as_jfloat());         break;
     case T_DOUBLE: out->print("dbl:%f",   as_jdouble());        break;
     case T_OBJECT: out->print("obj:0x%x", as_jobject());        break;
