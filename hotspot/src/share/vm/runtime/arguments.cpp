@@ -1446,13 +1446,18 @@ void Arguments::set_ergonomics_flags() {
     }
     // Set the ClassMetaspaceSize to something that will not need to be
     // expanded, since it cannot be expanded.
-    if (UseCompressedKlassPointers && FLAG_IS_DEFAULT(ClassMetaspaceSize)) {
-      // 100,000 classes seems like a good size, so 100M assumes around 1K
-      // per klass.   The vtable and oopMap is embedded so we don't have a fixed
-      // size per klass.   Eventually, this will be parameterized because it
-      // would also be useful to determine the optimal size of the
-      // systemDictionary.
-      FLAG_SET_ERGO(uintx, ClassMetaspaceSize, 100*M);
+    if (UseCompressedKlassPointers) {
+      if (ClassMetaspaceSize > KlassEncodingMetaspaceMax) {
+        warning("Class metaspace size is too large for UseCompressedKlassPointers");
+        FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+      } else if (FLAG_IS_DEFAULT(ClassMetaspaceSize)) {
+        // 100,000 classes seems like a good size, so 100M assumes around 1K
+        // per klass.   The vtable and oopMap is embedded so we don't have a fixed
+        // size per klass.   Eventually, this will be parameterized because it
+        // would also be useful to determine the optimal size of the
+        // systemDictionary.
+        FLAG_SET_ERGO(uintx, ClassMetaspaceSize, 100*M);
+      }
     }
   }
   // Also checks that certain machines are slower with compressed oops
