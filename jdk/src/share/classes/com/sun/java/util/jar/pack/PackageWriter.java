@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,12 +142,14 @@ class PackageWriter extends BandStructure {
         } else if (highV.equals(JAVA6_MAX_CLASS_VERSION) ||
                 (highV.equals(JAVA7_MAX_CLASS_VERSION) && !pkg.cp.haveExtraTags())) {
             // force down the package version if we have jdk7 classes without
-            // any Indy references, this is because jdk7 class file (52.0) without
-            // Indy is identical to jdk6 class file (51.0).
+            // any Indy references, this is because jdk7 class file (51.0) without
+            // Indy is identical to jdk6 class file (50.0).
             packageVersion = JAVA6_PACKAGE_VERSION;
+        } else if (highV.equals(JAVA7_MAX_CLASS_VERSION)) {
+            packageVersion = JAVA7_PACKAGE_VERSION;
         } else {
             // Normal case.  Use the newest archive format, when available
-            packageVersion = JAVA7_PACKAGE_VERSION;
+            packageVersion = JAVA8_PACKAGE_VERSION;
         }
 
         if (verbose > 0) {

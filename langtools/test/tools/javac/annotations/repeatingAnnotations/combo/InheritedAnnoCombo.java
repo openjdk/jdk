@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,17 +94,15 @@ public class InheritedAnnoCombo extends Helper {
         switch(className) {
         case "InheritedonBothAnno":
             annoData.append(Helper.ContentVars.INHERITED.getVal())
-            .append(Helper.ContentVars.CONTAINERFOR.getVal())
             .append(Helper.ContentVars.CONTAINER.getVal())
             .append(Helper.ContentVars.INHERITED.getVal())
-            .append(Helper.ContentVars.CONTAINEDBY.getVal())
+            .append(Helper.ContentVars.REPEATABLE.getVal())
             .append(Helper.ContentVars.BASE.getVal());
             break;
         case "InheritedonBase":
             annoData.append(Helper.ContentVars.INHERITED.getVal())
-            .append(Helper.ContentVars.CONTAINERFOR.getVal())
             .append(Helper.ContentVars.CONTAINER.getVal())
-            .append(Helper.ContentVars.CONTAINEDBY.getVal())
+            .append(Helper.ContentVars.REPEATABLE.getVal())
             .append(Helper.ContentVars.BASE.getVal());
             break;
         }

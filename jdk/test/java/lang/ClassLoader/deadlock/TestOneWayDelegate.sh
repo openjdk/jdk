@@ -41,9 +41,14 @@ if [ "${TESTJAVA}" = "" ] ; then
     echo "FAILED!!!"
     exit 1
 fi
+if [ "${COMPILEJAVA}" = "" ] ; then
+    COMPILEJAVA="${TESTJAVA}"
+fi
+
 echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
+echo COMPILEJAVA=${COMPILEJAVA}
 echo ""
 
 # set platform-specific variables
@@ -64,7 +69,7 @@ case "$OS" in
 esac
 
 # compile test
-${TESTJAVA}${FS}bin${FS}javac \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -d ${TESTCLASSES} \
         ${TESTSRC}${FS}Starter.java ${TESTSRC}${FS}DelegatingLoader.java
 
@@ -75,7 +80,7 @@ then
 fi
 
 # set up test
-${TESTJAVA}${FS}bin${FS}javac \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -d ${TESTCLASSES}${FS} \
         ${TESTSRC}${FS}Alice.java ${TESTSRC}${FS}SupBob.java \
         ${TESTSRC}${FS}Bob.java ${TESTSRC}${FS}SupAlice.java

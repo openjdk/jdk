@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,12 @@ public class DriverManager {
      * Attempts to establish a connection to the given database URL.
      * The <code>DriverManager</code> attempts to select an appropriate driver from
      * the set of registered JDBC drivers.
+     *<p>
+     * <B>Note:</B> If a property is specified as part of the {@code url} and
+     * is also specified in the {@code Properties} object, it is
+     * implementation-defined as to which value will take precedence.
+     * For maximum portability, an application should only specify a
+     * property once.
      *
      * @param url a database url of the form
      * <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
@@ -179,7 +185,12 @@ public class DriverManager {
      * connection arguments; normally at least a "user" and
      * "password" property should be included
      * @return a Connection to the URL
-     * @exception SQLException if a database access error occurs
+     * @exception SQLException if a database access error occurs or the url is
+     * {@code null}
+     * @throws SQLTimeoutException  when the driver has determined that the
+     * timeout value specified by the {@code setLoginTimeout} method
+     * has been exceeded and has at least tried to cancel the
+     * current database connection attempt
      */
     public static Connection getConnection(String url,
         java.util.Properties info) throws SQLException {
@@ -195,6 +206,12 @@ public class DriverManager {
      * Attempts to establish a connection to the given database URL.
      * The <code>DriverManager</code> attempts to select an appropriate driver from
      * the set of registered JDBC drivers.
+     *<p>
+     * <B>Note:</B> If a property is specified as part of the {@code url} and
+     * is also specified in the {@code Properties} object, it is
+     * implementation-defined as to which value will take precedence.
+     * For maximum portability, an application should only specify a
+     * property once.
      *
      * @param url a database url of the form
      * <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
@@ -202,7 +219,12 @@ public class DriverManager {
      *   made
      * @param password the user's password
      * @return a connection to the URL
-     * @exception SQLException if a database access error occurs
+     * @exception SQLException if a database access error occurs or the url is
+     * {@code null}
+     * @throws SQLTimeoutException  when the driver has determined that the
+     * timeout value specified by the {@code setLoginTimeout} method
+     * has been exceeded and has at least tried to cancel the
+     * current database connection attempt
      */
     public static Connection getConnection(String url,
         String user, String password) throws SQLException {
@@ -230,7 +252,12 @@ public class DriverManager {
      * @param url a database url of the form
      *  <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @return a connection to the URL
-     * @exception SQLException if a database access error occurs
+     * @exception SQLException if a database access error occurs or the url is
+     * {@code null}
+     * @throws SQLTimeoutException  when the driver has determined that the
+     * timeout value specified by the {@code setLoginTimeout} method
+     * has been exceeded and has at least tried to cancel the
+     * current database connection attempt
      */
     public static Connection getConnection(String url)
         throws SQLException {
@@ -380,7 +407,8 @@ public class DriverManager {
 
     /**
      * Sets the maximum time in seconds that a driver will wait
-     * while attempting to connect to a database.
+     * while attempting to connect to a database once the driver has
+     * been identified.
      *
      * @param seconds the login time limit in seconds; zero means there is no limit
      * @see #getLoginTimeout

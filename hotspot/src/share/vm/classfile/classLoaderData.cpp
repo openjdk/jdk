@@ -318,6 +318,7 @@ ClassLoaderData::~ClassLoaderData() {
 }
 
 Metaspace* ClassLoaderData::metaspace_non_null() {
+  assert(!DumpSharedSpaces, "wrong metaspace!");
   // If the metaspace has not been allocated, create a new one.  Might want
   // to create smaller arena for Reflection class loaders also.
   // The reason for the delayed allocation is because some class loaders are

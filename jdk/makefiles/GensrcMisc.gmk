@@ -190,3 +190,36 @@ $(JDK_OUTPUTDIR)/gensrc/sun/nio/fs/SolarisConstants.java : $(BUILD_GENSRC_SOL_EX
 
 
 endif
+
+##########################################################################################
+
+ifndef OPENJDK
+ifeq ($(OPENJDK_TARGET_OS), windows)
+
+    AB_GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc_ab
+    AB_SRC_DIR := $(JDK_TOPDIR)/src/closed/windows/classes/com/sun/java/accessibility
+
+    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+         $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridge.java: \
+			$(AB_SRC_DIR)/32bit/AccessBridge.java
+		$(install-file)
+
+         $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridge.java: \
+			$(AB_SRC_DIR)/legacy/AccessBridge.java
+		$(install-file)
+
+        GENSRC_MISC += $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridge.java \
+		       $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridge.java
+
+    else
+         $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java: \
+			$(AB_SRC_DIR)/64bit/AccessBridge.java
+		$(install-file)
+
+         GENSRC_MISC += $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java
+
+    endif
+endif
+endif
+
+##########################################################################################

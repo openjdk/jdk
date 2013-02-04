@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ Klass* SystemDictionary::handle_resolution_exception(Symbol* class_name, Handle 
       assert(klass_h() == NULL, "Should not have result with exception pending");
       Handle e(THREAD, PENDING_EXCEPTION);
       CLEAR_PENDING_EXCEPTION;
-      THROW_MSG_CAUSE_0(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string(), e);
+      THROW_MSG_CAUSE_NULL(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string(), e);
     } else {
       return NULL;
     }
@@ -181,9 +181,9 @@ Klass* SystemDictionary::handle_resolution_exception(Symbol* class_name, Handle 
   if (klass_h() == NULL) {
     ResourceMark rm(THREAD);
     if (throw_error) {
-      THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string());
+      THROW_MSG_NULL(vmSymbols::java_lang_NoClassDefFoundError(), class_name->as_C_string());
     } else {
-      THROW_MSG_0(vmSymbols::java_lang_ClassNotFoundException(), class_name->as_C_string());
+      THROW_MSG_NULL(vmSymbols::java_lang_ClassNotFoundException(), class_name->as_C_string());
     }
   }
   return (Klass*)klass_h();
@@ -343,29 +343,29 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
   }
   if (throw_circularity_error) {
       ResourceMark rm(THREAD);
-      THROW_MSG_0(vmSymbols::java_lang_ClassCircularityError(), child_name->as_C_string());
+      THROW_MSG_NULL(vmSymbols::java_lang_ClassCircularityError(), child_name->as_C_string());
   }
 
 // java.lang.Object should have been found above
   assert(class_name != NULL, "null super class for resolving");
   // Resolve the super class or interface, check results on return
-  Klass* superk = NULL;
-  superk = SystemDictionary::resolve_or_null(class_name,
+  Klass* superk = SystemDictionary::resolve_or_null(class_name,
                                                  class_loader,
                                                  protection_domain,
                                                  THREAD);
 
   KlassHandle superk_h(THREAD, superk);
 
-  // Note: clean up of placeholders currently in callers of
-  // resolve_super_or_fail - either at update_dictionary time
-  // or on error
+  // Clean up of placeholders moved so that each classloadAction registrar self-cleans up
+  // It is no longer necessary to keep the placeholder table alive until update_dictionary
+  // or error. GC used to walk the placeholder table as strong roots.
+  // The instanceKlass is kept alive because the class loader is on the stack,
+  // which keeps the loader_data alive, as well as all instanceKlasses in
+  // the loader_data. parseClassFile adds the instanceKlass to loader_data.
   {
-  MutexLocker mu(SystemDictionary_lock, THREAD);
-   PlaceholderEntry* probe = placeholders()->get_entry(p_index, p_hash, child_name, loader_data);
-   if (probe != NULL) {
-      probe->remove_seen_thread(THREAD, PlaceholderTable::LOAD_SUPER);
-   }
+    MutexLocker mu(SystemDictionary_lock, THREAD);
+    placeholders()->find_and_remove(p_index, p_hash, child_name, loader_data, PlaceholderTable::LOAD_SUPER, THREAD);
+    SystemDictionary_lock->notify_all();
   }
   if (HAS_PENDING_EXCEPTION || superk_h() == NULL) {
     // can null superk
@@ -430,8 +430,8 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
 
       // We're using a No_Safepoint_Verifier to catch any place where we
       // might potentially do a GC at all.
-      // SystemDictionary::do_unloading() asserts that classes are only
-      // unloaded at a safepoint.
+      // Dictionary::do_unloading() asserts that classes in SD are only
+      // unloaded at a safepoint. Anonymous classes are not in SD.
       No_Safepoint_Verifier nosafepoint;
       dictionary()->add_protection_domain(d_index, d_hash, klass, loader_data,
                                           protection_domain, THREAD);
@@ -486,7 +486,6 @@ void SystemDictionary::double_lock_wait(Handle lockObject, TRAPS) {
 // super class loading here.
 // This also is critical in cases where the original thread gets stalled
 // even in non-circularity situations.
-// Note: only one thread can define the class, but multiple can resolve
 // Note: must call resolve_super_or_fail even if null super -
 // to force placeholder entry creation for this class for circularity detection
 // Caller must check for pending exception
@@ -518,14 +517,6 @@ instanceKlassHandle SystemDictionary::handle_parallel_super_load(
                                                           protection_domain,
                                                           true,
                                                           CHECK_(nh));
-  // We don't redefine the class, so we just need to clean up if there
-  // was not an error (don't want to modify any system dictionary
-  // data structures).
-  {
-    MutexLocker mu(SystemDictionary_lock, THREAD);
-    placeholders()->find_and_remove(p_index, p_hash, name, loader_data, THREAD);
-    SystemDictionary_lock->notify_all();
-  }
 
   // parallelCapable class loaders do NOT wait for parallel superclass loads to complete
   // Serial class loaders and bootstrap classloader do wait for superclass loads
@@ -595,6 +586,10 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
 
   // Do lookup to see if class already exist and the protection domain
   // has the right access
+  // This call uses find which checks protection domain already matches
+  // All subsequent calls use find_class, and set has_loaded_class so that
+  // before we return a result we call out to java to check for valid protection domain
+  // to allow returning the Klass* and add it to the pd_set if it is valid
   unsigned int d_hash = dictionary()->compute_hash(name, loader_data);
   int d_index = dictionary()->hash_to_index(d_hash);
   Klass* probe = dictionary()->find(d_index, d_hash, name, loader_data,
@@ -652,7 +647,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
     }
   }
 
-  // If the class in is in the placeholder table, class loading is in progress
+  // If the class is in the placeholder table, class loading is in progress
   if (super_load_in_progress && havesupername==true) {
     k = SystemDictionary::handle_parallel_super_load(name, superclassname,
         class_loader, protection_domain, lockObject, THREAD);
@@ -664,7 +659,9 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
     }
   }
 
+  bool throw_circularity_error = false;
   if (!class_has_been_loaded) {
+    bool load_instance_added = false;
 
     // add placeholder entry to record loading instance class
     // Five cases:
@@ -690,7 +687,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
     //    No performance benefit and no deadlock issues.
     // case 5. parallelCapable user level classloaders - without objectLocker
     //    Allow parallel classloading of a class/classloader pair
-    bool throw_circularity_error = false;
+
     {
       MutexLocker mu(SystemDictionary_lock, THREAD);
       if (class_loader.is_null() || !is_parallelCapable(class_loader)) {
@@ -726,12 +723,13 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
           }
         }
       }
-      // All cases: add LOAD_INSTANCE
+      // All cases: add LOAD_INSTANCE holding SystemDictionary_lock
       // case 3: UnsyncloadClass || case 5: parallelCapable: allow competing threads to try
       // LOAD_INSTANCE in parallel
-      // add placeholder entry even if error - callers will remove on error
+
       if (!throw_circularity_error && !class_has_been_loaded) {
         PlaceholderEntry* newprobe = placeholders()->find_and_add(p_index, p_hash, name, loader_data, PlaceholderTable::LOAD_INSTANCE, NULL, THREAD);
+        load_instance_added = true;
         // For class loaders that do not acquire the classloader object lock,
         // if they did not catch another thread holding LOAD_INSTANCE,
         // need a check analogous to the acquire ObjectLocker/find_class
@@ -740,19 +738,18 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
         // class loaders holding the ObjectLock shouldn't find the class here
         Klass* check = find_class(d_index, d_hash, name, loader_data);
         if (check != NULL) {
-        // Klass is already loaded, so just return it
+        // Klass is already loaded, so return it after checking/adding protection domain
           k = instanceKlassHandle(THREAD, check);
           class_has_been_loaded = true;
-          newprobe->remove_seen_thread(THREAD, PlaceholderTable::LOAD_INSTANCE);
-          placeholders()->find_and_remove(p_index, p_hash, name, loader_data, THREAD);
-          SystemDictionary_lock->notify_all();
         }
       }
     }
+
     // must throw error outside of owning lock
     if (throw_circularity_error) {
+      assert(!HAS_PENDING_EXCEPTION && load_instance_added == false,"circularity error cleanup");
       ResourceMark rm(THREAD);
-      THROW_MSG_0(vmSymbols::java_lang_ClassCircularityError(), name->as_C_string());
+      THROW_MSG_NULL(vmSymbols::java_lang_ClassCircularityError(), name->as_C_string());
     }
 
     if (!class_has_been_loaded) {
@@ -782,20 +779,6 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
         }
       }
 
-      // clean up placeholder entries for success or error
-      // This cleans up LOAD_INSTANCE entries
-      // It also cleans up LOAD_SUPER entries on errors from
-      // calling load_instance_class
-      {
-        MutexLocker mu(SystemDictionary_lock, THREAD);
-        PlaceholderEntry* probe = placeholders()->get_entry(p_index, p_hash, name, loader_data);
-        if (probe != NULL) {
-          probe->remove_seen_thread(THREAD, PlaceholderTable::LOAD_INSTANCE);
-          placeholders()->find_and_remove(p_index, p_hash, name, loader_data, THREAD);
-          SystemDictionary_lock->notify_all();
-        }
-      }
-
       // If everything was OK (no exceptions, no null return value), and
       // class_loader is NOT the defining loader, do a little more bookkeeping.
       if (!HAS_PENDING_EXCEPTION && !k.is_null() &&
@@ -819,16 +802,20 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
           }
         }
       }
-      if (HAS_PENDING_EXCEPTION || k.is_null()) {
-        // On error, clean up placeholders
-        {
-          MutexLocker mu(SystemDictionary_lock, THREAD);
-          placeholders()->find_and_remove(p_index, p_hash, name, loader_data, THREAD);
-          SystemDictionary_lock->notify_all();
-        }
-        return NULL;
-      }
+    } // load_instance_class loop
+
+    if (load_instance_added == true) {
+      // clean up placeholder entries for LOAD_INSTANCE success or error
+      // This brackets the SystemDictionary updates for both defining
+      // and initiating loaders
+      MutexLocker mu(SystemDictionary_lock, THREAD);
+        placeholders()->find_and_remove(p_index, p_hash, name, loader_data, PlaceholderTable::LOAD_INSTANCE, THREAD);
+        SystemDictionary_lock->notify_all();
     }
+  }
+
+  if (HAS_PENDING_EXCEPTION || k.is_null()) {
+    return NULL;
   }
 
 #ifdef ASSERT
@@ -850,8 +837,8 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
     // so we cannot allow GC to occur while we're holding this entry.
     // We're using a No_Safepoint_Verifier to catch any place where we
     // might potentially do a GC at all.
-    // SystemDictionary::do_unloading() asserts that classes are only
-    // unloaded at a safepoint.
+    // Dictionary::do_unloading() asserts that classes in SD are only
+    // unloaded at a safepoint. Anonymous classes are not in SD.
     No_Safepoint_Verifier nosafepoint;
     if (dictionary()->is_valid_protection_domain(d_index, d_hash, name,
                                                  loader_data,
@@ -898,8 +885,8 @@ Klass* SystemDictionary::find(Symbol* class_name,
     // so we cannot allow GC to occur while we're holding this entry.
     // We're using a No_Safepoint_Verifier to catch any place where we
     // might potentially do a GC at all.
-    // SystemDictionary::do_unloading() asserts that classes are only
-    // unloaded at a safepoint.
+    // Dictionary::do_unloading() asserts that classes in SD are only
+    // unloaded at a safepoint. Anonymous classes are not in SD.
     No_Safepoint_Verifier nosafepoint;
     return dictionary()->find(d_index, d_hash, class_name, loader_data,
                               protection_domain, THREAD);
@@ -965,10 +952,6 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
   // throw potential ClassFormatErrors.
   //
   // Note: "name" is updated.
-  // Further note:  a placeholder will be added for this class when
-  //   super classes are loaded (resolve_super_or_fail). We expect this
-  //   to be called for all classes but java.lang.Object; and we preload
-  //   java.lang.Object through resolve_or_fail, not this path.
 
   instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
                                                              loader_data,
@@ -979,21 +962,6 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
                                                              true,
                                                              THREAD);
 
-  // We don't redefine the class, so we just need to clean up whether there
-  // was an error or not (don't want to modify any system dictionary
-  // data structures).
-  // Parsed name could be null if we threw an error before we got far
-  // enough along to parse it -- in that case, there is nothing to clean up.
-  if (parsed_name != NULL) {
-    unsigned int p_hash = placeholders()->compute_hash(parsed_name,
-                                                       loader_data);
-    int p_index = placeholders()->hash_to_index(p_hash);
-    {
-    MutexLocker mu(SystemDictionary_lock, THREAD);
-    placeholders()->find_and_remove(p_index, p_hash, parsed_name, loader_data, THREAD);
-    SystemDictionary_lock->notify_all();
-    }
-  }
 
   if (host_klass.not_null() && k.not_null()) {
     assert(EnableInvokeDynamic, "");
@@ -1062,10 +1030,6 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   // throw potential ClassFormatErrors.
   //
   // Note: "name" is updated.
-  // Further note:  a placeholder will be added for this class when
-  //   super classes are loaded (resolve_super_or_fail). We expect this
-  //   to be called for all classes but java.lang.Object; and we preload
-  //   java.lang.Object through resolve_or_fail, not this path.
 
   instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
                                                              loader_data,
@@ -1114,25 +1078,7 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
     }
   }
 
-  // If parsing the class file or define_instance_class failed, we
-  // need to remove the placeholder added on our behalf. But we
-  // must make sure parsed_name is valid first (it won't be if we had
-  // a format error before the class was parsed far enough to
-  // find the name).
-  if (HAS_PENDING_EXCEPTION && parsed_name != NULL) {
-    unsigned int p_hash = placeholders()->compute_hash(parsed_name,
-                                                       loader_data);
-    int p_index = placeholders()->hash_to_index(p_hash);
-    {
-    MutexLocker mu(SystemDictionary_lock, THREAD);
-    placeholders()->find_and_remove(p_index, p_hash, parsed_name, loader_data, THREAD);
-    SystemDictionary_lock->notify_all();
-    }
-    return NULL;
-  }
-
-  // Make sure that we didn't leave a place holder in the
-  // SystemDictionary; this is only done on success
+  // Make sure we have an entry in the SystemDictionary on success
   debug_only( {
     if (!HAS_PENDING_EXCEPTION) {
       assert(parsed_name != NULL, "parsed_name is still null?");
@@ -1547,8 +1493,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(Symbol* clas
     // Other cases fall through, and may run into duplicate defines
     // caught by finding an entry in the SystemDictionary
     if ((UnsyncloadClass || is_parallelDefine(class_loader)) && (probe->instance_klass() != NULL)) {
-        probe->remove_seen_thread(THREAD, PlaceholderTable::DEFINE_CLASS);
-        placeholders()->find_and_remove(p_index, p_hash, name_h, loader_data, THREAD);
+        placeholders()->find_and_remove(p_index, p_hash, name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
         SystemDictionary_lock->notify_all();
 #ifdef ASSERT
         Klass* check = find_class(d_index, d_hash, name_h, loader_data);
@@ -1578,8 +1523,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(Symbol* clas
         probe->set_instance_klass(k());
       }
       probe->set_definer(NULL);
-      probe->remove_seen_thread(THREAD, PlaceholderTable::DEFINE_CLASS);
-      placeholders()->find_and_remove(p_index, p_hash, name_h, loader_data, THREAD);
+      placeholders()->find_and_remove(p_index, p_hash, name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
       SystemDictionary_lock->notify_all();
     }
   }
@@ -1736,6 +1680,8 @@ int SystemDictionary::calculate_systemdictionary_size(int classcount) {
   }
   return newsize;
 }
+// Assumes classes in the SystemDictionary are only unloaded at a safepoint
+// Note: anonymous classes are not in the SD.
 bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
   // First, mark for unload all ClassLoaderData referencing a dead class loader.
   bool has_dead_loaders = ClassLoaderDataGraph::do_unloading(is_alive);
@@ -2105,9 +2051,7 @@ void SystemDictionary::update_dictionary(int d_index, unsigned int d_hash,
   // All loaded classes get a unique ID.
   TRACE_INIT_ID(k);
 
-  // Check for a placeholder. If there, remove it and make a
-  // new system dictionary entry.
-  placeholders()->find_and_remove(p_index, p_hash, name, loader_data, THREAD);
+  // Make a new system dictionary entry.
   Klass* sd_check = find_class(d_index, d_hash, name, loader_data);
   if (sd_check == NULL) {
     dictionary()->add_klass(name, loader_data, k);
@@ -2116,12 +2060,8 @@ void SystemDictionary::update_dictionary(int d_index, unsigned int d_hash,
 #ifdef ASSERT
   sd_check = find_class(d_index, d_hash, name, loader_data);
   assert (sd_check != NULL, "should have entry in system dictionary");
-// Changed to allow PH to remain to complete class circularity checking
-// while only one thread can define a class at one time, multiple
-// classes can resolve the superclass for a class at one time,
-// and the placeholder is used to track that
-//  Symbol* ph_check = find_placeholder(name, class_loader);
-//  assert (ph_check == NULL, "should not have a placeholder entry");
+  // Note: there may be a placeholder entry: for circularity testing
+  // or for parallel defines
 #endif
     SystemDictionary_lock->notify_all();
   }

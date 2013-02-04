@@ -1831,6 +1831,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
+     * Add the annotation types of the executable receiver.
+     *
+     * @param method the executable to write the receiver annotations for.
+     * @param htmltree the documentation tree to which the annotation info will be
+     *        added
+     */
+    public void addReceiverAnnotationInfo(ExecutableMemberDoc method, Content htmltree) {
+        addAnnotationInfo(method, method.receiverAnnotations(), htmltree);
+    }
+
+    /**
      * Adds the annotatation types for the given doc.
      *
      * @param doc the package to write annotations for
@@ -1900,6 +1911,26 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *         documented.
      */
     private List<String> getAnnotations(int indent, AnnotationDesc[] descList, boolean linkBreak) {
+        return getAnnotations(indent, descList, linkBreak, true);
+    }
+
+    /**
+     * Return the string representations of the annotation types for
+     * the given doc.
+     *
+     * A {@code null} {@code elementType} indicates that all the
+     * annotations should be returned without any filtering.
+     *
+     * @param indent the number of extra spaces to indent the annotations.
+     * @param descList the array of {@link AnnotationDesc}.
+     * @param linkBreak if true, add new line between each member value.
+     * @param elementType the type of targeted element (used for filtering
+     *        type annotations from declaration annotations)
+     * @return an array of strings representing the annotations being
+     *         documented.
+     */
+    public List<String> getAnnotations(int indent, AnnotationDesc[] descList, boolean linkBreak,
+            boolean isJava5DeclarationLocation) {
         List<String> results = new ArrayList<String>();
         StringBuilder annotation;
         for (int i = 0; i < descList.length; i++) {
@@ -1913,6 +1944,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     (!isAnnotationDocumented && !isContainerDocumented)) {
                 continue;
             }
+            /* TODO: check logic here to correctly handle declaration
+             * and type annotations.
+            if  (Util.isDeclarationAnnotation(annotationDoc, isJava5DeclarationLocation)) {
+                continue;
+            }*/
             annotation = new StringBuilder();
             isAnnotationDocumented = false;
             LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,

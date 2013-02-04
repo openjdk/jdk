@@ -170,7 +170,7 @@ public class IntersectionTypeParserTest {
     void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
         checkCount++;
         JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
-                Arrays.asList("-XDallowIntersectionTypes"), null, Arrays.asList(source));
+                null, null, Arrays.asList(source));
         ct.parse();
         if (diagChecker.errorFound) {
             throw new Error("Unexpected parser error for source:\n" +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @build JavacTestingAbstractProcessor
  * @compile/fail/ref=NegTest.ref -XDrawDiagnostics TestImportStar.java
  * @compile Anno.java AnnoProcessor.java
- * @compile/ref=TestImportStar.ref -XDrawDiagnostics -processor AnnoProcessor -proc:only TestImportStar.java
+ * @compile/fail/ref=TestImportStar.ref -XDrawDiagnostics -processor AnnoProcessor -proc:only TestImportStar.java
  */
 
  //The @compile/fail... verifies that the fix doesn't break the normal compilation of import xxx.*

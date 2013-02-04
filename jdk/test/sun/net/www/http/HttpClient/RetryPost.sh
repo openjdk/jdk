@@ -47,7 +47,7 @@ case "$OS" in
 esac
 
 # compile
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}RetryPost.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}RetryPost.java
 
 # run with no option specified. Should retry POST request.
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} RetryPost

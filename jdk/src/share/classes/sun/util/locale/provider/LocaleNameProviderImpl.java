@@ -26,7 +26,6 @@
 package sun.util.locale.provider;
 
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.spi.LocaleNameProvider;
 
@@ -174,12 +173,7 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
             throw new NullPointerException();
         }
 
-        ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getLocaleNames(locale);
-        if (rb.containsKey(key)) {
-                return rb.getString(key);
-            }
-
-        return null;
+        return LocaleProviderAdapter.forType(type).getLocaleResources(locale).getLocaleName(key);
     }
 
     @Override
