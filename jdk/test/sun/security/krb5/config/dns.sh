@@ -26,16 +26,19 @@
 # @summary Krb5LoginModule config class does not return proper KDC list from DNS
 #
 
+env
+
 if [ "${TESTJAVA}" = "" ] ; then
   JAVAC_CMD=`which javac`
   TESTJAVA=`dirname $JAVAC_CMD`/..
+  COMPILEJAVA="${TESTJAVA}"
 fi
 
 if [ "${TESTSRC}" = "" ] ; then
    TESTSRC="."
 fi
 
-$TESTJAVA/bin/javac -d . \
-        ${TESTSRC}/NamingManager.java ${TESTSRC}/DNS.java
+$COMPILEJAVA/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
+   ${TESTSRC}/NamingManager.java ${TESTSRC}/DNS.java
 $TESTJAVA/bin/java -Xbootclasspath/p:. DNS
 

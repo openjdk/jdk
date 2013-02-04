@@ -6,11 +6,9 @@
  * @compile/fail/ref=BaseAnnoAsContainerAnno.out -XDrawDiagnostics BaseAnnoAsContainerAnno.java
  */
 
-import java.lang.annotation.ContainedBy;
-import java.lang.annotation.ContainerFor;
+import java.lang.annotation.Repeatable;
 
-@ContainedBy(Foo.class)
-@ContainerFor(Foo.class)
+@Repeatable(Foo.class)
 @interface Foo {
     Foo[] value() default {};
 }

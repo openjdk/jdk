@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1834,6 +1834,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
      * Updates the designated column with an <code>Object</code> value.
+     *
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
      * update the underlying database; instead the <code>updateRow</code> or
@@ -1866,6 +1867,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
      * Updates the designated column with an <code>Object</code> value.
+     *
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
      * update the underlying database; instead the <code>updateRow</code> or
@@ -2224,6 +2226,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
      * Updates the designated column with an <code>Object</code> value.
+     *
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
      * update the underlying database; instead the <code>updateRow</code> or
@@ -2256,6 +2259,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
      * Updates the designated column with an <code>Object</code> value.
+     *
      * The updater methods are used to update column values in the
      * current row or the insert row.  The updater methods do not
      * update the underlying database; instead the <code>updateRow</code> or
@@ -4142,4 +4146,145 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      */
      public <T> T getObject(String columnLabel, Class<T> type) throws SQLException;
 
+    //------------------------- JDBC 4.2 -----------------------------------
+
+    /**
+     * Updates the designated column with an {@code Object} value.
+     *
+     * The updater methods are used to update column values in the
+     * current row or the insert row.  The updater methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
+     *<p>
+     * If the second argument is an {@code InputStream} then the stream must contain
+     * the number of bytes specified by scaleOrLength.  If the second argument is a
+     * {@code Reader} then the reader must contain the number of characters specified
+     * by scaleOrLength. If these conditions are not true the driver will generate a
+     * {@code SQLException} when the statement is executed.
+     *<p>
+     * The default implementation will throw {@code SQLFeatureNotSupportedException}
+     *
+     * @param columnIndex the first column is 1, the second is 2, ...
+     * @param x the new column value
+     * @param targetSqlType the SQL type to be sent to the database
+     * @param scaleOrLength for an object of {@code java.math.BigDecimal} ,
+     *          this is the number of digits after the decimal point. For
+     *          Java Object types {@code InputStream} and {@code Reader},
+     *          this is the length
+     *          of the data in the stream or reader.  For all other types,
+     *          this value will be ignored.
+     * @exception SQLException if the columnIndex is not valid;
+     * if a database access error occurs;
+     * the result set concurrency is {@code CONCUR_READ_ONLY}
+     * or this method is called on a closed result set
+     * @exception SQLFeatureNotSupportedException if the JDBC driver does not
+     * support this method; if the JDBC driver does not support this data type
+     * @see JDBCType
+     * @see SQLType
+     * @since 1.8
+     */
+     default void updateObject(int columnIndex, Object x,
+             SQLType targetSqlType, int scaleOrLength)  throws SQLException {
+        throw new SQLFeatureNotSupportedException("updateObject not implemented");
+    }
+
+    /**
+     * Updates the designated column with an {@code Object} value.
+     *
+     * The updater methods are used to update column values in the
+     * current row or the insert row.  The updater methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
+     *<p>
+     * If the second argument is an {@code InputStream} then the stream must
+     * contain number of bytes specified by scaleOrLength.  If the second
+     * argument is a {@code Reader} then the reader must contain the number
+     * of characters specified by scaleOrLength. If these conditions are not
+     * true the driver will generate a
+     * {@code SQLException} when the statement is executed.
+     *<p>
+     * The default implementation will throw {@code SQLFeatureNotSupportedException}
+     *
+     * @param columnLabel the label for the column specified with the SQL AS
+     * clause.  If the SQL AS clause was not specified, then the label is
+     * the name of the column
+     * @param targetSqlType the SQL type to be sent to the database
+     * @param scaleOrLength for an object of {@code java.math.BigDecimal} ,
+     *          this is the number of digits after the decimal point. For
+     *          Java Object types {@code InputStream} and {@code Reader},
+     *          this is the length
+     *          of the data in the stream or reader.  For all other types,
+     *          this value will be ignored.
+     * @exception SQLException if the columnLabel is not valid;
+     * if a database access error occurs;
+     * the result set concurrency is {@code CONCUR_READ_ONLY}
+     * or this method is called on a closed result set
+     * @exception SQLFeatureNotSupportedException if the JDBC driver does not
+     * support this method; if the JDBC driver does not support this data type
+     * @see JDBCType
+     * @see SQLType
+     * @since 1.8
+     */
+    default void updateObject(String columnLabel, Object x,
+            SQLType targetSqlType, int scaleOrLength) throws SQLException {
+        throw new SQLFeatureNotSupportedException("updateObject not implemented");
+    }
+
+    /**
+     * Updates the designated column with an {@code Object} value.
+     *
+     * The updater methods are used to update column values in the
+     * current row or the insert row.  The updater methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
+     *<p>
+     * The default implementation will throw {@code SQLFeatureNotSupportedException}
+     *
+     * @param columnIndex the first column is 1, the second is 2, ...
+     * @param x the new column value
+     * @param targetSqlType the SQL type to be sent to the database
+     * @exception SQLException if the columnIndex is not valid;
+     * if a database access error occurs;
+     * the result set concurrency is {@code CONCUR_READ_ONLY}
+     * or this method is called on a closed result set
+     * @exception SQLFeatureNotSupportedException if the JDBC driver does not
+     * support this method; if the JDBC driver does not support this data type
+     * @see JDBCType
+     * @see SQLType
+     * @since 1.8
+     */
+    default void updateObject(int columnIndex, Object x, SQLType targetSqlType)
+            throws SQLException {
+        throw new SQLFeatureNotSupportedException("updateObject not implemented");
+    }
+
+    /**
+     * Updates the designated column with an {@code Object} value.
+     *
+     * The updater methods are used to update column values in the
+     * current row or the insert row.  The updater methods do not
+     * update the underlying database; instead the {@code updateRow} or
+     * {@code insertRow} methods are called to update the database.
+     *<p>
+     * The default implementation will throw {@code SQLFeatureNotSupportedException}
+     *
+     * @param columnLabel the label for the column specified with the SQL AS
+     * clause.  If the SQL AS clause was not specified, then the label is
+     * the name of the column
+     * @param x the new column value
+     * @param targetSqlType the SQL type to be sent to the database
+     * @exception SQLException if the columnLabel is not valid;
+     * if a database access error occurs;
+     * the result set concurrency is {@code CONCUR_READ_ONLY}
+     * or this method is called on a closed result set
+     * @exception SQLFeatureNotSupportedException if the JDBC driver does not
+     * support this method; if the JDBC driver does not support this data type
+     * @see JDBCType
+     * @see SQLType
+     * @since 1.8
+     */
+    default void updateObject(String columnLabel, Object x,
+            SQLType targetSqlType) throws SQLException {
+        throw new SQLFeatureNotSupportedException("updateObject not implemented");
+    }
 }

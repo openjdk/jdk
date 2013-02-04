@@ -177,8 +177,8 @@ typedef struct jzentry {  /* Zip file entry */
  */
 typedef struct jzcell {
     unsigned int hash;    /* 32 bit hashcode on name */
-    jlong cenpos;         /* Offset of central directory file header */
     unsigned int next;    /* hash chain: index into jzfile->entries */
+    jlong cenpos;         /* Offset of central directory file header */
 } jzcell;
 
 typedef struct cencache {

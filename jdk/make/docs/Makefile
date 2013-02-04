@@ -207,6 +207,7 @@ COMMON_JAVADOCFLAGS =					\
 		-quiet					\
                 -use					\
                 -keywords				\
+		-Xdoclint:none				\
                 -Xprofilespath $(JDK_TOPDIR)/makefiles/profile-rtjar-includes.txt \
 		$(ADDITIONAL_JAVADOCFLAGS)
 

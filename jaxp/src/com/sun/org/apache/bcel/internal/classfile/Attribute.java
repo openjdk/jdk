@@ -206,6 +206,9 @@ public abstract class Attribute implements Cloneable, Node, Serializable {
     case Constants.ATTR_LOCAL_VARIABLE_TABLE:
       return new LocalVariableTable(name_index, length, file, constant_pool);
 
+    case Constants.ATTR_LOCAL_VARIABLE_TYPE_TABLE:
+      return new LocalVariableTypeTable(name_index, length, file, constant_pool);
+
     case Constants.ATTR_INNER_CLASSES:
       return new InnerClasses(name_index, length, file, constant_pool);
 

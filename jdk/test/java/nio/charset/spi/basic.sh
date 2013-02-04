@@ -38,12 +38,13 @@
 if [ -z "$TESTJAVA" ]; then
   if [ $# -lt 1 ]; then exit 1; fi
   TESTJAVA=$1; shift
+  COMPILEJDK="${TESTJAVA}"
   TESTSRC=`pwd`
   TESTCLASSES=`pwd`
 fi
 
 JAVA=$TESTJAVA/bin/java
-JAR=$TESTJAVA/bin/jar
+JAR=$COMPILEJAVA/bin/jar
 
 DIR=`pwd`
 case `uname` in
@@ -72,7 +73,7 @@ if [ \! -d $EXTD ]; then
     cp $TESTCLASSES/FooProvider.class $TESTCLASSES/FooCharset.class $JARD
     mkdir $TESTD
     cp $TESTCLASSES/Test.class $TESTD
-    (cd $JARD; $JAR -cf $EXTD/test.jar *)
+    (cd $JARD; $JAR ${TESTTOOLVMOPTS} -cf $EXTD/test.jar *)
 fi
 
 if [ $# -gt 0 ]; then

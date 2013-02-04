@@ -94,6 +94,7 @@ public interface Visitor {
   public void visitLineNumberTable(LineNumberTable obj);
   public void visitLocalVariable(LocalVariable obj);
   public void visitLocalVariableTable(LocalVariableTable obj);
+  public void visitLocalVariableTypeTable(LocalVariableTypeTable obj);
   public void visitMethod(Method obj);
   public void visitSignature(Signature obj);
   public void visitSourceFile(SourceFile obj);
