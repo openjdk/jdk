@@ -847,4 +847,6 @@ public abstract class Configuration {
         sourcetab = n;
         tabSpaces = String.format("%" + n + "s", "");
     }
+
+    public abstract boolean showMessage(SourcePosition pos, String key);
 }

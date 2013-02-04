@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import java.util.Map;
+
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.*;
@@ -87,18 +88,28 @@ public class Annotate {
     private int enterCount = 0;
 
     ListBuffer<Annotator> q = new ListBuffer<Annotator>();
+    ListBuffer<Annotator> typesQ = new ListBuffer<Annotator>();
     ListBuffer<Annotator> repeatedQ = new ListBuffer<Annotator>();
-
-    public void normal(Annotator a) {
-        q.append(a);
-    }
+    ListBuffer<Annotator> afterRepeatedQ = new ListBuffer<Annotator>();
 
     public void earlier(Annotator a) {
         q.prepend(a);
     }
 
+    public void normal(Annotator a) {
+        q.append(a);
+    }
+
+    public void typeAnnotation(Annotator a) {
+        typesQ.append(a);
+    }
+
     public void repeated(Annotator a) {
         repeatedQ.append(a);
+    }
+
+    public void afterRepeated(Annotator a) {
+        afterRepeatedQ.append(a);
     }
 
     /** Called when the Enter phase starts. */
@@ -116,11 +127,17 @@ public class Annotate {
         if (enterCount != 0) return;
         enterCount++;
         try {
-            while (q.nonEmpty())
+            while (q.nonEmpty()) {
                 q.next().enterAnnotation();
-
+            }
+            while (typesQ.nonEmpty()) {
+                typesQ.next().enterAnnotation();
+            }
             while (repeatedQ.nonEmpty()) {
                 repeatedQ.next().enterAnnotation();
+            }
+            while (afterRepeatedQ.nonEmpty()) {
+                afterRepeatedQ.next().enterAnnotation();
             }
         } finally {
             enterCount--;
@@ -141,16 +158,18 @@ public class Annotate {
      * This context contains all the information needed to synthesize new
      * annotations trees by the completer for repeating annotations.
      */
-    public class AnnotateRepeatedContext {
+    public class AnnotateRepeatedContext<T extends Attribute.Compound> {
         public final Env<AttrContext> env;
-        public final Map<Symbol.TypeSymbol, ListBuffer<Attribute.Compound>> annotated;
-        public final Map<Attribute.Compound, JCDiagnostic.DiagnosticPosition> pos;
+        public final Map<Symbol.TypeSymbol, ListBuffer<T>> annotated;
+        public final Map<T, JCDiagnostic.DiagnosticPosition> pos;
         public final Log log;
+        public final boolean isTypeCompound;
 
         public AnnotateRepeatedContext(Env<AttrContext> env,
-                                       Map<Symbol.TypeSymbol, ListBuffer<Attribute.Compound>> annotated,
-                                       Map<Attribute.Compound, JCDiagnostic.DiagnosticPosition> pos,
-                                       Log log) {
+                                       Map<Symbol.TypeSymbol, ListBuffer<T>> annotated,
+                                       Map<T, JCDiagnostic.DiagnosticPosition> pos,
+                                       Log log,
+                                       boolean isTypeCompound) {
             Assert.checkNonNull(env);
             Assert.checkNonNull(annotated);
             Assert.checkNonNull(pos);
@@ -160,6 +179,7 @@ public class Annotate {
             this.annotated = annotated;
             this.pos = pos;
             this.log = log;
+            this.isTypeCompound = isTypeCompound;
         }
 
         /**
@@ -170,7 +190,7 @@ public class Annotate {
          * @param repeatingAnnotations a List of repeating annotations
          * @return a new Attribute.Compound that is the container for the repeatingAnnotations
          */
-        public Attribute.Compound processRepeatedAnnotations(List<Attribute.Compound> repeatingAnnotations, Symbol sym) {
+        public T processRepeatedAnnotations(List<T> repeatingAnnotations, Symbol sym) {
             return Annotate.this.processRepeatedAnnotations(repeatingAnnotations, this, sym);
         }
 
@@ -246,7 +266,12 @@ public class Annotate {
                            ((MethodSymbol)method, value));
             t.type = result;
         }
-        return new Attribute.Compound(a.type, buf.toList());
+        // TODO: this should be a TypeCompound if "a" is a JCTypeAnnotation.
+        // However, how do we find the correct position?
+        Attribute.Compound ac = new Attribute.Compound(a.type, buf.toList());
+        // TODO: is this something we want? Who would use it?
+        // a.attribute = ac;
+        return ac;
     }
 
     Attribute enterAttributeValue(Type expected,
@@ -329,6 +354,15 @@ public class Annotate {
         return new Attribute.Error(attr.attribExpr(tree, env, expected));
     }
 
+    Attribute.TypeCompound enterTypeAnnotation(JCAnnotation a,
+            Type expected,
+            Env<AttrContext> env) {
+        Attribute.Compound c = enterAnnotation(a, expected, env);
+        Attribute.TypeCompound tc = new Attribute.TypeCompound(c.type, c.values, new TypeAnnotationPosition());
+        a.attribute = tc;
+        return tc;
+    }
+
     /* *********************************
      * Support for repeating annotations
      ***********************************/
@@ -337,10 +371,10 @@ public class Annotate {
      * synthesized container annotation or null IFF all repeating
      * annotation are invalid.  This method reports errors/warnings.
      */
-    private Attribute.Compound processRepeatedAnnotations(List<Attribute.Compound> annotations,
-                                                          AnnotateRepeatedContext ctx,
-                                                          Symbol on) {
-        Attribute.Compound firstOccurrence = annotations.head;
+    private <T extends Attribute.Compound> T processRepeatedAnnotations(List<T> annotations,
+            AnnotateRepeatedContext<T> ctx,
+            Symbol on) {
+        T firstOccurrence = annotations.head;
         List<Attribute> repeated = List.nil();
         Type origAnnoType = null;
         Type arrayOfOrigAnnoType = null;
@@ -350,16 +384,16 @@ public class Annotate {
         Assert.check(!annotations.isEmpty() &&
                      !annotations.tail.isEmpty()); // i.e. size() > 1
 
-        for (List<Attribute.Compound> al = annotations;
+        for (List<T> al = annotations;
              !al.isEmpty();
              al = al.tail)
         {
-            Attribute.Compound currentAnno = al.head;
+            T currentAnno = al.head;
 
             origAnnoType = currentAnno.type;
             if (arrayOfOrigAnnoType == null) {
                 arrayOfOrigAnnoType = types.makeArrayType(origAnnoType);
-}
+            }
 
             Type currentContainerType = getContainingType(currentAnno, ctx.pos.get(currentAnno));
             if (currentContainerType == null) {
@@ -383,25 +417,46 @@ public class Annotate {
 
         if (!repeated.isEmpty()) {
             repeated = repeated.reverse();
-            JCAnnotation annoTree;
             TreeMaker m = make.at(ctx.pos.get(firstOccurrence));
             Pair<MethodSymbol, Attribute> p =
                     new Pair<MethodSymbol, Attribute>(containerValueSymbol,
                                                       new Attribute.Array(arrayOfOrigAnnoType, repeated));
-            annoTree = m.Annotation(new Attribute.Compound(targetContainerType,
-                    List.of(p)));
+            if (ctx.isTypeCompound) {
+                /* TODO: the following code would be cleaner:
+                Attribute.TypeCompound at = new Attribute.TypeCompound(targetContainerType, List.of(p),
+                        ((Attribute.TypeCompound)annotations.head).position);
+                JCTypeAnnotation annoTree = m.TypeAnnotation(at);
+                at = enterTypeAnnotation(annoTree, targetContainerType, ctx.env);
+                */
+                // However, we directly construct the TypeCompound to keep the
+                // direct relation to the contained TypeCompounds.
+                Attribute.TypeCompound at = new Attribute.TypeCompound(targetContainerType, List.of(p),
+                        ((Attribute.TypeCompound)annotations.head).position);
 
-            if (!chk.annotationApplicable(annoTree, on))
-                log.error(annoTree.pos(), "invalid.containedby.annotation.incompatible.target", targetContainerType, origAnnoType);
+                // TODO: annotation applicability checks from below?
 
-            if (!chk.validateAnnotationDeferErrors(annoTree))
-                log.error(annoTree.pos(), "duplicate.annotation.invalid.repeated", origAnnoType);
+                at.setSynthesized(true);
 
-            Attribute.Compound c = enterAnnotation(annoTree,
-                                                   targetContainerType,
-                                                   ctx.env);
-            c.setSynthesized(true);
-            return c;
+                @SuppressWarnings("unchecked")
+                T x = (T) at;
+                return x;
+            } else {
+                Attribute.Compound c = new Attribute.Compound(targetContainerType, List.of(p));
+                JCAnnotation annoTree = m.Annotation(c);
+
+                if (!chk.annotationApplicable(annoTree, on))
+                    log.error(annoTree.pos(), "invalid.repeatable.annotation.incompatible.target", targetContainerType, origAnnoType);
+
+                if (!chk.validateAnnotationDeferErrors(annoTree))
+                    log.error(annoTree.pos(), "duplicate.annotation.invalid.repeated", origAnnoType);
+
+                c = enterAnnotation(annoTree, targetContainerType, ctx.env);
+                c.setSynthesized(true);
+
+                @SuppressWarnings("unchecked")
+                T x = (T) c;
+                return x;
+            }
         } else {
             return null; // errors should have been reported elsewhere
         }
@@ -414,11 +469,11 @@ public class Annotate {
         Type origAnnoType = currentAnno.type;
         TypeSymbol origAnnoDecl = origAnnoType.tsym;
 
-        // Fetch the ContainedBy annotation from the current
+        // Fetch the Repeatable annotation from the current
         // annotation's declaration, or null if it has none
-        Attribute.Compound ca = origAnnoDecl.attribute(syms.containedByType.tsym);
-        if (ca == null) { // has no ContainedBy annotation
-            log.error(pos, "duplicate.annotation.missing.container", origAnnoType, syms.containedByType);
+        Attribute.Compound ca = origAnnoDecl.attribute(syms.repeatableType.tsym);
+        if (ca == null) { // has no Repeatable annotation
+            log.error(pos, "duplicate.annotation.missing.container", origAnnoType, syms.repeatableType);
             return null;
         }
 
@@ -440,23 +495,23 @@ public class Annotate {
             DiagnosticPosition pos,
             TypeSymbol annoDecl)
     {
-        // The next three checks check that the ContainedBy annotation
+        // The next three checks check that the Repeatable annotation
         // on the declaration of the annotation type that is repeating is
         // valid.
 
-        // ContainedBy must have at least one element
+        // Repeatable must have at least one element
         if (ca.values.isEmpty()) {
-            log.error(pos, "invalid.containedby.annotation", annoDecl);
+            log.error(pos, "invalid.repeatable.annotation", annoDecl);
             return null;
         }
         Pair<MethodSymbol,Attribute> p = ca.values.head;
         Name name = p.fst.name;
         if (name != names.value) { // should contain only one element, named "value"
-            log.error(pos, "invalid.containedby.annotation", annoDecl);
+            log.error(pos, "invalid.repeatable.annotation", annoDecl);
             return null;
         }
         if (!(p.snd instanceof Attribute.Class)) { // check that the value of "value" is an Attribute.Class
-            log.error(pos, "invalid.containedby.annotation", annoDecl);
+            log.error(pos, "invalid.repeatable.annotation", annoDecl);
             return null;
         }
 
@@ -491,13 +546,13 @@ public class Annotate {
         }
         if (error) {
             log.error(pos,
-                      "invalid.containedby.annotation.multiple.values",
+                      "invalid.repeatable.annotation.multiple.values",
                       targetContainerType,
                       nr_value_elems);
             return null;
         } else if (nr_value_elems == 0) {
             log.error(pos,
-                      "invalid.containedby.annotation.no.value",
+                      "invalid.repeatable.annotation.no.value",
                       targetContainerType);
             return null;
         }
@@ -506,7 +561,7 @@ public class Annotate {
         // probably "impossible" to fail this
         if (containerValueSymbol.kind != Kinds.MTH) {
             log.error(pos,
-                      "invalid.containedby.annotation.invalid.value",
+                      "invalid.repeatable.annotation.invalid.value",
                       targetContainerType);
             fatalError = true;
         }
@@ -518,7 +573,7 @@ public class Annotate {
         if (!(types.isArray(valueRetType) &&
               types.isSameType(expectedType, valueRetType))) {
             log.error(pos,
-                      "invalid.containedby.annotation.value.return",
+                      "invalid.repeatable.annotation.value.return",
                       targetContainerType,
                       valueRetType,
                       expectedType);
@@ -528,10 +583,7 @@ public class Annotate {
             fatalError = true;
         }
 
-        // Explicitly no check for/validity of @ContainerFor. That is
-        // done on declaration of the container, and at reflect time.
-
-        // The rest of the conditions for a valid containing annotation are made
+        // The conditions for a valid containing annotation are made
         // in Check.validateRepeatedAnnotaton();
 
         return fatalError ? null : containerValueSymbol;
