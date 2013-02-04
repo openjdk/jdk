@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,19 @@ public class FloatingDecimal{
     boolean     mustSetRoundDir = false;
     boolean     fromHex = false;
     int         roundDir = 0; // set by doubleValue
+
+    /*
+     * The fields below provides additional information about the result of
+     * the binary to decimal digits conversion done in dtoa() and roundup()
+     * methods. They are changed if needed by those two methods.
+     */
+
+    // True if the dtoa() binary to decimal conversion was exact.
+    boolean     exactDecimalConversion = false;
+
+    // True if the result of the binary to decimal conversion was rounded-up
+    // at the end of the conversion process, i.e. roundUp() method was called.
+    boolean     decimalDigitsRoundedUp = false;
 
     private     FloatingDecimal( boolean negSign, int decExponent, char []digits, int n,  boolean e )
     {
@@ -396,6 +409,11 @@ public class FloatingDecimal{
             // else fall through.
         }
         digits[i] = (char)(q+1);
+        decimalDigitsRoundedUp = true;
+    }
+
+    public boolean digitsRoundedUp() {
+        return decimalDigitsRoundedUp;
     }
 
     /*
@@ -751,6 +769,7 @@ public class FloatingDecimal{
                     digits[ndigit++] = (char)('0' + q);
                 }
                 lowDigitDifference = (b<<1) - tens;
+                exactDecimalConversion  = (b == 0);
             } else {
                 // still good! they're all longs!
                 long b = (fractBits * long5pow[B5] ) << B2;
@@ -804,8 +823,10 @@ public class FloatingDecimal{
                     digits[ndigit++] = (char)('0' + q);
                 }
                 lowDigitDifference = (b<<1) - tens;
+                exactDecimalConversion  = (b == 0);
             }
         } else {
+            FDBigInt ZeroVal = new FDBigInt(0);
             FDBigInt tenSval;
             int  shiftBias;
 
@@ -859,8 +880,10 @@ public class FloatingDecimal{
             if ( high && low ){
                 Bval.lshiftMe(1);
                 lowDigitDifference = Bval.cmp(tenSval);
-            } else
+            } else {
                 lowDigitDifference = 0L; // this here only for flow analysis!
+            }
+            exactDecimalConversion  = (Bval.cmp( ZeroVal ) == 0);
         }
         this.decExponent = decExp+1;
         this.digits = digits;
@@ -881,6 +904,10 @@ public class FloatingDecimal{
                 roundup();
             }
         }
+    }
+
+    public boolean decimalDigitsExact() {
+        return exactDecimalConversion;
     }
 
     public String

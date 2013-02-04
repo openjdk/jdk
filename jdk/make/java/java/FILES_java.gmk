@@ -137,6 +137,7 @@ JAVA_JAVA_java = \
     java/lang/Appendable.java \
     java/lang/Comparable.java \
     java/lang/Readable.java \
+    java/lang/FunctionalInterface.java \
     java/lang/Override.java \
     java/lang/SafeVarargs.java \
     java/lang/SuppressWarnings.java \
@@ -227,6 +228,7 @@ JAVA_JAVA_java = \
             sun/util/locale/provider/LocaleResources.java \
             sun/util/locale/provider/NumberFormatProviderImpl.java \
             sun/util/locale/provider/RuleBasedBreakIterator.java \
+            sun/util/locale/provider/ResourceBundleBasedAdapter.java \
             sun/util/locale/provider/SPILocaleProviderAdapter.java \
             sun/util/locale/provider/TimeZoneNameProviderImpl.java \
             sun/util/locale/provider/TimeZoneNameUtility.java \
@@ -372,6 +374,11 @@ JAVA_JAVA_java = \
     java/util/concurrent/atomic/AtomicReferenceArray.java \
     java/util/concurrent/atomic/AtomicReferenceFieldUpdater.java \
     java/util/concurrent/atomic/AtomicStampedReference.java \
+    java/util/concurrent/atomic/DoubleAccumulator.java \
+    java/util/concurrent/atomic/DoubleAdder.java \
+    java/util/concurrent/atomic/LongAccumulator.java \
+    java/util/concurrent/atomic/LongAdder.java \
+    java/util/concurrent/atomic/Striped64.java \
     java/util/concurrent/locks/AbstractOwnableSynchronizer.java \
     java/util/concurrent/locks/AbstractQueuedLongSynchronizer.java \
     java/util/concurrent/locks/AbstractQueuedSynchronizer.java \

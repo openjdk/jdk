@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -734,12 +734,12 @@ void os::init_system_properties_values() {
 
   // The next steps are taken in the product version:
   //
-  // Obtain the JAVA_HOME value from the location of libjvm[_g].so.
+  // Obtain the JAVA_HOME value from the location of libjvm.so.
   // This library should be located at:
-  // <JAVA_HOME>/jre/lib/<arch>/{client|server}/libjvm[_g].so.
+  // <JAVA_HOME>/jre/lib/<arch>/{client|server}/libjvm.so.
   //
   // If "/jre/lib/" appears at the right place in the path, then we
-  // assume libjvm[_g].so is installed in a JDK and we use this path.
+  // assume libjvm.so is installed in a JDK and we use this path.
   //
   // Otherwise exit with message: "Could not create the Java virtual machine."
   //
@@ -749,9 +749,9 @@ void os::init_system_properties_values() {
   // instead of exit check for $JAVA_HOME environment variable.
   //
   // If it is defined and we are able to locate $JAVA_HOME/jre/lib/<arch>,
-  // then we append a fake suffix "hotspot/libjvm[_g].so" to this path so
-  // it looks like libjvm[_g].so is installed there
-  // <JAVA_HOME>/jre/lib/<arch>/hotspot/libjvm[_g].so.
+  // then we append a fake suffix "hotspot/libjvm.so" to this path so
+  // it looks like libjvm.so is installed there
+  // <JAVA_HOME>/jre/lib/<arch>/hotspot/libjvm.so.
   //
   // Otherwise exit.
   //
@@ -1934,7 +1934,7 @@ const char* os::get_current_directory(char *buf, int buflen) {
   return getcwd(buf, buflen);
 }
 
-// check if addr is inside libjvm[_g].so
+// check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
   Dl_info dlinfo;
@@ -2474,7 +2474,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 
 static char saved_jvm_path[MAXPATHLEN] = { 0 };
 
-// Find the full path to the current module, libjvm.so or libjvm_g.so
+// Find the full path to the current module, libjvm.so
 void os::jvm_path(char *buf, jint buflen) {
   // Error checking.
   if (buflen < MAXPATHLEN) {
@@ -2522,10 +2522,9 @@ void os::jvm_path(char *buf, jint buflen) {
           strcpy(cpu_arch, "amd64");
         }
 #endif
-        // Check the current module name "libjvm.so" or "libjvm_g.so".
+        // Check the current module name "libjvm.so".
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
-        p = strstr(p, "_g") ? "_g" : "";
 
         realpath(java_home_var, buf);
         // determine if this is a legacy image or modules image
@@ -2538,11 +2537,9 @@ void os::jvm_path(char *buf, jint buflen) {
         }
 
         if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm[_g].so" instead of
-          // "libjvm"debug_only("_g")".so" since for fastdebug version
-          // we should have "libjvm.so" but debug_only("_g") adds "_g"!
+          // Use current module name "libjvm.so"
           len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/hotspot/libjvm%s.so", p);
+          snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
         } else {
           // Go back to path of .so
           realpath((char *)dlinfo.dli_fname, buf);
@@ -6017,6 +6014,9 @@ void os::PlatformEvent::park() {           // AKA: down()
      _Event = 0 ;
      status = os::Solaris::mutex_unlock(_mutex);
      assert_status(status == 0, status, "mutex_unlock");
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other.
+    OrderAccess::fence();
   }
 }
 
@@ -6058,51 +6058,43 @@ int os::PlatformEvent::park(jlong millis) {
   _Event = 0 ;
   status = os::Solaris::mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");
+  // Paranoia to ensure our locked and lock-free paths interact
+  // correctly with each other.
+  OrderAccess::fence();
   return ret;
 }
 
 void os::PlatformEvent::unpark() {
-  int v, AnyWaiters;
+  // Transitions for _Event:
+  //    0 :=> 1
+  //    1 :=> 1
+  //   -1 :=> either 0 or 1; must signal target thread
+  //          That is, we can safely transition _Event from -1 to either
+  //          0 or 1. Forcing 1 is slightly more efficient for back-to-back
+  //          unpark() calls.
+  // See also: "Semaphores in Plan 9" by Mullender & Cox
+  //
+  // Note: Forcing a transition from "-1" to "1" on an unpark() means
+  // that it will take two back-to-back park() calls for the owning
+  // thread to block. This has the benefit of forcing a spurious return
+  // from the first park() call after an unpark() call which will help
+  // shake out uses of park() and unpark() without condition variables.
 
-  // Increment _Event.
-  // Another acceptable implementation would be to simply swap 1
-  // into _Event:
-  //   if (Swap (&_Event, 1) < 0) {
-  //      mutex_lock (_mutex) ; AnyWaiters = nParked; mutex_unlock (_mutex) ;
-  //      if (AnyWaiters) cond_signal (_cond) ;
-  //   }
-
-  for (;;) {
-    v = _Event ;
-    if (v > 0) {
-       // The LD of _Event could have reordered or be satisfied
-       // by a read-aside from this processor's write buffer.
-       // To avoid problems execute a barrier and then
-       // ratify the value.  A degenerate CAS() would also work.
-       // Viz., CAS (v+0, &_Event, v) == v).
-       OrderAccess::fence() ;
-       if (_Event == v) return ;
-       continue ;
-    }
-    if (Atomic::cmpxchg (v+1, &_Event, v) == v) break ;
-  }
+  if (Atomic::xchg(1, &_Event) >= 0) return;
 
   // If the thread associated with the event was parked, wake it.
-  if (v < 0) {
-     int status ;
-     // Wait for the thread assoc with the PlatformEvent to vacate.
-     status = os::Solaris::mutex_lock(_mutex);
-     assert_status(status == 0, status, "mutex_lock");
-     AnyWaiters = _nParked ;
-     status = os::Solaris::mutex_unlock(_mutex);
-     assert_status(status == 0, status, "mutex_unlock");
-     guarantee (AnyWaiters == 0 || AnyWaiters == 1, "invariant") ;
-     if (AnyWaiters != 0) {
-       // We intentional signal *after* dropping the lock
-       // to avoid a common class of futile wakeups.
-       status = os::Solaris::cond_signal(_cond);
-       assert_status(status == 0, status, "cond_signal");
-     }
+  // Wait for the thread assoc with the PlatformEvent to vacate.
+  int status = os::Solaris::mutex_lock(_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+  int AnyWaiters = _nParked;
+  status = os::Solaris::mutex_unlock(_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+  guarantee(AnyWaiters == 0 || AnyWaiters == 1, "invariant");
+  if (AnyWaiters != 0) {
+    // We intentional signal *after* dropping the lock
+    // to avoid a common class of futile wakeups.
+    status = os::Solaris::cond_signal(_cond);
+    assert_status(status == 0, status, "cond_signal");
   }
 }
 
@@ -6180,14 +6172,14 @@ static void unpackTime(timespec* absTime, bool isAbsolute, jlong time) {
 }
 
 void Parker::park(bool isAbsolute, jlong time) {
+  // Ideally we'd do something useful while spinning, such
+  // as calling unpackTime().
 
   // Optional fast-path check:
   // Return immediately if a permit is available.
-  if (_counter > 0) {
-      _counter = 0 ;
-      OrderAccess::fence();
-      return ;
-  }
+  // We depend on Atomic::xchg() having full barrier semantics
+  // since we are doing a lock-free update to _counter.
+  if (Atomic::xchg(0, &_counter) > 0) return;
 
   // Optional fast-exit: Check interrupt before trying to wait
   Thread* thread = Thread::current();
@@ -6229,6 +6221,8 @@ void Parker::park(bool isAbsolute, jlong time) {
     _counter = 0;
     status = os::Solaris::mutex_unlock(_mutex);
     assert (status == 0, "invariant") ;
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other and Java-level accesses.
     OrderAccess::fence();
     return;
   }
@@ -6270,12 +6264,14 @@ void Parker::park(bool isAbsolute, jlong time) {
   _counter = 0 ;
   status = os::Solaris::mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock") ;
+  // Paranoia to ensure our locked and lock-free paths interact
+  // correctly with each other and Java-level accesses.
+  OrderAccess::fence();
 
   // If externally suspended while waiting, re-suspend
   if (jt->handle_special_suspend_equivalent_condition()) {
     jt->java_suspend_self();
   }
-  OrderAccess::fence();
 }
 
 void Parker::unpark() {

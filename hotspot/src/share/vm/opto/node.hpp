@@ -994,12 +994,13 @@ public:
 #ifndef PRODUCT
   Node* find(int idx) const;         // Search the graph for the given idx.
   Node* find_ctrl(int idx) const;    // Search control ancestors for the given idx.
-  void dump() const;                 // Print this node,
+  void dump() const { dump("\n"); }  // Print this node.
+  void dump(const char* suffix, outputStream *st = tty) const;// Print this node.
   void dump(int depth) const;        // Print this node, recursively to depth d
   void dump_ctrl(int depth) const;   // Print control nodes, to depth d
-  virtual void dump_req() const;     // Print required-edge info
-  virtual void dump_prec() const;    // Print precedence-edge info
-  virtual void dump_out() const;     // Print the output edge info
+  virtual void dump_req(outputStream *st = tty) const;     // Print required-edge info
+  virtual void dump_prec(outputStream *st = tty) const;    // Print precedence-edge info
+  virtual void dump_out(outputStream *st = tty) const;     // Print the output edge info
   virtual void dump_spec(outputStream *st) const {}; // Print per-node info
   void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
   void verify() const;               // Check Def-Use info for my subgraph

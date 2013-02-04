@@ -1,6 +1,2 @@
-CyclicAnnotation.java:12:1: compiler.err.invalid.container.wrong.containerfor: Foo, Baz
-CyclicAnnotation.java:13:1: compiler.err.invalid.container.wrong.containedby: Foo, Baz
-CyclicAnnotation.java:15:11: compiler.err.cyclic.annotation.element
-CyclicAnnotation.java:18:1: compiler.err.invalid.container.wrong.containerfor: Baz, Foo
-CyclicAnnotation.java:19:1: compiler.err.invalid.container.wrong.containedby: Baz, Foo
-5 errors
+CyclicAnnotation.java:13:11: compiler.err.cyclic.annotation.element
+1 error

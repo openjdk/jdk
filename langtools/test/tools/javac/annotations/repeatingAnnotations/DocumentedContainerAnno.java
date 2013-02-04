@@ -6,15 +6,13 @@
  * @compile/fail/ref=DocumentedContainerAnno.out -XDrawDiagnostics DocumentedContainerAnno.java
  */
 
-import java.lang.annotation.ContainedBy;
-import java.lang.annotation.ContainerFor;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Documented;
 
 @Documented
-@ContainedBy(FooContainer.class)
+@Repeatable(FooContainer.class)
 @interface Foo {}
 
-@ContainerFor(Foo.class)
 @interface FooContainer{
     Foo[] value();
 }

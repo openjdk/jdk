@@ -11572,15 +11572,28 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 // =======================================================================
 // fast clearing of an array
 instruct rep_stos(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate(!UseFastStosb);
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
-  format %{ "SHL    ECX,1\t# Convert doublewords to words\n\t"
-            "XOR    EAX,EAX\n\t"
+  format %{ "XOR    EAX,EAX\t# ClearArray:\n\t"
+            "SHL    ECX,1\t# Convert doublewords to words\n\t"
             "REP STOS\t# store EAX into [EDI++] while ECX--" %}
-  opcode(0,0x4);
-  ins_encode( Opcode(0xD1), RegOpc(ECX),
-              OpcRegReg(0x33,EAX,EAX),
-              Opcode(0xF3), Opcode(0xAB) );
+  ins_encode %{ 
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rep_fast_stosb(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate(UseFastStosb);
+  match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
+  format %{ "XOR    EAX,EAX\t# ClearArray:\n\t"
+            "SHL    ECX,3\t# Convert doublewords to bytes\n\t"
+            "REP STOSB\t# store EAX into [EDI++] while ECX--" %}
+  ins_encode %{ 
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -11673,6 +11686,23 @@ instruct array_equals(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
   %}
   ins_pipe( pipe_slow );
 %}
+
+// encode char[] to byte[] in ISO_8859_1
+instruct encode_iso_array(eSIRegP src, eDIRegP dst, eDXRegI len,
+                          regD tmp1, regD tmp2, regD tmp3, regD tmp4,
+                          eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
+
+  format %{ "Encode array $src,$dst,$len -> $result    // KILL ECX, EDX, $tmp1, $tmp2, $tmp3, $tmp4, ESI, EDI " %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 
 //----------Control Flow Instructions------------------------------------------
 // Signed compare Instructions

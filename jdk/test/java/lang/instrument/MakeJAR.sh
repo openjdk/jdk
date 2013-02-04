@@ -23,7 +23,6 @@
 # questions.
 #
 
-
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
@@ -38,16 +37,22 @@ then
 fi
 echo "TESTJAVA=${TESTJAVA}"
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."
   exit 1
 fi
 
-JAVAC="${TESTJAVA}/bin/javac -g"
-JAR="${TESTJAVA}/bin/jar"
+JAVAC="${COMPILEJAVA}/bin/javac -g"
+JAR="${COMPILEJAVA}/bin/jar"
 
 cp ${TESTSRC}/InstrumentationHandoff.java InstrumentationHandoff.java
-${JAVAC} InstrumentationHandoff.java
-${JAR} cvfm $1.jar ${TESTSRC}/$1.mf InstrumentationHandoff.class
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} InstrumentationHandoff.java
+${JAR} ${TESTTOOLVMOPTS} cvfm $1.jar ${TESTSRC}/$1.mf InstrumentationHandoff.class
 rm -f InstrumentationHandoff.class InstrumentationHandoff.java

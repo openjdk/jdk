@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7151414
+ * @bug 7151414 4745761
  * @summary Unit test for calendar types
  */
 
@@ -39,20 +39,21 @@ public class CalendarTypeTest {
         new Locale("ja", "JP", "JP"),
         Locale.forLanguageTag("en-US-u-ca-japanese"),
     };
-    static String[] types = new String[] {
-        "gregory",
+    static final String[] TYPES = new String[] {
         "gregory",
         "buddhist",
-        "buddhist",
         "japanese",
-        "japanese",
+    };
+    static final String[] ALIASES = new String[] {
+        "gregorian",
+        "iso8601",
     };
 
     public static void main(String[] args) {
         for (int i = 0; i < locales.length; i++) {
             Calendar cal = Calendar.getInstance(locales[i]);
             String type = cal.getCalendarType();
-            checkValue("bad calendar type", type, types[i]);
+            checkValue("bad calendar type", type, TYPES[i/2]);
         }
 
         GregorianCalendar gcal = new GregorianCalendar();
@@ -63,6 +64,21 @@ public class CalendarTypeTest {
 
         Calendar k = new Koyomi();
         checkValue("bad class name", k.getCalendarType(), k.getClass().getName());
+
+        Set<String> types = Calendar.getAvailableCalendarTypes();
+        if (types.size() != 3) {
+            throw new RuntimeException("size != 3");
+        }
+        for (String s : TYPES) {
+            if (!types.contains(s)) {
+                throw new RuntimeException(s + " not contained");
+            }
+        }
+        for (String s : ALIASES) {
+            if (types.contains(s)) {
+                throw new RuntimeException("alias " + s + " contained");
+            }
+        }
     }
 
     private static void checkValue(String msg, String got, String expected) {

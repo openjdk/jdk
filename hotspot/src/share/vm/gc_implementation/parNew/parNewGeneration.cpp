@@ -878,12 +878,6 @@ void EvacuateFollowersClosureGeneral::do_void() {
 
 bool ParNewGeneration::_avoid_promotion_undo = false;
 
-void ParNewGeneration::adjust_desired_tenuring_threshold() {
-  // Set the desired survivor size to half the real survivor space
-  _tenuring_threshold =
-    age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize);
-}
-
 // A Generation that does parallel young-gen collection.
 
 void ParNewGeneration::collect(bool   full,
@@ -1013,6 +1007,8 @@ void ParNewGeneration::collect(bool   full,
     size_policy->reset_gc_overhead_limit_count();
 
     assert(to()->is_empty(), "to space should be empty now");
+
+    adjust_desired_tenuring_threshold();
   } else {
     assert(_promo_failure_scan_stack.is_empty(), "post condition");
     _promo_failure_scan_stack.clear(true); // Clear cached segments.
@@ -1035,7 +1031,6 @@ void ParNewGeneration::collect(bool   full,
   from()->set_concurrent_iteration_safe_limit(from()->top());
   to()->set_concurrent_iteration_safe_limit(to()->top());
 
-  adjust_desired_tenuring_threshold();
   if (ResizePLAB) {
     plab_stats()->adjust_desired_plab_sz(n_workers);
   }
@@ -1622,8 +1617,4 @@ void ParNewGeneration::ref_processor_init()
 
 const char* ParNewGeneration::name() const {
   return "par new generation";
-}
-
-bool ParNewGeneration::in_use() {
-  return UseParNewGC && ParallelGCThreads > 0;
 }

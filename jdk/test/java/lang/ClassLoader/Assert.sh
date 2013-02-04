@@ -35,6 +35,10 @@ then
   exit 1
 fi
 echo "TESTJAVA=${TESTJAVA}"
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."
@@ -47,7 +51,7 @@ cp ${TESTSRC}/Assert.java .
 cp -R ${TESTSRC}/package1 .
 cp -R ${TESTSRC}/package2 .
 
-${TESTJAVA}/bin/javac Assert.java 
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} Assert.java 
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} Assert
 

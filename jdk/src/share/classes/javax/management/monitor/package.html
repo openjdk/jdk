@@ -60,19 +60,20 @@ questions.
       <i>v</i>. A value <i>x</i> is extracted from <i>v</i> as follows:</p>
 
       <ul>
+          
       <li>If <i>v</i> is a {@link javax.management.openmbean.CompositeData
       CompositeData} and if <i>v</i>.{@link
       javax.management.openmbean.CompositeData#get(String) get}(<i>e</i>)
       returns a value then <i>x</i> is that value.</li>
       <li>If <i>v</i> is an array and <i>e</i> is the string <tt>"length"</tt>
       then <i>x</i> is the length of the array.</li>
-      <li>If the above rules do not produce a value, and if {@link
-      java.beans.Introspector#getBeanInfo(Class) Introspector.getBeanInfo}
-      for the class of <i>v</i> (<i>v</i>.<tt>getClass()</tt>) contains a
-      {@link java.beans.PropertyDescriptor PropertyDescriptor} with the name
-      <i>e</i>, then <i>x</i> is the result of calling the property's {@link
-      java.beans.PropertyDescriptor#getReadMethod() read method} on
-      <i>v</i>.</li>
+      
+      <li>If the above rules do not produce a value, and if introspection, as
+      if by calling {@link java.beans.Introspector#getBeanInfo(Class) 
+      Introspector.getBeanInfo}, for the class of <i>v</i> 
+      (<i>v</i>.<tt>getClass()</tt>) identifies a property with the name 
+      <i>e</i>, then <i>x</i> is the result of reading the property value. </li>
+      
       </ul>
 
       <p>The third rule means for example that if the attribute

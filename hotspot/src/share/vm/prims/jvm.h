@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ extern "C" {
 
 #define JVM_INTERFACE_VERSION 4
 
+JNIEXPORT jobjectArray JNICALL
+JVM_GetMethodParameters(JNIEnv *env, jobject method);
 
 JNIEXPORT jint JNICALL
 JVM_GetInterfaceVersion(void);
@@ -209,9 +211,6 @@ JVM_IsNaN(jdouble d);
  */
 JNIEXPORT void JNICALL
 JVM_FillInStackTrace(JNIEnv *env, jobject throwable);
-
-JNIEXPORT void JNICALL
-JVM_PrintStackTrace(JNIEnv *env, jobject throwable, jobject printable);
 
 JNIEXPORT jint JNICALL
 JVM_GetStackTraceDepth(JNIEnv *env, jobject throwable);
@@ -519,6 +518,10 @@ JVM_GetMethodDefaultAnnotationValue(JNIEnv *env, jobject method);
 JNIEXPORT jbyteArray JNICALL
 JVM_GetMethodParameterAnnotations(JNIEnv *env, jobject method);
 
+/* Type use annotations support (JDK 1.8) */
+
+JNIEXPORT jbyteArray JNICALL
+JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls);
 
 /*
  * New (JDK 1.4) reflection implementation

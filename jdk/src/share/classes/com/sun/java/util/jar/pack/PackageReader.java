@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,6 +242,7 @@ class PackageReader extends BandStructure {
     void checkArchiveVersion() throws IOException {
         Package.Version versionFound = null;
         for (Package.Version v : new Package.Version[] {
+                JAVA8_PACKAGE_VERSION,
                 JAVA7_PACKAGE_VERSION,
                 JAVA6_PACKAGE_VERSION,
                 JAVA5_PACKAGE_VERSION
@@ -252,7 +253,9 @@ class PackageReader extends BandStructure {
             }
         }
         if (versionFound == null) {
-            String expVer = JAVA7_PACKAGE_VERSION.toString()
+            String expVer =   JAVA8_PACKAGE_VERSION.toString()
+                            + "OR"
+                            + JAVA7_PACKAGE_VERSION.toString()
                             + " OR "
                             + JAVA6_PACKAGE_VERSION.toString()
                             + " OR "
@@ -1516,6 +1519,9 @@ class PackageReader extends BandStructure {
         //        method_metadata_bands
         //        *method_Exceptions_N :UNSIGNED5
         //        *method_Exceptions_RC :UNSIGNED5  (cp_Class)
+        //        *method_MethodParameters_NB: BYTE1
+        //        *method_MethodParameters_RUN: UNSIGNED5 (cp_Utf8)
+        //        *method_MethodParameters_I:  UNSIGNED5 (flag)
         //
         //  code_attr_bands:
         //        *code_flags :UNSIGNED5
