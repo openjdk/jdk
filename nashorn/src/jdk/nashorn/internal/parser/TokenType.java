@@ -168,6 +168,7 @@ public enum TokenType {
     FLOATING       (LITERAL,  null),
     STRING         (LITERAL,  null),
     ESCSTRING      (LITERAL,  null),
+    EXECSTRING     (LITERAL,  null),
     IDENT          (LITERAL,  null),
     REGEX          (LITERAL,  null),
     XML            (LITERAL,  null),

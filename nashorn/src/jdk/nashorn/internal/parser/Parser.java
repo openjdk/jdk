@@ -39,6 +39,7 @@ import static jdk.nashorn.internal.parser.TokenType.DECPREFIX;
 import static jdk.nashorn.internal.parser.TokenType.ELSE;
 import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
+import static jdk.nashorn.internal.parser.TokenType.EXECSTRING;
 import static jdk.nashorn.internal.parser.TokenType.FINALLY;
 import static jdk.nashorn.internal.parser.TokenType.FUNCTION;
 import static jdk.nashorn.internal.parser.TokenType.IDENT;
@@ -98,6 +99,7 @@ import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.ScriptingFunctions;
 
 /**
  * Builds the IR.
@@ -107,7 +109,11 @@ public class Parser extends AbstractParser {
     /** Code generator. */
     private final Compiler compiler;
 
+    /** Current context. */
     private final Context context;
+
+    /** Is scripting mode. */
+    private final boolean scripting;
 
     /** Top level script being compiled. */
     private FunctionNode script;
@@ -136,6 +142,7 @@ public class Parser extends AbstractParser {
 
         this.compiler = compiler;
         this.context  = compiler.getContext();
+        this.scripting = this.context._scripting;
     }
 
     /**
@@ -146,7 +153,7 @@ public class Parser extends AbstractParser {
     public FunctionNode parse(final String scriptName) {
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, stream, context._scripting && !context._no_syntax_extensions);
+            lexer  = new Lexer(source, stream, scripting && !context._no_syntax_extensions);
 
             // Set up first token (skips opening EOL.)
             k = -1;
@@ -1856,6 +1863,8 @@ loop:
         case REGEX:
         case XML:
             return getLiteral();
+        case EXECSTRING:
+            return execString(primaryToken);
         case FALSE:
             next();
             return LiteralNode.newInstance(source, primaryToken, finish, false);
@@ -1893,6 +1902,28 @@ loop:
         return null;
     }
 
+    /**
+     * Convert execString to a call to $EXEC.
+     *
+     * @param primaryToken Original string token.
+     * @return callNode to $EXEC.
+     */
+    Node execString(final long primaryToken) {
+        // Synthesize an ident to call $EXEC.
+        final IdentNode execIdent = new IdentNode(source, primaryToken, finish, ScriptingFunctions.EXEC_NAME);
+        // Skip over EXECSTRING.
+        next();
+        // Set up argument list for call.
+        final List<Node> arguments = new ArrayList<>();
+        // Skip beginning of edit string expression.
+        expect(LBRACE);
+        // Add the following expression to arguments.
+        arguments.add(expression());
+        // Skip ending of edit string expression.
+        expect(RBRACE);
+
+        return new CallNode(source, primaryToken, finish, execIdent, arguments);
+    }
 
     /**
      * ArrayLiteral :

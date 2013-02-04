@@ -32,9 +32,15 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Global functions supported only in scripting mode.
@@ -49,6 +55,19 @@ public class ScriptingFunctions {
 
     /** Handle to implementation of {@link ScriptingFunctions#quit} - Nashorn extension */
     public static final MethodHandle QUIT = findOwnMH("quit",     Object.class, Object.class, Object.class);
+
+    /** Handle to implementation of {@link ScriptingFunctions#quit} - Nashorn extension */
+    public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object.class, Object.class);
+
+    /** Names of special properties used by $EXEC API. */
+    public  static final String EXEC_NAME = "$EXEC";
+    private static final String OUT_NAME  = "$OUT";
+    private static final String ERR_NAME  = "$ERR";
+    private static final String EXIT_NAME = "$EXIT";
+
+    /** Names of special properties used by $ENV API. */
+    public  static final String ENV_NAME  = "$ENV";
+    private static final String PWD_NAME  = "PWD";
 
     private ScriptingFunctions() {
     }
@@ -106,6 +125,118 @@ public class ScriptingFunctions {
     public static Object quit(final Object self, final Object code) {
         System.exit(JSType.toInt32(code));
         return UNDEFINED;
+    }
+
+    /**
+     * Nashorn extension: exec a string in a separate process.
+     *
+     * @param self   self reference
+     * @param string string to execute
+     *
+     * @return output string from the request
+     */
+    public static Object exec(final Object self, final Object string, final Object input) throws IOException, InterruptedException {
+        // Current global is need to fetch additional inputs and for additional results.
+        final ScriptObject global = Context.getGlobal();
+
+        // Current ENV property state.
+        final Object env = global.get(ENV_NAME);
+        // Make sure ENV is a valid script object.
+        if (!(env instanceof ScriptObject)) {
+            typeError("env.not.object");
+        }
+        final ScriptObject envProperties = (ScriptObject)env;
+
+        // Break exec string into tokens.
+        final StringTokenizer tokenizer = new StringTokenizer(JSType.toString(string));
+        final String[] cmdArray = new String[tokenizer.countTokens()];
+        for (int i = 0; tokenizer.hasMoreTokens(); i++) {
+            cmdArray[i] = tokenizer.nextToken();
+        }
+
+        // Set up initial process.
+        final ProcessBuilder processBuilder = new ProcessBuilder(cmdArray);
+
+        // If a working directory is present, use it.
+        final Object pwd = envProperties.get(PWD_NAME);
+        if (pwd != UNDEFINED) {
+            processBuilder.directory(new File(JSType.toString(pwd)));
+        }
+
+        // Set up ENV variables.
+        final Map<String, String> environment = processBuilder.environment();
+        environment.clear();
+        for (Map.Entry<Object, Object> entry : envProperties.entrySet()) {
+
+            environment.put(JSType.toString(entry.getKey()), JSType.toString(entry.getValue()));
+        }
+
+        // Start the process.
+        final Process process = processBuilder.start();
+
+        // If input is present, pass on to process.
+        try (OutputStream outputStream = process.getOutputStream()) {
+            if (input != UNDEFINED) {
+                outputStream.write(JSType.toString(input).getBytes());
+            }
+        }
+
+        // Wait for the process to complete.
+        final int exit = process.waitFor();
+
+        // Collect output.
+        String out;
+         try (InputStream inputStream = process.getInputStream()) {
+            final StringBuilder outBuffer = new StringBuilder();
+            for (int ch; (ch = inputStream.read()) != -1; ) {
+                outBuffer.append((char)ch);
+            }
+            out = outBuffer.toString();
+        }
+
+        // Collect errors.
+        String err;
+        try (InputStream errorStream = process.getErrorStream()) {
+            final StringBuilder errBuffer = new StringBuilder();
+            for (int ch; (ch = errorStream.read()) != -1; ) {
+                errBuffer.append((char)ch);
+            }
+            err = errBuffer.toString();
+        }
+
+        // Set globals for secondary results.
+        final boolean isStrict = global.isStrictContext();
+        global.set(OUT_NAME, out, isStrict);
+        global.set(ERR_NAME, err, isStrict);
+        global.set(EXIT_NAME, exit, isStrict);
+
+        // Return the result from stdout.
+        return out;
+    }
+
+    /**
+     * Return an object containing properties mapping to ENV variables.
+     *
+     * @param envProperties object to receive properties
+     * @param isStrict      global's strict state
+     *
+     * @return Script object with properties mapping to ENV variables.
+     */
+    public static ScriptObject getENVValues(final ScriptObject envProperties, final boolean isStrict) {
+        // Retrieve current state of ENV variables.
+        Map<String, String> envVars;
+        try {
+            envVars = System.getenv();
+        } catch(SecurityException ex) {
+            envVars = new HashMap<>();
+        }
+
+        // Map ENV variables.
+        for (Map.Entry<String, String> entry : envVars.entrySet()) {
+            envProperties.set(entry.getKey(), entry.getValue(), isStrict);
+        }
+
+        return envProperties;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

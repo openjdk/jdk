@@ -744,16 +744,37 @@ public final class Context {
     }
 
     /**
-     * Create global script object
-     * @return the global script object
+     * Create and initialize a new global scope object.
+     *
+     * @return the initialized global scope object.
      */
     public ScriptObject createGlobal() {
+        return initGlobal(newGlobal());
+    }
+
+    /**
+     * Create a new uninitialized global scope object
+     * @return the global script object
+     */
+    public ScriptObject newGlobal() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("createNashornGlobal"));
         }
 
-        final ScriptObject global = newGlobal();
+        return newGlobalTrusted();
+    }
+
+    /**
+     * Initialize given global scope object.
+     *
+     * @return the initialized global scope object.
+     */
+    public ScriptObject initGlobal(final ScriptObject global) {
+        if (! (global instanceof GlobalObject)) {
+            throw new IllegalArgumentException("not a global object!");
+        }
+
         // Need only minimal global object, if we are just compiling.
         if (!_compile_only) {
             final ScriptObject oldGlobal = Context.getGlobalTrusted();
@@ -929,7 +950,7 @@ public final class Context {
              });
     }
 
-    private ScriptObject newGlobal() {
+    private ScriptObject newGlobalTrusted() {
         try {
             final Class<?> clazz = Class.forName("jdk.nashorn.internal.objects.Global", true, scriptLoader);
             return (ScriptObject) clazz.newInstance();
