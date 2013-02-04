@@ -2725,10 +2725,8 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     zend  = phase->transform( new(C) URShiftXNode(zend,  shift) );
   }
 
-  Node* zsize = phase->transform( new(C) SubXNode(zend, zbase) );
-  Node* zinit = phase->zerocon((unit == BytesPerLong) ? T_LONG : T_INT);
-
   // Bulk clear double-words
+  Node* zsize = phase->transform( new(C) SubXNode(zend, zbase) );
   Node* adr = phase->transform( new(C) AddPNode(dest, dest, start_offset) );
   mem = new (C) ClearArrayNode(ctl, mem, zsize, adr);
   return phase->transform(mem);
@@ -2794,6 +2792,26 @@ Node *StrIntrinsicNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 const Type *StrIntrinsicNode::Value( PhaseTransform *phase ) const {
+  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
+  return bottom_type();
+}
+
+//=============================================================================
+//------------------------------match_edge-------------------------------------
+// Do not match memory edge
+uint EncodeISOArrayNode::match_edge(uint idx) const {
+  return idx == 2 || idx == 3; // EncodeISOArray src (Binary dst len)
+}
+
+//------------------------------Ideal------------------------------------------
+// Return a node which is more "ideal" than the current node.  Strip out
+// control copies
+Node *EncodeISOArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
+}
+
+//------------------------------Value------------------------------------------
+const Type *EncodeISOArrayNode::Value(PhaseTransform *phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
 }

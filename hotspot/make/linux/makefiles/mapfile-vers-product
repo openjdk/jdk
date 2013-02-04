@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,7 @@ SUNWprivate_1.1 {
                 JVM_GetClassNameUTF;
                 JVM_GetClassSignature;
                 JVM_GetClassSigners;
+                JVM_GetClassTypeAnnotations;
                 JVM_GetComponentType;
                 JVM_GetDeclaredClasses;
                 JVM_GetDeclaringClass;
@@ -150,6 +151,7 @@ SUNWprivate_1.1 {
                 JVM_GetMethodIxNameUTF;
                 JVM_GetMethodIxSignatureUTF;
                 JVM_GetMethodParameterAnnotations;
+                JVM_GetMethodParameters;
                 JVM_GetPrimitiveArrayElement;
                 JVM_GetProtectionDomain;
                 JVM_GetSockName;
@@ -199,7 +201,6 @@ SUNWprivate_1.1 {
                 JVM_NewMultiArray;
                 JVM_OnExit;
                 JVM_Open;
-                JVM_PrintStackTrace;
                 JVM_RaiseSignal;
                 JVM_RawMonitorCreate;
                 JVM_RawMonitorDestroy;

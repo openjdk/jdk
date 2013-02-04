@@ -47,40 +47,40 @@ public class StorePasswordTest {
 
         new File(KEYSTORE).delete();
 
-        try {
+        KeyStore keystore = KeyStore.getInstance("PKCS12");
+        keystore.load(null, null);
 
-            KeyStore keystore = KeyStore.getInstance("PKCS12");
-            keystore.load(null, null);
+        // Set entry
+        keystore.setEntry(ALIAS,
+            new KeyStore.SecretKeyEntry(convertPassword(USER_PASSWORD)),
+                new KeyStore.PasswordProtection(PASSWORD));
 
-            // Set entry
-            keystore.setEntry(ALIAS,
-                new KeyStore.SecretKeyEntry(convertPassword(USER_PASSWORD)),
-                    new KeyStore.PasswordProtection(PASSWORD));
-
+        try (FileOutputStream outStream = new FileOutputStream(KEYSTORE)) {
             System.out.println("Storing keystore to: " + KEYSTORE);
-            keystore.store(new FileOutputStream(KEYSTORE), PASSWORD);
+            keystore.store(outStream, PASSWORD);
+        }
 
+        try (FileInputStream inStream = new FileInputStream(KEYSTORE)) {
             System.out.println("Loading keystore from: " + KEYSTORE);
-            keystore.load(new FileInputStream(KEYSTORE), PASSWORD);
+            keystore.load(inStream, PASSWORD);
             System.out.println("Loaded keystore with " + keystore.size() +
                 " entries");
-            KeyStore.Entry entry = keystore.getEntry(ALIAS,
-                new KeyStore.PasswordProtection(PASSWORD));
-            System.out.println("Retrieved entry: " + entry);
+        }
 
-            SecretKey key = (SecretKey) keystore.getKey(ALIAS, PASSWORD);
-            SecretKeyFactory factory =
-                SecretKeyFactory.getInstance(key.getAlgorithm());
-            PBEKeySpec keySpec =
-                (PBEKeySpec) factory.getKeySpec(key, PBEKeySpec.class);
-            char[] pwd = keySpec.getPassword();
-            System.out.println("Recovered credential: " + new String(pwd));
+        KeyStore.Entry entry = keystore.getEntry(ALIAS,
+            new KeyStore.PasswordProtection(PASSWORD));
+        System.out.println("Retrieved entry: " + entry);
 
-            if (!Arrays.equals(USER_PASSWORD.toCharArray(), pwd)) {
-                throw new Exception("Failed to recover the stored password");
-            }
-        } finally {
-            new File(KEYSTORE).delete();
+        SecretKey key = (SecretKey) keystore.getKey(ALIAS, PASSWORD);
+        SecretKeyFactory factory =
+            SecretKeyFactory.getInstance(key.getAlgorithm());
+        PBEKeySpec keySpec =
+            (PBEKeySpec) factory.getKeySpec(key, PBEKeySpec.class);
+        char[] pwd = keySpec.getPassword();
+        System.out.println("Recovered credential: " + new String(pwd));
+
+        if (!Arrays.equals(USER_PASSWORD.toCharArray(), pwd)) {
+            throw new Exception("Failed to recover the stored password");
         }
     }
 

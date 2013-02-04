@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,11 @@ final class PropMap implements SortedMap<String, String>  {
 
         // Pass through files with unrecognized attributes by default.
         props.put(Pack200.Packer.UNKNOWN_ATTRIBUTE, Pack200.Packer.PASS);
+
+        // Pass through files with unrecognized format by default, also
+        // allow system property to be set
+        props.put(Utils.CLASS_FORMAT_ERROR,
+                System.getProperty(Utils.CLASS_FORMAT_ERROR, Pack200.Packer.PASS));
 
         // Default effort is 5, midway between 1 and 9.
         props.put(Pack200.Packer.EFFORT, "5");

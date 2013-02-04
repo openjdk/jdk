@@ -101,8 +101,7 @@ Java_sun_lwawt_macosx_CPlatformComponent_nativeCreateComponent
 JNF_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-        
+
         CALayer *windowLayer = jlong_to_ptr(windowLayerPtr);
         surfaceLayers = [[AWTSurfaceLayers alloc] initWithWindowLayer: windowLayer];
         CFRetain(surfaceLayers);
@@ -127,7 +126,6 @@ JNF_COCOA_ENTER(env);
   AWTSurfaceLayers *surfaceLayers = OBJC(surfaceLayersPtr);
     
   [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
-      AWT_ASSERT_APPKIT_THREAD;
 
       CGRect rect = CGRectMake(x, y, width, height);
       [surfaceLayers setBounds: rect];

@@ -161,8 +161,18 @@ public class ProxyTest {
         }
     }
 
+    private static boolean hasFtp() {
+        try {
+            return new java.net.URL("ftp://") != null;
+        } catch (java.net.MalformedURLException x) {
+            System.out.println("FTP not supported by this runtime.");
+            return false;
+        }
+    }
+
     public static void main(String[] args) throws Exception {
-        ProxyTest test = new ProxyTest();
+        if (hasFtp())
+           new ProxyTest();
     }
 
     public ProxyTest() throws Exception {

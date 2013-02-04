@@ -8794,3 +8794,6 @@ FormatData/zh_TW/islamic.DatePatterns/0=GGGGy\u5e74M\u6708d\u65e5EEEE
 FormatData/zh_TW/islamic.DatePatterns/1=GGGGy\u5e74M\u6708d\u65e5
 FormatData/zh_TW/islamic.DatePatterns/2=GGGGy/M/d
 FormatData/zh_TW/islamic.DatePatterns/3=GGGGy/M/d
+
+# bug 7114053
+LocaleNames/sq/sq=shqip

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,16 @@
  */
 
 /*
- * Manual test
+ * @test
+ * @bug 7190310
+ * @summary Inlining WeakReference.get(), and hoisting $referent may lead to non-terminating loops
+ * @run main/othervm/timeout=600 -Xbatch Test7190310
+ */
+
+/*
+ * Note bug exhibits as infinite loop, timeout is helpful.
+ * It should normally finish pretty quickly, but on some especially slow machines
+ * it may not.  The companion _unsafe test lacks a timeout, but that is okay.
  */
 
 import java.lang.ref.*;

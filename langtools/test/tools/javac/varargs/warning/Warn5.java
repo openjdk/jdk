@@ -23,13 +23,18 @@
 
 /**
  * @test
- * @bug     6993978 7097436
+ * @bug     6993978 7097436 8006694
  * @summary Project Coin: Annotation to reduce varargs warnings
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @author  mcimadamore
  * @library ../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main Warn5
+ * @run main/othervm Warn5
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
+
 import java.net.URI;
 import java.util.Arrays;
 import java.util.EnumSet;

@@ -813,6 +813,10 @@ fi
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
 
+ACCEPTED_JARZIP_CONTENTS="
+/bin/w2k_lsa_auth.dll
+"
+
 # Probably should add all libs here
 ACCEPTED_SMALL_SIZE_DIFF="
 ./demo/jvmti/gctest/lib/gctest.dll
@@ -821,6 +825,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/bin/attach.dll
 ./jre/bin/java_crw_demo.dll
 ./jre/bin/jsoundds.dll
+./jre/bin/server/jvm.dll
 ./bin/appletviewer.exe
 ./bin/extcheck.exe
 ./bin/idlj.exe
@@ -880,6 +885,17 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/bin/servertool.exe
 ./jre/bin/tnameserv.exe
 ./jre/bin/unpack200.exe
+"
+
+# jabswitch.exe is compiled and linked with incremental turned on in the old
+# build. This makes no sense, so it's turned off in the new build.
+ACCEPTED_SIZE_DIFF="
+./bin/jabswitch.exe
+./jre/bin/jabswitch.exe
+"
+ACCEPTED_DIS_DIFF="
+./bin/jabswitch.exe
+./jre/bin/jabswitch.exe
 "
 
 # On windows, there are unavoidable allignment issues making

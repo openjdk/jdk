@@ -36,8 +36,6 @@
 JNIEXPORT jint JNICALL Java_sun_lwawt_macosx_CDesktopPeer__1lsOpenURI
 (JNIEnv *env, jclass clz, jstring uri)
 {
-    // AWT_ASSERT_ANY_THREAD
-
     OSStatus status = noErr;
 JNF_COCOA_ENTER(env);
 
@@ -63,8 +61,6 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT jint JNICALL Java_sun_lwawt_macosx_CDesktopPeer__1lsOpenFile
 (JNIEnv *env, jclass clz, jstring jpath, jboolean print)
 {
-    // AWT_ASSERT_ANY_THREAD
-
     OSStatus status = noErr;
 JNF_COCOA_ENTER(env);
 

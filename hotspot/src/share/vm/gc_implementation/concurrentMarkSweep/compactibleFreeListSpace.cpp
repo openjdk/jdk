@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,6 @@ HeapWord* CompactibleFreeListSpace::forward(oop q, size_t size,
     assert(q->forwardee() == NULL, "should be forwarded to NULL");
   }
 
-  VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(q, adjusted_size));
   compact_top += adjusted_size;
 
   // we need to update the offset table so that the beginnings of objects can be
@@ -555,7 +554,7 @@ void CompactibleFreeListSpace::reportFreeListStatistics() const {
     reportIndexedFreeListStatistics();
     size_t total_size = totalSizeInIndexedFreeLists() +
                        _dictionary->total_chunk_size(DEBUG_ONLY(freelistLock()));
-    gclog_or_tty->print(" free=%ld frag=%1.4f\n", total_size, flsFrag());
+    gclog_or_tty->print(" free=" SIZE_FORMAT " frag=%1.4f\n", total_size, flsFrag());
   }
 }
 

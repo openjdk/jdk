@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,11 @@ public abstract class LinkFactory {
                 //Just a primitive.
                 linkInfo.displayLength += type.typeName().length();
                 linkOutput.append(type.typeName());
+            } else if (type.asAnnotatedType() != null) {
+                linkOutput.append(getTypeAnnotationLinks(linkInfo));
+                linkInfo.type = type.asAnnotatedType().underlyingType();
+                linkOutput.append(getLinkOutput(linkInfo));
+                return linkOutput;
             } else if (type.asWildcardType() != null) {
                 //Wildcard type.
                 linkInfo.isTypeBound = true;
@@ -82,6 +87,7 @@ public abstract class LinkFactory {
                     linkOutput.append(getLinkOutput(linkInfo));
                 }
             } else if (type.asTypeVariable()!= null) {
+                linkOutput.append(getTypeAnnotationLinks(linkInfo));
                 linkInfo.isTypeBound = true;
                 //A type variable.
                 Doc owner = type.asTypeVariable().owner();
@@ -175,6 +181,9 @@ public abstract class LinkFactory {
     protected abstract LinkOutput getTypeParameterLink(LinkInfo linkInfo,
         Type typeParam);
 
+    protected abstract LinkOutput getTypeAnnotationLink(LinkInfo linkInfo,
+            AnnotationDesc annotation);
+
     /**
      * Return the links to the type parameters.
      *
@@ -223,6 +232,24 @@ public abstract class LinkFactory {
             linkInfo.displayLength += 1;
             output.append(getGreaterThanString());
         }
+        return output;
+    }
+
+    public LinkOutput getTypeAnnotationLinks(LinkInfo linkInfo) {
+        LinkOutput output = getOutputInstance();
+        if (linkInfo.type.asAnnotatedType() == null)
+            return output;
+        AnnotationDesc[] annotations = linkInfo.type.asAnnotatedType().annotations();
+        for (int i = 0; i < annotations.length; i++) {
+            if (i > 0) {
+                linkInfo.displayLength += 1;
+                output.append(" ");
+            }
+            output.append(getTypeAnnotationLink(linkInfo, annotations[i]));
+        }
+
+        linkInfo.displayLength += 1;
+        output.append(" ");
         return output;
     }
 

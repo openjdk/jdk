@@ -100,20 +100,7 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
 
   mark_sweep_phase3(level);
 
-  VALIDATE_MARK_SWEEP_ONLY(
-    if (ValidateMarkSweep) {
-      guarantee(_root_refs_stack->length() == 0, "should be empty by now");
-    }
-  )
-
   mark_sweep_phase4();
-
-  VALIDATE_MARK_SWEEP_ONLY(
-    if (ValidateMarkSweep) {
-      guarantee(_live_oops->length() == _live_oops_moved_to->length(),
-                "should be the same size");
-    }
-  )
 
   restore_marks();
 
@@ -187,31 +174,6 @@ void GenMarkSweep::allocate_stacks() {
 
   _preserved_marks = (PreservedMark*)scratch;
   _preserved_count = 0;
-
-#ifdef VALIDATE_MARK_SWEEP
-  if (ValidateMarkSweep) {
-    _root_refs_stack    = new (ResourceObj::C_HEAP, mtGC) GrowableArray<void*>(100, true);
-    _other_refs_stack   = new (ResourceObj::C_HEAP, mtGC) GrowableArray<void*>(100, true);
-    _adjusted_pointers  = new (ResourceObj::C_HEAP, mtGC) GrowableArray<void*>(100, true);
-    _live_oops          = new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(100, true);
-    _live_oops_moved_to = new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(100, true);
-    _live_oops_size     = new (ResourceObj::C_HEAP, mtGC) GrowableArray<size_t>(100, true);
-  }
-  if (RecordMarkSweepCompaction) {
-    if (_cur_gc_live_oops == NULL) {
-      _cur_gc_live_oops           = new(ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(100, true);
-      _cur_gc_live_oops_moved_to  = new(ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(100, true);
-      _cur_gc_live_oops_size      = new(ResourceObj::C_HEAP, mtGC) GrowableArray<size_t>(100, true);
-      _last_gc_live_oops          = new(ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(100, true);
-      _last_gc_live_oops_moved_to = new(ResourceObj::C_HEAP, mtGC) GrowableArray<HeapWord*>(100, true);
-      _last_gc_live_oops_size     = new(ResourceObj::C_HEAP, mtGC) GrowableArray<size_t>(100, true);
-    } else {
-      _cur_gc_live_oops->clear();
-      _cur_gc_live_oops_moved_to->clear();
-      _cur_gc_live_oops_size->clear();
-    }
-  }
-#endif
 }
 
 
@@ -225,19 +187,6 @@ void GenMarkSweep::deallocate_stacks() {
   _preserved_oop_stack.clear(true);
   _marking_stack.clear();
   _objarray_stack.clear(true);
-
-#ifdef VALIDATE_MARK_SWEEP
-  if (ValidateMarkSweep) {
-    delete _root_refs_stack;
-    delete _other_refs_stack;
-    delete _adjusted_pointers;
-    delete _live_oops;
-    delete _live_oops_size;
-    delete _live_oops_moved_to;
-    _live_oops_index = 0;
-    _live_oops_index_at_perm = 0;
-  }
-#endif
 }
 
 void GenMarkSweep::mark_sweep_phase1(int level,
@@ -245,8 +194,6 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   // Recursively traverse all live objects and mark them
   TraceTime tm("phase 1", PrintGC && Verbose, true, gclog_or_tty);
   trace(" 1");
-
-  VALIDATE_MARK_SWEEP_ONLY(reset_live_oop_tracking());
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
@@ -315,8 +262,6 @@ void GenMarkSweep::mark_sweep_phase2() {
   TraceTime tm("phase 2", PrintGC && Verbose, true, gclog_or_tty);
   trace("2");
 
-  VALIDATE_MARK_SWEEP_ONLY(reset_live_oop_tracking());
-
   gch->prepare_for_compaction();
 }
 
@@ -336,8 +281,6 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
 
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
-
-  VALIDATE_MARK_SWEEP_ONLY(reset_live_oop_tracking());
 
   // Because the two closures below are created statically, cannot
   // use OopsInGenClosure constructor which takes a generation,
@@ -393,10 +336,6 @@ void GenMarkSweep::mark_sweep_phase4() {
   TraceTime tm("phase 4", PrintGC && Verbose, true, gclog_or_tty);
   trace("4");
 
-  VALIDATE_MARK_SWEEP_ONLY(reset_live_oop_tracking());
-
   GenCompactClosure blk;
   gch->generation_iterate(&blk, true);
-
-  VALIDATE_MARK_SWEEP_ONLY(compaction_complete());
 }

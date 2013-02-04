@@ -64,6 +64,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   int        _sde_length;
   Array<u2>* _inner_classes;
   AnnotationArray* _annotations;
+  AnnotationArray* _type_annotations;
 
   void set_class_synthetic_flag(bool x)           { _synthetic_flag = x; }
   void set_class_sourcefile(Symbol* x)            { _sourcefile = x; }
@@ -71,12 +72,14 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void set_class_sde_buffer(char* x, int len)     { _sde_buffer = x; _sde_length = len; }
   void set_class_inner_classes(Array<u2>* x)      { _inner_classes = x; }
   void set_class_annotations(AnnotationArray* x)  { _annotations = x; }
+  void set_class_type_annotations(AnnotationArray* x)  { _type_annotations = x; }
   void init_parsed_class_attributes() {
     _synthetic_flag = false;
     _sourcefile = NULL;
     _generic_signature = NULL;
     _sde_buffer = NULL;
     _sde_length = 0;
+    _annotations = _type_annotations = NULL;
     // initialize the other flags too:
     _has_finalizer = _has_empty_finalizer = _has_vanilla_constructor = false;
     _max_bootstrap_specifier_index = -1;
@@ -92,17 +95,20 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
       _method_DontInline,
       _method_LambdaForm_Compiled,
       _method_LambdaForm_Hidden,
+      _sun_misc_Contended,
       _annotation_LIMIT
     };
     const Location _location;
     int _annotations_present;
+    u2 _contended_group;
+
     AnnotationCollector(Location location)
     : _location(location), _annotations_present(0)
     {
       assert((int)_annotation_LIMIT <= (int)sizeof(_annotations_present) * BitsPerByte, "");
     }
     // If this annotation name has an ID, report it (or _none).
-    ID annotation_index(Symbol* name);
+    ID annotation_index(ClassLoaderData* loader_data, Symbol* name);
     // Set the annotation name:
     void set_annotation(ID id) {
       assert((int)id >= 0 && (int)id < (int)_annotation_LIMIT, "oob");
@@ -111,6 +117,12 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     // Report if the annotation is present.
     bool has_any_annotations() { return _annotations_present != 0; }
     bool has_annotation(ID id) { return (nth_bit((int)id) & _annotations_present) != 0; }
+
+    void set_contended_group(u2 group) { _contended_group = group; }
+    u2 contended_group() { return _contended_group; }
+
+    void set_contended(bool contended) { set_annotation(_sun_misc_Contended); }
+    bool is_contended() { return has_annotation(_sun_misc_Contended); }
   };
   class FieldAnnotationCollector: public AnnotationCollector {
   public:
@@ -163,6 +175,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                               bool* is_synthetic_addr,
                               u2* generic_signature_index_addr,
                               AnnotationArray** field_annotations,
+                              AnnotationArray** field_type_annotations,
                               FieldAnnotationCollector* parsed_annotations,
                               TRAPS);
   Array<u2>* parse_fields(ClassLoaderData* loader_data,
@@ -170,7 +183,16 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                           constantPoolHandle cp, bool is_interface,
                           FieldAllocationCount *fac,
                           Array<AnnotationArray*>** fields_annotations,
+                          Array<AnnotationArray*>** fields_type_annotations,
                           u2* java_fields_count_ptr, TRAPS);
+
+  void print_field_layout(Symbol* name,
+                          Array<u2>* fields,
+                          constantPoolHandle cp,
+                          int instance_size,
+                          int instance_fields_start,
+                          int instance_fields_end,
+                          int static_fields_end);
 
   // Method parsing
   methodHandle parse_method(ClassLoaderData* loader_data,
@@ -180,6 +202,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                             AnnotationArray** method_annotations,
                             AnnotationArray** method_parameter_annotations,
                             AnnotationArray** method_default_annotations,
+                            AnnotationArray** method_type_annotations,
                             TRAPS);
   Array<Method*>* parse_methods(ClassLoaderData* loader_data,
                                 constantPoolHandle cp,
@@ -189,6 +212,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                 Array<AnnotationArray*>** methods_annotations,
                                 Array<AnnotationArray*>** methods_parameter_annotations,
                                 Array<AnnotationArray*>** methods_default_annotations,
+                                Array<AnnotationArray*>** methods_type_annotations,
                                 bool* has_default_method,
                                 TRAPS);
   Array<int>* sort_methods(ClassLoaderData* loader_data,
@@ -196,6 +220,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                            Array<AnnotationArray*>* methods_annotations,
                            Array<AnnotationArray*>* methods_parameter_annotations,
                            Array<AnnotationArray*>* methods_default_annotations,
+                           Array<AnnotationArray*>* methods_type_annotations,
                                 TRAPS);
   u2* parse_exception_table(ClassLoaderData* loader_data,
                             u4 code_length, u4 exception_table_length,
@@ -239,7 +264,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                         int runtime_invisible_annotations_length, TRAPS);
   int skip_annotation(u1* buffer, int limit, int index);
   int skip_annotation_value(u1* buffer, int limit, int index);
-  void parse_annotations(u1* buffer, int limit, constantPoolHandle cp,
+  void parse_annotations(ClassLoaderData* loader_data,
+                         u1* buffer, int limit, constantPoolHandle cp,
                          /* Results (currently, only one result is supported): */
                          AnnotationCollector* result,
                          TRAPS);

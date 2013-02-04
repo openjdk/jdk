@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,10 @@ import javax.tools.JavaFileManager;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javadoc.RootDocImpl;
 
 /**
  * Configure the output based on the command line options.
@@ -172,6 +174,11 @@ public class ConfigurationImpl extends Configuration {
     public boolean createoverview = false;
 
     /**
+     * Collected set of doclint options
+     */
+    public Set<String> doclintOpts = new LinkedHashSet<String>();
+
+    /**
      * Unique Resource Handler for this package.
      */
     public final MessageRetriever standardmessage;
@@ -255,6 +262,10 @@ public class ConfigurationImpl extends Configuration {
                 nooverview = true;
             } else if (opt.equals("-overview")) {
                 overview = true;
+            } else if (opt.equals("-xdoclint")) {
+                doclintOpts.add(null);
+            } else if (opt.startsWith("-xdoclint:")) {
+                doclintOpts.add(opt.substring(opt.indexOf(":") + 1));
             }
         }
         if (root.specifiedClasses().length > 0) {
@@ -270,6 +281,10 @@ public class ConfigurationImpl extends Configuration {
         }
         setCreateOverview();
         setTopFile(root);
+
+        if (root instanceof RootDocImpl) {
+            ((RootDocImpl) root).initDocLint(doclintOpts);
+        }
     }
 
     /**
@@ -303,7 +318,9 @@ public class ConfigurationImpl extends Configuration {
             option.equals("-serialwarn") ||
             option.equals("-use") ||
             option.equals("-nonavbar") ||
-            option.equals("-nooverview")) {
+            option.equals("-nooverview") ||
+            option.equals("-xdoclint") ||
+            option.startsWith("-xdoclint:")) {
             return 1;
         } else if (option.equals("-help")) {
             System.out.println(getText("doclet.usage"));
@@ -410,6 +427,16 @@ public class ConfigurationImpl extends Configuration {
                     return false;
                 }
                 noindex = true;
+            } else if (opt.startsWith("-xdoclint:")) {
+                if (opt.contains("/")) {
+                    reporter.printError(getText("doclet.Option_doclint_no_qualifiers"));
+                    return false;
+                }
+                if (!DocLint.isValidOption(
+                        opt.replace("-xdoclint:", DocLint.XMSGS_CUSTOM_PREFIX))) {
+                    reporter.printError(getText("doclet.Option_doclint_invalid_arg"));
+                    return false;
+                }
             }
         }
         return true;
@@ -506,8 +533,8 @@ public class ConfigurationImpl extends Configuration {
      */
     @Override
     public Locale getLocale() {
-        if (root instanceof com.sun.tools.javadoc.RootDocImpl)
-            return ((com.sun.tools.javadoc.RootDocImpl)root).getLocale();
+        if (root instanceof RootDocImpl)
+            return ((RootDocImpl)root).getLocale();
         else
             return Locale.getDefault();
     }
@@ -518,8 +545,8 @@ public class ConfigurationImpl extends Configuration {
     @Override
     public JavaFileManager getFileManager() {
         if (fileManager == null) {
-            if (root instanceof com.sun.tools.javadoc.RootDocImpl)
-                fileManager = ((com.sun.tools.javadoc.RootDocImpl)root).getFileManager();
+            if (root instanceof RootDocImpl)
+                fileManager = ((RootDocImpl) root).getFileManager();
             else
                 fileManager = new JavacFileManager(new Context(), false, null);
         }
@@ -527,4 +554,12 @@ public class ConfigurationImpl extends Configuration {
     }
 
     private JavaFileManager fileManager;
+
+    @Override
+    public boolean showMessage(SourcePosition pos, String key) {
+        if (root instanceof RootDocImpl) {
+            return pos == null || ((RootDocImpl) root).showTagMessages();
+        }
+        return true;
+    }
 }
