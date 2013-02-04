@@ -327,15 +327,19 @@ public class RuntimeCallSite extends MutableCallSite {
                     }
                 }
                 addcheck = MH.explicitCastArguments(addcheck, type().changeReturnType(boolean.class));
-                guard    = MH.guardWithTest(guard, addcheck,
+                guard    = MH.guardWithTest(upcastGuard(guard), addcheck,
                                 MH.dropArguments(MH.constant(boolean.class, false), 0, type().parameterArray()));
             }
 
-            return MH.guardWithTest(guard, mh, fallback);
+            return MH.guardWithTest(upcastGuard(guard), mh, fallback);
         }
 
         // generic fallback
         return MH.explicitCastArguments(Lookup.filterReturnType(GENERIC_METHODS.get(request.name()), type().returnType()), type());
+    }
+
+    private MethodHandle upcastGuard(final MethodHandle guard) {
+        return MH.asType(guard, type().changeReturnType(boolean.class));
     }
 
     /**

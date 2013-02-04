@@ -163,7 +163,7 @@ public class SharedScopeCall {
                     slot++;
                 }
             }
-            method.dynamicCall(returnType, paramTypes.length, flags);
+            method.dynamicCall(returnType, 2 + paramTypes.length, flags);
         }
 
         method._return(returnType);
