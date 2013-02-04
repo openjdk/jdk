@@ -185,7 +185,6 @@ all: test docs
 
 # Standard make clobber target
 clobber: clean
-    $(ECHO) "Cleaning Nashorn! #1"
 
 # All ant targets of interest
 ANT_TARGETS = clean externals update-externals jar javadoc shelldoc docs test test262 test262parallel octane sunspider perf alltests
