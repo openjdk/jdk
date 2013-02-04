@@ -201,10 +201,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         final Symbol symbol = identNode.getSymbol();
 
         if (!symbol.isScope()) {
-            if(symbol.isParam()) {
-                return method.loadParam(symbol);
-            }
-            assert symbol.hasSlot() && symbol.getSlot() != 0 || symbol.isThis();
+            assert symbol.hasSlot() || symbol.isParam();
             return method.load(symbol);
         }
 
@@ -3200,11 +3197,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                         }
                     } else {
                         assert symbol != null;
-                        if(symbol.isParam()) {
-                            method.storeParam(symbol);
-                        } else {
-                            method.store(symbol);
-                        }
+                        method.store(symbol);
                     }
                     return null;
 

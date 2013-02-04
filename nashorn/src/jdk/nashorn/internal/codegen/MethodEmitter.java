@@ -829,44 +829,26 @@ public class MethodEmitter implements Emitter {
     public MethodEmitter load(final Symbol symbol) {
         assert symbol != null;
         if (symbol.hasSlot()) {
-            debug("load symbol", symbol.getName() + " slot=" + symbol.getSlot());
-            pushType(symbol.getSymbolType().load(method, symbol.getSlot()));
-        }
-        return this;
-    }
-
-    /**
-     * Push a non-scope function parameter to the stack. Function parameters always arrive into a function as either
-     * explicit parameters on the stack, or collected into a final variable-arity {@code Object[]} parameter. If they
-     * end up being scoped (i.e. referenced from a child function or eval), then they're loaded as scoped symbols and
-     * this function is not invoked for them. If they aren't scoped, then they will be loaded from one of three places.
-     * First, if the function has an Arguments object, they're loaded from it. Otherwise, if the parameters come in a
-     * {@code Object[]} array, they are loaded from the array. Finally, if neither is the case, they're simply loaded
-     * from their bytecode slot.
-     *
-     * @param symbol the symbol representing the parameter.
-     *
-     * @return the method emitter
-     */
-    public MethodEmitter loadParam(final Symbol symbol) {
-        assert symbol != null && symbol.isParam() && !symbol.isScope();
-        if(symbol.hasSlot()) {
-            // Check that we aren't vararg, except if we're loading "this"
-            assert symbol.isThis() || !functionNode.isVarArg() : "Symbol=" + symbol + " functionNode=" + functionNode.getName();
-            // Just load it from a local variable
-            return load(symbol);
-        }
-        assert functionNode.isVarArg();
-        if(functionNode.needsArguments()) {
-            // ScriptObject.getArgument(int) on arguments
-            loadArguments();
-            load(symbol.getFieldIndex());
-            ScriptObject.GET_ARGUMENT.invoke(this);
-        } else {
-            // array load from __varargs__
-            loadVarArgs();
-            load(symbol.getFieldIndex());
-            arrayload();
+            final int slot = symbol.getSlot();
+            debug("load symbol", symbol.getName(), " slot=", slot);
+            pushType(symbol.getSymbolType().load(method, slot));
+        } else if (symbol.isParam()) {
+            assert !symbol.isScope();
+            assert functionNode.isVarArg() : "Non-vararg functions have slotted parameters";
+            final int index = symbol.getFieldIndex();
+            if(functionNode.needsArguments()) {
+                // ScriptObject.getArgument(int) on arguments
+                debug("load symbol", symbol.getName(), " arguments index=", index);
+                loadArguments();
+                load(index);
+                ScriptObject.GET_ARGUMENT.invoke(this);
+            } else {
+                // array load from __varargs__
+                debug("load symbol", symbol.getName(), " array index=", index);
+                loadVarArgs();
+                load(symbol.getFieldIndex());
+                arrayload();
+            }
         }
         return this;
     }
@@ -1033,44 +1015,27 @@ public class MethodEmitter implements Emitter {
     public void store(final Symbol symbol) {
         assert symbol != null : "No symbol to store";
         if (symbol.hasSlot()) {
-            debug("store", symbol);
-            popType(symbol.getSymbolType()).store(method, symbol.getSlot());
+            final int slot = symbol.getSlot();
+            debug("store symbol", symbol.getName(), " slot=", slot);
+            popType(symbol.getSymbolType()).store(method, slot);
+        } else if (symbol.isParam()) {
+            assert !symbol.isScope();
+            assert functionNode.isVarArg() : "Non-vararg functions have slotted parameters";
+            final int index = symbol.getFieldIndex();
+            if(functionNode.needsArguments()) {
+                debug("store symbol", symbol.getName(), " arguments index=", index);
+                loadArguments();
+                load(index);
+                ArgumentSetter.SET_ARGUMENT.invoke(this);
+            } else {
+                // varargs without arguments object - just do array store to __varargs__
+                debug("store symbol", symbol.getName(), " array index=", index);
+                loadVarArgs();
+                load(index);
+                ArgumentSetter.SET_ARRAY_ELEMENT.invoke(this);
+            }
         }
     }
-
-    /**
-     * Pop a value from the stack and store it in a non-scope function parameter. Function parameters always arrive into
-     * a function as either explicit parameters on th stack, or collected into a final variable-arity {@code Object[]}
-     * parameter. If they end up being scoped (i.e. referenced from a child function or eval), then they're stored as
-     * scoped symbols are and this function is not invoked for them. If they aren't scoped, then they will be stored
-     * to one of three places. First, if the function has an Arguments object, they're stored to it. Otherwise, if the
-     * parameters come in a {@code Object[]} array, they are stored to the array. Finally, if neither is the case,
-     * they're simply stored to their bytecode slot.
-     *
-     * @param symbol the symbol representing the parameter.
-     *
-     */
-    public void storeParam(final Symbol symbol) {
-        assert symbol != null && symbol.isParam() && !symbol.isScope();
-        if(symbol.hasSlot()) {
-            assert !functionNode.isVarArg();
-            // Just store it to a local variable
-            store(symbol);
-            return;
-        }
-        assert functionNode.isVarArg();
-        if(functionNode.needsArguments()) {
-            loadArguments();
-            load(symbol.getFieldIndex());
-            ArgumentSetter.SET_ARGUMENT.invoke(this);
-        } else {
-            // varargs without arguments object - just do array store to __varargs__
-            loadVarArgs();
-            load(symbol.getFieldIndex());
-            ArgumentSetter.SET_ARRAY_ELEMENT.invoke(this);
-        }
-    }
-
 
     /**
      * Pop a value from the stack and store it in a given local variable
