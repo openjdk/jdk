@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 
 /* @test
-   @bug 4252173
-   @summary Inability to reuse the HorizontalSliderThumbIcon
-   @author Pavel Porvatov
-   @run main bug4252173
-*/
+ * @bug 4252173 7077259
+ * @summary Inability to reuse the HorizontalSliderThumbIcon
+ * @author Pavel Porvatov
+ * @run main/othervm -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel bug4252173
+ */
 
 import javax.swing.*;
 import javax.swing.plaf.metal.DefaultMetalTheme;
