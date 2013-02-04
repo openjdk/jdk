@@ -95,17 +95,20 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
       _method_DontInline,
       _method_LambdaForm_Compiled,
       _method_LambdaForm_Hidden,
+      _sun_misc_Contended,
       _annotation_LIMIT
     };
     const Location _location;
     int _annotations_present;
+    u2 _contended_group;
+
     AnnotationCollector(Location location)
     : _location(location), _annotations_present(0)
     {
       assert((int)_annotation_LIMIT <= (int)sizeof(_annotations_present) * BitsPerByte, "");
     }
     // If this annotation name has an ID, report it (or _none).
-    ID annotation_index(Symbol* name);
+    ID annotation_index(ClassLoaderData* loader_data, Symbol* name);
     // Set the annotation name:
     void set_annotation(ID id) {
       assert((int)id >= 0 && (int)id < (int)_annotation_LIMIT, "oob");
@@ -114,6 +117,12 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     // Report if the annotation is present.
     bool has_any_annotations() { return _annotations_present != 0; }
     bool has_annotation(ID id) { return (nth_bit((int)id) & _annotations_present) != 0; }
+
+    void set_contended_group(u2 group) { _contended_group = group; }
+    u2 contended_group() { return _contended_group; }
+
+    void set_contended(bool contended) { set_annotation(_sun_misc_Contended); }
+    bool is_contended() { return has_annotation(_sun_misc_Contended); }
   };
   class FieldAnnotationCollector: public AnnotationCollector {
   public:
@@ -176,6 +185,14 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                           Array<AnnotationArray*>** fields_annotations,
                           Array<AnnotationArray*>** fields_type_annotations,
                           u2* java_fields_count_ptr, TRAPS);
+
+  void print_field_layout(Symbol* name,
+                          Array<u2>* fields,
+                          constantPoolHandle cp,
+                          int instance_size,
+                          int instance_fields_start,
+                          int instance_fields_end,
+                          int static_fields_end);
 
   // Method parsing
   methodHandle parse_method(ClassLoaderData* loader_data,
@@ -247,7 +264,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                         int runtime_invisible_annotations_length, TRAPS);
   int skip_annotation(u1* buffer, int limit, int index);
   int skip_annotation_value(u1* buffer, int limit, int index);
-  void parse_annotations(u1* buffer, int limit, constantPoolHandle cp,
+  void parse_annotations(ClassLoaderData* loader_data,
+                         u1* buffer, int limit, constantPoolHandle cp,
                          /* Results (currently, only one result is supported): */
                          AnnotationCollector* result,
                          TRAPS);

@@ -25,21 +25,13 @@
  * @test
  * @bug 8003280
  * @summary Add lambda tests
- *  check that non-boxing method references conversion has the precedence
- * @run main MethodReference25
+ *  check that non-boxing method references is not preferred over boxing one
+ * @compile/fail/ref=MethodReference25.out -XDrawDiagnostics MethodReference25.java
  */
 
-public class MethodReference25 {
+class MethodReference25 {
 
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
-
-    static int assertionCount = 0;
-
-    static void m(Integer i) { assertTrue(true); }
+    static void m(Integer i) { }
 
     interface SAM1 {
         void m(int x);
@@ -49,11 +41,10 @@ public class MethodReference25 {
         void m(Integer x);
     }
 
-    static void call(int i, SAM1 s) { s.m(i); assertTrue(false); }
+    static void call(int i, SAM1 s) { s.m(i);  }
     static void call(int i, SAM2 s) { s.m(i);  }
 
     public static void main(String[] args) {
-        call(1, MethodReference25::m); //resolves to call(int, SAM2)
-        assertTrue(assertionCount == 1);
+        call(1, MethodReference25::m); //ambiguous
     }
 }

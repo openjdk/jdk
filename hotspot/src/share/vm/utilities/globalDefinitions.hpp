@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1249,6 +1249,14 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 #define UINT64_FORMAT_W(width) "%" #width PRIu64
 
 #define PTR64_FORMAT           "0x%016" PRIx64
+
+// Format jlong, if necessary
+#ifndef JLONG_FORMAT
+#define JLONG_FORMAT           INT64_FORMAT
+#endif
+#ifndef JULONG_FORMAT
+#define JULONG_FORMAT          UINT64_FORMAT
+#endif
 
 // Format pointers which change size between 32- and 64-bit.
 #ifdef  _LP64

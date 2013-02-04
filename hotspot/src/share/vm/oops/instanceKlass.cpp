@@ -2890,11 +2890,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->print(BULLET"fake entry for mirror: ");
     mirrored_klass->print_value_on_maybe_null(st);
     st->cr();
-    st->print(BULLET"fake entry resolved_constructor: ");
-    Method* ctor = java_lang_Class::resolved_constructor(obj);
-    ctor->print_value_on_maybe_null(st);
     Klass* array_klass = java_lang_Class::array_klass(obj);
-    st->cr();
     st->print(BULLET"fake entry for array: ");
     array_klass->print_value_on_maybe_null(st);
     st->cr();

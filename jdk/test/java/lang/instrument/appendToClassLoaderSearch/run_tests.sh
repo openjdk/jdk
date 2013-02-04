@@ -47,10 +47,10 @@ echo "Creating jar files for simple tests..."
 
 cd ${TESTCLASSES}
 
-"$JAR" -cfm Agent.jar "${TESTSRC}"/manifest.mf Agent.class
-"$JAR" -cf  AgentSupport.jar AgentSupport.class
-"$JAR" -cf  BootSupport.jar BootSupport.class
-"$JAR" -cf  SimpleTests.jar BasicTest.class PrematureLoadTest.class
+"$JAR" ${TESTTOOLVMOPTS} -cfm Agent.jar "${TESTSRC}"/manifest.mf Agent.class
+"$JAR" ${TESTTOOLVMOPTS} -cf  AgentSupport.jar AgentSupport.class
+"$JAR" ${TESTTOOLVMOPTS} -cf  BootSupport.jar BootSupport.class
+"$JAR" ${TESTTOOLVMOPTS} -cf  SimpleTests.jar BasicTest.class PrematureLoadTest.class
 
 failures=0
 
@@ -72,18 +72,18 @@ echo "Setup for functional tests..."
 # system class path
 
 mkdir tmp
-"${JAVAC}" -d tmp "${TESTSRC}"/Tracer.java
-(cd tmp; "${JAR}" cf ../Tracer.jar org/tools/Tracer.class)
+"${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d tmp "${TESTSRC}"/Tracer.java
+(cd tmp; "${JAR}" ${TESTTOOLVMOPTS} cf ../Tracer.jar org/tools/Tracer.class)
 
 # InstrumentedApplication is Application+instrmentation - don't copy as
 # we don't want the original file permission
 
 cat "${TESTSRC}"/InstrumentedApplication.java > ./Application.java
-"${JAVAC}" -classpath Tracer.jar -d . Application.java
+"${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -classpath Tracer.jar -d . Application.java
 mv Application.class InstrumentedApplication.bytes
 
 cp "${TESTSRC}"/Application.java .
-"${JAVAC}" -d . Application.java
+"${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . Application.java
 
 sh -xc "$JAVA ${TESTVMOPTS} -classpath . -javaagent:Agent.jar DynamicTest" 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi

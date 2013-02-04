@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static java.util.Calendar.*;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.spi.CalendarNameProvider;
@@ -54,22 +53,19 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         String name = null;
         String key = getResourceKey(calendarType, field, style);
         if (key != null) {
-            ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getDateFormatData(locale);
-            if (rb.containsKey(key)) {
-                String[] strings = rb.getStringArray(key);
-                if (strings.length > 0) {
-                    if (field == DAY_OF_WEEK || field == YEAR) {
-                        --value;
-                    }
-                    name = strings[value];
-                    // If name is empty in standalone, try its `format' style.
-                    if (name.length() == 0
-                            && (style == SHORT_STANDALONE || style == LONG_STANDALONE
-                                || style == NARROW_STANDALONE)) {
-                        name = getDisplayName(calendarType, field, value,
-                                              getBaseStyle(style),
-                                              locale);
-                    }
+            String[] strings = LocaleProviderAdapter.forType(type).getLocaleResources(locale).getCalendarNames(key);
+            if (strings != null && strings.length > 0) {
+                if (field == DAY_OF_WEEK || field == YEAR) {
+                    --value;
+                }
+                name = strings[value];
+                // If name is empty in standalone, try its `format' style.
+                if (name.length() == 0
+                        && (style == SHORT_STANDALONE || style == LONG_STANDALONE
+                            || style == NARROW_STANDALONE)) {
+                    name = getDisplayName(calendarType, field, value,
+                                          getBaseStyle(style),
+                                          locale);
                 }
             }
         }
@@ -100,9 +96,8 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         String key = getResourceKey(calendarType, field, style);
         Map<String, Integer> map = new TreeMap<>(LengthBasedComparator.INSTANCE);
         if (key != null) {
-            ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getDateFormatData(locale);
-            if (rb.containsKey(key)) {
-                String[] strings = rb.getStringArray(key);
+            String[] strings = LocaleProviderAdapter.forType(type).getLocaleResources(locale).getCalendarNames(key);
+            if (strings != null) {
                 if (!hasDuplicates(strings)) {
                     if (field == YEAR) {
                         if (strings.length > 0) {
@@ -168,6 +163,8 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
             case "buddhist":
             case "japanese":
             case "gregory":
+            case "islamic":
+            case "roc":
                 break;
             default:
                 // Unknown calendar type
@@ -244,6 +241,9 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
             break;
 
         case MONTH:
+            if ("islamic".equals(type)) {
+                key.append(type).append('.');
+            }
             if (isStandalone) {
                 key.append("standalone.");
             }

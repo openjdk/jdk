@@ -26,6 +26,7 @@ import java.io.StringWriter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
@@ -67,9 +68,7 @@ public abstract class JavacTestingAbstractThreadedTest {
     protected static void checkAfterExec(boolean printCheckCount)
             throws InterruptedException {
         pool.shutdown();
-        while (!pool.isTerminated()) {
-            Thread.sleep(10);
-        }
+        pool.awaitTermination(15, TimeUnit.MINUTES);
         if (errCount.get() > 0) {
             if (throwAssertionOnError) {
                 closePrinters();

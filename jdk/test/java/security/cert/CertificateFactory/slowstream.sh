@@ -33,6 +33,9 @@ if [ "${TESTJAVA}" = "" ] ; then
   echo "FAILED!!!"
   exit 1
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 
 # set platform-dependent variables
 OS=`uname -s`
@@ -45,6 +48,7 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}SlowStream.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
+        ${TESTSRC}${FS}SlowStream.java
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dtest.src=${TESTSRC} SlowStreamWriter | \
         ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} SlowStreamReader

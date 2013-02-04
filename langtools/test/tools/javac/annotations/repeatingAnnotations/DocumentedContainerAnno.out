@@ -1,2 +1,2 @@
-DocumentedContainerAnno.java:14:1: compiler.err.invalid.containedby.annotation.not.documented: FooContainer, Foo
+DocumentedContainerAnno.java:13:1: compiler.err.invalid.repeatable.annotation.not.documented: FooContainer, Foo
 1 error

@@ -23,7 +23,6 @@
 
 // key: compiler.err.prob.found.req
 // key: compiler.misc.secondary.bound.must.be.marker.intf
-// options: -XDallowIntersectionTypes
 
 class SecondaryBoundMustBeMarkerInterface {
     Runnable r = (Runnable & Comparable<?>)()->{};

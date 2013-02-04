@@ -1147,7 +1147,6 @@ static NSObject *sAttributeNamesLOCK = nil;
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessibility_focusChanged
 (JNIEnv *env, jobject jthis)
 {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 
 JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postFocusChanged:) onObject:[JavaComponentAccessibility class] withObject:nil waitUntilDone:NO awtMode:NO];
@@ -1164,7 +1163,6 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_valueChanged
 (JNIEnv *env, jclass jklass, jlong element)
 {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postValueChanged) onObject:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO awtMode:NO];
 JNF_COCOA_EXIT(env);
@@ -1178,7 +1176,6 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectionChanged
 (JNIEnv *env, jclass jklass, jlong element)
 {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postSelectionChanged) onObject:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO awtMode:NO];
 JNF_COCOA_EXIT(env);
@@ -1193,7 +1190,6 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_unregisterFromCocoaAXSystem
 (JNIEnv *env, jclass jklass, jlong element)
 {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(unregisterFromCocoaAXSystem) onObject:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO awtMode:NO];
 JNF_COCOA_EXIT(env);
