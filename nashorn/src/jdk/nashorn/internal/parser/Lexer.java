@@ -36,9 +36,11 @@ import static jdk.nashorn.internal.parser.TokenType.HEXADECIMAL;
 import static jdk.nashorn.internal.parser.TokenType.LBRACE;
 import static jdk.nashorn.internal.parser.TokenType.LPAREN;
 import static jdk.nashorn.internal.parser.TokenType.OCTAL;
+import static jdk.nashorn.internal.parser.TokenType.RBRACE;
 import static jdk.nashorn.internal.parser.TokenType.REGEX;
 import static jdk.nashorn.internal.parser.TokenType.RPAREN;
 import static jdk.nashorn.internal.parser.TokenType.STRING;
+import static jdk.nashorn.internal.parser.TokenType.EXECSTRING;
 import static jdk.nashorn.internal.parser.TokenType.XML;
 
 import jdk.nashorn.internal.runtime.ECMAErrors;
@@ -367,12 +369,13 @@ public class Lexer extends Scanner {
     }
 
     /**
-     * Test if char is a string delimiter, e.g. '\' or '"'
+     * Test if char is a string delimiter, e.g. '\' or '"'.  Also scans exec
+     * strings ('`') in scripting mode.
      * @param ch a char
      * @return true if string delimiter
      */
     protected boolean isStringDelimiter(final char ch) {
-        return ch == '\'' || ch == '"';
+        return ch == '\'' || ch == '"' || (scripting && ch == '`');
     }
 
     /**
@@ -936,12 +939,29 @@ public class Lexer extends Scanner {
             // Record end of string.
             stringState.setLimit(position - 1);
 
-            // Only edit double quoted strings.
-            if (scripting && quote == '\"' && !stringState.isEmpty()) {
-                // Edit string.
-                editString(type, stringState);
+            if (scripting && !stringState.isEmpty()) {
+                switch (quote) {
+                case '`':
+                    // Mark the beginning of an exec string.
+                    add(EXECSTRING, stringState.position, stringState.limit);
+                    // Frame edit string with left brace.
+                    add(LBRACE, stringState.position, stringState.position);
+                    // Process edit string.
+                    editString(type, stringState);
+                    // Frame edit string with right brace.
+                    add(RBRACE, stringState.limit, stringState.limit);
+                    break;
+                case '"':
+                    // Only edit double quoted strings.
+                    editString(type, stringState);
+                    break;
+                case '\'':
+                    // Add string token without editing.
+                    add(type, stringState.position, stringState.limit);
+                    break;
+                }
             } else {
-                // Add string token.
+                /// Add string token without editing.
                 add(type, stringState.position, stringState.limit);
             }
         }

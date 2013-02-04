@@ -40,10 +40,10 @@ public final class OptionsObject {
     /** Only compile script, do not run it or generate other ScriptObjects */
     public final boolean _compile_only;
 
-    /** Accumulated callsite flags that will be used when boostrapping script callsites */
+    /** Accumulated callsite flags that will be used when bootstrapping script callsites */
     public final int     _callsite_flags;
 
-    /** Genereate line number table in class files */
+    /** Generate line number table in class files */
     public final boolean _debug_lines;
 
     /** Package to which generated class files are added */

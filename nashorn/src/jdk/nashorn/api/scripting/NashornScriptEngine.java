@@ -259,7 +259,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             @Override
             public ScriptObject run() {
                 try {
-                    return nashornContext.createGlobal();
+                    return nashornContext.newGlobal();
                 } catch (final RuntimeException e) {
                     if (Context.DEBUG) {
                         e.printStackTrace();
@@ -268,6 +268,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 }
             }
         });
+
+        nashornContext.initGlobal(newGlobal);
 
         // current ScriptContext exposed as "context"
         newGlobal.addOwnProperty("context", Property.NOT_ENUMERABLE, UNDEFINED);

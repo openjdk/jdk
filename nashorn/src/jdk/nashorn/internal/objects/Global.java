@@ -1450,6 +1450,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         value = ScriptFunctionImpl.makeFunction("quit", ScriptingFunctions.QUIT);
         addOwnProperty("quit", Attribute.NOT_ENUMERABLE, value);
 
+        final String execName = ScriptingFunctions.EXEC_NAME;
+        value = ScriptFunctionImpl.makeFunction(execName, ScriptingFunctions.EXEC);
+        addOwnProperty(execName, Attribute.NOT_ENUMERABLE, value);
+
         // Nashorn extension: global.echo (scripting-mode-only)
         // alias for "print"
         value = get("print");
@@ -1458,6 +1462,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)
         value = new OptionsObject(this.getContext());
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, value);
+
+        // Nashorn extension: global.$ENV (scripting-mode-only)
+        value = ScriptingFunctions.getENVValues(newEmptyInstance(), this.isStrictContext());
+        addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, value);
     }
 
     private void initTypedArray() {
