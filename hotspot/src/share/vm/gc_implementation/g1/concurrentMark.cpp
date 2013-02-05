@@ -2167,7 +2167,8 @@ void ConcurrentMark::completeCleanup() {
   assert(tmp_free_list.is_empty(), "post-condition");
 }
 
-// Support closures for reference procssing in G1
+// Supporting Object and Oop closures for reference discovery
+// and processing in during marking
 
 bool G1CMIsAliveClosure::do_object_b(oop obj) {
   HeapWord* addr = (HeapWord*)obj;
@@ -2175,73 +2176,26 @@ bool G1CMIsAliveClosure::do_object_b(oop obj) {
          (!_g1->is_in_g1_reserved(addr) || !_g1->is_obj_ill(obj));
 }
 
-class G1CMKeepAliveClosure: public ExtendedOopClosure {
-  G1CollectedHeap* _g1;
-  ConcurrentMark*  _cm;
- public:
-  G1CMKeepAliveClosure(G1CollectedHeap* g1, ConcurrentMark* cm) :
-    _g1(g1), _cm(cm) {
-    assert(Thread::current()->is_VM_thread(), "otherwise fix worker id");
-  }
+// 'Keep Alive' oop closure used by both serial parallel reference processing.
+// Uses the CMTask associated with a worker thread (for serial reference
+// processing the CMTask for worker 0 is used) to preserve (mark) and
+// trace referent objects.
+//
+// Using the CMTask and embedded local queues avoids having the worker
+// threads operating on the global mark stack. This reduces the risk
+// of overflowing the stack - which we would rather avoid at this late
+// state. Also using the tasks' local queues removes the potential
+// of the workers interfering with each other that could occur if
+// operating on the global stack.
 
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-
-  template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    HeapWord* addr = (HeapWord*)obj;
-
-    if (_cm->verbose_high()) {
-      gclog_or_tty->print_cr("\t[0] we're looking at location "
-                             "*"PTR_FORMAT" = "PTR_FORMAT,
-                             p, (void*) obj);
-    }
-
-    if (_g1->is_in_g1_reserved(addr) && _g1->is_obj_ill(obj)) {
-      _cm->mark_and_count(obj);
-      _cm->mark_stack_push(obj);
-    }
-  }
-};
-
-class G1CMDrainMarkingStackClosure: public VoidClosure {
-  ConcurrentMark*               _cm;
-  CMMarkStack*                  _markStack;
-  G1CMKeepAliveClosure*         _oopClosure;
- public:
-  G1CMDrainMarkingStackClosure(ConcurrentMark* cm, CMMarkStack* markStack,
-                               G1CMKeepAliveClosure* oopClosure) :
-    _cm(cm),
-    _markStack(markStack),
-    _oopClosure(oopClosure) { }
-
-  void do_void() {
-    _markStack->drain(_oopClosure, _cm->nextMarkBitMap(), false);
-  }
-};
-
-// 'Keep Alive' closure used by parallel reference processing.
-// An instance of this closure is used in the parallel reference processing
-// code rather than an instance of G1CMKeepAliveClosure. We could have used
-// the G1CMKeepAliveClosure as it is MT-safe. Also reference objects are
-// placed on to discovered ref lists once so we can mark and push with no
-// need to check whether the object has already been marked. Using the
-// G1CMKeepAliveClosure would mean, however, having all the worker threads
-// operating on the global mark stack. This means that an individual
-// worker would be doing lock-free pushes while it processes its own
-// discovered ref list followed by drain call. If the discovered ref lists
-// are unbalanced then this could cause interference with the other
-// workers. Using a CMTask (and its embedded local data structures)
-// avoids that potential interference.
-class G1CMParKeepAliveAndDrainClosure: public OopClosure {
+class G1CMKeepAliveAndDrainClosure: public OopClosure {
   ConcurrentMark*  _cm;
   CMTask*          _task;
   int              _ref_counter_limit;
   int              _ref_counter;
  public:
-  G1CMParKeepAliveAndDrainClosure(ConcurrentMark* cm, CMTask* task) :
-    _cm(cm), _task(task),
-    _ref_counter_limit(G1RefProcDrainInterval) {
+  G1CMKeepAliveAndDrainClosure(ConcurrentMark* cm, CMTask* task) :
+    _cm(cm), _task(task), _ref_counter_limit(G1RefProcDrainInterval) {
     assert(_ref_counter_limit > 0, "sanity");
     _ref_counter = _ref_counter_limit;
   }
@@ -2262,18 +2216,22 @@ class G1CMParKeepAliveAndDrainClosure: public OopClosure {
       _ref_counter--;
 
       if (_ref_counter == 0) {
-        // We have dealt with _ref_counter_limit references, pushing them and objects
-        // reachable from them on to the local stack (and possibly the global stack).
-        // Call do_marking_step() to process these entries. We call the routine in a
-        // loop, which we'll exit if there's nothing more to do (i.e. we're done
-        // with the entries that we've pushed as a result of the deal_with_reference
-        // calls above) or we overflow.
-        // Note: CMTask::do_marking_step() can set the CMTask::has_aborted() flag
-        // while there may still be some work to do. (See the comment at the
-        // beginning of CMTask::do_marking_step() for those conditions - one of which
-        // is reaching the specified time target.) It is only when
-        // CMTask::do_marking_step() returns without setting the has_aborted() flag
-        // that the marking has completed.
+        // We have dealt with _ref_counter_limit references, pushing them
+        // and objects reachable from them on to the local stack (and
+        // possibly the global stack). Call CMTask::do_marking_step() to
+        // process these entries.
+        //
+        // We call CMTask::do_marking_step() in a loop, which we'll exit if
+        // there's nothing more to do (i.e. we're done with the entries that
+        // were pushed as a result of the CMTask::deal_with_reference() calls
+        // above) or we overflow.
+        //
+        // Note: CMTask::do_marking_step() can set the CMTask::has_aborted()
+        // flag while there may still be some work to do. (See the comment at
+        // the beginning of CMTask::do_marking_step() for those conditions -
+        // one of which is reaching the specified time target.) It is only
+        // when CMTask::do_marking_step() returns without setting the
+        // has_aborted() flag that the marking step has completed.
         do {
           double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
           _task->do_marking_step(mark_step_duration_ms,
@@ -2290,36 +2248,59 @@ class G1CMParKeepAliveAndDrainClosure: public OopClosure {
   }
 };
 
-class G1CMParDrainMarkingStackClosure: public VoidClosure {
+// 'Drain' oop closure used by both serial and parallel reference processing.
+// Uses the CMTask associated with a given worker thread (for serial
+// reference processing the CMtask for worker 0 is used). Calls the
+// do_marking_step routine, with an unbelievably large timeout value,
+// to drain the marking data structures of the remaining entries
+// added by the 'keep alive' oop closure above.
+
+class G1CMDrainMarkingStackClosure: public VoidClosure {
   ConcurrentMark* _cm;
-  CMTask* _task;
+  CMTask*         _task;
+  bool            _do_stealing;
+  bool            _do_termination;
  public:
-  G1CMParDrainMarkingStackClosure(ConcurrentMark* cm, CMTask* task) :
-    _cm(cm), _task(task) { }
+  G1CMDrainMarkingStackClosure(ConcurrentMark* cm, CMTask* task, bool is_par) :
+    _cm(cm), _task(task) {
+    assert(is_par || _task->worker_id() == 0,
+           "Only task for worker 0 should be used if ref processing is single threaded");
+    // We only allow stealing and only enter the termination protocol
+    // in CMTask::do_marking_step() if this closure is being instantiated
+    // for parallel reference processing.
+    _do_stealing = _do_termination = is_par;
+  }
 
   void do_void() {
     do {
       if (_cm->verbose_high()) {
-        gclog_or_tty->print_cr("\t[%u] Drain: Calling do marking_step",
-                               _task->worker_id());
+        gclog_or_tty->print_cr("\t[%u] Drain: Calling do_marking_step - "
+                               "stealing: %s, termination: %s",
+                               _task->worker_id(),
+                               BOOL_TO_STR(_do_stealing),
+                               BOOL_TO_STR(_do_termination));
       }
 
-      // We call CMTask::do_marking_step() to completely drain the local and
-      // global marking stacks. The routine is called in a loop, which we'll
-      // exit if there's nothing more to do (i.e. we'completely drained the
-      // entries that were pushed as a result of applying the
-      // G1CMParKeepAliveAndDrainClosure to the entries on the discovered ref
-      // lists above) or we overflow the global marking stack.
-      // Note: CMTask::do_marking_step() can set the CMTask::has_aborted() flag
-      // while there may still be some work to do. (See the comment at the
-      // beginning of CMTask::do_marking_step() for those conditions - one of which
-      // is reaching the specified time target.) It is only when
-      // CMTask::do_marking_step() returns without setting the has_aborted() flag
-      // that the marking has completed.
+      // We call CMTask::do_marking_step() to completely drain the local
+      // and global marking stacks of entries pushed by the 'keep alive'
+      // oop closure (an instance of G1CMKeepAliveAndDrainClosure above).
+      //
+      // CMTask::do_marking_step() is called in a loop, which we'll exit
+      // if there's nothing more to do (i.e. we'completely drained the
+      // entries that were pushed as a a result of applying the 'keep alive'
+      // closure to the entries on the discovered ref lists) or we overflow
+      // the global marking stack.
+      //
+      // Note: CMTask::do_marking_step() can set the CMTask::has_aborted()
+      // flag while there may still be some work to do. (See the comment at
+      // the beginning of CMTask::do_marking_step() for those conditions -
+      // one of which is reaching the specified time target.) It is only
+      // when CMTask::do_marking_step() returns without setting the
+      // has_aborted() flag that the marking step has completed.
 
       _task->do_marking_step(1000000000.0 /* something very large */,
-                             true /* do_stealing    */,
-                             true /* do_termination */);
+                             _do_stealing,
+                             _do_termination);
     } while (_task->has_aborted() && !_cm->has_overflown());
   }
 };
@@ -2352,19 +2333,23 @@ class G1CMRefProcTaskProxy: public AbstractGangTask {
   ProcessTask&     _proc_task;
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;
+  bool             _processing_is_mt;
 
 public:
   G1CMRefProcTaskProxy(ProcessTask& proc_task,
                      G1CollectedHeap* g1h,
                      ConcurrentMark* cm) :
     AbstractGangTask("Process reference objects in parallel"),
-    _proc_task(proc_task), _g1h(g1h), _cm(cm) { }
+    _proc_task(proc_task), _g1h(g1h), _cm(cm) {
+      ReferenceProcessor* rp = _g1h->ref_processor_cm();
+      _processing_is_mt = rp->processing_is_mt();
+    }
 
   virtual void work(uint worker_id) {
     CMTask* marking_task = _cm->task(worker_id);
     G1CMIsAliveClosure g1_is_alive(_g1h);
-    G1CMParKeepAliveAndDrainClosure g1_par_keep_alive(_cm, marking_task);
-    G1CMParDrainMarkingStackClosure g1_par_drain(_cm, marking_task);
+    G1CMKeepAliveAndDrainClosure g1_par_keep_alive(_cm, marking_task);
+    G1CMDrainMarkingStackClosure g1_par_drain(_cm, marking_task, _processing_is_mt);
 
     _proc_task.work(worker_id, g1_is_alive, g1_par_keep_alive, g1_par_drain);
   }
@@ -2372,6 +2357,7 @@ public:
 
 void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
   assert(_workers != NULL, "Need parallel worker threads.");
+  assert(_g1h->ref_processor_cm()->processing_is_mt(), "processing is not MT");
 
   G1CMRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm);
 
@@ -2399,6 +2385,7 @@ public:
 
 void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
   assert(_workers != NULL, "Need parallel worker threads.");
+  assert(_g1h->ref_processor_cm()->processing_is_mt(), "processing is not MT");
 
   G1CMRefEnqueueTaskProxy enq_task_proxy(enq_task);
 
@@ -2429,59 +2416,58 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     // See the comment in G1CollectedHeap::ref_processing_init()
     // about how reference processing currently works in G1.
 
-    // Process weak references.
+    // Set the soft reference policy
     rp->setup_policy(clear_all_soft_refs);
     assert(_markStack.isEmpty(), "mark stack should be empty");
 
-    G1CMKeepAliveClosure g1_keep_alive(g1h, this);
-    G1CMDrainMarkingStackClosure
-      g1_drain_mark_stack(this, &_markStack, &g1_keep_alive);
+    // Non-MT instances 'Keep Alive' and 'Complete GC' oop closures.
+    G1CMKeepAliveAndDrainClosure g1_keep_alive(this, task(0));
+    G1CMDrainMarkingStackClosure g1_drain_mark_stack(this, task(0), false);
 
-    // We use the work gang from the G1CollectedHeap and we utilize all
-    // the worker threads.
-    uint active_workers = g1h->workers() ? g1h->workers()->active_workers() : 1U;
+    // We need at least one active thread. If reference processing is
+    // not multi-threaded we use the current (ConcurrentMarkThread) thread,
+    // otherwise we use the work gang from the G1CollectedHeap and we
+    // utilize all the worker threads we can.
+    uint active_workers = (rp->processing_is_mt() && g1h->workers() != NULL
+                                ? g1h->workers()->active_workers()
+                                : 1U);
+
     active_workers = MAX2(MIN2(active_workers, _max_worker_id), 1U);
 
     G1CMRefProcTaskExecutor par_task_executor(g1h, this,
                                               g1h->workers(), active_workers);
 
-    if (rp->processing_is_mt()) {
-      // Set the degree of MT here.  If the discovery is done MT, there
-      // may have been a different number of threads doing the discovery
-      // and a different number of discovered lists may have Ref objects.
-      // That is OK as long as the Reference lists are balanced (see
-      // balance_all_queues() and balance_queues()).
-      rp->set_active_mt_degree(active_workers);
+    AbstractRefProcTaskExecutor* executor = (rp->processing_is_mt()
+                                                ? &par_task_executor
+                                                : NULL);
 
-      rp->process_discovered_references(&g1_is_alive,
+    // Set the degree of MT processing here.  If the discovery was done MT,
+    // the number of threads involved during discovery could differ from
+    // the number of active workers.  This is OK as long as the discovered
+    // Reference lists are balanced (see balance_all_queues() and balance_queues()).
+    rp->set_active_mt_degree(active_workers);
+
+    // Process the weak references.
+    rp->process_discovered_references(&g1_is_alive,
                                       &g1_keep_alive,
                                       &g1_drain_mark_stack,
-                                      &par_task_executor);
+                                      executor);
 
-      // The work routines of the parallel keep_alive and drain_marking_stack
-      // will set the has_overflown flag if we overflow the global marking
-      // stack.
-    } else {
-      rp->process_discovered_references(&g1_is_alive,
-                                        &g1_keep_alive,
-                                        &g1_drain_mark_stack,
-                                        NULL);
-    }
+    // The do_oop work routines of the keep_alive and drain_marking_stack
+    // oop closures will set the has_overflown flag if we overflow the
+    // global marking stack.
 
     assert(_markStack.overflow() || _markStack.isEmpty(),
             "mark stack should be empty (unless it overflowed)");
     if (_markStack.overflow()) {
-      // Should have been done already when we tried to push an
+      // This should have been done already when we tried to push an
       // entry on to the global mark stack. But let's do it again.
       set_has_overflown();
     }
 
-    if (rp->processing_is_mt()) {
-      assert(rp->num_q() == active_workers, "why not");
-      rp->enqueue_discovered_references(&par_task_executor);
-    } else {
-      rp->enqueue_discovered_references();
-    }
+    assert(rp->num_q() == active_workers, "why not");
+
+    rp->enqueue_discovered_references(executor);
 
     rp->verify_no_references_recorded();
     assert(!rp->discovery_enabled(), "Post condition");

@@ -371,8 +371,8 @@ class ConcurrentMark: public CHeapObj<mtGC> {
   friend class CalcLiveObjectsClosure;
   friend class G1CMRefProcTaskProxy;
   friend class G1CMRefProcTaskExecutor;
-  friend class G1CMParKeepAliveAndDrainClosure;
-  friend class G1CMParDrainMarkingStackClosure;
+  friend class G1CMKeepAliveAndDrainClosure;
+  friend class G1CMDrainMarkingStackClosure;
 
 protected:
   ConcurrentMarkThread* _cmThread;   // the thread doing the work
