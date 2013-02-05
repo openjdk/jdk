@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  */
 
 /* @test
-   @bug 6532833
-   @summary PIT: Metal LAF - The right side border is not shown for the Spinner after the removing the buttons
-   @author Pavel Porvatov
-*/
+ * @bug 6532833 7077259
+ * @summary PIT: Metal LAF - The right side border is not shown for the Spinner after the removing the buttons
+ * @author Pavel Porvatov
+ * @run main/othervm -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel bug6532833
+ */
 
 import javax.swing.*;
 import java.awt.*;
