@@ -188,11 +188,6 @@ public class TypeVariableImpl<D extends GenericDeclaration>
     }
 
     // Implementations of AnnotatedElement methods.
-    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
-        Objects.requireNonNull(annotationClass);
-        return false;
-    }
-
     @SuppressWarnings("unchecked")
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);

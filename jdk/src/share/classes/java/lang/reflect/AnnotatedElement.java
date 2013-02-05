@@ -91,6 +91,9 @@ public interface AnnotatedElement {
      * <p>The truth value returned by this method is equivalent to:
      * {@code getAnnotation(annotationClass) != null}
      *
+     * <p>The body of the default method is specified to be the code
+     * above.
+     *
      * @param annotationClass the Class object corresponding to the
      *        annotation type
      * @return true if an annotation for the specified annotation
@@ -98,7 +101,9 @@ public interface AnnotatedElement {
      * @throws NullPointerException if the given annotation class is null
      * @since 1.5
      */
-     boolean isAnnotationPresent(Class<? extends Annotation> annotationClass);
+    default boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+        return getAnnotation(annotationClass) != null;
+    }
 
    /**
      * Returns this element's annotation for the specified type if

@@ -280,14 +280,6 @@ public final class Parameter implements AnnotatedElement {
         return getDeclaredAnnotations();
     }
 
-    /**
-     * @throws NullPointerException {@inheritDoc}
-     */
-    public boolean isAnnotationPresent(
-        Class<? extends Annotation> annotationClass) {
-        return getAnnotation(annotationClass) != null;
-    }
-
     private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
     private synchronized Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
