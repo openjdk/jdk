@@ -143,8 +143,9 @@ public class JavadocTool implements DocumentationTool {
         PrintWriter out_pw = new PrintWriter(out == null ? System.out : out);
         try {
             String standardDocletName = "com.sun.tools.doclets.standard.Standard";
+            ClassLoader cl = getClass().getClassLoader();
             return com.sun.tools.javadoc.Main.execute(
-                    "javadoc", err_pw, err_pw, out_pw, standardDocletName, arguments);
+                    "javadoc", err_pw, err_pw, out_pw, standardDocletName, cl, arguments);
         } finally {
             err_pw.flush();
             out_pw.flush();
