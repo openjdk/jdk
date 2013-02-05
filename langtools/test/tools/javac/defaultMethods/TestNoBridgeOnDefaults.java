@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @ignore awaits for VM support
  * @summary  check that javac does not generate bridge methods for defaults
  */
 
