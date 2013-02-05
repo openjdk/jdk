@@ -61,9 +61,9 @@ public class ScriptingFunctions {
 
     /** Names of special properties used by $EXEC API. */
     public  static final String EXEC_NAME = "$EXEC";
-    private static final String OUT_NAME  = "$OUT";
-    private static final String ERR_NAME  = "$ERR";
-    private static final String EXIT_NAME = "$EXIT";
+    public  static final String OUT_NAME  = "$OUT";
+    public  static final String ERR_NAME  = "$ERR";
+    public  static final String EXIT_NAME = "$EXIT";
 
     /** Names of special properties used by $ENV API. */
     public  static final String ENV_NAME  = "$ENV";
@@ -139,14 +139,6 @@ public class ScriptingFunctions {
         // Current global is need to fetch additional inputs and for additional results.
         final ScriptObject global = Context.getGlobal();
 
-        // Current ENV property state.
-        final Object env = global.get(ENV_NAME);
-        // Make sure ENV is a valid script object.
-        if (!(env instanceof ScriptObject)) {
-            typeError("env.not.object");
-        }
-        final ScriptObject envProperties = (ScriptObject)env;
-
         // Break exec string into tokens.
         final StringTokenizer tokenizer = new StringTokenizer(JSType.toString(string));
         final String[] cmdArray = new String[tokenizer.countTokens()];
@@ -157,18 +149,23 @@ public class ScriptingFunctions {
         // Set up initial process.
         final ProcessBuilder processBuilder = new ProcessBuilder(cmdArray);
 
-        // If a working directory is present, use it.
-        final Object pwd = envProperties.get(PWD_NAME);
-        if (pwd != UNDEFINED) {
-            processBuilder.directory(new File(JSType.toString(pwd)));
-        }
+        // Current ENV property state.
+        final Object env = global.get(ENV_NAME);
+        if (env instanceof ScriptObject) {
+            final ScriptObject envProperties = (ScriptObject)env;
 
-        // Set up ENV variables.
-        final Map<String, String> environment = processBuilder.environment();
-        environment.clear();
-        for (Map.Entry<Object, Object> entry : envProperties.entrySet()) {
+            // If a working directory is present, use it.
+            final Object pwd = envProperties.get(PWD_NAME);
+            if (pwd != UNDEFINED) {
+                processBuilder.directory(new File(JSType.toString(pwd)));
+            }
 
-            environment.put(JSType.toString(entry.getKey()), JSType.toString(entry.getValue()));
+            // Set up ENV variables.
+            final Map<String, String> environment = processBuilder.environment();
+            environment.clear();
+            for (Map.Entry<Object, Object> entry : envProperties.entrySet()) {
+                environment.put(JSType.toString(entry.getKey()), JSType.toString(entry.getValue()));
+            }
         }
 
         // Start the process.
@@ -212,31 +209,6 @@ public class ScriptingFunctions {
 
         // Return the result from stdout.
         return out;
-    }
-
-    /**
-     * Return an object containing properties mapping to ENV variables.
-     *
-     * @param envProperties object to receive properties
-     * @param isStrict      global's strict state
-     *
-     * @return Script object with properties mapping to ENV variables.
-     */
-    public static ScriptObject getENVValues(final ScriptObject envProperties, final boolean isStrict) {
-        // Retrieve current state of ENV variables.
-        Map<String, String> envVars;
-        try {
-            envVars = System.getenv();
-        } catch(SecurityException ex) {
-            envVars = new HashMap<>();
-        }
-
-        // Map ENV variables.
-        for (Map.Entry<String, String> entry : envVars.entrySet()) {
-            envProperties.set(entry.getKey(), entry.getValue(), isStrict);
-        }
-
-        return envProperties;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

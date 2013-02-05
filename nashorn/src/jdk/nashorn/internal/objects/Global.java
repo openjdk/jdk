@@ -34,6 +34,7 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.SoftReference;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1464,8 +1465,20 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$ENV (scripting-mode-only)
-        value = ScriptingFunctions.getENVValues(newEmptyInstance(), this.isStrictContext());
-        addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, value);
+        if (System.getSecurityManager() == null) {
+            // do not fill $ENV if we have a security manager around
+            // Retrieve current state of ENV variables.
+            final ScriptObject env = newEmptyInstance();
+            env.putAll(System.getenv());
+            addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
+        } else {
+            addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
+        }
+
+        // add other special properties for exec support
+        addOwnProperty(ScriptingFunctions.OUT_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
+        addOwnProperty(ScriptingFunctions.ERR_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
+        addOwnProperty(ScriptingFunctions.EXIT_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
     }
 
     private void initTypedArray() {
