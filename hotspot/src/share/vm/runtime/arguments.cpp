@@ -2458,7 +2458,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       }
       // Out of the box management support
       if (match_option(option, "-Dcom.sun.management", &tail)) {
+#if INCLUDE_MANAGEMENT
         FLAG_SET_CMDLINE(bool, ManagementServer, true);
+#else
+        vm_exit_during_initialization(
+            "-Dcom.sun.management is not supported in this VM.", NULL);
+#endif
       }
     // -Xint
     } else if (match_option(option, "-Xint", &tail)) {
@@ -2807,6 +2812,11 @@ SOLARIS_ONLY(
       //       away and will cause VM initialization failures!
       warning("-XX:+UseVMInterruptibleIO is obsolete and will be removed in a future release.");
       FLAG_SET_CMDLINE(bool, UseVMInterruptibleIO, true);
+#if !INCLUDE_MANAGEMENT
+    } else if (match_option(option, "-XX:+ManagementServer", &tail)) {
+      vm_exit_during_initialization(
+        "ManagementServer is not supported in this VM.", NULL);
+#endif // INCLUDE_MANAGEMENT
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
