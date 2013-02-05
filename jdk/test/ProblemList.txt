@@ -321,11 +321,11 @@ sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 tools/pack200/CommandLineTests.java                             generic-all
 tools/pack200/Pack200Test.java                                  generic-all
 
-# 8001163
-tools/pack200/AttributeTests.java                               generic-all
-
 # 7150569
 tools/launcher/UnicodeTest.java                                 macosx-all
+
+# 8007410
+tools/launcher/FXLauncherTest.java                              linux-all
 
 ############################################################################
 

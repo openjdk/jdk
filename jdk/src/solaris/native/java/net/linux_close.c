@@ -192,17 +192,6 @@ static int closefd(int fd1, int fd2) {
 
     {
         /*
-         * Send a wakeup signal to all threads blocked on this
-         * file descriptor.
-         */
-        threadEntry_t *curr = fdEntry->threads;
-        while (curr != NULL) {
-            curr->intr = 1;
-            pthread_kill( curr->thr, sigWakeup );
-            curr = curr->next;
-        }
-
-        /*
          * And close/dup the file descriptor
          * (restart if interrupted by signal)
          */
@@ -214,6 +203,16 @@ static int closefd(int fd1, int fd2) {
             }
         } while (rv == -1 && errno == EINTR);
 
+        /*
+         * Send a wakeup signal to all threads blocked on this
+         * file descriptor.
+         */
+        threadEntry_t *curr = fdEntry->threads;
+        while (curr != NULL) {
+            curr->intr = 1;
+            pthread_kill( curr->thr, sigWakeup );
+            curr = curr->next;
+        }
     }
 
     /*

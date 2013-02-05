@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -647,13 +647,23 @@ class Instruction  {
         }
     }
 
-    public static void opcodeChecker(byte[] code) throws FormatException {
+    public static void opcodeChecker(byte[] code, ConstantPool.Entry[] cpMap) throws FormatException {
         Instruction i = at(code, 0);
         while (i != null) {
             int opcode = i.getBC();
             if (opcode < _nop || opcode > _jsr_w) {
                 String message = "illegal opcode: " + opcode + " " + i;
                 throw new FormatException(message);
+            }
+            ConstantPool.Entry e = i.getCPRef(cpMap);
+            if (e != null) {
+                byte tag = i.getCPTag();
+                if (!e.tagMatches(tag)) {
+                    String message = "illegal reference, expected type=" +
+                                     ConstantPool.tagName(tag) + ": " +
+                                     i.toString(cpMap);
+                    throw new FormatException(message);
+                }
             }
             i = i.next();
         }
