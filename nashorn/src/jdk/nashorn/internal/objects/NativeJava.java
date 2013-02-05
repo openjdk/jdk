@@ -351,10 +351,10 @@ public class NativeJava {
      * var ArrayList = Java.type("java.util.ArrayList")
      * var ArrayListExtender = Java.extend(ArrayList)
      * var printSizeInvokedArrayList = new ArrayListExtender() {
-     *     function size() { print("size invoked!"); }
+     *     size: function() { print("size invoked!"); }
      * }
      * var printAddInvokedArrayList = new ArrayListExtender() {
-     *     function add(x, y) {
+     *     add: function(x, y) {
      *       if(typeof(y) === "undefined") {
      *           print("add(e) invoked!");
      *       } else {
