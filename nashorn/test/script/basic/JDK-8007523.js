@@ -22,15 +22,15 @@
  */
 
 /**
- * JDK-8007522: IllegalStateException thrown from String.prototype.search function
+ * JDK-8007523: VerifyError on script that uses regular expression literals with ternary operator 
  *
  * @test
  * @run
  */
 
-var str = "hello";
-// search used to result in IllegalStateException
-if (str.search(/foo/g) != -1) {
-    fail("String.prototype.search failed");
-}
+var flag = true;
 
+// used to throw VerifyError because of the following ternary operator
+if (String(flag? /bar1/ : /bar2/) != '/bar1/') {
+    fail("ternary operator failed to pass right value");
+}
