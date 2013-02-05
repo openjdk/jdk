@@ -1000,7 +1000,6 @@ class BandStructure {
 
         /** Write a constant pool reference. */
         public void putRef(Entry e) {
-            assert(index != null);
             addValue(encodeRefOrNull(e, index));
         }
         public void putRef(Entry e, Index index) {
@@ -1052,6 +1051,8 @@ class BandStructure {
 
 
     int encodeRef(Entry e, Index ix) {
+        if (ix == null)
+            throw new RuntimeException("null index for " + e.stringValue());
         int coding = ix.indexOf(e);
         if (verbose > 2)
             Utils.log.fine("putRef "+coding+" => "+e);
