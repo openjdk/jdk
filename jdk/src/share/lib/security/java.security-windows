@@ -146,7 +146,19 @@ keystore.type=jks
 # passed to checkPackageAccess unless the
 # corresponding RuntimePermission ("accessClassInPackage."+package) has
 # been granted.
-package.access=sun.,com.sun.xml.internal.ws.,com.sun.xml.internal.bind.,com.sun.imageio.,com.sun.org.apache.xerces.internal.utils.,com.sun.org.apache.xalan.internal.utils.,com.sun.org.glassfish.external.,com.sun.org.glassfish.gmbal.,jdk.internal.
+package.access=sun.,\
+               com.sun.xml.internal.bind.,\
+               com.sun.xml.internal.org.jvnet.staxex.,\
+               com.sun.xml.internal.ws.,\
+               com.sun.imageio.,\
+               com.sun.istack.internal.,\
+               com.sun.jmx.defaults.,\
+               com.sun.jmx.remote.util.,\
+               com.sun.org.apache.xerces.internal.utils.,\
+               com.sun.org.apache.xalan.internal.utils.,\
+               com.sun.org.glassfish.external.,\
+               com.sun.org.glassfish.gmbal.,\
+	       jdk.internal.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -158,7 +170,19 @@ package.access=sun.,com.sun.xml.internal.ws.,com.sun.xml.internal.bind.,com.sun.
 # by default, none of the class loaders supplied with the JDK call
 # checkPackageDefinition.
 #
-package.definition=sun.,com.sun.xml.internal.ws.,com.sun.xml.internal.bind.,com.sun.imageio.,com.sun.org.apache.xerces.internal.utils.,com.sun.org.apache.xalan.internal.utils.,com.sun.org.glassfish.external.,com.sun.org.glassfish.gmbal.,jdk.internal.
+package.definition=sun.,\
+                   com.sun.xml.internal.bind.,\
+                   com.sun.xml.internal.org.jvnet.staxex.,\
+                   com.sun.xml.internal.ws.,\
+                   com.sun.imageio.,\
+                   com.sun.istack.internal.,\
+                   com.sun.jmx.defaults.,\
+                   com.sun.jmx.remote.util.,\
+                   com.sun.org.apache.xerces.internal.utils.,\
+                   com.sun.org.apache.xalan.internal.utils.,\
+                   com.sun.org.glassfish.external.,\
+                   com.sun.org.glassfish.gmbal.,\
+		   jdk.internal.
 
 #
 # Determines whether this properties file can be appended to
