@@ -977,7 +977,7 @@ bool ciMethod::can_be_compiled() {
 // ciMethod::set_not_compilable
 //
 // Tell the VM that this method cannot be compiled at all.
-void ciMethod::set_not_compilable() {
+void ciMethod::set_not_compilable(const char* reason) {
   check_is_loaded();
   VM_ENTRY_MARK;
   ciEnv* env = CURRENT_ENV;
@@ -986,7 +986,7 @@ void ciMethod::set_not_compilable() {
   } else {
     _is_c2_compilable = false;
   }
-  get_Method()->set_not_compilable(env->comp_level());
+  get_Method()->set_not_compilable(env->comp_level(), true, reason);
 }
 
 // ------------------------------------------------------------------
