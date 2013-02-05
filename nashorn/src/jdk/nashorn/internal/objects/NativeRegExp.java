@@ -675,7 +675,7 @@ public final class NativeRegExp extends ScriptObject {
         start = matcher.find(start) ? matcher.start() : -1;
 
         if (global) {
-            setLastIndex(matcher.end());
+            setLastIndex(start == -1? -1 : matcher.end());
         }
 
         return start;
