@@ -494,6 +494,11 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         }
 
         @Override
+        public Type getType() {
+            return Type.OBJECT;
+        }
+
+        @Override
         public void toString(final StringBuilder sb) {
             sb.append(value.toString());
         }
