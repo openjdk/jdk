@@ -50,8 +50,6 @@ import javax.management.MBeanInfo;
 import javax.management.NotCompliantMBeanException;
 
 import com.sun.jmx.remote.util.EnvHelp;
-import java.beans.BeanInfo;
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import javax.management.AttributeNotFoundException;
