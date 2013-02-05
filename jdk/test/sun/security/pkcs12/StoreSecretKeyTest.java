@@ -53,35 +53,34 @@ public class StoreSecretKeyTest {
 
         new File(KEYSTORE).delete();
 
-        try {
+        KeyStore keystore = KeyStore.getInstance("PKCS12");
+        keystore.load(null, null);
 
-            KeyStore keystore = KeyStore.getInstance("PKCS12");
-            keystore.load(null, null);
+        // Set entry
+        keystore.setEntry(ALIAS,
+            new KeyStore.SecretKeyEntry(generateSecretKey("AES", 128)),
+                new KeyStore.PasswordProtection(PASSWORD));
 
-            // Set entry
-            keystore.setEntry(ALIAS,
-                new KeyStore.SecretKeyEntry(generateSecretKey("AES", 128)),
-                    new KeyStore.PasswordProtection(PASSWORD));
-
+        try (FileOutputStream outStream = new FileOutputStream(KEYSTORE)) {
             System.out.println("Storing keystore to: " + KEYSTORE);
-            keystore.store(new FileOutputStream(KEYSTORE), PASSWORD);
+            keystore.store(outStream, PASSWORD);
+        }
 
+        try (FileInputStream inStream = new FileInputStream(KEYSTORE)) {
             System.out.println("Loading keystore from: " + KEYSTORE);
-            keystore.load(new FileInputStream(KEYSTORE), PASSWORD);
+            keystore.load(inStream, PASSWORD);
             System.out.println("Loaded keystore with " + keystore.size() +
                 " entries");
-            KeyStore.Entry entry = keystore.getEntry(ALIAS,
-                new KeyStore.PasswordProtection(PASSWORD));
-            System.out.println("Retrieved entry: " + entry);
+        }
 
-            if (entry instanceof KeyStore.SecretKeyEntry) {
-                System.out.println("Retrieved secret key entry: " +
-                    entry);
-            } else {
-                throw new Exception("Not a secret key entry");
-            }
-        } finally {
-            new File(KEYSTORE).delete();
+        KeyStore.Entry entry = keystore.getEntry(ALIAS,
+            new KeyStore.PasswordProtection(PASSWORD));
+        System.out.println("Retrieved entry: " + entry);
+
+        if (entry instanceof KeyStore.SecretKeyEntry) {
+            System.out.println("Retrieved secret key entry: " + entry);
+        } else {
+            throw new Exception("Not a secret key entry");
         }
     }
 

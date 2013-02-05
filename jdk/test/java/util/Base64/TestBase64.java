@@ -22,7 +22,7 @@
  */
 
 /**
- * @test 4235519 8004212
+ * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530
  * @summary tests java.util.Base64
  */
 
@@ -109,6 +109,15 @@ public class TestBase64 {
 
         // test return value from decode(ByteBuffer, ByteBuffer)
         testDecBufRet();
+
+        // test single-non-base64 character for mime decoding
+        testSingleNonBase64MimeDec();
+
+        // test decoding of unpadded data
+        testDecodeUnpadded();
+
+        // test mime decoding with ignored character after padding
+        testDecodeIgnoredAfterPadding();
     }
 
     private static sun.misc.BASE64Encoder sunmisc = new sun.misc.BASE64Encoder();
@@ -295,6 +304,7 @@ public class TestBase64 {
         checkNull(new Runnable() { public void run() { enc.encode(bb_null); }});
         checkNull(new Runnable() { public void run() { enc.encode(bb_null, ByteBuffer.allocate(10), 0); }});
         checkNull(new Runnable() { public void run() { enc.encode(ByteBuffer.allocate(10), bb_null, 0); }});
+        checkNull(new Runnable() { public void run() { enc.wrap(null); }});
     }
 
     private static void testNull(final Base64.Decoder dec) {
@@ -305,6 +315,7 @@ public class TestBase64 {
         checkNull(new Runnable() { public void run() { dec.decode(bb_null); }});
         checkNull(new Runnable() { public void run() { dec.decode(bb_null, ByteBuffer.allocate(10)); }});
         checkNull(new Runnable() { public void run() { dec.decode(ByteBuffer.allocate(10), bb_null); }});
+        checkNull(new Runnable() { public void run() { dec.wrap(null); }});
     }
 
     private static interface Testable {
@@ -354,6 +365,94 @@ public class TestBase64 {
         } catch (IllegalArgumentException iae) {}
     }
 
+    private static void testDecodeIgnoredAfterPadding() throws Throwable {
+        for (byte nonBase64 : new byte[] {'#', '(', '!', '\\', '-', '_', '\n', '\r'}) {
+            byte[][] src = new byte[][] {
+                "A".getBytes("ascii"),
+                "AB".getBytes("ascii"),
+                "ABC".getBytes("ascii"),
+                "ABCD".getBytes("ascii"),
+                "ABCDE".getBytes("ascii")
+            };
+            Base64.Encoder encM = Base64.getMimeEncoder();
+            Base64.Decoder decM = Base64.getMimeDecoder();
+            Base64.Encoder enc = Base64.getEncoder();
+            Base64.Decoder dec = Base64.getDecoder();
+            for (int i = 0; i < src.length; i++) {
+                // decode(byte[])
+                byte[] encoded = encM.encode(src[i]);
+                encoded = Arrays.copyOf(encoded, encoded.length + 1);
+                encoded[encoded.length - 1] = nonBase64;
+                checkEqual(decM.decode(encoded), src[i], "Non-base64 char is not ignored");
+                try {
+                    dec.decode(encoded);
+                    throw new RuntimeException("No IAE for non-base64 char");
+                } catch (IllegalArgumentException iae) {}
+
+                // decode(ByteBuffer[], ByteBuffer[])
+                ByteBuffer encodedBB = ByteBuffer.wrap(encoded);
+                ByteBuffer decodedBB = ByteBuffer.allocate(100);
+                int ret = decM.decode(encodedBB, decodedBB);
+                byte[] buf = new byte[ret];
+                decodedBB.flip();
+                decodedBB.get(buf);
+                checkEqual(buf, src[i], "Non-base64 char is not ignored");
+                try {
+                    encodedBB.rewind();
+                    decodedBB.clear();
+                    dec.decode(encodedBB, decodedBB);
+                    throw new RuntimeException("No IAE for non-base64 char");
+                } catch (IllegalArgumentException iae) {}
+                // direct
+                encodedBB.rewind();
+                decodedBB = ByteBuffer.allocateDirect(100);
+                ret = decM.decode(encodedBB, decodedBB);
+                buf = new byte[ret];
+                decodedBB.flip();
+                decodedBB.get(buf);
+                checkEqual(buf, src[i], "Non-base64 char is not ignored");
+                try {
+                    encodedBB.rewind();
+                    decodedBB.clear();
+                    dec.decode(encodedBB, decodedBB);
+                    throw new RuntimeException("No IAE for non-base64 char");
+                } catch (IllegalArgumentException iae) {}
+            }
+        }
+    }
+
+    private static void  testDecodeUnpadded() throws Throwable {
+        byte[] srcA = new byte[] { 'Q', 'Q' };
+        byte[] srcAA = new byte[] { 'Q', 'Q', 'E'};
+        Base64.Decoder dec = Base64.getDecoder();
+        byte[] ret = dec.decode(srcA);
+        if (ret[0] != 'A')
+            throw new RuntimeException("Decoding unpadding input A failed");
+        ret = dec.decode(srcAA);
+        if (ret[0] != 'A' && ret[1] != 'A')
+            throw new RuntimeException("Decoding unpadding input AA failed");
+        ret = new byte[10];
+        if (dec.wrap(new ByteArrayInputStream(srcA)).read(ret) != 1 &&
+            ret[0] != 'A')
+            throw new RuntimeException("Decoding unpadding input A from stream failed");
+        if (dec.wrap(new ByteArrayInputStream(srcA)).read(ret) != 2 &&
+            ret[0] != 'A' && ret[1] != 'A')
+            throw new RuntimeException("Decoding unpadding input AA from stream failed");
+    }
+
+    // single-non-base64-char should be ignored for mime decoding, but
+    // iae for basic decoding
+    private static void testSingleNonBase64MimeDec() throws Throwable {
+        for (String nonBase64 : new String[] {"#", "(", "!", "\\", "-", "_"}) {
+            if (Base64.getMimeDecoder().decode(nonBase64).length != 0) {
+                throw new RuntimeException("non-base64 char is not ignored");
+            }
+            try {
+                Base64.getDecoder().decode(nonBase64);
+                throw new RuntimeException("No IAE for single non-base64 char");
+            } catch (IllegalArgumentException iae) {}
+        }
+    }
 
     private static void testDecBufRet() throws Throwable {
         Random rnd = new java.util.Random();

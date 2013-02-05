@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,7 @@ public final class Double extends Number implements Comparable<Double> {
             return Double.toString(d);
         else {
             // Initialized to maximum size of output.
-            StringBuffer answer = new StringBuffer(24);
+            StringBuilder answer = new StringBuilder(24);
 
             if (Math.copySign(1.0, d) == -1.0)    // value is negative,
                 answer.append("-");                  // so append sign info
@@ -300,8 +300,7 @@ public final class Double extends Number implements Comparable<Double> {
 
             if(d == 0.0) {
                 answer.append("0.0p0");
-            }
-            else {
+            } else {
                 boolean subnormal = (d < DoubleConsts.MIN_NORMAL);
 
                 // Isolate significand bits and OR in a high-order bit
@@ -324,13 +323,14 @@ public final class Double extends Number implements Comparable<Double> {
                               "0":
                               signif.replaceFirst("0{1,12}$", ""));
 
+                answer.append('p');
                 // If the value is subnormal, use the E_min exponent
                 // value for double; otherwise, extract and report d's
                 // exponent (the representation of a subnormal uses
                 // E_min -1).
-                answer.append("p" + (subnormal ?
-                               DoubleConsts.MIN_EXPONENT:
-                               Math.getExponent(d) ));
+                answer.append(subnormal ?
+                              DoubleConsts.MIN_EXPONENT:
+                              Math.getExponent(d));
             }
             return answer.toString();
         }

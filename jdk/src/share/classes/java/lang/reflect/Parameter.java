@@ -233,8 +233,7 @@ public final class Parameter implements AnnotatedElement {
      */
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-
-        return AnnotationSupport.getOneAnnotation(declaredAnnotations(), annotationClass);
+        return annotationClass.cast(declaredAnnotations().get(annotationClass));
     }
 
     /**
@@ -279,14 +278,6 @@ public final class Parameter implements AnnotatedElement {
      */
     public Annotation[] getAnnotations() {
         return getDeclaredAnnotations();
-    }
-
-    /**
-     * @throws NullPointerException {@inheritDoc}
-     */
-    public boolean isAnnotationPresent(
-        Class<? extends Annotation> annotationClass) {
-        return getAnnotation(annotationClass) != null;
     }
 
     private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;

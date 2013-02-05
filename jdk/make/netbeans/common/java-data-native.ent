@@ -39,11 +39,11 @@
         <classpath mode="boot">${bootstrap.jdk}/jre/lib/rt.jar</classpath>
         <built-to>${root}/build/${platform}-${arch}/classes</built-to>
         <javadoc-built-to>${root}/build/${platform}-${arch}/docs/api</javadoc-built-to>
-        <source-level>1.7</source-level>
+        <source-level>1.8</source-level>
     </compilation-unit>
     <compilation-unit>
         <package-root>${root}/test</package-root>
         <unit-tests/>
-        <source-level>1.7</source-level>
+        <source-level>1.8</source-level>
     </compilation-unit>
 </java-data>
