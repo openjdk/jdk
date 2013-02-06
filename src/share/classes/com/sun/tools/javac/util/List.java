@@ -96,6 +96,26 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return res.reverse();
     }
 
+    public List<A> intersect(List<A> that) {
+        ListBuffer<A> buf = ListBuffer.lb();
+        for (A el : this) {
+            if (that.contains(el)) {
+                buf.append(el);
+            }
+        }
+        return buf.toList();
+    }
+
+    public List<A> diff(List<A> that) {
+        ListBuffer<A> buf = ListBuffer.lb();
+        for (A el : this) {
+            if (!that.contains(el)) {
+                buf.append(el);
+            }
+        }
+        return buf.toList();
+    }
+
     /** Construct a list consisting of given element.
      */
     public static <A> List<A> of(A x1) {
