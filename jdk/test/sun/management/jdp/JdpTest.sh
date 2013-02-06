@@ -23,7 +23,7 @@
 
 # @test
 # @bug 7169888 
-# @build JdpUnitTest JdpClient JdpDoSomething 
+# @compile -XDignore.symbol.file JdpUnitTest.java JdpClient.java JdpDoSomething.java 
 # @run shell JdpTest.sh --jtreg --no-compile
 # @summary No word Failed expected in the test output
 
@@ -46,6 +46,10 @@ _last_pid=""
 
 
 _compile(){
+    # If the test run without JTReg, we have to compile it by our self
+    # Under JTReg see @compile statement above
+    # sun.* packages is not included to symbol file lib/ct.sym so we have 
+    # to ignore it
 
     if [ ! -e ${_testclasses} ]
     then
@@ -55,7 +59,8 @@ _compile(){
     rm -f ${_testclasses}/*.class
 
     # Compile testcase
-    ${TESTJAVA}/bin/javac -d ${_testclasses} JdpUnitTest.java \
+    ${COMPILEJAVA}/bin/javac -XDignore.symbol.file -d ${_testclasses} \
+                                             JdpUnitTest.java \
                                              JdpDoSomething.java  \
                                              JdpClient.java
 
@@ -265,6 +270,13 @@ then
   echo "TESTJAVA env have to be set"
   exit
 fi
+
+# COMPILEJAVA variable is set when we test jre
+if [ "x${COMPILEJAVA}" = "x" ]
+then
+   COMPILEJAVA="${TESTJAVA}"
+fi
+
 
 #------------------------------------------------------------------------------
 # reading parameters 
