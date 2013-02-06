@@ -35,8 +35,6 @@ include MakeBase.gmk
 include JavaCompilation.gmk
 include IdlCompilation.gmk
 
-JAVAC_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" \
-		-jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
 # The Corba sources are old and generates a LOT of warnings.
 # Disable these using Xlint, until someone cares to fix them. 
 DISABLE_CORBA_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-serial,-fallthrough,-cast,-rawtypes,-static,-dep-ann
@@ -46,7 +44,7 @@ DISABLE_CORBA_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-serial,-fallthrough,
 # Thus we force the target bytecode to the boot jdk bytecode.
 $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
      JVM:=$(JAVA),\
-     JAVAC:=$(JAVAC_JARS),\
+     JAVAC:=$(NEW_JAVAC),\
      FLAGS:=$(BOOT_JDK_SOURCETARGET) -bootclasspath $(BOOT_RTJAR) $(DISABLE_CORBA_WARNINGS),\
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
@@ -56,7 +54,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
 # cannot necessarily be run with the boot jdk.
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE,\
      JVM:=$(JAVA),\
-     JAVAC:=$(JAVAC_JARS),\
+     JAVAC:=$(NEW_JAVAC),\
      FLAGS:=-cp $(BOOT_TOOLSJAR) -XDignore.symbol.file=true $(DISABLE_CORBA_WARNINGS),\
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
