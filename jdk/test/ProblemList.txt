@@ -45,8 +45,8 @@
 #   as to why they are here and use a label:
 #     generic-all       Problems on all platforms
 #     generic-ARCH      Where ARCH is one of: sparc, sparcv9, x64, i586, etc.
-#     OSNAME-all        Where OSNAME is one of: solaris, linux, windows
-#     OSNAME-ARCH       Specific on to one OSNAME and ARCH, e.g. solaris-x64
+#     OSNAME-all        Where OSNAME is one of: solaris, linux, windows, macosx
+#     OSNAME-ARCH       Specific on to one OSNAME and ARCH, e.g. solaris-amd64
 #     OSNAME-REV        Specific on to one OSNAME and REV, e.g. solaris-5.8
 #
 # More than one label is allowed but must be on the same line.
