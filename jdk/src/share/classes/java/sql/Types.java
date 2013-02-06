@@ -319,6 +319,24 @@ public class Types {
      */
     public static final int REF_CURSOR = 2012;
 
+    /**
+     * The constant in the Java programming language, sometimes referred to
+     * as a type code, that identifies the generic SQL type
+     * {@code TIME WITH TIMEZONE}.
+     *
+     * @since 1.8
+     */
+    public static final int TIME_WITH_TIMEZONE = 2013;
+
+    /**
+     * The constant in the Java programming language, sometimes referred to
+     * as a type code, that identifies the generic SQL type
+     * {@code TIMESTAMP WITH TIMEZONE}.
+     *
+     * @since 1.8
+     */
+    public static final int TIMESTAMP_WITH_TIMEZONE = 2014;
+
     // Prevent instantiation
     private Types() {}
 }
