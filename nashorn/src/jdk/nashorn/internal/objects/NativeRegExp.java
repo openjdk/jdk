@@ -27,7 +27,10 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,6 +57,8 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  */
 @ScriptClass("RegExp")
 public final class NativeRegExp extends ScriptObject {
+    static final MethodHandle REGEXP_STATICS_HANDLER = findOwnMH("regExpStaticsHandler", Object.class, Object.class, Object.class);
+
     /** ECMA 15.10.7.5 lastIndex property */
     @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public Object lastIndex;
@@ -74,6 +79,9 @@ public final class NativeRegExp extends ScriptObject {
     private Pattern pattern;
 
     private BitVector groupsInNegativeLookahead;
+
+    // RegExp constructor object. Needed to support RegExp "static" properties,
+    private Object constructor;
 
     /*
     public NativeRegExp() {
@@ -420,10 +428,81 @@ public final class NativeRegExp extends ScriptObject {
         final RegExpMatch m = execInner(string);
         // the input string
         if (m == null) {
-            return null;
+            return setLastRegExpMatch(null);
         }
 
-        return new NativeRegExpExecResult(m);
+        return setLastRegExpMatch(new NativeRegExpExecResult(m));
+    }
+
+    // Name of the "last successful match" property of the RegExp constructor
+    static final String LAST_REGEXP_MATCH = "__last_regexp_match__";
+
+    /**
+     * Handles "static" properties of RegExp constructor. These are "deprecated"
+     * properties of RegExp constructor.
+     *
+     * @param self self object passed to this method
+     * @param name name of the property being searched
+     *
+     * @return value of the specified property or undefined if not found
+     */
+    public static Object regExpStaticsHandler(final Object self, final  Object name) {
+        final String propName = JSType.toString(name);
+        if (self instanceof ScriptObject) {
+            final ScriptObject sobj = (ScriptObject)self;
+            final Object value = sobj.get(LAST_REGEXP_MATCH);
+            if (! (value instanceof NativeRegExpExecResult)) {
+                return UNDEFINED;
+            }
+
+            // get the last match object
+            final NativeRegExpExecResult lastMatch = (NativeRegExpExecResult)value;
+
+            // look for $1... $9
+            if (propName.length() > 0 && propName.charAt(0) == '$') {
+                int index = 0;
+                try {
+                    index = Integer.parseInt(propName.substring(1));
+                } catch (final Exception ignored) {
+                    return UNDEFINED;
+                }
+
+                // index out of range
+                if (index < 1 && index > 9) {
+                    return UNDEFINED;
+                }
+
+                // retrieve indexed value from last match object.
+                return lastMatch.get(index);
+            }
+
+            // misc. "static" properties supported
+            switch (propName) {
+                case "input": {
+                    return lastMatch.input;
+                }
+
+                case "lastMatch": {
+                    return lastMatch.get(0);
+                }
+
+                case "lastParen": {
+                    final int len = ((Number)NativeRegExpExecResult.length(lastMatch)).intValue();
+                    return (len > 0)? lastMatch.get(len - 1) : UNDEFINED;
+                }
+            }
+        }
+
+        return UNDEFINED;
+    }
+
+    // Support for RegExp static properties. We set last successful match
+    // to the RegExp constructor object.
+    private Object setLastRegExpMatch(final Object match) {
+        if (constructor instanceof ScriptObject) {
+            ((ScriptObject)constructor).set(LAST_REGEXP_MATCH, match, isStrictContext());
+        }
+        return match;
     }
 
     /**
@@ -665,20 +744,15 @@ public final class NativeRegExp extends ScriptObject {
      * @return Index of match.
      */
     Object search(final String string) {
-        final Matcher matcher = pattern.matcher(string);
-
-        int start = 0;
-        if (global) {
-            start = getLastIndex();
+        final RegExpMatch m = execInner(string);
+        // the input string
+        if (m == null) {
+            setLastRegExpMatch(null);
+            return -1;
         }
 
-        start = matcher.find(start) ? matcher.start() : -1;
-
-        if (global) {
-            setLastIndex(start == -1? -1 : matcher.end());
-        }
-
-        return start;
+        setLastRegExpMatch(new NativeRegExpExecResult(m));
+        return m.getIndex();
     }
 
     /**
@@ -706,7 +780,10 @@ public final class NativeRegExp extends ScriptObject {
     }
 
     private void init() {
-        this.setProto(Global.instance().getRegExpPrototype());
+        final ScriptObject proto = Global.instance().getRegExpPrototype();
+        this.setProto(proto);
+        // retrieve constructor to support "static" properties of RegExp
+        this.constructor = PrototypeObject.getConstructor(proto);
     }
 
     private static NativeRegExp checkRegExp(final Object self) {
@@ -769,4 +846,7 @@ public final class NativeRegExp extends ScriptObject {
         this.groupsInNegativeLookahead = groupsInNegativeLookahead;
     }
 
+    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(MethodHandles.publicLookup(), NativeRegExp.class, name, MH.type(rtype, types));
+    }
 }
