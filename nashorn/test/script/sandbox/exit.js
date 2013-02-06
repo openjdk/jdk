@@ -22,7 +22,7 @@
  */
 
 /**
- * Try to call System.exit.
+ * Try to call System.exit, quit and exit.
  *
  * @test
  * @security
@@ -38,6 +38,20 @@ function check(e) {
 
 try {
     java.lang.System.exit(0);
+    // will not reach here regardless of outcome..
+} catch (e) {
+    check(e);
+}
+
+try {
+    quit();
+    // will not reach here regardless of outcome..
+} catch (e) {
+    check(e);
+}
+
+try {
+    exit(0);
     // will not reach here regardless of outcome..
 } catch (e) {
     check(e);
