@@ -269,7 +269,7 @@ public class Infer {
         inferenceException.clear();
 
         DeferredAttr.DeferredAttrContext deferredAttrContext =
-                resolveContext.deferredAttrContext(msym, inferenceContext);
+                resolveContext.deferredAttrContext(msym, inferenceContext, resultInfo, warn);
 
         try {
             methodCheck.argumentsAcceptable(env, deferredAttrContext, argtypes, mt.getParameterTypes(), warn);
