@@ -1351,6 +1351,13 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final ScriptObject regExpProto = getRegExpPrototype();
         regExpProto.addBoundProperties(DEFAULT_REGEXP);
 
+        // add hook to support "deprecated" "static" properties of RegExp constructor object
+        final ScriptFunction handler = ScriptFunctionImpl.makeFunction(NO_SUCH_METHOD_NAME, NativeRegExp.REGEXP_STATICS_HANDLER);
+        builtinRegExp.addOwnProperty(NO_SUCH_PROPERTY_NAME, Attribute.NOT_ENUMERABLE, handler);
+
+        // add initial undefined "last successful match" property RegExp
+        builtinRegExp.addOwnProperty(NativeRegExp.LAST_REGEXP_MATCH, Attribute.NOT_ENUMERABLE, UNDEFINED);
+
         // Error stuff
         initErrorObjects();
 
