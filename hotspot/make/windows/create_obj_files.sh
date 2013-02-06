@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,6 @@ COMPILER2_PATHS="${COMPILER2_PATHS} ${GENERATED}/adfiles"
 # Include dirs per type.
 case "${TYPE}" in
     "core")      Src_Dirs="${CORE_PATHS}" ;;
-    "kernel")    Src_Dirs="${BASE_PATHS} ${COMPILER1_PATHS}" ;;
     "compiler1") Src_Dirs="${CORE_PATHS} ${COMPILER1_PATHS}" ;;
     "compiler2") Src_Dirs="${CORE_PATHS} ${COMPILER2_PATHS}" ;;
     "tiered")    Src_Dirs="${CORE_PATHS} ${COMPILER1_PATHS} ${COMPILER2_PATHS}" ;;
@@ -120,16 +119,12 @@ COMPILER1_SPECIFIC_FILES="c1_*"
 SHARK_SPECIFIC_FILES="shark"
 ZERO_SPECIFIC_FILES="zero"
 
-# These files need to be excluded when building the kernel target.
-KERNEL_EXCLUDED_FILES="attachListener.cpp attachListener_windows.cpp metaspaceShared_${Platform_arch_model}.cpp forte.cpp fprofiler.cpp heapDumper.cpp heapInspection.cpp jniCheck.cpp jvmtiCodeBlobEvents.cpp jvmtiExtensions.cpp jvmtiImpl.cpp jvmtiRawMonitor.cpp jvmtiTagMap.cpp jvmtiTrace.cpp vmStructs.cpp g1MemoryPool.cpp psMemoryPool.cpp gcAdaptivePolicyCounters.cpp concurrentGCThread.cpp metaspaceShared.cpp mutableNUMASpace.cpp allocationStats.cpp gSpaceCounters.cpp immutableSpace.cpp mutableSpace.cpp spaceCounters.cpp yieldingWorkgroup.cpp"
-
 # Always exclude these.
 Src_Files_EXCLUDE="jsig.c jvmtiEnvRecommended.cpp jvmtiEnvStub.cpp"
 
 # Exclude per type.
 case "${TYPE}" in
     "core")      Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${COMPILER2_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ciTypeFlow.cpp" ;;
-    "kernel")    Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER2_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ${KERNEL_EXCLUDED_FILES} ciTypeFlow.cpp" ;;
     "compiler1") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER2_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ciTypeFlow.cpp" ;;
     "compiler2") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES}" ;;
     "tiered")    Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES}" ;;

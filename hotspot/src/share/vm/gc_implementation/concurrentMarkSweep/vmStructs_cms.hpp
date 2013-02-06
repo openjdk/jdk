@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@
   nonstatic_field(CompactibleFreeListSpace,    _bt,                                           BlockOffsetArrayNonContigSpace)        \
                                                                                                                                      \
   nonstatic_field(CMSBitMap,                   _bmWordSize,                                   size_t)                                \
-  nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                            \
-  nonstatic_field(CMSBitMap,                      _bm,                                           BitMap)                            \
-  nonstatic_field(CMSBitMap,                   _virtual_space,                                VirtualSpace)                         \
+  nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                             \
+  nonstatic_field(CMSBitMap,                      _bm,                                           BitMap)                             \
+  nonstatic_field(CMSBitMap,                   _virtual_space,                                VirtualSpace)                          \
   nonstatic_field(CMSCollector,                _markBitMap,                                   CMSBitMap)                             \
   nonstatic_field(ConcurrentMarkSweepGeneration, _cmsSpace,                                   CompactibleFreeListSpace*)             \
      static_field(ConcurrentMarkSweepThread,   _collector,                                    CMSCollector*)                         \

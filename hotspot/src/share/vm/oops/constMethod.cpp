@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/gcLocker.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
@@ -330,6 +331,18 @@ void ConstMethod::print_value_on(outputStream* st) const {
   method()->print_value_on(st);
 }
 
+#if INCLUDE_SERVICES
+// Size Statistics
+void ConstMethod::collect_statistics(KlassSizeStats *sz) const {
+  int n1, n2, n3;
+  sz->_const_method_bytes += (n1 = sz->count(this));
+  sz->_bytecode_bytes     += (n2 = code_size());
+  sz->_stackmap_bytes     += (n3 = sz->count_array(stackmap_data()));
+
+  sz->_method_all_bytes += n1 + n3; // note: n2 is part of n3
+  sz->_ro_bytes += n1 + n3;
+}
+#endif // INCLUDE_SERVICES
 
 // Verification
 
