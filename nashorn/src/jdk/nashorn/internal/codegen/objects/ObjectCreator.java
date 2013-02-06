@@ -127,14 +127,15 @@ public abstract class ObjectCreator {
 
     /**
      * Construct the property map appropriate for the object.
+     * @return the newly created property map
      */
-    protected void makeMap() {
+    protected PropertyMap makeMap() {
         if (keys.isEmpty()) { //empty map
             propertyMap = PropertyMap.newMap(fieldObjectClass);
-            return;
+        } else {
+            propertyMap = newMapCreator(fieldObjectClass).makeMap(isVarArg());
         }
-
-        propertyMap = newMapCreator(fieldObjectClass).makeMap(isVarArg());
+        return propertyMap;
     }
 
     /**

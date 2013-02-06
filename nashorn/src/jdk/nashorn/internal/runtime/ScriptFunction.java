@@ -37,7 +37,6 @@ import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
-import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
@@ -70,144 +69,53 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", Object.class, Object.class);
 
-    /** method handle to arity setter for this ScriptFunction */
-    public static final Call SET_ARITY = virtualCallNoLookup(ScriptFunction.class, "setArity", void.class, int.class);
     /** method handle to scope getter for this ScriptFunction */
     public static final Call GET_SCOPE = virtualCallNoLookup(ScriptFunction.class, "getScope", ScriptObject.class);
 
     /** Should specialized function and specialized constructors for the builtin be used if available? */
     private static final boolean DISABLE_SPECIALIZATION = Options.getBooleanProperty("nashorn.scriptfunction.specialization.disable");
 
-    /** Name of function or null. */
-    private final String name;
-
-    /** Source of function. */
-    private final Source source;
-
-    /** Start position and length in source. */
-    private final long token;
-
-    /** Reference to code for this method. */
-    private final MethodHandle invokeHandle;
-
-    /** Reference to code for this method when called to create "new" object */
-    protected MethodHandle constructHandle;
+    private final ScriptFunctionData data;
 
     /** Reference to constructor prototype. */
     protected Object prototype;
 
-    /** Constructor to create a new instance. */
-    private MethodHandle allocator;
-
-    /** Map for new instance constructor. */
-    private PropertyMap allocatorMap;
-
     /** The parent scope. */
     private final ScriptObject scope;
 
-    /** Specializations - see @SpecializedFunction */
-    private MethodHandle[] invokeSpecializations;
+    /**
+     * Constructor
+     *
+     * @param name         function name
+     * @param methodHandle method handle to function (if specializations are present, assumed to be most generic)
+     * @param map          property map
+     * @param scope        scope
+     * @param specs        specialized version of this function - other method handles
+     *
+     */
+    protected ScriptFunction(
+            final String name,
+            final MethodHandle methodHandle,
+            final PropertyMap map,
+            final ScriptObject scope,
+            final MethodHandle[] specs,
+            final boolean strict,
+            final boolean builtin) {
 
-    /** Specializations - see @SpecializedFunction */
-    private MethodHandle[] constructSpecializations;
-
-    /** This field is either computed in constructor or set explicitly by calling setArity method. */
-    private int arity;
+        this (new ScriptFunctionData(name, methodHandle, specs, strict, builtin), map, scope);
+    }
 
     /**
      * Constructor
      *
-     * @param name          function name
-     * @param methodHandle  method handle to function (if specializations are present, assumed to be most generic)
+     * @param data          static function data
      * @param map           property map
      * @param scope         scope
-     * @param specs         specialized version of this function - other method handles
      */
     protected ScriptFunction(
-            final String name,
-            final MethodHandle methodHandle,
+            final ScriptFunctionData data,
             final PropertyMap map,
-            final ScriptObject scope,
-            final MethodHandle[] specs) {
-        this(name, methodHandle, map, scope, null, 0, needsCallee(methodHandle), specs);
-    }
-
-    /**
-     * Heuristic to figure out if the method handle has a callee argument. If it's type is either
-     * {@code (boolean, Object, ScriptFunction, ...)} or {@code (Object, ScriptFunction, ...)}, then we'll assume it has
-     * a callee argument. We need this as the constructor above is not passed this information, and can't just blindly
-     * assume it's false (notably, it's being invoked for creation of new scripts, and scripts have scopes, therefore
-     * they also always receive a callee.
-     * @param methodHandle the examined method handle
-     * @return true if the method handle expects a callee, false otherwise
-     */
-    private static boolean needsCallee(MethodHandle methodHandle) {
-        final MethodType type = methodHandle.type();
-        final int len = type.parameterCount();
-        if(len == 0) {
-            return false;
-        }
-        if(type.parameterType(0) == boolean.class) {
-            return len > 2 && type.parameterType(2) == ScriptFunction.class;
-        }
-        return len > 1 && type.parameterType(1) == ScriptFunction.class;
-    }
-
-    /**
-     * Constructor
-     *
-     * @param name          function name
-     * @param methodHandle  method handle to function (if specializations are present, assumed to be most generic)
-     * @param map           property map
-     * @param scope         scope
-     * @param source        the source
-     * @param token         token
-     * @param allocator     method handle to this function's allocator - see JO$ classes
-     * @param allocatorMap  property map to be used for all constructors
-     * @param needsCallee   does this method use the {@code callee} variable
-     * @param specs         specialized version of this function - other method handles
-     */
-    protected ScriptFunction(
-            final String name,
-            final MethodHandle methodHandle,
-            final PropertyMap map,
-            final ScriptObject scope,
-            final Source source,
-            final long token,
-            final MethodHandle allocator,
-            final PropertyMap allocatorMap,
-            final boolean needsCallee,
-            final MethodHandle[] specs) {
-
-        this(name, methodHandle, map, scope, source, token, needsCallee, specs);
-
-        //this is the internal constructor
-
-        this.allocator    = allocator;
-        this.allocatorMap = allocatorMap;
-    }
-
-    /**
-     * Constructor
-     *
-     * @param name              function name
-     * @param methodHandle      method handle to function (if specializations are present, assumed to be most generic)
-     * @param map               property map
-     * @param scope             scope
-     * @param source            the source
-     * @param token             token
-     * @param needsCallee       does this method use the {@code callee} variable
-     * @param specs             specialized version of this function - other method handles
-     */
-    protected ScriptFunction(
-            final String name,
-            final MethodHandle methodHandle,
-            final PropertyMap map,
-            final ScriptObject scope,
-            final Source source,
-            final long token,
-            final boolean needsCallee,
-            final MethodHandle[] specs) {
+            final ScriptObject scope) {
 
         super(map);
 
@@ -215,89 +123,8 @@ public abstract class ScriptFunction extends ScriptObject {
             constructorCount++;
         }
 
-        this.name   = name;
-        this.source = source;
-        this.token  = token;
+        this.data = data;
         this.scope  = scope;
-        if(needsCallee) {
-            setHasCalleeParameter();
-        }
-
-        final MethodType type       = methodHandle.type();
-        final int        paramCount = type.parameterCount();
-        final boolean    isVarArg   = type.parameterType(paramCount - 1).isArray();
-
-        final MethodHandle mh = MH.asType(methodHandle, adaptType(type, needsCallee, isVarArg));
-
-        this.arity = isVarArg ? -1 : paramCount - 1; //drop the self param for arity
-
-        if (needsCallee && !isVarArg) {
-            this.arity--;
-        }
-
-        if (scope != null) {
-            this.invokeHandle    = mh;
-            this.constructHandle = mh;
-        } else if (isConstructor(mh)) {
-            if (!isVarArg) {
-                this.arity--;    // drop the boolean flag for arity
-            }
-            /*
-             * We insert a boolean argument to tell if the method was invoked as
-             * constructor or not if the method handle's first argument is boolean.
-             */
-            this.invokeHandle    = MH.insertArguments(mh, 0, false);
-            this.constructHandle = MH.insertArguments(mh, 0, true);
-
-            if (specs != null) {
-                this.invokeSpecializations    = new MethodHandle[specs.length];
-                this.constructSpecializations = new MethodHandle[specs.length];
-                for (int i = 0; i < specs.length; i++) {
-                    this.invokeSpecializations[i]    = MH.insertArguments(specs[i], 0, false);
-                    this.constructSpecializations[i] = MH.insertArguments(specs[i], 0, true);
-                }
-            }
-        } else {
-            this.invokeHandle             = mh;
-            this.constructHandle          = mh;
-            this.invokeSpecializations    = specs;
-            this.constructSpecializations = specs;
-        }
-    }
-
-    /**
-     * Takes a method type, and returns a (potentially different method type) that the method handles used by
-     * ScriptFunction must conform to in order to be usable in {@link #invoke(Object, Object...)} and
-     * {@link #construct(Object, Object...)}. The returned method type will be sure to return {@code Object}, and will
-     * have all its parameters turned into {@code Object} as well, except for the following ones:
-     * <ul>
-     * <li>an optional first {@code boolean} parameter, used for some functions to distinguish method and constructor
-     * invocation,</li>
-     * <li>a last parameter of type {@code Object[]} which is used for vararg functions,</li>
-     * <li>the second (or, in presence of boolean parameter, third) argument, which is forced to be
-     * {@link ScriptFunction}, in case the function receives itself (callee) as an argument</li>
-     * @param type the original type
-     * @param hasCallee true if the function uses the callee argument
-     * @param isVarArg if the function is a vararg
-     * @return the new type, conforming to the rules above.
-     */
-    private static MethodType adaptType(final MethodType type, final boolean hasCallee, final boolean isVarArg) {
-        // Generify broadly
-        MethodType newType = type.generic().changeReturnType(Object.class);
-        if(isVarArg) {
-            // Change back to vararg if we over-generified it
-            newType = newType.changeParameterType(type.parameterCount() - 1, Object[].class);
-        }
-        final boolean hasBoolean = type.parameterType(0) == boolean.class;
-        if(hasBoolean) {
-            // Restore the initial boolean argument
-            newType = newType.changeParameterType(0, boolean.class);
-        }
-        if(hasCallee) {
-            // Restore the ScriptFunction argument
-            newType = newType.changeParameterType(hasBoolean ? 2 : 1, ScriptFunction.class);
-        }
-        return newType;
     }
 
     @Override
@@ -329,7 +156,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return arity
      */
     public final int getArity() {
-        return arity;
+        return data.getArity();
     }
 
     /**
@@ -337,27 +164,32 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param arity arity
      */
     public final void setArity(final int arity) {
-        this.arity = arity;
+        data.setArity(arity);
     }
 
     /**
      * Is this a ECMAScript 'use strict' function?
      * @return true if function is in strict mode
      */
-    public abstract boolean isStrict();
+    public boolean isStrict() {
+        return data.isStrict();
+    }
 
     /**
      * Is this a ECMAScript built-in function (like parseInt, Array.isArray) ?
      * @return true if built-in
      */
-    public abstract boolean isBuiltin();
+    public boolean isBuiltin() {
+        return data.isBuiltin();
+    }
 
     /**
-     * Is this a non-strict and not-built-in script function?
-     * @return true if neither strict nor built-in
+     * Returns true if this is a non-strict, non-built-in function that requires non-primitive this argument
+     * according to ECMA 10.4.3.
+     * @return true if this argument must be an object
      */
-    public boolean isNonStrictFunction() {
-        return !isStrict() && !isBuiltin();
+    public boolean needsWrappedThis() {
+        return data.needsWrappedThis();
     }
 
     /**
@@ -372,43 +204,44 @@ public abstract class ScriptFunction extends ScriptObject {
             invokes++;
         }
 
+        final MethodHandle invoker = data.getGenericInvoker();
         final Object selfObj = convertThisObject(self);
         final Object[] args = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
 
-        if (isVarArg(invokeHandle)) {
-            if (hasCalleeParameter()) {
-                return invokeHandle.invokeExact(selfObj, this, args);
+        if (data.isVarArg()) {
+            if (data.needsCallee()) {
+                return invoker.invokeExact(selfObj, this, args);
             }
-            return invokeHandle.invokeExact(selfObj, args);
+            return invoker.invokeExact(selfObj, args);
         }
 
-        final int paramCount = invokeHandle.type().parameterCount();
-        if (hasCalleeParameter()) {
+        final int paramCount = invoker.type().parameterCount();
+        if (data.needsCallee()) {
             switch (paramCount) {
             case 2:
-                return invokeHandle.invokeExact(selfObj, this);
+                return invoker.invokeExact(selfObj, this);
             case 3:
-                return invokeHandle.invokeExact(selfObj, this, getArg(args, 0));
+                return invoker.invokeExact(selfObj, this, getArg(args, 0));
             case 4:
-                return invokeHandle.invokeExact(selfObj, this, getArg(args, 0), getArg(args, 1));
+                return invoker.invokeExact(selfObj, this, getArg(args, 0), getArg(args, 1));
             case 5:
-                return invokeHandle.invokeExact(selfObj, this, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+                return invoker.invokeExact(selfObj, this, getArg(args, 0), getArg(args, 1), getArg(args, 2));
             default:
-                return invokeHandle.invokeWithArguments(withArguments(selfObj, this, paramCount, args));
+                return invoker.invokeWithArguments(withArguments(selfObj, this, paramCount, args));
             }
         }
 
         switch (paramCount) {
         case 1:
-            return invokeHandle.invokeExact(selfObj);
+            return invoker.invokeExact(selfObj);
         case 2:
-            return invokeHandle.invokeExact(selfObj, getArg(args, 0));
+            return invoker.invokeExact(selfObj, getArg(args, 0));
         case 3:
-            return invokeHandle.invokeExact(selfObj, getArg(args, 0), getArg(args, 1));
+            return invoker.invokeExact(selfObj, getArg(args, 0), getArg(args, 1));
         case 4:
-            return invokeHandle.invokeExact(selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+            return invoker.invokeExact(selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2));
         default:
-            return invokeHandle.invokeWithArguments(withArguments(selfObj, null, paramCount, args));
+            return invoker.invokeWithArguments(withArguments(selfObj, null, paramCount, args));
         }
     }
 
@@ -424,44 +257,45 @@ public abstract class ScriptFunction extends ScriptObject {
      * @throws Throwable if there is an exception/error with the constructor invocation or thrown from it
      */
     public Object construct(final Object self, final Object... args) throws Throwable {
-        if (constructHandle == null) {
+        if (data.getConstructor() == null) {
             typeError("not.a.constructor", ScriptRuntime.safeToString(this));
         }
 
-        if (isVarArg(constructHandle)) {
-            if (hasCalleeParameter()) {
-                return constructHandle.invokeExact(self, this, args);
+        final MethodHandle constructor = data.getGenericConstructor();
+        if (data.isVarArg()) {
+            if (data.needsCallee()) {
+                return constructor.invokeExact(self, this, args);
             }
-            return constructHandle.invokeExact(self, args);
+            return constructor.invokeExact(self, args);
         }
 
-        final int paramCount = constructHandle.type().parameterCount();
-        if (hasCalleeParameter()) {
+        final int paramCount = constructor.type().parameterCount();
+        if (data.needsCallee()) {
             switch (paramCount) {
             case 2:
-                return constructHandle.invokeExact(self, this);
+                return constructor.invokeExact(self, this);
             case 3:
-                return constructHandle.invokeExact(self, this, getArg(args, 0));
+                return constructor.invokeExact(self, this, getArg(args, 0));
             case 4:
-                return constructHandle.invokeExact(self, this, getArg(args, 0), getArg(args, 1));
+                return constructor.invokeExact(self, this, getArg(args, 0), getArg(args, 1));
             case 5:
-                return constructHandle.invokeExact(self, this, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+                return constructor.invokeExact(self, this, getArg(args, 0), getArg(args, 1), getArg(args, 2));
             default:
-                return constructHandle.invokeWithArguments(withArguments(self, this, args));
+                return constructor.invokeWithArguments(withArguments(self, this, args));
             }
         }
 
         switch(paramCount) {
         case 1:
-            return constructHandle.invokeExact(self);
+            return constructor.invokeExact(self);
         case 2:
-            return constructHandle.invokeExact(self, getArg(args, 0));
+            return constructor.invokeExact(self, getArg(args, 0));
         case 3:
-            return constructHandle.invokeExact(self, getArg(args, 0), getArg(args, 1));
+            return constructor.invokeExact(self, getArg(args, 0), getArg(args, 1));
         case 4:
-            return constructHandle.invokeExact(self, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+            return constructor.invokeExact(self, getArg(args, 0), getArg(args, 1), getArg(args, 2));
         default:
-            return constructHandle.invokeWithArguments(withArguments(self, null, args));
+            return constructor.invokeWithArguments(withArguments(self, null, args));
         }
     }
 
@@ -509,9 +343,9 @@ public abstract class ScriptFunction extends ScriptObject {
 
         ScriptObject object = null;
 
-        if (allocator != null) {
+        if (data.getAllocator() != null) {
             try {
-                object = (ScriptObject)allocator.invokeExact(allocatorMap);
+                object = (ScriptObject)data.getAllocator().invokeExact(data.getAllocatorMap());
             } catch (final RuntimeException | Error e) {
                 throw e;
             } catch (final Throwable t) {
@@ -546,25 +380,6 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     public abstract ScriptFunction makeBoundFunction(Object self, Object[] args);
 
-    /**
-     * Test if a methodHandle refers to a constructor.
-     * @param methodHandle MethodHandle to test.
-     * @return True if method is a constructor.
-     */
-    private static boolean isConstructor(final MethodHandle methodHandle) {
-        return methodHandle.type().parameterCount() >= 1 && methodHandle.type().parameterType(0) == boolean.class;
-    }
-
-    /**
-     * Test if a methodHandle refers to a variable argument method.
-     * @param methodHandle MethodHandle to test.
-     * @return True if variable arguments.
-     */
-    public boolean isVarArg(final MethodHandle methodHandle) {
-        return hasCalleeParameter()
-                ? methodHandle.type().parameterCount() == 3 && methodHandle.type().parameterType(2).isArray()
-                : methodHandle.type().parameterCount() == 2 && methodHandle.type().parameterType(1).isArray();
-    }
 
     @Override
     public final String safeToString() {
@@ -573,23 +388,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-
-        sb.append(super.toString())
-            .append(" [ ")
-            .append(invokeHandle)
-            .append(", ")
-            .append((name == null || name.isEmpty()) ? "<anonymous>" : name);
-
-        if (source != null) {
-            sb.append(" @ ")
-               .append(source.getName())
-               .append(':')
-               .append(source.getLine(Token.descPosition(token)));
-        }
-        sb.append(" ]");
-
-        return sb.toString();
+        return data.toString();
     }
 
     /**
@@ -598,11 +397,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return string representation of this function's source
      */
     public final String toSource() {
-        if (source != null && token != 0) {
-            return source.getString(Token.descPosition(token), Token.descLength(token));
-        }
-
-        return "function " + (name == null ? "" : name) + "() { [native code] }";
+        return data.toSource();
     }
 
     /**
@@ -696,7 +491,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return invoke method handle
      */
     public final MethodHandle getBestSpecializedInvokeHandle(final MethodType type) {
-        return candidateWithLowestWeight(type, getInvokeHandle(), invokeSpecializations);
+        return candidateWithLowestWeight(type, getInvokeHandle(), data.getInvokeSpecializations());
     }
 
     /**
@@ -706,7 +501,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return invokeHandle
      */
     public final MethodHandle getInvokeHandle() {
-        return invokeHandle;
+        return data.getInvoker();
     }
 
     /**
@@ -718,19 +513,9 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     public final MethodHandle getBoundInvokeHandle(final ScriptObject self) {
         final MethodHandle bound = MH.bindTo(getInvokeHandle(), self);
-        return hasCalleeParameter() ? MH.bindTo(bound, this) : bound;
+        return data.needsCallee() ? MH.bindTo(bound, this) : bound;
     }
 
-    /**
-     * Check whether the ScriptFunction has callee parameter
-     * @return true if callee parameter
-     */
-    protected abstract boolean hasCalleeParameter();
-
-    /**
-     * Flag ScriptFunction as needing a callee parameter
-     */
-    protected abstract void setHasCalleeParameter();
 
     /**
      * Get the construct handle - the most generic (and if no specializations are in place, only) constructor
@@ -740,7 +525,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return construct handle
      */
     public final MethodHandle getConstructHandle(final MethodType type) {
-        return candidateWithLowestWeight(type, getConstructHandle(), constructSpecializations);
+        return candidateWithLowestWeight(type, getConstructHandle(), data.getConstructSpecializations());
     }
 
     /**
@@ -748,7 +533,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return constructor handle
      */
     public final MethodHandle getConstructHandle() {
-        return constructHandle;
+        return data.getConstructor();
     }
 
     /**
@@ -756,8 +541,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param constructHandle constructor handle
      */
     public final void setConstructHandle(final MethodHandle constructHandle) {
-        this.constructHandle = constructHandle;
-        this.constructSpecializations = null;
+        data.setConstructor(constructHandle);
     }
 
     /**
@@ -765,7 +549,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return the name
      */
     public final String getName() {
-        return name;
+        return data.getName();
     }
 
     /**
@@ -775,7 +559,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return true if this needs compilation
      */
     public final boolean needsCompilation() {
-        return invokeHandle == null;
+        return data.getInvoker() == null;
     }
 
     /**
@@ -783,7 +567,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return token
      */
     public final long getToken() {
-        return token;
+        return data.getToken();
     }
 
     /**
@@ -907,7 +691,7 @@ public abstract class ScriptFunction extends ScriptObject {
         final Class<?>[] ctorArgs = ctorType.dropParameterTypes(0, 1).parameterArray(); // drop self
         MethodHandle handle = MH.foldArguments(MH.dropArguments(NEWFILTER, 2, ctorArgs), constructor);
 
-        if (hasCalleeParameter()) {
+        if (data.needsCallee()) {
             handle = MH.foldArguments(handle, ALLOCATE);
         } else {
             handle = MH.filterArguments(handle, 0, ALLOCATE);
@@ -958,12 +742,12 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle boundHandle;
         MethodHandle guard = null;
 
-        if (hasCalleeParameter()) {
+        if (data.needsCallee()) {
             final MethodHandle callHandle = getBestSpecializedInvokeHandle(type);
 
             if(NashornCallSiteDescriptor.isScope(desc)) {
                 // (this, callee, args...) => (callee, args...) => (callee, [this], args...)
-                boundHandle = MH.bindTo(callHandle, isNonStrictFunction() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
+                boundHandle = MH.bindTo(callHandle, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
                 boundHandle = MH.dropArguments(boundHandle, 1, Object.class);
             } else {
                 // (this, callee, args...) permute => (callee, this, args...) which is what we get in
@@ -980,7 +764,7 @@ public abstract class ScriptFunction extends ScriptObject {
                 // For non-strict functions, check whether this-object is primitive type.
                 // If so add a to-object-wrapper argument filter.
                 // Else install a guard that will trigger a relink when the argument becomes primitive.
-                if (isNonStrictFunction()) {
+                if (needsWrappedThis()) {
                     if (isPrimitiveThis(request.getArguments()[1])) {
                         boundHandle = MH.filterArguments(boundHandle, 1, WRAPFILTER);
                     } else {
@@ -992,7 +776,7 @@ public abstract class ScriptFunction extends ScriptObject {
             final MethodHandle callHandle = getBestSpecializedInvokeHandle(type.dropParameterTypes(0, 1));
 
             if(NashornCallSiteDescriptor.isScope(desc)) {
-                boundHandle = MH.bindTo(callHandle, isNonStrictFunction() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
+                boundHandle = MH.bindTo(callHandle, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
                 boundHandle = MH.dropArguments(boundHandle, 0, Object.class, Object.class);
             } else {
                 boundHandle = MH.dropArguments(callHandle, 0, Object.class);
@@ -1012,13 +796,13 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle methodHandle = getBestSpecializedInvokeHandle(type);
 
         if (bindName != null) {
-            if (hasCalleeParameter()) {
+            if (data.needsCallee()) {
                 methodHandle = MH.insertArguments(methodHandle, 1, this, bindName);
             } else {
                 methodHandle = MH.insertArguments(methodHandle, 1, bindName);
             }
         } else {
-            if (hasCalleeParameter()) {
+            if (data.needsCallee()) {
                 methodHandle = MH.insertArguments(methodHandle, 1, this);
             }
         }
@@ -1034,7 +818,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return the converted this object
      */
     protected Object convertThisObject(final Object thiz) {
-        if (!(thiz instanceof ScriptObject) && isNonStrictFunction()) {
+        if (!(thiz instanceof ScriptObject) && needsWrappedThis()) {
             if (JSType.nullOrUndefined(thiz)) {
                 return Context.getGlobalTrusted();
             }

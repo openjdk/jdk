@@ -34,7 +34,6 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -394,7 +393,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     @Override
     public ScriptFunction newScriptFunction(final String name, final MethodHandle handle, final ScriptObject scope, final boolean strict) {
-        return new ScriptFunctionImpl(name, handle, scope, strict, null);
+        return new ScriptFunctionImpl(name, handle, scope, null, strict, false);
     }
 
     @Override

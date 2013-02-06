@@ -383,6 +383,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @return New {@link PropertyMap} with added properties.
      */
     public PropertyMap addAll(final PropertyMap other) {
+        assert this != other : "adding property map to itself";
         final Property[] otherProperties = other.properties.getProperties();
         final PropertyHashMap newProperties = properties.immutableAdd(otherProperties);
 
