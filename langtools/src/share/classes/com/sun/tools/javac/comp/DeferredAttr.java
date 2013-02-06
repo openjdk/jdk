@@ -373,8 +373,8 @@ public class DeferredAttr extends JCTree.Visitor {
                 if (!progress) {
                     //remove all variables that have already been instantiated
                     //from the list of stuck variables
-                    inferenceContext.solveAny(inferenceContext.freeVarsIn(List.from(stuckVars)), types, infer);
-                    inferenceContext.notifyChange(types);
+                    inferenceContext.solveAny(inferenceContext.freeVarsIn(List.from(stuckVars)));
+                    inferenceContext.notifyChange();
                 }
             }
         }
@@ -383,7 +383,7 @@ public class DeferredAttr extends JCTree.Visitor {
          * Class representing a deferred attribution node. It keeps track of
          * a deferred type, along with the expected target type information.
          */
-        class DeferredAttrNode implements Infer.InferenceContext.FreeTypeListener {
+        class DeferredAttrNode implements Infer.FreeTypeListener {
 
             /** underlying deferred type */
             DeferredType dt;
@@ -406,7 +406,7 @@ public class DeferredAttr extends JCTree.Visitor {
             @Override
             public void typesInferred(InferenceContext inferenceContext) {
                 stuckVars = List.nil();
-                resultInfo = resultInfo.dup(inferenceContext.asInstType(resultInfo.pt, types));
+                resultInfo = resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
             }
 
             /**
