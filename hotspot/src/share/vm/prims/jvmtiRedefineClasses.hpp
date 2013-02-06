@@ -468,9 +468,9 @@ class VM_RedefineClasses: public VM_Operation {
 
   void flush_dependent_code(instanceKlassHandle k_h, TRAPS);
 
-  static void check_class(Klass* k_oop, ClassLoaderData* initiating_loader, TRAPS) PRODUCT_RETURN;
-
-  static void dump_methods()   PRODUCT_RETURN;
+  static void check_class(Klass* k_oop, ClassLoaderData* initiating_loader,
+                TRAPS);
+  static void dump_methods();
 
  public:
   VM_RedefineClasses(jint class_count,
