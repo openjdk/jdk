@@ -28,7 +28,6 @@ package jdk.nashorn.internal.codegen.objects;
 import static jdk.nashorn.internal.codegen.ClassEmitter.Flag.HANDLE_STATIC;
 import static jdk.nashorn.internal.codegen.Compiler.SCRIPTFUNCTION_IMPL_OBJECT;
 import static jdk.nashorn.internal.codegen.CompilerConstants.ALLOCATE;
-import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 
@@ -40,14 +39,10 @@ import jdk.nashorn.internal.codegen.CodeGenerator;
 import jdk.nashorn.internal.codegen.FunctionSignature;
 import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.Symbol;
-import jdk.nashorn.internal.parser.Token;
-import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Analyze a function object's characteristics for appropriate code
@@ -79,58 +74,28 @@ public class FunctionObjectCreator extends ObjectCreator {
      */
     @Override
     public void makeObject(final MethodEmitter method) {
-        makeMap();
 
-        final IdentNode identNode  = functionNode.getIdent();
-        final String    signature  = new FunctionSignature(true, functionNode.needsCallee(), functionNode.getReturnType(), functionNode.isVarArg() ? null : functionNode.getParameters()).toString();
-        final long      firstToken = functionNode.getFirstToken();
-        final long      lastToken  = functionNode.getLastToken();
-        final int       position   = Token.descPosition(firstToken);
-        final int       length     = Token.descPosition(lastToken) - position + Token.descLength(lastToken);
-        final long      token      = Token.toDesc(TokenType.FUNCTION, position, length);
+        final PropertyMap map = makeMap();
+        final String signature = new FunctionSignature(true, functionNode.needsCallee(), functionNode.getReturnType(), functionNode.isVarArg() ? null : functionNode.getParameters()).toString();
+        final ScriptFunctionData scriptFunctionData = new ScriptFunctionData(functionNode, map);
 
         /*
-         * Instantiate the function object, must be referred to by name as
-         * class is not available at compile time
+         * Instantiate the function object
          */
         method._new(SCRIPTFUNCTION_IMPL_OBJECT).dup();
-        method.load(functionNode.isAnonymous() ? "" : identNode.getName());
+        codegen.loadConstant(scriptFunctionData);
         loadHandle(method, signature);
         if(functionNode.needsParentScope()) {
             method.loadScope();
         } else {
             method.loadNull();
         }
-        method.getStatic(compileUnit.getUnitClassName(), SOURCE.tag(), SOURCE.descriptor());
-        method.load(token);
         method.loadHandle(getClassName(), ALLOCATE.tag(), methodDescriptor(ScriptObject.class, PropertyMap.class), EnumSet.of(HANDLE_STATIC));
-
-        /*
-         * Emit code for the correct property map for the object
-         */
-        loadMap(method);
 
         /*
          * Invoke the constructor
          */
-        method.load(functionNode.needsCallee());
-        method.load(functionNode.isStrictMode());
-        method.invoke(constructorNoLookup(SCRIPTFUNCTION_IMPL_OBJECT,
-                    String.class,
-                    MethodHandle.class,
-                    ScriptObject.class,
-                    Source.class,
-                    long.class,
-                    MethodHandle.class,
-                    PropertyMap.class,
-                    boolean.class,
-                    boolean.class));
+        method.invoke(constructorNoLookup(SCRIPTFUNCTION_IMPL_OBJECT, ScriptFunctionData.class, MethodHandle.class, ScriptObject.class, MethodHandle.class));
 
-
-        if (functionNode.isVarArg()) {
-            method.dup();
-            method.load(functionNode.getParameters().size());
-            method.invoke(ScriptFunction.SET_ARITY);
-        }
     }
 }
