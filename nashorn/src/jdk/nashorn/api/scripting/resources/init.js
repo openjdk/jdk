@@ -119,7 +119,7 @@ function jmap(map) {
         },
         toString: function() {
             return map.toString();
-        } 
+        }
     });
 }
 
@@ -703,27 +703,6 @@ function exec(cmd) {
     }
     process.waitFor();
     $exit = process.exitValue();
-}
-
-/**
- * Exit the shell program.
- *
- * @param exitCode integer code returned to OS shell.
- * optional, defaults to 0
- */
-function exit(code) {
-    if (code) {
-        java.lang.System.exit(code + 0);
-    } else {
-        java.lang.System.exit(0);
-    }
-}
-
-/**
- * synonym for exit
- */
-function quit(code) {
-    exit(code);
 }
 
 // XML utilities

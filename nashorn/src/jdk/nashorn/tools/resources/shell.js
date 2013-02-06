@@ -81,18 +81,3 @@ Object.defineProperty(this, "evalinput", {
     writable: true,
     configurable: true
 });
-
-
-/**
- * Elegantly exits the current session
- */
-if (!quit) {
-Object.defineProperty(this, "quit", {
-    value: function quit() {
-        java.lang.System.exit(0);
-    },
-    enumerable: false,
-    writable: true,
-    configurable: true
-});
-}
