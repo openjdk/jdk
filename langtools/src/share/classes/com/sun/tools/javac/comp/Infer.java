@@ -241,7 +241,7 @@ public class Infer {
         for (Type t : todo) {
             UndetVar uv = (UndetVar)t;
             TypeVar ct = (TypeVar)uv.inst;
-            ct.bound = types.glb(inferenceContext.asInstTypes(types.getBounds(ct), types));
+            ct.bound = types.glb(inferenceContext.asInstTypes(types.getBounds(ct)));
             if (ct.bound.isErroneous()) {
                 //report inference error if glb fails
                 reportBoundError(uv, BoundErrorKind.BAD_UPPER);
@@ -265,7 +265,7 @@ public class Infer {
                                   Resolve.MethodCheck methodCheck,
                                   Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
-        final InferenceContext inferenceContext = new InferenceContext(tvars, this, true);
+        final InferenceContext inferenceContext = new InferenceContext(tvars);
         inferenceException.clear();
 
         DeferredAttr.DeferredAttrContext deferredAttrContext =
@@ -288,7 +288,7 @@ public class Infer {
 
             checkWithinBounds(inferenceContext, warn);
 
-            mt = (MethodType)inferenceContext.asInstType(mt, types);
+            mt = (MethodType)inferenceContext.asInstType(mt);
 
             List<Type> restvars = inferenceContext.restvars();
 
@@ -299,7 +299,7 @@ public class Infer {
                     }
                     instantiateUninferred(env.tree.pos(), inferenceContext, mt, resultInfo, warn);
                     checkWithinBounds(inferenceContext, warn);
-                    mt = (MethodType)inferenceContext.asInstType(mt, types);
+                    mt = (MethodType)inferenceContext.asInstType(mt);
                     if (rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
                         log.note(env.tree.pos, "deferred.method.inst", msym, mt, resultInfo.pt);
                     }
@@ -309,7 +309,7 @@ public class Infer {
             // return instantiated version of method type
             return mt;
         } finally {
-            inferenceContext.notifyChange(types);
+            inferenceContext.notifyChange();
         }
     }
     //where
@@ -320,7 +320,7 @@ public class Infer {
                     to = mt.getReturnType().isPrimitiveOrVoid() ?
                             mt.getReturnType() : syms.objectType;
                 }
-                Type qtype1 = inferenceContext.asFree(mt.getReturnType(), types);
+                Type qtype1 = inferenceContext.asFree(mt.getReturnType());
                 Warner retWarn = new Warner();
                 if (!resultInfo.checkContext.compatible(qtype1, qtype1.hasTag(UNDETVAR) ? types.boxedTypeOrType(to) : to, retWarn) ||
                         //unchecked conversion is not allowed
@@ -342,9 +342,9 @@ public class Infer {
             uv.substBounds(inferenceContext.inferenceVars(), inferenceContext.instTypes(), types);
             checkCompatibleUpperBounds(uv, inferenceContext.inferenceVars());
             if (!inferenceContext.restvars().contains(uv.qtype)) {
-                Type inst = inferenceContext.asInstType(t, types);
+                Type inst = inferenceContext.asInstType(t);
                 for (Type u : uv.getBounds(InferenceBound.UPPER)) {
-                    if (!types.isSubtypeUnchecked(inst, inferenceContext.asFree(u, types), warn)) {
+                    if (!types.isSubtypeUnchecked(inst, inferenceContext.asFree(u), warn)) {
                         reportBoundError(uv, BoundErrorKind.UPPER);
                     }
                 }
@@ -478,7 +478,7 @@ public class Infer {
         } else {
             Type formalInterface = funcInterface.tsym.type;
             InferenceContext funcInterfaceContext =
-                    new InferenceContext(funcInterface.tsym.type.getTypeArguments(), this, false);
+                    new InferenceContext(funcInterface.tsym.type.getTypeArguments());
             Assert.check(paramTypes != null);
             //get constraints from explicit params (this is done by
             //checking that explicit param types are equal to the ones
@@ -489,7 +489,7 @@ public class Infer {
                 return types.createErrorType(funcInterface);
             }
             for (Type p : descParameterTypes) {
-                if (!types.isSameType(funcInterfaceContext.asFree(p, types), paramTypes.head)) {
+                if (!types.isSameType(funcInterfaceContext.asFree(p), paramTypes.head)) {
                     checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
                     return types.createErrorType(funcInterface);
                 }
@@ -498,17 +498,19 @@ public class Infer {
             List<Type> actualTypeargs = funcInterface.getTypeArguments();
             for (Type t : funcInterfaceContext.undetvars) {
                 UndetVar uv = (UndetVar)t;
-                minimizeInst(uv, types.noWarnings);
-                if (uv.inst == null &&
-                        Type.filter(uv.getBounds(InferenceBound.UPPER), boundFilter).nonEmpty()) {
-                    maximizeInst(uv, types.noWarnings);
-                }
-                if (uv.inst == null) {
+                if (funcInterfaceContext.boundedVars().contains(uv.qtype)) {
+                    minimizeInst(uv, types.noWarnings);
+                    if (uv.inst == null &&
+                            Type.filter(uv.getBounds(InferenceBound.UPPER), boundFilter).nonEmpty()) {
+                        maximizeInst(uv, types.noWarnings);
+                    }
+                } else {
                     uv.inst = actualTypeargs.head;
                 }
+                Assert.check(uv.inst != null);
                 actualTypeargs = actualTypeargs.tail;
             }
-            Type owntype = funcInterfaceContext.asInstType(formalInterface, types);
+            Type owntype = funcInterfaceContext.asInstType(formalInterface);
             if (!chk.checkValidGenericType(owntype)) {
                 //if the inferred functional interface type is not well-formed,
                 //or if it's not a subtype of the original target, issue an error
@@ -585,23 +587,13 @@ public class Infer {
         }
 
     /**
-     * Mapping that turns inference variables into undet vars
-     * (used by inference context)
+     * Functional interface for defining inference callbacks. Certain actions
+     * (i.e. subtyping checks) might need to be redone after all inference variables
+     * have been fixed.
      */
-    class FromTypeVarFun extends Mapping {
-
-        boolean includeBounds;
-
-        FromTypeVarFun(boolean includeBounds) {
-            super("fromTypeVarFunWithBounds");
-            this.includeBounds = includeBounds;
-        }
-
-        public Type apply(Type t) {
-            if (t.hasTag(TYPEVAR)) return new UndetVar((TypeVar)t, types, includeBounds);
-            else return t.map(this);
-        }
-    };
+    interface FreeTypeListener {
+        void typesInferred(InferenceContext inferenceContext);
+    }
 
     /**
      * An inference context keeps track of the set of variables that are free
@@ -611,16 +603,7 @@ public class Infer {
      * it can be used as an entry point for performing upper/lower bound inference
      * (see InferenceKind).
      */
-    static class InferenceContext {
-
-        /**
-        * Single-method-interface for defining inference callbacks. Certain actions
-        * (i.e. subtyping checks) might need to be redone after all inference variables
-        * have been fixed.
-        */
-        interface FreeTypeListener {
-            void typesInferred(InferenceContext inferenceContext);
-        }
+    class InferenceContext {
 
         /** list of inference vars as undet vars */
         List<Type> undetvars;
@@ -633,10 +616,18 @@ public class Infer {
 
         List<FreeTypeListener> freetypeListeners = List.nil();
 
-        public InferenceContext(List<Type> inferencevars, Infer infer, boolean includeBounds) {
-            this.undetvars = Type.map(inferencevars, infer.new FromTypeVarFun(includeBounds));
+        public InferenceContext(List<Type> inferencevars) {
+            this.undetvars = Type.map(inferencevars, fromTypeVarFun);
             this.inferencevars = inferencevars;
         }
+        //where
+            Mapping fromTypeVarFun = new Mapping("fromTypeVarFunWithBounds") {
+                // mapping that turns inference variables into undet vars
+                public Type apply(Type t) {
+                    if (t.hasTag(TYPEVAR)) return new UndetVar((TypeVar)t, types);
+                    else return t.map(this);
+                }
+            };
 
         /**
          * returns the list of free variables (as type-variables) in this
@@ -648,19 +639,51 @@ public class Infer {
 
         /**
          * returns the list of uninstantiated variables (as type-variables) in this
-         * inference context (usually called after instantiate())
+         * inference context
          */
         List<Type> restvars() {
-            List<Type> undetvars = this.undetvars;
-            ListBuffer<Type> restvars = ListBuffer.lb();
-            for (Type t : instTypes()) {
-                UndetVar uv = (UndetVar)undetvars.head;
-                if (uv.qtype == t) {
-                    restvars.append(t);
+            return filterVars(new Filter<UndetVar>() {
+                public boolean accepts(UndetVar uv) {
+                    return uv.inst == null;
                 }
-                undetvars = undetvars.tail;
+            });
+        }
+
+        /**
+         * returns the list of instantiated variables (as type-variables) in this
+         * inference context
+         */
+        List<Type> instvars() {
+            return filterVars(new Filter<UndetVar>() {
+                public boolean accepts(UndetVar uv) {
+                    return uv.inst != null;
+                }
+            });
+        }
+
+        /**
+         * Get list of bounded inference variables (where bound is other than
+         * declared bounds).
+         */
+        final List<Type> boundedVars() {
+            return filterVars(new Filter<UndetVar>() {
+                public boolean accepts(UndetVar uv) {
+                    return uv.getBounds(InferenceBound.UPPER)
+                            .diff(uv.getDeclaredBounds())
+                            .appendList(uv.getBounds(InferenceBound.EQ, InferenceBound.LOWER)).nonEmpty();
+                }
+            });
+        }
+
+        private List<Type> filterVars(Filter<UndetVar> fu) {
+            ListBuffer<Type> res = ListBuffer.lb();
+            for (Type t : undetvars) {
+                UndetVar uv = (UndetVar)t;
+                if (fu.accepts(uv)) {
+                    res.append(uv.qtype);
+                }
             }
-            return restvars.toList();
+            return res.toList();
         }
 
         /**
@@ -709,14 +732,14 @@ public class Infer {
          * undet vars (used ahead of subtyping/compatibility checks to allow propagation
          * of inference constraints).
          */
-        final Type asFree(Type t, Types types) {
+        final Type asFree(Type t) {
             return types.subst(t, inferencevars, undetvars);
         }
 
-        final List<Type> asFree(List<Type> ts, Types types) {
+        final List<Type> asFree(List<Type> ts) {
             ListBuffer<Type> buf = ListBuffer.lb();
             for (Type t : ts) {
-                buf.append(asFree(t, types));
+                buf.append(asFree(t));
             }
             return buf.toList();
         }
@@ -735,14 +758,14 @@ public class Infer {
          * instantiated types - if one or more free variable has not been
          * fully instantiated, it will still be available in the resulting type.
          */
-        Type asInstType(Type t, Types types) {
+        Type asInstType(Type t) {
             return types.subst(t, inferencevars, instTypes());
         }
 
-        List<Type> asInstTypes(List<Type> ts, Types types) {
+        List<Type> asInstTypes(List<Type> ts) {
             ListBuffer<Type> buf = ListBuffer.lb();
             for (Type t : ts) {
-                buf.append(asInstType(t, types));
+                buf.append(asInstType(t));
             }
             return buf.toList();
         }
@@ -758,7 +781,7 @@ public class Infer {
          * Mark the inference context as complete and trigger evaluation
          * of all deferred checks.
          */
-        void notifyChange(Types types) {
+        void notifyChange() {
             InferenceException thrownEx = null;
             for (Map.Entry<FreeTypeListener, List<Type>> entry :
                     new HashMap<FreeTypeListener, List<Type>>(freeTypeListeners).entrySet()) {
@@ -780,22 +803,23 @@ public class Infer {
             }
         }
 
-        void solveAny(List<Type> varsToSolve, Types types, Infer infer) {
+        void solveAny(List<Type> varsToSolve) {
             boolean progress = false;
             for (Type t : varsToSolve) {
-                UndetVar uv = (UndetVar)asFree(t, types);
+                UndetVar uv = (UndetVar)asFree(t);
                 if (uv.inst == null) {
-                    infer.minimizeInst(uv, types.noWarnings);
+                    minimizeInst(uv, types.noWarnings);
                     if (uv.inst != null) {
                         progress = true;
                     }
                 }
             }
             if (!progress) {
-                throw infer.inferenceException.setMessage("cyclic.inference", varsToSolve);
+                throw inferenceException.setMessage("cyclic.inference", varsToSolve);
             }
         }
     }
 
-    final InferenceContext emptyContext = new InferenceContext(List.<Type>nil(), this, false);
+    final InferenceContext emptyContext = new InferenceContext(List.<Type>nil());
+    // </editor-fold>
 }

@@ -35,7 +35,7 @@ import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
-import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
+import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
@@ -741,7 +741,7 @@ public class Resolve {
                 inferenceContext.addFreeTypeListener(List.of(t), new FreeTypeListener() {
                     @Override
                     public void typesInferred(InferenceContext inferenceContext) {
-                        varargsAccessible(env, inferenceContext.asInstType(t, types), inferenceContext);
+                        varargsAccessible(env, inferenceContext.asInstType(t), inferenceContext);
                     }
                 });
             } else {
@@ -785,8 +785,8 @@ public class Resolve {
 
         public boolean compatible(Type found, Type req, Warner warn) {
             return strict ?
-                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asFree(req, types), warn) :
-                    types.isConvertible(found, deferredAttrContext.inferenceContext.asFree(req, types), warn);
+                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asFree(req), warn) :
+                    types.isConvertible(found, deferredAttrContext.inferenceContext.asFree(req), warn);
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
