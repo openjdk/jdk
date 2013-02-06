@@ -112,23 +112,7 @@ ifeq ($(PROPS_ARE_CREATED),yes)
         $(eval $(call SetupArchive,ARCHIVE_BOOTSTRAP_JAVAC,$(BUILD_BOOTSTRAP_LANGTOOLS),\
 		SRCS:=$(LANGTOOLS_OUTPUTDIR)/btclasses/bootstrap,\
 		JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar,\
-		JARMAIN:=com.sun.tools.javac.Main))
-
-        $(eval $(call SetupArchive,ARCHIVE_BOOTSTRAP_JAVAH,$(BUILD_BOOTSTRAP_LANGTOOLS),\
-		SRCS:=$(LANGTOOLS_OUTPUTDIR)/btclasses/bootstrap,\
-		JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javah.jar,\
-		JARMAIN:=com.sun.tools.javah.Main))
-
-        $(eval $(call SetupArchive,ARCHIVE_BOOTSTRAP_JAVAP,$(BUILD_BOOTSTRAP_LANGTOOLS),\
-		SRCS:=$(LANGTOOLS_OUTPUTDIR)/btclasses/bootstrap,\
-		JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javap.jar,\
-		JARMAIN:=com.sun.tools.javap.Main))
-
-        $(eval $(call SetupArchive,ARCHIVE_BOOTSTRAP_JAVADOC,$(BUILD_BOOTSTRAP_LANGTOOLS),\
-		SRCS:=$(LANGTOOLS_OUTPUTDIR)/btclasses/bootstrap,\
-		JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javadoc.jar,\
-		SUFFIXES:=.class $(RESOURCE_SUFFIXES),\
-		JARMAIN:=com.sun.tools.javadoc.Main))
+		SUFFIXES:=.class $(RESOURCE_SUFFIXES)))
 
         # GenStubs is used to bootstrap any dependencies from javac to the new JDK that is not 
         # yet built. It is currently not needed but might be again in the future. The following
@@ -176,7 +160,8 @@ ifeq ($(PROPS_ARE_CREATED),yes)
                 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE,\
                   JVM:=$(JAVA),\
                   JAVAC:="-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" \
-			 -jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar,\
+			 -cp $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar \
+			 com.sun.tools.javac.Main,\
                   FLAGS:=-XDignore.symbol.file=true -Xlint:all$(COMMA)-deprecation -Werror,\
                   SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
                   SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
@@ -201,11 +186,7 @@ ifeq ($(PROPS_ARE_CREATED),yes)
 
                 all: 		$(LANGTOOLS_OUTPUTDIR)/dist/lib/classes.jar \
 				$(LANGTOOLS_OUTPUTDIR)/dist/lib/src.zip \
-	                 	$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar \
-				$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javah.jar \
-				$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javap.jar \
-				$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javadoc.jar
-
+	                 	$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
 
         endif
 endif
