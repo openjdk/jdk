@@ -53,10 +53,7 @@ public class ScriptingFunctions {
     /** Handle to implementation of {@link ScriptingFunctions#readFully} - Nashorn extension */
     public static final MethodHandle READFULLY = findOwnMH("readFully",     Object.class, Object.class, Object.class);
 
-    /** Handle to implementation of {@link ScriptingFunctions#quit} - Nashorn extension */
-    public static final MethodHandle QUIT = findOwnMH("quit",     Object.class, Object.class, Object.class);
-
-    /** Handle to implementation of {@link ScriptingFunctions#quit} - Nashorn extension */
+    /** Handle to implementation of {@link ScriptingFunctions#exec} - Nashorn extension */
     public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object.class, Object.class);
 
     /** Names of special properties used by $EXEC API. */
@@ -112,19 +109,6 @@ public class ScriptingFunctions {
         }
 
         return new String(Source.readFully(f));
-    }
-
-    /**
-     * Nashorn extension: perform a {@code System.exit} call from the script
-     *
-     * @param self  self reference
-     * @param code  exit code
-     *
-     * @return undefined (will never be reacheD)
-     */
-    public static Object quit(final Object self, final Object code) {
-        System.exit(JSType.toInt32(code));
-        return UNDEFINED;
     }
 
     /**

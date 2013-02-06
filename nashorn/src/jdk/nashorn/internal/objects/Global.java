@@ -115,6 +115,14 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     @Property(attributes = Attribute.NOT_ENUMERABLE)
     public Object load;
 
+    /** Nashorn extension: global.exit */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public Object exit;
+
+    /** Nashorn extension: global.quit */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public Object quit;
+
     /** Value property NaN of the Global Object - ECMA 15.1.1.1 NaN */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public final Object NaN = Double.NaN;
@@ -333,6 +341,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private static final MethodHandle PRINT   = findOwnMH("print",   Object.class, Object.class, Object[].class);
     private static final MethodHandle PRINTLN = findOwnMH("println", Object.class, Object.class, Object[].class);
     private static final MethodHandle LOAD    = findOwnMH("load",    Object.class, Object.class, Object.class);
+    private static final MethodHandle EXIT    = findOwnMH("exit",    Object.class, Object.class, Object.class);
 
     /**
      * Constructor
@@ -686,6 +695,19 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final Global global = Global.instance();
         final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
         return global.getContext().load(scope, source);
+    }
+
+    /**
+     * Global exit and quit implementation - Nashorn extension: perform a {@code System.exit} call from the script
+     *
+     * @param self  self reference
+     * @param code  exit code
+     *
+     * @return undefined (will never be reacheD)
+     */
+    public static Object exit(final Object self, final Object code) {
+        System.exit(JSType.toInt32(code));
+        return UNDEFINED;
     }
 
     ScriptObject getFunctionPrototype() {
@@ -1320,6 +1342,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.unescape           = ScriptFunctionImpl.makeFunction("unescape",   GlobalFunctions.UNESCAPE);
         this.print              = ScriptFunctionImpl.makeFunction("print",      getContext()._print_no_newline ? PRINT : PRINTLN);
         this.load               = ScriptFunctionImpl.makeFunction("load",       LOAD);
+        this.exit               = ScriptFunctionImpl.makeFunction("exit",       EXIT);
+        this.quit               = ScriptFunctionImpl.makeFunction("quit",       EXIT);
 
         // built-in constructors
         this.builtinArray     = (ScriptFunction)initConstructor("Array");
@@ -1453,9 +1477,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         value = ScriptFunctionImpl.makeFunction("readFully", ScriptingFunctions.READFULLY);
         addOwnProperty("readFully", Attribute.NOT_ENUMERABLE, value);
-
-        value = ScriptFunctionImpl.makeFunction("quit", ScriptingFunctions.QUIT);
-        addOwnProperty("quit", Attribute.NOT_ENUMERABLE, value);
 
         final String execName = ScriptingFunctions.EXEC_NAME;
         value = ScriptFunctionImpl.makeFunction(execName, ScriptingFunctions.EXEC);
