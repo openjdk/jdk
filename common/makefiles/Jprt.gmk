@@ -179,27 +179,52 @@ jprt_bundle: $(JPRT_ARCHIVE_BUNDLE)
 $(JPRT_ARCHIVE_BUNDLE): bundles
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(CP) $(BUILD_OUTPUT)/bundles/j2sdk-image.zip $@
+	$(CP) $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip $@
 
-# This target must be called in the context of a SPEC file
-bundles: all
+ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
+  SRC_JDK_IMAGE_DIR := $(JDK_OVERLAY_IMAGE_DIR)
+  SRC_JRE_IMAGE_DIR := $(JRE_OVERLAY_IMAGE_DIR)
+else
+  SRC_JDK_IMAGE_DIR := $(JDK_IMAGE_DIR)
+  SRC_JRE_IMAGE_DIR := $(JRE_IMAGE_DIR)
+endif
+SRC_JDK_BUNDLE_DIR := $(JDK_BUNDLE_DIR)
+SRC_JRE_BUNDLE_DIR := $(JRE_BUNDLE_DIR)
+
+# Bundle up the images
+bundles: all bundles-only
+bundles-only: start-make
 	@$(call TargetEnter)
 	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
-	$(CD) $(JDK_OVERLAY_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2sdk-image.zip .
-	$(CD) $(JRE_OVERLAY_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2re-image.zip .
-else
-	$(CD) $(JDK_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2sdk-image.zip .
-	$(CD) $(JRE_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/j2re-image.zip .
+	$(CD) $(SRC_JDK_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip .
+	$(CD) $(SRC_JRE_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/$(JRE_IMAGE_SUBDIR).zip .
 	if [ -d  $(BUILD_OUTPUT)/install/bundles ] ; then \
            $(CD) $(BUILD_OUTPUT)/install/bundles && $(ZIP) -q -r $(JPRT_ARCHIVE_INSTALL_BUNDLE) . ; \
         fi
+	@$(call TargetExit)
+
+# Copy images to one unified location regardless of platform etc.
+final-images: all final-images-only
+final-images-only: start-make
+	@$(call TargetEnter)
+	$(RM) -r $(BUILD_OUTPUT)/final-images
+	$(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JDK_IMAGE_SUBDIR)
+	$(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JRE_IMAGE_SUBDIR)
+	$(CP) -R -P $(SRC_JDK_IMAGE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JDK_IMAGE_SUBDIR)/
+	$(CP) -R -P $(SRC_JRE_IMAGE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JRE_IMAGE_SUBDIR)/
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+	$(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JDK_BUNDLE_SUBDIR)
+	$(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JRE_BUNDLE_SUBDIR)
+	$(CP) -R -P $(SRC_JDK_BUNDLE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JDK_BUNDLE_SUBDIR)/
+	$(CP) -R -P $(SRC_JRE_BUNDLE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JRE_BUNDLE_SUBDIR)/
 endif
 	@$(call TargetExit)
 
+
 # Keep track of phony targets
 PHONY_LIST += jprt_build_product jprt_build_fastdebug jprt_build_debug \
-              jprt_build_generic bundles jprt_bundle
+              jprt_build_generic bundles jprt_bundle \
+              final-images final-images-only
 
 ###########################################################################
 # Phony targets
