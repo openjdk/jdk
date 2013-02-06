@@ -564,7 +564,7 @@ public class Resolve {
                                     methodCheck,
                                     warn);
 
-        methodCheck.argumentsAcceptable(env, currentResolutionContext.deferredAttrContext(m, infer.emptyContext),
+        methodCheck.argumentsAcceptable(env, currentResolutionContext.deferredAttrContext(m, infer.emptyContext, resultInfo, warn),
                                 argtypes, mt.getParameterTypes(), warn);
         return mt;
     }
@@ -3589,8 +3589,8 @@ public class Resolve {
             candidates = candidates.append(c);
         }
 
-        DeferredAttrContext deferredAttrContext(Symbol sym, InferenceContext inferenceContext) {
-            return deferredAttr.new DeferredAttrContext(attrMode, sym, step, inferenceContext);
+        DeferredAttrContext deferredAttrContext(Symbol sym, InferenceContext inferenceContext, ResultInfo pendingResult, Warner warn) {
+            return deferredAttr.new DeferredAttrContext(attrMode, sym, step, inferenceContext, pendingResult != null ? pendingResult.checkContext.deferredAttrContext() : deferredAttr.emptyDeferredAttrContext, warn);
         }
 
         /**
