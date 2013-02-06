@@ -245,12 +245,19 @@ public class Checker extends DocTreeScanner<Void, Void> {
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
         } else {
+            boolean done = false;
             for (TagStackItem tsi: tagStack) {
                 if (tsi.tag.accepts(t)) {
                     while (tagStack.peek() != tsi) tagStack.pop();
+                    done = true;
                     break;
-                } else if (tsi.tag.endKind != HtmlTag.EndKind.OPTIONAL)
+                } else if (tsi.tag.endKind != HtmlTag.EndKind.OPTIONAL) {
+                    done = true;
                     break;
+                }
+            }
+            if (!done && HtmlTag.BODY.accepts(t)) {
+                tagStack.clear();
             }
 
             checkStructure(tree, t);
