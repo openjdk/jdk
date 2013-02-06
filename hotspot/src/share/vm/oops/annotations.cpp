@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/annotations.hpp"
@@ -113,6 +114,50 @@ typeArrayOop Annotations::make_java_array(AnnotationArray* annotations, TRAPS) {
 void Annotations::print_value_on(outputStream* st) const {
   st->print("Anotations(" INTPTR_FORMAT ")", this);
 }
+
+#if INCLUDE_SERVICES
+// Size Statistics
+
+julong Annotations::count_bytes(Array<AnnotationArray*>* p) {
+  julong bytes = 0;
+  if (p != NULL) {
+    for (int i = 0; i < p->length(); i++) {
+      bytes += KlassSizeStats::count_array(p->at(i));
+    }
+    bytes += KlassSizeStats::count_array(p);
+  }
+  return bytes;
+}
+
+void Annotations::collect_statistics(KlassSizeStats *sz) const {
+  sz->_annotations_bytes = sz->count(this);
+  sz->_class_annotations_bytes = sz->count(class_annotations());
+  sz->_fields_annotations_bytes = count_bytes(fields_annotations());
+  sz->_methods_annotations_bytes = count_bytes(methods_annotations());
+  sz->_methods_parameter_annotations_bytes =
+                          count_bytes(methods_parameter_annotations());
+  sz->_methods_default_annotations_bytes =
+                          count_bytes(methods_default_annotations());
+
+  const Annotations* type_anno = type_annotations();
+  if (type_anno != NULL) {
+    sz->_type_annotations_bytes = sz->count(type_anno);
+    sz->_type_annotations_bytes += sz->count(type_anno->class_annotations());
+    sz->_type_annotations_bytes += count_bytes(type_anno->fields_annotations());
+    sz->_type_annotations_bytes += count_bytes(type_anno->methods_annotations());
+  }
+
+  sz->_annotations_bytes +=
+      sz->_class_annotations_bytes +
+      sz->_fields_annotations_bytes +
+      sz->_methods_annotations_bytes +
+      sz->_methods_parameter_annotations_bytes +
+      sz->_methods_default_annotations_bytes +
+      sz->_type_annotations_bytes;
+
+  sz->_ro_bytes += sz->_annotations_bytes;
+}
+#endif // INCLUDE_SERVICES
 
 #define BULLET  " - "
 

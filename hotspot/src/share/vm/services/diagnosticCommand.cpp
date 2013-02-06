@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,12 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(true, false));
-#if INCLUDE_SERVICES // Heap dumping supported
+#if INCLUDE_SERVICES // Heap dumping/inspection supported
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(true, false));
-#endif // INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassStatsDCmd>(true, false));
+#endif // INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(true, false));
-
   //Enhanced JMX Agent Support
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(true,false));
@@ -252,7 +252,7 @@ void RunFinalizationDCmd::execute(TRAPS) {
                          vmSymbols::void_method_signature(), CHECK);
 }
 
-#if INCLUDE_SERVICES // Heap dumping supported
+#if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename","Name of the dump file", "STRING",true),
@@ -292,7 +292,6 @@ int HeapDumpDCmd::num_arguments() {
     return 0;
   }
 }
-#endif // INCLUDE_SERVICES
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
@@ -318,6 +317,65 @@ int ClassHistogramDCmd::num_arguments() {
     return 0;
   }
 }
+
+#define DEFAULT_COLUMNS "InstBytes,KlassBytes,CpAll,annotations,MethodCount,Bytecodes,MethodAll,ROAll,RWAll,Total"
+ClassStatsDCmd::ClassStatsDCmd(outputStream* output, bool heap) :
+                                       DCmdWithParser(output, heap),
+  _csv("-csv", "Print in CSV (comma-separated values) format for spreadsheets",
+       "BOOLEAN", false, "false"),
+  _all("-all", "Show all columns",
+       "BOOLEAN", false, "false"),
+  _help("-help", "Show meaning of all the columns",
+       "BOOLEAN", false, "false"),
+  _columns("columns", "Comma-separated list of all the columns to show. "
+           "If not specified, the following columns are shown: " DEFAULT_COLUMNS,
+           "STRING", false) {
+  _dcmdparser.add_dcmd_option(&_all);
+  _dcmdparser.add_dcmd_option(&_csv);
+  _dcmdparser.add_dcmd_option(&_help);
+  _dcmdparser.add_dcmd_argument(&_columns);
+}
+
+void ClassStatsDCmd::execute(TRAPS) {
+  if (!UnlockDiagnosticVMOptions) {
+    output()->print_cr("GC.class_stats command requires -XX:+UnlockDiagnosticVMOptions");
+    return;
+  }
+
+  VM_GC_HeapInspection heapop(output(),
+                              true, /* request_full_gc */
+                              true /* need_prologue */);
+  heapop.set_csv_format(_csv.value());
+  heapop.set_print_help(_help.value());
+  heapop.set_print_class_stats(true);
+  if (_all.value()) {
+    if (_columns.has_value()) {
+      output()->print_cr("Cannot specify -all and individual columns at the same time");
+      return;
+    } else {
+      heapop.set_columns(NULL);
+    }
+  } else {
+    if (_columns.has_value()) {
+      heapop.set_columns(_columns.value());
+    } else {
+      heapop.set_columns(DEFAULT_COLUMNS);
+    }
+  }
+  VMThread::execute(&heapop);
+}
+
+int ClassStatsDCmd::num_arguments() {
+  ResourceMark rm;
+  ClassStatsDCmd* dcmd = new ClassStatsDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
+}
+#endif // INCLUDE_SERVICES
 
 ThreadDumpDCmd::ThreadDumpDCmd(outputStream* output, bool heap) :
                                DCmdWithParser(output, heap),
@@ -406,7 +464,32 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
 
   _jmxremote_ssl_config_file
   ("jmxremote.ssl.config.file",
-   "set com.sun.management.jmxremote.ssl_config_file", "STRING", false)
+   "set com.sun.management.jmxremote.ssl_config_file", "STRING", false),
+
+// JDP Protocol support
+  _jmxremote_autodiscovery
+  ("jmxremote.autodiscovery",
+   "set com.sun.management.jmxremote.autodiscovery", "STRING", false),
+
+   _jdp_port
+  ("jdp.port",
+   "set com.sun.management.jdp.port", "INT", false),
+
+   _jdp_address
+  ("jdp.address",
+   "set com.sun.management.jdp.address", "STRING", false),
+
+   _jdp_source_addr
+  ("jdp.source_addr",
+   "set com.sun.management.jdp.source_addr", "STRING", false),
+
+   _jdp_ttl
+  ("jdp.ttl",
+   "set com.sun.management.jdp.ttl", "INT", false),
+
+   _jdp_pause
+  ("jdp.pause",
+   "set com.sun.management.jdp.pause", "INT", false)
 
   {
     _dcmdparser.add_dcmd_option(&_config_file);
@@ -422,6 +505,12 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
     _dcmdparser.add_dcmd_option(&_jmxremote_ssl_enabled_protocols);
     _dcmdparser.add_dcmd_option(&_jmxremote_ssl_need_client_auth);
     _dcmdparser.add_dcmd_option(&_jmxremote_ssl_config_file);
+    _dcmdparser.add_dcmd_option(&_jmxremote_autodiscovery);
+    _dcmdparser.add_dcmd_option(&_jdp_port);
+    _dcmdparser.add_dcmd_option(&_jdp_address);
+    _dcmdparser.add_dcmd_option(&_jdp_source_addr);
+    _dcmdparser.add_dcmd_option(&_jdp_ttl);
+    _dcmdparser.add_dcmd_option(&_jdp_pause);
 }
 
 
@@ -435,7 +524,6 @@ int JMXStartRemoteDCmd::num_arguments() {
     return 0;
   }
 }
-
 
 void JMXStartRemoteDCmd::execute(TRAPS) {
     ResourceMark rm(THREAD);
@@ -466,7 +554,9 @@ void JMXStartRemoteDCmd::execute(TRAPS) {
     // file.
 #define PUT_OPTION(a) \
     if ( (a).is_set() ){ \
-        options.print("%scom.sun.management.%s=%s", comma, (a).name(), (a).value()); \
+        options.print(\
+               ( *((a).type()) == 'I' ) ? "%scom.sun.management.%s=%d" : "%scom.sun.management.%s=%s",\
+                comma, (a).name(), (a).value()); \
         comma[0] = ','; \
     }
 
@@ -483,6 +573,12 @@ void JMXStartRemoteDCmd::execute(TRAPS) {
     PUT_OPTION(_jmxremote_ssl_enabled_protocols);
     PUT_OPTION(_jmxremote_ssl_need_client_auth);
     PUT_OPTION(_jmxremote_ssl_config_file);
+    PUT_OPTION(_jmxremote_autodiscovery);
+    PUT_OPTION(_jdp_port);
+    PUT_OPTION(_jdp_address);
+    PUT_OPTION(_jdp_source_addr);
+    PUT_OPTION(_jdp_ttl);
+    PUT_OPTION(_jdp_pause);
 
 #undef PUT_OPTION
 

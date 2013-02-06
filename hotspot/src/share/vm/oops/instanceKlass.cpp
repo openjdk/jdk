@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "interpreter/rewriter.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "memory/genOopClosures.inline.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/fieldStreams.hpp"
@@ -2959,6 +2960,52 @@ void InstanceKlass::oop_print_value_on(oop obj, outputStream* st) {
 const char* InstanceKlass::internal_name() const {
   return external_name();
 }
+
+#if INCLUDE_SERVICES
+// Size Statistics
+void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
+  Klass::collect_statistics(sz);
+
+  sz->_inst_size  = HeapWordSize * size_helper();
+  sz->_vtab_bytes = HeapWordSize * align_object_offset(vtable_length());
+  sz->_itab_bytes = HeapWordSize * align_object_offset(itable_length());
+  sz->_nonstatic_oopmap_bytes = HeapWordSize *
+        ((is_interface() || is_anonymous()) ?
+         align_object_offset(nonstatic_oop_map_size()) :
+         nonstatic_oop_map_size());
+
+  int n = 0;
+  n += (sz->_methods_array_bytes         = sz->count_array(methods()));
+  n += (sz->_method_ordering_bytes       = sz->count_array(method_ordering()));
+  n += (sz->_local_interfaces_bytes      = sz->count_array(local_interfaces()));
+  n += (sz->_transitive_interfaces_bytes = sz->count_array(transitive_interfaces()));
+  n += (sz->_signers_bytes               = sz->count_array(signers()));
+  n += (sz->_fields_bytes                = sz->count_array(fields()));
+  n += (sz->_inner_classes_bytes         = sz->count_array(inner_classes()));
+  sz->_ro_bytes += n;
+
+  const ConstantPool* cp = constants();
+  if (cp) {
+    cp->collect_statistics(sz);
+  }
+
+  const Annotations* anno = annotations();
+  if (anno) {
+    anno->collect_statistics(sz);
+  }
+
+  const Array<Method*>* methods_array = methods();
+  if (methods()) {
+    for (int i = 0; i < methods_array->length(); i++) {
+      Method* method = methods_array->at(i);
+      if (method) {
+        sz->_method_count ++;
+        method->collect_statistics(sz);
+      }
+    }
+  }
+}
+#endif // INCLUDE_SERVICES
 
 // Verification
 

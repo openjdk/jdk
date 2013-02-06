@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,6 +256,16 @@ class InstanceKlass: public Klass {
   // JVMTI fields can be moved to their own structure - see 6315920
   unsigned char * _cached_class_file_bytes;       // JVMTI: cached class file, before retransformable agent modified it in CFLH
   jint            _cached_class_file_len;         // JVMTI: length of above
+
+  volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
+
+  // Class states are defined as ClassState (see above).
+  // Place the _init_state here to utilize the unused 2-byte after
+  // _idnum_allocated_count.
+  u1              _init_state;                    // state of class
+  u1              _reference_type;                // reference type
+
+
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
 
   // Method array.
@@ -280,15 +290,6 @@ class InstanceKlass: public Klass {
   //     [generic signature index]
   //     ...
   Array<u2>*      _fields;
-
-  volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
-
-  // Class states are defined as ClassState (see above).
-  // Place the _init_state here to utilize the unused 2-byte after
-  // _idnum_allocated_count.
-  u1              _init_state;                    // state of class
-
-  u1              _reference_type;                // reference type
 
   // embedded Java vtable follows here
   // embedded Java itables follows here
@@ -826,6 +827,9 @@ class InstanceKlass: public Klass {
                                                is_interface(),
                                                is_anonymous());
   }
+#if INCLUDE_SERVICES
+  virtual void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   static int vtable_start_offset()    { return header_size(); }
   static int vtable_length_offset()   { return offset_of(InstanceKlass, _vtable_len) / HeapWordSize; }

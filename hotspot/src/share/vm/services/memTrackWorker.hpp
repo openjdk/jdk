@@ -107,6 +107,7 @@ class MemTrackWorker : public NamedThread {
   NOT_PRODUCT(int _merge_count;)
   NOT_PRODUCT(int _last_gen_in_use;)
 
+  // how many generations are queued
   inline int generations_in_use() const {
     return (_tail >= _head ? (_tail - _head + 1) : (MAX_GENERATIONS - (_head - _tail) + 1));
   }

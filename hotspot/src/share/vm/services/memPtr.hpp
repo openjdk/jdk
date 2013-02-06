@@ -47,16 +47,16 @@ class SequenceGenerator : AllStatic {
   static void reset() {
     assert(SafepointSynchronize::is_at_safepoint(), "Safepoint required");
     _seq_number = 1;
-    DEBUG_ONLY(_generation ++;)
+    _generation ++;
   };
 
-  DEBUG_ONLY(static unsigned long current_generation() { return (unsigned long)_generation; })
+  static unsigned long current_generation() { return _generation; }
   NOT_PRODUCT(static jint max_seq_num() { return _max_seq_number; })
 
  private:
-  static volatile jint _seq_number;
-  NOT_PRODUCT(static jint _max_seq_number; )
-  DEBUG_ONLY(static volatile unsigned long _generation; )
+  static volatile jint             _seq_number;
+  static volatile unsigned long    _generation;
+  NOT_PRODUCT(static jint          _max_seq_number; )
 };
 
 /*
