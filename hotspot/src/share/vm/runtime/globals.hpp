@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1816,7 +1816,7 @@ class CommandLineFlags {
                                                                             \
   product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
           "Percentage of the (entire) heap occupancy to start a "           \
-          "concurrent GC cycle. It us used by GCs that trigger a "          \
+          "concurrent GC cycle. It is used by GCs that trigger a "          \
           "concurrent GC cycle based on the occupancy of the entire heap, " \
           "not just one of the generations (e.g., G1). A value of 0 "       \
           "denotes 'do constant GC cycles'.")                               \
