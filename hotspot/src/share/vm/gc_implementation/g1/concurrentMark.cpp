@@ -4066,11 +4066,23 @@ void CMTask::do_marking_step(double time_target_ms,
                                _worker_id, _finger, _region_limit, _curr_region);
       }
 
-      // Let's iterate over the bitmap of the part of the
-      // region that is left.
-      if (mr.is_empty() || _nextMarkBitMap->iterate(&bitmap_closure, mr)) {
-        // We successfully completed iterating over the region. Now,
-        // let's give up the region.
+      HeapRegion* hr = _g1h->heap_region_containing(mr.start());
+      assert(!hr->isHumongous() || mr.start() == hr->bottom(),
+             "the start of HeapRegion and MemRegion should be consistent for humongous regions");
+
+      // The special case of the bitmap of a humongous region with its first
+      // bit NOT marked should be avoided from (wasteful) iterating.
+      // Note that the alternative case of the bitmap of a humongous region
+      // with its first bit marked is handled properly in the iterate() routine.
+      // Then, let's iterate over the bitmap of the part of the region that is
+      // left.
+      // If the iteration is successful, give up the region.
+      // Also note that the case of the bitmap of a humongous region with its
+      // first bit NOT marked is considered "successful", leveraging the fact
+      // that the entire bitmap consists of all 0's in such case.
+      if (mr.is_empty() ||
+          (hr != NULL && hr->isHumongous() && !_nextMarkBitMap->isMarked(mr.start())) ||
+          _nextMarkBitMap->iterate(&bitmap_closure, mr)) {
         giveup_current_region();
         regular_clock_call();
       } else {
