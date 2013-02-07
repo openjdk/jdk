@@ -36,9 +36,10 @@
 #include "runtime/interfaceSupport.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/preserveException.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #ifndef USDT2
 HS_DTRACE_PROBE_DECL1(hotspot, gc__begin, bool);

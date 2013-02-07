@@ -34,6 +34,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/virtualspace.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
@@ -499,13 +500,13 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     int n_threads =  SharedHeap::heap()->n_par_threads();
     bool is_par = n_threads > 0;
     if (is_par) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
       assert(SharedHeap::heap()->n_par_threads() ==
              SharedHeap::heap()->workers()->active_workers(), "Mismatch");
       non_clean_card_iterate_parallel_work(sp, mr, cl, ct, n_threads);
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
       fatal("Parallel gc not supported here.");
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     } else {
       // We do not call the non_clean_card_iterate_serial() version below because
       // we want to clear the cards (which non_clean_card_iterate_serial() does not

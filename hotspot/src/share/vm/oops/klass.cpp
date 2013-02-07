@@ -38,11 +38,12 @@
 #include "oops/oop.inline2.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/stack.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 void Klass::set_name(Symbol* n) {
   _name = n;

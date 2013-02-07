@@ -40,6 +40,7 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 void SpaceMemRegionOopsIterClosure::do_oop(oop* p)       { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
 void SpaceMemRegionOopsIterClosure::do_oop(narrowOop* p) { SpaceMemRegionOopsIterClosure::do_oop_work(p); }
@@ -658,7 +659,7 @@ void ContiguousSpace::object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl)
   }
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define ContigSpace_PAR_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)         \
                                                                             \
   void ContiguousSpace::par_oop_iterate(MemRegion mr, OopClosureType* blk) {\
@@ -673,7 +674,7 @@ void ContiguousSpace::object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl)
   ALL_PAR_OOP_ITERATE_CLOSURES(ContigSpace_PAR_OOP_ITERATE_DEFN)
 
 #undef ContigSpace_PAR_OOP_ITERATE_DEFN
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 void ContiguousSpace::oop_iterate(ExtendedOopClosure* blk) {
   if (is_empty()) return;
