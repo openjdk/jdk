@@ -48,6 +48,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.OptionsObject;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
+import jdk.nashorn.internal.runtime.RegExpMatch;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -336,6 +337,9 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     // class cache
     private ClassCache classCache;
+
+    // Used to store the last RegExp result to support deprecated RegExp constructor properties
+    private RegExpMatch lastRegExpMatch;
 
     private static final MethodHandle EVAL    = findOwnMH("eval",    Object.class, Object.class, Object.class);
     private static final MethodHandle PRINT   = findOwnMH("print",   Object.class, Object.class, Object[].class);
@@ -1375,13 +1379,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final ScriptObject regExpProto = getRegExpPrototype();
         regExpProto.addBoundProperties(DEFAULT_REGEXP);
 
-        // add hook to support "deprecated" "static" properties of RegExp constructor object
-        final ScriptFunction handler = ScriptFunctionImpl.makeFunction(NO_SUCH_METHOD_NAME, NativeRegExp.REGEXP_STATICS_HANDLER);
-        builtinRegExp.addOwnProperty(NO_SUCH_PROPERTY_NAME, Attribute.NOT_ENUMERABLE, handler);
-
-        // add initial undefined "last successful match" property RegExp
-        builtinRegExp.addOwnProperty(NativeRegExp.LAST_REGEXP_MATCH, Attribute.NOT_ENUMERABLE, UNDEFINED);
-
         // Error stuff
         initErrorObjects();
 
@@ -1703,4 +1700,13 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
         return MH.findStatic(MethodHandles.publicLookup(), Global.class, name, MH.type(rtype, types));
     }
+
+    RegExpMatch getLastRegExpMatch() {
+        return lastRegExpMatch;
+    }
+
+    void setLastRegExpMatch(RegExpMatch regExpMatch) {
+        this.lastRegExpMatch = regExpMatch;
+    }
+
 }

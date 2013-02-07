@@ -89,10 +89,10 @@ import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
 public abstract class ScriptObject extends PropertyListenerManager implements PropertyAccess {
 
     /** Search fall back routine name for "no such method" */
-    public static final String NO_SUCH_METHOD_NAME   = "__noSuchMethod__";
+    static final String NO_SUCH_METHOD_NAME   = "__noSuchMethod__";
 
     /** Search fall back routine name for "no such property" */
-    public static final String NO_SUCH_PROPERTY_NAME = "__noSuchProperty__";
+    static final String NO_SUCH_PROPERTY_NAME = "__noSuchProperty__";
 
     /** Per ScriptObject flag - is this a scope object? */
     public static final int IS_SCOPE       = 0b0000_0001;
