@@ -198,25 +198,40 @@
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false"/>
+
+    <!-- tests that check nashorn internals and internal API -->
+    <jar jarfile="${nashorn.internal.tests.jar}">
+      <fileset dir="${build.test.classes.dir}" excludes="**/api/scripting/*"/>
+    </jar>
+
+    <!-- tests that check nashorn script engine (jsr-223) API -->
+    <jar jarfile="${nashorn.api.tests.jar}">
+      <fileset dir="${build.test.classes.dir}" includes="**/api/scripting/*"/>
+    </jar>
+
   </target>
 
   <target name="generate-policy-file">
     <!-- Generating nashorn.policy file -->
-    <echo message="grant codeBase &quot;file:/${basedir}/dist/nashorn.jar&quot; {" file="${build.dir}/nashorn.policy"/>
+
+    <!-- nashorn internal tests jar requires AllPermission -->
+    <echo message="grant codeBase &quot;file:/${basedir}/${nashorn.internal.tests.jar}&quot; {" file="${build.dir}/nashorn.policy"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-
-    <echo message="grant codeBase &quot;file:/${basedir}/build/test/classes&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
+    
+    <!-- TestNG framework jar needs AllPermission -->
+    <echo message="grant codeBase &quot;file:/${basedir}/${file.reference.testng.jar}&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
 
-    <echo message="grant codeBase &quot;file:/${basedir}/${file.reference.testng.jar}&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
+    <!-- AllPermission to test/script/trusted tests -->
+    <echo message="grant codeBase &quot;file:/${basedir}/test/script/trusted/*&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
@@ -225,14 +240,11 @@
 
     <echo message="grant codeBase &quot;file:/${basedir}/test/script/basic/*&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
+    <!-- test/script/basic .js scripts load other script tests -->
+    <echo message="    permission java.io.FilePermission &quot;${basedir}/test/script/-&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-
-    <echo message="grant codeBase &quot;file:/${basedir}/test/perf/*&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
+    <!-- test/script/basic .js scripts can read nashorn.test.* properties -->
+    <echo message="    permission java.util.PropertyPermission &quot;nashorn.test.*&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>

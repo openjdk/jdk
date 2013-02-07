@@ -972,46 +972,6 @@ public class ScriptEngineTest {
         }
     }
 
-    private static class MyClassLoader extends ClassLoader {
-        // to check if script engine uses the specified class loader
-        private final boolean[] reached = new boolean[1];
-
-        @Override
-        protected Class findClass(final String name) throws ClassNotFoundException {
-            // flag that it reached here
-            reached[0] = true;
-            return super.findClass(name);
-        }
-
-        public boolean reached() {
-            return reached[0];
-        }
-    };
-
-    @Test
-    public void factoryClassLoaderTest() {
-        final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
-            if (fac instanceof NashornScriptEngineFactory) {
-                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
-                final MyClassLoader loader = new MyClassLoader();
-                // set the classloader as app class loader
-                final ScriptEngine e = nfac.getScriptEngine(loader);
-                try {
-                    e.eval("Packages.foo");
-                    // check that the class loader was attempted
-                    assertTrue(loader.reached(), "did not reach class loader!");
-                } catch (final ScriptException se) {
-                    se.printStackTrace();
-                    fail(se.getMessage());
-                }
-                return;
-            }
-        }
-
-        fail("Cannot find nashorn factory!");
-    }
-
     @Test
     public void factoryOptionsTest() {
         final ScriptEngineManager sm = new ScriptEngineManager();
@@ -1027,40 +987,6 @@ public class ScriptEngineTest {
                     fail("should have thrown exception!");
                 } catch (final ScriptException se) {
                 }
-                return;
-            }
-        }
-
-        fail("Cannot find nashorn factory!");
-    }
-
-    @Test
-    public void factoryClassLoaderAndOptionsTest() {
-        final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
-            if (fac instanceof NashornScriptEngineFactory) {
-                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
-                final String[] options = new String[] { "-strict" };
-                final MyClassLoader loader = new MyClassLoader();
-                // set the classloader as app class loader
-                final ScriptEngine e = nfac.getScriptEngine(options, loader);
-                try {
-                    e.eval("Packages.foo");
-                    // check that the class loader was attempted
-                    assertTrue(loader.reached(), "did not reach class loader!");
-                } catch (final ScriptException se) {
-                    se.printStackTrace();
-                    fail(se.getMessage());
-                }
-
-                try {
-                    // strict mode - delete of a var should throw SyntaxError
-                    e.eval("var d = 2; delete d;");
-                } catch (final ScriptException se) {
-                    // check that the error message contains "SyntaxError"
-                    assertTrue(se.getMessage().contains("SyntaxError"));
-                }
-
                 return;
             }
         }

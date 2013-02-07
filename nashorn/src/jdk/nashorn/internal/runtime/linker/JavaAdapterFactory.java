@@ -456,6 +456,8 @@ public final class JavaAdapterFactory {
     private static ClassLoader createClassLoader(final ClassLoader parentLoader, final String className,
             final byte[] classBytes, final String privilegedActionClassName) {
         return new AdapterLoader(parentLoader) {
+            private final ProtectionDomain myProtectionDomain = getClass().getProtectionDomain();
+
             @Override
             protected Class<?> findClass(final String name) throws ClassNotFoundException {
                 if(name.equals(className)) {
@@ -463,7 +465,7 @@ public final class JavaAdapterFactory {
                     return defineClass(name, bytes, 0, bytes.length, GENERATED_PROTECTION_DOMAIN);
                 } else if(name.equals(privilegedActionClassName)) {
                     final byte[] bytes = generatePrivilegedActionClassBytes(privilegedActionClassName.replace('.', '/'));
-                    return defineClass(name, bytes, 0, bytes.length, getClass().getProtectionDomain());
+                    return defineClass(name, bytes, 0, bytes.length, myProtectionDomain);
                 } else {
                     throw new ClassNotFoundException(name);
                 }

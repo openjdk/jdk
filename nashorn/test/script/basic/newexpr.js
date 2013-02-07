@@ -29,7 +29,7 @@
  */
 
 var File = java.io.File;
-print(new File(".").isDirectory());
+print(! new File(".").toString().isEmpty());
 
 var obj = {
    foo : function (x) {

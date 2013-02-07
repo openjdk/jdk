@@ -607,24 +607,38 @@ public final class Context {
         if (src instanceof String) {
             srcName = (String)src;
             final File file = new File((String)src);
-            if (file.isFile()) {
-                url = file.toURI().toURL();
-            } else if (srcName.indexOf(':') != -1) {
+            if (srcName.indexOf(':') != -1) {
                 try {
                     url = new URL((String)src);
                 } catch (final MalformedURLException e) {
                     // fallback URL - nashorn:foo.js - check under jdk/nashorn/internal/runtime/resources
-                    String str = (String)src;
+                    final String str = (String)src;
                     if (str.startsWith("nashorn:")) {
-                        str = "resources/" + str.substring("nashorn:".length());
-                        url = Context.class.getResource(str);
-                        if (url == null) {
+                        final String resource = "resources/" + str.substring("nashorn:".length());
+                        // NOTE: even sandbox scripts should be able to load scripts in nashorn: scheme
+                        // These scripts are always available and are loaded from nashorn.jar's resources.
+                        final Source code = AccessController.doPrivileged(
+                                new PrivilegedAction<Source>() {
+                                    @Override
+                                    public Source run() {
+                                        try {
+                                            final URL resURL = Context.class.getResource(resource);
+                                            return (resURL != null)? new Source(str, resURL) : null;
+                                        } catch (final IOException exp) {
+                                            return null;
+                                        }
+                                    }
+                                });
+                        if (code == null) {
                             throw e;
                         }
+                        return evaluateSource(code, scope, scope);
                     } else {
                         throw e;
                     }
                 }
+            } else if (file.isFile()) {
+                url = file.toURI().toURL();
             }
             src = url;
         }
