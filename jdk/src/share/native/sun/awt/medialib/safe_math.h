@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,13 @@
  * questions.
  */
 
-#ifndef __SAFE_ALLOC_H__
-#define __SAFE_ALLOC_H__
+#ifndef __SAFE_MATH_H__
+#define __SAFE_MATH_H__
 
-#include "j2d_md.h"
+#define SAFE_TO_MULT(a, b) \
+    (((a) > 0) && ((b) >= 0) && ((0x7fffffff / (a)) > (b)))
 
-/*
- * Macroses defined below are wrappers for alloc functions
- * that perform buffer size calculation with integer overflow
- * check.
- */
-#define SAFE_TO_ALLOC_2(c, sz)                                             \
-    (((c) > 0) && ((sz) > 0) &&                                            \
-     ((0xffffffffu / ((juint)(c))) > ((juint)(sz))))
+#define SAFE_TO_ADD(a, b) \
+    (((a) >= 0) && ((b) >= 0) && ((0x7fffffff - (a)) > (b)))
 
-#define SAFE_TO_ALLOC_3(w, h, sz)                                          \
-    (((w) > 0) && ((h) > 0) && ((sz) > 0) &&                               \
-     (((0xffffffffu / ((juint)(w))) / ((juint)(h))) > ((juint)(sz))))
-
-#endif // __SAFE_ALLOC_H__
+#endif // __SAFE_MATH_H__

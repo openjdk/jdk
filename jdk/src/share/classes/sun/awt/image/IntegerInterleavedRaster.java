@@ -151,7 +151,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
             throw new RasterFormatException("IntegerInterleavedRasters must have"+
                                             " SinglePixelPackedSampleModel");
         }
-        verify(false);
+        verify();
     }
 
 
@@ -538,31 +538,6 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      */
     public WritableRaster createCompatibleWritableRaster() {
         return createCompatibleWritableRaster(width,height);
-    }
-
-    /**
-     * Verify that the layout parameters are consistent with
-     * the data.  If strictCheck
-     * is false, this method will check for ArrayIndexOutOfBounds conditions.  If
-     * strictCheck is true, this method will check for additional error
-     * conditions such as line wraparound (width of a line greater than
-     * the scanline stride).
-     * @return   String   Error string, if the layout is incompatible with
-     *                    the data.  Otherwise returns null.
-     */
-    private void verify (boolean strictCheck) {
-        int maxSize = 0;
-        int size;
-
-        size = (height-1)*scanlineStride + (width-1) + dataOffsets[0];
-        if (size > maxSize) {
-            maxSize = size;
-        }
-        if (data.length < maxSize) {
-            throw new RasterFormatException("Data array too small (should be "+
-                                          maxSize
-                                          +" but is "+data.length+" )");
-        }
     }
 
     public String toString() {
