@@ -563,7 +563,7 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
 
     if ((fd = open(jarfile, O_RDONLY
 #ifdef O_LARGEFILE
-        | O_LARGEFILE /* large file mode on solaris */
+        | O_LARGEFILE /* large file mode */
 #endif
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
@@ -618,6 +618,9 @@ JLI_JarUnpackFile(const char *jarfile, const char *filename, int *size) {
     void    *data = NULL;
 
     fd = open(jarfile, O_RDONLY
+#ifdef O_LARGEFILE
+        | O_LARGEFILE /* large file mode */
+#endif
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
 #endif
@@ -661,6 +664,9 @@ JLI_ManifestIterate(const char *jarfile, attribute_closure ac, void *user_data)
     int     rc;
 
     if ((fd = open(jarfile, O_RDONLY
+#ifdef O_LARGEFILE
+        | O_LARGEFILE /* large file mode */
+#endif
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
 #endif
