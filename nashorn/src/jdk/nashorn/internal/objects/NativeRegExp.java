@@ -27,10 +27,7 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,6 +40,7 @@ import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
+import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.parser.RegExp;
 import jdk.nashorn.internal.runtime.BitVector;
 import jdk.nashorn.internal.runtime.JSType;
@@ -57,8 +55,6 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  */
 @ScriptClass("RegExp")
 public final class NativeRegExp extends ScriptObject {
-    static final MethodHandle REGEXP_STATICS_HANDLER = findOwnMH("regExpStaticsHandler", Object.class, Object.class, Object.class);
-
     /** ECMA 15.10.7.5 lastIndex property */
     @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public Object lastIndex;
@@ -80,8 +76,8 @@ public final class NativeRegExp extends ScriptObject {
 
     private BitVector groupsInNegativeLookahead;
 
-    // RegExp constructor object. Needed to support RegExp "static" properties,
-    private Object constructor;
+    // Reference to global object needed to support static RegExp properties
+    private Global globalObject;
 
     /*
     public NativeRegExp() {
@@ -329,7 +325,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param self self reference
      * @return the input string for the regexp
      */
-    @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE | Attribute.NOT_WRITABLE)
+    @Getter(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public static Object source(final Object self) {
         return checkRegExp(self).input;
     }
@@ -340,7 +336,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param self self reference
      * @return true if this regexp is flagged global, false otherwise
      */
-    @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE | Attribute.NOT_WRITABLE)
+    @Getter(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public static Object global(final Object self) {
         return checkRegExp(self).global;
     }
@@ -351,7 +347,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param self self reference
      * @return true if this regexp if flagged to ignore case, false otherwise
      */
-    @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE | Attribute.NOT_WRITABLE)
+    @Getter(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public static Object ignoreCase(final Object self) {
         return checkRegExp(self).ignoreCase;
     }
@@ -362,9 +358,173 @@ public final class NativeRegExp extends ScriptObject {
      * @param self self reference
      * @return true if this regexp is flagged to be multiline, false otherwise
      */
-    @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE | Attribute.NOT_WRITABLE)
+    @Getter(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public static Object multiline(final Object self) {
         return checkRegExp(self).multiline;
+    }
+
+    /**
+     * Getter for non-standard RegExp.input property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "input")
+    public static Object getLastInput(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getInput();
+    }
+
+    /**
+     * Getter for non-standard RegExp.multiline property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "multiline")
+    public static Object getLastMultiline(Object self) {
+        return false; // doesn't ever seem to become true and isn't documented anyhwere
+    }
+
+    /**
+     * Getter for non-standard RegExp.lastMatch property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "lastMatch")
+    public static Object getLastMatch(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(0);
+    }
+
+    /**
+     * Getter for non-standard RegExp.lastParen property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "lastParen")
+    public static Object getLastParen(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getLastParen();
+    }
+
+    /**
+     * Getter for non-standard RegExp.leftContext property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "leftContext")
+    public static Object getLeftContext(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getInput().substring(0, match.getIndex());
+    }
+
+    /**
+     * Getter for non-standard RegExp.rightContext property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "rightContext")
+    public static Object getRightContext(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getInput().substring(match.getIndex() + match.length());
+    }
+
+    /**
+     * Getter for non-standard RegExp.$1 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$1")
+    public static Object getGroup1(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(1);
+    }
+
+    /**
+     * Getter for non-standard RegExp.$2 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$2")
+    public static Object getGroup2(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(2);
+    }
+
+    /**
+     * Getter for non-standard RegExp.$3 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$3")
+    public static Object getGroup3(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(3);
+    }
+
+    /**
+     * Getter for non-standard RegExp.$4 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$4")
+    public static Object getGroup4(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(4);
+    }
+
+    /**
+     * Getter for non-standard RegExp.$5 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$5")
+    public static Object getGroup5(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(5);
+    }
+
+    /**
+     * Getter for non-standard RegExp.$6 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$6")
+    public static Object getGroup6(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(6);
+    }
+
+    /**
+     * Getter for non-standard RegExp.$7 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$7")
+    public static Object getGroup7(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(7);
+    }
+
+    /**
+     * Getter for non-standard RegExp.$8 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$8")
+    public static Object getGroup8(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(8);
+    }
+
+    /**
+     * Getter for non-standard RegExp.$9 property.
+     * @param self self object
+     * @return last regexp input
+     */
+    @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$9")
+    public static Object getGroup9(Object self) {
+        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        return match == null ? "" : match.getGroup(9);
     }
 
     private RegExpMatch execInner(final String string) {
@@ -389,7 +549,9 @@ public final class NativeRegExp extends ScriptObject {
             setLastIndex(matcher.end());
         }
 
-        return new RegExpMatch(string, matcher.start(), groups(matcher));
+        final RegExpMatch match = new RegExpMatch(string, matcher.start(), groups(matcher));
+        globalObject.setLastRegExpMatch(match);
+        return match;
     }
 
     /**
@@ -425,84 +587,13 @@ public final class NativeRegExp extends ScriptObject {
      * @return NativeArray of matches, string or null.
      */
     public Object exec(final String string) {
-        final RegExpMatch m = execInner(string);
-        // the input string
-        if (m == null) {
-            return setLastRegExpMatch(null);
+        final RegExpMatch match = execInner(string);
+
+        if (match == null) {
+            return null;
         }
 
-        return setLastRegExpMatch(new NativeRegExpExecResult(m));
-    }
-
-    // Name of the "last successful match" property of the RegExp constructor
-    static final String LAST_REGEXP_MATCH = "__last_regexp_match__";
-
-    /**
-     * Handles "static" properties of RegExp constructor. These are "deprecated"
-     * properties of RegExp constructor.
-     *
-     * @param self self object passed to this method
-     * @param name name of the property being searched
-     *
-     * @return value of the specified property or undefined if not found
-     */
-    public static Object regExpStaticsHandler(final Object self, final  Object name) {
-        final String propName = JSType.toString(name);
-        if (self instanceof ScriptObject) {
-            final ScriptObject sobj = (ScriptObject)self;
-            final Object value = sobj.get(LAST_REGEXP_MATCH);
-            if (! (value instanceof NativeRegExpExecResult)) {
-                return UNDEFINED;
-            }
-
-            // get the last match object
-            final NativeRegExpExecResult lastMatch = (NativeRegExpExecResult)value;
-
-            // look for $1... $9
-            if (propName.length() > 0 && propName.charAt(0) == '$') {
-                int index = 0;
-                try {
-                    index = Integer.parseInt(propName.substring(1));
-                } catch (final Exception ignored) {
-                    return UNDEFINED;
-                }
-
-                // index out of range
-                if (index < 1 && index > 9) {
-                    return UNDEFINED;
-                }
-
-                // retrieve indexed value from last match object.
-                return lastMatch.get(index);
-            }
-
-            // misc. "static" properties supported
-            switch (propName) {
-                case "input": {
-                    return lastMatch.input;
-                }
-
-                case "lastMatch": {
-                    return lastMatch.get(0);
-                }
-
-                case "lastParen": {
-                    final int len = ((Number)NativeRegExpExecResult.length(lastMatch)).intValue();
-                    return (len > 0)? lastMatch.get(len - 1) : UNDEFINED;
-                }
-            }
-        }
-
-        return UNDEFINED;
-    }
-
-    // Support for RegExp static properties. We set last successful match
-    // to the RegExp constructor object.
-    private Object setLastRegExpMatch(final Object match) {
-        if (constructor instanceof ScriptObject) {
-            ((ScriptObject)constructor).set(LAST_REGEXP_MATCH, match, isStrictContext());
-        }
-        return match;
+        return new NativeRegExpExecResult(match);
     }
 
     /**
@@ -744,15 +835,13 @@ public final class NativeRegExp extends ScriptObject {
      * @return Index of match.
      */
     Object search(final String string) {
-        final RegExpMatch m = execInner(string);
-        // the input string
-        if (m == null) {
-            setLastRegExpMatch(null);
+        final RegExpMatch match = execInner(string);
+
+        if (match == null) {
             return -1;
         }
 
-        setLastRegExpMatch(new NativeRegExpExecResult(m));
-        return m.getIndex();
+        return match.getIndex();
     }
 
     /**
@@ -780,10 +869,9 @@ public final class NativeRegExp extends ScriptObject {
     }
 
     private void init() {
-        final ScriptObject proto = Global.instance().getRegExpPrototype();
-        this.setProto(proto);
-        // retrieve constructor to support "static" properties of RegExp
-        this.constructor = PrototypeObject.getConstructor(proto);
+        // Keep reference to global object to support "static" properties of RegExp
+        this.globalObject = Global.instance();
+        this.setProto(globalObject.getRegExpPrototype());
     }
 
     private static NativeRegExp checkRegExp(final Object self) {
@@ -846,7 +934,4 @@ public final class NativeRegExp extends ScriptObject {
         this.groupsInNegativeLookahead = groupsInNegativeLookahead;
     }
 
-    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.publicLookup(), NativeRegExp.class, name, MH.type(rtype, types));
-    }
 }

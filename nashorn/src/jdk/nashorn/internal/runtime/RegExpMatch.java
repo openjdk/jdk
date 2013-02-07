@@ -77,4 +77,22 @@ public final class RegExpMatch {
     public int length() {
         return ((String)groups[0]).length();
     }
+
+    /**
+     * Get the group with the given index or the empty string if group index is not valid.
+     * @param index the group index
+     * @return the group or ""
+     */
+    public Object getGroup(int index) {
+        return index >= 0 && index < groups.length ? groups[index] : "";
+    }
+
+    /**
+     * Get the last parenthesis group, or the empty string if none exists.
+     * @return the last group or ""
+     */
+    public Object getLastParen() {
+        return groups.length > 1 ? groups[groups.length - 1] : "";
+    }
+
 }
