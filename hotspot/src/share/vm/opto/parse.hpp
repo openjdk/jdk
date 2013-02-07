@@ -73,7 +73,8 @@ protected:
   const char* try_to_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result, bool& should_delay);
   const char* should_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const;
   const char* should_not_inline(ciMethod* callee_method, ciMethod* caller_method, WarmCallInfo* wci_result) const;
-  void        print_inlining(ciMethod *callee_method, int caller_bci, const char *failure_msg) const;
+  void        print_inlining(ciMethod* callee_method, int caller_bci,
+                             const char* msg, bool success) const;
 
   InlineTree *caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;

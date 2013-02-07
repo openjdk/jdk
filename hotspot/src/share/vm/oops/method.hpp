@@ -764,18 +764,18 @@ class Method : public Metadata {
   // whether it is not compilable for another reason like having a
   // breakpoint set in it.
   bool  is_not_compilable(int comp_level = CompLevel_any) const;
-  void set_not_compilable(int comp_level = CompLevel_all, bool report = true);
+  void set_not_compilable(int comp_level = CompLevel_all, bool report = true, const char* reason = NULL);
   void set_not_compilable_quietly(int comp_level = CompLevel_all) {
     set_not_compilable(comp_level, false);
   }
   bool  is_not_osr_compilable(int comp_level = CompLevel_any) const;
-  void set_not_osr_compilable(int comp_level = CompLevel_all, bool report = true);
+  void set_not_osr_compilable(int comp_level = CompLevel_all, bool report = true, const char* reason = NULL);
   void set_not_osr_compilable_quietly(int comp_level = CompLevel_all) {
     set_not_osr_compilable(comp_level, false);
   }
 
  private:
-  void print_made_not_compilable(int comp_level, bool is_osr, bool report);
+  void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
 
  public:
   bool  is_not_c1_compilable() const          { return access_flags().is_not_c1_compilable(); }

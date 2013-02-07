@@ -2816,10 +2816,6 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
 
-#ifdef IA64
-  ShouldNotReachHere(); // NYI
-#endif /* IA64 */
-
   //
   // This code is dependent on the memory layout of the interpreter local
   // array and the monitors. On all of our platforms the layout is identical
