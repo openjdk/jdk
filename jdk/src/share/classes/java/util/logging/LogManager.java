@@ -395,7 +395,10 @@ public class LogManager {
                         context = userContext;
                     } else {
                         context = new LoggerContext();
-                        context.addLocalLogger(manager.rootLogger);
+                        // during initialization, rootLogger is null when
+                        // instantiating itself RootLogger
+                        if (manager.rootLogger != null)
+                            context.addLocalLogger(manager.rootLogger);
                     }
                     javaAwtAccess.put(ecx, LoggerContext.class, context);
                 }
