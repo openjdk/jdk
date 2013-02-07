@@ -1802,7 +1802,7 @@ class CommandLineFlags {
   product(bool, ParallelRefProcBalancingEnabled, true,                      \
           "Enable balancing of reference processing queues")                \
                                                                             \
-  product(intx, CMSTriggerRatio, 80,                                        \
+  product(uintx, CMSTriggerRatio, 80,                                       \
           "Percentage of MinHeapFreeRatio in CMS generation that is "       \
           "allocated before a CMS collection cycle commences")              \
                                                                             \
@@ -2977,10 +2977,10 @@ class CommandLineFlags {
   product(uintx, TLABWasteIncrement,    4,                                  \
           "Increment allowed waste at slow allocation")                     \
                                                                             \
-  product(intx, SurvivorRatio, 8,                                           \
+  product(uintx, SurvivorRatio, 8,                                          \
           "Ratio of eden/survivor space size")                              \
                                                                             \
-  product(intx, NewRatio, 2,                                                \
+  product(uintx, NewRatio, 2,                                               \
           "Ratio of new/old generation sizes")                              \
                                                                             \
   product_pd(uintx, NewSizeThreadIncrease,                                  \
@@ -3031,7 +3031,7 @@ class CommandLineFlags {
   product(uintx, InitialTenuringThreshold,    7,                            \
           "Initial value for tenuring threshold")                           \
                                                                             \
-  product(intx, TargetSurvivorRatio,    50,                                 \
+  product(uintx, TargetSurvivorRatio,    50,                                \
           "Desired percentage of survivor space used after scavenge")       \
                                                                             \
   product(uintx, MarkSweepDeadRatio,     5,                                 \
