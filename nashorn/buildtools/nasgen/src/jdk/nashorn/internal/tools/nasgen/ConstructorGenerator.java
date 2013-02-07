@@ -135,7 +135,7 @@ public class ConstructorGenerator extends ClassGenerator {
                 linkerAddGetterSetter(mi, className, memInfo);
             } else if (memInfo.isConstructorGetter()) {
                 final MemberInfo setter = scriptClassInfo.findSetter(memInfo);
-                linkerAddGetterSetter(mi, className, memInfo, setter);
+                linkerAddGetterSetter(mi, scriptClassInfo.getJavaName(), memInfo, setter);
             }
         }
         emitStaticInitSuffix(mi, className);
