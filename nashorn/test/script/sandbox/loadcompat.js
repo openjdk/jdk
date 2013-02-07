@@ -22,37 +22,29 @@
  */
 
 /**
- * Basic checks for throwing and catching java exceptions from script.
- * 
+ * Check that nashorn mozilla compatibility script can be loaded in sandbox.
+ *
  * @test
  * @run
+ * @security
  */
 
-try {
-    new java.io.FileInputStream("non_existent_file");
-} catch (e) {
-    print(e instanceof java.io.FileNotFoundException || e instanceof java.lang.SecurityException);
+load("nashorn:mozilla_compat.js");
+
+var obj = {};
+if (obj.__proto__ !== Object.prototype) {
+    fail("__proto__ does not work as expected");
 }
 
-try {
-    new java.net.URL("invalid_url");
-} catch (e) {
-    print(e instanceof java.net.MalformedURLException);
-    print(e);
+var array = [];
+if (array.__proto__ !== Array.prototype) {
+    fail("__proto__ does not work as expected");
 }
 
-try {
-    var obj = new java.lang.Object();
-    obj.wait();
-} catch (e) {
-    print(e instanceof java.lang.IllegalMonitorStateException);
-    print(e);
+if (typeof JavaAdapter != 'function') {
+    fail("JavaAdapter constructor is missing in compatibility script");
 }
 
-// directly throw a Java exception
-try {
-    throw new java.io.IOException("I/O failed");
-} catch (e) {
-    print(e instanceof java.io.IOException);
-    print(e);
+if (typeof importPackage != 'function') {
+    fail("importPackage function is missing in compatibility script");
 }

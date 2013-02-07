@@ -22,37 +22,42 @@
  */
 
 /**
- * Basic checks for throwing and catching java exceptions from script.
- * 
+ * Check that user defined interface can be implemented.
+ *
  * @test
  * @run
+ * @security
  */
 
-try {
-    new java.io.FileInputStream("non_existent_file");
-} catch (e) {
-    print(e instanceof java.io.FileNotFoundException || e instanceof java.lang.SecurityException);
+var Window = Java.type("jdk.nashorn.api.scripting.Window");
+var WindowEventHandler = Java.type("jdk.nashorn.api.scripting.WindowEventHandler");
+
+var w = new Window();
+
+var loadedFuncReached = false;
+// try function to SAM converter
+w.onload = function() {
+    loadedFuncReached = true;
+    return true;
 }
 
-try {
-    new java.net.URL("invalid_url");
-} catch (e) {
-    print(e instanceof java.net.MalformedURLException);
-    print(e);
+w.onload.loaded();
+if (! loadedFuncReached) {
+    fail("Interface method impl. not called");
 }
 
-try {
-    var obj = new java.lang.Object();
-    obj.wait();
-} catch (e) {
-    print(e instanceof java.lang.IllegalMonitorStateException);
-    print(e);
-}
+// reset
+loadedFuncReached = false;
 
-// directly throw a Java exception
-try {
-    throw new java.io.IOException("I/O failed");
-} catch (e) {
-    print(e instanceof java.io.IOException);
-    print(e);
+// try direct interface implementation
+w.onload = new WindowEventHandler() {
+    loaded: function() {
+        loadedFuncReached = true;
+        return true;
+    }
+};
+
+w.onload.loaded();
+if (! loadedFuncReached) {
+    fail("Interface method impl. not called");
 }

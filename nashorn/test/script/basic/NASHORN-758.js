@@ -25,16 +25,16 @@
  * NASHORN-758 : nashorn shell command line options improvements
  *
  * @test
- * @option -Dfoo=bar
- * @option -Dhello=world
+ * @option -Dnashorn.test.foo=bar
+ * @option -Dnashorn.test.hello=world
  * @run
  */
 
 
-if (java.lang.System.getProperty("foo") != "bar") {
-    fail("System property 'foo' != 'bar'");
+if (java.lang.System.getProperty("nashorn.test.foo") != "bar") {
+    fail("System property 'nashorn.test.foo' != 'bar'");
 }
 
-if (java.lang.System.getProperty("hello") != "world") {
-    fail("System property 'hello' != 'world'");
+if (java.lang.System.getProperty("nashorn.test.hello") != "world") {
+    fail("System property 'nashorn.test.hello' != 'world'");
 }
