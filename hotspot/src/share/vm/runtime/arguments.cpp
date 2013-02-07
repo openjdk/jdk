@@ -1239,7 +1239,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   // prefer minuscule survivor spaces so as not to waste
   // space for (non-existent) survivors
   if (FLAG_IS_DEFAULT(SurvivorRatio) && MaxTenuringThreshold == 0) {
-    FLAG_SET_ERGO(intx, SurvivorRatio, MAX2((intx)1024, SurvivorRatio));
+    FLAG_SET_ERGO(uintx, SurvivorRatio, MAX2((uintx)1024, SurvivorRatio));
   }
   // If OldPLABSize is set and CMSParPromoteBlocksToClaim is not,
   // set CMSParPromoteBlocksToClaim equal to OldPLABSize.
@@ -1881,7 +1881,7 @@ bool Arguments::check_vm_args_consistency() {
   if (UseParallelOldGC && ParallelOldGCSplitALot) {
     // Settings to encourage splitting.
     if (!FLAG_IS_CMDLINE(NewRatio)) {
-      FLAG_SET_CMDLINE(intx, NewRatio, 2);
+      FLAG_SET_CMDLINE(uintx, NewRatio, 2);
     }
     if (!FLAG_IS_CMDLINE(ScavengeBeforeFullGC)) {
       FLAG_SET_CMDLINE(bool, ScavengeBeforeFullGC, false);

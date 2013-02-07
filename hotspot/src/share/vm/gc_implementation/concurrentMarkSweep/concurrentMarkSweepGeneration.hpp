@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1093,7 +1093,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // getter and initializer for _initiating_occupancy field.
   double initiating_occupancy() const { return _initiating_occupancy; }
-  void   init_initiating_occupancy(intx io, intx tr);
+  void   init_initiating_occupancy(intx io, uintx tr);
 
  public:
   ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
