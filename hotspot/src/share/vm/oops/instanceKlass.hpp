@@ -36,6 +36,7 @@
 #include "runtime/os.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/macros.hpp"
 
 // An InstanceKlass is the VM level representation of a Java class.
 // It contains all information needed for at class at execution runtime.
@@ -936,13 +937,13 @@ class InstanceKlass: public Klass {
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DECL)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix) \
   int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 private:

@@ -30,9 +30,10 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // HeapInspection
 
