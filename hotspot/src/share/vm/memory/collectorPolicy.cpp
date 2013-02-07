@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,18 @@ void TwoGenerationCollectorPolicy::initialize_flags() {
   if (NewSize + OldSize > MaxHeapSize) {
     MaxHeapSize = NewSize + OldSize;
   }
+
+  if (FLAG_IS_CMDLINE(OldSize) && FLAG_IS_DEFAULT(NewSize)) {
+    // NewRatio will be used later to set the young generation size so we use
+    // it to calculate how big the heap should be based on the requested OldSize
+    // and NewRatio.
+    assert(NewRatio > 0, "NewRatio should have been set up earlier");
+    size_t calculated_heapsize = (OldSize / NewRatio) * (NewRatio + 1);
+
+    calculated_heapsize = align_size_up(calculated_heapsize, max_alignment());
+    MaxHeapSize = calculated_heapsize;
+    InitialHeapSize = calculated_heapsize;
+  }
   MaxHeapSize = align_size_up(MaxHeapSize, max_alignment());
 
   always_do_update_barrier = UseConcMarkSweepGC;
@@ -384,14 +396,15 @@ void GenCollectorPolicy::initialize_size_info() {
 // keeping it simple also seems a worthwhile goal.
 bool TwoGenerationCollectorPolicy::adjust_gen0_sizes(size_t* gen0_size_ptr,
                                                      size_t* gen1_size_ptr,
-                                                     size_t heap_size,
-                                                     size_t min_gen0_size) {
+                                                     const size_t heap_size,
+                                                     const size_t min_gen1_size) {
   bool result = false;
+
   if ((*gen1_size_ptr + *gen0_size_ptr) > heap_size) {
-    if (((*gen0_size_ptr + OldSize) > heap_size) &&
-       (heap_size - min_gen0_size) >= min_alignment()) {
-      // Adjust gen0 down to accomodate OldSize
-      *gen0_size_ptr = heap_size - min_gen0_size;
+    if ((heap_size < (*gen0_size_ptr + min_gen1_size)) &&
+        (heap_size >= min_gen1_size + min_alignment())) {
+      // Adjust gen0 down to accommodate min_gen1_size
+      *gen0_size_ptr = heap_size - min_gen1_size;
       *gen0_size_ptr =
         MAX2((uintx)align_size_down(*gen0_size_ptr, min_alignment()),
              min_alignment());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,7 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
 
   // Returns true is gen0 sizes were adjusted
   bool adjust_gen0_sizes(size_t* gen0_size_ptr, size_t* gen1_size_ptr,
-                               size_t heap_size, size_t min_gen1_size);
+                         const size_t heap_size, const size_t min_gen1_size);
 };
 
 class MarkSweepPolicy : public TwoGenerationCollectorPolicy {
