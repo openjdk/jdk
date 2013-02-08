@@ -650,24 +650,23 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return FindPropertyData or null if not found.
      */
     public final FindProperty findProperty(final String key, final boolean deep, final boolean stopOnNonScope) {
-        int depth = 0;
-
         for (ScriptObject self = this; self != null; self = self.getProto()) {
             // if doing deep search, stop search on the first non-scope object if asked to do so
-            if (stopOnNonScope && depth != 0 && !self.isScope()) {
-                break;
+            if (stopOnNonScope && self != this && !self.isScope()) {
+                return null;
             }
+
             final PropertyMap selfMap  = self.getMap();
             final Property    property = selfMap.findProperty(key);
 
             if (property != null) {
-                return new FindProperty(this, self, selfMap, property, depth);
-            } else if (!deep) {
-                return null;
+                return new FindProperty(this, self, property);
             }
 
-            depth++;
-        }
+            if (!deep) {
+                return null;
+            }
+         }
 
         return null;
     }
@@ -999,7 +998,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return Value of property.
      */
     public final Object getWithProperty(final Property property) {
-        return getObjectValue(new FindProperty(this, this, getMap(), property, 0));
+        return getObjectValue(new FindProperty(this, this, property));
     }
 
     /**
@@ -1793,7 +1792,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
         if (!scope && find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
             // We should still check if inherited data property is not writable
-            if (isExtensible() && !find.isWritable()) {
+            if (isExtensible() && !find.getProperty().isWritable()) {
                 return createEmptySetMethod(desc, "property.not.writable", false);
             }
             // Otherwise, forget the found property
@@ -1801,7 +1800,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         if (find != null) {
-            if(!find.isWritable()) {
+            if(!find.getProperty().isWritable()) {
                 // Existing, non-writable property
                 return createEmptySetMethod(desc, "property.not.writable", true);
             }
@@ -2617,7 +2616,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         MethodHandle setter;
 
         if (f != null) {
-            if (!f.isWritable()) {
+            if (!f.getProperty().isWritable()) {
                 if (strict) {
                     typeError("property.not.writable", key, ScriptRuntime.safeToString(this));
                 }
@@ -3120,7 +3119,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return true;
         }
 
-        if (!find.isConfigurable()) {
+        if (!find.getProperty().isConfigurable()) {
             if (strict) {
                 typeError("cant.delete.property", propName, ScriptRuntime.safeToString(this));
             }

@@ -271,13 +271,14 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      *
      * @param key           {@link Property} key.
      * @param propertyFlags {@link Property} flags.
+     * @param slot          {@link Property} slot.
      * @param getter        {@link Property} get accessor method.
      * @param setter        {@link Property} set accessor method.
      *
      * @return  New {@link PropertyMap} with {@link AccessorProperty} added.
      */
-    public PropertyMap newProperty(final String key, final int propertyFlags, final MethodHandle getter, final MethodHandle setter) {
-        return newProperty(new AccessorProperty(key, propertyFlags, getter, setter));
+    public PropertyMap newProperty(final String key, final int propertyFlags, final int slot, final MethodHandle getter, final MethodHandle setter) {
+        return newProperty(new AccessorProperty(key, propertyFlags, slot, getter, setter));
     }
 
     /**

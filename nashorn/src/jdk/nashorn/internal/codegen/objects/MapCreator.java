@@ -25,20 +25,12 @@
 
 package jdk.nashorn.internal.codegen.objects;
 
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.PRIMITIVE_TYPE;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 
 /**
@@ -72,11 +64,11 @@ public class MapCreator {
     /**
      * Constructs a property map based on a set of fields.
      *
-     * @param isVarArg is this a vararg object map
+     * @param hasArguments does the created object have an "arguments" property
      *
      * @return New map populated with accessor properties.
      */
-    public PropertyMap makeMap(final boolean isVarArg) {
+    public PropertyMap makeMap(final boolean hasArguments) {
         final List<Property> properties = new ArrayList<>();
 
         assert keys != null;
@@ -86,63 +78,31 @@ public class MapCreator {
             final Symbol symbol = symbols[i];
 
             if (symbol != null && !ArrayIndex.isIndexKey(key)) {
-                final Property property = initHandle(key, symbol.getFieldIndex(), symbol, isVarArg);
-                properties.add(property);
+                properties.add(new AccessorProperty(key, getPropertyFlags(symbol, hasArguments), structure, symbol.getFieldIndex()));
             }
         }
 
         return PropertyMap.newMap(structure, properties);
     }
 
-    private Property initHandle(final String key, final int fieldIndex, final Symbol symbol, final boolean isVarArg) {
-        assert symbol != null;
-        final boolean isParam = symbol.isParam();
-
-        final String fieldNameObject    = ObjectClassGenerator.getFieldName(fieldIndex, Type.OBJECT);
-        final String fieldNamePrimitive = ObjectClassGenerator.getFieldName(fieldIndex, ObjectClassGenerator.PRIMITIVE_TYPE);
-
-        MethodHandle primitiveGetter = null;
-        MethodHandle primitiveSetter = null;
-        MethodHandle objectGetter;
-        MethodHandle objectSetter;
-
-        final MethodHandles.Lookup lookup = MethodHandles.lookup();
-
-        if (isParam && isVarArg) {
-            final MethodHandle arguments   = MH.getter(MethodHandles.lookup(), structure, "arguments", Object.class);
-            final MethodHandle argumentsSO = MH.asType(arguments, arguments.type().changeReturnType(ScriptObject.class));
-            objectGetter = MH.insertArguments(MH.filterArguments(ScriptObject.GET_ARGUMENT.methodHandle(), 0, argumentsSO), 1, fieldIndex);
-            objectSetter = MH.insertArguments(MH.filterArguments(ScriptObject.SET_ARGUMENT.methodHandle(), 0, argumentsSO), 1, fieldIndex);
-        } else {
-            objectGetter = MH.getter(lookup, structure, fieldNameObject, Type.OBJECT.getTypeClass());
-            objectSetter = MH.setter(lookup, structure, fieldNameObject, Type.OBJECT.getTypeClass());
-            if (!OBJECT_FIELDS_ONLY) {
-                primitiveGetter = MH.getter(lookup, structure, fieldNamePrimitive, PRIMITIVE_TYPE.getTypeClass());
-                primitiveSetter = MH.setter(lookup, structure, fieldNamePrimitive, PRIMITIVE_TYPE.getTypeClass());
-            }
-        }
-
-        return new AccessorProperty(key, getPropertyFlags(symbol, isVarArg), objectGetter, objectSetter, primitiveGetter, primitiveSetter);
-    }
-
     /**
      * Compute property flags given local state of a field. Maybe be overridden and extended,
      * as is the case in {@link ObjectMapCreator}
      *
-     * @param symbol   symbol to check
-     * @param isVarArg is this a vararg
+     * @param symbol       symbol to check
+     * @param hasArguments does the created object have an "arguments" property
      *
      * @return flags to use for fields
      */
-    protected int getPropertyFlags(final Symbol symbol, final boolean isVarArg) {
-        final boolean isParam = symbol.isParam();
+    protected int getPropertyFlags(final Symbol symbol, final boolean hasArguments) {
         int flags = 0;
 
-        if (isParam || isVarArg) {
-            flags |= Property.IS_ALWAYS_OBJECT;
-            if (isParam) {
-                flags |= Property.IS_PARAMETER;
-            }
+        if (symbol.isParam()) {
+            flags |= Property.IS_ALWAYS_OBJECT | Property.IS_PARAMETER;
+        }
+
+        if (hasArguments) {
+            flags |= Property.IS_ALWAYS_OBJECT | Property.HAS_ARGUMENTS;
         }
 
         if (symbol.isScope()) {

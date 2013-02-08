@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.ACCESSOR
 import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.DEBUG_FIELDS;
 import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.LOG;
 import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
+import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.PRIMITIVE_TYPE;
 import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.createGetter;
 import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.createGuardBoxedPrimitiveSetter;
 import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.createSetter;
@@ -41,6 +42,7 @@ import static jdk.nashorn.internal.runtime.linker.MethodHandleFactory.stripName;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.linker.Lookup;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
@@ -90,49 +92,6 @@ public class AccessorProperty extends Property {
     }
 
     /**
-     * Constructor
-     *
-     * primitiveGetter and setter are only used in dual fields mode. Setting them to null also
-     * works in dual field mode, it only means that the property never has a primitive
-     * representation
-     *
-     * @param key              property key
-     * @param flags            property flags
-     * @param objectGetter     seed getter for object field
-     * @param objectSetter     seed setter for object field
-     * @param primitiveGetter  seed getter for primitive field (in dual field mode)
-     * @param primitiveSetter  seed setter for primitive field (in dual field mode)
-     */
-    public AccessorProperty(final String key, final int flags, final MethodHandle objectGetter, final MethodHandle objectSetter, final MethodHandle primitiveGetter, final MethodHandle primitiveSetter) {
-        super(key, flags);
-
-        this.objectGetter    = objectGetter;
-        this.objectSetter    = objectSetter;
-        this.primitiveGetter = primitiveGetter;
-        this.primitiveSetter = primitiveSetter;
-
-        Class<?> initialType = null;
-
-        if (OBJECT_FIELDS_ONLY || isAlwaysObject()) {
-            initialType = Object.class;
-        } else {
-            if (!canBePrimitive()) {
-                info(key + " cannot be primitive");
-                initialType = Object.class;
-            } else {
-                info(key + " CAN be primitive");
-                if (!canBeUndefined()) {
-                    info(key + " is always defined");
-                    initialType = int.class; //double works too for less type invalidation, but this requires experimentation, e.g. var x = 17; x += 2 will turn it into double now because of lack of range analysis
-                }
-            }
-        }
-
-        // is always object means "is never initialized to undefined, and always of object type
-        setCurrentType(initialType);
-    }
-
-    /**
      * Delegate constructor. This is used when adding properties to the Global scope, which
      * is necessary for outermost levels in a script (the ScriptObject is represented by
      * a JO$-prefixed ScriptObject class, but the properties need to be in the Global scope
@@ -161,11 +120,12 @@ public class AccessorProperty extends Property {
      *
      * @param key    the property key
      * @param flags  the property flags
+     * @param slot   the property field number or spill slot
      * @param getter the property getter
      * @param setter the property setter or null if non writable, non configurable
      */
-    public AccessorProperty(final String key, final int flags, final MethodHandle getter, final MethodHandle setter) {
-        super(key, flags);
+    public AccessorProperty(final String key, final int flags, final int slot, final MethodHandle getter, final MethodHandle setter) {
+        super(key, flags, slot);
 
         // we don't need to prep the setters these will never be invalidated as this is a nasgen
         // or known type getter/setter. No invalidations will take place
@@ -190,6 +150,66 @@ public class AccessorProperty extends Property {
         }
 
         setCurrentType(getterType);
+    }
+
+    /**
+     * Constructor for dual field AccessorPropertys.
+     *
+     * @param key              property key
+     * @param flags            property flags
+     * @param structure        structure for objects associated with this property
+     * @param slot             property field number or spill slot
+     */
+    public AccessorProperty(final String key, final int flags, final Class<?> structure, final int slot) {
+        super(key, flags, slot);
+
+        /*
+         *
+         * primitiveGetter and primitiveSetter are only used in dual fields mode. Setting them to null also
+         * works in dual field mode, it only means that the property never has a primitive
+         * representation.
+         */
+        primitiveGetter = null;
+        primitiveSetter = null;
+
+        final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+        if (isParameter() && hasArguments()) {
+            final MethodHandle arguments   = MH.getter(MethodHandles.lookup(), structure, "arguments", Object.class);
+            final MethodHandle argumentsSO = MH.asType(arguments, arguments.type().changeReturnType(ScriptObject.class));
+
+            objectGetter = MH.insertArguments(MH.filterArguments(ScriptObject.GET_ARGUMENT.methodHandle(), 0, argumentsSO), 1, slot);
+            objectSetter = MH.insertArguments(MH.filterArguments(ScriptObject.SET_ARGUMENT.methodHandle(), 0, argumentsSO), 1, slot);
+        } else {
+            final String fieldNameObject    = ObjectClassGenerator.getFieldName(slot, Type.OBJECT);
+            final String fieldNamePrimitive = ObjectClassGenerator.getFieldName(slot, ObjectClassGenerator.PRIMITIVE_TYPE);
+
+            objectGetter = MH.getter(lookup, structure, fieldNameObject, Type.OBJECT.getTypeClass());
+            objectSetter = MH.setter(lookup, structure, fieldNameObject, Type.OBJECT.getTypeClass());
+
+            if (!OBJECT_FIELDS_ONLY) {
+                primitiveGetter = MH.getter(lookup, structure, fieldNamePrimitive, PRIMITIVE_TYPE.getTypeClass());
+                primitiveSetter = MH.setter(lookup, structure, fieldNamePrimitive, PRIMITIVE_TYPE.getTypeClass());
+            }
+        }
+
+        Class<?> initialType = null;
+
+        if (OBJECT_FIELDS_ONLY || isAlwaysObject()) {
+            initialType = Object.class;
+        } else if (!canBePrimitive()) {
+            info(key + " cannot be primitive");
+            initialType = Object.class;
+        } else {
+            info(key + " CAN be primitive");
+            if (!canBeUndefined()) {
+                info(key + " is always defined");
+                initialType = int.class; //double works too for less type invalidation, but this requires experimentation, e.g. var x = 17; x += 2 will turn it into double now because of lack of range analysis
+            }
+        }
+
+        // is always object means "is never initialized to undefined, and always of object type
+        setCurrentType(initialType);
     }
 
     /**

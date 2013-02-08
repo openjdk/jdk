@@ -75,7 +75,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
      * @param symbols      symbols for fields in object
      * @param values       values (or null where no value) to be written to the fields
      * @param isScope      is this a scope object
-     * @param hasArguments does the created object have an "arguments" object
+     * @param hasArguments does the created object have an "arguments" property
      */
     public FieldObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<T> values, final boolean isScope, final boolean hasArguments) {
         super(codegen, keys, symbols, isScope, hasArguments);
@@ -106,7 +106,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
         if (isScope()) {
             loadScope(method);
 
-            if (isVarArg()) {
+            if (hasArguments()) {
                 method.loadArguments();
                 method.invoke(constructorNoLookup(getClassName(), PropertyMap.class, ScriptObject.class, ARGUMENTS.type()));
             } else {
