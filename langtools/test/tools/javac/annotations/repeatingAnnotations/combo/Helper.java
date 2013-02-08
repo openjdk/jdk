@@ -40,14 +40,17 @@ public class Helper {
         IMPORTINHERITED("import java.lang.annotation.Inherited;\n"),
         IMPORTRETENTION("import java.lang.annotation.Retention;\n" +
                         "\nimport java.lang.annotation.RetentionPolicy;\n"),
+        IMPORTSTMTS("import java.lang.annotation.*;\n"),
         REPEATABLE("\n@Repeatable(FooContainer.class)\n"),
         CONTAINER("@interface FooContainer {\n" +"  Foo[] value();\n}\n"),
         BASE("@interface Foo {}\n"),
+        BASEANNO("@Foo"),
         REPEATABLEANNO("\n@Foo() @Foo()"),
         DEPRECATED("\n@Deprecated"),
         DOCUMENTED("\n@Documented"),
         INHERITED("\n@Inherited"),
-        RETENTION("@Retention(RetentionPolicy.#VAL)\n");
+        RETENTION("@Retention(RetentionPolicy.#VAL)\n"),
+        TARGET("\n@Target(#VAL)\n");
 
         private String val;
 
@@ -69,6 +72,7 @@ public class Helper {
     public static final String template =
             "/*PACKAGE*/\n" +
             "//pkg test;\n\n" +
+            "/*ANNODATA*/\n" + // import statements, declaration of Foo/FooContainer
             "/*TYPE*/ //class\n" +
             "class #ClassName {\n" +
             "  /*FIELD*/ //instance var\n" +
@@ -97,7 +101,11 @@ public class Helper {
             "interface TestInterface {}\n\n" +
             "/*TYPE*/\n" +
             "/*ANNOTATION_TYPE*/\n" +
-            "@interface TestAnnotationType{}\n";
+            "@interface TestAnnotationType{}\n" +
+            "class TestPkg {}\n" +
+            "class TestTypeAnno </*TYPE_PARAMETER*/ T extends Object> {\n" +
+            "  String /*TYPE_USE*/[] arr;\n" +
+            "}";
 
     // Create and compile FileObject using values for className and contents
     public static boolean compileCode(String className, String contents,
@@ -150,3 +158,4 @@ public class Helper {
         }
     }
 }
+
