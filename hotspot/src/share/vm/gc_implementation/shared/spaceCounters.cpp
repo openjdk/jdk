@@ -23,10 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/shared/spaceCounters.hpp"
 #include "memory/resourceArea.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 SpaceCounters::SpaceCounters(const char* name, int ordinal, size_t max_size,
                              MutableSpace* m, GenerationCounters* gc) :

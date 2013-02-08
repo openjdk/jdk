@@ -35,6 +35,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/macros.hpp"
 #include "vmreg_sparc.inline.hpp"
 
 // Implementation of StubAssembler
@@ -822,7 +823,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case g1_pre_barrier_slow_id:
       { // G4: previous value of memory
         BarrierSet* bs = Universe::heap()->barrier_set();
@@ -984,7 +985,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ delayed()->restore();
       }
       break;
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
     default:
       { __ set_info("unimplemented entry", dont_gc_arguments);

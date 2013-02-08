@@ -36,12 +36,17 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
+
+#ifdef INCLUDE_NMT
+#include "services/memTracker.hpp"
+#endif // INCLUDE_NMT
 
 bool WhiteBox::_used = false;
 
@@ -85,7 +90,7 @@ WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
   return closure.found();
 WB_END
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   oop result = JNIHandles::resolve(obj);
@@ -108,7 +113,61 @@ WB_END
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
   return (jint)HeapRegion::GrainBytes;
 WB_END
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
+
+#ifdef INCLUDE_NMT
+// Keep track of the 3 allocations in NMTAllocTest so we can free them later
+// on and verify that they're not visible anymore
+static void* nmtMtTest1 = NULL, *nmtMtTest2 = NULL, *nmtMtTest3 = NULL;
+
+// Alloc memory using the test memory type so that we can use that to see if
+// NMT picks it up correctly
+WB_ENTRY(jboolean, WB_NMTAllocTest(JNIEnv* env))
+  void *mem;
+
+  if (!MemTracker::is_on() || MemTracker::shutdown_in_progress()) {
+    return false;
+  }
+
+  // Allocate 2 * 128k + 256k + 1024k and free the 1024k one to make sure we track
+  // everything correctly. Total should be 512k held alive.
+  nmtMtTest1 = os::malloc(128 * 1024, mtTest);
+  mem = os::malloc(1024 * 1024, mtTest);
+  nmtMtTest2 = os::malloc(256 * 1024, mtTest);
+  os::free(mem, mtTest);
+  nmtMtTest3 = os::malloc(128 * 1024, mtTest);
+
+  return true;
+WB_END
+
+// Free the memory allocated by NMTAllocTest
+WB_ENTRY(jboolean, WB_NMTFreeTestMemory(JNIEnv* env))
+
+  if (nmtMtTest1 == NULL || nmtMtTest2 == NULL || nmtMtTest3 == NULL) {
+    return false;
+  }
+
+  os::free(nmtMtTest1, mtTest);
+  nmtMtTest1 = NULL;
+  os::free(nmtMtTest2, mtTest);
+  nmtMtTest2 = NULL;
+  os::free(nmtMtTest3, mtTest);
+  nmtMtTest3 = NULL;
+
+  return true;
+WB_END
+
+// Block until the current generation of NMT data to be merged, used to reliably test the NMT feature
+WB_ENTRY(jboolean, WB_NMTWaitForDataMerge(JNIEnv* env))
+
+  if (!MemTracker::is_on() || MemTracker::shutdown_in_progress()) {
+    return false;
+  }
+
+  return MemTracker::wbtest_wait_for_data_merge();
+WB_END
+
+#endif // INCLUDE_NMT
 
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
@@ -171,12 +230,17 @@ static JNINativeMethod methods[] = {
       CC "(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
   {CC"g1IsHumongous",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
+#ifdef INCLUDE_NMT
+  {CC"NMTAllocTest",       CC"()Z",                   (void*)&WB_NMTAllocTest      },
+  {CC"NMTFreeTestMemory",  CC"()Z",                   (void*)&WB_NMTFreeTestMemory },
+  {CC"NMTWaitForDataMerge",CC"()Z",                   (void*)&WB_NMTWaitForDataMerge},
+#endif // INCLUDE_NMT
 };
 
 #undef CC

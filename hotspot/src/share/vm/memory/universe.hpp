@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,9 @@ class Universe: AllStatic {
   static struct NarrowPtrStruct _narrow_klass;
   static address _narrow_ptrs_base;
 
+  // Aligned size of the metaspace.
+  static size_t _class_metaspace_size;
+
   // array of dummy objects used with +FullGCAlot
   debug_only(static objArrayOop _fullgc_alot_dummy_array;)
   // index of next entry to clear
@@ -277,6 +280,13 @@ class Universe: AllStatic {
   }
   static bool     reserve_metaspace_helper(bool with_base = false);
   static ReservedHeapSpace reserve_heap_metaspace(size_t heap_size, size_t alignment, bool& contiguous);
+
+  static size_t  class_metaspace_size() {
+    return _class_metaspace_size;
+  }
+  static void    set_class_metaspace_size(size_t metaspace_size) {
+    _class_metaspace_size = metaspace_size;
+  }
 
   // Debugging
   static int _verify_count;                           // number of verifies done

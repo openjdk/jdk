@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,12 @@
 #include "runtime/orderAccess.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/accessFlags.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
 #include "gc_implementation/g1/g1OopClosures.hpp"
 #include "gc_implementation/parNew/parOopClosures.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 //
 // A Klass provides:
@@ -75,11 +76,11 @@
 //    [class_loader_data]
 //    [modifier_flags]
 //    [access_flags  ]
-//    [verify_count  ] - not in product
-//    [alloc_count   ]
 //    [last_biased_lock_bulk_revocation_time] (64 bits)
 //    [prototype_header]
 //    [biased_lock_revocation_count]
+//    [verify_count  ] - not in product
+//    [alloc_count   ]
 //    [_modified_oops]
 //    [_accumulated_modified_oops]
 //    [trace_id]
@@ -91,6 +92,7 @@ template <class T> class GrowableArray;
 class ClassLoaderData;
 class klassVtable;
 class ParCompactionManager;
+class KlassSizeStats;
 
 class Klass : public Metadata {
   friend class VMStructs;
@@ -164,17 +166,17 @@ class Klass : public Metadata {
   jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
-#ifndef PRODUCT
-  int           _verify_count;  // to avoid redundant verifies
-#endif
-
-  juint    _alloc_count;        // allocation profiling support
-
   // Biased locking implementation and statistics
   // (the 64-bit chunk goes first, to avoid some fragmentation)
   jlong    _last_biased_lock_bulk_revocation_time;
   markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
+
+#ifndef PRODUCT
+  int           _verify_count;  // to avoid redundant verifies
+#endif
+
+  juint    _alloc_count;        // allocation profiling support
 
   TRACE_DEFINE_KLASS_TRACE_ID;
 
@@ -477,6 +479,9 @@ class Klass : public Metadata {
 
   // Size of klass in word size.
   virtual int size() const = 0;
+#if INCLUDE_SERVICES
+  virtual void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   // Returns the Java name for a class (Resource allocated)
   // For arrays, this returns the name of the element with a leading '['.
@@ -625,13 +630,13 @@ class Klass : public Metadata {
     return oop_oop_iterate(obj, blk);
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // In case we don't have a specialized backward scanner use forward
   // iteration.
   virtual int oop_oop_iterate_backwards_v(oop obj, ExtendedOopClosure* blk) {
     return oop_oop_iterate_v(obj, blk);
   }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Iterates "blk" over all the oops in "obj" (of type "this") within "mr".
   // (I don't see why the _m should be required, but without it the Solaris
@@ -663,7 +668,7 @@ class Klass : public Metadata {
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_DECL)
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_DECL)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define Klass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)      \
   virtual int oop_oop_iterate_backwards##nv_suffix(oop obj,                  \
                                                    OopClosureType* blk) {    \
@@ -673,7 +678,7 @@ class Klass : public Metadata {
 
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   virtual void array_klasses_do(void f(Klass* k)) {}
   virtual void with_array_klasses_do(void f(Klass* k));
