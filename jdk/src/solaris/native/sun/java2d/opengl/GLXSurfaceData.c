@@ -57,21 +57,22 @@ Java_sun_java2d_opengl_GLXSurfaceData_initOps(JNIEnv *env, jobject glxsd,
                                               jobject peer, jlong aData)
 {
 #ifndef HEADLESS
-    OGLSDOps *oglsdo = (OGLSDOps *)SurfaceData_InitOps(env, glxsd,
-                                                       sizeof(OGLSDOps));
     GLXSDOps *glxsdo = (GLXSDOps *)malloc(sizeof(GLXSDOps));
-
-    J2dTraceLn(J2D_TRACE_INFO, "GLXSurfaceData_initOps");
-
-    if (oglsdo == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
-        return;
-    }
 
     if (glxsdo == NULL) {
         JNU_ThrowOutOfMemoryError(env, "creating native GLX ops");
         return;
     }
+
+    OGLSDOps *oglsdo = (OGLSDOps *)SurfaceData_InitOps(env, glxsd,
+                                                       sizeof(OGLSDOps));
+    if (oglsdo == NULL) {
+        free(glxsdo);
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
+
+    J2dTraceLn(J2D_TRACE_INFO, "GLXSurfaceData_initOps");
 
     oglsdo->privOps = glxsdo;
 
