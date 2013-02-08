@@ -1099,8 +1099,9 @@ public class Attr extends JCTree.Visitor {
             Env<AttrContext> localEnv =
                 env.dup(tree, env.info.dup(env.info.scope.dupUnshared()));
             localEnv.info.scope.owner =
-                new MethodSymbol(tree.flags | BLOCK, names.empty, null,
-                                 env.info.scope.owner);
+                new MethodSymbol(tree.flags | BLOCK |
+                    env.info.scope.owner.flags() & STRICTFP, names.empty, null,
+                    env.info.scope.owner);
             if ((tree.flags & STATIC) != 0) localEnv.info.staticLevel++;
 
             // Attribute all type annotations in the block
