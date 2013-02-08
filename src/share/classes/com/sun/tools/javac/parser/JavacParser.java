@@ -3022,7 +3022,7 @@ public class JavacParser implements Parser {
         boolean checkForImports = true;
         boolean firstTypeDecl = true;
         while (token.kind != EOF) {
-            if (token.pos <= endPosTable.errorEndPos) {
+            if (token.pos > 0 && token.pos <= endPosTable.errorEndPos) {
                 // error recovery
                 skip(checkForImports, false, false, false);
                 if (token.kind == EOF)
