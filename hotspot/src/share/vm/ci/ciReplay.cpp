@@ -30,6 +30,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/macros.hpp"
 
 #ifndef PRODUCT
 

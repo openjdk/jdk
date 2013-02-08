@@ -28,8 +28,9 @@
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/macros.hpp"
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
 class DirtyCardQueueSet;
 
@@ -120,6 +121,6 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
 };
 
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1SATBCARDTABLEMODREFBS_HPP
