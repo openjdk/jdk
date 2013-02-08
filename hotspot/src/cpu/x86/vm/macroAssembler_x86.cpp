@@ -5691,7 +5691,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   Address::ScaleFactor scale = Address::times_2;
   int stride = 8;
 
-  if (UseAVX >= 2) {
+  if (UseAVX >= 2 && UseSSE42Intrinsics) {
     Label COMPARE_WIDE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_WIDE_TAIL, COMPARE_SMALL_STR;
     Label COMPARE_WIDE_VECTORS_LOOP, COMPARE_16_CHARS, COMPARE_INDEX_CHAR;
     Label COMPARE_TAIL_LONG;
