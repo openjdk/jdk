@@ -917,7 +917,7 @@ void VMError::report_and_die() {
         bool copy_ok =
           Arguments::copy_expand_pid(ErrorFile, strlen(ErrorFile), buffer, sizeof(buffer));
         if (copy_ok) {
-          fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
+          fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0600);
         }
       }
 
@@ -928,7 +928,7 @@ void VMError::report_and_die() {
         // so use the default name in the current directory
         jio_snprintf(&buffer[len], sizeof(buffer)-len, "%shs_err_pid%u.log",
                      os::file_separator(), os::current_process_id());
-        fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
+        fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0600);
       }
 
       if (fd == -1) {
@@ -937,7 +937,7 @@ void VMError::report_and_die() {
         if (tmpdir != NULL && tmpdir[0] != '\0') {
           jio_snprintf(buffer, sizeof(buffer), "%s%shs_err_pid%u.log",
                        tmpdir, os::file_separator(), os::current_process_id());
-          fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
+          fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0600);
         }
       }
 
