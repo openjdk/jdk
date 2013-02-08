@@ -1501,7 +1501,7 @@ JavaThread::JavaThread(bool is_attaching_via_jni) :
   } else {
     _jni_attach_state = _not_attaching_via_jni;
   }
-  assert(_deferred_card_mark.is_empty(), "Default MemRegion ctor");
+  assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
   _safepoint_visible = false;
 }
 
@@ -1897,9 +1897,16 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     JvmtiExport::cleanup_thread(this);
   }
 
-#if INCLUDE_ALL_GCS
-  // We must flush G1-related buffers before removing a thread from
+  // We must flush any deferred card marks before removing a thread from
   // the list of active threads.
+  Universe::heap()->flush_deferred_store_barrier(this);
+  assert(deferred_card_mark().is_empty(), "Should have been flushed");
+
+#if INCLUDE_ALL_GCS
+  // We must flush the G1-related buffers before removing a thread
+  // from the list of active threads. We must do this after any deferred
+  // card marks have been flushed (above) so that any entries that are
+  // added to the thread's dirty card queue as a result are not lost.
   if (UseG1GC) {
     flush_barrier_queues();
   }
