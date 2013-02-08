@@ -52,6 +52,7 @@
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif

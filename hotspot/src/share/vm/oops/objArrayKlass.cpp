@@ -43,7 +43,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/copy.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
@@ -54,7 +55,7 @@
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, KlassHandle klass_handle, Symbol* name, TRAPS) {
   assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
@@ -461,7 +462,7 @@ void ObjArrayKlass::oop_follow_contents(oop obj) {
   }
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void ObjArrayKlass::oop_follow_contents(ParCompactionManager* cm,
                                         oop obj) {
   assert(obj->is_array(), "obj must be array");
@@ -472,7 +473,7 @@ void ObjArrayKlass::oop_follow_contents(ParCompactionManager* cm,
     objarray_follow_contents<oop>(cm, obj, 0);
   }
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #define if_do_metadata_checked(closure, nv_suffix)                    \
   /* Make sure the non-virtual and the virtual versions match. */     \
@@ -573,7 +574,7 @@ int ObjArrayKlass::oop_adjust_pointers(oop obj) {
   return size;
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void ObjArrayKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_objArray(), "obj must be obj array");
   ObjArrayKlass_OOP_ITERATE( \
@@ -591,7 +592,7 @@ int ObjArrayKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   ObjArrayKlass_OOP_ITERATE(a, p, PSParallelCompact::adjust_pointer(p))
   return size;
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 // JVM support
 

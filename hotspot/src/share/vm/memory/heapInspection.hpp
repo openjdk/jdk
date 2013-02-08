@@ -28,6 +28,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/annotations.hpp"
+#include "utilities/macros.hpp"
 
 #if INCLUDE_SERVICES
 

@@ -56,7 +56,8 @@
 #include "runtime/thread.inline.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
@@ -67,7 +68,7 @@
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -2043,7 +2044,7 @@ void InstanceKlass::oop_follow_contents(oop obj) {
     assert_is_in_closed_subset)
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void InstanceKlass::oop_follow_contents(ParCompactionManager* cm,
                                         oop obj) {
   assert(obj != NULL, "can't follow the content of NULL object");
@@ -2055,7 +2056,7 @@ void InstanceKlass::oop_follow_contents(ParCompactionManager* cm,
     PSParallelCompact::mark_and_push(cm, p), \
     assert_is_in)
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 // closure's do_metadata() method dictates whether the given closure should be
 // applied to the klass ptr in the object header.
@@ -2083,7 +2084,7 @@ int InstanceKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) 
   return size_helper();                                                 \
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
                                                                                 \
 int InstanceKlass::oop_oop_iterate_backwards##nv_suffix(oop obj,                \
@@ -2101,7 +2102,7 @@ int InstanceKlass::oop_oop_iterate_backwards##nv_suffix(oop obj,                
     assert_is_in_closed_subset)                                                 \
    return size_helper();                                                        \
 }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #define InstanceKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix) \
                                                                         \
@@ -2125,10 +2126,10 @@ ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_DEFN_m)
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 int InstanceKlass::oop_adjust_pointers(oop obj) {
   int size = size_helper();
@@ -2140,7 +2141,7 @@ int InstanceKlass::oop_adjust_pointers(oop obj) {
   return size;
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void InstanceKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   InstanceKlass_OOP_MAP_REVERSE_ITERATE( \
     obj, \
@@ -2160,7 +2161,7 @@ int InstanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   return size;
 }
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
   assert(is_loader_alive(is_alive), "this klass should be live");
