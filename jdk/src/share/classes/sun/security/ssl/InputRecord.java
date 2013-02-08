@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,43 +133,173 @@ class InputRecord extends ByteArrayInputStream implements Record {
         return handshakeHash;
     }
 
+    void decrypt(MAC signer, CipherBox box) throws BadPaddingException {
+
+        BadPaddingException reservedBPE = null;
+        int tagLen = signer.MAClen();
+        int cipheredLength = count - headerSize;
+
+        if (!box.isNullCipher()) {
+            // sanity check length of the ciphertext
+            if (!box.sanityCheck(tagLen, cipheredLength)) {
+                throw new BadPaddingException(
+                    "ciphertext sanity check failed");
+            }
+
+            try {
+                // Note that the CipherBox.decrypt() does not change
+                // the capacity of the buffer.
+                count = headerSize +
+                        box.decrypt(buf, headerSize, cipheredLength, tagLen);
+            } catch (BadPaddingException bpe) {
+                // RFC 2246 states that decryption_failed should be used
+                // for this purpose. However, that allows certain attacks,
+                // so we just send bad record MAC. We also need to make
+                // sure to always check the MAC to avoid a timing attack
+                // for the same issue. See paper by Vaudenay et al and the
+                // update in RFC 4346/5246.
+                //
+                // Failover to message authentication code checking.
+                reservedBPE = bpe;
+            }
+        }
+
+        if (tagLen != 0) {
+            int macOffset = count - tagLen;
+            int contentLen = macOffset - headerSize;
+
+            // Note that although it is not necessary, we run the same MAC
+            // computation and comparison on the payload for both stream
+            // cipher and CBC block cipher.
+            if (contentLen < 0) {
+                // negative data length, something is wrong
+                if (reservedBPE == null) {
+                    reservedBPE = new BadPaddingException("bad record");
+                }
+
+                // set offset of the dummy MAC
+                macOffset = headerSize + cipheredLength - tagLen;
+                contentLen = macOffset - headerSize;
+            }
+
+            count -= tagLen;  // Set the count before any MAC checking
+                              // exception occurs, so that the following
+                              // process can read the actual decrypted
+                              // content (minus the MAC) in the fragment
+                              // if necessary.
+
+            // Run MAC computation and comparison on the payload.
+            if (checkMacTags(contentType(),
+                    buf, headerSize, contentLen, signer, false)) {
+                if (reservedBPE == null) {
+                    reservedBPE = new BadPaddingException("bad record MAC");
+                }
+            }
+
+            // Run MAC computation and comparison on the remainder.
+            //
+            // It is only necessary for CBC block cipher.  It is used to get a
+            // constant time of MAC computation and comparison on each record.
+            if (box.isCBCMode()) {
+                int remainingLen = calculateRemainingLen(
+                                        signer, cipheredLength, contentLen);
+
+                // NOTE: remainingLen may be bigger (less than 1 block of the
+                // hash algorithm of the MAC) than the cipheredLength. However,
+                // We won't need to worry about it because we always use a
+                // maximum buffer for every record.  We need a change here if
+                // we use small buffer size in the future.
+                if (remainingLen > buf.length) {
+                    // unlikely to happen, just a placehold
+                    throw new RuntimeException(
+                        "Internal buffer capacity error");
+                }
+
+                // Won't need to worry about the result on the remainder. And
+                // then we won't need to worry about what's actual data to
+                // check MAC tag on.  We start the check from the header of the
+                // buffer so that we don't need to construct a new byte buffer.
+                checkMacTags(contentType(), buf, 0, remainingLen, signer, true);
+            }
+        }
+
+        // Is it a failover?
+        if (reservedBPE != null) {
+            throw reservedBPE;
+        }
+    }
+
     /*
-     * Verify and remove the MAC ... used for all records.
+     * Run MAC computation and comparison
+     *
+     * Please DON'T change the content of the byte buffer parameter!
      */
-    boolean checkMAC(MAC signer) {
-        int len = signer.MAClen();
-        if (len == 0) { // no mac
-            return true;
-        }
+    static boolean checkMacTags(byte contentType, byte[] buffer,
+            int offset, int contentLen, MAC signer, boolean isSimulated) {
 
-        int offset = count - len;
-
-        if (offset < headerSize) {
-            // data length would be negative, something is wrong
-            return false;
-        }
-
-        byte[] mac = signer.compute(contentType(), buf,
-            headerSize, offset - headerSize);
-
-        if (len != mac.length) {
+        int tagLen = signer.MAClen();
+        byte[] hash = signer.compute(
+                contentType, buffer, offset, contentLen, isSimulated);
+        if (hash == null || tagLen != hash.length) {
+            // Something is wrong with MAC implementation.
             throw new RuntimeException("Internal MAC error");
         }
 
-        for (int i = 0; i < len; i++) {
-            if (buf[offset + i] != mac[i]) {
-                return false;
+        int[] results = compareMacTags(buffer, offset + contentLen, hash);
+        return (results[0] != 0);
+    }
+
+    /*
+     * A constant-time comparison of the MAC tags.
+     *
+     * Please DON'T change the content of the byte buffer parameter!
+     */
+    private static int[] compareMacTags(
+            byte[] buffer, int offset, byte[] tag) {
+
+        // An array of hits is used to prevent Hotspot optimization for
+        // the purpose of a constant-time check.
+        int[] results = {0, 0};    // {missed #, matched #}
+
+        // The caller ensures there are enough bytes available in the buffer.
+        // So we won't need to check the length of the buffer.
+        for (int i = 0; i < tag.length; i++) {
+            if (buffer[offset + i] != tag[i]) {
+                results[0]++;       // mismatched bytes
+            } else {
+                results[1]++;       // matched bytes
             }
         }
-        count -= len;
-        return true;
+
+        return results;
     }
 
-    void decrypt(CipherBox box) throws BadPaddingException {
-        int len = count - headerSize;
-        count = headerSize + box.decrypt(buf, headerSize, len);
-    }
+    /*
+     * Calculate the length of a dummy buffer to run MAC computation
+     * and comparison on the remainder.
+     *
+     * The caller MUST ensure that the fullLen is not less than usedLen.
+     */
+    static int calculateRemainingLen(
+            MAC signer, int fullLen, int usedLen) {
 
+        int blockLen = signer.hashBlockLen();
+        int minimalPaddingLen = signer.minimalPaddingLen();
+
+        // (blockLen - minimalPaddingLen) is the maximum message size of
+        // the last block of hash function operation. See FIPS 180-4, or
+        // MD5 specification.
+        fullLen += 13 - (blockLen - minimalPaddingLen);
+        usedLen += 13 - (blockLen - minimalPaddingLen);
+
+        // Note: fullLen is always not less than usedLen, and blockLen
+        // is always bigger than minimalPaddingLen, so we don't worry
+        // about negative values. 0x01 is added to the result to ensure
+        // that the return value is positive.  The extra one byte does
+        // not impact the overall MAC compression function evaluations.
+        return 0x01 + (int)(Math.ceil(fullLen/(1.0d * blockLen)) -
+                Math.ceil(usedLen/(1.0d * blockLen))) * signer.hashBlockLen();
+    }
 
     /*
      * Well ... hello_request messages are _never_ hashed since we can't
