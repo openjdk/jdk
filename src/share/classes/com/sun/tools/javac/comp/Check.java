@@ -1023,7 +1023,7 @@ public class Check {
         };
 
     /** Check that given modifiers are legal for given symbol and
-     *  return modifiers together with any implicit modififiers for that symbol.
+     *  return modifiers together with any implicit modifiers for that symbol.
      *  Warning: we can't use flags() here since this method
      *  is called during class enter, when flags() would cause a premature
      *  completion.
@@ -1069,7 +1069,7 @@ public class Check {
             }
             // Imply STRICTFP if owner has STRICTFP set.
             if (((flags|implicit) & Flags.ABSTRACT) == 0)
-              implicit |= sym.owner.flags_field & STRICTFP;
+                implicit |= sym.owner.flags_field & STRICTFP;
             break;
         case TYP:
             if (sym.isLocal()) {
