@@ -1393,9 +1393,9 @@ void Method::sort_methods(Array<Method*>* methods,
 
 
 //-----------------------------------------------------------------------------------
-// Non-product code
+// Non-product code unless JVM/TI needs it
 
-#ifndef PRODUCT
+#if !defined(PRODUCT) || INCLUDE_JVMTI
 class SignatureTypePrinter : public SignatureTypeNames {
  private:
   outputStream* _st;
@@ -1430,8 +1430,13 @@ void Method::print_name(outputStream* st) {
   sig.print_parameters();
   st->print(")");
 }
+#endif // !PRODUCT || INCLUDE_JVMTI
 
 
+//-----------------------------------------------------------------------------------
+// Non-product code
+
+#ifndef PRODUCT
 void Method::print_codes_on(outputStream* st) const {
   print_codes_on(0, code_size(), st);
 }

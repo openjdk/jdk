@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
 //    0x00000800 |       2048 - previous class breakpoint mgmt
 //    0x00001000 |       4096 - detect calls to obsolete methods
 //    0x00002000 |       8192 - fail a guarantee() in addition to detection
-//    0x00004000 |      16384 - unused
+//    0x00004000 |      16384 - detect old/obsolete methods in metadata
 //    0x00008000 |      32768 - old/new method matching/add/delete
 //    0x00010000 |      65536 - impl details: CP size info
 //    0x00020000 |     131072 - impl details: CP merge pass info
@@ -80,6 +80,13 @@
     ResourceMark rm; \
     tty->print("RedefineClasses-0x%x: ", level); \
     tty->print_cr args; \
+  } while (0)
+
+#define RC_TRACE_NO_CR(level, args) \
+  if ((TraceRedefineClasses & level) != 0) { \
+    ResourceMark rm; \
+    tty->print("RedefineClasses-0x%x: ", level); \
+    tty->print args; \
   } while (0)
 
 #define RC_TRACE_WITH_THREAD(level, thread, args) \
