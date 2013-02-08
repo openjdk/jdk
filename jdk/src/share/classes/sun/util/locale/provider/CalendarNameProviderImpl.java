@@ -58,6 +58,9 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                 if (field == DAY_OF_WEEK || field == YEAR) {
                     --value;
                 }
+                if (value < 0 || value >= strings.length) {
+                    return null;
+                }
                 name = strings[value];
                 // If name is empty in standalone, try its `format' style.
                 if (name.length() == 0
