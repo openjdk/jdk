@@ -1199,66 +1199,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(
   return ik;
 }
 
-#ifdef KERNEL
-// Some classes on the bootstrap class path haven't been installed on the
-// system yet.  Call the DownloadManager method to make them appear in the
-// bootstrap class path and try again to load the named class.
-// Note that with delegation class loaders all classes in another loader will
-// first try to call this so it'd better be fast!!
-static instanceKlassHandle download_and_retry_class_load(
-                                                    Symbol* class_name,
-                                                    TRAPS) {
-
-  Klass* dlm = SystemDictionary::DownloadManager_klass();
-  instanceKlassHandle nk;
-
-  // If download manager class isn't loaded just return.
-  if (dlm == NULL) return nk;
-
-  { HandleMark hm(THREAD);
-    ResourceMark rm(THREAD);
-    Handle s = java_lang_String::create_from_symbol(class_name, CHECK_(nk));
-    Handle class_string = java_lang_String::externalize_classname(s, CHECK_(nk));
-
-    // return value
-    JavaValue result(T_OBJECT);
-
-    // Call the DownloadManager.  We assume that it has a lock because
-    // multiple classes could be not found and downloaded at the same time.
-    // class sun.misc.DownloadManager;
-    // public static String getBootClassPathEntryForClass(String className);
-    JavaCalls::call_static(&result,
-                       KlassHandle(THREAD, dlm),
-                       vmSymbols::getBootClassPathEntryForClass_name(),
-                       vmSymbols::string_string_signature(),
-                       class_string,
-                       CHECK_(nk));
-
-    // Get result.string and add to bootclasspath
-    assert(result.get_type() == T_OBJECT, "just checking");
-    oop obj = (oop) result.get_jobject();
-    if (obj == NULL) { return nk; }
-
-    Handle h_obj(THREAD, obj);
-    char* new_class_name = java_lang_String::as_platform_dependent_str(h_obj,
-                                                                  CHECK_(nk));
-
-    // lock the loader
-    // we use this lock because JVMTI does.
-    Handle loader_lock(THREAD, SystemDictionary::system_loader_lock());
-
-    ObjectLocker ol(loader_lock, THREAD);
-    // add the file to the bootclasspath
-    ClassLoader::update_class_path_entry_list(new_class_name, true);
-  } // end HandleMark
-
-  if (TraceClassLoading) {
-    ClassLoader::print_bootclasspath();
-  }
-  return ClassLoader::load_classfile(class_name, CHECK_(nk));
-}
-#endif // KERNEL
-
 
 instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
@@ -1277,15 +1217,6 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
       PerfTraceTime vmtimer(ClassLoader::perf_sys_classload_time());
       k = ClassLoader::load_classfile(class_name, CHECK_(nh));
     }
-
-#ifdef KERNEL
-    // If the VM class loader has failed to load the class, call the
-    // DownloadManager class to make it magically appear on the classpath
-    // and try again.  This is only configured with the Kernel VM.
-    if (k.is_null()) {
-      k = download_and_retry_class_load(class_name, CHECK_(nh));
-    }
-#endif // KERNEL
 
     // find_or_define_instance_class may return a different InstanceKlass
     if (!k.is_null()) {
@@ -1822,13 +1753,7 @@ bool SystemDictionary::initialize_wk_klass(WKID id, int init_opt, TRAPS) {
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   Klass**    klassp = &_well_known_klasses[id];
   bool must_load = (init_opt < SystemDictionary::Opt);
-  bool try_load  = true;
-  if (init_opt == SystemDictionary::Opt_Kernel) {
-#ifndef KERNEL
-    try_load = false;
-#endif //KERNEL
-  }
-  if ((*klassp) == NULL && try_load) {
+  if ((*klassp) == NULL) {
     if (must_load) {
       (*klassp) = resolve_or_fail(symbol, true, CHECK_0); // load required class
     } else {
@@ -1917,12 +1842,6 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   _box_klasses[T_LONG]    = WK_KLASS(Long_klass);
   //_box_klasses[T_OBJECT]  = WK_KLASS(object_klass);
   //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
-
-#ifdef KERNEL
-  if (DownloadManager_klass() == NULL) {
-    warning("Cannot find sun/jkernel/DownloadManager");
-  }
-#endif // KERNEL
 
   { // Compute whether we should use loadClass or loadClassInternal when loading classes.
     Method* method = InstanceKlass::cast(ClassLoader_klass())->find_method(vmSymbols::loadClassInternal_name(), vmSymbols::string_class_signature());

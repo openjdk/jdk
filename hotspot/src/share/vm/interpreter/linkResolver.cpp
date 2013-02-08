@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1241,7 +1241,7 @@ void LinkResolver::resolve_handle_call(CallInfo& result, KlassHandle resolved_kl
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
   assert(EnableInvokeDynamic, "");
-  pool->set_invokedynamic();    // mark header to flag active call sites
+  pool->set_has_invokedynamic();    // mark header to flag active call sites
 
   //resolve_pool(<resolved_klass>, method_name, method_signature, current_klass, pool, index, CHECK);
   Symbol* method_name       = pool->name_ref_at(index);

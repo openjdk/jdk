@@ -399,7 +399,7 @@ frame os::current_frame() {
   typedef intptr_t*      get_fp_func           ();
   get_fp_func* func = CAST_TO_FN_PTR(get_fp_func*,
                                      StubRoutines::x86::get_previous_fp_entry());
-  if (func == NULL) return frame(NULL, NULL, NULL);
+  if (func == NULL) return frame();
   intptr_t* fp = (*func)();
 #else
   intptr_t* fp = _get_previous_fp();
@@ -410,7 +410,7 @@ frame os::current_frame() {
                 CAST_FROM_FN_PTR(address, os::current_frame));
   if (os::is_first_C_frame(&myframe)) {
     // stack is not walkable
-    return frame(NULL, NULL, NULL);
+    return frame();
   } else {
     return os::get_sender_for_C_frame(&myframe);
   }

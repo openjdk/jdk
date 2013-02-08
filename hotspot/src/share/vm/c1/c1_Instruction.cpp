@@ -188,7 +188,7 @@ ciType* LoadIndexed::exact_type() const {
 
 ciType* LoadIndexed::declared_type() const {
   ciType* array_type = array()->declared_type();
-  if (array_type == NULL) {
+  if (array_type == NULL || !array_type->is_loaded()) {
     return NULL;
   }
   assert(array_type->is_array_klass(), "what else?");

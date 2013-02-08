@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import sun.jvm.hotspot.types.*;
 // to the sys_thread_t structure of the classic JVM implementation.
 public class OSThread extends VMObject {
     private static JIntField interruptedField;
+    private static JIntField threadIdField;
     static {
         VM.registerVMInitializedObserver(new Observer() {
             public void update(Observable o, Object data) {
@@ -43,6 +44,7 @@ public class OSThread extends VMObject {
     private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("OSThread");
         interruptedField = type.getJIntField("_interrupted");
+        threadIdField = type.getJIntField("_thread_id");
     }
 
     public OSThread(Address addr) {
@@ -52,4 +54,9 @@ public class OSThread extends VMObject {
     public boolean interrupted() {
         return ((int)interruptedField.getValue(addr)) != 0;
     }
+
+    public int threadId() {
+        return (int)threadIdField.getValue(addr);
+    }
+
 }

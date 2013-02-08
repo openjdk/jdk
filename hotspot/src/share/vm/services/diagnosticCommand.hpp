@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/diagnosticCommand_ext.hpp"
+#include "utilities/macros.hpp"
 
 class HelpDCmd : public DCmdWithParser {
 protected:
@@ -178,7 +179,7 @@ public:
 };
 #endif // INCLUDE_SERVICES
 
-// See also: inspeactheap in attachListener.cpp
+// See also: inspectheap in attachListener.cpp
 class ClassHistogramDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _all;
@@ -189,6 +190,27 @@ public:
   }
   static const char* description() {
     return "Provide statistics about the Java heap usage.";
+  }
+  static const char* impact() {
+    return "High: Depends on Java heap size and content.";
+  }
+  static int num_arguments();
+  virtual void execute(TRAPS);
+};
+
+class ClassStatsDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _all;
+  DCmdArgument<bool> _csv;
+  DCmdArgument<bool> _help;
+  DCmdArgument<char*> _columns;
+public:
+  ClassStatsDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "GC.class_stats";
+  }
+  static const char* description() {
+    return "Provide statistics about Java class meta data. Requires -XX:+UnlockDiagnosticVMOptions.";
   }
   static const char* impact() {
     return "High: Depends on Java heap size and content.";
@@ -235,6 +257,16 @@ class JMXStartRemoteDCmd : public DCmdWithParser {
   DCmdArgument<char *> _jmxremote_ssl_enabled_protocols;
   DCmdArgument<char *> _jmxremote_ssl_need_client_auth;
   DCmdArgument<char *> _jmxremote_ssl_config_file;
+
+  // JDP support
+  // Keep autodiscovery char* not bool to pass true/false
+  // as property value to java level.
+  DCmdArgument<char *> _jmxremote_autodiscovery;
+  DCmdArgument<jlong>  _jdp_port;
+  DCmdArgument<char *> _jdp_address;
+  DCmdArgument<char *> _jdp_source_addr;
+  DCmdArgument<jlong>  _jdp_ttl;
+  DCmdArgument<jlong>  _jdp_pause;
 
 public:
   JMXStartRemoteDCmd(outputStream *output, bool heap_allocated);

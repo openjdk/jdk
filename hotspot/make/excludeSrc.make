@@ -72,12 +72,10 @@ ifeq ($(INCLUDE_CDS), false)
       Src_Files_EXCLUDE += metaspaceShared.cpp
 endif
 
-ifeq ($(INCLUDE_ALTERNATE_GCS), false)
-      CXXFLAGS += -DINCLUDE_ALTERNATE_GCS=0
-      CFLAGS += -DINCLUDE_ALTERNATE_GCS=0
+ifeq ($(INCLUDE_ALL_GCS), false)
+      CXXFLAGS += -DINCLUDE_ALL_GCS=0
+      CFLAGS += -DINCLUDE_ALL_GCS=0
 
-      CXXFLAGS += -DSERIALGC
-      CFLAGS += -DSERIALGC
       Src_Files_EXCLUDE += \
 	cmsAdaptiveSizePolicy.cpp cmsCollectorPolicy.cpp \
 	cmsGCAdaptivePolicyCounters.cpp cmsLockVerifier.cpp cmsPermGen.cpp compactibleFreeListSpace.cpp \
