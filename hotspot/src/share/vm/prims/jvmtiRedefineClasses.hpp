@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,9 +421,10 @@ class VM_RedefineClasses: public VM_Operation {
   // and in all direct and indirect subclasses.
   void increment_class_counter(InstanceKlass *ik, TRAPS);
 
-  // Support for constant pool merging (these routines are in alpha
-  // order):
+  // Support for constant pool merging (these routines are in alpha order):
   void append_entry(constantPoolHandle scratch_cp, int scratch_i,
+    constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS);
+  int find_or_append_indirect_entry(constantPoolHandle scratch_cp, int scratch_i,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS);
   int find_new_index(int old_index);
   bool is_unresolved_class_mismatch(constantPoolHandle cp1, int index1,
@@ -487,17 +488,4 @@ class VM_RedefineClasses: public VM_Operation {
   // and redefine implementation
   static bool is_modifiable_class(oop klass_mirror);
 };
-
-
-// Helper class to mark and unmark metadata used on the stack as either handles
-// or executing methods, so that it can't be deleted during class redefinition
-// and class unloading.
-class MetadataOnStackMark : public StackObj {
-  NOT_PRODUCT(static bool _is_active;)
- public:
-  MetadataOnStackMark() NOT_JVMTI_RETURN;
-  ~MetadataOnStackMark() NOT_JVMTI_RETURN;
-  static void record(Metadata* m) NOT_JVMTI_RETURN;
-};
-
 #endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP

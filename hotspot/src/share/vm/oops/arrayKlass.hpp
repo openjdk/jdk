@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,14 @@ class ArrayKlass: public Klass {
   // Sizing
   static int header_size()                 { return sizeof(ArrayKlass)/HeapWordSize; }
   static int static_size(int header_size);
+
+#if INCLUDE_SERVICES
+  virtual void collect_statistics(KlassSizeStats *sz) const {
+    Klass::collect_statistics(sz);
+    // Do nothing for now, but remember to modify if you add new
+    // stuff to ArrayKlass.
+  }
+#endif
 
   // Java vtable
   klassVtable* vtable() const;             // return new klassVtable

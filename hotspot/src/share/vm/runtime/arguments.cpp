@@ -827,7 +827,8 @@ bool Arguments::process_argument(const char* arg,
     return true;
   }
 
-  const char * const argname = *arg == '+' || *arg == '-' ? arg + 1 : arg;
+  bool has_plus_minus = (*arg == '+' || *arg == '-');
+  const char* const argname = has_plus_minus ? arg + 1 : arg;
   if (is_newly_obsolete(arg, &since)) {
     char version[256];
     since.to_string(version, sizeof(version));
@@ -838,13 +839,29 @@ bool Arguments::process_argument(const char* arg,
   // For locked flags, report a custom error message if available.
   // Otherwise, report the standard unrecognized VM option.
 
-  Flag* locked_flag = Flag::find_flag((char*)argname, strlen(argname), true);
-  if (locked_flag != NULL) {
+  size_t arg_len;
+  const char* equal_sign = strchr(argname, '=');
+  if (equal_sign == NULL) {
+    arg_len = strlen(argname);
+  } else {
+    arg_len = equal_sign - argname;
+  }
+
+  Flag* found_flag = Flag::find_flag((char*)argname, arg_len, true);
+  if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
-    locked_flag->get_locked_message(locked_message_buf, BUFLEN);
+    found_flag->get_locked_message(locked_message_buf, BUFLEN);
     if (strlen(locked_message_buf) == 0) {
-      jio_fprintf(defaultStream::error_stream(),
-        "Unrecognized VM option '%s'\n", argname);
+      if (found_flag->is_bool() && !has_plus_minus) {
+        jio_fprintf(defaultStream::error_stream(),
+          "Missing +/- setting for VM option '%s'\n", argname);
+      } else if (!found_flag->is_bool() && has_plus_minus) {
+        jio_fprintf(defaultStream::error_stream(),
+          "Unexpected +/- setting in VM option '%s'\n", argname);
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+          "Improperly specified VM option '%s'\n", argname);
+      }
     } else {
       jio_fprintf(defaultStream::error_stream(), "%s", locked_message_buf);
     }
@@ -1429,13 +1446,18 @@ void Arguments::set_ergonomics_flags() {
     }
     // Set the ClassMetaspaceSize to something that will not need to be
     // expanded, since it cannot be expanded.
-    if (UseCompressedKlassPointers && FLAG_IS_DEFAULT(ClassMetaspaceSize)) {
-      // 100,000 classes seems like a good size, so 100M assumes around 1K
-      // per klass.   The vtable and oopMap is embedded so we don't have a fixed
-      // size per klass.   Eventually, this will be parameterized because it
-      // would also be useful to determine the optimal size of the
-      // systemDictionary.
-      FLAG_SET_ERGO(uintx, ClassMetaspaceSize, 100*M);
+    if (UseCompressedKlassPointers) {
+      if (ClassMetaspaceSize > KlassEncodingMetaspaceMax) {
+        warning("Class metaspace size is too large for UseCompressedKlassPointers");
+        FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+      } else if (FLAG_IS_DEFAULT(ClassMetaspaceSize)) {
+        // 100,000 classes seems like a good size, so 100M assumes around 1K
+        // per klass.   The vtable and oopMap is embedded so we don't have a fixed
+        // size per klass.   Eventually, this will be parameterized because it
+        // would also be useful to determine the optimal size of the
+        // systemDictionary.
+        FLAG_SET_ERGO(uintx, ClassMetaspaceSize, 100*M);
+      }
     }
   }
   // Also checks that certain machines are slower with compressed oops
@@ -2472,10 +2494,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump", &tail)) {
-#if defined(KERNEL)
-      vm_exit_during_initialization(
-          "Dumping a shared archive is not supported on the Kernel JVM.", NULL);
-#elif !INCLUDE_CDS
+#if !INCLUDE_CDS
       vm_exit_during_initialization(
           "Dumping a shared archive is not supported in this VM.", NULL);
 #else
@@ -3462,36 +3481,6 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
 
   PropertyList_add(plist, k, v);
 }
-
-#ifdef KERNEL
-char *Arguments::get_kernel_properties() {
-  // Find properties starting with kernel and append them to string
-  // We need to find out how long they are first because the URL's that they
-  // might point to could get long.
-  int length = 0;
-  SystemProperty* prop;
-  for (prop = _system_properties; prop != NULL; prop = prop->next()) {
-    if (strncmp(prop->key(), "kernel.", 7 ) == 0) {
-      length += (strlen(prop->key()) + strlen(prop->value()) + 5);  // "-D ="
-    }
-  }
-  // Add one for null terminator.
-  char *props = AllocateHeap(length + 1, mtInternal);
-  if (length != 0) {
-    int pos = 0;
-    for (prop = _system_properties; prop != NULL; prop = prop->next()) {
-      if (strncmp(prop->key(), "kernel.", 7 ) == 0) {
-        jio_snprintf(&props[pos], length-pos,
-                     "-D%s=%s ", prop->key(), prop->value());
-        pos = strlen(props);
-      }
-    }
-  }
-  // null terminate props in case of null
-  props[length] = '\0';
-  return props;
-}
-#endif // KERNEL
 
 // Copies src into buf, replacing "%%" with "%" and "%p" with pid
 // Returns true if all of the source pointed by src has been copied over to

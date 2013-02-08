@@ -1168,7 +1168,7 @@ void ciEnv::dump_replay_data() {
 
 void ciEnv::dump_replay_data(outputStream* out) {
   ASSERT_IN_VM;
-
+  ResourceMark rm;
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
   out->print_cr("JvmtiExport can_hotswap_or_post_breakpoint %d", _jvmti_can_hotswap_or_post_breakpoint);
