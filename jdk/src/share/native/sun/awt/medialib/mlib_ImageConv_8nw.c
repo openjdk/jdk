@@ -1654,6 +1654,8 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
   mlib_s32 *buffo, *buffi;
   GET_SRC_DST_PARAMETERS(DTYPE);
 
+  mlib_status status = MLIB_SUCCESS;
+
   if (scale > 30) {
     fscale *= 1.0/(1 << 30);
     scale -= 30;
@@ -1673,14 +1675,20 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
     k[i] = kernel[i]*fscale;
   }
 
-  if (m == 1) return mlib_ImageConv1xN(dst, src, k, n, dn, cmask);
+  if (m == 1) {
+    status = mlib_ImageConv1xN(dst, src, k, n, dn, cmask);
+    FREE_AND_RETURN_STATUS;
+  }
 
   bsize = (n + 3)*wid;
 
   if ((bsize > BUFF_SIZE) || (n > MAX_N)) {
     pbuff = mlib_malloc(sizeof(FTYPE)*bsize + sizeof(FTYPE *)*2*(n + 1));
 
-    if (pbuff == NULL) return MLIB_FAILURE;
+    if (pbuff == NULL) {
+      status = MLIB_FAILURE;
+      FREE_AND_RETURN_STATUS;
+    }
     buffs = (FTYPE   **)(pbuff + bsize);
   }
 
@@ -2034,9 +2042,7 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
     }
   }
 
-  if (pbuff != buff) mlib_free(pbuff);
-
-  return MLIB_SUCCESS;
+  FREE_AND_RETURN_STATUS;
 }
 
 /***************************************************************/
