@@ -800,8 +800,12 @@ class Method : public Metadata {
   static bool has_unloaded_classes_in_signature(methodHandle m, TRAPS);
 
   // Printing
-  void print_short_name(outputStream* st = tty)  /*PRODUCT_RETURN*/; // prints as klassname::methodname; Exposed so field engineers can debug VM
+  void print_short_name(outputStream* st = tty); // prints as klassname::methodname; Exposed so field engineers can debug VM
+#if INCLUDE_JVMTI
+  void print_name(outputStream* st = tty); // prints as "virtual void foo(int)"; exposed for TraceRedefineClasses
+#else
   void print_name(outputStream* st = tty)        PRODUCT_RETURN; // prints as "virtual void foo(int)"
+#endif
 
   // Helper routine used for method sorting
   static void sort_methods(Array<Method*>* methods,

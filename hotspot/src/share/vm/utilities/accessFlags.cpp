@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ void AccessFlags::atomic_clear_bits(jint bits) {
   } while(f != old_flags);
 }
 
-#ifndef PRODUCT
+#if !defined(PRODUCT) || INCLUDE_JVMTI
 
 void AccessFlags::print_on(outputStream* st) const {
   if (is_public      ()) st->print("public "      );
@@ -80,7 +80,7 @@ void AccessFlags::print_on(outputStream* st) const {
   if (on_stack       ()) st->print("{on_stack} "  );
 }
 
-#endif
+#endif // !PRODUCT || INCLUDE_JVMTI
 
 void accessFlags_init() {
   assert(sizeof(AccessFlags) == sizeof(jint), "just checking size of flags");
