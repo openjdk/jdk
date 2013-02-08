@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3746,28 +3746,6 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
                              name)) {
         library = os::dll_load(buffer, ebuf, sizeof ebuf);
       }
-#ifdef KERNEL
-      // Download instrument dll
-      if (library == NULL && strcmp(name, "instrument") == 0) {
-        char *props = Arguments::get_kernel_properties();
-        char *home  = Arguments::get_java_home();
-        const char *fmt   = "%s/bin/java %s -Dkernel.background.download=false"
-                      " sun.jkernel.DownloadManager -download client_jvm";
-        size_t length = strlen(props) + strlen(home) + strlen(fmt) + 1;
-        char *cmd = NEW_C_HEAP_ARRAY(char, length, mtThread);
-        jio_snprintf(cmd, length, fmt, home, props);
-        int status = os::fork_and_exec(cmd);
-        FreeHeap(props);
-        if (status == -1) {
-          warning(cmd);
-          vm_exit_during_initialization("fork_and_exec failed: %s",
-                                         strerror(errno));
-        }
-        FREE_C_HEAP_ARRAY(char, cmd, mtThread);
-        // when this comes back the instrument.dll should be where it belongs.
-        library = os::dll_load(buffer, ebuf, sizeof ebuf);
-      }
-#endif // KERNEL
       if (library == NULL) { // Try the local directory
         char ns[1] = {0};
         if (os::dll_build_name(buffer, sizeof(buffer), ns, name)) {

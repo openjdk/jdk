@@ -88,12 +88,12 @@ void GraphKit::gen_stub(address C_function,
                                             thread,
                                             in_bytes(JavaThread::frame_anchor_offset()) +
                                             in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
-#if defined(SPARC) || defined(IA64)
+#if defined(SPARC)
   Node* adr_flags = basic_plus_adr(top(),
                                    thread,
                                    in_bytes(JavaThread::frame_anchor_offset()) +
                                    in_bytes(JavaFrameAnchor::flags_offset()));
-#endif /* defined(SPARC) || defined(IA64) */
+#endif /* defined(SPARC) */
 
 
   // Drop in the last_Java_sp.  last_Java_fp is not touched.
@@ -102,10 +102,8 @@ void GraphKit::gen_stub(address C_function,
   // users will look at the other fields.
   //
   Node *adr_sp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_sp_offset()));
-#ifndef IA64
   Node *last_sp = basic_plus_adr(top(), frameptr(), (intptr_t) STACK_BIAS);
   store_to_memory(NULL, adr_sp, last_sp, T_ADDRESS, NoAlias);
-#endif
 
   // Set _thread_in_native
   // The order of stores into TLS is critical!  Setting _thread_in_native MUST
@@ -210,19 +208,12 @@ void GraphKit::gen_stub(address C_function,
   //-----------------------------
 
   // Clear last_Java_sp
-#ifdef IA64
-  if( os::is_MP() ) insert_mem_bar(Op_MemBarRelease);
-#endif
-
   store_to_memory(NULL, adr_sp, null(), T_ADDRESS, NoAlias);
-#ifdef IA64
-  if (os::is_MP() && UseMembar) insert_mem_bar(new MemBarVolatileNode());
-#endif // def IA64
   // Clear last_Java_pc and (optionally)_flags
   store_to_memory(NULL, adr_last_Java_pc, null(), T_ADDRESS, NoAlias);
-#if defined(SPARC) || defined(IA64)
+#if defined(SPARC)
   store_to_memory(NULL, adr_flags, intcon(0), T_INT, NoAlias);
-#endif /* defined(SPARC) || defined(IA64) */
+#endif /* defined(SPARC) */
 #ifdef IA64
   Node* adr_last_Java_fp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_fp_offset()));
   if( os::is_MP() ) insert_mem_bar(Op_MemBarRelease);
