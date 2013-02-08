@@ -52,7 +52,7 @@ public abstract class ObjectCreator {
     protected final CodeGenerator codegen;
 
     private   final boolean       isScope;
-    private   final boolean       isVarArg;
+    private   final boolean       hasArguments;
     private         int           fieldCount;
     private         int           paramCount;
     private         String        fieldObjectClassName;
@@ -62,19 +62,19 @@ public abstract class ObjectCreator {
     /**
      * Constructor
      *
-     * @param codegen  the code generator
-     * @param keys     the keys
-     * @param symbols  the symbols corresponding to keys, same index
-     * @param isScope  is this object scope
-     * @param isVarArg is this object var arg
+     * @param codegen      the code generator
+     * @param keys         the keys
+     * @param symbols      the symbols corresponding to keys, same index
+     * @param isScope      is this object scope
+     * @param hasArguments does the created object have an "arguments" property
      */
-    protected ObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final boolean isScope, final boolean isVarArg) {
+    protected ObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final boolean isScope, final boolean hasArguments) {
         this.codegen       = codegen;
         this.compileUnit   = codegen.getCurrentCompileUnit();
         this.keys          = keys;
         this.symbols       = symbols;
         this.isScope       = isScope;
-        this.isVarArg      = isVarArg;
+        this.hasArguments  = hasArguments;
 
         countFields();
         findClass();
@@ -86,7 +86,7 @@ public abstract class ObjectCreator {
     private void countFields() {
         for (final Symbol symbol : this.symbols) {
             if (symbol != null) {
-                if (isVarArg() && symbol.isParam()) {
+                if (hasArguments() && symbol.isParam()) {
                     symbol.setFieldIndex(paramCount++);
                 } else {
                     symbol.setFieldIndex(fieldCount++);
@@ -133,7 +133,7 @@ public abstract class ObjectCreator {
         if (keys.isEmpty()) { //empty map
             propertyMap = PropertyMap.newMap(fieldObjectClass);
         } else {
-            propertyMap = newMapCreator(fieldObjectClass).makeMap(isVarArg());
+            propertyMap = newMapCreator(fieldObjectClass).makeMap(hasArguments());
         }
         return propertyMap;
     }
@@ -167,10 +167,10 @@ public abstract class ObjectCreator {
     }
 
     /**
-     * Is this a vararg object
-     * @return true if vararg
+     * Does the created object have an "arguments" property
+     * @return true if has an "arguments" property
      */
-    protected boolean isVarArg() {
-        return isVarArg;
+    protected boolean hasArguments() {
+        return hasArguments;
     }
 }

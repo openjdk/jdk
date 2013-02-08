@@ -42,9 +42,6 @@ import jdk.nashorn.internal.runtime.linker.Lookup;
 public final class SpillProperty extends AccessorProperty {
     private static final MethodHandle SPILLGETTER = MH.asType(MH.getter(MethodHandles.lookup(), ScriptObject.class, "spill", Object[].class), Lookup.GET_OBJECT_TYPE);
 
-    /** Property slot in spill */
-    private final int slot;
-
     /**
      * Constructor
      *
@@ -55,14 +52,11 @@ public final class SpillProperty extends AccessorProperty {
      * @param setter setter for property, or null if not configurable and writable
      */
     public SpillProperty(final String key, final int flags, final int slot, final MethodHandle getter, final MethodHandle setter) {
-        super(key, flags, getter, setter);
-        this.slot = slot;
+        super(key, flags, slot, getter, setter);
     }
 
     private SpillProperty(final SpillProperty property) {
         super(property);
-
-        this.slot = property.slot;
     }
 
     @Override
@@ -88,31 +82,4 @@ public final class SpillProperty extends AccessorProperty {
         return super.getSetter(type, currentMap);
     }
 
-    @Override
-    public int getSlot() {
-        return slot;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + '[' + slot + ']';
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode() ^ slot;
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (other instanceof SpillProperty) {
-            return super.equals(other) && slot == ((SpillProperty) other).slot;
-        }
-
-        return false;
-    }
 }

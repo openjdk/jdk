@@ -139,7 +139,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
 
     // add a new property that throws TypeError on get as well as set
     static synchronized PropertyMap newThrowerProperty(final PropertyMap map, final String name, final int flags) {
-        return map.newProperty(name, flags, Lookup.TYPE_ERROR_THROWER_GETTER, Lookup.TYPE_ERROR_THROWER_SETTER);
+        return map.newProperty(name, flags, -1, Lookup.TYPE_ERROR_THROWER_GETTER, Lookup.TYPE_ERROR_THROWER_SETTER);
     }
 
     // property map for strict mode functions - lazily initialized

@@ -60,7 +60,7 @@ public final class UserAccessorProperty extends Property {
      * @param setterSlot setter slot, starting at first embed
      */
     public UserAccessorProperty(final String key, final int flags, final int getterSlot, final int setterSlot) {
-        super(key, flags);
+        super(key, flags, -1);
         this.getterSlot = getterSlot;
         this.setterSlot = setterSlot;
     }
@@ -95,17 +95,13 @@ public final class UserAccessorProperty extends Property {
 
     @Override
     public boolean equals(final Object other) {
-        if (this == other) {
-            return true;
+        if (!super.equals(other)) {
+            return false;
         }
 
-        if (other instanceof UserAccessorProperty) {
-            final UserAccessorProperty uc = (UserAccessorProperty) other;
-            return super.equals(other) && getterSlot == uc.getterSlot && setterSlot == uc.setterSlot;
-        }
-
-        return false;
-    }
+        final UserAccessorProperty uc = (UserAccessorProperty) other;
+        return getterSlot == uc.getterSlot && setterSlot == uc.setterSlot;
+     }
 
     @Override
     public int hashCode() {
@@ -158,6 +154,6 @@ public final class UserAccessorProperty extends Property {
     public ScriptFunction getSetterFunction(final ScriptObject obj) {
         final Object value = obj.getEmbedOrSpill(setterSlot);
         return (value instanceof ScriptFunction) ? (ScriptFunction) value : null;
-
     }
+
 }

@@ -160,7 +160,7 @@ public final class Lookup {
             throw new IllegalArgumentException("getter/setter has wrong arguments");
         }
 
-        return map.newProperty(key, flags, getter, setter);
+        return map.newProperty(key, flags, -1, getter, setter);
     }
 
     /**

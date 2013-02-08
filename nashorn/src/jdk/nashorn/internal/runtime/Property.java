@@ -67,17 +67,20 @@ public abstract class Property {
     /** Is this a spill property? See {@link SpillProperty} */
     public static final int IS_SPILL         = 0b0000_0001_0000;
 
-    /** Is this a function parameter ? */
+    /** Is this a function parameter? */
     public static final int IS_PARAMETER     = 0b0000_0010_0000;
 
+    /** Is parameter accessed thru arguments? */
+    public static final int HAS_ARGUMENTS    = 0b0000_0100_0000;
+
     /** Is this property always represented as an Object? See {@link ObjectClassGenerator} and dual fields flag. */
-    public static final int IS_ALWAYS_OBJECT = 0b0000_0100_0000;
+    public static final int IS_ALWAYS_OBJECT = 0b0000_1000_0000;
 
     /** Can this property be primitive? */
-    public static final int CAN_BE_PRIMITIVE = 0b0000_1000_0000;
+    public static final int CAN_BE_PRIMITIVE = 0b0001_0000_0000;
 
     /** Can this property be undefined? */
-    public static final int CAN_BE_UNDEFINED = 0b0001_0000_0000;
+    public static final int CAN_BE_UNDEFINED = 0b0010_0000_0000;
 
     /** Property key. */
     private final String key;
@@ -85,15 +88,21 @@ public abstract class Property {
     /** Property flags. */
     protected int flags;
 
+    /** Property field number or spill slot */
+    private final int slot;
+
     /**
      * Constructor
      *
      * @param key   property key
      * @param flags property flags
+     * @param slot  property field number or spill slot
      */
-    public Property(final String key, final int flags) {
+    public Property(final String key, final int flags, final int slot) {
+        assert key != null;
         this.key   = key;
         this.flags = flags;
+        this.slot  = slot;
     }
 
     /**
@@ -104,6 +113,7 @@ public abstract class Property {
     protected Property(final Property property) {
         this.key   = property.key;
         this.flags = property.flags;
+        this.slot  = property.slot;
     }
 
     /**
@@ -212,6 +222,14 @@ public abstract class Property {
      */
     public boolean isParameter() {
         return (flags & IS_PARAMETER) == IS_PARAMETER;
+    }
+
+    /**
+     * Check whether this property is in an object with arguments field
+     * @return true if has arguments
+     */
+    public boolean hasArguments() {
+        return (flags & HAS_ARGUMENTS) == HAS_ARGUMENTS;
     }
 
     /**
@@ -371,17 +389,17 @@ public abstract class Property {
     }
 
     /**
-     * Get the spill slot as described in {@link Property#getSpillCount()}.
-     * @return spill slot, -1 if none exists
+     * Get the field number or spill slot
+     * @return number/slot, -1 if none exists
      */
     public int getSlot() {
-        return -1;
+        return slot;
     }
 
     @Override
     public int hashCode() {
         final Class<?> type = getCurrentType();
-        return Objects.hashCode(this.key) ^ flags ^ (type == null ? 0 : type.hashCode());
+        return Objects.hashCode(this.key) ^ flags ^ getSlot() ^ (type == null ? 0 : type.hashCode());
     }
 
     @Override
@@ -390,17 +408,16 @@ public abstract class Property {
             return true;
         }
 
-        if (!(other instanceof Property)) {
+        if (other == null || this.getClass() != other.getClass()) {
             return false;
         }
 
         final Property otherProperty = (Property)other;
-        final Object otherKey = otherProperty.key;
-        final Class<?> otherType = otherProperty.getCurrentType();
 
-        return flags == otherProperty.flags &&
-               (key == null ? otherKey == null : key.equals(otherKey)) &&
-               (getCurrentType() == otherType);
+        return getFlags()       == otherProperty.getFlags() &&
+               getSlot()        == otherProperty.getSlot() &&
+               getCurrentType() == otherProperty.getCurrentType() &&
+               getKey().equals(otherProperty.getKey());
     }
 
     @Override
@@ -416,6 +433,12 @@ public abstract class Property {
             append(" {").
             append(type == null ? "UNDEFINED" : Type.typeFor(type).getDescriptor()).
             append('}');
+
+        if (slot != -1) {
+            sb.append('[');
+            sb.append(slot);
+            sb.append(']');
+        }
 
         return sb.toString();
     }
