@@ -1559,8 +1559,7 @@ typedef struct {
      * the new bit is also added in the main/baseline.
      */
     unsigned int is_attachable : 1;
-    unsigned int is_kernel_jvm : 1;
-    unsigned int : 30;
+    unsigned int : 31;
     unsigned int : 32;
     unsigned int : 32;
 } jvm_version_info;
