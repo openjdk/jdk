@@ -138,8 +138,7 @@ public final class Client extends NTLM {
             domain = domainFromServer;
         }
         if (domain == null) {
-            throw new NTLMException(NTLMException.NO_DOMAIN_INFO,
-                    "No domain info");
+            domain = "";
         }
 
         int flags = 0x88200 | (inputFlags & 3);
