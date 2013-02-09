@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ package java.io;
  * @see     java.io.File#list(java.io.FilenameFilter)
  * @since   JDK1.0
  */
-public
-interface FilenameFilter {
+@FunctionalInterface
+public interface FilenameFilter {
     /**
      * Tests if a specified file should be included in a file list.
      *
