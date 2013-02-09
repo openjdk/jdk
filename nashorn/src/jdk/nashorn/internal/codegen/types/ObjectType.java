@@ -74,11 +74,6 @@ class ObjectType extends Type {
     public Type load(final MethodVisitor method, final int slot) {
         assert slot != -1;
         method.visitVarInsn(ALOAD, slot);
-
-        if (slot == CompilerConstants.THIS.slot()) {
-            return Type.THIS;
-        }
-
         return Type.OBJECT;
     }
 

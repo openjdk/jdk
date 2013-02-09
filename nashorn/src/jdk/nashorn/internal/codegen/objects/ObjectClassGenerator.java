@@ -29,9 +29,9 @@ import static jdk.nashorn.internal.codegen.Compiler.SCRIPTS_PACKAGE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.ALLOCATE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_ARGUMENTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_SCOPE;
+import static jdk.nashorn.internal.codegen.CompilerConstants.JAVA_THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.MAP;
-import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
@@ -251,7 +251,7 @@ public final class ObjectClassGenerator {
         // always initialize fields to undefined, even with --dual-fields. Then it's ok to
         // remember things like "widest set type" in properties, and if it's object, don't
         // add any special "return undefined" getters, saving an invalidation
-        init.load(Type.OBJECT, THIS.slot());
+        init.load(Type.OBJECT, JAVA_THIS.slot());
         init.loadUndefined(Type.OBJECT);
 
         final Iterator<String> iter = fieldNames.iterator();
@@ -387,7 +387,7 @@ public final class ObjectClassGenerator {
     private static MethodEmitter newInitMethod(final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class);
         init.begin();
-        init.load(Type.OBJECT, THIS.slot());
+        init.load(Type.OBJECT, JAVA_THIS.slot());
         init.load(Type.OBJECT, MAP.slot());
         init.invoke(constructorNoLookup(ScriptObject.class, PropertyMap.class));
 
@@ -402,7 +402,7 @@ public final class ObjectClassGenerator {
     private static MethodEmitter newInitScopeMethod(final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class);
         init.begin();
-        init.load(Type.OBJECT, THIS.slot());
+        init.load(Type.OBJECT, JAVA_THIS.slot());
         init.load(Type.OBJECT, MAP.slot());
         init.load(Type.OBJECT, INIT_SCOPE.slot());
         init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class));
@@ -418,7 +418,7 @@ public final class ObjectClassGenerator {
     private static MethodEmitter newInitScopeWithArgumentsMethod(final ClassEmitter classEmitter) {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, Object.class);
         init.begin();
-        init.load(Type.OBJECT, THIS.slot());
+        init.load(Type.OBJECT, JAVA_THIS.slot());
         init.load(Type.OBJECT, MAP.slot());
         init.load(Type.OBJECT, INIT_SCOPE.slot());
         init.load(Type.OBJECT, INIT_ARGUMENTS.slot());
@@ -436,7 +436,7 @@ public final class ObjectClassGenerator {
     private static void newEmptyInit(final ClassEmitter classEmitter, final String className) {
         final MethodEmitter emptyInit = classEmitter.init();
         emptyInit.begin();
-        emptyInit.load(Type.OBJECT, THIS.slot());
+        emptyInit.load(Type.OBJECT, JAVA_THIS.slot());
         emptyInit.loadNull();
         emptyInit.invoke(constructorNoLookup(className, PropertyMap.class));
         emptyInit.returnVoid();

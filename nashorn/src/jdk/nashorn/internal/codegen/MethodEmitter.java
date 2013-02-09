@@ -831,7 +831,8 @@ public class MethodEmitter implements Emitter {
         if (symbol.hasSlot()) {
             final int slot = symbol.getSlot();
             debug("load symbol", symbol.getName(), " slot=", slot);
-            pushType(symbol.getSymbolType().load(method, slot));
+            final Type type = symbol.getSymbolType().load(method, slot);
+            pushType(type == Type.OBJECT && symbol.isThis() ? Type.THIS : type);
         } else if (symbol.isParam()) {
             assert !symbol.isScope();
             assert functionNode.isVarArg() : "Non-vararg functions have slotted parameters";
@@ -865,8 +866,19 @@ public class MethodEmitter implements Emitter {
      */
     public MethodEmitter load(final Type type, final int slot) {
         debug("explicit load", type, slot);
-        pushType(type.load(method, slot));
+        final Type loadType = type.load(method, slot);
+        pushType(loadType == Type.OBJECT && isThisSlot(slot) ? Type.THIS : loadType);
         return this;
+    }
+
+    private boolean isThisSlot(final int slot) {
+        if(functionNode == null) {
+            return slot == CompilerConstants.JAVA_THIS.slot();
+        }
+        final int thisSlot = functionNode.getThisNode().getSymbol().getSlot();
+        assert !functionNode.needsCallee() || thisSlot == 1; // needsCallee -> thisSlot == 1
+        assert functionNode.needsCallee() || thisSlot == 0; // !needsCallee -> thisSlot == 0
+        return slot == thisSlot;
     }
 
     /**
@@ -949,10 +961,11 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     public MethodEmitter loadCallee() {
-        debug("load callee " + functionNode.getCalleeNode().getSymbol());
-        assert functionNode.getCalleeNode().getSymbol().getSlot() != 0 : "callee has wrong slot " + functionNode.getCalleeNode().getSymbol().getSlot() + " in " + functionNode.getName();
+        final Symbol calleeSymbol = functionNode.getCalleeNode().getSymbol();
+        debug("load callee ", calleeSymbol);
+        assert calleeSymbol.getSlot() == 0 : "callee has wrong slot " + calleeSymbol.getSlot() + " in " + functionNode.getName();
 
-        return load(functionNode.getCalleeNode().getSymbol());
+        return load(calleeSymbol);
     }
 
     /**

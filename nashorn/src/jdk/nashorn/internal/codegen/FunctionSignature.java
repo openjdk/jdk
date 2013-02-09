@@ -25,9 +25,6 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.CALLEE;
-import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
-
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -99,34 +96,31 @@ public final class FunctionSignature {
             count    = isVarArg ? 1 : argTypes.length;
         }
 
-        int first = 0;
-
-        if (hasSelf) {
-            count++;
-            first++;
-        }
         if (hasCallee) {
             count++;
-            first++;
+        }
+        if (hasSelf) {
+            count++;
         }
 
         paramTypes = new Type[count];
 
-        if (hasSelf) {
-            paramTypes[THIS.slot()] = Type.OBJECT;
-        }
+        int next = 0;
         if (hasCallee) {
-            paramTypes[CALLEE.slot()] = Type.typeFor(ScriptFunction.class);
+            paramTypes[next++] = Type.typeFor(ScriptFunction.class);
+        }
+
+        if (hasSelf) {
+            paramTypes[next++] = Type.OBJECT;
         }
 
         if (isVarArg) {
-            paramTypes[first] = Type.OBJECT_ARRAY;
+            paramTypes[next] = Type.OBJECT_ARRAY;
         } else if (argTypes != null) {
-            for (int i = first, j = 0; i < count; i++, j++) {
-                paramTypes[i] = argTypes[j];
-                if (paramTypes[i].isObject()) {
-                    paramTypes[i] = Type.OBJECT; //TODO: for now, turn java/lang/String into java/lang/Object as we aren't as specific.
-                }
+            for (int j = 0; next < count;) {
+                final Type type = argTypes[j++];
+                // TODO: for now, turn java/lang/String into java/lang/Object as we aren't as specific.
+                paramTypes[next++] = type.isObject() ? Type.OBJECT : type;
             }
         } else {
             assert false : "isVarArgs cannot be false when argTypes are null";

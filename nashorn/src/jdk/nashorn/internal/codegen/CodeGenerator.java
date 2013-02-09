@@ -650,14 +650,14 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
                 final String signature = new FunctionSignature(true, callee.needsCallee(), callee.getReturnType(), isVarArg ? null : callee.getParameters()).toString();
 
+                if (callee.needsCallee()) {
+                    new FunctionObjectCreator(CodeGenerator.this, callee).makeObject(method);
+                }
+
                 if (callee.isStrictMode()) { // self is undefined
                     method.loadUndefined(Type.OBJECT);
                 } else { // get global from scope (which is the self)
                     globalInstance();
-                }
-
-                if (callee.needsCallee()) { // TODO: always true
-                    new FunctionObjectCreator(CodeGenerator.this, callee).makeObject(method); // TODO: if callee not needed, function object is used only to pass scope (could be optimized). if neither the scope nor the function object is needed by the callee, we can pass null instead.
                 }
 
                 loadArgs(args, signature, isVarArg, argCount);
@@ -1646,8 +1646,8 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         final Class<?>   rtype  = fn.getReturnType().getTypeClass();
         final boolean needsArguments = fn.needsArguments();
         final Class<?>[] ptypes = needsArguments ?
-                new Class<?>[] {Object.class, ScriptFunction.class, ScriptObject.class, Object.class} :
-                new Class<?>[] {Object.class, ScriptFunction.class, ScriptObject.class};
+                new Class<?>[] {ScriptFunction.class, Object.class, ScriptObject.class, Object.class} :
+                new Class<?>[] {ScriptFunction.class, Object.class, ScriptObject.class};
 
         setCurrentCompileUnit(splitCompileUnit);
         splitNode.setCompileUnit(splitCompileUnit);
@@ -1669,12 +1669,12 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         splitNode.setMethodEmitter(method);
 
         final MethodEmitter caller = splitNode.getCaller();
-        caller.loadThis();
         if(fn.needsCallee()) {
             caller.loadCallee();
         } else {
             caller.loadNull();
         }
+        caller.loadThis();
         caller.loadScope();
         if (needsArguments) {
             caller.loadArguments();

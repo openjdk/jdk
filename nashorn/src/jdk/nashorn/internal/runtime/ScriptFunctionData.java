@@ -25,14 +25,13 @@
 
 package jdk.nashorn.internal.runtime;
 
-import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.parser.Token;
-import jdk.nashorn.internal.parser.TokenType;
+import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.parser.Token;
+import jdk.nashorn.internal.parser.TokenType;
 
 /**
  * A container for data needed to instantiate a specific {@link ScriptFunction} at runtime.
@@ -129,19 +128,19 @@ public class ScriptFunctionData {
              * constructor or not if the method handle's first argument is boolean.
              */
             this.invoker     = MH.insertArguments(methodHandle, 0, false);
-            this.constructor = MH.insertArguments(methodHandle, 0, true);
+            this.constructor = adaptConstructor(MH.insertArguments(methodHandle, 0, true));
 
             if (specs != null) {
                 this.invokeSpecializations    = new MethodHandle[specs.length];
                 this.constructSpecializations = new MethodHandle[specs.length];
                 for (int i = 0; i < specs.length; i++) {
                     this.invokeSpecializations[i]    = MH.insertArguments(specs[i], 0, false);
-                    this.constructSpecializations[i] = MH.insertArguments(specs[i], 0, true);
+                    this.constructSpecializations[i] = adaptConstructor(MH.insertArguments(specs[i], 0, true));
                 }
             }
         } else {
             this.invoker                  = methodHandle;
-            this.constructor              = methodHandle;
+            this.constructor              = adaptConstructor(methodHandle);
             this.invokeSpecializations    = specs;
             this.constructSpecializations = specs;
         }
@@ -353,7 +352,7 @@ public class ScriptFunctionData {
         // and they're set when first called, so we enforce set-once here.
         if (this.invoker == null) {
             this.invoker     = invoker;
-            this.constructor = invoker;
+            this.constructor = adaptConstructor(invoker);
             this.allocator   = allocator;
         }
     }
@@ -408,9 +407,9 @@ public class ScriptFunctionData {
             return false;
         }
         if(type.parameterType(0) == boolean.class) {
-            return len > 2 && type.parameterType(2) == ScriptFunction.class;
+            return len > 1 && type.parameterType(1) == ScriptFunction.class;
         }
-        return len > 1 && type.parameterType(1) == ScriptFunction.class;
+        return type.parameterType(0) == ScriptFunction.class;
     }
 
     /**
@@ -434,9 +433,29 @@ public class ScriptFunctionData {
             newType = newType.changeParameterType(type.parameterCount() - 1, Object[].class);
         }
         if (needsCallee()) {
-            newType = newType.changeParameterType(1, ScriptFunction.class);
+            newType = newType.changeParameterType(0, ScriptFunction.class);
         }
         return type.equals(newType) ? handle : handle.asType(newType);
     }
 
+    /**
+     * Adapts a method handle to conform to requirements of a constructor. Right now this consists of making sure its
+     * return value is {@code Object}. We might consider moving the caller-this argument swap here too from
+     * {@link ScriptFunction#findNewMethod(org.dynalang.dynalink.CallSiteDescriptor)}.
+     * @param ctorHandle the constructor method handle
+     * @return adapted constructor method handle
+     */
+    private static MethodHandle adaptConstructor(final MethodHandle ctorHandle) {
+        return changeReturnTypeToObject(ctorHandle);
+    }
+
+    /**
+     * Adapts the method handle so its return type is {@code Object}. If the handle's return type is already
+     * {@code Object}, the handle is returned unchanged.
+     * @param mh the handle to adapt
+     * @return the adapted handle
+     */
+    private static MethodHandle changeReturnTypeToObject(final MethodHandle mh) {
+        return MH.asType(mh, mh.type().changeReturnType(Object.class));
+    }
 }
