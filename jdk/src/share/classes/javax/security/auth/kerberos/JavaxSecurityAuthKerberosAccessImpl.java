@@ -31,8 +31,8 @@ import sun.security.krb5.PrincipalName;
 
 class JavaxSecurityAuthKerberosAccessImpl
         implements JavaxSecurityAuthKerberosAccess {
-    public EncryptionKey[] keyTabGetEncryptionKeys(
-            KeyTab ktab, PrincipalName principal) {
-        return ktab.getEncryptionKeys(principal);
+    public sun.security.krb5.internal.ktab.KeyTab keyTabTakeSnapshot(
+            KeyTab ktab) {
+        return ktab.takeSnapshot();
     }
 }

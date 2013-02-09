@@ -76,6 +76,8 @@ public class OneKDC extends KDC {
         Config.refresh();
 
         writeKtab(KTAB);
+        Security.setProperty("auth.login.defaultCallbackHandler",
+                "OneKDC$CallbackForClient");
     }
 
     /**
@@ -93,7 +95,7 @@ public class OneKDC extends KDC {
                 "    com.sun.security.auth.module.Krb5LoginModule required;\n};\n" +
                 "com.sun.security.jgss.krb5.accept {\n" +
                 "    com.sun.security.auth.module.Krb5LoginModule required\n" +
-                "    principal=\"" + SERVER + "\"\n" +
+                "    principal=\"*\"\n" +
                 "    useKeyTab=true\n" +
                 "    isInitiator=false\n" +
                 "    storeKey=true;\n};\n" +
@@ -112,7 +114,6 @@ public class OneKDC extends KDC {
                 "    isInitiator=false;\n};\n"
                 ).getBytes());
         fos.close();
-        Security.setProperty("auth.login.defaultCallbackHandler", "OneKDC$CallbackForClient");
     }
 
     /**

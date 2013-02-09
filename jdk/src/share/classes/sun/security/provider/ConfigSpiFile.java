@@ -404,6 +404,7 @@ public final class ConfigSpiFile extends ConfigurationSpi {
         st.wordChars('$', '$');
         st.wordChars('_', '_');
         st.wordChars('-', '-');
+        st.wordChars('*', '*');
         st.lowerCaseMode(false);
         st.slashSlashComments(true);
         st.slashStarComments(true);
