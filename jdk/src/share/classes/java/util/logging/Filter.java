@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ package java.util.logging;
  *
  * @since 1.4
  */
-
+@FunctionalInterface
 public interface Filter {
 
     /**
@@ -46,5 +46,4 @@ public interface Filter {
      * @return true if the log record should be published.
      */
     public boolean isLoggable(LogRecord record);
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,8 +117,7 @@ import java.io.IOException;
  */
 
 public interface DirectoryStream<T>
-    extends Closeable, Iterable<T>
-{
+    extends Closeable, Iterable<T> {
     /**
      * An interface that is implemented by objects that decide if a directory
      * entry should be accepted or filtered. A {@code Filter} is passed as the
@@ -130,6 +129,7 @@ public interface DirectoryStream<T>
      *
      * @since 1.7
      */
+    @FunctionalInterface
     public static interface Filter<T> {
         /**
          * Decides if the given directory entry should be accepted or filtered.
