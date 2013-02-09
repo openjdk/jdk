@@ -886,8 +886,8 @@ public final class Context {
                     RUN_SCRIPT.tag(),
                     MH.type(
                         Object.class,
-                        Object.class,
-                        ScriptFunction.class));
+                        ScriptFunction.class,
+                        Object.class));
 
         boolean strict;
 

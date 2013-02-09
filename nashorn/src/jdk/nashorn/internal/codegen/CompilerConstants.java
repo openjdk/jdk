@@ -82,8 +82,12 @@ public enum CompilerConstants {
     /** method name for Java method that is script entry point */
     RUN_SCRIPT("runScript"),
 
-    /** this name and slot */
-    THIS("this", 0),
+    /**
+     * "this" name symbol for a parameter representing ECMAScript "this" in static methods that are compiled
+     * representations of ECMAScript functions. It is not assigned a slot, as its position in the method signature is
+     * dependent on other factors (most notably, callee can precede it).
+     */
+    THIS("this"),
 
     /** this debugger symbol */
     THIS_DEBUGGER("__this__"),
@@ -95,7 +99,7 @@ public enum CompilerConstants {
     SCRIPT_RETURN("__return__"),
 
     /** the callee value variable when necessary */
-    CALLEE("__callee__", ScriptFunction.class, 1),
+    CALLEE("__callee__", ScriptFunction.class),
 
     /** the varargs variable when necessary */
     VARARGS("__varargs__"),
@@ -126,6 +130,9 @@ public enum CompilerConstants {
 
     /** prefix for regexps */
     REGEX_PREFIX("$regex"),
+
+    /** "this" used in non-static Java methods; always in slot 0 */
+    JAVA_THIS("this", 0),
 
     /** init scope */
     INIT_SCOPE("$scope", 2),

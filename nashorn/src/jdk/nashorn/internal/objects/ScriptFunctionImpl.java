@@ -30,13 +30,12 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-
-import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.codegen.objects.FunctionObjectCreator;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Lookup;

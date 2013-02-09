@@ -237,8 +237,8 @@ final class Attr extends NodeOperatorVisitor {
 
         functionNode.setFrame(functionNode.pushFrame());
 
-        initThis(functionNode);
         initCallee(functionNode);
+        initThis(functionNode);
         if (functionNode.isVarArg()) {
             initVarArg(functionNode);
         }
