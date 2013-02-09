@@ -62,11 +62,38 @@ public class ServiceCredsCombination {
         check("b", "b", princ("a"), princ("b"), oldktab(), oldktab());
         check(null, null, princ("a"), princ("b"), oldktab(), oldktab());
         check("x", "NOCRED", princ("a"), princ("b"), oldktab(), oldktab());
+        // bound ktab
+        check("c", "c", princ("c"), ktab("c"));
+        check(null, "c", princ("c"), ktab("c"));
+        // unbound ktab
+        check("x", "x", ktab());
+        check(null, null, ktab());
+        // Two bound ktab
+        check("c1", "c1", princ("c1"), princ("c2"), ktab("c1"), ktab("c2"));
+        check("c2", "c2", princ("c1"), princ("c2"), ktab("c1"), ktab("c2"));
+        check("x", "NOCRED", princ("c1"), princ("c2"), ktab("c1"), ktab("c2"));
+        check(null, null, princ("c1"), princ("c2"), ktab("c1"), ktab("c2"));
+        // One bound, one unbound
+        check("c1", "c1", princ("c1"), ktab("c1"), ktab());
+        check("x", "x", princ("c1"), ktab("c1"), ktab());
+        check(null, null, princ("c1"), ktab("c1"), ktab());
+        // Two unbound ktab
+        check("x", "x", ktab(), ktab());
+        check(null, null, ktab(), ktab());
         // pass + old ktab
         check("a", "a", princ("a"), princ("b"), key("a"), oldktab());
         check("b", "b", princ("a"), princ("b"), key("a"), oldktab());
         check(null, null, princ("a"), princ("b"), key("a"), oldktab());
         check("x", "NOCRED", princ("a"), princ("b"), key("a"), oldktab());
+        // pass + bound ktab
+        check("a", "a", princ("a"), princ("c"), key("a"), ktab("c"));
+        check("c", "c", princ("a"), princ("c"), key("a"), ktab("c"));
+        check("x", "NOCRED", princ("a"), princ("c"), key("a"), ktab("c"));
+        check(null, null, princ("a"), princ("c"), key("a"), ktab("c"));
+        // pass + unbound ktab
+        check("a", "a", princ("a"), key("a"), ktab());
+        check("x", "x", princ("a"), key("a"), ktab());
+        check(null, null, princ("a"), key("a"), ktab());
         // Compatibility, automatically add princ for keys
         check(null, "a", key("a"));
         check("x", "NOCRED", key("a"));
@@ -129,5 +156,11 @@ public class ServiceCredsCombination {
     }
     private static KeyTab oldktab() {
         return KeyTab.getInstance();
+    }
+    static KeyTab ktab(String s) {
+        return KeyTab.getInstance(princ(s));
+    }
+    static KeyTab ktab() {
+        return KeyTab.getUnboundInstance();
     }
 }

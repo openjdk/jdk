@@ -175,6 +175,7 @@ public class LoginConfigImpl extends Configuration {
                 options.put("useKeyTab", "true");
                 options.put("storeKey", "true");
                 options.put("doNotPrompt", "true");
+                options.put("principal", "*");
                 options.put("isInitiator", "false");
             } else {
                 options.put("useTicketCache", "true");

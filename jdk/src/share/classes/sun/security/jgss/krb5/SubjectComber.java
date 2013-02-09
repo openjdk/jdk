@@ -86,36 +86,39 @@ class SubjectComber {
             List<T> answer = (oneOnly ? null : new ArrayList<T>());
 
             if (credClass == KeyTab.class) {
-                // TODO: There is currently no good way to filter out keytabs
-                // not for serverPrincipal. We can only check the principal
-                // set. If the server is not there, we can be sure none of the
-                // keytabs should be used, otherwise, use all for safety.
-                boolean useAll = false;
-                if (serverPrincipal != null) {
-                    for (KerberosPrincipal princ:
-                            subject.getPrincipals(KerberosPrincipal.class)) {
-                        if (princ.getName().equals(serverPrincipal)) {
-                            useAll = true;
-                            break;
+                Iterator<KeyTab> iterator =
+                    subject.getPrivateCredentials(KeyTab.class).iterator();
+                while (iterator.hasNext()) {
+                    KeyTab t = iterator.next();
+                    if (serverPrincipal != null && t.isBound()) {
+                        KerberosPrincipal name = t.getPrincipal();
+                        if (name != null) {
+                            if (!serverPrincipal.equals(name.getName())) {
+                                continue;
+                            }
+                        } else {
+                            // legacy bound keytab. although we don't know who
+                            // the bound principal is, it must be in allPrincs
+                            boolean found = false;
+                            for (KerberosPrincipal princ:
+                                    subject.getPrincipals(KerberosPrincipal.class)) {
+                                if (princ.getName().equals(serverPrincipal)) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) continue;
                         }
                     }
-                } else {
-                    useAll = true;
-                }
-                if (useAll) {
-                    Iterator<KeyTab> iterator =
-                        subject.getPrivateCredentials(KeyTab.class).iterator();
-                    while (iterator.hasNext()) {
-                        KeyTab t = iterator.next();
-                        if (DEBUG) {
-                            System.out.println("Found " + credClass.getSimpleName()
-                                    + " " + t);
-                        }
-                        if (oneOnly) {
-                            return t;
-                        } else {
-                            answer.add(credClass.cast(t));
-                        }
+                    // Check passed, we can add now
+                    if (DEBUG) {
+                        System.out.println("Found " + credClass.getSimpleName()
+                                + " " + t);
+                    }
+                    if (oneOnly) {
+                        return t;
+                    } else {
+                        answer.add(credClass.cast(t));
                     }
                 }
             } else if (credClass == KerberosKey.class) {
