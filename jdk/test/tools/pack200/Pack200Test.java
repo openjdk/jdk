@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.jar.*;
 
  /*
   * @test
-  * @bug 6521334 6712743
+  * @bug 6521334 6712743 8007902
   * @summary check for memory leaks, test general packer/unpacker functionality\
   *          using native and java unpackers
   * @compile -XDignore.symbol.file Utils.java Pack200Test.java
