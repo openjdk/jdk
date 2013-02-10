@@ -4758,8 +4758,8 @@ int unpacker::write_bsms(int naOffset, int na) {
     PTRLIST_QSORT(cp.requested_bsms, outputEntry_cmp);
     // append the BootstrapMethods attribute (after the InnerClasses attr):
     putref(cp.sym[cpool::s_BootstrapMethods]);
+    // make a note of the offset, for lazy patching
     int sizeOffset = (int)wpoffset();
-    byte* sizewp = wp;
     putu4(-99);  // attr size will be patched
     putu2(cur_class_local_bsm_count);
     int written_bsms = 0;
@@ -4776,6 +4776,7 @@ int unpacker::write_bsms(int naOffset, int na) {
       written_bsms += 1;
     }
     assert(written_bsms == cur_class_local_bsm_count);  // else insane
+    byte* sizewp = wp_at(sizeOffset);
     putu4_at(sizewp, (int)(wp - (sizewp+4)));  // size of code attr
     putu2_at(wp_at(naOffset), ++na);  // increment class attr count
   }
