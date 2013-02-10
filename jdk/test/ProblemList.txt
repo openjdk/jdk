@@ -317,12 +317,15 @@ sun/tools/jconsole/ImmutableResourceTest.sh                     generic-all
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 
-# Tests take too long, see 7143279
-tools/pack200/CommandLineTests.java                             generic-all
-tools/pack200/Pack200Test.java                                  generic-all
+# Tests take too long, on sparcs see 7143279
+tools/pack200/CommandLineTests.java                             solaris-all, macosx-all 
+tools/pack200/Pack200Test.java                                  solaris-all, macosx-all
 
 # 7150569
 tools/launcher/UnicodeTest.java                                 macosx-all
+
+# 8006039
+tools/launcher/I18NJarTest.java                                 macosx-all
 
 # 8007410
 tools/launcher/FXLauncherTest.java                              linux-all
