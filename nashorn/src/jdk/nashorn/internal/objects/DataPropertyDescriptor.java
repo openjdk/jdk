@@ -136,7 +136,7 @@ public final class DataPropertyDescriptor extends ScriptObject implements Proper
 
     @Override
     public PropertyDescriptor fillFrom(final ScriptObject sobj) {
-        final boolean strict = getContext()._strict;
+        final boolean strict = isStrictContext();
         if (sobj.has(CONFIGURABLE)) {
             this.configurable = JSType.toBoolean(sobj.get(CONFIGURABLE));
         } else {

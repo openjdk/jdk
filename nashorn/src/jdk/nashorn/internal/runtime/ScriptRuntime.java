@@ -36,8 +36,11 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.ir.debug.JSONWriter;
+import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import org.dynalang.dynalink.beans.StaticClass;
 
@@ -265,6 +268,9 @@ public final class ScriptRuntime {
 
                 @Override
                 public Object next() {
+                    if (index >= length) {
+                        throw new NoSuchElementException();
+                    }
                     return Array.get(array, index++);
                 }
 
@@ -374,6 +380,28 @@ public final class ScriptRuntime {
         }
 
         return (x == y);
+    }
+
+    /**
+     * Returns AST as JSON compatible string. This is used to
+     * implement "parse" function in resources/parse.js script.
+     *
+     * @param code code to be parsed
+     * @param name name of the code source (used for location)
+     * @param includeLoc tells whether to include location information for nodes or not
+     * @return JSON string representation of AST of the supplied code
+     */
+    public static String parse(final String code, final String name, final boolean includeLoc) {
+        return JSONWriter.parse(Context.getContextTrusted(), code, name, includeLoc);
+    }
+
+    /**
+     * Test whether a char is valid JavaScript whitespace
+     * @param ch a char
+     * @return true if valid JavaScript whitespace
+     */
+    public static boolean isJSWhitespace(final char ch) {
+        return Lexer.isJSWhitespace(ch);
     }
 
     /**

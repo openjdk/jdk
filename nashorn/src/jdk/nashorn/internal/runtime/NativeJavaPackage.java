@@ -64,7 +64,7 @@ import org.dynalang.dynalink.linker.LinkRequest;
  * var ftype4 = Java.asType("java.awt.geom.Arc2D").Float
  * </pre>
  */
-public class NativeJavaPackage extends ScriptObject {
+public final class NativeJavaPackage extends ScriptObject {
     /** Full name of package (includes path.) */
     private final String name;
 

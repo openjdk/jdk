@@ -617,7 +617,7 @@ public final class NativeJSAdapter extends ScriptObject {
         case "getMethod":
             final FindProperty find = adaptee.findProperty(__call__, true);
             if (find != null) {
-                final ScriptFunction func = (ScriptFunction)getObjectValue(find);
+                final ScriptFunctionImpl func = (ScriptFunctionImpl)getObjectValue(find);
                 // TODO: It's a shame we need to produce a function bound to this and name, when we'd only need it bound
                 // to name. Probably not a big deal, but if we can ever make it leaner, it'd be nice.
                 return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,

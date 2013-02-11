@@ -660,7 +660,7 @@ public final class Symbol implements Comparable<Symbol> {
         if (TRACE_SYMBOLS != null && (TRACE_SYMBOLS.isEmpty() || TRACE_SYMBOLS.contains(name))) {
             Context.err("SYMBOL: '" + name + "' " + desc);
             if (TRACE_SYMBOLS_STACKTRACE != null && (TRACE_SYMBOLS_STACKTRACE.isEmpty() || TRACE_SYMBOLS_STACKTRACE.contains(name))) {
-                new Throwable().printStackTrace(Context.getContext().getErr());
+                new Throwable().printStackTrace(Context.getCurrentErr());
             }
         }
     }

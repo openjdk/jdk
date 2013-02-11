@@ -29,29 +29,81 @@
  * @run
  */
 
-// compile(script) -- compiles a script specified as a string with its 
-// source code, returns a jdk.nashorn.internal.ir.FunctionNode object 
-// representing it.
-var compile = (function() {
-    var Compiler       = Java.type("jdk.nashorn.internal.codegen.Compiler")
-    var Context        = Java.type("jdk.nashorn.internal.runtime.Context")
-    var Source         = Java.type("jdk.nashorn.internal.runtime.Source")
-    var CompilerAccess = Java.type("jdk.nashorn.internal.codegen.CompilerAccess")
-    return function(source) {
-	    var compiler = Compiler.compiler(new Source("<no name>", source), Context.getContext())
-        compiler.compile()
-        return CompilerAccess.getScriptNode(compiler)
+/*
+ * This test script depends on nashorn Compiler internals. It uses reflection
+ * to get access to private field and many public methods of Compiler and
+ * FunctionNode classes. Note that this is trusted code and access to such
+ * internal package classes and methods is okay. But, if you modify any 
+ * Compiler or FunctionNode class, you may have to revisit this script.
+ * We cannot use direct Java class (via dynalink bean linker) to Compiler
+ * and FunctionNode because of package-access check and so reflective calls.
+ */
+
+var Compiler       = Java.type("jdk.nashorn.internal.codegen.Compiler")
+var Context        = Java.type("jdk.nashorn.internal.runtime.Context")
+var Source         = Java.type("jdk.nashorn.internal.runtime.Source")
+var FunctionNode   = Java.type("jdk.nashorn.internal.ir.FunctionNode")
+
+// Compiler class methods and fields
+
+// Compiler.compile(Source, Context)
+var compilerMethod = Compiler.class.getMethod("compiler", Source.class, Context.class);
+// Compiler.compile()
+var compileMethod  = Compiler.class.getMethod("compile");
+
+// NOTE: private field. But this is a trusted test!
+// Compiler.functionNode
+var functionNodeField = Compiler.class.getDeclaredField("functionNode");
+functionNodeField.setAccessible(true);
+
+// FunctionNode methods
+
+// FunctionNode.getFunctions method
+var getFunctionsMethod = FunctionNode.class.getMethod("getFunctions");
+
+// These are method names of methods in FunctionNode class
+var allAssertionList = ['isVarArg', 'needsParentScope', 'needsCallee', 'needsScope', 'needsSelfSymbol', 'isSplit', 'hasEval', 'hasWith', 'hasDeepWithOrEval', 'varsInScope', 'isStrictMode']
+
+// corresponding Method objects of FunctionNode class
+var functionNodeMethods = {};
+// initialize FunctionNode methods
+(function() {
+    for (var f in allAssertionList) {
+        var method = allAssertionList[f];
+        functionNodeMethods[method] = FunctionNode.class.getMethod(method);
     }
 })();
 
+// returns "script" functionNode from Compiler instance
+function getScriptNode(compiler) {
+    // compiler.functionNode
+    return functionNodeField.get(compiler);
+}
+
+// returns functionNode.getFunctions().get(0)
+function getFirstFunction(functionNode) {
+    // functionNode.getFunctions().get(0)
+    return getFunctionsMethod.invoke(functionNode).get(0);
+}
+
+// compile(script) -- compiles a script specified as a string with its 
+// source code, returns a jdk.nashorn.internal.ir.FunctionNode object 
+// representing it.
+function compile(source) {
+   var compiler = compilerMethod.invoke(null,
+       new Source("<no name>", source), Context.getContext())
+   compileMethod.invoke(compiler);
+   return getScriptNode(compiler)
+};
+
 var allAssertions = (function() {
-    var allAssertionList = ['isVarArg', 'needsParentScope', 'needsCallee', 'needsScope', 'needsSelfSymbol', 'isSplit', 'hasEval', 'hasWith', 'hasDeepWithOrEval', 'varsInScope', 'isStrictMode']
     var allAssertions = {}
     for(var assertion in allAssertionList) {
         allAssertions[allAssertionList[assertion]] = true
     }
     return allAssertions;
 })();
+
 
 // test(f[, assertions...]) tests whether all the specified assertions on the
 // passed function node are true.
@@ -66,10 +118,7 @@ function test(f) {
     }
     for(var assertion in allAssertions) {
         var expectedValue = !!assertions[assertion]
-        if(f[assertion] == null) {
-            throw "Can't find " + assertion + " on " + f;
-        }
-        if(f[assertion]() !== expectedValue) {
+        if(functionNodeMethods[assertion].invoke(f) !== expectedValue) {
             throw "Expected " + assertion + " === " + expectedValue + " for " + f;
         }
     }
@@ -79,7 +128,7 @@ function test(f) {
 // assertions are true in the first function in the given script; "script"
 // is a string with the source text of the script.
 function testFirstFn(script) {
-    arguments[0] = compile(script).functions[0]
+    arguments[0] = getFirstFunction(compile(script))
     test.apply(null, arguments)
 }
 

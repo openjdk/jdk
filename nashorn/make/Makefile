@@ -181,7 +181,7 @@ else
 endif
 
 # Default target and expected 'do everything' target
-all: test docs
+all: test
 
 # Standard make clobber target
 clobber: clean

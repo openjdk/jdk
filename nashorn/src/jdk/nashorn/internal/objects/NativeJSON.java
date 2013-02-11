@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.objects;
 
-import static jdk.nashorn.internal.runtime.ECMAErrors.syntaxError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
@@ -36,25 +35,15 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import jdk.nashorn.internal.ir.LiteralNode;
-import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
-import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ObjectNode;
-import jdk.nashorn.internal.ir.PropertyNode;
-import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
-import jdk.nashorn.internal.parser.JSONParser;
-import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.ConsString;
-import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSONFunctions;
 import jdk.nashorn.internal.runtime.JSType;
-import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
@@ -68,8 +57,6 @@ public final class NativeJSON extends ScriptObject {
     private static final InvokeByName TO_JSON = new InvokeByName("toJSON", ScriptObject.class, Object.class, Object.class);
     private static final MethodHandle REPLACER_INVOKER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
             ScriptFunction.class, ScriptObject.class, Object.class, Object.class);
-    private static final MethodHandle REVIVER_INVOKER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
-            ScriptFunction.class, ScriptObject.class, String.class, Object.class);
 
 
     NativeJSON() {
@@ -87,27 +74,7 @@ public final class NativeJSON extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object parse(final Object self, final Object text, final Object reviver) {
-        final String     str     = JSType.toString(text);
-        final Context    context = Global.getThisContext();
-        final JSONParser parser  = new JSONParser(
-                new Source("<json>", str),
-                new Context.ThrowErrorManager(),
-                (context != null) ?
-                    context._strict :
-                    false);
-
-        Node node;
-
-        try {
-            node = parser.parse();
-        } catch (final ParserException e) {
-            syntaxError(e, "invalid.json", e.getMessage());
-            return UNDEFINED;
-        }
-
-        final Object unfiltered = convertNode(node);
-
-        return applyReviver(unfiltered, reviver);
+        return JSONFunctions.parse(text, reviver);
     }
 
     /**
@@ -198,136 +165,6 @@ public final class NativeJSON extends ScriptObject {
 
     // -- Internals only below this point
 
-    // parse helpers
-
-    // apply 'reviver' function if available
-    private static Object applyReviver(final Object unfiltered, final Object reviver) {
-        if (reviver instanceof ScriptFunction) {
-            final ScriptObject root = Global.newEmptyInstance();
-            root.set("", unfiltered, Global.isStrict());
-            return walk(root, "", (ScriptFunction)reviver);
-        }
-        return unfiltered;
-    }
-
-    // This is the abstract "Walk" operation from the spec.
-    private static Object walk(final ScriptObject holder, final Object name, final ScriptFunction reviver) {
-        final Object val = holder.get(name);
-        if (val == UNDEFINED) {
-            return val;
-        } else if (val instanceof ScriptObject) {
-            final ScriptObject     valueObj = (ScriptObject)val;
-            final boolean          strict   = Global.isStrict();
-            final Iterator<String> iter     = valueObj.propertyIterator();
-
-            while (iter.hasNext()) {
-                final String key        = iter.next();
-                final Object newElement = walk(valueObj, key, reviver);
-
-                if (newElement == UNDEFINED) {
-                    valueObj.delete(key, strict);
-                } else {
-                    valueObj.set(key, newElement, strict);
-                }
-            }
-
-            return valueObj;
-        } else if (isArray(val)) {
-            final NativeArray      valueArray = (NativeArray)val;
-            final boolean          strict     = Global.isStrict();
-            final Iterator<String> iter       = valueArray.propertyIterator();
-
-            while (iter.hasNext()) {
-                final String key        = iter.next();
-                final Object newElement = walk(valueArray, valueArray.get(key), reviver);
-
-                if (newElement == UNDEFINED) {
-                    valueArray.delete(key, strict);
-                } else {
-                    valueArray.set(key, newElement, strict);
-                }
-            }
-            return valueArray;
-        } else {
-            try {
-                // Object.class, ScriptFunction.class, ScriptObject.class, String.class, Object.class);
-                return REVIVER_INVOKER.invokeExact(reviver, holder, JSType.toString(name), val);
-            } catch(Error|RuntimeException t) {
-                throw t;
-            } catch(final Throwable t) {
-                throw new RuntimeException(t);
-            }
-        }
-    }
-
-    // Converts IR node to runtime value
-    private static Object convertNode(final Node node) {
-
-       if (node instanceof LiteralNode) {
-            // check for array literal
-            if (node.tokenType() == TokenType.ARRAY) {
-                assert node instanceof ArrayLiteralNode;
-                final Node[] elements = ((ArrayLiteralNode)node).getValue();
-
-                // NOTE: We cannot use LiteralNode.isNumericArray() here as that
-                // method uses symbols of element nodes. Since we don't do lower
-                // pass, there won't be any symbols!
-                if (isNumericArray(elements)) {
-                    final double[] values = new double[elements.length];
-                    int   index = 0;
-
-                    for (final Node elem : elements) {
-                        values[index++] = JSType.toNumber(convertNode(elem));
-                    }
-                    return Global.allocate(values);
-                }
-
-                final Object[] values = new Object[elements.length];
-                int   index = 0;
-
-                for (final Node elem : elements) {
-                    values[index++] = convertNode(elem);
-                }
-
-                return Global.allocate(values);
-            }
-
-            return ((LiteralNode<?>)node).getValue();
-
-        } else if (node instanceof ObjectNode) {
-            final ObjectNode   objNode  = (ObjectNode) node;
-            final ScriptObject object   = Global.newEmptyInstance();
-            final boolean      strict   = Global.isStrict();
-            final List<Node>   elements = objNode.getElements();
-
-            for (final Node elem : elements) {
-                final PropertyNode pNode     = (PropertyNode) elem;
-                final Node         valueNode = pNode.getValue();
-
-                object.set(pNode.getKeyName(), convertNode(valueNode), strict);
-            }
-
-            return object;
-        } else if (node instanceof UnaryNode) {
-            // UnaryNode used only to represent negative number JSON value
-            final UnaryNode unaryNode = (UnaryNode)node;
-            return -((LiteralNode<?>)unaryNode.rhs()).getNumber();
-        } else {
-            return null;
-        }
-    }
-
-    // does the given IR node represent a numeric array?
-    private static boolean isNumericArray(final Node[] values) {
-        for (final Node node : values) {
-            if (node instanceof LiteralNode && ((LiteralNode<?>)node).getValue() instanceof Number) {
-                continue;
-            }
-            return false;
-        }
-        return true;
-    }
-
     // stringify helpers.
 
     private static class StringifyState {
@@ -380,9 +217,9 @@ public final class NativeJSON extends ScriptObject {
         }
 
         if (value instanceof String) {
-            return JSONParser.quote((String)value);
+            return JSONFunctions.quote((String)value);
         } else if (value instanceof ConsString) {
-            return JSONParser.quote(value.toString());
+            return JSONFunctions.quote(value.toString());
         }
 
         if (value instanceof Number) {
@@ -421,7 +258,7 @@ public final class NativeJSON extends ScriptObject {
             if (strP != UNDEFINED) {
                 final StringBuilder member = new StringBuilder();
 
-                member.append(JSONParser.quote(p.toString())).append(':');
+                member.append(JSONFunctions.quote(p.toString())).append(':');
                 if (!state.gap.isEmpty()) {
                     member.append(' ');
                 }

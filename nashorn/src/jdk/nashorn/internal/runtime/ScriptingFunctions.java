@@ -37,15 +37,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
  * Global functions supported only in scripting mode.
  */
-public class ScriptingFunctions {
+public final class ScriptingFunctions {
 
     /** Handle to implementation of {@link ScriptingFunctions#readLine} - Nashorn extension */
     public static final MethodHandle READLINE = findOwnMH("readLine", Object.class, Object.class);

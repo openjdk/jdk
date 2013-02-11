@@ -124,7 +124,7 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
 
     @Override
     public PropertyDescriptor fillFrom(final ScriptObject sobj) {
-        final boolean strict = getContext()._strict;
+        final boolean strict = isStrictContext();
         if (sobj.has(CONFIGURABLE)) {
             this.configurable = JSType.toBoolean(sobj.get(CONFIGURABLE));
         } else {

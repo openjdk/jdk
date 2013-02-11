@@ -168,7 +168,7 @@ public final class NativeFunction {
             arguments = ScriptRuntime.EMPTY_ARRAY;
         }
 
-        return ((ScriptFunction)self).makeBoundFunction(thiz, arguments);
+        return ((ScriptFunctionImpl)self).makeBoundFunction(thiz, arguments);
     }
 
     /**

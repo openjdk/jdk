@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
  * Uint32 array for TypedArray extension
  */
 @ScriptClass("Uint32Array")
-public class NativeUint32Array extends ArrayBufferView {
+public final class NativeUint32Array extends ArrayBufferView {
     private static final int BYTES_PER_ELEMENT = 4;
     private static final Factory FACTORY = new Factory(BYTES_PER_ELEMENT) {
         @Override

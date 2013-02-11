@@ -47,7 +47,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * ECMA 15.11 Error Objects
  */
 @ScriptClass("Error")
-public class NativeError extends ScriptObject {
+public final class NativeError extends ScriptObject {
 
     static final MethodHandle GET_COLUMNNUMBER = findOwnMH("getColumnNumber", Object.class, Object.class);
     static final MethodHandle SET_COLUMNNUMBER = findOwnMH("setColumnNumber", Object.class, Object.class, Object.class);

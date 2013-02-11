@@ -104,7 +104,7 @@ final class StructureLoader extends NashornLoader {
             }
         }
 
-        return super.loadClass(name, resolve);
+        return super.loadClassTrusted(name, resolve);
     }
 
 
@@ -116,8 +116,6 @@ final class StructureLoader extends NashornLoader {
         }
         return super.findClass(name);
     }
-
-    private static final boolean IS_JAVA_7 = System.getProperty("java.version").indexOf("1.7") != -1;
 
     /**
      * Generate a layout class.
@@ -133,13 +131,6 @@ final class StructureLoader extends NashornLoader {
         }
 
         final byte[] code = new ObjectClassGenerator(context).generate(descriptor);
-
-        try {
-            return IS_JAVA_7 ? sun.misc.Unsafe.getUnsafe().defineClass(name, code, 0, code.length) : defineClass(name, code, 0, code.length);
-        } catch (final SecurityException e) {
-            throw new AssertionError("Nashorn needs to run in the bootclasspath when using Java7, or the NoClassDefFoundError bug in Java7 will trigger." +
-                                     "(This may not be enough - it has been known to happen anyway. Please use Java8)");
-        }
-
+        return defineClass(name, code, 0, code.length);
     }
 }

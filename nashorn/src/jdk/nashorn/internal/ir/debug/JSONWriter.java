@@ -80,19 +80,13 @@ public final class JSONWriter extends NodeVisitor {
     /**
      * Returns AST as JSON compatible string.
      *
+     * @param context nashorn context to use
      * @param code code to be parsed
      * @param name name of the code source (used for location)
      * @param includeLoc tells whether to include location information for nodes or not
      * @return JSON string representation of AST of the supplied code
      */
-    public static String parse(final String code, final String name, final boolean includeLoc) {
-        final Context      context    = AccessController.doPrivileged(
-                new PrivilegedAction<Context>() {
-                    @Override
-                    public Context run() {
-                        return Context.getContext();
-                    }
-                });
+    public static String parse(final Context context, final String code, final String name, final boolean includeLoc) {
         final Compiler     compiler   = Compiler.compiler(new Source(name, code), context, new Context.ThrowErrorManager(), context._strict);
         final Parser       parser     = new Parser(compiler, context._strict);
         final JSONWriter   jsonWriter = new JSONWriter(includeLoc);

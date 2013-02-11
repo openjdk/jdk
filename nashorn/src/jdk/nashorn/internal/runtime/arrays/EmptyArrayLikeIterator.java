@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import java.util.NoSuchElementException;
+
 /**
  * Dummy array iterator that has no elements
  */
@@ -41,7 +43,7 @@ final class EmptyArrayLikeIterator extends ArrayLikeIterator<Object> {
 
     @Override
     public Object next() {
-        return null;
+        throw new NoSuchElementException();
     }
 
     @Override

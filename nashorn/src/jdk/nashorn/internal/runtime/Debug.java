@@ -36,7 +36,7 @@ import jdk.nashorn.internal.parser.TokenType;
  * Utilities for debugging Nashorn.
  *
  */
-public class Debug {
+public final class Debug {
     private Debug() {
     }
 

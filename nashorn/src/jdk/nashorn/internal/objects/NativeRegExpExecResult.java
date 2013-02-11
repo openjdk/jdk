@@ -40,7 +40,7 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
  * RegExp.prototype.exec method.
  */
 @ScriptClass("RegExpExecResult")
-public class NativeRegExpExecResult extends ScriptObject {
+public final class NativeRegExpExecResult extends ScriptObject {
     /** index property */
     @Property
     public Object index;

@@ -108,6 +108,9 @@ public final class Compiler {
     /** Name of the objects package */
     public static final String OBJECTS_PACKAGE = "jdk/nashorn/internal/objects";
 
+    /** Name of the runtime package */
+    public static final String RUNTIME_PACKAGE = "jdk/nashorn/internal/runtime";
+
     /** Name of the Global object, cannot be referred to as .class, @see CodeGenerator */
     public static final String GLOBAL_OBJECT = OBJECTS_PACKAGE + '/' + "Global";
 

@@ -37,6 +37,7 @@ import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.RegExp;
 import jdk.nashorn.internal.runtime.Source;
 
 /**

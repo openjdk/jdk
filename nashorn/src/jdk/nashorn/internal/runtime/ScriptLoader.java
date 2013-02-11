@@ -28,32 +28,15 @@ package jdk.nashorn.internal.runtime;
 import java.security.CodeSource;
 
 /**
- * Responsible for loading generated and disk based classes.
+ * Responsible for loading script generated classes.
  *
  */
 final class ScriptLoader extends NashornLoader {
     /**
      * Constructor.
      */
-    ScriptLoader(final ClassLoader parent, final Context context) {
+    ScriptLoader(final StructureLoader parent, final Context context) {
         super(parent, context);
-    }
-
-    @Override
-    protected synchronized Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
-        checkPackageAccess(name);
-
-        // check the cache first
-        Class<?> cl = findLoadedClass(name);
-        if (cl == null) {
-            cl = getParent().loadClass(name);
-        }
-
-        if (resolve) {
-            resolveClass(cl);
-        }
-
-        return cl;
     }
 
     // package-private and private stuff below this point

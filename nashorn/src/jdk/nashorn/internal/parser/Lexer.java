@@ -289,7 +289,7 @@ public class Lexer extends Scanner {
         add(type, start, position);
     }
 
-    static String getWhitespaceRegExp() {
+    public static String getWhitespaceRegExp() {
         return JAVASCRIPT_WHITESPACE_IN_REGEXP;
     }
 

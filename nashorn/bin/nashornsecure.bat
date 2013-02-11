@@ -24,4 +24,4 @@ rem questions.
 rem
 @echo off
 
-jrunscript -J-Djava.security.manager -J-Xms2G -J-Xmx2G -J-XX:-TieredCompilation -J-server -J-esa -J-ea -J-Djava.ext.dirs=%~dp0\..\dist -J-XX:+HeapDumpOnOutOfMemoryError -J-Dnashorn.debug=true -J-Djava.lang.invoke.MethodHandle.DEBUG_NAMES=false -l nashorn
+jrunscript -J-Djava.security.properties=%~dp0\..\make\java.security.override -J-Djava.security.manager -J-Xms2G -J-Xmx2G -J-XX:-TieredCompilation -J-server -J-esa -J-ea -J-Djava.ext.dirs=%~dp0\..\dist -J-XX:+HeapDumpOnOutOfMemoryError -J-Dnashorn.debug=true -J-Djava.lang.invoke.MethodHandle.DEBUG_NAMES=false -l nashorn

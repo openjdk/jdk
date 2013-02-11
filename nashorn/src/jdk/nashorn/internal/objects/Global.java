@@ -347,10 +347,13 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private static final MethodHandle LOAD    = findOwnMH("load",    Object.class, Object.class, Object.class);
     private static final MethodHandle EXIT    = findOwnMH("exit",    Object.class, Object.class, Object.class);
 
+    private final Context context;
+
     /**
      * Constructor
      */
-    public Global() {
+    public Global(final Context context) {
+        this.context = context;
         this.setIsScope();
         /*
          * Duplicate global's map and use it. This way the initial Map filled
@@ -359,19 +362,23 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
          */
         this.setMap(getMap().duplicate());
 
-        final int cacheSize = getContext()._class_cache_size;
+        final int cacheSize = context._class_cache_size;
         if (cacheSize > 0) {
             classCache = new ClassCache(cacheSize);
         }
     }
 
     /**
-     * Script access to unique context specific Global instance
+     * Script access to "current" Global instance
      *
      * @return the global singleton
      */
     public static Global instance() {
-        return (Global)Context.getGlobal();
+        ScriptObject global = Context.getGlobal();
+        if (! (global instanceof Global)) {
+            throw new IllegalStateException("no current global instance");
+        }
+        return (Global)global;
     }
 
     /**
@@ -380,7 +387,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the context
      */
     static Context getThisContext() {
-        return instance().getContext();
+        return instance().context;
     }
 
     /**
@@ -569,7 +576,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     public PropertyDescriptor newAccessorDescriptor(final Object get, final Object set, final boolean configurable, final boolean enumerable) {
         final AccessorPropertyDescriptor desc = new AccessorPropertyDescriptor(configurable, enumerable, get == null ? UNDEFINED : get, set == null ? UNDEFINED : set);
 
-        final boolean strict = getContext()._strict;
+        final boolean strict = context._strict;
 
         if (get == null) {
             desc.delete(PropertyDescriptor.GET, strict);
@@ -658,7 +665,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final Global global = Global.instance();
         final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
 
-        return global.getContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict));
+        return global.context.eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict));
     }
 
     /**
@@ -698,7 +705,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     public static Object load(final Object self, final Object source) throws IOException {
         final Global global = Global.instance();
         final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
-        return global.getContext().load(scope, source);
+        return global.context.load(scope, source);
     }
 
     /**
@@ -1344,7 +1351,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.decodeURIComponent = ScriptFunctionImpl.makeFunction("decodeURIComponent", GlobalFunctions.DECODE_URICOMPONENT);
         this.escape             = ScriptFunctionImpl.makeFunction("escape",     GlobalFunctions.ESCAPE);
         this.unescape           = ScriptFunctionImpl.makeFunction("unescape",   GlobalFunctions.UNESCAPE);
-        this.print              = ScriptFunctionImpl.makeFunction("print",      getContext()._print_no_newline ? PRINT : PRINTLN);
+        this.print              = ScriptFunctionImpl.makeFunction("print",      context._print_no_newline ? PRINT : PRINTLN);
         this.load               = ScriptFunctionImpl.makeFunction("load",       LOAD);
         this.exit               = ScriptFunctionImpl.makeFunction("exit",       EXIT);
         this.quit               = ScriptFunctionImpl.makeFunction("quit",       EXIT);
@@ -1387,7 +1394,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         initTypedArray();
 
-        if (getContext()._scripting) {
+        if (context._scripting) {
             initScripting();
         }
 
@@ -1403,11 +1410,11 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.__LINE__ = 0.0;
 
         // expose script (command line) arguments as "arguments" property of global
-        final List<String> arguments = getContext().getOptions().getArguments();
+        final List<String> arguments = context.getOptions().getArguments();
         final Object argsObj = wrapAsObject(arguments.toArray());
 
         addOwnProperty("arguments", Attribute.NOT_ENUMERABLE, argsObj);
-        if (getContext()._scripting) {
+        if (context._scripting) {
             // synonym for "arguments" in scripting mode
             addOwnProperty("$ARG", Attribute.NOT_ENUMERABLE, argsObj);
         }
@@ -1485,7 +1492,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         addOwnProperty("echo", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)
-        value = new OptionsObject(this.getContext());
+        value = new OptionsObject(context);
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$ENV (scripting-mode-only)

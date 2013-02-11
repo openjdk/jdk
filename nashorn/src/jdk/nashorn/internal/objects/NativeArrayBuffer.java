@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 @ScriptClass("ArrayBuffer")
-class NativeArrayBuffer extends ScriptObject {
+final class NativeArrayBuffer extends ScriptObject {
     private final byte[] buffer;
 
     @Constructor(arity = 1)

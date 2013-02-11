@@ -3183,6 +3183,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 @Override
                 public Node enter(final IdentNode node) {
                     final Symbol symbol = node.getSymbol();
+                    assert symbol != null;
                     if (symbol.isScope()) {
                         if (symbol.isFastScope(currentFunction)) {
                             storeFastScopeVar(node.getType(), symbol, CALLSITE_SCOPE | getCallSiteFlags());
@@ -3190,7 +3191,6 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                             method.dynamicSet(node.getType(), node.getName(), CALLSITE_SCOPE | getCallSiteFlags());
                         }
                     } else {
-                        assert symbol != null;
                         method.store(symbol);
                     }
                     return null;

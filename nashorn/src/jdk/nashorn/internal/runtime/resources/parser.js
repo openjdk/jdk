@@ -47,7 +47,7 @@ function parse(/*code, [name], [location]*/) {
             code = arguments[0];
     }
 
-    var jsonStr = Packages.jdk.nashorn.internal.ir.debug.JSONWriter.parse(code, name, location);
+    var jsonStr = Packages.jdk.nashorn.internal.runtime.ScriptRuntime.parse(code, name, location);
     return JSON.parse(jsonStr,
         function (prop, value) {
             if (typeof(value) == 'string' && prop == "value") {

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.parser;
+package jdk.nashorn.internal.runtime;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,13 +33,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
-import jdk.nashorn.internal.runtime.BitVector;
+import jdk.nashorn.internal.parser.Lexer;
+import jdk.nashorn.internal.parser.Scanner;
 
 /**
  * Scan a JavaScript regexp, converting to Java regex if necessary.
  *
  */
-public class RegExpScanner extends Scanner {
+final class RegExpScanner extends Scanner {
 
     /**
      * String builder to accumulate the result - this contains verbatim parsed JavaScript.

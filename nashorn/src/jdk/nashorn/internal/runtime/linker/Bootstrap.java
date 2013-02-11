@@ -29,9 +29,11 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.codegen.RuntimeCallSite;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.DynamicLinker;
@@ -78,6 +80,20 @@ public final class Bootstrap {
     public static CallSite bootstrap(final Lookup lookup, final String opDesc, final MethodType type, final int flags) {
         return dynamicLinker.link(LinkerCallSite.newLinkerCallSite(opDesc, type, flags));
     }
+
+    /**
+     * Bootstrapper for a specialized Runtime call
+     *
+     * @param lookup       lookup
+     * @param initialName  initial name for callsite
+     * @param type         method type for call site
+     *
+     * @return callsite for a runtime node
+     */
+    public static CallSite runtimeBootstrap(final MethodHandles.Lookup lookup, final String initialName, final MethodType type) {
+        return new RuntimeCallSite(type, initialName);
+    }
+
 
     /**
      * Returns a dynamic invoker for a specified dynamic operation. You can use this method to create a method handle

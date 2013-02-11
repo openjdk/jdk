@@ -40,7 +40,7 @@ import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
  * This class supports the handling of scope in a with body.
  *
  */
-public class WithObject extends ScriptObject implements Scope {
+public final class WithObject extends ScriptObject implements Scope {
 
     private static final MethodHandle WITHEXPRESSIONFILTER = findOwnMH("withFilterExpression", Object.class, Object.class);
     private static final MethodHandle WITHSCOPEFILTER      = findOwnMH("withFilterScope",      Object.class, Object.class);
