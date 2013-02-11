@@ -384,11 +384,6 @@ class VM_RedefineClasses: public VM_Operation {
   jvmtiError compare_and_normalize_class_versions(
     instanceKlassHandle the_class, instanceKlassHandle scratch_class);
 
-  // Swap annotations[i] with annotations[j]
-  // Used by compare_and_normalize_class_versions() when normalizing
-  // overloaded methods or changing idnum as when adding or deleting methods.
-  void swap_all_method_annotations(int i, int j, instanceKlassHandle scratch_class, TRAPS);
-
   // Figure out which new methods match old methods in name and signature,
   // which methods have been added, and which are no longer present
   void compute_added_deleted_matching_methods();
@@ -416,6 +411,9 @@ class VM_RedefineClasses: public VM_Operation {
   // Install the redefinition of a class
   void redefine_single_class(jclass the_jclass,
     Klass* scratch_class_oop, TRAPS);
+
+  void swap_annotations(instanceKlassHandle new_class,
+                        instanceKlassHandle scratch_class);
 
   // Increment the classRedefinedCount field in the specific InstanceKlass
   // and in all direct and indirect subclasses.
