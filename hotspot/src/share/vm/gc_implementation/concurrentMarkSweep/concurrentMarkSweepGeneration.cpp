@@ -48,6 +48,7 @@
 #include "memory/iterator.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/tenuredGeneration.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals_extension.hpp"
@@ -916,7 +917,31 @@ void ConcurrentMarkSweepGeneration::compute_new_size() {
     return;
   }
 
-  size_t expand_bytes = 0;
+  // Compute some numbers about the state of the heap.
+  const size_t used_after_gc = used();
+  const size_t capacity_after_gc = capacity();
+
+  CardGeneration::compute_new_size();
+
+  // Reset again after a possible resizing
+  cmsSpace()->reset_after_compaction();
+
+  assert(used() == used_after_gc && used_after_gc <= capacity(),
+         err_msg("used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
+         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity()));
+}
+
+void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
+  assert_locked_or_safepoint(Heap_lock);
+
+  // If incremental collection failed, we just want to expand
+  // to the limit.
+  if (incremental_collection_failed()) {
+    clear_incremental_collection_failed();
+    grow_to_reserved();
+    return;
+  }
+
   double free_percentage = ((double) free()) / capacity();
   double desired_free_percentage = (double) MinHeapFreeRatio / 100;
   double maximum_free_percentage = (double) MaxHeapFreeRatio / 100;
@@ -925,9 +950,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size() {
   if (free_percentage < desired_free_percentage) {
     size_t desired_capacity = (size_t)(used() / ((double) 1 - desired_free_percentage));
     assert(desired_capacity >= capacity(), "invalid expansion size");
-    expand_bytes = MAX2(desired_capacity - capacity(), MinHeapDeltaBytes);
-  }
-  if (expand_bytes > 0) {
+    size_t expand_bytes = MAX2(desired_capacity - capacity(), MinHeapDeltaBytes);
     if (PrintGCDetails && Verbose) {
       size_t desired_capacity = (size_t)(used() / ((double) 1 - desired_free_percentage));
       gclog_or_tty->print_cr("\nFrom compute_new_size: ");
@@ -960,6 +983,14 @@ void ConcurrentMarkSweepGeneration::compute_new_size() {
     if (PrintGCDetails && Verbose) {
       gclog_or_tty->print_cr("  Expanded free fraction %f",
         ((double) free()) / capacity());
+    }
+  } else {
+    size_t desired_capacity = (size_t)(used() / ((double) 1 - desired_free_percentage));
+    assert(desired_capacity <= capacity(), "invalid expansion size");
+    size_t shrink_bytes = capacity() - desired_capacity;
+    // Don't shrink unless the delta is greater than the minimum shrink we want
+    if (shrink_bytes >= MinHeapDeltaBytes) {
+      shrink_free_list_by(shrink_bytes);
     }
   }
 }
@@ -1872,7 +1903,7 @@ void CMSCollector::compute_new_size() {
   assert_locked_or_safepoint(Heap_lock);
   FreelistLocker z(this);
   MetaspaceGC::compute_new_size();
-  _cmsGen->compute_new_size();
+  _cmsGen->compute_new_size_free_list();
 }
 
 // A work method used by foreground collection to determine
@@ -2601,6 +2632,10 @@ void CMSCollector::gc_prologue(bool full) {
 }
 
 void ConcurrentMarkSweepGeneration::gc_prologue(bool full) {
+
+  _capacity_at_prologue = capacity();
+  _used_at_prologue = used();
+
   // Delegate to CMScollector which knows how to coordinate between
   // this and any other CMS generations that it is responsible for
   // collecting.
@@ -3300,6 +3335,26 @@ bool ConcurrentMarkSweepGeneration::expand_and_ensure_spooling_space(
 }
 
 
+void ConcurrentMarkSweepGeneration::shrink_by(size_t bytes) {
+  assert_locked_or_safepoint(ExpandHeap_lock);
+  // Shrink committed space
+  _virtual_space.shrink_by(bytes);
+  // Shrink space; this also shrinks the space's BOT
+  _cmsSpace->set_end((HeapWord*) _virtual_space.high());
+  size_t new_word_size = heap_word_size(_cmsSpace->capacity());
+  // Shrink the shared block offset array
+  _bts->resize(new_word_size);
+  MemRegion mr(_cmsSpace->bottom(), new_word_size);
+  // Shrink the card table
+  Universe::heap()->barrier_set()->resize_covered_region(mr);
+
+  if (Verbose && PrintGC) {
+    size_t new_mem_size = _virtual_space.committed_size();
+    size_t old_mem_size = new_mem_size + bytes;
+    gclog_or_tty->print_cr("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+                  name(), old_mem_size/K, new_mem_size/K);
+  }
+}
 
 void ConcurrentMarkSweepGeneration::shrink(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
@@ -3351,7 +3406,7 @@ bool ConcurrentMarkSweepGeneration::grow_to_reserved() {
   return success;
 }
 
-void ConcurrentMarkSweepGeneration::shrink_by(size_t bytes) {
+void ConcurrentMarkSweepGeneration::shrink_free_list_by(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   assert_lock_strong(freelistLock());
   // XXX Fix when compaction is implemented.
@@ -9071,51 +9126,6 @@ void ASConcurrentMarkSweepGeneration::update_counters(size_t used) {
     assert(gc_stats_l->kind() == GCStats::CMSGCStatsKind,
       "Wrong gc statistics type");
     counters->update_counters(gc_stats_l);
-  }
-}
-
-// The desired expansion delta is computed so that:
-// . desired free percentage or greater is used
-void ASConcurrentMarkSweepGeneration::compute_new_size() {
-  assert_locked_or_safepoint(Heap_lock);
-
-  GenCollectedHeap* gch = (GenCollectedHeap*) GenCollectedHeap::heap();
-
-  // If incremental collection failed, we just want to expand
-  // to the limit.
-  if (incremental_collection_failed()) {
-    clear_incremental_collection_failed();
-    grow_to_reserved();
-    return;
-  }
-
-  assert(UseAdaptiveSizePolicy, "Should be using adaptive sizing");
-
-  assert(gch->kind() == CollectedHeap::GenCollectedHeap,
-    "Wrong type of heap");
-  int prev_level = level() - 1;
-  assert(prev_level >= 0, "The cms generation is the lowest generation");
-  Generation* prev_gen = gch->get_gen(prev_level);
-  assert(prev_gen->kind() == Generation::ASParNew,
-    "Wrong type of young generation");
-  ParNewGeneration* younger_gen = (ParNewGeneration*) prev_gen;
-  size_t cur_eden = younger_gen->eden()->capacity();
-  CMSAdaptiveSizePolicy* size_policy = cms_size_policy();
-  size_t cur_promo = free();
-  size_policy->compute_tenured_generation_free_space(cur_promo,
-                                                       max_available(),
-                                                       cur_eden);
-  resize(cur_promo, size_policy->promo_size());
-
-  // Record the new size of the space in the cms generation
-  // that is available for promotions.  This is temporary.
-  // It should be the desired promo size.
-  size_policy->avg_cms_promo()->sample(free());
-  size_policy->avg_old_live()->sample(used());
-
-  if (UsePerfData) {
-    CMSGCAdaptivePolicyCounters* counters = gc_adaptive_policy_counters();
-    counters->update_cms_capacity_counter(capacity());
   }
 }
 
