@@ -40,7 +40,7 @@
 # include "macroAssembler_arm.inline.hpp"
 #endif
 #ifdef TARGET_ARCH_ppc
-# include "assembler_ppc.inline.hpp"
+# include "macroAssembler_ppc.inline.hpp"
 #endif
 
 #endif // SHARE_VM_ASM_MACROASSEMBLER_INLINE_HPP
