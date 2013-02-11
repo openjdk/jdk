@@ -1573,9 +1573,9 @@ JVM_ENTRY(jbyteArray, JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls))
   if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
     if (k->oop_is_instance()) {
-      Annotations* type_annotations = InstanceKlass::cast(k)->type_annotations();
+      AnnotationArray* type_annotations = InstanceKlass::cast(k)->class_type_annotations();
       if (type_annotations != NULL) {
-        typeArrayOop a = Annotations::make_java_array(type_annotations->class_annotations(), CHECK_NULL);
+        typeArrayOop a = Annotations::make_java_array(type_annotations, CHECK_NULL);
         return (jbyteArray) JNIHandles::make_local(env, a);
       }
     }

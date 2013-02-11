@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,11 +366,10 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   volatile_nonstatic_field(Method,      _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(Method,      _from_interpreted_entry,                       address)                               \
   volatile_nonstatic_field(ConstMethod, _fingerprint,                                  uint64_t)                              \
-  nonstatic_field(ConstMethod,          _constants,                                    ConstantPool*)                  \
+  nonstatic_field(ConstMethod,          _constants,                                    ConstantPool*)                         \
   nonstatic_field(ConstMethod,          _stackmap_data,                                Array<u1>*)                            \
   nonstatic_field(ConstMethod,          _constMethod_size,                             int)                                   \
-  nonstatic_field(ConstMethod,          _interpreter_kind,                             jbyte)                                 \
-  nonstatic_field(ConstMethod,          _flags,                                        jbyte)                                 \
+  nonstatic_field(ConstMethod,          _flags,                                        u2)                                    \
   nonstatic_field(ConstMethod,          _code_size,                                    u2)                                    \
   nonstatic_field(ConstMethod,          _name_index,                                   u2)                                    \
   nonstatic_field(ConstMethod,          _signature_index,                              u2)                                    \
@@ -2261,14 +2260,18 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(Klass::_lh_array_tag_obj_value)                        \
                                                                           \
   /********************************/                                      \
-  /* ConstMethod anon-enum */                                      \
+  /* ConstMethod anon-enum */                                             \
   /********************************/                                      \
                                                                           \
-  declare_constant(ConstMethod::_has_linenumber_table)             \
-  declare_constant(ConstMethod::_has_checked_exceptions)           \
-  declare_constant(ConstMethod::_has_localvariable_table)          \
-  declare_constant(ConstMethod::_has_exception_table)              \
-  declare_constant(ConstMethod::_has_generic_signature)            \
+  declare_constant(ConstMethod::_has_linenumber_table)                    \
+  declare_constant(ConstMethod::_has_checked_exceptions)                  \
+  declare_constant(ConstMethod::_has_localvariable_table)                 \
+  declare_constant(ConstMethod::_has_exception_table)                     \
+  declare_constant(ConstMethod::_has_generic_signature)                   \
+  declare_constant(ConstMethod::_has_method_annotations)                  \
+  declare_constant(ConstMethod::_has_parameter_annotations)               \
+  declare_constant(ConstMethod::_has_default_annotations)                 \
+  declare_constant(ConstMethod::_has_type_annotations)                    \
                                                                           \
   /*************************************/                                 \
   /* InstanceKlass enum                */                                 \
