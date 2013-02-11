@@ -377,7 +377,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param args other arguments (beside self) to bind the function to
      * @return the bound function
      */
-    public abstract ScriptFunction makeBoundFunction(Object self, Object[] args);
+    protected abstract ScriptFunction makeBoundFunction(Object self, Object[] args);
 
 
     @Override

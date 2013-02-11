@@ -38,7 +38,7 @@ import jdk.nashorn.internal.parser.TokenType;
  * Instances of this class are created during codegen and stored in script classes'
  * constants array to reduce function instantiation overhead during runtime.
  */
-public class ScriptFunctionData {
+public final class ScriptFunctionData {
 
     // per-function object flags
     private static final int IS_STRICT  = 0b0000_0001;

@@ -46,7 +46,7 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  *
  */
 @ScriptClass("Debug")
-public class NativeDebug extends ScriptObject {
+public final class NativeDebug extends ScriptObject {
     NativeDebug() {
         this.setProto(Global.objectPrototype());
     }
@@ -64,6 +64,10 @@ public class NativeDebug extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object getContext(final Object self) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("getNashornContext"));
+        }
         return Global.getThisContext();
     }
 

@@ -1053,7 +1053,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * Return the current context from the object's map.
      * @return Current context.
      */
-    protected final Context getContext() {
+    final Context getContext() {
         return getMap().getContext();
     }
 

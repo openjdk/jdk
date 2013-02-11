@@ -52,7 +52,7 @@ import org.dynalang.dynalink.linker.LinkRequest;
  * {@link NativeJava#type(Object, Object) Java.type()} method.
  */
 @ScriptClass("JavaImporter")
-public class NativeJavaImporter extends ScriptObject {
+public final class NativeJavaImporter extends ScriptObject {
     private final Object[] args;
 
     NativeJavaImporter(final Object[] args) {
@@ -121,7 +121,7 @@ public class NativeJavaImporter extends ScriptObject {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final Object value = createProperty(name);
         if(value != null) {
-            set(name, value, getContext()._strict);
+            set(name, value, isStrictContext());
             return true;
         }
         return false;

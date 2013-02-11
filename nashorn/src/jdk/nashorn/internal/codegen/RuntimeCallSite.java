@@ -42,6 +42,7 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.Lookup;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 
@@ -55,8 +56,8 @@ import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
  * {@code Object a === int b} is a good idea to specialize to {@code ((Integer)a).intValue() == b}
  * surrounded by catch blocks that will try less narrow specializations
  */
-public class RuntimeCallSite extends MutableCallSite {
-    static final Call BOOTSTRAP = staticCallNoLookup(RuntimeCallSite.class, "bootstrap", CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
+public final class RuntimeCallSite extends MutableCallSite {
+    static final Call BOOTSTRAP = staticCallNoLookup(Bootstrap.class, "runtimeBootstrap", CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
 
     private static final MethodHandle NEXT = findOwnMH("next",  MethodHandle.class);
 
@@ -200,24 +201,11 @@ public class RuntimeCallSite extends MutableCallSite {
      * @param type method type for call site
      * @param name name of runtime call
      */
-    RuntimeCallSite(final MethodType type, final String name) {
+    public RuntimeCallSite(final MethodType type, final String name) {
         super(type);
         this.name    = name;
         this.request = Request.valueOf(name.substring(0, name.indexOf(SpecializedRuntimeNode.REQUEST_SEPARATOR)));
         setTarget(makeMethod(name));
-    }
-
-    /**
-     * Bootstrapper for a specialized Runtime call
-     *
-     * @param lookup       lookup
-     * @param initialName  initial name for callsite
-     * @param type         method type for call site
-     *
-     * @return callsite for a runtime node
-     */
-    public static CallSite bootstrap(final MethodHandles.Lookup lookup, final String initialName, final MethodType type) {
-        return new RuntimeCallSite(type, initialName);
     }
 
     private String nextName(final String requestName) {

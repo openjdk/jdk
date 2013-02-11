@@ -43,7 +43,7 @@ import org.dynalang.dynalink.linker.GuardedInvocation;
  * {@link ScriptObject#findSetMethod(CallSiteDescriptor, org.dynalang.dynalink.linker.LinkRequest)} and
  * serve as the actual encapsulation of the algorithm for creating an appropriate property setter method.
  */
-class SetMethodCreator {
+final class SetMethodCreator {
     // See constructor parameters for description of fields
     private final ScriptObject sobj;
     private final PropertyMap map;

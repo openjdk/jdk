@@ -34,7 +34,7 @@ import jdk.nashorn.internal.runtime.options.Options;
  * Wrapper class for Logging system. This is how you are supposed to register a logger and use it
  */
 
-public class DebugLogger {
+public final class DebugLogger {
     @SuppressWarnings("NonConstantLogger")
     private final Logger  logger;
     private final boolean isEnabled;

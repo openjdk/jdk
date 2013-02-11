@@ -30,7 +30,7 @@ import java.util.Arrays;
 /**
  * Faster implementation of BitSet
  */
-public class BitVector implements Cloneable {
+public final class BitVector implements Cloneable {
     /** Number of bits per slot. */
     private static final int BITSPERSLOT = 64;
 

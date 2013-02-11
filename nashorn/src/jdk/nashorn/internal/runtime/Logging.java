@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  * specified on the command line. Supports all standard log levels
  *
  */
-public class Logging {
+public final class Logging {
 
     private Logging() {
     }

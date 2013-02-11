@@ -40,7 +40,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  *
  */
 @ScriptClass("Error")
-public class NativeSyntaxError extends ScriptObject {
+public final class NativeSyntaxError extends ScriptObject {
 
     /** message property in instance */
     @Property(name = NativeError.MESSAGE)

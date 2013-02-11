@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import java.util.NoSuchElementException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
@@ -71,6 +72,10 @@ class MapIterator extends ArrayLikeIterator<Object> {
 
     @Override
     public Object next() {
-        return indexInArray() ? obj.get(bumpIndex()) : null;
+        if (indexInArray()) {
+            return obj.get(bumpIndex());
+        }
+
+        throw new NoSuchElementException();
     }
 }

@@ -47,7 +47,7 @@ import org.dynalang.dynalink.support.TypeUtilities;
  * arrays, and so forth.
  */
 @ScriptClass("Java")
-public class NativeJava {
+public final class NativeJava {
 
     private NativeJava() {
     }

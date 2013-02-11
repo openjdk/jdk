@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.access;
+package jdk.nashorn.api.javaaccess;
 
 public class Person {
 

@@ -33,7 +33,7 @@ import java.util.Deque;
  * instances of <tt>ConsString</tt> or {@link String}. Copying of characters to
  * a proper string is delayed until it becomes necessary.
  */
-public class ConsString implements CharSequence {
+public final class ConsString implements CharSequence {
 
     private CharSequence left, right;
     final private int length;

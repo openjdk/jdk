@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.parser;
+package jdk.nashorn.internal.runtime;
 
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.MULTILINE;
@@ -32,9 +32,6 @@ import static java.util.regex.Pattern.UNICODE_CASE;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import jdk.nashorn.internal.runtime.BitVector;
-import jdk.nashorn.internal.runtime.ECMAErrors;
-import jdk.nashorn.internal.runtime.ParserException;
 
 /**
  * This class is used to represent a parsed regular expression. Accepts input

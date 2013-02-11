@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.access;
+package jdk.nashorn.api.javaaccess;
 
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.internal.junit.ArrayAsserts.assertArrayEquals;

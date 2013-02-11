@@ -37,7 +37,7 @@ import java.lang.invoke.MethodHandles;
  * These are actual implementation methods for functions exposed by global
  * scope. The code lives here to share the code across the contexts.
  */
-public class GlobalFunctions {
+public final class GlobalFunctions {
 
     /** Methodhandle to implementation of ECMA 15.1.2.2, parseInt */
     public static final MethodHandle PARSEINT = findOwnMH("parseInt",   double.class, Object.class, Object.class, Object.class);

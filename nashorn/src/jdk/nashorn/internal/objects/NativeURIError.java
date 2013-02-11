@@ -39,7 +39,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * ECMA 15.11.6.6 URIError
  */
 @ScriptClass("Error")
-public class NativeURIError extends ScriptObject {
+public final class NativeURIError extends ScriptObject {
 
     /** message property in instance */
     @Property(name = NativeError.MESSAGE)

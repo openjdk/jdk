@@ -118,7 +118,7 @@ public final class NativeArray extends ScriptObject {
             if (value == ScriptRuntime.EMPTY) {
                 arrayData = arrayData.delete(index);
             } else {
-                arrayData = arrayData.set(index, value, getContext()._strict);
+                arrayData = arrayData.set(index, value, isStrictContext());
             }
         }
 
@@ -644,7 +644,7 @@ public final class NativeArray extends ScriptObject {
             if (bulkable(sobj)) {
                 final NativeArray nativeArray = (NativeArray)sobj;
                 if (nativeArray.getArray().length() + args.length <= JSType.MAX_UINT) {
-                    final ArrayData newData = nativeArray.getArray().push(nativeArray.getContext()._strict, args);
+                    final ArrayData newData = nativeArray.getArray().push(nativeArray.isStrictContext(), args);
                     nativeArray.setArray(newData);
                     return newData.length();
                 }

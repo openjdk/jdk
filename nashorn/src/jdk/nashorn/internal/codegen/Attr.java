@@ -415,6 +415,7 @@ final class Attr extends NodeOperatorVisitor {
             symbol.setIsScope();
         }
 
+        assert symbol != null;
         if(symbol.isGlobal()) {
             getCurrentFunctionNode().setUsesGlobalSymbol();
         } else if(symbol.isScope()) {

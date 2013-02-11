@@ -30,12 +30,12 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import jdk.nashorn.internal.codegen.objects.FunctionObjectCreator;
+
+import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Lookup;
@@ -184,7 +184,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param strict are we in strict mode
      * @return new ScriptFunction
      */
-    public static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle, final MethodHandle[] specs, final boolean strict) {
+    static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle, final MethodHandle[] specs, final boolean strict) {
         final ScriptFunctionImpl func = new ScriptFunctionImpl(name, methodHandle, null, specs, strict, true);
         func.setConstructHandle(null);
         func.setPrototype(UNDEFINED);
@@ -200,7 +200,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param specs  specialized versions of function if available, null otherwise
      * @return new ScriptFunction
      */
-    public static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle, final MethodHandle[] specs) {
+    static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle, final MethodHandle[] specs) {
         return makeFunction(name, methodHandle, specs, false);
     }
 
@@ -211,7 +211,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param methodHandle handle for invocation
      * @return new ScriptFunction
      */
-    public static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle) {
+    static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle) {
         return makeFunction(name, methodHandle, null);
     }
 
@@ -223,7 +223,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param args arguments to bind
      */
     @Override
-    public ScriptFunction makeBoundFunction(final Object thiz, final Object[] args) {
+    protected ScriptFunction makeBoundFunction(final Object thiz, final Object[] args) {
         Object[] allArgs = args;
 
         if (allArgs == null) {

@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
  * Int8Array for the TypedArray extension
  */
 @ScriptClass("Int8Array")
-public class NativeInt8Array extends ArrayBufferView {
+public final class NativeInt8Array extends ArrayBufferView {
     private static final int BYTES_PER_ELEMENT = 1;
     private static final Factory FACTORY = new Factory(BYTES_PER_ELEMENT) {
         @Override

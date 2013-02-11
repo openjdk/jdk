@@ -47,7 +47,6 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
-import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -1034,10 +1033,10 @@ public final class NativeString extends ScriptObject {
         int start = 0;
         int end   = len - 1;
 
-        while (start <= end && Lexer.isJSWhitespace(str.charAt(start))) {
+        while (start <= end && ScriptRuntime.isJSWhitespace(str.charAt(start))) {
             start++;
         }
-        while (end > start && Lexer.isJSWhitespace(str.charAt(end))) {
+        while (end > start && ScriptRuntime.isJSWhitespace(str.charAt(end))) {
             end--;
         }
 
