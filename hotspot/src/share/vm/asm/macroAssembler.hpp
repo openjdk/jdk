@@ -37,7 +37,7 @@
 # include "assembler_zero.hpp"
 #endif
 #ifdef TARGET_ARCH_arm
-# include "assembler_arm.hpp"
+# include "macroAssembler_arm.hpp"
 #endif
 #ifdef TARGET_ARCH_ppc
 # include "assembler_ppc.hpp"
