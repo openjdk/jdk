@@ -278,6 +278,10 @@ public abstract class Executable extends AccessibleObject
      * this object.  Returns an array of length 0 if the executable
      * has no parameters.
      *
+     * The parameters of the underlying executable do not necessarily
+     * have unique names, or names that are legal identifiers in the
+     * Java programming language (JLS 3.8).
+     *
      * @return an array of {@code Parameter} objects representing all
      * the parameters to the executable this object represents
      */
