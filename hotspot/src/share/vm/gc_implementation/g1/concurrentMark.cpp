@@ -4062,27 +4062,36 @@ void CMTask::do_marking_step(double time_target_ms,
       if (_cm->verbose_low()) {
         gclog_or_tty->print_cr("[%u] we're scanning part "
                                "["PTR_FORMAT", "PTR_FORMAT") "
-                               "of region "PTR_FORMAT,
-                               _worker_id, _finger, _region_limit, _curr_region);
+                               "of region "HR_FORMAT,
+                               _worker_id, _finger, _region_limit,
+                               HR_FORMAT_PARAMS(_curr_region));
       }
 
-      HeapRegion* hr = _g1h->heap_region_containing(mr.start());
-      assert(!hr->isHumongous() || mr.start() == hr->bottom(),
-             "the start of HeapRegion and MemRegion should be consistent for humongous regions");
+      assert(!_curr_region->isHumongous() || mr.start() == _curr_region->bottom(),
+             "humongous regions should go around loop once only");
 
-      // The special case of the bitmap of a humongous region with its first
-      // bit NOT marked should be avoided from (wasteful) iterating.
-      // Note that the alternative case of the bitmap of a humongous region
-      // with its first bit marked is handled properly in the iterate() routine.
-      // Then, let's iterate over the bitmap of the part of the region that is
-      // left.
+      // Some special cases:
+      // If the memory region is empty, we can just give up the region.
+      // If the current region is humongous then we only need to check
+      // the bitmap for the bit associated with the start of the object,
+      // scan the object if it's live, and give up the region.
+      // Otherwise, let's iterate over the bitmap of the part of the region
+      // that is left.
       // If the iteration is successful, give up the region.
-      // Also note that the case of the bitmap of a humongous region with its
-      // first bit NOT marked is considered "successful", leveraging the fact
-      // that the entire bitmap consists of all 0's in such case.
-      if (mr.is_empty() ||
-          (hr != NULL && hr->isHumongous() && !_nextMarkBitMap->isMarked(mr.start())) ||
-          _nextMarkBitMap->iterate(&bitmap_closure, mr)) {
+      if (mr.is_empty()) {
+        giveup_current_region();
+        regular_clock_call();
+      } else if (_curr_region->isHumongous() && mr.start() == _curr_region->bottom()) {
+        if (_nextMarkBitMap->isMarked(mr.start())) {
+          // The object is marked - apply the closure
+          BitMap::idx_t offset = _nextMarkBitMap->heapWordToOffset(mr.start());
+          bitmap_closure.do_bit(offset);
+        }
+        // Even if this task aborted while scanning the humongous object
+        // we can (and should) give up the current region.
+        giveup_current_region();
+        regular_clock_call();
+      } else if (_nextMarkBitMap->iterate(&bitmap_closure, mr)) {
         giveup_current_region();
         regular_clock_call();
       } else {
