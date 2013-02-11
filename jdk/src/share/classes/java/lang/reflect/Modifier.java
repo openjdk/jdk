@@ -342,13 +342,13 @@ class Modifier {
     static final int SYNTHETIC = 0x00001000;
     static final int ANNOTATION  = 0x00002000;
     static final int ENUM      = 0x00004000;
-    static final int SYNTHESIZED = 0x00010000;
+    static final int MANDATED  = 0x00008000;
     static boolean isSynthetic(int mod) {
       return (mod & SYNTHETIC) != 0;
     }
 
-    static boolean isSynthesized(int mod) {
-      return (mod & SYNTHESIZED) != 0;
+    static boolean isMandated(int mod) {
+      return (mod & MANDATED) != 0;
     }
 
     /**
