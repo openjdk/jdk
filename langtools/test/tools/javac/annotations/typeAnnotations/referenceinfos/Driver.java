@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,8 +241,8 @@ public class Driver {
         sb.append("\n@Repeatable(RTAs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTA {}");
         sb.append("\n@Repeatable(RTBs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTB {}");
 
-        sb.append("\n@ContainerFor(RTA.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTAs { RTA[] value(); }");
-        sb.append("\n@ContainerFor(RTB.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTBs { RTB[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTAs { RTA[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTBs { RTB[] value(); }");
 
         sb.append("\n@Target(value={ElementType.TYPE,ElementType.FIELD,ElementType.METHOD,ElementType.PARAMETER,ElementType.CONSTRUCTOR,ElementType.LOCAL_VARIABLE})");
         sb.append("\n@interface Decl {}");
