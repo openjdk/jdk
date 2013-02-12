@@ -23,7 +23,9 @@
 
 /*
  * @test
- * @summary smoke test for combinator-like stuck analysis
+ * @bug 8005244
+ * @summary Implement overload resolution as per latest spec EDR
+ *          smoke test for combinator-like stuck analysis
  * @author  Maurizio Cimadamore
  * @compile TargetType51.java
  */

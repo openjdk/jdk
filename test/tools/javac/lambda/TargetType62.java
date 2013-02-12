@@ -23,22 +23,24 @@
 
 /*
  * @test
- * @bug 8003280
- * @summary Add lambda tests
- *  complex case of lambda return type that depends on generic method
- *          inference variable
- * @compile -XDrawDiagnostics TargetType20.java
+ * @bug 8007464
+ * @summary Add graph inference support
+ *          check that new wildcards inference strategy doesn't run into 7190296
+ * @ignore  awaits stream API: 800NNNN
+ * @compile TargetType62.java
  */
 import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
-class TargetType20 {
+class TargetType61 {
 
-    interface SAM2<X> {
-      List<X> f();
+    Collector test(Function<Integer, Integer> classifier) {
+        return g(classifier, TreeMap::new, m(HashSet::new));
     }
 
-    class Test {
-       <Z> void call(SAM2<Z> x, SAM2<Z> y) { }
-       { call(() -> Collections.emptyList(), () -> new ArrayList<String>()); }
-    }
+    <R> Collector<Integer, R> m(Supplier<R> s) { return null; }
+
+    <T, K, D, M extends Map<K, D>>
+            Collector<T, M> g(Function<T, K> classifier, Supplier<M> mapFactory, Collector<T, D> downstream) { return null; }
 }

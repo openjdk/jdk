@@ -23,22 +23,25 @@
 
 /*
  * @test
- * @bug 8003280
- * @summary Add lambda tests
- *  complex case of lambda return type that depends on generic method
- *          inference variable
- * @compile -XDrawDiagnostics TargetType20.java
+ * @bug 8007464
+ * @summary Add graph inference support
+ *          check that new wildcards inference strategy doesn't run into 7190296
+ * @compile TargetType61.java
  */
-import java.util.*;
+class TargetType61 {
 
-class TargetType20 {
-
-    interface SAM2<X> {
-      List<X> f();
+    interface Stream<T> {
+        void forEach(Sink<? super T> sink);
     }
 
-    class Test {
-       <Z> void call(SAM2<Z> x, SAM2<Z> y) { }
-       { call(() -> Collections.emptyList(), () -> new ArrayList<String>()); }
+    interface Sink<T> {
+        void put(T t);
+    }
+
+    public boolean add(CharSequence s) { return false; }
+
+    public void addAll(Stream<? extends CharSequence> stream) {
+        stream.forEach(this::add);
+        stream.forEach(e -> { add(e); });
     }
 }
