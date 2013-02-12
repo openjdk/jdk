@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,494 +25,119 @@
 
 package sun.util.calendar;
 
-import  java.io.File;
-import  java.io.FileInputStream;
-import  java.io.FileNotFoundException;
-import  java.io.IOException;
-import  java.lang.ref.SoftReference;
-import  java.nio.file.FileSystems;
-import  java.security.AccessController;
-import  java.security.PrivilegedAction;
-import  java.security.PrivilegedActionException;
-import  java.security.PrivilegedExceptionAction;
-import  java.util.ArrayList;
-import  java.util.HashMap;
-import  java.util.List;
-import  java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.StreamCorruptedException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneRules;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneOffsetTransitionRule;
+import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.SimpleTimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.CRC32;
+import java.util.zip.ZipFile;
 
 /**
- * <code>ZoneInfoFile</code> reads Zone information files in the
- * &lt;java.home&gt;/lib/zi directory and provides time zone
- * information in the form of a {@link ZoneInfo} object. Also, it
- * reads the ZoneInfoMappings file to obtain time zone IDs information
- * that is used by the {@link ZoneInfo} class. The directory layout
- * and data file formats are as follows.
- *
- * <p><strong>Directory layout</strong><p>
- *
- * All zone data files and ZoneInfoMappings are put under the
- * &lt;java.home&gt;/lib/zi directory. A path name for a given time
- * zone ID is a concatenation of &lt;java.home&gt;/lib/zi/ and the
- * time zone ID. (The file separator is replaced with the platform
- * dependent value. e.g., '\' for Win32.) An example layout will look
- * like as follows.
- * <blockquote>
- * <pre>
- * &lt;java.home&gt;/lib/zi/Africa/Addis_Ababa
- *                   /Africa/Dakar
- *                   /America/Los_Angeles
- *                   /Asia/Singapore
- *                   /EET
- *                   /Europe/Oslo
- *                   /GMT
- *                   /Pacific/Galapagos
- *                       ...
- *                   /ZoneInfoMappings
- * </pre>
- * </blockquote>
- *
- * A zone data file has specific information of each zone.
- * <code>ZoneInfoMappings</code> has global information of zone IDs so
- * that the information can be obtained without instantiating all time
- * zones.
- *
- * <p><strong>File format</strong><p>
- *
- * Two binary-file formats based on a simple Tag-Length-Value format are used
- * to describe TimeZone information. The generic format of a data file is:
- * <blockquote>
- * <pre>
- *    DataFile {
- *      u1              magic[7];
- *      u1              version;
- *      data_item       data[];
- *    }
- * </pre>
- * </blockquote>
- * where <code>magic</code> is a magic number identifying a file
- * format, <code>version</code> is the format version number, and
- * <code>data</code> is one or more <code>data_item</code>s. The
- * <code>data_item</code> structure is:
- * <blockquote>
- * <pre>
- *    data_item {
- *      u1              tag;
- *      u2              length;
- *      u1              value[length];
- *    }
- * </pre>
- * </blockquote>
- * where <code>tag</code> indicates the data type of the item,
- * <code>length</code> is a byte count of the following
- * <code>value</code> that is the content of item data.
+ * Loads TZDB time-zone rules for j.u.TimeZone
  * <p>
- * All data is stored in the big-endian order. There is no boundary
- * alignment between date items.
- *
- * <p><strong>1. ZoneInfo data file</strong><p>
- *
- * Each ZoneInfo data file consists of the following members.
- * <br>
- * <blockquote>
- * <pre>
- *    ZoneInfoDataFile {
- *      u1              magic[7];
- *      u1              version;
- *      SET OF<sup>1</sup> {
- *        transition            transitions<sup>2</sup>;
- *        offset_table          offsets<sup>2</sup>;
- *        simpletimezone        stzparams<sup>2</sup>;
- *        raw_offset            rawoffset;
- *        dstsaving             dst;
- *        checksum              crc32;
- *        gmtoffsetwillchange   gmtflag<sup>2</sup>;
- *      }
- *   }
- *   1: an unordered collection of zero or one occurrences of each item
- *   2: optional item
- * </pre>
- * </blockquote>
- * <code>magic</code> is a byte-string constant identifying the
- * ZoneInfo data file.  This field must be <code>"javazi&#92;0"</code>
- * defined as {@link #JAVAZI_LABEL}.
- * <p>
- * <code>version</code> is the version number of the file format. This
- * will be used for compatibility check. This field must be
- * <code>0x01</code> in this version.
- * <p>
- * <code>transition</code>, <code>offset_table</code> and
- * <code>simpletimezone</code> have information of time transition
- * from the past to the future.  Therefore, these structures don't
- * exist if the zone didn't change zone names and haven't applied DST in
- * the past, and haven't planned to apply it.  (e.g. Asia/Tokyo zone)
- * <p>
- * <code>raw_offset</code>, <code>dstsaving</code> and <code>checksum</code>
- * exist in every zoneinfo file. They are used by TimeZone.class indirectly.
- *
- * <p><strong>1.1 <code>transition</code> structure</strong><p><a name="transition"></a>
- * <blockquote>
- * <pre>
- *    transition {
- *      u1      tag;              // 0x04 : constant
- *      u2      length;           // byte length of whole values
- *      s8      value[length/8];  // transitions in `long'
- *    }
- * </pre>
- * </blockquote>
- * See {@link ZoneInfo#transitions ZoneInfo.transitions} about the value.
- *
- * <p><strong>1.2 <code>offset_table</code> structure</strong><p>
- * <blockquote>
- * <pre>
- *    offset_table {
- *      u1      tag;              // 0x05 : constant
- *      u2      length;           // byte length of whole values
- *      s4      value[length/4];  // offset values in `int'
- *    }
- * </pre>
- * </blockquote>
- *
- * <p><strong>1.3 <code>simpletimezone</code> structure</strong><p>
- * See {@link ZoneInfo#simpleTimeZoneParams ZoneInfo.simpleTimeZoneParams}
- * about the value.
- * <blockquote>
- * <pre>
- *    simpletimezone {
- *      u1      tag;              // 0x06 : constant
- *      u2      length;           // byte length of whole values
- *      s4      value[length/4];  // SimpleTimeZone parameters
- *    }
- * </pre>
- * </blockquote>
- * See {@link ZoneInfo#offsets ZoneInfo.offsets} about the value.
- *
- * <p><strong>1.4 <code>raw_offset</code> structure</strong><p>
- * <blockquote>
- * <pre>
- *    raw_offset {
- *      u1      tag;              // 0x01 : constant
- *      u2      length;           // must be 4.
- *      s4      value;            // raw GMT offset [millisecond]
- *    }
- * </pre>
- * </blockquote>
- * See {@link ZoneInfo#rawOffset ZoneInfo.rawOffset} about the value.
- *
- * <p><strong>1.5 <code>dstsaving</code> structure</strong><p>
- * Value has dstSaving in seconds.
- * <blockquote>
- * <pre>
- *    dstsaving {
- *      u1      tag;              // 0x02 : constant
- *      u2      length;           // must be 2.
- *      s2      value;            // DST save value [second]
- *    }
- * </pre>
- * </blockquote>
- * See {@link ZoneInfo#dstSavings ZoneInfo.dstSavings} about value.
- *
- * <p><strong>1.6 <code>checksum</code> structure</strong><p>
- * <blockquote>
- * <pre>
- *    checksum {
- *      u1      tag;              // 0x03 : constant
- *      u2      length;           // must be 4.
- *      s4      value;            // CRC32 value of transitions
- *    }
- * </pre>
- * </blockquote>
- * See {@link ZoneInfo#checksum ZoneInfo.checksum}.
- *
- * <p><strong>1.7 <code>gmtoffsetwillchange</code> structure</strong><p>
- * This record has a flag value for {@link ZoneInfo#rawOffsetWillChange}.
- * If this record is not present in a zoneinfo file, 0 is assumed for
- * the value.
- * <blockquote>
- * <pre>
- *    gmtoffsetwillchange {
- *      u1      tag;             // 0x07 : constant
- *      u2      length;          // must be 1.
- *      u1      value;           // 1: if the GMT raw offset will change
- *                               // in the future, 0, otherwise.
- *     }
- * </pre>
- * </blockquote>
- *
- *
- * <p><strong>2. ZoneInfoMappings file</strong><p>
- *
- * The ZoneInfoMappings file consists of the following members.
- * <br>
- * <blockquote>
- * <pre>
- *    ZoneInfoMappings {
- *      u1      magic[7];
- *      u1      version;
- *      SET OF {
- *        versionName                   version;
- *        zone_id_table                 zoneIDs;
- *        raw_offset_table              rawoffsets;
- *        raw_offset_index_table        rawoffsetindices;
- *        alias_table                   aliases;
- *        excluded_list                 excludedList;
- *      }
- *   }
- * </pre>
- * </blockquote>
- *
- * <code>magic</code> is a byte-string constant which has the file type.
- * This field must be <code>"javazm&#92;0"</code> defined as {@link #JAVAZM_LABEL}.
- * <p>
- * <code>version</code> is the version number of this file
- * format. This will be used for compatibility check. This field must
- * be <code>0x01</code> in this version.
- * <p>
- * <code>versionName</code> shows which version of Olson's data has been used
- * to generate this ZoneInfoMappings. (e.g. <code>tzdata2000g</code>) <br>
- * This field is for trouble-shooting and isn't usually used in runtime.
- * <p>
- * <code>zone_id_table</code>, <code>raw_offset_index_table</code> and
- * <code>alias_table</code> are general information of supported
- * zones.
- *
- * <p><strong>2.1 <code>zone_id_table</code> structure</strong><p>
- * The list of zone IDs included in the zi database. The list does
- * <em>not</em> include zone IDs, if any, listed in excludedList.
- * <br>
- * <blockquote>
- * <pre>
- *    zone_id_table {
- *      u1      tag;              // 0x40 : constant
- *      u2      length;           // byte length of whole values
- *      u2      zone_id_count;
- *      zone_id value[zone_id_count];
- *    }
- *
- *    zone_id {
- *      u1      byte_length;      // byte length of id
- *      u1      id[byte_length];  // zone name string
- *    }
- * </pre>
- * </blockquote>
- *
- * <p><strong>2.2 <code>raw_offset_table</code> structure</strong><p>
- * <br>
- * <blockquote>
- * <pre>
- *    raw_offset_table {
- *      u1      tag;              // 0x41 : constant
- *      u2      length;           // byte length of whole values
- *      s4      value[length/4];  // raw GMT offset in milliseconds
- *   }
- * </pre>
- * </blockquote>
- *
- * <p><strong>2.3 <code>raw_offset_index_table</code> structure</strong><p>
- * <br>
- * <blockquote>
- * <pre>
- *    raw_offset_index_table {
- *      u1      tag;              // 0x42 : constant
- *      u2      length;           // byte length of whole values
- *      u1      value[length];
- *    }
- * </pre>
- * </blockquote>
- *
- * <p><strong>2.4 <code>alias_table</code> structure</strong><p>
- * <br>
- * <blockquote>
- * <pre>
- *   alias_table {
- *      u1      tag;              // 0x43 : constant
- *      u2      length;           // byte length of whole values
- *      u2      nentries;         // number of id-pairs
- *      id_pair value[nentries];
- *   }
- *
- *   id_pair {
- *      zone_id aliasname;
- *      zone_id ID;
- *   }
- * </pre>
- * </blockquote>
- *
- * <p><strong>2.5 <code>versionName</code> structure</strong><p>
- * <br>
- * <blockquote>
- * <pre>
- *   versionName {
- *      u1      tag;              // 0x44 : constant
- *      u2      length;           // byte length of whole values
- *      u1      value[length];
- *   }
- * </pre>
- * </blockquote>
- *
- * <p><strong>2.6 <code>excludeList</code> structure</strong><p>
- * The list of zone IDs whose zones will change their GMT offsets
- * (a.k.a. raw offsets) some time in the future. Those IDs must be
- * added to the list of zone IDs for getAvailableIDs(). Also they must
- * be examined for getAvailableIDs(int) to determine the
- * <em>current</em> GMT offsets.
- * <br>
- * <blockquote>
- * <pre>
- *   excluded_list {
- *      u1      tag;              // 0x45 : constant
- *      u2      length;           // byte length of whole values
- *      u2      nentries;         // number of zone_ids
- *      zone_id value[nentries];  // excluded zone IDs
- *   }
- * </pre>
- * </blockquote>
- *
- * @since 1.4
+ * @since 1.8
  */
-
-public class ZoneInfoFile {
-
-    /**
-     * The magic number for the ZoneInfo data file format.
-     */
-    public static final byte[]  JAVAZI_LABEL = {
-        (byte)'j', (byte)'a', (byte)'v', (byte)'a', (byte)'z', (byte)'i', (byte)'\0'
-    };
-    private static final int    JAVAZI_LABEL_LENGTH = JAVAZI_LABEL.length;
+public final class ZoneInfoFile {
 
     /**
-     * The ZoneInfo data file format version number. Must increase
-     * one when any incompatible change has been made.
+     * Gets all available IDs supported in the Java run-time.
+     *
+     * @return a set of time zone IDs.
      */
-    public static final byte    JAVAZI_VERSION = 0x01;
+    public static Set<String> getZoneIds() {
+        return zones.keySet();
+    }
 
     /**
-     * Raw offset data item tag.
+     * Gets all available IDs that have the same value as the
+     * specified raw GMT offset.
+     *
+     * @param rawOffset  the GMT offset in milliseconds. This
+     *                   value should not include any daylight saving time.
+     * @return an array of time zone IDs.
      */
-    public static final byte    TAG_RawOffset = 1;
-
-    /**
-     * Known last Daylight Saving Time save value data item tag.
-     */
-    public static final byte    TAG_LastDSTSaving = 2;
-
-    /**
-     * Checksum data item tag.
-     */
-    public static final byte    TAG_CRC32 = 3;
-
-    /**
-     * Transition data item tag.
-     */
-    public static final byte    TAG_Transition = 4;
-
-    /**
-     * Offset table data item tag.
-     */
-    public static final byte    TAG_Offset = 5;
-
-    /**
-     * SimpleTimeZone parameters data item tag.
-     */
-    public static final byte    TAG_SimpleTimeZone = 6;
-
-    /**
-     * Raw GMT offset will change in the future.
-     */
-    public static final byte    TAG_GMTOffsetWillChange = 7;
-
-
-    /**
-     * The ZoneInfoMappings file name.
-     */
-    public static final String  JAVAZM_FILE_NAME = "ZoneInfoMappings";
-
-    /**
-     * The magic number for the ZoneInfoMappings file format.
-     */
-    public static final byte[]  JAVAZM_LABEL = {
-        (byte)'j', (byte)'a', (byte)'v', (byte)'a', (byte)'z', (byte)'m', (byte)'\0'
-    };
-    private static final int    JAVAZM_LABEL_LENGTH = JAVAZM_LABEL.length;
-
-    /**
-     * The ZoneInfoMappings file format version number. Must increase
-     * one when any incompatible change has been made.
-     */
-    public static final byte    JAVAZM_VERSION = 0x01;
-
-    /**
-     * Time zone IDs data item tag.
-     */
-    public static final byte    TAG_ZoneIDs = 64;
-
-    /**
-     * Raw GMT offsets table data item tag.
-     */
-    public static final byte    TAG_RawOffsets = 65;
-
-    /**
-     * Indices to the raw GMT offset table data item tag.
-     */
-    public static final byte    TAG_RawOffsetIndices = 66;
-
-    /**
-     * Time zone aliases table data item tag.
-     */
-    public static final byte    TAG_ZoneAliases = 67;
-
-    /**
-     * Olson's public zone information version tag.
-     */
-    public static final byte    TAG_TZDataVersion = 68;
-
-    /**
-     * Excluded zones item tag. (Added in Mustang)
-     */
-    public static final byte    TAG_ExcludedZones = 69;
-
-    private static Map<String, ZoneInfo> zoneInfoObjects = null;
-
-    private static final ZoneInfo GMT = new ZoneInfo("GMT", 0);
-
-    private static final String ziDir = AccessController.doPrivileged(
-        new PrivilegedAction<String>() {
-            public String run() {
-                String zi = System.getProperty("java.home") +
-                    File.separator + "lib" + File.separator + "zi";
-                try {
-                    zi = FileSystems.getDefault().getPath(zi).toRealPath().toString();
-                } catch(Exception e) {
-                }
-                return zi;
+    public static String[] getZoneIds(int rawOffset) {
+        List<String> ids = new ArrayList<>();
+        for (String id : zones.keySet()) {
+            ZoneInfo zi = getZoneInfo0(id);
+            if (zi.getRawOffset() == rawOffset) {
+                ids.add(id);
             }
-        });
+        }
+        return ids.toArray(new String[ids.size()]);
+    }
+
+    public static ZoneInfo getZoneInfo(String zoneId) {
+        if (!zones.containsKey(zoneId)) {
+            return null;
+        }
+        // ZoneInfo is mutable, return the copy
+
+        ZoneInfo zi = getZoneInfo0(zoneId);
+        zi = (ZoneInfo)zi.clone();
+        zi.setID(zoneId);
+        return zi;
+    }
 
     /**
-     * Converts the given time zone ID to a platform dependent path
-     * name. For example, "America/Los_Angeles" is converted to
-     * "America\Los_Angeles" on Win32.
-     * @return a modified ID replacing '/' with {@link
-     * java.io.File#separatorChar File.separatorChar} if needed.
+     * Returns a Map from alias time zone IDs to their standard
+     * time zone IDs.
+     *
+     * @return an unmodified alias mapping
      */
-    public static String getFileName(String ID) {
-        if (File.separatorChar == '/') {
-            return ID;
-        }
-        return ID.replace('/', File.separatorChar);
+    public static Map<String, String> getAliasMap() {
+        return aliases;
+    }
+
+    /**
+     * Gets the version of this tz data.
+     *
+     * @return the tzdb version
+     */
+    public static String getVersion() {
+        return versionId;
     }
 
     /**
      * Gets a ZoneInfo with the given GMT offset. The object
      * has its ID in the format of GMT{+|-}hh:mm.
      *
-     * @param originalId the given custom id (before normalized such as "GMT+9")
-     * @param gmtOffset GMT offset <em>in milliseconds</em>
+     * @param originalId  the given custom id (before normalized such as "GMT+9")
+     * @param gmtOffset   GMT offset <em>in milliseconds</em>
      * @return a ZoneInfo constructed with the given GMT offset
      */
     public static ZoneInfo getCustomTimeZone(String originalId, int gmtOffset) {
         String id = toCustomID(gmtOffset);
-
+        return new ZoneInfo(id, gmtOffset);
+/*
         ZoneInfo zi = getFromCache(id);
         if (zi == null) {
             zi = new ZoneInfo(id, gmtOffset);
@@ -522,6 +147,7 @@ public class ZoneInfoFile {
             }
         }
         return (ZoneInfo) zi.clone();
+*/
     }
 
     public static String toCustomID(int gmtOffset) {
@@ -549,531 +175,670 @@ public class ZoneInfoFile {
         return new String(buf);
     }
 
-    /**
-     * @return a ZoneInfo instance created for the specified id, or
-     * null if there is no time zone data file found for the specified
-     * id.
-     */
-    public static ZoneInfo getZoneInfo(String id) {
-        //treat GMT zone as special
-        if ("GMT".equals(id))
-            return (ZoneInfo) GMT.clone();
-        ZoneInfo zi = getFromCache(id);
-        if (zi == null) {
-            Map<String, String> aliases = ZoneInfo.getCachedAliasTable();
-            if (aliases != null && aliases.get(id) != null) {
-                return null;
-            }
-            zi = createZoneInfo(id);
-            if (zi == null) {
-                return null;
-            }
-            zi = addToCache(id, zi);
-        }
-        return (ZoneInfo) zi.clone();
-    }
 
-    synchronized static ZoneInfo getFromCache(String id) {
-        if (zoneInfoObjects == null) {
-            return null;
-        }
-        return zoneInfoObjects.get(id);
-    }
+    ///////////////////////////////////////////////////////////
 
-    synchronized static ZoneInfo addToCache(String id, ZoneInfo zi) {
-        if (zoneInfoObjects == null) {
-            zoneInfoObjects = new HashMap<>();
-        } else {
-            ZoneInfo zone = zoneInfoObjects.get(id);
-            if (zone != null) {
-                return zone;
-            }
-        }
-        zoneInfoObjects.put(id, zi);
-        return zi;
-    }
-
-    private static ZoneInfo createZoneInfo(String id) {
-        byte[] buf = readZoneInfoFile(getFileName(id));
-        if (buf == null) {
-            return null;
-        }
-
-        int index = 0;
-        int filesize = buf.length;
-        int rawOffset = 0;
-        int dstSavings = 0;
-        int checksum = 0;
-        boolean willGMTOffsetChange = false;
-        long[] transitions = null;
-        int[] offsets = null;
-        int[] simpleTimeZoneParams = null;
-
+    private static ZoneInfo getZoneInfo0(String zoneId) {
         try {
-            for (index = 0; index < JAVAZI_LABEL.length; index++) {
-                if (buf[index] != JAVAZI_LABEL[index]) {
-                    System.err.println("ZoneInfo: wrong magic number: " + id);
-                    return null;
-                }
+
+            Object obj = zones.get(zoneId);
+            if (obj instanceof byte[]) {
+                byte[] bytes = (byte[]) obj;
+                DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes));
+                obj = getZoneInfo(dis, zoneId);
+                zones.put(zoneId, obj);
             }
-            if (buf[index++] > JAVAZI_VERSION) {
-                System.err.println("ZoneInfo: incompatible version ("
-                                   + buf[index - 1] + "): " + id);
-                return null;
-            }
-
-            while (index < filesize) {
-                byte tag = buf[index++];
-                int  len = ((buf[index++] & 0xFF) << 8) + (buf[index++] & 0xFF);
-
-                if (filesize < index+len) {
-                    break;
-                }
-
-                switch (tag) {
-                case TAG_CRC32:
-                    {
-                        int val = buf[index++] & 0xff;
-                        val = (val << 8) + (buf[index++] & 0xff);
-                        val = (val << 8) + (buf[index++] & 0xff);
-                        val = (val << 8) + (buf[index++] & 0xff);
-                        checksum = val;
-                    }
-                    break;
-
-                case TAG_LastDSTSaving:
-                    {
-                        short val = (short)(buf[index++] & 0xff);
-                        val = (short)((val << 8) + (buf[index++] & 0xff));
-                        dstSavings = val * 1000;
-                    }
-                    break;
-
-                case TAG_RawOffset:
-                    {
-                        int val = buf[index++] & 0xff;
-                        val = (val << 8) + (buf[index++] & 0xff);
-                        val = (val << 8) + (buf[index++] & 0xff);
-                        val = (val << 8) + (buf[index++] & 0xff);
-                        rawOffset = val;
-                    }
-                    break;
-
-                case TAG_Transition:
-                    {
-                        int n = len / 8;
-                        transitions = new long[n];
-                        for (int i = 0; i < n; i ++) {
-                            long val = buf[index++] & 0xff;
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            transitions[i] = val;
-                        }
-                    }
-                    break;
-
-                case TAG_Offset:
-                    {
-                        int n = len / 4;
-                        offsets = new int[n];
-                        for (int i = 0; i < n; i ++) {
-                            int val = buf[index++] & 0xff;
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            offsets[i] = val;
-                        }
-                    }
-                    break;
-
-                case TAG_SimpleTimeZone:
-                    {
-                        if (len != 32 && len != 40) {
-                            System.err.println("ZoneInfo: wrong SimpleTimeZone parameter size");
-                            return null;
-                        }
-                        int n = len / 4;
-                        simpleTimeZoneParams = new int[n];
-                        for (int i = 0; i < n; i++) {
-                            int val = buf[index++] & 0xff;
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            simpleTimeZoneParams[i] = val;
-                        }
-                    }
-                    break;
-
-                case TAG_GMTOffsetWillChange:
-                    {
-                        if (len != 1) {
-                            System.err.println("ZoneInfo: wrong byte length for TAG_GMTOffsetWillChange");
-                        }
-                        willGMTOffsetChange = buf[index++] == 1;
-                    }
-                    break;
-
-                default:
-                    System.err.println("ZoneInfo: unknown tag < " + tag + ">. ignored.");
-                    index += len;
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("ZoneInfo: corrupted zoneinfo file: " + id);
-            return null;
+            return (ZoneInfo)obj;
+        } catch (Exception ex) {
+            throw new RuntimeException("Invalid binary time-zone data: TZDB:" +
+                zoneId + ", version: " + versionId, ex);
         }
-
-        if (index != filesize) {
-            System.err.println("ZoneInfo: wrong file size: " + id);
-            return null;
-        }
-
-        return new ZoneInfo(id, rawOffset, dstSavings, checksum,
-                            transitions, offsets, simpleTimeZoneParams,
-                            willGMTOffsetChange);
-    }
-
-    private volatile static SoftReference<List<String>> zoneIDs = null;
-
-    static List<String> getZoneIDs() {
-        List<String> ids = null;
-
-        SoftReference<List<String>> cache = zoneIDs;
-        if (cache != null) {
-            ids = cache.get();
-            if (ids != null) {
-                return ids;
-            }
-        }
-
-        byte[] buf = null;
-        buf = getZoneInfoMappings();
-        int index = JAVAZM_LABEL_LENGTH + 1;
-        int filesize = buf.length;
-
-        try {
-        loop:
-            while (index < filesize) {
-                byte tag = buf[index++];
-                int     len = ((buf[index++] & 0xFF) << 8) + (buf[index++] & 0xFF);
-
-                switch (tag) {
-                case TAG_ZoneIDs:
-                    {
-                        int n = (buf[index++] << 8) + (buf[index++] & 0xFF);
-                        ids = new ArrayList<>(n);
-
-                        for (int i = 0; i < n; i++) {
-                            byte m = buf[index++];
-                            ids.add(new String(buf, index, m, "UTF-8"));
-                            index += m;
-                        }
-                    }
-                    break loop;
-
-                default:
-                    index += len;
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("ZoneInfo: corrupted " + JAVAZM_FILE_NAME);
-        }
-
-        zoneIDs = new SoftReference<>(ids);
-        return ids;
-    }
-
-    /**
-     * @return an alias table in HashMap where a key is an alias ID
-     * (e.g., "PST") and its value is a real time zone ID (e.g.,
-     * "America/Los_Angeles").
-     */
-    static Map<String, String> getZoneAliases() {
-        byte[] buf = getZoneInfoMappings();
-        int index = JAVAZM_LABEL_LENGTH + 1;
-        int filesize = buf.length;
-        Map<String, String> aliases = null;
-
-        try {
-        loop:
-            while (index < filesize) {
-                byte tag = buf[index++];
-                int     len = ((buf[index++] & 0xFF) << 8) + (buf[index++] & 0xFF);
-
-                switch (tag) {
-                case TAG_ZoneAliases:
-                    {
-                        int n = (buf[index++] << 8) + (buf[index++] & 0xFF);
-                        aliases = new HashMap<>(n);
-                        for (int i = 0; i < n; i++) {
-                            byte m = buf[index++];
-                            String name = new String(buf, index, m, "UTF-8");
-                            index += m;
-                            m = buf[index++];
-                            String realName = new String(buf, index, m, "UTF-8");
-                            index += m;
-                            aliases.put(name, realName);
-                        }
-                    }
-                    break loop;
-
-                default:
-                    index += len;
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("ZoneInfo: corrupted " + JAVAZM_FILE_NAME);
-            return null;
-        }
-        return aliases;
-    }
-
-    private volatile static SoftReference<List<String>> excludedIDs = null;
-    private volatile static boolean hasNoExcludeList = false;
-
-    /**
-     * @return a List of zone IDs for zones that will change their GMT
-     * offsets in some future time.
-     *
-     * @since 1.6
-     */
-    static List<String> getExcludedZones() {
-        if (hasNoExcludeList) {
-            return null;
-        }
-
-        List<String> excludeList = null;
-
-        SoftReference<List<String>> cache = excludedIDs;
-        if (cache != null) {
-            excludeList = cache.get();
-            if (excludeList != null) {
-                return excludeList;
-            }
-        }
-
-        byte[] buf = getZoneInfoMappings();
-        int index = JAVAZM_LABEL_LENGTH + 1;
-        int filesize = buf.length;
-
-        try {
-          loop:
-            while (index < filesize) {
-                byte tag = buf[index++];
-                int     len = ((buf[index++] & 0xFF) << 8) + (buf[index++] & 0xFF);
-
-                switch (tag) {
-                case TAG_ExcludedZones:
-                    {
-                        int n = (buf[index++] << 8) + (buf[index++] & 0xFF);
-                        excludeList = new ArrayList<>();
-                        for (int i = 0; i < n; i++) {
-                            byte m = buf[index++];
-                            String name = new String(buf, index, m, "UTF-8");
-                            index += m;
-                            excludeList.add(name);
-                        }
-                    }
-                    break loop;
-
-                default:
-                    index += len;
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("ZoneInfo: corrupted " + JAVAZM_FILE_NAME);
-            return null;
-        }
-
-        if (excludeList != null) {
-            excludedIDs = new SoftReference<>(excludeList);
-        } else {
-            hasNoExcludeList = true;
-        }
-        return excludeList;
-    }
-
-    private volatile static SoftReference<byte[]> rawOffsetIndices = null;
-
-    static byte[] getRawOffsetIndices() {
-        byte[] indices = null;
-
-        SoftReference<byte[]> cache = rawOffsetIndices;
-        if (cache != null) {
-            indices = cache.get();
-            if (indices != null) {
-                return indices;
-            }
-        }
-
-        byte[] buf = getZoneInfoMappings();
-        int index = JAVAZM_LABEL_LENGTH + 1;
-        int filesize = buf.length;
-
-        try {
-        loop:
-            while (index < filesize) {
-                byte tag = buf[index++];
-                int     len = ((buf[index++] & 0xFF) << 8) + (buf[index++] & 0xFF);
-
-                switch (tag) {
-                case TAG_RawOffsetIndices:
-                    {
-                        indices = new byte[len];
-                        for (int i = 0; i < len; i++) {
-                            indices[i] = buf[index++];
-                        }
-                    }
-                    break loop;
-
-                default:
-                    index += len;
-                    break;
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.err.println("ZoneInfo: corrupted " + JAVAZM_FILE_NAME);
-        }
-
-        rawOffsetIndices = new SoftReference<>(indices);
-        return indices;
-    }
-
-    private volatile static SoftReference<int[]> rawOffsets = null;
-
-    static int[] getRawOffsets() {
-        int[] offsets = null;
-
-        SoftReference<int[]> cache = rawOffsets;
-        if (cache != null) {
-            offsets = cache.get();
-            if (offsets != null) {
-                return offsets;
-            }
-        }
-
-        byte[] buf = getZoneInfoMappings();
-        int index = JAVAZM_LABEL_LENGTH + 1;
-        int filesize = buf.length;
-
-        try {
-        loop:
-            while (index < filesize) {
-                byte tag = buf[index++];
-                int     len = ((buf[index++] & 0xFF) << 8) + (buf[index++] & 0xFF);
-
-                switch (tag) {
-                case TAG_RawOffsets:
-                    {
-                        int n = len/4;
-                        offsets = new int[n];
-                        for (int i = 0; i < n; i++) {
-                            int val = buf[index++] & 0xff;
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            val = (val << 8) + (buf[index++] & 0xff);
-                            offsets[i] = val;
-                        }
-                    }
-                    break loop;
-
-                default:
-                    index += len;
-                    break;
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.err.println("ZoneInfo: corrupted " + JAVAZM_FILE_NAME);
-        }
-
-        rawOffsets = new SoftReference<>(offsets);
-        return offsets;
-    }
-
-    private volatile static SoftReference<byte[]> zoneInfoMappings = null;
-
-    private static byte[] getZoneInfoMappings() {
-        byte[] data;
-
-        SoftReference<byte[]> cache = zoneInfoMappings;
-        if (cache != null) {
-            data = cache.get();
-            if (data != null) {
-                return data;
-            }
-        }
-
-        data = readZoneInfoFile(JAVAZM_FILE_NAME);
-
-        if (data == null) {
-            return null;
-        }
-
-        int index;
-        for (index = 0; index < JAVAZM_LABEL.length; index++) {
-            if (data[index] != JAVAZM_LABEL[index]) {
-                System.err.println("ZoneInfo: wrong magic number: " + JAVAZM_FILE_NAME);
-                return null;
-            }
-        }
-        if (data[index++] > JAVAZM_VERSION) {
-            System.err.println("ZoneInfo: incompatible version ("
-                               + data[index - 1] + "): " + JAVAZM_FILE_NAME);
-            return null;
-        }
-
-        zoneInfoMappings = new SoftReference<>(data);
-        return data;
-    }
-
-    /**
-     * Reads the specified file under &lt;java.home&gt;/lib/zi into a buffer.
-     * @return the buffer, or null if any I/O error occurred.
-     */
-    private static byte[] readZoneInfoFile(final String fileName) {
-        if (fileName.indexOf("..") >= 0) {
-            return null;
-        }
-        byte[] buffer = null;
-
-        try {
-            buffer = AccessController.doPrivileged(new PrivilegedExceptionAction<byte[]>() {
-                public byte[] run() throws IOException {
-                    File file = new File(ziDir, fileName);
-                    byte[] buf = null;
-                    int filesize = (int)file.length();
-                    if (filesize > 0) {
-                        FileInputStream fis = new FileInputStream(file);
-                        buf = new byte[filesize];
-                        try {
-                            if (fis.read(buf) != filesize) {
-                                throw new IOException("read error on " + fileName);
-                            }
-                        } finally {
-                            fis.close();
-                        }
-                    }
-                    return buf;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            Exception ex = e.getException();
-            if (!(ex instanceof FileNotFoundException) || JAVAZM_FILE_NAME.equals(fileName)) {
-                System.err.println("ZoneInfo: " + ex.getMessage());
-            }
-        }
-        return buffer;
     }
 
     private ZoneInfoFile() {
+    }
+
+    private static String versionId;
+    private final static Map<String, Object> zones = new ConcurrentHashMap<>();
+    private static Map<String, String> aliases = new HashMap<>();
+
+    // Flag for supporting JDK backward compatible IDs, such as "EST".
+    private static final boolean USE_OLDMAPPING;
+
+    static {
+        String oldmapping = AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("sun.timezone.ids.oldmapping", "false")).toLowerCase(Locale.ROOT);
+        USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            public Object run() {
+                try {
+
+                    String libDir = System.getProperty("java.home") + File.separator + "lib";
+                    File tzdbJar = new File(libDir, "tzdb.jar");
+                    try (ZipFile zf = new ZipFile(tzdbJar);
+                        DataInputStream dis = new DataInputStream(
+                            zf.getInputStream(zf.getEntry("TZDB.dat")))) {
+                        load(dis);
+                    }
+                } catch (Exception x) {
+                    throw new Error(x);
+                }
+                return null;
+            }
+        });
+    }
+
+    // Must be invoked after loading in all data
+    private static void addOldMapping() {
+        String[][] oldMappings = new String[][] {
+            { "ACT", "Australia/Darwin" },
+            { "AET", "Australia/Sydney" },
+            { "AGT", "America/Argentina/Buenos_Aires" },
+            { "ART", "Africa/Cairo" },
+            { "AST", "America/Anchorage" },
+            { "BET", "America/Sao_Paulo" },
+            { "BST", "Asia/Dhaka" },
+            { "CAT", "Africa/Harare" },
+            { "CNT", "America/St_Johns" },
+            { "CST", "America/Chicago" },
+            { "CTT", "Asia/Shanghai" },
+            { "EAT", "Africa/Addis_Ababa" },
+            { "ECT", "Europe/Paris" },
+            { "IET", "America/Indiana/Indianapolis" },
+            { "IST", "Asia/Kolkata" },
+            { "JST", "Asia/Tokyo" },
+            { "MIT", "Pacific/Apia" },
+            { "NET", "Asia/Yerevan" },
+            { "NST", "Pacific/Auckland" },
+            { "PLT", "Asia/Karachi" },
+            { "PNT", "America/Phoenix" },
+            { "PRT", "America/Puerto_Rico" },
+            { "PST", "America/Los_Angeles" },
+            { "SST", "Pacific/Guadalcanal" },
+            { "VST", "Asia/Ho_Chi_Minh" },
+        };
+        for (String[] alias : oldMappings) {
+            String k = alias[0];
+            String v = alias[1];
+            if (zones.containsKey(v)) {  // make sure we do have the data
+                aliases.put(k, v);
+                zones.put(k, zones.get(v));
+            }
+        }
+        if (USE_OLDMAPPING) {
+            if (zones.containsKey("America/New_York")) {
+                aliases.put("EST", "America/New_York");
+                zones.put("EST", zones.get("America/New_York"));
+            }
+            if (zones.containsKey("America/Denver")) {
+                aliases.put("MST", "America/Denver");
+                zones.put("MST", zones.get("America/Denver"));
+            }
+            if (zones.containsKey("Pacific/Honolulu")) {
+                aliases.put("HST", "Pacific/Honolulu");
+                zones.put("HST", zones.get("Pacific/Honolulu"));
+            }
+        }
+    }
+
+    /**
+     * Loads the rules from a DateInputStream
+     *
+     * @param dis  the DateInputStream to load, not null
+     * @throws Exception if an error occurs
+     */
+    private static void load(DataInputStream dis) throws ClassNotFoundException, IOException {
+        if (dis.readByte() != 1) {
+            throw new StreamCorruptedException("File format not recognised");
+        }
+        // group
+        String groupId = dis.readUTF();
+        if ("TZDB".equals(groupId) == false) {
+            throw new StreamCorruptedException("File format not recognised");
+        }
+        // versions, only keep the last one
+        int versionCount = dis.readShort();
+        for (int i = 0; i < versionCount; i++) {
+            versionId = dis.readUTF();
+
+        }
+        // regions
+        int regionCount = dis.readShort();
+        String[] regionArray = new String[regionCount];
+        for (int i = 0; i < regionCount; i++) {
+            regionArray[i] = dis.readUTF();
+        }
+        // rules
+        int ruleCount = dis.readShort();
+        Object[] ruleArray = new Object[ruleCount];
+        for (int i = 0; i < ruleCount; i++) {
+            byte[] bytes = new byte[dis.readShort()];
+            dis.readFully(bytes);
+            ruleArray[i] = bytes;
+        }
+        // link version-region-rules, only keep the last version, if more than one
+        for (int i = 0; i < versionCount; i++) {
+            regionCount = dis.readShort();
+            zones.clear();
+            for (int j = 0; j < regionCount; j++) {
+                String region = regionArray[dis.readShort()];
+                Object rule = ruleArray[dis.readShort() & 0xffff];
+                zones.put(region, rule);
+            }
+        }
+        // remove the following ids from the map, they
+        // are exclued from the "old" ZoneInfo
+        zones.remove("ROC");
+        for (int i = 0; i < versionCount; i++) {
+            int aliasCount = dis.readShort();
+            aliases.clear();
+            for (int j = 0; j < aliasCount; j++) {
+                String alias = regionArray[dis.readShort()];
+                String region = regionArray[dis.readShort()];
+                aliases.put(alias, region);
+            }
+        }
+        // old us time-zone names
+        addOldMapping();
+        aliases = Collections.unmodifiableMap(aliases);
+    }
+
+    /////////////////////////Ser/////////////////////////////////
+    public static ZoneInfo getZoneInfo(DataInput in, String zoneId) throws Exception {
+        byte type = in.readByte();
+        // TBD: assert ZRULES:
+        int stdSize = in.readInt();
+        long[] stdTrans = new long[stdSize];
+        for (int i = 0; i < stdSize; i++) {
+            stdTrans[i] = readEpochSec(in);
+        }
+        int [] stdOffsets = new int[stdSize + 1];
+        for (int i = 0; i < stdOffsets.length; i++) {
+            stdOffsets[i] = readOffset(in);
+        }
+        int savSize = in.readInt();
+        long[] savTrans = new long[savSize];
+        for (int i = 0; i < savSize; i++) {
+            savTrans[i] = readEpochSec(in);
+        }
+        int[] savOffsets = new int[savSize + 1];
+        for (int i = 0; i < savOffsets.length; i++) {
+            savOffsets[i] = readOffset(in);
+        }
+        int ruleSize = in.readByte();
+        ZoneOffsetTransitionRule[] rules = new ZoneOffsetTransitionRule[ruleSize];
+        for (int i = 0; i < ruleSize; i++) {
+            rules[i] = readZOTRule(in);
+        }
+        return getZoneInfo(zoneId, stdTrans, stdOffsets, savTrans, savOffsets, rules);
+    }
+
+    public static int readOffset(DataInput in) throws IOException {
+        int offsetByte = in.readByte();
+        return offsetByte == 127 ? in.readInt() : offsetByte * 900;
+    }
+
+    static long readEpochSec(DataInput in) throws IOException {
+        int hiByte = in.readByte() & 255;
+        if (hiByte == 255) {
+            return in.readLong();
+        } else {
+            int midByte = in.readByte() & 255;
+            int loByte = in.readByte() & 255;
+            long tot = ((hiByte << 16) + (midByte << 8) + loByte);
+            return (tot * 900) - 4575744000L;
+        }
+    }
+
+    static ZoneOffsetTransitionRule readZOTRule(DataInput in) throws IOException {
+        int data = in.readInt();
+        Month month = Month.of(data >>> 28);
+        int dom = ((data & (63 << 22)) >>> 22) - 32;
+        int dowByte = (data & (7 << 19)) >>> 19;
+        DayOfWeek dow = dowByte == 0 ? null : DayOfWeek.of(dowByte);
+        int timeByte = (data & (31 << 14)) >>> 14;
+        TimeDefinition defn = TimeDefinition.values()[(data & (3 << 12)) >>> 12];
+        int stdByte = (data & (255 << 4)) >>> 4;
+        int beforeByte = (data & (3 << 2)) >>> 2;
+        int afterByte = (data & 3);
+        LocalTime time = (timeByte == 31 ? LocalTime.ofSecondOfDay(in.readInt()) : LocalTime.of(timeByte % 24, 0));
+        ZoneOffset std = (stdByte == 255 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds((stdByte - 128) * 900));
+        ZoneOffset before = (beforeByte == 3 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds(std.getTotalSeconds() + beforeByte * 1800));
+        ZoneOffset after = (afterByte == 3 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds(std.getTotalSeconds() + afterByte * 1800));
+        return ZoneOffsetTransitionRule.of(month, dom, dow, time, timeByte == 24, defn, std, before, after);
+    }
+
+    /////////////////////////ZoneRules --> ZoneInfo/////////////////////////////////
+
+    // ZoneInfo starts with UTC1900
+    private static final long UTC1900 = -2208988800L;
+    // ZoneInfo ends with   UTC2037
+    private static final long UTC2037 =
+        LocalDateTime.of(2038, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC) - 1;
+
+    /* Get a ZoneInfo instance.
+     *
+     * @param standardTransitions  the standard transitions, not null
+     * @param standardOffsets  the standard offsets, not null
+     * @param savingsInstantTransitions  the standard transitions, not null
+     * @param wallOffsets  the wall offsets, not null
+     * @param lastRules  the recurring last rules, size 15 or less, not null
+     */
+    private static ZoneInfo getZoneInfo(String zoneId,
+                                        long[] standardTransitions,
+                                        int[] standardOffsets,
+                                        long[] savingsInstantTransitions,
+                                        int[] wallOffsets,
+                                        ZoneOffsetTransitionRule[] lastRules) {
+        int rawOffset = 0;
+        int dstSavings = 0;
+        int checksum = 0;
+        int[] params = null;
+        boolean willGMTOffsetChange = false;
+
+        // rawOffset, pick the last one
+        if (standardTransitions.length > 0)
+            rawOffset = standardOffsets[standardOffsets.length - 1] * 1000;
+        else
+            rawOffset = standardOffsets[0] * 1000;
+
+        // transitions, offsets;
+        long[] transitions = null;
+        int[]  offsets = null;
+        int    nOffsets = 0;
+        int    nTrans = 0;
+
+        if (savingsInstantTransitions.length != 0) {
+            transitions = new long[250];
+            offsets = new int[100];    // TBD: ZoneInfo actually can't handle
+                                       // offsets.length > 16 (4-bit index limit)
+            // last year in trans table
+            // It should not matter to use before or after offset for year
+            int lastyear = LocalDateTime.ofEpochSecond(
+                savingsInstantTransitions[savingsInstantTransitions.length - 1], 0,
+                ZoneOffset.ofTotalSeconds(wallOffsets[savingsInstantTransitions.length - 1])).getYear();
+            // int lastyear = savingsLocalTransitions[savingsLocalTransitions.length - 1].getYear();
+
+            int i = 0, k = 1;
+            while (i < savingsInstantTransitions.length &&
+                   savingsInstantTransitions[i] < UTC1900) {
+                 i++;     // skip any date before UTC1900
+            }
+            if (i < savingsInstantTransitions.length) {
+                // javazic writes the last GMT offset into index 0!
+                if (i < savingsInstantTransitions.length) {
+                    offsets[0] = standardOffsets[standardOffsets.length - 1] * 1000;
+                    nOffsets = 1;
+                }
+                // ZoneInfo has a beginning entry for 1900.
+                // Only add it if this is not the only one in table
+                nOffsets = addTrans(transitions, nTrans++, offsets, nOffsets,
+                                    UTC1900,
+                                    wallOffsets[i],
+                                    getStandardOffset(standardTransitions, standardOffsets, UTC1900));
+            }
+            for (; i < savingsInstantTransitions.length; i++) {
+                //if (savingsLocalTransitions[i * 2].getYear() > LASTYEAR) {
+                if (savingsInstantTransitions[i] > UTC2037) {
+                    // no trans beyond LASTYEAR
+                    lastyear = LASTYEAR;
+                    break;
+                }
+                long trans = savingsInstantTransitions[i];
+                while (k < standardTransitions.length) {
+                    // some standard offset transitions don't exist in
+                    // savingInstantTrans, if the offset "change" doesn't
+                    // really change the "effectiveWallOffset". For example
+                    // the 1999/2000 pair in Zone Arg/Buenos_Aires, in which
+                    // the daylightsaving "happened" but it actually does
+                    //  not result in the timezone switch. ZoneInfo however
+                    // needs them in its transitions table
+                    long trans_s = standardTransitions[k];
+                    if (trans_s >= UTC1900) {
+                        if (trans_s > trans)
+                            break;
+                        if (trans_s < trans) {
+                            if (nOffsets + 2 >= offsets.length) {
+                                offsets = Arrays.copyOf(offsets, offsets.length + 100);
+                            }
+                            if (nTrans + 1 >= transitions.length) {
+                                transitions = Arrays.copyOf(transitions, transitions.length + 100);
+                            }
+                            nOffsets = addTrans(transitions, nTrans++, offsets, nOffsets,
+                                                trans_s,
+                                                wallOffsets[i],
+                                                standardOffsets[k+1]);
+                        }
+                    }
+                    k++;
+                }
+                if (nOffsets + 2 >= offsets.length) {
+                    offsets = Arrays.copyOf(offsets, offsets.length + 100);
+                }
+                if (nTrans + 1 >= transitions.length) {
+                    transitions = Arrays.copyOf(transitions, transitions.length + 100);
+                }
+                nOffsets = addTrans(transitions, nTrans++, offsets, nOffsets,
+                                    trans,
+                                    wallOffsets[i + 1],
+                                    getStandardOffset(standardTransitions, standardOffsets, trans));
+            }
+            // append any leftover standard trans
+            while (k < standardTransitions.length) {
+                long trans = standardTransitions[k];
+                if (trans >= UTC1900) {
+                    int offset = wallOffsets[i];
+                    int offsetIndex = indexOf(offsets, 0, nOffsets, offset);
+                    if (offsetIndex == nOffsets)
+                        nOffsets++;
+                    transitions[nTrans++] = ((trans * 1000) << TRANSITION_NSHIFT) |
+                                            (offsetIndex & OFFSET_MASK);
+                }
+                k++;
+            }
+            if (lastRules.length > 1) {
+                // fill the gap between the last trans until LASTYEAR
+                while (lastyear++ < LASTYEAR) {
+                    for (ZoneOffsetTransitionRule zotr : lastRules) {
+                        ZoneOffsetTransition zot = zotr.createTransition(lastyear);
+                        //long trans = zot.getDateTimeBefore().toEpochSecond();
+                        long trans = zot.toEpochSecond();
+                        if (nOffsets + 2 >= offsets.length) {
+                            offsets = Arrays.copyOf(offsets, offsets.length + 100);
+                        }
+                        if (nTrans + 1 >= transitions.length) {
+                            transitions = Arrays.copyOf(transitions, transitions.length + 100);
+                        }
+                        nOffsets = addTrans(transitions, nTrans++, offsets, nOffsets,
+                                            trans,
+                                            zot.getOffsetAfter().getTotalSeconds(),
+                                            getStandardOffset(standardTransitions, standardOffsets, trans));
+                    }
+                }
+                ZoneOffsetTransitionRule startRule =  lastRules[lastRules.length - 2];
+                ZoneOffsetTransitionRule endRule =  lastRules[lastRules.length - 1];
+                params = new int[10];
+                if (startRule.getOffsetBefore().compareTo(startRule.getOffsetAfter()) < 0 &&
+                    endRule.getOffsetBefore().compareTo(endRule.getOffsetAfter()) > 0) {
+                    ZoneOffsetTransitionRule tmp;
+                    tmp = startRule;
+                    startRule = endRule;
+                    endRule = tmp;
+                }
+                params[0] = startRule.getMonth().getValue() - 1;
+                // params[1] = startRule.getDayOfMonthIndicator();
+                // params[2] = toCalendarDOW[startRule.getDayOfWeek().getValue()];
+                int       dom = startRule.getDayOfMonthIndicator();
+                DayOfWeek dow = startRule.getDayOfWeek();
+                if (dow == null) {
+                    params[1] = startRule.getDayOfMonthIndicator();
+                    params[2] = 0;
+                } else {
+                    // ZoneRulesBuilder adjusts < 0 case (-1, for last, don't have
+                    // "<=" case yet) to positive value if not February (it appears
+                    // we don't have February cutoff in tzdata table yet)
+                    // Ideally, if JSR310 can just pass in the nagative and
+                    // we can then pass in the dom = -1, dow > 0 into ZoneInfo
+                    //
+                    // hacking, assume the >=24 is the result of ZRB optimization for
+                    // "last", it works for now.
+                    if (dom < 0 || dom >= 24) {
+                        params[1] = -1;
+                        params[2] = toCalendarDOW[dow.getValue()];
+                    } else {
+                        params[1] = dom;
+                        // To specify a day of week on or after an exact day of month,
+                        // set the month to an exact month value, day-of-month to the
+                        // day on or after which the rule is applied, and day-of-week
+                        // to a negative Calendar.DAY_OF_WEEK DAY_OF_WEEK field value.
+                        params[2] = -toCalendarDOW[dow.getValue()];
+                    }
+                }
+                params[3] = startRule.getLocalTime().toSecondOfDay() * 1000;
+                params[4] = toSTZTime[startRule.getTimeDefinition().ordinal()];
+
+                params[5] = endRule.getMonth().getValue() - 1;
+                // params[6] = endRule.getDayOfMonthIndicator();
+                // params[7] = toCalendarDOW[endRule.getDayOfWeek().getValue()];
+                dom = endRule.getDayOfMonthIndicator();
+                dow = endRule.getDayOfWeek();
+                if (dow == null) {
+                    params[6] = dom;
+                    params[7] = 0;
+                } else {
+                    // hacking: see comment above
+                    if (dom < 0 || dom >= 24) {
+                        params[6] = -1;
+                        params[7] = toCalendarDOW[dow.getValue()];
+                    } else {
+                        params[6] = dom;
+                        params[7] = -toCalendarDOW[dow.getValue()];
+                    }
+                }
+                params[8] = endRule.getLocalTime().toSecondOfDay() * 1000;
+                params[9] = toSTZTime[endRule.getTimeDefinition().ordinal()];
+                dstSavings = (startRule.getOffsetAfter().getTotalSeconds()
+                             - startRule.getOffsetBefore().getTotalSeconds()) * 1000;
+                // Note: known mismatching -> Asia/Amman
+                // ZoneInfo :      startDayOfWeek=5     <= Thursday
+                //                 startTime=86400000   <= 24 hours
+                // This:           startDayOfWeek=6
+                //                 startTime=0
+                // Below is the workaround, it probably slows down everyone a little
+                if (params[2] == 6 && params[3] == 0 && zoneId.equals("Asia/Amman")) {
+                    params[2] = 5;
+                    params[3] = 86400000;
+                }
+            } else if (nTrans > 0) {  // only do this if there is something in table already
+                if (lastyear < LASTYEAR) {
+                    // ZoneInfo has an ending entry for 2037
+                    long trans = OffsetDateTime.of(LASTYEAR, Month.JANUARY.getValue(), 1, 0, 0, 0, 0,
+                                                   ZoneOffset.ofTotalSeconds(rawOffset/1000))
+                                               .toEpochSecond();
+                    int offsetIndex = indexOf(offsets, 0, nOffsets, rawOffset/1000);
+                    if (offsetIndex == nOffsets)
+                        nOffsets++;
+                    transitions[nTrans++] = (trans * 1000) << TRANSITION_NSHIFT |
+                                       (offsetIndex & OFFSET_MASK);
+                } else if (savingsInstantTransitions.length > 2) {
+                    // Workaround: create the params based on the last pair for
+                    // zones like Israel and Iran which have trans defined
+                    // up until 2037, but no "transition rule" defined
+                    //
+                    // Note: Known mismatching for Israel, Asia/Jerusalem/Tel Aviv
+                    // ZoneInfo:        startMode=3
+                    //                  startMonth=2
+                    //                  startDay=26
+                    //                  startDayOfWeek=6
+                    //
+                    // This:            startMode=1
+                    //                  startMonth=2
+                    //                  startDay=27
+                    //                  startDayOfWeek=0
+                    // these two are actually the same for 2037, the SimpleTimeZone
+                    // for the last "known" year
+                    int m = savingsInstantTransitions.length;
+                    long startTrans = savingsInstantTransitions[m - 2];
+                    int startOffset = wallOffsets[m - 2 + 1];
+                    int startStd = getStandardOffset(standardTransitions, standardOffsets, startTrans);
+                    long endTrans =  savingsInstantTransitions[m - 1];
+                    int endOffset = wallOffsets[m - 1 + 1];
+                    int endStd = getStandardOffset(standardTransitions, standardOffsets, endTrans);
+
+                    if (startOffset > startStd && endOffset == endStd) {
+                        /*
+                        m = savingsLocalTransitions.length;
+                        LocalDateTime startLDT = savingsLocalTransitions[m -4];  //gap
+                        LocalDateTime endLDT = savingsLocalTransitions[m - 1];   //over
+                         */
+                        // last - 1 trans
+                        m = savingsInstantTransitions.length - 2;
+                        ZoneOffset before = ZoneOffset.ofTotalSeconds(wallOffsets[m]);
+                        ZoneOffset after = ZoneOffset.ofTotalSeconds(wallOffsets[m + 1]);
+                        ZoneOffsetTransition trans = ZoneOffsetTransition.of(
+                            LocalDateTime.ofEpochSecond(savingsInstantTransitions[m], 0, before),
+                            before,
+                            after);
+                        LocalDateTime startLDT;
+                        if (trans.isGap()) {
+                            startLDT = trans.getDateTimeBefore();
+                        } else {
+                            startLDT = trans.getDateTimeAfter();
+                        }
+                        // last trans
+                        m = savingsInstantTransitions.length - 1;
+                        before = ZoneOffset.ofTotalSeconds(wallOffsets[m]);
+                        after = ZoneOffset.ofTotalSeconds(wallOffsets[m + 1]);
+                        trans = ZoneOffsetTransition.of(
+                            LocalDateTime.ofEpochSecond(savingsInstantTransitions[m], 0, before),
+                            before,
+                            after);
+                        LocalDateTime endLDT;
+                        if (trans.isGap()) {
+                            endLDT = trans.getDateTimeAfter();
+                        } else {
+                            endLDT = trans.getDateTimeBefore();
+                        }
+                        params = new int[10];
+                        params[0] = startLDT.getMonthValue() - 1;
+                        params[1] = startLDT.getDayOfMonth();
+                        params[2] = 0;
+                        params[3] = startLDT.toLocalTime().toSecondOfDay() * 1000;
+                        params[4] = SimpleTimeZone.WALL_TIME;
+                        params[5] = endLDT.getMonthValue() - 1;
+                        params[6] = endLDT.getDayOfMonth();
+                        params[7] = 0;
+                        params[8] = endLDT.toLocalTime().toSecondOfDay() * 1000;
+                        params[9] = SimpleTimeZone.WALL_TIME;
+                        dstSavings = (startOffset - startStd) * 1000;
+                    }
+                }
+            }
+            if (transitions != null && transitions.length != nTrans) {
+                if (nTrans == 0) {
+                   transitions = null;
+                } else {
+                    transitions = Arrays.copyOf(transitions, nTrans);
+                }
+            }
+            if (offsets != null && offsets.length != nOffsets) {
+                if (nOffsets == 0) {
+                   offsets = null;
+                } else {
+                    offsets = Arrays.copyOf(offsets, nOffsets);
+                }
+            }
+            if (transitions != null) {
+                Checksum sum = new Checksum();
+                for (i = 0; i < transitions.length; i++) {
+                    long val = transitions[i];
+                    int dst = (int)((val >>> DST_NSHIFT) & 0xfL);
+                    int saving = (dst == 0) ? 0 : offsets[dst];
+                    int index = (int)(val & OFFSET_MASK);
+                    int offset = offsets[index];
+                    long second = (val >> TRANSITION_NSHIFT);
+                    // javazic uses "index of the offset in offsets",
+                    // instead of the real offset value itself to
+                    // calculate the checksum. Have to keep doing
+                    // the same thing, checksum is part of the
+                    // ZoneInfo serialization form.
+                    sum.update(second + index);
+                    sum.update(index);
+                    sum.update(dst == 0 ? -1 : dst);
+                }
+                checksum = (int)sum.getValue();
+            }
+        }
+        return new ZoneInfo(zoneId, rawOffset, dstSavings, checksum, transitions,
+                            offsets, params, willGMTOffsetChange);
+    }
+
+    private static int getStandardOffset(long[] standardTransitions,
+                                         int[] standardOffsets,
+                                         long epochSec) {
+        int index  = Arrays.binarySearch(standardTransitions, epochSec);
+        if (index < 0) {
+            // switch negative insert position to start of matched range
+            index = -index - 2;
+        }
+        return standardOffsets[index + 1];
+    }
+
+    private static int toCalendarDOW[] = new int[] {
+        -1,
+        Calendar.MONDAY,
+        Calendar.TUESDAY,
+        Calendar.WEDNESDAY,
+        Calendar.THURSDAY,
+        Calendar.FRIDAY,
+        Calendar.SATURDAY,
+        Calendar.SUNDAY
+    };
+
+    private static int toSTZTime[] = new int[] {
+        SimpleTimeZone.UTC_TIME,
+        SimpleTimeZone.WALL_TIME,
+        SimpleTimeZone.STANDARD_TIME,
+    };
+
+    private static final long OFFSET_MASK = 0x0fL;
+    private static final long DST_MASK = 0xf0L;
+    private static final int  DST_NSHIFT = 4;
+    private static final int  TRANSITION_NSHIFT = 12;
+    private static final int  LASTYEAR = 2037;
+
+    // from: 0 for offset lookup, 1 for dstsvings lookup
+    private static int indexOf(int[] offsets, int from, int nOffsets, int offset) {
+        offset *= 1000;
+        for (; from < nOffsets; from++) {
+            if (offsets[from] == offset)
+                return from;
+        }
+        offsets[from] = offset;
+        return from;
+    }
+
+    // return updated nOffsets
+    private static int addTrans(long transitions[], int nTrans,
+                                int offsets[], int nOffsets,
+                                long trans, int offset, int stdOffset) {
+        int offsetIndex = indexOf(offsets, 0, nOffsets, offset);
+        if (offsetIndex == nOffsets)
+            nOffsets++;
+        int dstIndex = 0;
+        if (offset != stdOffset) {
+            dstIndex = indexOf(offsets, 1, nOffsets, offset - stdOffset);
+            if (dstIndex == nOffsets)
+                nOffsets++;
+        }
+        transitions[nTrans] = ((trans * 1000) << TRANSITION_NSHIFT) |
+                              ((dstIndex << DST_NSHIFT) & DST_MASK) |
+                              (offsetIndex & OFFSET_MASK);
+        return nOffsets;
+    }
+
+    /////////////////////////////////////////////////////////////
+    // ZoneInfo checksum, copy/pasted from javazic
+    private static class Checksum extends CRC32 {
+        public void update(int val) {
+            byte[] b = new byte[4];
+            b[0] = (byte)((val >>> 24) & 0xff);
+            b[1] = (byte)((val >>> 16) & 0xff);
+            b[2] = (byte)((val >>> 8) & 0xff);
+            b[3] = (byte)(val & 0xff);
+            update(b);
+        }
+        void update(long val) {
+            byte[] b = new byte[8];
+            b[0] = (byte)((val >>> 56) & 0xff);
+            b[1] = (byte)((val >>> 48) & 0xff);
+            b[2] = (byte)((val >>> 40) & 0xff);
+            b[3] = (byte)((val >>> 32) & 0xff);
+            b[4] = (byte)((val >>> 24) & 0xff);
+            b[5] = (byte)((val >>> 16) & 0xff);
+            b[6] = (byte)((val >>> 8) & 0xff);
+            b[7] = (byte)(val & 0xff);
+            update(b);
+        }
     }
 }
