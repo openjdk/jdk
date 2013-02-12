@@ -377,7 +377,7 @@ void GenCollectedHeap::do_collection(bool  full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, collector_policy());
 
-  const size_t metadata_prev_used = MetaspaceAux::used_in_bytes();
+  const size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
 
   print_heap_before_gc();
 
@@ -556,6 +556,7 @@ void GenCollectedHeap::do_collection(bool  full,
     if (complete) {
       // Delete metaspaces for unloaded class loaders and clean up loader_data graph
       ClassLoaderDataGraph::purge();
+      MetaspaceAux::verify_metrics();
       // Resize the metaspace capacity after full collections
       MetaspaceGC::compute_new_size();
       update_full_collections_completed();

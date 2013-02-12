@@ -1304,7 +1304,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
   print_heap_before_gc();
 
-  size_t metadata_prev_used = MetaspaceAux::used_in_bytes();
+  size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
 
   HRSPhaseSetter x(HRSPhaseFullGC);
   verify_region_sets_optional();
@@ -1425,6 +1425,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       // Delete metaspaces for unloaded class loaders and clean up loader_data graph
       ClassLoaderDataGraph::purge();
+    MetaspaceAux::verify_metrics();
 
       // Note: since we've just done a full GC, concurrent
       // marking is no longer active. Therefore we need not
