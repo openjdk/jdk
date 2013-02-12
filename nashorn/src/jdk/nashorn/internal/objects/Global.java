@@ -413,7 +413,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     @Override
     public ScriptFunction newScriptFunction(final String name, final MethodHandle handle, final ScriptObject scope, final boolean strict) {
-        return new ScriptFunctionImpl(name, handle, scope, null, strict, false);
+        return new ScriptFunctionImpl(name, handle, scope, null, strict, false, true);
     }
 
     @Override
@@ -1339,7 +1339,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         // initialize global function properties
         this.eval = this.builtinEval = ScriptFunctionImpl.makeFunction("eval", EVAL);
-        ((ScriptFunction)this.eval).setArity(1);
 
         this.parseInt           = ScriptFunctionImpl.makeFunction("parseInt",   GlobalFunctions.PARSEINT);
         this.parseFloat         = ScriptFunctionImpl.makeFunction("parseFloat", GlobalFunctions.PARSEFLOAT);

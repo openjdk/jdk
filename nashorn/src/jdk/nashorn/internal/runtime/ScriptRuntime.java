@@ -322,24 +322,6 @@ public final class ScriptRuntime {
     }
 
     /**
-     * Constructor new object using given constructor function
-     * @param target ScriptFunction object.
-     * @param args   Constructor arguments.
-     * @return newly constructed object.
-     */
-    public static Object construct(final ScriptFunction target, final Object... args) {
-        try {
-            final ScriptObject allocation = (ScriptObject)target.allocate();
-            final Object result = target.construct(allocation, args);
-            return result instanceof ScriptObject ? result : allocation;
-        } catch (final RuntimeException | Error e) {
-            throw e;
-        } catch (final Throwable t) {
-            throw new RuntimeException(t);
-        }
-    }
-
-    /**
      * Generic implementation of ECMA 9.12 - SameValue algorithm
      *
      * @param x first value to compare

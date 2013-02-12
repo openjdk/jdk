@@ -34,13 +34,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
-import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
-import jdk.nashorn.internal.runtime.options.Options;
 import org.dynalang.dynalink.CallSiteDescriptor;
 import org.dynalang.dynalink.linker.GuardedInvocation;
 import org.dynalang.dynalink.linker.LinkRequest;
@@ -63,17 +60,12 @@ public abstract class ScriptFunction extends ScriptObject {
     public static final MethodHandle G$NAME       = findOwnMH("G$name",       Object.class, Object.class);
 
     /** Method handle for allocate function for this ScriptFunction */
-    public static final MethodHandle ALLOCATE     = findOwnMH("allocate", Object.class);
-
-    private static final MethodHandle NEWFILTER = findOwnMH("newFilter", Object.class, Object.class, Object.class);
+    static final MethodHandle ALLOCATE = findOwnMH("allocate", Object.class);
 
     private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", Object.class, Object.class);
 
     /** method handle to scope getter for this ScriptFunction */
     public static final Call GET_SCOPE = virtualCallNoLookup(ScriptFunction.class, "getScope", ScriptObject.class);
-
-    /** Should specialized function and specialized constructors for the builtin be used if available? */
-    private static final boolean DISABLE_SPECIALIZATION = Options.getBooleanProperty("nashorn.scriptfunction.specialization.disable");
 
     private final ScriptFunctionData data;
 
@@ -100,9 +92,10 @@ public abstract class ScriptFunction extends ScriptObject {
             final ScriptObject scope,
             final MethodHandle[] specs,
             final boolean strict,
-            final boolean builtin) {
+            final boolean builtin,
+            final boolean isConstructor) {
 
-        this (new ScriptFunctionData(name, methodHandle, specs, strict, builtin), map, scope);
+        this (new ScriptFunctionData(name, methodHandle, specs, strict, builtin, isConstructor), map, scope);
     }
 
     /**
@@ -138,12 +131,13 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     @Override
     public boolean isInstance(final ScriptObject instance) {
-        if (!(prototype instanceof ScriptObject)) {
-            typeError("prototype.not.an.object", ScriptRuntime.safeToString(this), ScriptRuntime.safeToString(prototype));
+        final Object basePrototype = getTargetFunction().getPrototype();
+        if (!(basePrototype instanceof ScriptObject)) {
+            typeError("prototype.not.an.object", ScriptRuntime.safeToString(getTargetFunction()), ScriptRuntime.safeToString(basePrototype));
         }
 
         for (ScriptObject proto = instance.getProto(); proto != null; proto = proto.getProto()) {
-            if (proto == prototype) {
+            if (proto == basePrototype) {
                 return true;
             }
         }
@@ -152,11 +146,18 @@ public abstract class ScriptFunction extends ScriptObject {
     }
 
     /**
-     * Get the arity of this ScriptFunction
-     * @return arity
+     * Returns the target function for this function. If the function was not created using
+     * {@link #makeBoundFunction(Object, Object[])}, its target function is itself. If it is bound, its target function
+     * is the target function of the function it was made from (therefore, the target function is always the final,
+     * unbound recipient of the calls).
+     * @return the target function for this function.
      */
-    public final int getArity() {
-        return data.getArity();
+    protected ScriptFunction getTargetFunction() {
+        return this;
+    }
+
+    boolean isBoundFunction() {
+        return getTargetFunction() != this;
     }
 
     /**
@@ -173,14 +174,6 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     public boolean isStrict() {
         return data.isStrict();
-    }
-
-    /**
-     * Is this a ECMAScript built-in function (like parseInt, Array.isArray) ?
-     * @return true if built-in
-     */
-    public boolean isBuiltin() {
-        return data.isBuiltin();
     }
 
     /**
@@ -203,126 +196,7 @@ public abstract class ScriptFunction extends ScriptObject {
         if (Context.DEBUG) {
             invokes++;
         }
-
-        final MethodHandle invoker = data.getGenericInvoker();
-        final Object selfObj = convertThisObject(self);
-        final Object[] args = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
-
-        if (data.isVarArg()) {
-            if (data.needsCallee()) {
-                return invoker.invokeExact(this, selfObj, args);
-            }
-            return invoker.invokeExact(selfObj, args);
-        }
-
-        final int paramCount = invoker.type().parameterCount();
-        if (data.needsCallee()) {
-            switch (paramCount) {
-            case 2:
-                return invoker.invokeExact(this, selfObj);
-            case 3:
-                return invoker.invokeExact(this, selfObj, getArg(args, 0));
-            case 4:
-                return invoker.invokeExact(this, selfObj, getArg(args, 0), getArg(args, 1));
-            case 5:
-                return invoker.invokeExact(this, selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2));
-            default:
-                return invoker.invokeWithArguments(withArguments(selfObj, paramCount, args));
-            }
-        }
-
-        switch (paramCount) {
-        case 1:
-            return invoker.invokeExact(selfObj);
-        case 2:
-            return invoker.invokeExact(selfObj, getArg(args, 0));
-        case 3:
-            return invoker.invokeExact(selfObj, getArg(args, 0), getArg(args, 1));
-        case 4:
-            return invoker.invokeExact(selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2));
-        default:
-            return invoker.invokeWithArguments(withArguments(selfObj, paramCount, args));
-        }
-    }
-
-    private static Object getArg(final Object[] args, final int i) {
-        return i < args.length ? args[i] : UNDEFINED;
-    }
-
-    /**
-     * Construct new object using this constructor.
-     * @param self  Target object.
-     * @param args  Call arguments.
-     * @return ScriptFunction result.
-     * @throws Throwable if there is an exception/error with the constructor invocation or thrown from it
-     */
-    public Object construct(final Object self, final Object... args) throws Throwable {
-        if (data.getConstructor() == null) {
-            typeError("not.a.constructor", ScriptRuntime.safeToString(this));
-        }
-
-        final MethodHandle constructor = data.getGenericConstructor();
-        if (data.isVarArg()) {
-            if (data.needsCallee()) {
-                return constructor.invokeExact(this, self, args);
-            }
-            return constructor.invokeExact(self, args);
-        }
-
-        final int paramCount = constructor.type().parameterCount();
-        if (data.needsCallee()) {
-            switch (paramCount) {
-            case 2:
-                return constructor.invokeExact(this, self);
-            case 3:
-                return constructor.invokeExact(this, self, getArg(args, 0));
-            case 4:
-                return constructor.invokeExact(this, self, getArg(args, 0), getArg(args, 1));
-            case 5:
-                return constructor.invokeExact(this, self, getArg(args, 0), getArg(args, 1), getArg(args, 2));
-            default:
-                return constructor.invokeWithArguments(withArguments(self, args));
-            }
-        }
-
-        switch(paramCount) {
-        case 1:
-            return constructor.invokeExact(self);
-        case 2:
-            return constructor.invokeExact(self, getArg(args, 0));
-        case 3:
-            return constructor.invokeExact(self, getArg(args, 0), getArg(args, 1));
-        case 4:
-            return constructor.invokeExact(self, getArg(args, 0), getArg(args, 1), getArg(args, 2));
-        default:
-            return constructor.invokeWithArguments(withArguments(self, args));
-        }
-    }
-
-    private Object[] withArguments(final Object self, final Object[] args) {
-        return withArguments(self, args.length + (data.needsCallee() ? 2 : 1), args);
-    }
-
-    private Object[] withArguments(final Object self, final int argCount, final Object[] args) {
-        final Object[] finalArgs = new Object[argCount];
-
-        int nextArg = 0;
-        if (data.needsCallee()) {
-            finalArgs[nextArg++] = this;
-        }
-        finalArgs[nextArg++] = self;
-
-        // Don't add more args that there is argCount in the handle (including self and callee).
-        for (int i = 0; i < args.length && nextArg < argCount;) {
-            finalArgs[nextArg++] = args[i++];
-        }
-
-        // If we have fewer args than argCount, pad with undefined.
-        while (nextArg < argCount) {
-            finalArgs[nextArg++] = UNDEFINED;
-        }
-
-        return finalArgs;
+        return data.invoke(this, self, arguments);
     }
 
     /**
@@ -331,26 +205,14 @@ public abstract class ScriptFunction extends ScriptObject {
      *
      * @return a new instance of the {@link ScriptObject} whose allocator this is
      */
-    public Object allocate() {
+    @SuppressWarnings("unused")
+    private Object allocate() {
         if (Context.DEBUG) {
             allocations++;
         }
+        assert !isBoundFunction(); // allocate never invoked on bound functions
 
-        if (getConstructHandle() == null) {
-            typeError("not.a.constructor", ScriptRuntime.safeToString(this));
-        }
-
-        ScriptObject object = null;
-
-        if (data.getAllocator() != null) {
-            try {
-                object = (ScriptObject)data.getAllocator().invokeExact(data.getAllocatorMap());
-            } catch (final RuntimeException | Error e) {
-                throw e;
-            } catch (final Throwable t) {
-                throw new RuntimeException(t);
-            }
-        }
+        final ScriptObject object = data.allocate();
 
         if (object != null) {
             if (prototype instanceof ScriptObject) {
@@ -372,13 +234,17 @@ public abstract class ScriptFunction extends ScriptObject {
     protected abstract ScriptObject getObjectPrototype();
 
     /**
-     * Creates a version of this function bound to a specific "self" and other argumentss
-     * @param self the self to bind the function to
-     * @param args other arguments (beside self) to bind the function to
-     * @return the bound function
+     * Creates a version of this function bound to a specific "self" and other arguments, as per
+     * {@code Function.prototype.bind} functionality in ECMAScript 5.1 section 15.3.4.5.
+     * @param self the self to bind to this function. Can be null (in which case, null is bound as this).
+     * @param args additional arguments to bind to this function. Can be null or empty to not bind additional arguments.
+     * @return a function with the specified self and parameters bound.
      */
-    protected abstract ScriptFunction makeBoundFunction(Object self, Object[] args);
+    protected ScriptFunction makeBoundFunction(Object self, Object[] args) {
+        return makeBoundFunction(data.makeBoundFunctionData(this, self, args));
+    }
 
+    protected abstract ScriptFunction makeBoundFunction(ScriptFunctionData boundData);
 
     @Override
     public final String safeToString() {
@@ -417,80 +283,13 @@ public abstract class ScriptFunction extends ScriptObject {
         return prototype;
     }
 
-    private static int weigh(final MethodType t) {
-        int weight = Type.typeFor(t.returnType()).getWeight();
-        for (final Class<?> paramType : t.parameterArray()) {
-            final int pweight = Type.typeFor(paramType).getWeight();
-            weight += pweight;
-        }
-        return weight;
-    }
-
-    private static boolean typeCompatible(final MethodType desc, final MethodType spec) {
-        //spec must fit in desc
-        final Class<?>[] dparray = desc.parameterArray();
-        final Class<?>[] sparray = spec.parameterArray();
-
-        if (dparray.length != sparray.length) {
-            return false;
-        }
-
-        for (int i = 0; i < dparray.length; i++) {
-            final Type dp = Type.typeFor(dparray[i]);
-            final Type sp = Type.typeFor(sparray[i]);
-
-            if (dp.isBoolean()) {
-                return false; //don't specialize on booleans, we have the "true" vs int 1 ambiguity in resolution
-            }
-
-            //specialization arguments must be at least as wide as dp, if not wider
-            if (Type.widest(dp, sp) != sp) {
-                //e.g. specialization takes double and callsite says "object". reject.
-                //but if specialization says double and callsite says "int" or "long" or "double", that's fine
-                return false;
-            }
-        }
-
-        return true; // anything goes for return type, take the convenient one and it will be upcasted thru dynalink magic.
-    }
-
-    private MethodHandle candidateWithLowestWeight(final MethodType descType, final MethodHandle initialCandidate, final MethodHandle[] specs) {
-        if (DISABLE_SPECIALIZATION || specs == null) {
-            return initialCandidate;
-        }
-
-        int          minimumWeight = Integer.MAX_VALUE;
-        MethodHandle candidate     = initialCandidate;
-
-        for (final MethodHandle spec : specs) {
-            final MethodType specType = spec.type();
-
-            if (!typeCompatible(descType, specType)) {
-                continue;
-            }
-
-            //return type is ok. we want a wider or equal one for our callsite.
-            final int specWeight = weigh(specType);
-            if (specWeight < minimumWeight) {
-                candidate = spec;
-                minimumWeight = specWeight;
-            }
-        }
-
-        if (DISABLE_SPECIALIZATION && candidate != initialCandidate) {
-            Context.err("### Specializing builtin " + getName() + " -> " + candidate + "?");
-        }
-
-        return candidate;
-    }
-
     /**
      * Return the most appropriate invoke handle if there are specializations
      * @param type most specific method type to look for invocation with
      * @return invoke method handle
      */
-    public final MethodHandle getBestSpecializedInvokeHandle(final MethodType type) {
-        return candidateWithLowestWeight(type, getInvokeHandle(), data.getInvokeSpecializations());
+    private final MethodHandle getBestInvoker(final MethodType type) {
+        return data.getBestInvoker(type);
     }
 
     /**
@@ -525,33 +324,6 @@ public abstract class ScriptFunction extends ScriptObject {
     }
 
     /**
-     * Get the construct handle - the most generic (and if no specializations are in place, only) constructor
-     * method handle for this ScriptFunction
-     * @see SpecializedConstructor
-     * @param type type for wanted constructor
-     * @return construct handle
-     */
-    private final MethodHandle getConstructHandle(final MethodType type) {
-        return candidateWithLowestWeight(type, getConstructHandle(), data.getConstructSpecializations());
-    }
-
-    /**
-     * Get a method handle to the constructor for this function
-     * @return constructor handle
-     */
-    public final MethodHandle getConstructHandle() {
-        return data.getConstructor();
-    }
-
-    /**
-     * Set a method handle to the constructor for this function.
-     * @param constructHandle constructor handle. Can be null to prevent the function from being used as a constructor.
-     */
-    public final void setConstructHandle(final MethodHandle constructHandle) {
-        data.setConstructor(constructHandle);
-    }
-
-    /**
      * Get the name for this function
      * @return the name
      */
@@ -567,14 +339,6 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     public final boolean needsCompilation() {
         return data.getInvoker() == null;
-    }
-
-    /**
-     * Get token for this function
-     * @return token
-     */
-    public final long getToken() {
-        return data.getToken();
     }
 
     /**
@@ -618,7 +382,7 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     public static int G$length(final Object self) {
         if (self instanceof ScriptFunction) {
-            return ((ScriptFunction)self).getArity();
+            return ((ScriptFunction)self).data.getArity();
         }
 
         return 0;
@@ -681,81 +445,13 @@ public abstract class ScriptFunction extends ScriptObject {
 
     @Override
     protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {
-        // Call site type is (callee, args...) - dyn:new doesn't specify a "this", it's our job to allocate it
         final MethodType type = desc.getMethodType();
-
-        // Constructor arguments are either (callee, this, args...) or (this, args...), depending on whether it needs a
-        // callee or not.
-        MethodHandle constructor = getConstructHandle(type);
-
-        if (constructor == null) {
-            typeError("not.a.constructor", ScriptRuntime.safeToString(this));
-            return null;
-        }
-
-        // If it was (callee, this, args...), permute it to (this, callee, args...). We're doing this because having
-        // "this" in the first argument position is what allows the elegant folded composition of
-        // (newFilter x constructor x allocator) further down below in the code.
-        constructor = swapCalleeAndThis(constructor);
-
-        final MethodType ctorType = constructor.type();
-        // Drop constructor "this", so it's also captured as "allocation" parameter of newFilter after we fold the
-        // constructor into newFilter.
-        // (this, [callee, ]args...) => ([callee, ]args...)
-        final Class<?>[] ctorArgs = ctorType.dropParameterTypes(0, 1).parameterArray();
-        // Fold constructor into newFilter that replaces the return value from the constructor with the originally
-        // allocated value when the originally allocated value is a primitive.
-        // (result, this, [callee, ]args...) x (this, [callee, ]args...) => (this, [callee, ]args...)
-        MethodHandle handle = MH.foldArguments(MH.dropArguments(NEWFILTER, 2, ctorArgs), constructor);
-
-        // allocate() takes a ScriptFunction and returns a newly allocated ScriptObject...
-        if (data.needsCallee()) {
-            // ...we either fold it into the previous composition, if we need both the ScriptFunction callee object and
-            // the newly allocated object in the arguments, so (this, callee, args...) x (callee) => (callee, args...),
-            // or...
-            handle = MH.foldArguments(handle, ALLOCATE);
-        } else {
-            // ...replace the ScriptFunction argument with the newly allocated object, if it doesn't need the callee
-            // (this, args...) filter (callee) => (callee, args...)
-            handle = MH.filterArguments(handle, 0, ALLOCATE);
-        }
-
-        final MethodHandle filterIn = MH.asType(pairArguments(handle, type), type);
-        return new GuardedInvocation(filterIn, null, NashornGuards.getFunctionGuard(this));
-    }
-
-    /**
-     * If this function's method handles need a callee parameter, swap the order of first two arguments for the passed
-     * method handle. If this function's method handles don't need a callee parameter, returns the original method
-     * handle unchanged.
-     * @param mh a method handle with order of arguments {@code (callee, this, args...)}
-     * @return a method handle with order of arguments {@code (this, callee, args...)}
-     */
-    private MethodHandle swapCalleeAndThis(final MethodHandle mh) {
-        if (!data.needsCallee()) {
-            return mh;
-        }
-        final MethodType type = mh.type();
-        assert type.parameterType(0) == ScriptFunction.class;
-        assert type.parameterType(1) == Object.class;
-        final MethodType newType = type.changeParameterType(0, Object.class).changeParameterType(1, ScriptFunction.class);
-        final int[] reorder = new int[type.parameterCount()];
-        reorder[0] = 1;
-        assert reorder[1] == 0;
-        for (int i = 2; i < reorder.length; ++i) {
-            reorder[i] = i;
-        }
-        return MethodHandles.permuteArguments(mh, newType, reorder);
-    }
-
-    @SuppressWarnings("unused")
-    private static Object newFilter(final Object result, final Object allocation) {
-        return (result instanceof ScriptObject || !JSType.isPrimitive(result))? result : allocation;
+        return new GuardedInvocation(pairArguments(data.getBestConstructor(type), type), null, NashornGuards.getFunctionGuard(this));
     }
 
     @SuppressWarnings("unused")
     private static Object wrapFilter(final Object obj) {
-        if (obj instanceof ScriptObject || !isPrimitiveThis(obj)) {
+        if (obj instanceof ScriptObject || !ScriptFunctionData.isPrimitiveThis(obj)) {
             return obj;
         }
         return ((GlobalObject) Context.getGlobalTrusted()).wrapAsObject(obj);
@@ -792,7 +488,7 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle guard = null;
 
         if (data.needsCallee()) {
-            final MethodHandle callHandle = getBestSpecializedInvokeHandle(type);
+            final MethodHandle callHandle = getBestInvoker(type);
 
             if (NashornCallSiteDescriptor.isScope(desc)) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
@@ -808,7 +504,7 @@ public abstract class ScriptFunction extends ScriptObject {
                 // If so add a to-object-wrapper argument filter.
                 // Else install a guard that will trigger a relink when the argument becomes primitive.
                 if (needsWrappedThis()) {
-                    if (isPrimitiveThis(request.getArguments()[1])) {
+                    if (ScriptFunctionData.isPrimitiveThis(request.getArguments()[1])) {
                         boundHandle = MH.filterArguments(boundHandle, 1, WRAPFILTER);
                     } else {
                         guard = NashornGuards.getNonStrictFunctionGuard(this);
@@ -816,7 +512,7 @@ public abstract class ScriptFunction extends ScriptObject {
                 }
             }
         } else {
-            final MethodHandle callHandle = getBestSpecializedInvokeHandle(type.dropParameterTypes(0, 1));
+            final MethodHandle callHandle = getBestInvoker(type.dropParameterTypes(0, 1));
 
             if (NashornCallSiteDescriptor.isScope(desc)) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
@@ -840,37 +536,11 @@ public abstract class ScriptFunction extends ScriptObject {
      * These don't want a callee parameter, so bind that. Name binding is optional.
      */
     MethodHandle getCallMethodHandle(final MethodType type, final String bindName) {
-        return pairArguments(bindToNameIfNeeded(bindToCalleeIfNeeded(getBestSpecializedInvokeHandle(type)), bindName), type);
+        return pairArguments(bindToNameIfNeeded(bindToCalleeIfNeeded(getBestInvoker(type)), bindName), type);
     }
 
     private static MethodHandle bindToNameIfNeeded(final MethodHandle methodHandle, final String bindName) {
         return bindName == null ? methodHandle : MH.insertArguments(methodHandle, 1, bindName);
-    }
-
-    /**
-     * Convert this argument for non-strict functions according to ES 10.4.3
-     *
-     * @param thiz the this argument
-     *
-     * @return the converted this object
-     */
-    protected Object convertThisObject(final Object thiz) {
-        if (!(thiz instanceof ScriptObject) && needsWrappedThis()) {
-            if (JSType.nullOrUndefined(thiz)) {
-                return Context.getGlobalTrusted();
-            }
-
-            if (isPrimitiveThis(thiz)) {
-                return ((GlobalObject)Context.getGlobalTrusted()).wrapAsObject(thiz);
-            }
-        }
-
-        return thiz;
-    }
-
-    private static boolean isPrimitiveThis(Object obj) {
-        return obj instanceof String || obj instanceof ConsString ||
-               obj instanceof Number || obj instanceof Boolean;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

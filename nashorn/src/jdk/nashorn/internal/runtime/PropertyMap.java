@@ -308,7 +308,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      *
      * @return New {@link PropertyMap} with {@link Property} removed or {@code null} if not found.
      */
-    PropertyMap deleteProperty(final Property property) {
+    public PropertyMap deleteProperty(final Property property) {
         PropertyMap newMap = checkHistory(property);
         final String key = property.getKey();
 
