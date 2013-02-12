@@ -23,20 +23,14 @@ has a default value (currently 8 relinks) for this property if it
 is not explicitly set.
 
 
-SYSTEM PROPERTY: -Dnashorn.compiler.split.threshold=x
+SYSTEM PROPERTY: -Dnashorn.compiler.splitter.threshold=x
 
 This will change the node weight that requires a subgraph of the IR to
 be split into several classes in order not to run out of bytecode space.
 The default value is 0x8000 (32768).
 
 
-SYSTEM PROPERTY: -Dnashorn.callsiteaccess.debug
-
-See the description of the access logger below. This flag is
-equivalent to enabling the access logger with "info" level.
-
-
-SYSTEM PROPERTY: -Dnashorn.compiler.intarithmetic 
+SYSTEM PROPERTY: -Dnashorn.compiler.intarithmetic
 
 Arithmetic operations in Nashorn (except bitwise ones) typically
 coerce the operands to doubles (as per the JavaScript spec). To switch
