@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,23 +140,23 @@ public class Pool {
         return n == null ? -1 : n.intValue();
     }
 
-    static class Method extends DelegatedSymbol {
-        MethodSymbol m;
+    static class Method extends DelegatedSymbol<MethodSymbol> {
         UniqueType uniqueType;
         Method(MethodSymbol m, Types types) {
             super(m);
-            this.m = m;
             this.uniqueType = new UniqueType(m.type, types);
         }
-        public boolean equals(Object other) {
-            if (!(other instanceof Method)) return false;
-            MethodSymbol o = ((Method)other).m;
+        public boolean equals(Object any) {
+            if (!(any instanceof Method)) return false;
+            MethodSymbol o = ((Method)any).other;
+            MethodSymbol m = this.other;
             return
                 o.name == m.name &&
                 o.owner == m.owner &&
-                ((Method)other).uniqueType.equals(uniqueType);
+                ((Method)any).uniqueType.equals(uniqueType);
         }
         public int hashCode() {
+            MethodSymbol m = this.other;
             return
                 m.name.hashCode() * 33 +
                 m.owner.hashCode() * 9 +
@@ -173,21 +173,21 @@ public class Pool {
         }
 
         @Override
-        public boolean equals(Object other) {
-            if (!super.equals(other)) return false;
-            if (!(other instanceof DynamicMethod)) return false;
-            DynamicMethodSymbol dm1 = (DynamicMethodSymbol)m;
-            DynamicMethodSymbol dm2 = (DynamicMethodSymbol)((DynamicMethod)other).m;
+        public boolean equals(Object any) {
+            if (!super.equals(any)) return false;
+            if (!(any instanceof DynamicMethod)) return false;
+            DynamicMethodSymbol dm1 = (DynamicMethodSymbol)other;
+            DynamicMethodSymbol dm2 = (DynamicMethodSymbol)((DynamicMethod)any).other;
             return dm1.bsm == dm2.bsm &&
                         dm1.bsmKind == dm2.bsmKind &&
                         Arrays.equals(uniqueStaticArgs,
-                            ((DynamicMethod)other).uniqueStaticArgs);
+                            ((DynamicMethod)any).uniqueStaticArgs);
         }
 
         @Override
         public int hashCode() {
             int hash = super.hashCode();
-            DynamicMethodSymbol dm = (DynamicMethodSymbol)m;
+            DynamicMethodSymbol dm = (DynamicMethodSymbol)other;
             hash += dm.bsmKind * 7 +
                     dm.bsm.hashCode() * 11;
             for (int i = 0; i < dm.staticArgs.length; i++) {
@@ -209,23 +209,23 @@ public class Pool {
         }
     }
 
-    static class Variable extends DelegatedSymbol {
-        VarSymbol v;
+    static class Variable extends DelegatedSymbol<VarSymbol> {
         UniqueType uniqueType;
         Variable(VarSymbol v, Types types) {
             super(v);
-            this.v = v;
             this.uniqueType = new UniqueType(v.type, types);
         }
-        public boolean equals(Object other) {
-            if (!(other instanceof Variable)) return false;
-            VarSymbol o = ((Variable)other).v;
+        public boolean equals(Object any) {
+            if (!(any instanceof Variable)) return false;
+            VarSymbol o = ((Variable)any).other;
+            VarSymbol v = other;
             return
                 o.name == v.name &&
                 o.owner == v.owner &&
-                ((Variable)other).uniqueType.equals(uniqueType);
+                ((Variable)any).uniqueType.equals(uniqueType);
         }
         public int hashCode() {
+            VarSymbol v = other;
             return
                 v.name.hashCode() * 33 +
                 v.owner.hashCode() * 9 +

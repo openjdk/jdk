@@ -1,13 +1,5 @@
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.ElementType.TYPE_PARAMETER;
-import static java.lang.annotation.ElementType.TYPE_USE;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /*
- * Copyright (c) 2009 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +27,14 @@ import java.lang.annotation.Target;
  * @author Werner Dietl
  * @compile/fail/ref=DotClass.out -XDrawDiagnostics DotClass.java
  */
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.ElementType.TYPE_PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
 
 @Target({TYPE_USE, TYPE_PARAMETER, TYPE})
 @Retention(RetentionPolicy.RUNTIME)

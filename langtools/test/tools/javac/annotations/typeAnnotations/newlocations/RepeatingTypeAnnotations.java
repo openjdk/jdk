@@ -120,7 +120,6 @@ class MyList<E> { }
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface RTA { }
 
-@ContainerFor(RTA.class)
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface RTAs {
     RTA[] value();
