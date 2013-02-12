@@ -234,11 +234,18 @@ public class DeferredAttr extends JCTree.Visitor {
                     dt.speculativeCache.put(deferredAttrContext.msym, speculativeTree, deferredAttrContext.phase);
                     return speculativeTree.type;
                 case CHECK:
-                    Assert.check(dt.mode == AttrMode.SPECULATIVE);
+                    Assert.check(dt.mode != null);
                     return attr.attribTree(dt.tree, dt.env, resultInfo);
             }
             Assert.error();
             return null;
+        }
+    };
+
+    DeferredTypeCompleter dummyCompleter = new DeferredTypeCompleter() {
+        public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
+            Assert.check(deferredAttrContext.mode == AttrMode.CHECK);
+            return dt.tree.type = Type.noType;
         }
     };
 
@@ -382,7 +389,7 @@ public class DeferredAttr extends JCTree.Visitor {
                 if (!progress) {
                     //remove all variables that have already been instantiated
                     //from the list of stuck variables
-                    inferenceContext.solveAny(inferenceContext.freeVarsIn(List.from(stuckVars)));
+                    inferenceContext.solveAny(List.from(stuckVars), warn);
                     inferenceContext.notifyChange();
                 }
             }
@@ -431,7 +438,15 @@ public class DeferredAttr extends JCTree.Visitor {
                     return true;
                 case CHECK:
                     if (stuckVars.nonEmpty()) {
-                        return false;
+                        //stuck expression - see if we can propagate
+                        if (deferredAttrContext.parent != emptyDeferredAttrContext &&
+                                Type.containsAny(deferredAttrContext.parent.inferenceContext.inferencevars, List.from(stuckVars))) {
+                            deferredAttrContext.parent.deferredAttrNodes.add(this);
+                            dt.check(resultInfo, List.<Type>nil(), dummyCompleter);
+                            return true;
+                        } else {
+                            return false;
+                        }
                     } else {
                         dt.check(resultInfo, stuckVars, basicCompleter);
                         return true;

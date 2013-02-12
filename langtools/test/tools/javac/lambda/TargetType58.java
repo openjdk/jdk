@@ -23,22 +23,24 @@
 
 /*
  * @test
- * @bug 8003280
- * @summary Add lambda tests
- *  complex case of lambda return type that depends on generic method
- *          inference variable
- * @compile -XDrawDiagnostics TargetType20.java
+ * @bug 8007464
+ * @summary Add graph inference support
+ *          more smoke tests for graph inference
+ * @ignore  awaits stream API: 800NNNN
+ * @compile TargetType58.java
  */
 import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
-class TargetType20 {
+class TargetType58 {
 
-    interface SAM2<X> {
-      List<X> f();
+    void test(List<Integer> li) {
+        g(li, s -> s.substream(200), Collections.emptyList());
     }
 
-    class Test {
-       <Z> void call(SAM2<Z> x, SAM2<Z> y) { }
-       { call(() -> Collections.emptyList(), () -> new ArrayList<String>()); }
+    <T, U, S_OUT extends Stream<U>,
+            I extends Iterable<U>> Collection<U> g(Collection<T> coll, Function<Stream<T>, S_OUT> f, I i) {
+        return null;
     }
 }

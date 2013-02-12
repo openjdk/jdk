@@ -1,3 +1,0 @@
-TargetType50.java:25:28: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.upper.bounds: TargetType50.Sink<java.lang.Object>, TargetType50.Sink<java.lang.String>)
-TargetType50.java:26:28: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.upper.bounds: TargetType50.Sink<java.lang.Object>, TargetType50.Sink<java.lang.String>)
-2 errors
