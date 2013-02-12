@@ -23,22 +23,18 @@
 
 /*
  * @test
- * @bug 8003280
- * @summary Add lambda tests
- *  complex case of lambda return type that depends on generic method
- *          inference variable
- * @compile -XDrawDiagnostics TargetType20.java
+ * @bug 8007464
+ * @summary Add graph inference support
+ *          smoke test for graph inference
+ * @compile TargetType56.java
  */
-import java.util.*;
+class TargetType56 {
+    <Z> Z m(Z z) { return null; }
 
-class TargetType20 {
-
-    interface SAM2<X> {
-      List<X> f();
-    }
-
-    class Test {
-       <Z> void call(SAM2<Z> x, SAM2<Z> y) { }
-       { call(() -> Collections.emptyList(), () -> new ArrayList<String>()); }
+    void test() {
+        double d1 = m(1);
+        double d2 = m((Integer)null);
+        double d3 = m(m(1));
+        double d4 = m(m((Integer)null));
     }
 }
