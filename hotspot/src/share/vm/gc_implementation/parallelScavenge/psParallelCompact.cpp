@@ -891,7 +891,7 @@ public:
     _heap_used      = heap->used();
     _young_gen_used = heap->young_gen()->used_in_bytes();
     _old_gen_used   = heap->old_gen()->used_in_bytes();
-    _metadata_used  = MetaspaceAux::used_in_bytes();
+    _metadata_used  = MetaspaceAux::allocated_used_bytes();
   };
 
   size_t heap_used() const      { return _heap_used; }
@@ -1026,6 +1026,7 @@ void PSParallelCompact::post_compact()
 
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
   ClassLoaderDataGraph::purge();
+  MetaspaceAux::verify_metrics();
 
   Threads::gc_epilogue();
   CodeCache::gc_epilogue();

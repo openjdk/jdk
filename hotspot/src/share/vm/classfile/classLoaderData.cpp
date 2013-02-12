@@ -672,6 +672,8 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
     dead->unload();
     data = data->next();
     // Remove from loader list.
+    // This class loader data will no longer be found
+    // in the ClassLoaderDataGraph.
     if (prev != NULL) {
       prev->set_next(data);
     } else {

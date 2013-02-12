@@ -47,7 +47,6 @@ typedef BinaryTreeDictionary<Metachunk, FreeList> ChunkTreeDictionary;
 // the free chunk lists
 const bool metaspace_slow_verify = false;
 
-
 // Parameters for stress mode testing
 const uint metadata_deallocate_a_lot_block = 10;
 const uint metadata_deallocate_a_lock_chunk = 3;
@@ -220,7 +219,6 @@ class ChunkManager VALUE_OBJ_CLASS_SPEC {
   void print_on(outputStream* st);
 };
 
-
 // Used to manage the free list of Metablocks (a block corresponds
 // to the allocation of a quantum of metadata).
 class BlockFreelist VALUE_OBJ_CLASS_SPEC {
@@ -298,7 +296,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   MemRegion* reserved() { return &_reserved; }
   VirtualSpace* virtual_space() const { return (VirtualSpace*) &_virtual_space; }
 
-  // Returns true if "word_size" is available in the virtual space
+  // Returns true if "word_size" is available in the VirtualSpace
   bool is_available(size_t word_size) { return _top + word_size <= end(); }
 
   MetaWord* top() const { return _top; }
@@ -313,6 +311,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   // used and capacity in this single entry in the list
   size_t used_words_in_vs() const;
   size_t capacity_words_in_vs() const;
+  size_t free_words_in_vs() const;
 
   bool initialize();
 
@@ -449,6 +448,8 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   VirtualSpaceList(size_t word_size);
   VirtualSpaceList(ReservedSpace rs);
 
+  size_t free_bytes();
+
   Metachunk* get_new_chunk(size_t word_size,
                            size_t grow_chunks_by_words,
                            size_t medium_chunk_bunch);
@@ -579,7 +580,11 @@ class SpaceManager : public CHeapObj<mtClass> {
   bool has_small_chunk_limit() { return !vs_list()->is_class(); }
 
   // Sum of all space in allocated chunks
-  size_t _allocation_total;
+  size_t _allocated_blocks_words;
+
+  // Sum of all allocated chunks
+  size_t _allocated_chunks_words;
+  size_t _allocated_chunks_count;
 
   // Free lists of blocks are per SpaceManager since they
   // are assumed to be in chunks in use by the SpaceManager
@@ -635,11 +640,26 @@ class SpaceManager : public CHeapObj<mtClass> {
   size_t medium_chunk_size() { return (size_t) vs_list()->is_class() ? ClassMediumChunk : MediumChunk; }
   size_t medium_chunk_bunch() { return medium_chunk_size() * MediumChunkMultiple; }
 
-  size_t allocation_total() const { return _allocation_total; }
-  void inc_allocation_total(size_t v) { Atomic::add_ptr(v, &_allocation_total); }
+  size_t allocated_blocks_words() const { return _allocated_blocks_words; }
+  size_t allocated_blocks_bytes() const { return _allocated_blocks_words * BytesPerWord; }
+  size_t allocated_chunks_words() const { return _allocated_chunks_words; }
+  size_t allocated_chunks_count() const { return _allocated_chunks_count; }
+
   bool is_humongous(size_t word_size) { return word_size > medium_chunk_size(); }
 
   static Mutex* expand_lock() { return _expand_lock; }
+
+  // Increment the per Metaspace and global running sums for Metachunks
+  // by the given size.  This is used when a Metachunk to added to
+  // the in-use list.
+  void inc_size_metrics(size_t words);
+  // Increment the per Metaspace and global running sums Metablocks by the given
+  // size.  This is used when a Metablock is allocated.
+  void inc_used_metrics(size_t words);
+  // Delete the portion of the running sums for this SpaceManager. That is,
+  // the globals running sums for the Metachunks and Metablocks are
+  // decremented for all the Metachunks in-use by this SpaceManager.
+  void dec_total_from_size_metrics();
 
   // Set the sizes for the initial chunks.
   void get_initial_chunk_sizes(Metaspace::MetaspaceType type,
@@ -686,7 +706,7 @@ class SpaceManager : public CHeapObj<mtClass> {
   void verify_chunk_size(Metachunk* chunk);
   NOT_PRODUCT(void mangle_freed_chunks();)
 #ifdef ASSERT
-  void verify_allocation_total();
+  void verify_allocated_blocks_words();
 #endif
 };
 
@@ -797,6 +817,9 @@ size_t VirtualSpaceNode::capacity_words_in_vs() const {
   return pointer_delta(end(), bottom(), sizeof(MetaWord));
 }
 
+size_t VirtualSpaceNode::free_words_in_vs() const {
+  return pointer_delta(end(), top(), sizeof(MetaWord));
+}
 
 // Allocates the chunk from the virtual space only.
 // This interface is also used internally for debugging.  Not all
@@ -1071,6 +1094,10 @@ VirtualSpaceList::VirtualSpaceList(ReservedSpace rs) :
   link_vs(class_entry, rs.size()/BytesPerWord);
 }
 
+size_t VirtualSpaceList::free_bytes() {
+  return virtual_space_list()->free_words_in_vs() * BytesPerWord;
+}
+
 // Allocate another meta virtual space and add it to the list.
 bool VirtualSpaceList::grow_vs(size_t vs_word_size) {
   assert_lock_strong(SpaceManager::expand_lock());
@@ -1211,9 +1238,9 @@ bool VirtualSpaceList::contains(const void *ptr) {
 //
 // After the GC the compute_new_size() for MetaspaceGC is called to
 // resize the capacity of the metaspaces.  The current implementation
-// is based on the flags MinMetaspaceFreeRatio and MaxHeapFreeRatio used
+// is based on the flags MinMetaspaceFreeRatio and MaxMetaspaceFreeRatio used
 // to resize the Java heap by some GC's.  New flags can be implemented
-// if really needed.  MinHeapFreeRatio is used to calculate how much
+// if really needed.  MinMetaspaceFreeRatio is used to calculate how much
 // free space is desirable in the metaspace capacity to decide how much
 // to increase the HWM.  MaxMetaspaceFreeRatio is used to decide how much
 // free space is desirable in the metaspace capacity before decreasing
@@ -1248,7 +1275,11 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t word_size) {
 }
 
 bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
+
+  size_t committed_capacity_bytes = MetaspaceAux::allocated_capacity_bytes();
   // If the user wants a limit, impose one.
+  size_t max_metaspace_size_bytes = MaxMetaspaceSize;
+  size_t metaspace_size_bytes = MetaspaceSize;
   if (!FLAG_IS_DEFAULT(MaxMetaspaceSize) &&
       MetaspaceAux::reserved_in_bytes() >= MaxMetaspaceSize) {
     return false;
@@ -1260,57 +1291,48 @@ bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
 
   // If this is part of an allocation after a GC, expand
   // unconditionally.
-  if(MetaspaceGC::expand_after_GC()) {
+  if (MetaspaceGC::expand_after_GC()) {
     return true;
   }
 
-  size_t metaspace_size_words = MetaspaceSize / BytesPerWord;
+
 
   // If the capacity is below the minimum capacity, allow the
   // expansion.  Also set the high-water-mark (capacity_until_GC)
   // to that minimum capacity so that a GC will not be induced
   // until that minimum capacity is exceeded.
-  if (vsl->capacity_words_sum() < metaspace_size_words ||
+  if (committed_capacity_bytes < metaspace_size_bytes ||
       capacity_until_GC() == 0) {
-    set_capacity_until_GC(metaspace_size_words);
+    set_capacity_until_GC(metaspace_size_bytes);
     return true;
   } else {
-    if (vsl->capacity_words_sum() < capacity_until_GC()) {
+    if (committed_capacity_bytes < capacity_until_GC()) {
       return true;
     } else {
       if (TraceMetadataChunkAllocation && Verbose) {
         gclog_or_tty->print_cr("  allocation request size " SIZE_FORMAT
                         "  capacity_until_GC " SIZE_FORMAT
-                        "  capacity_words_sum " SIZE_FORMAT
-                        "  used_words_sum " SIZE_FORMAT
-                        "  free chunks " SIZE_FORMAT
-                        "  free chunks count %d",
+                        "  allocated_capacity_bytes " SIZE_FORMAT,
                         word_size,
                         capacity_until_GC(),
-                        vsl->capacity_words_sum(),
-                        vsl->used_words_sum(),
-                        vsl->chunk_manager()->free_chunks_total(),
-                        vsl->chunk_manager()->free_chunks_count());
+                        MetaspaceAux::allocated_capacity_bytes());
       }
       return false;
     }
   }
 }
 
-// Variables are in bytes
+
 
 void MetaspaceGC::compute_new_size() {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   uint current_shrink_factor = _shrink_factor;
   _shrink_factor = 0;
 
-  VirtualSpaceList *vsl = Metaspace::space_list();
-
-  size_t capacity_after_gc = vsl->capacity_bytes_sum();
-  // Check to see if these two can be calculated without walking the CLDG
-  size_t used_after_gc = vsl->used_bytes_sum();
-  size_t capacity_until_GC = vsl->capacity_bytes_sum();
-  size_t free_after_gc = capacity_until_GC - used_after_gc;
+  // Until a faster way of calculating the "used" quantity is implemented,
+  // use "capacity".
+  const size_t used_after_gc = MetaspaceAux::allocated_capacity_bytes();
+  const size_t capacity_until_GC = MetaspaceGC::capacity_until_GC();
 
   const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;
   const double maximum_used_percentage = 1.0 - minimum_free_percentage;
@@ -1323,45 +1345,34 @@ void MetaspaceGC::compute_new_size() {
                                   MetaspaceSize);
 
   if (PrintGCDetails && Verbose) {
-    const double free_percentage = ((double)free_after_gc) / capacity_until_GC;
     gclog_or_tty->print_cr("\nMetaspaceGC::compute_new_size: ");
     gclog_or_tty->print_cr("  "
                   "  minimum_free_percentage: %6.2f"
                   "  maximum_used_percentage: %6.2f",
                   minimum_free_percentage,
                   maximum_used_percentage);
-    double d_free_after_gc = free_after_gc / (double) K;
     gclog_or_tty->print_cr("  "
-                  "   free_after_gc       : %6.1fK"
-                  "   used_after_gc       : %6.1fK"
-                  "   capacity_after_gc   : %6.1fK"
-                  "   metaspace HWM     : %6.1fK",
-                  free_after_gc / (double) K,
-                  used_after_gc / (double) K,
-                  capacity_after_gc / (double) K,
-                  capacity_until_GC / (double) K);
-    gclog_or_tty->print_cr("  "
-                  "   free_percentage: %6.2f",
-                  free_percentage);
+                  "   used_after_gc       : %6.1fKB",
+                  used_after_gc / (double) K);
   }
 
 
+  size_t shrink_bytes = 0;
   if (capacity_until_GC < minimum_desired_capacity) {
     // If we have less capacity below the metaspace HWM, then
     // increment the HWM.
     size_t expand_bytes = minimum_desired_capacity - capacity_until_GC;
     // Don't expand unless it's significant
     if (expand_bytes >= MinMetaspaceExpansion) {
-      size_t expand_words = expand_bytes / BytesPerWord;
-      MetaspaceGC::inc_capacity_until_GC(expand_words);
+      MetaspaceGC::set_capacity_until_GC(capacity_until_GC + expand_bytes);
     }
     if (PrintGCDetails && Verbose) {
-      size_t new_capacity_until_GC = MetaspaceGC::capacity_until_GC_in_bytes();
+      size_t new_capacity_until_GC = capacity_until_GC;
       gclog_or_tty->print_cr("    expanding:"
-                    "  minimum_desired_capacity: %6.1fK"
-                    "  expand_words: %6.1fK"
-                    "  MinMetaspaceExpansion: %6.1fK"
-                    "  new metaspace HWM:  %6.1fK",
+                    "  minimum_desired_capacity: %6.1fKB"
+                    "  expand_bytes: %6.1fKB"
+                    "  MinMetaspaceExpansion: %6.1fKB"
+                    "  new metaspace HWM:  %6.1fKB",
                     minimum_desired_capacity / (double) K,
                     expand_bytes / (double) K,
                     MinMetaspaceExpansion / (double) K,
@@ -1371,11 +1382,10 @@ void MetaspaceGC::compute_new_size() {
   }
 
   // No expansion, now see if we want to shrink
-  size_t shrink_words = 0;
   // We would never want to shrink more than this
-  size_t max_shrink_words = capacity_until_GC - minimum_desired_capacity;
-  assert(max_shrink_words >= 0, err_msg("max_shrink_words " SIZE_FORMAT,
-    max_shrink_words));
+  size_t max_shrink_bytes = capacity_until_GC - minimum_desired_capacity;
+  assert(max_shrink_bytes >= 0, err_msg("max_shrink_bytes " SIZE_FORMAT,
+    max_shrink_bytes));
 
   // Should shrinking be considered?
   if (MaxMetaspaceFreeRatio < 100) {
@@ -1385,17 +1395,15 @@ void MetaspaceGC::compute_new_size() {
     size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));
     maximum_desired_capacity = MAX2(maximum_desired_capacity,
                                     MetaspaceSize);
-    if (PrintGC && Verbose) {
+    if (PrintGCDetails && Verbose) {
       gclog_or_tty->print_cr("  "
                              "  maximum_free_percentage: %6.2f"
                              "  minimum_used_percentage: %6.2f",
                              maximum_free_percentage,
                              minimum_used_percentage);
       gclog_or_tty->print_cr("  "
-                             "  capacity_until_GC: %6.1fK"
-                             "  minimum_desired_capacity: %6.1fK"
-                             "  maximum_desired_capacity: %6.1fK",
-                             capacity_until_GC / (double) K,
+                             "  minimum_desired_capacity: %6.1fKB"
+                             "  maximum_desired_capacity: %6.1fKB",
                              minimum_desired_capacity / (double) K,
                              maximum_desired_capacity / (double) K);
     }
@@ -1405,17 +1413,17 @@ void MetaspaceGC::compute_new_size() {
 
     if (capacity_until_GC > maximum_desired_capacity) {
       // Capacity too large, compute shrinking size
-      shrink_words = capacity_until_GC - maximum_desired_capacity;
+      shrink_bytes = capacity_until_GC - maximum_desired_capacity;
       // We don't want shrink all the way back to initSize if people call
       // System.gc(), because some programs do that between "phases" and then
       // we'd just have to grow the heap up again for the next phase.  So we
       // damp the shrinking: 0% on the first call, 10% on the second call, 40%
       // on the third call, and 100% by the fourth call.  But if we recompute
       // size without shrinking, it goes back to 0%.
-      shrink_words = shrink_words / 100 * current_shrink_factor;
-      assert(shrink_words <= max_shrink_words,
+      shrink_bytes = shrink_bytes / 100 * current_shrink_factor;
+      assert(shrink_bytes <= max_shrink_bytes,
         err_msg("invalid shrink size " SIZE_FORMAT " not <= " SIZE_FORMAT,
-          shrink_words, max_shrink_words));
+          shrink_bytes, max_shrink_bytes));
       if (current_shrink_factor == 0) {
         _shrink_factor = 10;
       } else {
@@ -1429,11 +1437,11 @@ void MetaspaceGC::compute_new_size() {
                       MetaspaceSize / (double) K,
                       maximum_desired_capacity / (double) K);
         gclog_or_tty->print_cr("  "
-                      "  shrink_words: %.1fK"
+                      "  shrink_bytes: %.1fK"
                       "  current_shrink_factor: %d"
                       "  new shrink factor: %d"
                       "  MinMetaspaceExpansion: %.1fK",
-                      shrink_words / (double) K,
+                      shrink_bytes / (double) K,
                       current_shrink_factor,
                       _shrink_factor,
                       MinMetaspaceExpansion / (double) K);
@@ -1441,23 +1449,11 @@ void MetaspaceGC::compute_new_size() {
     }
   }
 
-
   // Don't shrink unless it's significant
-  if (shrink_words >= MinMetaspaceExpansion) {
-    VirtualSpaceNode* csp = vsl->current_virtual_space();
-    size_t available_to_shrink = csp->capacity_words_in_vs() -
-      csp->used_words_in_vs();
-    shrink_words = MIN2(shrink_words, available_to_shrink);
-    csp->shrink_by(shrink_words);
-    MetaspaceGC::dec_capacity_until_GC(shrink_words);
-    if (PrintGCDetails && Verbose) {
-      size_t new_capacity_until_GC = MetaspaceGC::capacity_until_GC_in_bytes();
-      gclog_or_tty->print_cr("  metaspace HWM: %.1fK", new_capacity_until_GC / (double) K);
-    }
+  if (shrink_bytes >= MinMetaspaceExpansion &&
+      ((capacity_until_GC - shrink_bytes) >= MetaspaceSize)) {
+    MetaspaceGC::set_capacity_until_GC(capacity_until_GC - shrink_bytes);
   }
-  assert(used_after_gc <= vsl->capacity_bytes_sum(),
-         "sanity check");
-
 }
 
 // Metadebug methods
@@ -1860,18 +1856,28 @@ size_t SpaceManager::sum_waste_in_chunks_in_use(ChunkIndex index) const {
 }
 
 size_t SpaceManager::sum_capacity_in_chunks_in_use() const {
-  MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
-  size_t sum = 0;
-  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
-    Metachunk* chunk = chunks_in_use(i);
-    while (chunk != NULL) {
-      // Just changed this sum += chunk->capacity_word_size();
-      // sum += chunk->word_size() - Metachunk::overhead();
-      sum += chunk->capacity_word_size();
-      chunk = chunk->next();
+  // For CMS use "allocated_chunks_words()" which does not need the
+  // Metaspace lock.  For the other collectors sum over the
+  // lists.  Use both methods as a check that "allocated_chunks_words()"
+  // is correct.  That is, sum_capacity_in_chunks() is too expensive
+  // to use in the product and allocated_chunks_words() should be used
+  // but allow for  checking that allocated_chunks_words() returns the same
+  // value as sum_capacity_in_chunks_in_use() which is the definitive
+  // answer.
+  if (UseConcMarkSweepGC) {
+    return allocated_chunks_words();
+  } else {
+    MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
+    size_t sum = 0;
+    for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
+      Metachunk* chunk = chunks_in_use(i);
+      while (chunk != NULL) {
+        sum += chunk->capacity_word_size();
+        chunk = chunk->next();
+      }
     }
-  }
   return sum;
+  }
 }
 
 size_t SpaceManager::sum_count_in_chunks_in_use() {
@@ -2029,10 +2035,42 @@ void SpaceManager::print_on(outputStream* st) const {
 SpaceManager::SpaceManager(Mutex* lock,
                            VirtualSpaceList* vs_list) :
   _vs_list(vs_list),
-  _allocation_total(0),
+  _allocated_blocks_words(0),
+  _allocated_chunks_words(0),
+  _allocated_chunks_count(0),
   _lock(lock)
 {
   initialize();
+}
+
+void SpaceManager::inc_size_metrics(size_t words) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  // Total of allocated Metachunks and allocated Metachunks count
+  // for each SpaceManager
+  _allocated_chunks_words = _allocated_chunks_words + words;
+  _allocated_chunks_count++;
+  // Global total of capacity in allocated Metachunks
+  MetaspaceAux::inc_capacity(words);
+  // Global total of allocated Metablocks.
+  // used_words_slow() includes the overhead in each
+  // Metachunk so include it in the used when the
+  // Metachunk is first added (so only added once per
+  // Metachunk).
+  MetaspaceAux::inc_used(Metachunk::overhead());
+}
+
+void SpaceManager::inc_used_metrics(size_t words) {
+  // Add to the per SpaceManager total
+  Atomic::add_ptr(words, &_allocated_blocks_words);
+  // Add to the global total
+  MetaspaceAux::inc_used(words);
+}
+
+void SpaceManager::dec_total_from_size_metrics() {
+  MetaspaceAux::dec_capacity(allocated_chunks_words());
+  MetaspaceAux::dec_used(allocated_blocks_words());
+  // Also deduct the overhead per Metachunk
+  MetaspaceAux::dec_used(allocated_chunks_count() * Metachunk::overhead());
 }
 
 void SpaceManager::initialize() {
@@ -2073,7 +2111,10 @@ void ChunkManager::return_chunks(ChunkIndex index, Metachunk* chunks) {
 
 SpaceManager::~SpaceManager() {
   // This call this->_lock which can't be done while holding expand_lock()
-  const size_t in_use_before = sum_capacity_in_chunks_in_use();
+  assert(sum_capacity_in_chunks_in_use() == allocated_chunks_words(),
+    err_msg("sum_capacity_in_chunks_in_use() " SIZE_FORMAT
+            " allocated_chunks_words() " SIZE_FORMAT,
+            sum_capacity_in_chunks_in_use(), allocated_chunks_words()));
 
   MutexLockerEx fcl(SpaceManager::expand_lock(),
                     Mutex::_no_safepoint_check_flag);
@@ -2081,6 +2122,8 @@ SpaceManager::~SpaceManager() {
   ChunkManager* chunk_manager = vs_list()->chunk_manager();
 
   chunk_manager->slow_locked_verify();
+
+  dec_total_from_size_metrics();
 
   if (TraceMetadataChunkAllocation && Verbose) {
     gclog_or_tty->print_cr("~SpaceManager(): " PTR_FORMAT, this);
@@ -2092,7 +2135,7 @@ SpaceManager::~SpaceManager() {
 
   // Have to update before the chunks_in_use lists are emptied
   // below.
-  chunk_manager->inc_free_chunks_total(in_use_before,
+  chunk_manager->inc_free_chunks_total(allocated_chunks_words(),
                                        sum_count_in_chunks_in_use());
 
   // Add all the chunks in use by this space manager
@@ -2158,7 +2201,6 @@ SpaceManager::~SpaceManager() {
                      chunk_manager->humongous_dictionary()->total_count(),
                      chunk_size_name(HumongousIndex));
   }
-  set_chunks_in_use(HumongousIndex, NULL);
   chunk_manager->slow_locked_verify();
 }
 
@@ -2238,12 +2280,17 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
     assert(new_chunk->word_size() > medium_chunk_size(), "List inconsistency");
   }
 
+  // Add to the running sum of capacity
+  inc_size_metrics(new_chunk->word_size());
+
   assert(new_chunk->is_empty(), "Not ready for reuse");
   if (TraceMetadataChunkAllocation && Verbose) {
     gclog_or_tty->print("SpaceManager::add_chunk: %d) ",
                         sum_count_in_chunks_in_use());
     new_chunk->print_on(gclog_or_tty);
-    vs_list()->chunk_manager()->locked_print_free_chunks(tty);
+    if (vs_list() != NULL) {
+      vs_list()->chunk_manager()->locked_print_free_chunks(tty);
+    }
   }
 }
 
@@ -2314,7 +2361,7 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
   // of memory if this returns null.
   if (DumpSharedSpaces) {
     assert(current_chunk() != NULL, "should never happen");
-    inc_allocation_total(word_size);
+    inc_used_metrics(word_size);
     return current_chunk()->allocate(word_size); // caller handles null result
   }
   if (current_chunk() != NULL) {
@@ -2325,7 +2372,7 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
     result = grow_and_allocate(word_size);
   }
   if (result > 0) {
-    inc_allocation_total(word_size);
+    inc_used_metrics(word_size);
     assert(result != (MetaWord*) chunks_in_use(MediumIndex),
            "Head of the list is being allocated");
   }
@@ -2359,20 +2406,14 @@ void SpaceManager::verify_chunk_size(Metachunk* chunk) {
 }
 
 #ifdef ASSERT
-void SpaceManager::verify_allocation_total() {
+void SpaceManager::verify_allocated_blocks_words() {
   // Verification is only guaranteed at a safepoint.
-  if (SafepointSynchronize::is_at_safepoint()) {
-    gclog_or_tty->print_cr("Chunk " PTR_FORMAT " allocation_total " SIZE_FORMAT
-                           " sum_used_in_chunks_in_use " SIZE_FORMAT,
-                           this,
-                           allocation_total(),
-                           sum_used_in_chunks_in_use());
-  }
-  MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
-  assert(allocation_total() == sum_used_in_chunks_in_use(),
+  assert(SafepointSynchronize::is_at_safepoint() || !Universe::is_fully_initialized(),
+    "Verification can fail if the applications is running");
+  assert(allocated_blocks_words() == sum_used_in_chunks_in_use(),
     err_msg("allocation total is not consistent " SIZE_FORMAT
             " vs " SIZE_FORMAT,
-            allocation_total(), sum_used_in_chunks_in_use()));
+            allocated_blocks_words(), sum_used_in_chunks_in_use()));
 }
 
 #endif
@@ -2428,14 +2469,65 @@ void SpaceManager::mangle_freed_chunks() {
 
 // MetaspaceAux
 
-size_t MetaspaceAux::used_in_bytes(Metaspace::MetadataType mdtype) {
+
+size_t MetaspaceAux::_allocated_capacity_words = 0;
+size_t MetaspaceAux::_allocated_used_words = 0;
+
+size_t MetaspaceAux::free_bytes() {
+  size_t result = 0;
+  if (Metaspace::class_space_list() != NULL) {
+    result = result + Metaspace::class_space_list()->free_bytes();
+  }
+  if (Metaspace::space_list() != NULL) {
+    result = result + Metaspace::space_list()->free_bytes();
+  }
+  return result;
+}
+
+void MetaspaceAux::dec_capacity(size_t words) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  assert(words <= _allocated_capacity_words,
+    err_msg("About to decrement below 0: words " SIZE_FORMAT
+            " is greater than _allocated_capacity_words " SIZE_FORMAT,
+            words, _allocated_capacity_words));
+  _allocated_capacity_words = _allocated_capacity_words - words;
+}
+
+void MetaspaceAux::inc_capacity(size_t words) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  // Needs to be atomic
+  _allocated_capacity_words = _allocated_capacity_words + words;
+}
+
+void MetaspaceAux::dec_used(size_t words) {
+  assert(words <= _allocated_used_words,
+    err_msg("About to decrement below 0: words " SIZE_FORMAT
+            " is greater than _allocated_used_words " SIZE_FORMAT,
+            words, _allocated_used_words));
+  // For CMS deallocation of the Metaspaces occurs during the
+  // sweep which is a concurrent phase.  Protection by the expand_lock()
+  // is not enough since allocation is on a per Metaspace basis
+  // and protected by the Metaspace lock.
+  jlong minus_words = (jlong) - (jlong) words;
+  Atomic::add_ptr(minus_words, &_allocated_used_words);
+}
+
+void MetaspaceAux::inc_used(size_t words) {
+  // _allocated_used_words tracks allocations for
+  // each piece of metadata.  Those allocations are
+  // generally done concurrently by different application
+  // threads so must be done atomically.
+  Atomic::add_ptr(words, &_allocated_used_words);
+}
+
+size_t MetaspaceAux::used_bytes_slow(Metaspace::MetadataType mdtype) {
   size_t used = 0;
   ClassLoaderDataGraphMetaspaceIterator iter;
   while (iter.repeat()) {
     Metaspace* msp = iter.get_next();
-    // Sum allocation_total for each metaspace
+    // Sum allocated_blocks_words for each metaspace
     if (msp != NULL) {
-      used += msp->used_words(mdtype);
+      used += msp->used_words_slow(mdtype);
     }
   }
   return used * BytesPerWord;
@@ -2453,13 +2545,15 @@ size_t MetaspaceAux::free_in_bytes(Metaspace::MetadataType mdtype) {
   return free * BytesPerWord;
 }
 
-size_t MetaspaceAux::capacity_in_bytes(Metaspace::MetadataType mdtype) {
-  size_t capacity = free_chunks_total(mdtype);
+size_t MetaspaceAux::capacity_bytes_slow(Metaspace::MetadataType mdtype) {
+  // Don't count the space in the freelists.  That space will be
+  // added to the capacity calculation as needed.
+  size_t capacity = 0;
   ClassLoaderDataGraphMetaspaceIterator iter;
   while (iter.repeat()) {
     Metaspace* msp = iter.get_next();
     if (msp != NULL) {
-      capacity += msp->capacity_words(mdtype);
+      capacity += msp->capacity_words_slow(mdtype);
     }
   }
   return capacity * BytesPerWord;
@@ -2486,23 +2580,30 @@ size_t MetaspaceAux::free_chunks_total_in_bytes(Metaspace::MetadataType mdtype) 
   return free_chunks_total(mdtype) * BytesPerWord;
 }
 
+size_t MetaspaceAux::free_chunks_total() {
+  return free_chunks_total(Metaspace::ClassType) +
+         free_chunks_total(Metaspace::NonClassType);
+}
+
+size_t MetaspaceAux::free_chunks_total_in_bytes() {
+  return free_chunks_total() * BytesPerWord;
+}
+
 void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
   gclog_or_tty->print(", [Metaspace:");
   if (PrintGCDetails && Verbose) {
     gclog_or_tty->print(" "  SIZE_FORMAT
                         "->" SIZE_FORMAT
-                        "("  SIZE_FORMAT "/" SIZE_FORMAT ")",
+                        "("  SIZE_FORMAT ")",
                         prev_metadata_used,
-                        used_in_bytes(),
-                        capacity_in_bytes(),
+                        allocated_capacity_bytes(),
                         reserved_in_bytes());
   } else {
     gclog_or_tty->print(" "  SIZE_FORMAT "K"
                         "->" SIZE_FORMAT "K"
-                        "("  SIZE_FORMAT "K/" SIZE_FORMAT "K)",
+                        "("  SIZE_FORMAT "K)",
                         prev_metadata_used / K,
-                        used_in_bytes()/ K,
-                        capacity_in_bytes()/K,
+                        allocated_capacity_bytes() / K,
                         reserved_in_bytes()/ K);
   }
 
@@ -2517,23 +2618,30 @@ void MetaspaceAux::print_on(outputStream* out) {
   out->print_cr(" Metaspace total "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes()/K, used_in_bytes()/K, reserved_in_bytes()/K);
-  out->print_cr("  data space     "
-                SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
-                " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes(nct)/K, used_in_bytes(nct)/K, reserved_in_bytes(nct)/K);
-  out->print_cr("  class space    "
-                SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
-                " reserved " SIZE_FORMAT "K",
-                capacity_in_bytes(ct)/K, used_in_bytes(ct)/K, reserved_in_bytes(ct)/K);
+                allocated_capacity_bytes()/K, allocated_used_bytes()/K, reserved_in_bytes()/K);
+#if 0
+// The calls to capacity_bytes_slow() and used_bytes_slow() cause
+// lock ordering assertion failures with some collectors.  Do
+// not include this code until the lock ordering is fixed.
+  if (PrintGCDetails && Verbose) {
+    out->print_cr("  data space     "
+                  SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
+                  " reserved " SIZE_FORMAT "K",
+                  capacity_bytes_slow(nct)/K, used_bytes_slow(nct)/K, reserved_in_bytes(nct)/K);
+    out->print_cr("  class space    "
+                  SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
+                  " reserved " SIZE_FORMAT "K",
+                  capacity_bytes_slow(ct)/K, used_bytes_slow(ct)/K, reserved_in_bytes(ct)/K);
+  }
+#endif
 }
 
 // Print information for class space and data space separately.
 // This is almost the same as above.
 void MetaspaceAux::print_on(outputStream* out, Metaspace::MetadataType mdtype) {
   size_t free_chunks_capacity_bytes = free_chunks_total_in_bytes(mdtype);
-  size_t capacity_bytes = capacity_in_bytes(mdtype);
-  size_t used_bytes = used_in_bytes(mdtype);
+  size_t capacity_bytes = capacity_bytes_slow(mdtype);
+  size_t used_bytes = used_bytes_slow(mdtype);
   size_t free_bytes = free_in_bytes(mdtype);
   size_t used_and_free = used_bytes + free_bytes +
                            free_chunks_capacity_bytes;
@@ -2605,6 +2713,36 @@ void MetaspaceAux::verify_free_chunks() {
   Metaspace::space_list()->chunk_manager()->verify();
   Metaspace::class_space_list()->chunk_manager()->verify();
 }
+
+void MetaspaceAux::verify_capacity() {
+#ifdef ASSERT
+  size_t running_sum_capacity_bytes = allocated_capacity_bytes();
+  // For purposes of the running sum of used, verify against capacity
+  size_t capacity_in_use_bytes = capacity_bytes_slow();
+  assert(running_sum_capacity_bytes == capacity_in_use_bytes,
+    err_msg("allocated_capacity_words() * BytesPerWord " SIZE_FORMAT
+            " capacity_bytes_slow()" SIZE_FORMAT,
+            running_sum_capacity_bytes, capacity_in_use_bytes));
+#endif
+}
+
+void MetaspaceAux::verify_used() {
+#ifdef ASSERT
+  size_t running_sum_used_bytes = allocated_used_bytes();
+  // For purposes of the running sum of used, verify against capacity
+  size_t used_in_use_bytes = used_bytes_slow();
+  assert(allocated_used_bytes() == used_in_use_bytes,
+    err_msg("allocated_used_bytes() " SIZE_FORMAT
+            " used_bytes_slow()()" SIZE_FORMAT,
+            allocated_used_bytes(), used_in_use_bytes));
+#endif
+}
+
+void MetaspaceAux::verify_metrics() {
+  verify_capacity();
+  verify_used();
+}
+
 
 // Metaspace methods
 
@@ -2755,8 +2893,8 @@ MetaWord* Metaspace::expand_and_allocate(size_t word_size, MetadataType mdtype) 
   MetaWord* result;
   MetaspaceGC::set_expand_after_GC(true);
   size_t before_inc = MetaspaceGC::capacity_until_GC();
-  size_t delta_words = MetaspaceGC::delta_capacity_until_GC(word_size);
-  MetaspaceGC::inc_capacity_until_GC(delta_words);
+  size_t delta_bytes = MetaspaceGC::delta_capacity_until_GC(word_size) * BytesPerWord;
+  MetaspaceGC::inc_capacity_until_GC(delta_bytes);
   if (PrintGCDetails && Verbose) {
     gclog_or_tty->print_cr("Increase capacity to GC from " SIZE_FORMAT
       " to " SIZE_FORMAT, before_inc, MetaspaceGC::capacity_until_GC());
@@ -2774,8 +2912,8 @@ char* Metaspace::bottom() const {
   return (char*)vsm()->current_chunk()->bottom();
 }
 
-size_t Metaspace::used_words(MetadataType mdtype) const {
-  // return vsm()->allocation_total();
+size_t Metaspace::used_words_slow(MetadataType mdtype) const {
+  // return vsm()->allocated_used_words();
   return mdtype == ClassType ? class_vsm()->sum_used_in_chunks_in_use() :
                                vsm()->sum_used_in_chunks_in_use();  // includes overhead!
 }
@@ -2790,9 +2928,17 @@ size_t Metaspace::free_words(MetadataType mdtype) const {
 // have been made. Don't include space in the global freelist and
 // in the space available in the dictionary which
 // is already counted in some chunk.
-size_t Metaspace::capacity_words(MetadataType mdtype) const {
+size_t Metaspace::capacity_words_slow(MetadataType mdtype) const {
   return mdtype == ClassType ? class_vsm()->sum_capacity_in_chunks_in_use() :
                                vsm()->sum_capacity_in_chunks_in_use();
+}
+
+size_t Metaspace::used_bytes_slow(MetadataType mdtype) const {
+  return used_words_slow(mdtype) * BytesPerWord;
+}
+
+size_t Metaspace::capacity_bytes_slow(MetadataType mdtype) const {
+  return capacity_words_slow(mdtype) * BytesPerWord;
 }
 
 void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
@@ -2921,10 +3067,6 @@ void Metaspace::verify() {
 }
 
 void Metaspace::dump(outputStream* const out) const {
-  if (UseMallocOnly) {
-    // Just print usage for now
-    out->print_cr("usage %d", used_words(Metaspace::NonClassType));
-  }
   out->print_cr("\nVirtual space manager: " INTPTR_FORMAT, vsm());
   vsm()->dump(out);
   out->print_cr("\nClass space manager: " INTPTR_FORMAT, class_vsm());
