@@ -32,8 +32,9 @@
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "memory/space.inline.hpp"
 #include "memory/watermark.hpp"
+#include "utilities/macros.hpp"
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
 // A HeapRegion is the smallest piece of a G1CollectedHeap that
 // can be collected independently.
@@ -837,6 +838,6 @@ class HeapRegionClosure : public StackObj {
   bool complete() { return _complete; }
 };
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP

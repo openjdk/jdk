@@ -47,6 +47,7 @@
 #include "runtime/vframeArray.hpp"
 #include "stack_zero.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #ifdef SHARK
 #include "shark/shark_globals.hpp"
 #endif
@@ -791,7 +792,7 @@ address InterpreterGenerator::generate_accessor_entry() {
 }
 
 address InterpreterGenerator::generate_Reference_get_entry(void) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   if (UseG1GC) {
     // We need to generate have a routine that generates code to:
     //   * load the value in the referent field
@@ -803,7 +804,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
     // field as live.
     Unimplemented();
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
