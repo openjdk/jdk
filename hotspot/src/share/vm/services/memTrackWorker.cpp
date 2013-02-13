@@ -91,6 +91,8 @@ void MemTrackWorker::run() {
   MemSnapshot* snapshot = MemTracker::get_snapshot();
   assert(snapshot != NULL, "Worker should not be started");
   MemRecorder* rec;
+  unsigned long processing_generation = 0;
+  bool          worker_idle = false;
 
   while (!MemTracker::shutdown_in_progress()) {
     NOT_PRODUCT(_last_gen_in_use = generations_in_use();)
@@ -100,6 +102,12 @@ void MemTrackWorker::run() {
       rec = _gen[_head].next_recorder();
     }
     if (rec != NULL) {
+      if (rec->get_generation() != processing_generation || worker_idle) {
+        processing_generation = rec->get_generation();
+        worker_idle = false;
+        MemTracker::set_current_processing_generation(processing_generation);
+      }
+
       // merge the recorder into staging area
       if (!snapshot->merge(rec)) {
         MemTracker::shutdown(MemTracker::NMT_out_of_memory);
@@ -129,6 +137,9 @@ void MemTrackWorker::run() {
           MemTracker::shutdown(MemTracker::NMT_out_of_memory);
         }
       } else {
+        // worker thread is idle
+        worker_idle = true;
+        MemTracker::report_worker_idle();
         snapshot->wait(1000);
         ThreadCritical tc;
         // check if more data arrived

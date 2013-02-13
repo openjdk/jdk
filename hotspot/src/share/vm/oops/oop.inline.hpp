@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
+#include "utilities/macros.hpp"
 #ifdef TARGET_ARCH_x86
 # include "bytes_x86.hpp"
 #endif
@@ -227,12 +228,12 @@ inline oop oopDesc::decode_heap_oop(oop v)  { return v; }
 // might not be the same as oop.
 
 inline narrowOop oopDesc::encode_klass_not_null(Klass* v) {
-  assert(!is_null(v), "oop value can never be zero");
+  assert(!is_null(v), "klass value can never be zero");
   assert(check_klass_alignment(v), "Address not aligned");
   address base = Universe::narrow_klass_base();
   int    shift = Universe::narrow_klass_shift();
   uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
-  assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
+  assert(KlassEncodingMetaspaceMax > pd, "change encoding max if new encoding");
   uint64_t result = pd >> shift;
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow klass pointer overflow");
   assert(decode_klass(result) == v, "reversibility");
@@ -760,7 +761,7 @@ inline int oopDesc::oop_iterate_no_header(OopClosure* blk, MemRegion mr) {
 ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DEFN)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
                                                                            \
 inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
@@ -770,6 +771,6 @@ inline int oopDesc::oop_iterate_backwards(OopClosureType* blk) {           \
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_BACKWARDS_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_BACKWARDS_DEFN)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #endif // SHARE_VM_OOPS_OOP_INLINE_HPP

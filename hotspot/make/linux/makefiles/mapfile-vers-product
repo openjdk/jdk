@@ -184,6 +184,7 @@ SUNWprivate_1.1 {
                 JVM_IsSilentCompiler;
                 JVM_IsSupportedJNIVersion;
                 JVM_IsThreadAlive;
+                JVM_IsVMGeneratedMethodIx;
                 JVM_LatestUserDefinedLoader;
                 JVM_Listen;
                 JVM_LoadClass0;
