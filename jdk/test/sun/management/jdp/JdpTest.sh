@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 # Copyright (c) 2011, 2012 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -51,7 +51,7 @@ _do_compile(){
     # sun.* packages is not included to symbol file lib/ct.sym so we have 
     # to ignore it
 
-    if [ ! -f ${_testclasses} ]
+    if [ ! -d ${_testclasses} ]
     then
 	  mkdir -p ${_testclasses}
     fi   
@@ -295,12 +295,12 @@ do
  esac 
 done
 
-if [ ${_compile} = "yes" ]
+if [ "${_compile}" = "yes" ]
 then
  _do_compile
 fi
 
-if [ ${_jtreg} = "yes" ]
+if [ "${_jtreg}" = "yes" ]
 then
  _testclasses=${TESTCLASSES}
  _testsrc=${TESTSRC}
@@ -309,7 +309,7 @@ fi
 
 # Make sure _tesclasses is absolute path
 tt=`echo ${_testclasses} | sed -e 's,/,,'`
-if [ ${tt} = ${_testclasses} ]
+if [ "${tt}" = "${_testclasses}" ]
 then
   _testclasses="${_pwd}/${_testclasses}"
 fi
@@ -319,7 +319,7 @@ _policyname="${_testclasses}/policy"
 rm -f ${_logname}
 rm -f ${_policyname}
 
-if [ -e ${_testsrc}/policy.tpl ]
+if [ -f ${_testsrc}/policy.tpl ]
 then
 
 cat ${_testsrc}/policy.tpl | \
