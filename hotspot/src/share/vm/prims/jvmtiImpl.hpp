@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 #ifndef SHARE_VM_PRIMS_JVMTIIMPL_HPP
 #define SHARE_VM_PRIMS_JVMTIIMPL_HPP
-
-#ifndef JVMTI_KERNEL
 
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmti.h"
@@ -435,7 +433,6 @@ public:
   static void print();
 };
 
-#endif // !JVMTI_KERNEL
 
 /**
  * When a thread (such as the compiler thread or VM thread) cannot post a

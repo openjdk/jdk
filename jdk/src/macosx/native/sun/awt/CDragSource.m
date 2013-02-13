@@ -443,9 +443,9 @@ static BOOL                sNeedsEnter;
     NSGraphicsContext* graphicsContext = [NSGraphicsContext graphicsContextWithWindow:window];
 
     // Convert mouse coordinates to NS:
-    NSPoint location = NSMakePoint(fDragPos.x, fDragPos.y);
-    NSPoint eventLocation = [fView convertPoint:location toView:nil];
-
+    NSPoint eventLocation = [fView convertPoint:NSMakePoint(fDragPos.x, fDragPos.y) toView:nil];
+    eventLocation.y = [[fView window] frame].size.height - eventLocation.y;
+    
     // Convert fTriggerEventTimeStamp to NS - AWTEvent.h defines UTC(nsEvent) as ((jlong)[event timestamp] * 1000):
     NSTimeInterval timeStamp = fTriggerEventTimeStamp / 1000;
 
@@ -497,12 +497,9 @@ static BOOL                sNeedsEnter;
     NSImage* dragImage = fDragImage;
 
     // Get drag origin and offset:
-    NSPoint dragOrigin;
-    dragOrigin.x = fDragPos.x;
-    dragOrigin.y = fDragPos.y;
-    dragOrigin = [view convertPoint:[dragEvent locationInWindow] fromView:nil];
+    NSPoint dragOrigin = [dragEvent locationInWindow];
     dragOrigin.x += fDragImageOffset.x;
-    dragOrigin.y += [dragImage size].height + fDragImageOffset.y;
+    dragOrigin.y -= fDragImageOffset.y + [dragImage size].height;
 
     // Drag offset values don't seem to matter:
     NSSize dragOffset = NSMakeSize(0, 0);
@@ -516,7 +513,6 @@ static BOOL                sNeedsEnter;
     DLog5(@"  - drag image: %f, %f (%f x %f)", fDragImageOffset.x, fDragImageOffset.y, [dragImage size].width, [dragImage size].height);
     DLog3(@"  - event point (window) %f, %f", [dragEvent locationInWindow].x, [dragEvent locationInWindow].y);
     DLog3(@"  - drag point (view) %f, %f", dragOrigin.x, dragOrigin.y);
-
     // Set up the fDragKeyModifier, so we know if the operation has changed
     // Set up the fDragMouseModifier, so we can |= it later (since CoreDrag doesn't tell us mouse states during a drag)
     fDragKeyModifiers = [DnDUtilities extractJavaExtKeyModifiersFromJavaExtModifiers:fModifiers];

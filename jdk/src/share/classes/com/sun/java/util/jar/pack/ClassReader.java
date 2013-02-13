@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ class ClassReader {
     Package pkg;
     Class cls;
     long inPos;
+    long constantPoolLimit = -1;
     DataInputStream in;
     Map<Attribute.Layout, Attribute> attrDefs;
     Map<Attribute.Layout, String> attrCommands;
@@ -117,15 +118,33 @@ class ClassReader {
 
     private Entry readRef(byte tag) throws IOException {
         Entry e = readRef();
-        assert(e != null);
         assert(!(e instanceof UnresolvedEntry));
-        assert(e.tagMatches(tag));
+        checkTag(e, tag);
         return e;
+    }
+
+    /** Throw a ClassFormatException if the entry does not match the expected tag type. */
+    private Entry checkTag(Entry e, byte tag) throws ClassFormatException {
+        if (e == null || !e.tagMatches(tag)) {
+            String where = (inPos == constantPoolLimit
+                                ? " in constant pool"
+                                : " at pos: " + inPos);
+            String got = (e == null
+                            ? "null CP index"
+                            : "type=" + ConstantPool.tagName(e.tag));
+            throw new ClassFormatException("Bad constant, expected type=" +
+                    ConstantPool.tagName(tag) +
+                    " got "+ got + ", in File: " + cls.file.nameString + where);
+        }
+        return e;
+    }
+    private Entry checkTag(Entry e, byte tag, boolean nullOK) throws ClassFormatException {
+        return nullOK && e == null ? null : checkTag(e, tag);
     }
 
     private Entry readRefOrNull(byte tag) throws IOException {
         Entry e = readRef();
-        assert(e == null || e.tagMatches(tag));
+        checkTag(e, tag, true);
         return e;
     }
 
@@ -143,8 +162,10 @@ class ClassReader {
 
     private SignatureEntry readSignatureRef() throws IOException {
         // The class file stores a Utf8, but we want a Signature.
-        Entry e = readRef(CONSTANT_Utf8);
-        return ConstantPool.getSignatureEntry(e.stringValue());
+        Entry e = readRef(CONSTANT_Signature);
+        return (e != null && e.getTag() == CONSTANT_Utf8)
+                ? ConstantPool.getSignatureEntry(e.stringValue())
+                : (SignatureEntry) e;
     }
 
     void read() throws IOException {
@@ -279,6 +300,7 @@ class ClassReader {
                             " at pos: " + inPos);
             }
         }
+        constantPoolLimit = inPos;
 
         // Fix up refs, which might be out of order.
         while (fptr > 0) {
@@ -311,25 +333,25 @@ class ClassReader {
                 case CONSTANT_Fieldref:
                 case CONSTANT_Methodref:
                 case CONSTANT_InterfaceMethodref:
-                    ClassEntry      mclass = (ClassEntry)      cpMap[ref];
-                    DescriptorEntry mdescr = (DescriptorEntry) cpMap[ref2];
+                    ClassEntry      mclass = (ClassEntry)      checkTag(cpMap[ref],  CONSTANT_Class);
+                    DescriptorEntry mdescr = (DescriptorEntry) checkTag(cpMap[ref2], CONSTANT_NameandType);
                     cpMap[cpi] = ConstantPool.getMemberEntry((byte)tag, mclass, mdescr);
                     break;
                 case CONSTANT_NameandType:
-                    Utf8Entry mname = (Utf8Entry) cpMap[ref];
-                    Utf8Entry mtype = (Utf8Entry) cpMap[ref2];
+                    Utf8Entry mname = (Utf8Entry) checkTag(cpMap[ref],  CONSTANT_Utf8);
+                    Utf8Entry mtype = (Utf8Entry) checkTag(cpMap[ref2], CONSTANT_Signature);
                     cpMap[cpi] = ConstantPool.getDescriptorEntry(mname, mtype);
                     break;
                 case CONSTANT_MethodType:
-                    cpMap[cpi] = ConstantPool.getMethodTypeEntry((Utf8Entry) cpMap[ref]);
+                    cpMap[cpi] = ConstantPool.getMethodTypeEntry((Utf8Entry) checkTag(cpMap[ref], CONSTANT_Signature));
                     break;
                 case CONSTANT_MethodHandle:
                     byte refKind = (byte)(-1 ^ ref);
-                    MemberEntry memRef = (MemberEntry) cpMap[ref2];
+                    MemberEntry memRef = (MemberEntry) checkTag(cpMap[ref2], CONSTANT_AnyMember);
                     cpMap[cpi] = ConstantPool.getMethodHandleEntry(refKind, memRef);
                     break;
                 case CONSTANT_InvokeDynamic:
-                    DescriptorEntry idescr = (DescriptorEntry) cpMap[ref2];
+                    DescriptorEntry idescr = (DescriptorEntry) checkTag(cpMap[ref2], CONSTANT_NameandType);
                     cpMap[cpi] = new UnresolvedEntry((byte)tag, (-1 ^ ref), idescr);
                     // Note that ref must be resolved later, using the BootstrapMethods attribute.
                     break;
@@ -541,7 +563,8 @@ class ClassReader {
         code.max_locals = readUnsignedShort();
         code.bytes = new byte[readInt()];
         in.readFully(code.bytes);
-        Instruction.opcodeChecker(code.bytes);
+        Entry[] cpMap = cls.getCPMap();
+        Instruction.opcodeChecker(code.bytes, cpMap);
         int nh = readUnsignedShort();
         code.setHandlerCount(nh);
         for (int i = 0; i < nh; i++) {
@@ -559,7 +582,7 @@ class ClassReader {
             MethodHandleEntry bsmRef = (MethodHandleEntry) readRef(CONSTANT_MethodHandle);
             Entry[] argRefs = new Entry[readUnsignedShort()];
             for (int j = 0; j < argRefs.length; j++) {
-                argRefs[j] = readRef();
+                argRefs[j] = readRef(CONSTANT_LoadableValue);
             }
             bsms[i] = ConstantPool.getBootstrapMethodEntry(bsmRef, argRefs);
         }
