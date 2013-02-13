@@ -29,6 +29,7 @@
 #include "services/memBaseline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/macros.hpp"
 
 #if INCLUDE_NMT
 

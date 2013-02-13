@@ -178,7 +178,7 @@ class StackMapFrame : public ResourceObj {
 #ifdef DEBUG
     // Put bogus type to indicate it's no longer valid.
     if (_stack_mark != -1) {
-      for (int i = _stack_mark; i >= _stack_size; --i) {
+      for (int i = _stack_mark - 1; i >= _stack_size; --i) {
         _stack[i] = VerificationType::bogus_type();
       }
     }
