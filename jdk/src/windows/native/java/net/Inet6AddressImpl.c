@@ -77,9 +77,6 @@ static jclass ni_ia4cls;
 static jclass ni_ia6cls;
 static jmethodID ni_ia4ctrID;
 static jmethodID ni_ia6ctrID;
-static jfieldID ni_iaaddressID;
-static jfieldID ni_iahostID;
-static jfieldID ni_iafamilyID;
 static jfieldID ni_ia6ipaddressID;
 static int initialized = 0;
 
@@ -104,9 +101,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
       ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
       ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
       ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
-      ni_iaaddressID = (*env)->GetFieldID(env, ni_iacls, "address", "I");
-      ni_iafamilyID = (*env)->GetFieldID(env, ni_iacls, "family", "I");
-      ni_iahostID = (*env)->GetFieldID(env, ni_iacls, "hostName", "Ljava/lang/String;");
       ni_ia6ipaddressID = (*env)->GetFieldID(env, ni_ia6cls, "ipaddress", "[B");
       initialized = 1;
     }
@@ -243,9 +237,8 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 ret = NULL;
                 goto cleanupAndReturn;
               }
-              (*env)->SetIntField(env, iaObj, ni_iaaddressID,
-                                  ntohl(((struct sockaddr_in*)iterator->ai_addr)->sin_addr.s_addr));
-              (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
+              setInetAddress_addr(env, iaObj, ntohl(((struct sockaddr_in*)iterator->ai_addr)->sin_addr.s_addr));
+              setInetAddress_hostName(env, iaObj, host);
               (*env)->SetObjectArrayElement(env, ret, inetIndex, iaObj);
                 inetIndex ++;
             } else if (iterator->ai_family == AF_INET6) {
@@ -269,7 +262,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
               }
               (*env)->SetObjectField(env, iaObj, ni_ia6ipaddressID, ipaddress);
-              (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
+              setInetAddress_hostName(env, iaObj, host);
               (*env)->SetObjectArrayElement(env, ret, inet6Index, iaObj);
               inet6Index ++;
             }
