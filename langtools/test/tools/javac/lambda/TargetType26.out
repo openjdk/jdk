@@ -1,2 +1,2 @@
-TargetType26.java:16:7: compiler.err.cant.apply.symbol: kindname.method, call, Z, @340, kindname.class, TargetType26, (compiler.misc.cyclic.inference: Z)
+TargetType26.java:16:11: compiler.err.prob.found.req: (compiler.misc.cyclic.inference: Z)
 1 error

@@ -186,10 +186,7 @@ public class SamConversionComboTest {
         if(context != Context.CONSTRUCTOR && fInterface != FInterface.C && methodDef == MethodDef.METHOD6)
         //method that throws exceptions not thrown by the interface method is a mismatch
             return false;
-        if(context == Context.CONSTRUCTOR &&
-           methodReference != MethodReference.METHOD1 &&
-           methodReference != MethodReference.METHOD2 &&
-           methodReference != MethodReference.METHOD3)//ambiguous reference
+        if(context == Context.CONSTRUCTOR)
                return false;
         return true;
     }

@@ -241,15 +241,15 @@
     </target>
 
     <target name="build-bootstrap-tools"
-        depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-doclets,build-bootstrap-javah"
+        depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-doclets,build-bootstrap-javah,build-bootstrap-sjavac"
     />
 
     <target name="build-all-tools"
-        depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap"
+        depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap,build-sjavac"
     />
 
     <target name="build-all-classes" depends="build-bootstrap-javac,-create-import-jdk-stubs">
-        <build-classes includes="${javac.includes} ${javadoc.includes} ${doclets.includes} ${javah.includes} ${javap.includes}"/>
+        <build-classes includes="${javac.includes} ${javadoc.includes} ${doclets.includes} ${javah.includes} ${javap.includes} ${sjavac.includes}"/>
     </target>
 
     <!-- clean -->
@@ -656,6 +656,40 @@
 
     <target name="javap" depends="build-javap,jtreg-javap,findbugs-javap"/>
 
+    <!--
+    **** sjavac targets.
+    -->
+
+    <target name="build-bootstrap-sjavac"
+            depends="-def-build-bootstrap-classes,-def-build-bootstrap-jar,-def-build-bootstrap-tool">
+        <build-bootstrap-classes includes="${sjavac.includes}"/>
+        <build-bootstrap-jar     name="sjavac" includes="${sjavac.includes}"
+                                 jarmainclass="com.sun.tools.sjavac.Main"/>
+        <build-bootstrap-tool    name="sjavac"/>
+    </target>
+
+    <target name="build-classes-sjavac" depends="build-classes-javac">
+        <build-classes includes="${sjavac.includes}"/>
+    </target>
+
+    <target name="build-sjavac" depends="build-classes-sjavac">
+        <build-jar  name="sjavac" includes="${sjavac.includes}"
+                    jarmainclass="com.sun.tools.sjavac.Main"
+                    jarclasspath="sjavac.jar"/>
+        <build-tool name="sjavac"/>
+    </target>
+    
+    <!-- (no javadoc for javap) -->
+
+    <target name="jtreg-sjavac" depends="build-sjavac,-def-jtreg">
+        <jtreg-tool name="sjavac" tests="${sjavac.tests}"/>
+    </target>
+
+    <target name="findbugs-sjavac" depends="build-sjavac,-def-findbugs">
+        <findbugs-tool name="sjavac"/>
+    </target>
+
+    <target name="sjavac" depends="build-sjavac,jtreg-sjavac,findbugs-sjavac"/>
 
     <!--
     **** Create import JDK stubs.

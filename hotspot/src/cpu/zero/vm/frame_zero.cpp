@@ -98,10 +98,20 @@ BasicObjectLock* frame::interpreter_frame_monitor_end() const {
 #endif // CC_INTERP
 
 void frame::patch_pc(Thread* thread, address pc) {
-  // We borrow this call to set the thread pointer in the interpreter
-  // state; the hook to set up deoptimized frames isn't supplied it.
-  assert(pc == NULL, "should be");
-  get_interpreterState()->set_thread((JavaThread *) thread);
+
+  if (pc != NULL) {
+    _cb = CodeCache::find_blob(pc);
+    SharkFrame* sharkframe = zeroframe()->as_shark_frame();
+    sharkframe->set_pc(pc);
+    _pc = pc;
+    _deopt_state = is_deoptimized;
+
+  } else {
+    // We borrow this call to set the thread pointer in the interpreter
+    // state; the hook to set up deoptimized frames isn't supplied it.
+    assert(pc == NULL, "should be");
+    get_interpreterState()->set_thread((JavaThread *) thread);
+  }
 }
 
 bool frame::safe_for_sender(JavaThread *thread) {

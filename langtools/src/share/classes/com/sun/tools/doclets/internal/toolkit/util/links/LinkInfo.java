@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,12 @@ public abstract class LinkInfo {
      * Set this to true to indicate that you are linking to a type parameter.
      */
     public boolean isTypeBound = false;
+
+    /**
+     * Whether the document element is in a Java 5 declaration
+     * location or not.
+     */
+    public boolean isJava5DeclarationLocation = true;
 
     /**
      * The label for the link.

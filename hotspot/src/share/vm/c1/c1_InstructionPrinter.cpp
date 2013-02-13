@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,7 +360,7 @@ void InstructionPrinter::do_Constant(Constant* x) {
   ValueType* t = x->type();
   switch (t->tag()) {
     case intTag    : output()->print("%d"  , t->as_IntConstant   ()->value());    break;
-    case longTag   : output()->print(os::jlong_format_specifier(), t->as_LongConstant()->value()); output()->print("L"); break;
+    case longTag   : output()->print(JLONG_FORMAT, t->as_LongConstant()->value()); output()->print("L"); break;
     case floatTag  : output()->print("%g"  , t->as_FloatConstant ()->value());    break;
     case doubleTag : output()->print("%gD" , t->as_DoubleConstant()->value());    break;
     case objectTag : print_object(x);                                        break;

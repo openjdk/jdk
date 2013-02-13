@@ -1,0 +1,3 @@
+BrokenAnnotation.java:16:6: compiler.err.cant.resolve.location: kindname.class, Target, , , (compiler.misc.location: kindname.class, BrokenAnnotation<T>, null)
+BrokenAnnotation.java:15:34: compiler.err.annotation.type.not.applicable
+2 errors

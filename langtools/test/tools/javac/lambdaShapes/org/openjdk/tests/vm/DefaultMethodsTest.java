@@ -807,20 +807,8 @@ public class DefaultMethodsTest extends TestHarness {
             fail("Could not load class", e);
         }
     }
-
-    public void testSynchronizedDefault() {
-        try {
-            java.lang.Class.forName("org.openjdk.tests.vm.SynchronizedDefault");
-        } catch (Exception e) {
-            fail("Could not load class", e);
-        }
-    }
 }
 
 interface StrictfpDefault {
     default strictfp void m() {}
-}
-
-interface SynchronizedDefault {
-    default synchronized void m() {}
 }

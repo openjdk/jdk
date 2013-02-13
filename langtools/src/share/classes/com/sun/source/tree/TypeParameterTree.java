@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,4 +47,5 @@ import javax.lang.model.element.Name;
 public interface TypeParameterTree extends Tree {
     Name getName();
     List<? extends Tree> getBounds();
+    List<? extends AnnotationTree> getAnnotations();
 }

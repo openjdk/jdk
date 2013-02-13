@@ -1,2 +1,0 @@
-TargetType06.java:25:23: compiler.err.cant.apply.symbol: kindname.method, map, TargetType06.Function<B,B>, @510, kindname.class, TargetType06, (compiler.misc.cyclic.inference: B)
-1 error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,9 +176,6 @@ public enum Source {
     public boolean allowTryWithResources() {
         return compareTo(JDK1_7) >= 0;
     }
-    public boolean allowTypeAnnotations() {
-        return compareTo(JDK1_7) >= 0;
-    }
     public boolean allowBinaryLiterals() {
         return compareTo(JDK1_7) >= 0;
     }
@@ -206,16 +203,28 @@ public enum Source {
     public boolean allowDefaultMethods() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowStaticInterfaceMethods() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public boolean allowStrictMethodClashCheck() {
         return compareTo(JDK1_8) >= 0;
     }
     public boolean allowEffectivelyFinalInInnerClasses() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowTypeAnnotations() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public boolean allowRepeatedAnnotations() {
         return compareTo(JDK1_8) >= 0;
     }
     public boolean allowIntersectionTypesInCast() {
+        return compareTo(JDK1_8) >= 0;
+    }
+    public boolean allowEarlyReturnConstraints() {
+        return compareTo(JDK1_8) >= 0;
+    }
+    public boolean allowStructuralMostSpecific() {
         return compareTo(JDK1_8) >= 0;
     }
     public static SourceVersion toSourceVersion(Source source) {

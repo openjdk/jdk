@@ -27,7 +27,7 @@
  * @summary Add lambda tests
  *  check nested case of overload resolution and lambda parameter inference
  * @author  Maurizio Cimadamore
- * @compile TargetType01.java
+ * @compile/fail/ref=TargetType01.out -XDrawDiagnostics TargetType01.java
  */
 
 class TargetType01 {
@@ -43,7 +43,6 @@ class TargetType01 {
     static String M(F_S_S f){ return null; }
 
     static {
-        //ambiguity here - the compiler does not try all the combinations!
-        M(x1 -> { return M( x2 -> { return x1 + x2; });});
+        M(x1 -> { return M( x2 -> { return x1 + x2; });}); //ambiguous
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7192245
+ * @bug 7192245 8005851 8005166
  * @summary Automatic test for checking set of allowed modifiers on interface methods
  */
 
@@ -54,7 +54,7 @@ public class TestDefaultMethodsSyntax {
         }
 
         List<String> getOptions() {
-            return Arrays.asList("-source", versionString);
+            return Arrays.asList("-XDallowStaticInterfaceMethods", "-source", versionString);
         }
     }
 
@@ -77,32 +77,6 @@ public class TestDefaultMethodsSyntax {
             this.modStr = modStr;
         }
 
-        boolean isAllowed(EnclosingKind ek, ModifierKind otherMod) {
-            if (this == otherMod) return false;
-            switch (this) {
-                case NONE:
-                    return true;
-                case ABSTRACT:
-                    return otherMod != PRIVATE;
-                case NATIVE:
-                    return otherMod != ABSTRACT &&
-                            otherMod != STRICTFP;
-                case FINAL:
-                case STATIC:
-                case SYNCHRONIZED:
-                case STRICTFP:
-                     return otherMod != ABSTRACT;
-                case PUBLIC:
-                    return true;
-                case PROTECTED:
-                    return ek == EnclosingKind.ABSTRACT_CLASS;
-                case DEFAULT:
-                    return otherMod != ABSTRACT;
-                default:
-                    return true;
-            }
-        }
-
         static boolean intersect(ModifierKind mk, ModifierKind... mks) {
             for (ModifierKind mk2 : mks) {
                 if (mk == mk2) return true;
@@ -113,7 +87,7 @@ public class TestDefaultMethodsSyntax {
         static boolean compatible(MethodKind mk, ModifierKind mod1, ModifierKind mod2, EnclosingKind ek) {
             if (intersect(ABSTRACT, mod1, mod2) || intersect(NATIVE, mod1, mod2)) {
                 return mk == MethodKind.NO_BODY;
-            } else if (intersect(DEFAULT, mod1, mod2)) {
+            } else if (intersect(DEFAULT, mod1, mod2) || intersect(STATIC, mod1, mod2)) {
                 return mk == MethodKind.BODY;
             } else {
                 return ek == EnclosingKind.INTERFACE ?
@@ -123,7 +97,6 @@ public class TestDefaultMethodsSyntax {
 
         boolean compatible(EnclosingKind ek) {
             switch (this) {
-                case STATIC:
                 case PRIVATE:
                 case PROTECTED:
                     return ek != EnclosingKind.INTERFACE;
@@ -176,17 +149,17 @@ public class TestDefaultMethodsSyntax {
 
         static Result[][] allowedModifierPairs = {
             /*                     NONE  PUBLIC  PROTECTED  PRIVATE  ABSTRACT  STATIC  NATIVE  SYNCHRONIZED  FINAL  STRICTFP  DEFAULT */
-            /* NONE */           { T   , T    , C        , C       , T       , C     , C     , C           , C    , C       , I   },
-            /* PUBLIC */         { T   , F    , F        , F       , T       , C     , C     , C           , C    , C       , I   },
+            /* NONE */           { T   , T    , C        , C       , T       , T     , C     , C           , C    , C       , I   },
+            /* PUBLIC */         { T   , F    , F        , F       , T       , T     , C     , C           , C    , C       , I   },
             /* PROTECTED */      { C   , F    , F        , F       , C       , C     , C     , C           , C    , C       , F   },
             /* PRIVATE */        { C   , F    , F        , F       , F       , C     , C     , C           , C    , C       , F   },
             /* ABSTRACT */       { T   , T    , C        , F       , F       , F     , F     , F           , F    , F       , F   },
-            /* STATIC */         { C   , C    , C        , C       , F       , F     , C     , C           , C    , C       , F   },
+            /* STATIC */         { T   , T    , C        , C       , F       , F     , C     , C           , C    , T       , F   },
             /* NATIVE */         { C   , C    , C        , C       , F       , C     , F     , C           , C    , F       , F   },
-            /* SYNCHRONIZED */   { C   , C    , C        , C       , F       , C     , C     , F           , C    , C       , I   },
+            /* SYNCHRONIZED */   { C   , C    , C        , C       , F       , C     , C     , F           , C    , C       , F   },
             /* FINAL */          { C   , C    , C        , C       , F       , C     , C     , C           , F    , C       , F   },
-            /* STRICTFP */       { C   , C    , C        , C       , F       , C     , F     , C           , C    , F       , I   },
-            /* DEFAULT */        { I   , I    , F        , F       , F       , F     , F     , I           , F    , I       , F   }};
+            /* STRICTFP */       { C   , C    , C        , C       , F       , T     , F     , C           , C    , F       , I   },
+            /* DEFAULT */        { I   , I    , F        , F       , F       , F     , F     , F           , F    , I       , F   }};
     }
 
     enum MethodKind {
@@ -290,6 +263,9 @@ public class TestDefaultMethodsSyntax {
 
         errorExpected |= ModifierKind.intersect(ModifierKind.DEFAULT, modk1, modk2) &&
                 vk == VersionKind.PRE_LAMBDA;
+
+        errorExpected |= ModifierKind.intersect(ModifierKind.STATIC, modk1, modk2) &&
+                ek == EnclosingKind.INTERFACE && vk == VersionKind.PRE_LAMBDA;
 
         checkCount++;
         if (diagChecker.errorFound != errorExpected) {

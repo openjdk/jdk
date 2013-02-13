@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,8 +351,8 @@ public class ClassReader implements Completer {
 
     /** Read a byte.
      */
-    byte nextByte() {
-        return buf[bp++];
+    int nextByte() {
+        return buf[bp++] & 0xFF;
     }
 
     /** Read an integer.
@@ -1172,6 +1172,19 @@ public class ClassReader implements Completer {
                 }
             },
 
+            new AttributeReader(names.RuntimeVisibleTypeAnnotations, V52, CLASS_OR_MEMBER_ATTRIBUTE) {
+                protected void read(Symbol sym, int attrLen) {
+                    attachTypeAnnotations(sym);
+                }
+            },
+
+            new AttributeReader(names.RuntimeInvisibleTypeAnnotations, V52, CLASS_OR_MEMBER_ATTRIBUTE) {
+                protected void read(Symbol sym, int attrLen) {
+                    attachTypeAnnotations(sym);
+                }
+            },
+
+
             // The following attributes for a Code attribute are not currently handled
             // StackMapTable
             // SourceDebugExtension
@@ -1381,6 +1394,17 @@ public class ClassReader implements Completer {
         }
     }
 
+    void attachTypeAnnotations(final Symbol sym) {
+        int numAttributes = nextChar();
+        if (numAttributes != 0) {
+            ListBuffer<TypeAnnotationProxy> proxies =
+                ListBuffer.lb();
+            for (int i = 0; i < numAttributes; i++)
+                proxies.append(readTypeAnnotation());
+            annotate.normal(new TypeAnnotationCompleter(sym, proxies.toList()));
+        }
+    }
+
     /** Attach the default value for an annotation element.
      */
     void attachAnnotationDefault(final Symbol sym) {
@@ -1425,6 +1449,111 @@ public class ClassReader implements Completer {
             pairs.append(new Pair<Name,Attribute>(name, value));
         }
         return new CompoundAnnotationProxy(t, pairs.toList());
+    }
+
+    TypeAnnotationProxy readTypeAnnotation() {
+        TypeAnnotationPosition position = readPosition();
+        CompoundAnnotationProxy proxy = readCompoundAnnotation();
+
+        return new TypeAnnotationProxy(proxy, position);
+    }
+
+    TypeAnnotationPosition readPosition() {
+        int tag = nextByte(); // TargetType tag is a byte
+
+        if (!TargetType.isValidTargetTypeValue(tag))
+            throw this.badClassFile("bad.type.annotation.value", String.format("0x%02X", tag));
+
+        TypeAnnotationPosition position = new TypeAnnotationPosition();
+        TargetType type = TargetType.fromTargetTypeValue(tag);
+
+        position.type = type;
+
+        switch (type) {
+        // type cast
+        case CAST:
+        // instanceof
+        case INSTANCEOF:
+        // new expression
+        case NEW:
+            position.offset = nextChar();
+            break;
+        // local variable
+        case LOCAL_VARIABLE:
+        // resource variable
+        case RESOURCE_VARIABLE:
+            int table_length = nextChar();
+            position.lvarOffset = new int[table_length];
+            position.lvarLength = new int[table_length];
+            position.lvarIndex = new int[table_length];
+
+            for (int i = 0; i < table_length; ++i) {
+                position.lvarOffset[i] = nextChar();
+                position.lvarLength[i] = nextChar();
+                position.lvarIndex[i] = nextChar();
+            }
+            break;
+        // exception parameter
+        case EXCEPTION_PARAMETER:
+            position.exception_index = nextByte();
+            break;
+        // method receiver
+        case METHOD_RECEIVER:
+            // Do nothing
+            break;
+        // type parameter
+        case CLASS_TYPE_PARAMETER:
+        case METHOD_TYPE_PARAMETER:
+            position.parameter_index = nextByte();
+            break;
+        // type parameter bound
+        case CLASS_TYPE_PARAMETER_BOUND:
+        case METHOD_TYPE_PARAMETER_BOUND:
+            position.parameter_index = nextByte();
+            position.bound_index = nextByte();
+            break;
+        // class extends or implements clause
+        case CLASS_EXTENDS:
+            position.type_index = nextChar();
+            break;
+        // throws
+        case THROWS:
+            position.type_index = nextChar();
+            break;
+        // method parameter
+        case METHOD_FORMAL_PARAMETER:
+            position.parameter_index = nextByte();
+            break;
+        // method/constructor/reference type argument
+        case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
+        case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case METHOD_REFERENCE_TYPE_ARGUMENT:
+            position.offset = nextChar();
+            position.type_index = nextByte();
+            break;
+        // We don't need to worry about these
+        case METHOD_RETURN:
+        case FIELD:
+            break;
+        // lambda formal parameter
+        case LAMBDA_FORMAL_PARAMETER:
+            position.parameter_index = nextByte();
+            break;
+        case UNKNOWN:
+            throw new AssertionError("jvm.ClassReader: UNKNOWN target type should never occur!");
+        default:
+            throw new AssertionError("jvm.ClassReader: Unknown target type for position: " + position);
+        }
+
+        { // See whether there is location info and read it
+            int len = nextByte();
+            ListBuffer<Integer> loc = ListBuffer.lb();
+            for (int i = 0; i < len * TypeAnnotationPosition.TypePathEntry.bytesPerEntry; ++i)
+                loc = loc.append(nextByte());
+            position.location = TypeAnnotationPosition.getTypePathFromBinary(loc.toList());
+        }
+
+        return position;
     }
 
     Attribute readAttributeValue() {
@@ -1748,10 +1877,43 @@ public class ClassReader implements Completer {
                 Annotations annotations = sym.annotations;
                 List<Attribute.Compound> newList = deproxyCompoundList(l);
                 if (annotations.pendingCompletion()) {
-                    annotations.setAttributes(newList);
+                    annotations.setDeclarationAttributes(newList);
                 } else {
                     annotations.append(newList);
                 }
+            } finally {
+                currentClassFile = previousClassFile;
+            }
+        }
+    }
+
+    class TypeAnnotationCompleter extends AnnotationCompleter {
+
+        List<TypeAnnotationProxy> proxies;
+
+        TypeAnnotationCompleter(Symbol sym,
+                List<TypeAnnotationProxy> proxies) {
+            super(sym, List.<CompoundAnnotationProxy>nil());
+            this.proxies = proxies;
+        }
+
+        List<Attribute.TypeCompound> deproxyTypeCompoundList(List<TypeAnnotationProxy> proxies) {
+            ListBuffer<Attribute.TypeCompound> buf = ListBuffer.lb();
+            for (TypeAnnotationProxy proxy: proxies) {
+                Attribute.Compound compound = deproxyCompound(proxy.compound);
+                Attribute.TypeCompound typeCompound = new Attribute.TypeCompound(compound, proxy.position);
+                buf.add(typeCompound);
+            }
+            return buf.toList();
+        }
+
+        @Override
+        public void enterAnnotation() {
+            JavaFileObject previousClassFile = currentClassFile;
+            try {
+                currentClassFile = classFile;
+                List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
+                sym.annotations.setTypeAttributes(newList.prependList(sym.getRawTypeAttributes()));
             } finally {
                 currentClassFile = previousClassFile;
             }

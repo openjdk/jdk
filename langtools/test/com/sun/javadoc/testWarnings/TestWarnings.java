@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ public class TestWarnings extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
     };
 
     private static final String[] ARGS2 = new String[] {
-        "-d", BUG_ID, "-private", "-sourcepath", SRC_DIR, "pkg"
+        "-Xdoclint:none", "-d", BUG_ID, "-private", "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.

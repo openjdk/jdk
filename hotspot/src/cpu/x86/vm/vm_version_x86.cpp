@@ -661,6 +661,14 @@ void VM_Version::get_processor_features() {
       }
     }
   }
+#if defined(COMPILER2) && defined(_ALLBSD_SOURCE)
+    if (MaxVectorSize > 16) {
+      // Limit vectors size to 16 bytes on BSD until it fixes
+      // restoring upper 128bit of YMM registers on return
+      // from signal handler.
+      FLAG_SET_DEFAULT(MaxVectorSize, 16);
+    }
+#endif // COMPILER2
 
   // Use population count instruction if available.
   if (supports_popcnt()) {
@@ -745,6 +753,10 @@ void VM_Version::get_processor_features() {
   PrefetchFieldsAhead         = prefetch_fields_ahead();
 #endif
 
+  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
+     (cache_line_size > ContendedPaddingWidth))
+     ContendedPaddingWidth = cache_line_size;
+
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("Logical CPUs per core: %u",
@@ -790,6 +802,9 @@ void VM_Version::get_processor_features() {
     }
     if (PrefetchFieldsAhead > 0) {
       tty->print_cr("PrefetchFieldsAhead %d", PrefetchFieldsAhead);
+    }
+    if (ContendedPaddingWidth > 0) {
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
     }
   }
 #endif // !PRODUCT

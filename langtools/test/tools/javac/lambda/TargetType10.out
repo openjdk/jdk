@@ -1,2 +1,2 @@
-TargetType10.java:17:11: compiler.err.cant.apply.symbol: kindname.method, compose, TargetType10.Function<B,C>,TargetType10.Function<A,? extends B>, @500,@515, kindname.class, TargetType10.Test, (compiler.misc.cyclic.inference: B,A)
+TargetType10.java:17:18: compiler.err.prob.found.req: (compiler.misc.cyclic.inference: B,A)
 1 error

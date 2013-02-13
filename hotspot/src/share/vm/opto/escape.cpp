@@ -523,7 +523,8 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_AryEq:
     case Op_StrComp:
     case Op_StrEquals:
-    case Op_StrIndexOf: {
+    case Op_StrIndexOf:
+    case Op_EncodeISOArray: {
       add_local_var(n, PointsToNode::ArgEscape);
       delayed_worklist->push(n); // Process it later.
       break;
@@ -701,7 +702,8 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_AryEq:
     case Op_StrComp:
     case Op_StrEquals:
-    case Op_StrIndexOf: {
+    case Op_StrIndexOf:
+    case Op_EncodeISOArray: {
       // char[] arrays passed to string intrinsic do not escape but
       // they are not scalar replaceable. Adjust escape state for them.
       // Start from in(2) edge since in(1) is memory edge.
@@ -2581,15 +2583,22 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       }
       // Otherwise skip it (the call updated 'result' value).
     } else if (result->Opcode() == Op_SCMemProj) {
-      assert(result->in(0)->is_LoadStore(), "sanity");
-      const Type *at = igvn->type(result->in(0)->in(MemNode::Address));
+      Node* mem = result->in(0);
+      Node* adr = NULL;
+      if (mem->is_LoadStore()) {
+        adr = mem->in(MemNode::Address);
+      } else {
+        assert(mem->Opcode() == Op_EncodeISOArray, "sanity");
+        adr = mem->in(3); // Memory edge corresponds to destination array
+      }
+      const Type *at = igvn->type(adr);
       if (at != Type::TOP) {
         assert (at->isa_ptr() != NULL, "pointer type required.");
         int idx = C->get_alias_index(at->is_ptr());
         assert(idx != alias_idx, "Object is not scalar replaceable if a LoadStore node access its field");
         break;
       }
-      result = result->in(0)->in(MemNode::Memory);
+      result = mem->in(MemNode::Memory);
     }
   }
   if (result->is_Phi()) {
@@ -2927,6 +2936,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         if (m->is_MergeMem()) {
           assert(_mergemem_worklist.contains(m->as_MergeMem()), "EA: missing MergeMem node in the worklist");
         }
+      } else if (use->Opcode() == Op_EncodeISOArray) {
+        if (use->in(MemNode::Memory) == n || use->in(3) == n) {
+          // EncodeISOArray overwrites destination array
+          memnode_worklist.append_if_missing(use);
+        }
       } else {
         uint op = use->Opcode();
         if (!(op == Op_CmpP || op == Op_Conv2B ||
@@ -2962,6 +2976,16 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       n = n->as_MemBar()->proj_out(TypeFunc::Memory);
       if (n == NULL)
         continue;
+    } else if (n->Opcode() == Op_EncodeISOArray) {
+      // get the memory projection
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node *use = n->fast_out(i);
+        if (use->Opcode() == Op_SCMemProj) {
+          n = use;
+          break;
+        }
+      }
+      assert(n->Opcode() == Op_SCMemProj, "memory projection required");
     } else {
       assert(n->is_Mem(), "memory node required.");
       Node *addr = n->in(MemNode::Address);
@@ -2999,7 +3023,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       Node *use = n->fast_out(i);
       if (use->is_Phi() || use->is_ClearArray()) {
         memnode_worklist.append_if_missing(use);
-      } else if(use->is_Mem() && use->in(MemNode::Memory) == n) {
+      } else if (use->is_Mem() && use->in(MemNode::Memory) == n) {
         if (use->Opcode() == Op_StoreCM) // Ignore cardmark stores
           continue;
         memnode_worklist.append_if_missing(use);
@@ -3010,6 +3034,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         assert(use->in(MemNode::Memory) != n, "EA: missing memory path");
       } else if (use->is_MergeMem()) {
         assert(_mergemem_worklist.contains(use->as_MergeMem()), "EA: missing MergeMem node in the worklist");
+      } else if (use->Opcode() == Op_EncodeISOArray) {
+        if (use->in(MemNode::Memory) == n || use->in(3) == n) {
+          // EncodeISOArray overwrites destination array
+          memnode_worklist.append_if_missing(use);
+        }
       } else {
         uint op = use->Opcode();
         if (!(op == Op_StoreCM ||

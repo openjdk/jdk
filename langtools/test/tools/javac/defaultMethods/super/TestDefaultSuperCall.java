@@ -23,17 +23,21 @@
 
 /*
  * @test
+ * @bug 8006694
  * @summary Automatic test for checking correctness of default super/this resolution
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main TestDefaultSuperCall
+ * @run main/othervm TestDefaultSuperCall
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -212,7 +216,6 @@ public class TestDefaultSuperCall
         List<String> elementsWithMethod;
 
         Shape(ElementKind... elements) {
-            errWriter.println("elements = " + Arrays.toString(elements));
             enclosingElements = new ArrayList<>();
             enclosingNames = new ArrayList<>();
             elementsWithMethod = new ArrayList<>();
@@ -406,7 +409,6 @@ public class TestDefaultSuperCall
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                errWriter.println(diagnostic.getMessage(Locale.getDefault()));
                 errorFound = true;
             }
         }

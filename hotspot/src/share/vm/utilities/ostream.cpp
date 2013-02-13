@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,13 +243,11 @@ outputStream& outputStream::indent() {
 }
 
 void outputStream::print_jlong(jlong value) {
-  // N.B. Same as INT64_FORMAT
-  print(os::jlong_format_specifier(), value);
+  print(JLONG_FORMAT, value);
 }
 
 void outputStream::print_julong(julong value) {
-  // N.B. Same as UINT64_FORMAT
-  print(os::julong_format_specifier(), value);
+  print(JULONG_FORMAT, value);
 }
 
 /**

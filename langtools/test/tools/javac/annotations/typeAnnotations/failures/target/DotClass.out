@@ -1,0 +1,17 @@
+DotClass.java:47:42: compiler.err.no.annotations.on.dot.class
+DotClass.java:50:33: compiler.err.no.annotations.on.dot.class
+DotClass.java:52:52: compiler.err.no.annotations.on.dot.class
+DotClass.java:57:44: compiler.err.no.annotations.on.dot.class
+DotClass.java:58:26: compiler.err.no.annotations.on.dot.class
+DotClass.java:59:26: compiler.err.no.annotations.on.dot.class
+DotClass.java:60:35: compiler.err.no.annotations.on.dot.class
+DotClass.java:62:48: compiler.err.no.annotations.on.dot.class
+DotClass.java:63:49: compiler.err.no.annotations.on.dot.class
+DotClass.java:64:28: compiler.err.no.annotations.on.dot.class
+DotClass.java:65:35: compiler.err.no.annotations.on.dot.class
+DotClass.java:68:54: compiler.err.no.annotations.on.dot.class
+DotClass.java:69:54: compiler.err.no.annotations.on.dot.class
+DotClass.java:70:54: compiler.err.no.annotations.on.dot.class
+DotClass.java:71:54: compiler.err.no.annotations.on.dot.class
+DotClass.java:72:54: compiler.err.no.annotations.on.dot.class
+16 errors

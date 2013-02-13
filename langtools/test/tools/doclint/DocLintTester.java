@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.sun.tools.doclint.DocLint;
+import com.sun.tools.doclint.DocLint.BadArgs;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -45,6 +46,7 @@ public class DocLintTester {
     public void run(String... args) throws Exception {
         String testSrc = System.getProperty("test.src");
 
+        boolean badArgs = false;
         File refFile = null;
         List<String> opts = new ArrayList<String>();
         List<File> files = new ArrayList<File>();
@@ -52,19 +54,25 @@ public class DocLintTester {
             String arg = args[i];
             if (arg.equals("-ref")) {
                 refFile = new File(testSrc, args[++i]);
+            } else if (arg.equals("-badargs")) {
+                badArgs = true;
             } else if (arg.startsWith("-Xmsgs")) {
                 opts.add(arg);
+            } else if (arg.startsWith("-")) {
+                opts.add(arg);
+                if (i < args.length - 1 && !args[i+1].startsWith("-"))
+                    opts.add(args[++i]);
             } else
                 files.add(new File(testSrc, arg));
         }
 
-        check(opts, files, refFile);
+        check(opts, files, badArgs, refFile);
 
         if (errors > 0)
             throw new Exception(errors + " errors occurred");
     }
 
-    void check(List<String> opts, List<File> files, File refFile) throws Exception {
+    void check(List<String> opts, List<File> files, boolean expectBadArgs, File refFile) throws Exception {
         List<String> args = new ArrayList<String>();
         args.addAll(opts);
         for (File file: files)
@@ -72,7 +80,14 @@ public class DocLintTester {
 
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        new DocLint().run(pw, args.toArray(new String[args.size()]));
+        try {
+            new DocLint().run(pw, args.toArray(new String[args.size()]));
+            if (expectBadArgs)
+                error("expected exception not thrown");
+        } catch (BadArgs e) {
+            if (!expectBadArgs)
+                error("unexpected exception caught: " + e);
+        }
         pw.flush();
         String out = normalizeNewlines(removeFileNames(sw.toString())).trim();
         if (out != null)

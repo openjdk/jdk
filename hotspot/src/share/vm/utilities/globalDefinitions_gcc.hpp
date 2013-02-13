@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,5 +305,9 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 # undef offsetof
 #endif
 #define offsetof(klass,field) offset_of(klass,field)
+
+#if defined(_LP64) && defined(__APPLE__)
+#define JLONG_FORMAT           "%ld"
+#endif // _LP64 && __APPLE__
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_GCC_HPP

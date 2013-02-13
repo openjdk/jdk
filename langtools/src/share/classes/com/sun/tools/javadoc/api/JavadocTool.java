@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,12 +139,13 @@ public class JavadocTool implements DocumentationTool {
 
     @Override
     public int run(InputStream in, OutputStream out, OutputStream err, String... arguments) {
-        PrintWriter err_pw = new PrintWriter(err, true);
-        PrintWriter out_pw = new PrintWriter(out);
+        PrintWriter err_pw = new PrintWriter(err == null ? System.err : err, true);
+        PrintWriter out_pw = new PrintWriter(out == null ? System.out : out);
         try {
             String standardDocletName = "com.sun.tools.doclets.standard.Standard";
+            ClassLoader cl = getClass().getClassLoader();
             return com.sun.tools.javadoc.Main.execute(
-                    "javadoc", err_pw, err_pw, out_pw, standardDocletName, arguments);
+                    "javadoc", err_pw, err_pw, out_pw, standardDocletName, cl, arguments);
         } finally {
             err_pw.flush();
             out_pw.flush();

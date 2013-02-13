@@ -1,0 +1,6 @@
+MethodReference60.java:49:44: compiler.err.prob.found.req: (compiler.misc.invalid.mref: kindname.constructor, (compiler.misc.cant.apply.symbol: kindname.constructor, Array, int, compiler.misc.no.args, kindname.class, Array, (compiler.misc.arg.length.mismatch)))
+MethodReference60.java:50:44: compiler.err.prob.found.req: (compiler.misc.invalid.mref: kindname.constructor, (compiler.misc.cant.apply.symbol: kindname.constructor, Array, int, int,int, kindname.class, Array, (compiler.misc.arg.length.mismatch)))
+MethodReference60.java:51:44: compiler.err.prob.found.req: (compiler.misc.invalid.mref: kindname.constructor, (compiler.misc.cant.apply.symbol: kindname.constructor, Array, int, java.lang.String, kindname.class, Array, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.inconvertible.types: java.lang.String, int))))
+MethodReference60.java:52:42: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.mref: (compiler.misc.inconvertible.types: int[], java.lang.Integer))
+MethodReference60.java:53:44: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.mref: (compiler.misc.inconvertible.types: int[], java.lang.Integer[]))
+5 errors

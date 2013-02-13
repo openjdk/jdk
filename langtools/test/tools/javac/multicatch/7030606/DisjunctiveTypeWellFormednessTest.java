@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 7030606
+ * @bug 7030606 8006694
  * @summary Project-coin: multi-catch types should be pairwise disjoint
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main DisjunctiveTypeWellFormednessTest
+ * @run main/othervm DisjunctiveTypeWellFormednessTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;

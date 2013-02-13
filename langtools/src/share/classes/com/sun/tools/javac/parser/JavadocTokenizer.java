@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ public class JavadocTokenizer extends JavaTokenizer {
             // relative to the best match found in the array.
             if (pos == Position.NOPOS)
                 return Position.NOPOS;
-            if (pos < 0 || pos >= docComment.length())
+            if (pos < 0 || pos > docComment.length())
                 throw new StringIndexOutOfBoundsException(String.valueOf(pos));
             if (docPosns == null)
                 return Position.NOPOS;

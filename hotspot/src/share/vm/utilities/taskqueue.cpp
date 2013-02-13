@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,8 +239,8 @@ ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
 
 #ifdef TRACESPINNING
 void ParallelTaskTerminator::print_termination_counts() {
-  gclog_or_tty->print_cr("ParallelTaskTerminator Total yields: %lld  "
-    "Total spins: %lld  Total peeks: %lld",
+  gclog_or_tty->print_cr("ParallelTaskTerminator Total yields: " UINT32_FORMAT
+    " Total spins: " UINT32_FORMAT " Total peeks: " UINT32_FORMAT,
     total_yields(),
     total_spins(),
     total_peeks());

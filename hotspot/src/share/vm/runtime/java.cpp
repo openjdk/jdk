@@ -64,6 +64,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/histogram.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #ifdef TARGET_ARCH_x86
 # include "vm_version_x86.hpp"
@@ -80,11 +81,11 @@
 #ifdef TARGET_ARCH_ppc
 # include "vm_version_ppc.hpp"
 #endif
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -368,6 +369,12 @@ void print_statistics() {
   if (CITime) {
     CompileBroker::print_times();
   }
+
+  if (PrintCodeCache) {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::print();
+  }
+
 #ifdef COMPILER2
   if (PrintPreciseBiasedLockingStatistics) {
     OptoRuntime::print_named_counters();
@@ -541,6 +548,10 @@ void before_exit(JavaThread * thread) {
     _before_exit_status = BEFORE_EXIT_DONE;
     BeforeExit_lock->notify_all();
   }
+
+  // Shutdown NMT before exit. Otherwise,
+  // it will run into trouble when system destroys static variables.
+  MemTracker::shutdown(MemTracker::NMT_normal);
 
   #undef BEFORE_EXIT_NOT_RUN
   #undef BEFORE_EXIT_RUNNING

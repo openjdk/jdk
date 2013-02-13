@@ -272,6 +272,7 @@ jtreg-tests: check-jtreg FRC
 	@mkdir -p $(JTREG_OUTPUT_DIR)
 	JT_JAVA=$(JT_JAVA) $(JTREG) \
 	  -J-Xmx512m \
+	  -vmoption:-Xmx768m \
 	  -a -ignore:quiet -v:fail,error,nopass \
           -r:$(JTREG_OUTPUT_DIR)/JTreport \
           -w:$(JTREG_OUTPUT_DIR)/JTwork \

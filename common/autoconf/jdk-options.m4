@@ -389,7 +389,8 @@ if test "x$with_milestone" = xyes; then
   AC_MSG_ERROR([Milestone must have a value])
 elif test "x$with_milestone" != x; then
     MILESTONE="$with_milestone"
-else
+fi
+if test "x$MILESTONE" = x; then
   MILESTONE=internal
 fi
 

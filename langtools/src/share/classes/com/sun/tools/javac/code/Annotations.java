@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import static com.sun.tools.javac.code.Kinds.PCK;
  *
  * An instance of this class can be in one of three states:
  *
- * NOT_STARTED indicates that the Symbol this instance belongs to have not been
+ * NOT_STARTED indicates that the Symbol this instance belongs to has not been
  * annotated (yet). Specifically if the declaration is not annotated this
  * instance will never move past NOT_STARTED. You can never go back to
  * NOT_STARTED.
@@ -59,7 +59,7 @@ import static com.sun.tools.javac.code.Kinds.PCK;
  *
  * "unnamed" this Annotations contains some attributes, possibly the final set.
  * While in this state you can only prepend or append to the attributes not set
- * it directly. You can also move back to the IN_PROGRESS sate using reset().
+ * it directly. You can also move back to the IN_PROGRESS state using reset().
  *
  * <p><b>This is NOT part of any supported API. If you write code that depends
  * on this, you do so at your own risk. This code and its internal interfaces
@@ -67,14 +67,21 @@ import static com.sun.tools.javac.code.Kinds.PCK;
  */
 public class Annotations {
 
-    private static final List<Attribute.Compound> NOT_STARTED = List.of(null);
-    private static final List<Attribute.Compound> IN_PROGRESS = List.of(null);
+    private static final List<Attribute.Compound> DECL_NOT_STARTED = List.of(null);
+    private static final List<Attribute.Compound> DECL_IN_PROGRESS = List.of(null);
+
     /*
      * This field should never be null
      */
-    private List<Attribute.Compound> attributes = NOT_STARTED;
+    private List<Attribute.Compound> attributes = DECL_NOT_STARTED;
+
     /*
-     * The Symbol this Annotations belong to
+     * This field should never be null
+     */
+    private List<Attribute.TypeCompound> type_attributes = List.<Attribute.TypeCompound>nil();
+
+    /*
+     * The Symbol this Annotations instance belongs to
      */
     private final Symbol sym;
 
@@ -82,11 +89,15 @@ public class Annotations {
         this.sym = sym;
     }
 
-    public List<Attribute.Compound> getAttributes() {
-        return filterSentinels(attributes);
+    public List<Attribute.Compound> getDeclarationAttributes() {
+        return filterDeclSentinels(attributes);
     }
 
-    public void setAttributes(List<Attribute.Compound> a) {
+    public List<Attribute.TypeCompound> getTypeAttributes() {
+        return type_attributes;
+    }
+
+    public void setDeclarationAttributes(List<Attribute.Compound> a) {
         Assert.check(pendingCompletion() || !isStarted());
         if (a == null) {
             throw new NullPointerException();
@@ -94,30 +105,50 @@ public class Annotations {
         attributes = a;
     }
 
+    public void setTypeAttributes(List<Attribute.TypeCompound> a) {
+        if (a == null) {
+            throw new NullPointerException();
+        }
+        type_attributes = a;
+    }
+
     public void setAttributes(Annotations other) {
         if (other == null) {
             throw new NullPointerException();
         }
-        setAttributes(other.getAttributes());
+        setDeclarationAttributes(other.getDeclarationAttributes());
+        setTypeAttributes(other.getTypeAttributes());
     }
 
-    public void setAttributesWithCompletion(final Annotate.AnnotateRepeatedContext ctx) {
+    public void setDeclarationAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.Compound> ctx) {
         Assert.check(pendingCompletion() || (!isStarted() && sym.kind == PCK));
+        this.setDeclarationAttributes(getAttributesForCompletion(ctx));
+    }
 
-        Map<Symbol.TypeSymbol, ListBuffer<Attribute.Compound>> annotated = ctx.annotated;
+    public void appendTypeAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.TypeCompound> ctx) {
+        this.appendUniqueTypes(getAttributesForCompletion(ctx));
+    }
+
+    private <T extends Attribute.Compound> List<T> getAttributesForCompletion(
+            final Annotate.AnnotateRepeatedContext<T> ctx) {
+
+        Map<Symbol.TypeSymbol, ListBuffer<T>> annotated = ctx.annotated;
         boolean atLeastOneRepeated = false;
-        List<Attribute.Compound> buf = List.<Attribute.Compound>nil();
-        for (ListBuffer<Attribute.Compound> lb : annotated.values()) {
+        List<T> buf = List.<T>nil();
+        for (ListBuffer<T> lb : annotated.values()) {
             if (lb.size() == 1) {
                 buf = buf.prepend(lb.first());
             } else { // repeated
-                buf = buf.prepend(new Placeholder(lb.toList(), sym));
+                // This will break when other subtypes of Attributs.Compound
+                // are introduced, because PlaceHolder is a subtype of TypeCompound.
+                T res;
+                @SuppressWarnings("unchecked")
+                T ph = (T) new Placeholder<T>(ctx, lb.toList(), sym);
+                res = ph;
+                buf = buf.prepend(res);
                 atLeastOneRepeated = true;
             }
         }
-
-        // Add non-repeating attributes
-        setAttributes(buf.reverse());
 
         if (atLeastOneRepeated) {
             // The Symbol s is now annotated with a combination of
@@ -126,19 +157,18 @@ public class Annotations {
             //
             // We need to do this in two passes because when creating
             // a container for a repeating annotation we must
-            // guarantee that the @ContainedBy on the
+            // guarantee that the @Repeatable on the
             // contained annotation is fully annotated
             //
             // The way we force this order is to do all repeating
             // annotations in a pass after all non-repeating are
-            // finished. This will work because @ContainedBy
+            // finished. This will work because @Repeatable
             // is non-repeating and therefore will be annotated in the
             // fist pass.
 
             // Queue a pass that will replace Attribute.Placeholders
             // with Attribute.Compound (made from synthesized containers).
             ctx.annotateRepeated(new Annotate.Annotator() {
-
                 @Override
                 public String toString() {
                     return "repeated annotation pass of: " + sym + " in: " + sym.owner;
@@ -150,10 +180,12 @@ public class Annotations {
                 }
             });
         }
+        // Add non-repeating attributes
+        return buf.reverse();
     }
 
     public Annotations reset() {
-        attributes = IN_PROGRESS;
+        attributes = DECL_IN_PROGRESS;
         return this;
     }
 
@@ -163,12 +195,16 @@ public class Annotations {
                 || attributes.isEmpty();
     }
 
+    public boolean isTypesEmpty() {
+        return type_attributes.isEmpty();
+    }
+
     public boolean pendingCompletion() {
-        return attributes == IN_PROGRESS;
+        return attributes == DECL_IN_PROGRESS;
     }
 
     public Annotations append(List<Attribute.Compound> l) {
-        attributes = filterSentinels(attributes);
+        attributes = filterDeclSentinels(attributes);
 
         if (l.isEmpty()) {
             ; // no-op
@@ -180,8 +216,24 @@ public class Annotations {
         return this;
     }
 
+    public Annotations appendUniqueTypes(List<Attribute.TypeCompound> l) {
+        if (l.isEmpty()) {
+            ; // no-op
+        } else if (type_attributes.isEmpty()) {
+            type_attributes = l;
+        } else {
+            // TODO: in case we expect a large number of annotations, this
+            // might be inefficient.
+            for (Attribute.TypeCompound tc : l) {
+                if (!type_attributes.contains(tc))
+                    type_attributes = type_attributes.append(tc);
+            }
+        }
+        return this;
+    }
+
     public Annotations prepend(List<Attribute.Compound> l) {
-        attributes = filterSentinels(attributes);
+        attributes = filterDeclSentinels(attributes);
 
         if (l.isEmpty()) {
             ; // no-op
@@ -193,19 +245,29 @@ public class Annotations {
         return this;
     }
 
-    private List<Attribute.Compound> filterSentinels(List<Attribute.Compound> a) {
-        return (a == IN_PROGRESS || a == NOT_STARTED)
+    private List<Attribute.Compound> filterDeclSentinels(List<Attribute.Compound> a) {
+        return (a == DECL_IN_PROGRESS || a == DECL_NOT_STARTED)
                 ? List.<Attribute.Compound>nil()
                 : a;
     }
 
     private boolean isStarted() {
-        return attributes != NOT_STARTED;
+        return attributes != DECL_NOT_STARTED;
     }
 
     private List<Attribute.Compound> getPlaceholders() {
         List<Attribute.Compound> res = List.<Attribute.Compound>nil();
-        for (Attribute.Compound a : filterSentinels(attributes)) {
+        for (Attribute.Compound a : filterDeclSentinels(attributes)) {
+            if (a instanceof Placeholder) {
+                res = res.prepend(a);
+            }
+        }
+        return res.reverse();
+    }
+
+    private List<Attribute.TypeCompound> getTypePlaceholders() {
+        List<Attribute.TypeCompound> res = List.<Attribute.TypeCompound>nil();
+        for (Attribute.TypeCompound a : type_attributes) {
             if (a instanceof Placeholder) {
                 res = res.prepend(a);
             }
@@ -216,68 +278,100 @@ public class Annotations {
     /*
      * Replace Placeholders for repeating annotations with their containers
      */
-    private void complete(Annotate.AnnotateRepeatedContext ctx) {
-        Assert.check(!pendingCompletion());
+    private <T extends Attribute.Compound> void complete(Annotate.AnnotateRepeatedContext<T> ctx) {
         Log log = ctx.log;
         Env<AttrContext> env = ctx.env;
         JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
         try {
+            // TODO: can we reduce duplication in the following branches?
+            if (ctx.isTypeCompound) {
+                Assert.check(!isTypesEmpty());
 
-            if (isEmpty()) {
-                return;
-            }
-
-            List<Attribute.Compound> result = List.nil();
-            for (Attribute.Compound a : getAttributes()) {
-                if (a instanceof Placeholder) {
-                    Attribute.Compound replacement = replaceOne((Placeholder) a, ctx);
-
-                    if (null != replacement) {
-                        result = result.prepend(replacement);
-                    }
-                } else {
-                    result = result.prepend(a);
+                if (isTypesEmpty()) {
+                    return;
                 }
+
+                List<Attribute.TypeCompound> result = List.nil();
+                for (Attribute.TypeCompound a : getTypeAttributes()) {
+                    if (a instanceof Placeholder) {
+                        @SuppressWarnings("unchecked")
+                        Placeholder<Attribute.TypeCompound> ph = (Placeholder<Attribute.TypeCompound>) a;
+                        Attribute.TypeCompound replacement = replaceOne(ph, ph.getRepeatedContext());
+
+                        if (null != replacement) {
+                            result = result.prepend(replacement);
+                        }
+                    } else {
+                        result = result.prepend(a);
+                    }
+                }
+
+                type_attributes = result.reverse();
+
+                Assert.check(Annotations.this.getTypePlaceholders().isEmpty());
+            } else {
+                Assert.check(!pendingCompletion());
+
+                if (isEmpty()) {
+                    return;
+                }
+
+                List<Attribute.Compound> result = List.nil();
+                for (Attribute.Compound a : getDeclarationAttributes()) {
+                    if (a instanceof Placeholder) {
+                        @SuppressWarnings("unchecked")
+                        Attribute.Compound replacement = replaceOne((Placeholder<T>) a, ctx);
+
+                        if (null != replacement) {
+                            result = result.prepend(replacement);
+                        }
+                    } else {
+                        result = result.prepend(a);
+                    }
+                }
+
+                attributes = result.reverse();
+
+                Assert.check(Annotations.this.getPlaceholders().isEmpty());
             }
-
-            attributes = result.reverse();
-
-            Assert.check(Annotations.this.getPlaceholders().isEmpty());
         } finally {
             log.useSource(oldSource);
         }
     }
 
-    private Attribute.Compound replaceOne(Placeholder placeholder, Annotate.AnnotateRepeatedContext ctx) {
+    private <T extends Attribute.Compound> T replaceOne(Placeholder<T> placeholder, Annotate.AnnotateRepeatedContext<T> ctx) {
         Log log = ctx.log;
 
         // Process repeated annotations
-        Attribute.Compound validRepeated =
-            ctx.processRepeatedAnnotations(placeholder.getPlaceholderFor(), sym);
+        T validRepeated = ctx.processRepeatedAnnotations(placeholder.getPlaceholderFor(), sym);
 
         if (validRepeated != null) {
             // Check that the container isn't manually
             // present along with repeated instances of
             // its contained annotation.
-            ListBuffer<Attribute.Compound> manualContainer = ctx.annotated.get(validRepeated.type.tsym);
+            ListBuffer<T> manualContainer = ctx.annotated.get(validRepeated.type.tsym);
             if (manualContainer != null) {
-                log.error(ctx.pos.get(manualContainer.first()), "invalid.containedby.annotation.repeated.and.container.present",
+                log.error(ctx.pos.get(manualContainer.first()), "invalid.repeatable.annotation.repeated.and.container.present",
                         manualContainer.first().type.tsym);
             }
         }
 
         // A null return will delete the Placeholder
         return validRepeated;
-
     }
 
-    private static class Placeholder extends Attribute.Compound {
+    private static class Placeholder<T extends Attribute.Compound> extends Attribute.TypeCompound {
 
-        private List<Attribute.Compound> placeholderFor;
-        private Symbol on;
+        private final Annotate.AnnotateRepeatedContext<T> ctx;
+        private final List<T> placeholderFor;
+        private final Symbol on;
 
-        public Placeholder(List<Attribute.Compound> placeholderFor, Symbol on) {
-            super(Type.noType, List.<Pair<Symbol.MethodSymbol, Attribute>>nil());
+        public Placeholder(Annotate.AnnotateRepeatedContext<T> ctx, List<T> placeholderFor, Symbol on) {
+            super(on.type, List.<Pair<Symbol.MethodSymbol, Attribute>>nil(),
+                    ctx.isTypeCompound ?
+                            ((Attribute.TypeCompound)placeholderFor.head).position :
+                                null);
+            this.ctx = ctx;
             this.placeholderFor = placeholderFor;
             this.on = on;
         }
@@ -287,8 +381,12 @@ public class Annotations {
             return "<placeholder: " + placeholderFor + " on: " + on + ">";
         }
 
-        public List<Attribute.Compound> getPlaceholderFor() {
+        public List<T> getPlaceholderFor() {
             return placeholderFor;
+        }
+
+        public Annotate.AnnotateRepeatedContext<T> getRepeatedContext() {
+            return ctx;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.tools.javadoc;
+
+import javax.lang.model.type.TypeKind;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.code.Symbol;
@@ -51,12 +53,27 @@ public class TypeMaker {
      * @param errToClassDoc  if true, ERROR type results in a ClassDoc;
      *          false preserves legacy behavior
      */
+    public static com.sun.javadoc.Type getType(DocEnv env, Type t,
+            boolean errorToClassDoc) {
+        return getType(env, t, errorToClassDoc, true);
+    }
+
     @SuppressWarnings("fallthrough")
     public static com.sun.javadoc.Type getType(DocEnv env, Type t,
-                                               boolean errToClassDoc) {
+            boolean errToClassDoc, boolean considerAnnotations) {
         if (env.legacyDoclet) {
             t = env.types.erasure(t);
         }
+        if (considerAnnotations
+                && t.getKind() == TypeKind.ANNOTATED) {
+            return new AnnotatedTypeImpl(env, (com.sun.tools.javac.code.Type.AnnotatedType) t);
+        }
+
+        if (t.getKind() == TypeKind.ANNOTATED) {
+            Type.AnnotatedType at = (Type.AnnotatedType) t;
+            return new AnnotatedTypeImpl(env, at);
+        }
+
         switch (t.getTag()) {
         case CLASS:
             if (ClassDocImpl.isGeneric((ClassSymbol)t.tsym)) {
@@ -129,6 +146,11 @@ public class TypeMaker {
      * Class names are qualified if "full" is true.
      */
     static String getTypeString(DocEnv env, Type t, boolean full) {
+        // TODO: should annotations be included here?
+        if (t.getKind() == TypeKind.ANNOTATED) {
+            Type.AnnotatedType at = (Type.AnnotatedType)t;
+            t = at.underlyingType;
+        }
         switch (t.getTag()) {
         case ARRAY:
             StringBuilder s = new StringBuilder();
@@ -278,6 +300,13 @@ public class TypeMaker {
          * Return null, as there are no arrays of wildcard types.
          */
         public WildcardType asWildcardType() {
+            return null;
+        }
+
+        /**
+         * Return null, as there are no annotations of the type
+         */
+        public AnnotatedType asAnnotatedType() {
             return null;
         }
 

@@ -25,7 +25,7 @@
 // key: compiler.misc.where.description.intersection
 // key: compiler.misc.intersection.type
 // key: compiler.err.prob.found.req
-// key: compiler.misc.inconvertible.types
+// key: compiler.misc.inferred.do.not.conform.to.upper.bounds
 // options: -XDdiags=where
 // run: simple
 

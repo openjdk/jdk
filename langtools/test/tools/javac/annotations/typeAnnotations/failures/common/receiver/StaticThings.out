@@ -1,0 +1,5 @@
+StaticThings.java:52:32: compiler.err.annotation.type.not.applicable
+StaticThings.java:54:37: compiler.err.annotation.type.not.applicable
+StaticThings.java:33:26: compiler.err.annotation.type.not.applicable
+StaticThings.java:36:28: compiler.err.annotation.type.not.applicable
+4 errors

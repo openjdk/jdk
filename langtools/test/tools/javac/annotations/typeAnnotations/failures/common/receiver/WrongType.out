@@ -1,0 +1,9 @@
+WrongType.java:51:15: compiler.err.cant.resolve.location: kindname.class, XYZ, , , (compiler.misc.location: kindname.class, WrongType, null)
+WrongType.java:61:27: compiler.err.doesnt.exist: Outer
+WrongType.java:62:31: compiler.err.cant.resolve.location: kindname.class, XY, , , (compiler.misc.location: kindname.class, WrongType, null)
+WrongType.java:44:23: compiler.err.incorrect.receiver.type
+WrongType.java:46:23: compiler.err.incorrect.receiver.type
+WrongType.java:59:33: compiler.err.incorrect.receiver.type
+WrongType.java:60:31: compiler.err.incorrect.receiver.type
+WrongType.java:66:28: compiler.err.incorrect.receiver.type
+8 errors

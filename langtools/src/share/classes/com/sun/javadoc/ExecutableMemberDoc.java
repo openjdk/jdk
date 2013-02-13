@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,15 @@ public interface ExecutableMemberDoc extends MemberDoc {
      * in the order the arguments are present.
      */
     Parameter[] parameters();
+
+    /**
+     * Get the receiver annotations of this executable element.
+     * Return an empty array if there are none.
+     *
+     * @return the receiver annotations of this executable element.
+     * @since 1.8
+     */
+    AnnotationDesc[] receiverAnnotations();
 
     /**
      * Return the throws tags in this method.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,10 @@ import java.util.*;
 import javax.tools.JavaFileManager;
 
 import com.sun.javadoc.*;
+import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.api.JavacTrees;
+import com.sun.tools.doclint.DocLint;
+import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -105,6 +107,7 @@ public class DocEnv {
     Types types;
     JavaFileManager fileManager;
     Context context;
+    DocLint doclint;
 
     WeakHashMap<JCTree, TreePath> treePaths = new WeakHashMap<JCTree, TreePath>();
 
@@ -399,6 +402,9 @@ public class DocEnv {
      */
     public void warning(DocImpl doc, String key, String a1) {
         if (silent)
+            return;
+        // suppress messages that have (probably) been covered by doclint
+        if (doclint != null && doc != null && key.startsWith("tag"))
             return;
         messager.warning(doc==null ? null : doc.position(), key, a1);
     }
@@ -732,9 +738,15 @@ public class DocEnv {
         return p;
     }
 
-    TreePath getTreePath(JCCompilationUnit toplevel, JCTree tree) {
-        // don't bother to cache paths for classes and members
-        return new TreePath(getTreePath(toplevel), tree);
+    TreePath getTreePath(JCCompilationUnit toplevel, JCClassDecl tree) {
+        TreePath p = treePaths.get(tree);
+        if (p == null)
+            treePaths.put(tree, p = new TreePath(getTreePath(toplevel), tree));
+        return p;
+    }
+
+    TreePath getTreePath(JCCompilationUnit toplevel, JCClassDecl cdecl, JCTree tree) {
+        return new TreePath(getTreePath(toplevel, cdecl), tree);
     }
 
     /**
@@ -780,5 +792,26 @@ public class DocEnv {
         if ((flags & Flags.VOLATILE) != 0)
             result |= Modifier.VOLATILE;
         return result;
+    }
+
+    void initDoclint(Collection<String> opts) {
+        ArrayList<String> doclintOpts = new ArrayList<String>();
+
+        for (String opt: opts) {
+            doclintOpts.add(opt == null ? DocLint.XMSGS_OPTION : DocLint.XMSGS_CUSTOM_PREFIX + opt);
+        }
+
+        if (doclintOpts.size() == 1
+                && doclintOpts.get(0).equals(DocLint.XMSGS_CUSTOM_PREFIX + "none")) {
+            return;
+        }
+
+        JavacTask t = BasicJavacTask.instance(context);
+        doclint = new DocLint();
+        doclint.init(t, doclintOpts.toArray(new String[doclintOpts.size()]), false);
+    }
+
+    boolean showTagMessages() {
+        return (doclint == null);
     }
 }

@@ -1,0 +1,8 @@
+T6967002.java:33:22: compiler.err.expected: ')'
+T6967002.java:33:25: compiler.err.illegal.start.of.expr
+T6967002.java:33:28: compiler.err.illegal.start.of.expr
+T6967002.java:33:29: compiler.err.illegal.start.of.expr
+T6967002.java:33:27: compiler.err.not.stmt
+T6967002.java:33:30: compiler.err.expected: ';'
+T6967002.java:35:2: compiler.err.premature.eof
+7 errors

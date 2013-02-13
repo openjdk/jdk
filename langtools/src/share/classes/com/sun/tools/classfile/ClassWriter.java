@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -498,6 +498,16 @@ public class ClassWriter {
             return null;
         }
 
+        public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr, ClassOutputStream out) {
+            annotationWriter.write(attr.annotations, out);
+            return null;
+        }
+
+        public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr, ClassOutputStream out) {
+            annotationWriter.write(attr.annotations, out);
+            return null;
+        }
+
         public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, ClassOutputStream out) {
             out.writeByte(attr.parameter_annotations.length);
             for (Annotation[] annos: attr.parameter_annotations)
@@ -657,11 +667,22 @@ public class ClassWriter {
                 write(anno, out);
         }
 
+        public void write(TypeAnnotation[] annos, ClassOutputStream out) {
+            out.writeShort(annos.length);
+            for (TypeAnnotation anno: annos)
+                write(anno, out);
+        }
+
         public void write(Annotation anno, ClassOutputStream out) {
             out.writeShort(anno.type_index);
             out.writeShort(anno.element_value_pairs.length);
             for (element_value_pair p: anno.element_value_pairs)
                 write(p, out);
+        }
+
+        public void write(TypeAnnotation anno, ClassOutputStream out) {
+            write(anno.position, out);
+            write(anno.annotation, out);
         }
 
         public void write(element_value_pair pair, ClassOutputStream out) {
@@ -702,5 +723,89 @@ public class ClassWriter {
             return null;
         }
 
+        // TODO: Move this to TypeAnnotation to be closer with similar logic?
+        private void write(TypeAnnotation.Position p, ClassOutputStream out) {
+            out.writeByte(p.type.targetTypeValue());
+            switch (p.type) {
+            // type cast
+            case CAST:
+            // instanceof
+            case INSTANCEOF:
+            // new expression
+            case NEW:
+                out.writeShort(p.offset);
+                break;
+            // local variable
+            case LOCAL_VARIABLE:
+            // resource variable
+            case RESOURCE_VARIABLE:
+                int table_length = p.lvarOffset.length;
+                out.writeShort(table_length);
+                for (int i = 0; i < table_length; ++i) {
+                    out.writeShort(1);  // for table length
+                    out.writeShort(p.lvarOffset[i]);
+                    out.writeShort(p.lvarLength[i]);
+                    out.writeShort(p.lvarIndex[i]);
+                }
+                break;
+            // exception parameter
+            case EXCEPTION_PARAMETER:
+                out.writeByte(p.exception_index);
+                break;
+            // method receiver
+            case METHOD_RECEIVER:
+                // Do nothing
+                break;
+            // type parameters
+            case CLASS_TYPE_PARAMETER:
+            case METHOD_TYPE_PARAMETER:
+                out.writeByte(p.parameter_index);
+                break;
+            // type parameters bounds
+            case CLASS_TYPE_PARAMETER_BOUND:
+            case METHOD_TYPE_PARAMETER_BOUND:
+                out.writeByte(p.parameter_index);
+                out.writeByte(p.bound_index);
+                break;
+            // class extends or implements clause
+            case CLASS_EXTENDS:
+                out.writeByte(p.type_index);
+                break;
+            // throws
+            case THROWS:
+                out.writeByte(p.type_index);
+                break;
+            // method parameter
+            case METHOD_FORMAL_PARAMETER:
+                out.writeByte(p.parameter_index);
+                break;
+            // method/constructor/reference type argument
+            case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
+            case METHOD_INVOCATION_TYPE_ARGUMENT:
+            case METHOD_REFERENCE_TYPE_ARGUMENT:
+                out.writeShort(p.offset);
+                out.writeByte(p.type_index);
+                break;
+            // We don't need to worry about these
+            case METHOD_RETURN:
+            case FIELD:
+                break;
+            // lambda formal parameter
+            case LAMBDA_FORMAL_PARAMETER:
+                out.writeByte(p.parameter_index);
+                break;
+            case UNKNOWN:
+                throw new AssertionError("ClassWriter: UNKNOWN target type should never occur!");
+            default:
+                throw new AssertionError("ClassWriter: Unknown target type for position: " + p);
+            }
+
+            { // Append location data for generics/arrays.
+                // TODO: check for overrun?
+                out.writeByte((byte)p.location.size());
+                for (int i : TypeAnnotation.Position.getBinaryFromTypePath(p.location))
+                    out.writeByte((byte)i);
+            }
+        }
     }
 }

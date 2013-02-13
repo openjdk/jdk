@@ -130,23 +130,23 @@
 #endif // INCLUDE_MANAGEMENT
 
 /*
- * When INCLUDE_ALTERNATE_GCS is false the only garbage collectors
+ * When INCLUDE_ALL_GCS is false the only garbage collectors
  * included in the JVM are defaultNewGeneration and markCompact.
  *
- * When INCLUDE_ALTERNATE_GCS is true all garbage collectors are
+ * When INCLUDE_ALL_GCS is true all garbage collectors are
  * included in the JVM.
  */
-#ifndef INCLUDE_ALTERNATE_GCS
-#define INCLUDE_ALTERNATE_GCS 1
-#endif // INCLUDE_ALTERNATE_GCS
+#ifndef INCLUDE_ALL_GCS
+#define INCLUDE_ALL_GCS 1
+#endif // INCLUDE_ALL_GCS
 
-#if INCLUDE_ALTERNATE_GCS
-#define NOT_ALTERNATE_GCS_RETURN        /* next token must be ; */
-#define NOT_ALTERNATE_GCS_RETURN_(code) /* next token must be ; */
+#if INCLUDE_ALL_GCS
+#define NOT_ALL_GCS_RETURN        /* next token must be ; */
+#define NOT_ALL_GCS_RETURN_(code) /* next token must be ; */
 #else
-#define NOT_ALTERNATE_GCS_RETURN        {}
-#define NOT_ALTERNATE_GCS_RETURN_(code) { return code; }
-#endif // INCLUDE_ALTERNATE_GCS
+#define NOT_ALL_GCS_RETURN        {}
+#define NOT_ALL_GCS_RETURN_(code) { return code; }
+#endif // INCLUDE_ALL_GCS
 
 #ifndef INCLUDE_NMT
 #define INCLUDE_NMT 1

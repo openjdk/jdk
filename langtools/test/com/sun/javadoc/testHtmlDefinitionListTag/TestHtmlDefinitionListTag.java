@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,19 +222,19 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
     private static final String[] ARGS1 =
         new String[] {
-            "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"};
+            "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS2 =
         new String[] {
-            "-d", BUG_ID, "-nocomment", "-sourcepath", SRC_DIR, "pkg1"};
+            "-Xdoclint:none", "-d", BUG_ID, "-nocomment", "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS3 =
         new String[] {
-            "-d", BUG_ID, "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
+            "-Xdoclint:none", "-d", BUG_ID, "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
 
     private static final String[] ARGS4 =
         new String[] {
-            "-d", BUG_ID, "-nocomment", "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
+            "-Xdoclint:none", "-d", BUG_ID, "-nocomment", "-nodeprecated", "-sourcepath", SRC_DIR, "pkg1"};
 
     /**
      * The entry point of the test.

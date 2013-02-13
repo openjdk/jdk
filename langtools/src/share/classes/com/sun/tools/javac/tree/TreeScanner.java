@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ public class TreeScanner extends Visitor {
         scan(tree.mods);
         scan(tree.restype);
         scan(tree.typarams);
+        scan(tree.recvparam);
         scan(tree.params);
         scan(tree.thrown);
         scan(tree.defaultValue);
@@ -200,15 +201,18 @@ public class TreeScanner extends Visitor {
 
     public void visitNewClass(JCNewClass tree) {
         scan(tree.encl);
-        scan(tree.clazz);
         scan(tree.typeargs);
+        scan(tree.clazz);
         scan(tree.args);
         scan(tree.def);
     }
 
     public void visitNewArray(JCNewArray tree) {
+        scan(tree.annotations);
         scan(tree.elemtype);
         scan(tree.dims);
+        for (List<JCAnnotation> annos : tree.dimAnnotations)
+            scan(annos);
         scan(tree.elems);
     }
 
@@ -291,6 +295,7 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitTypeParameter(JCTypeParameter tree) {
+        scan(tree.annotations);
         scan(tree.bounds);
     }
 
@@ -312,6 +317,11 @@ public class TreeScanner extends Visitor {
     public void visitAnnotation(JCAnnotation tree) {
         scan(tree.annotationType);
         scan(tree.args);
+    }
+
+    public void visitAnnotatedType(JCAnnotatedType tree) {
+        scan(tree.annotations);
+        scan(tree.underlyingType);
     }
 
     public void visitErroneous(JCErroneous tree) {

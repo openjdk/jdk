@@ -24,14 +24,17 @@
 /*
  * @test
  * @bug 7194586
- *
- * @bug 8003280
+ * @bug 8003280 8006694
  * @summary Add lambda tests
  *  Add back-end support for invokedynamic
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main TestInvokeDynamic
+ * @run main/othervm TestInvokeDynamic
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -48,7 +51,6 @@ import com.sun.tools.classfile.Instruction;
 import com.sun.tools.classfile.Method;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symtab;
@@ -67,11 +69,8 @@ import java.util.Arrays;
 import java.util.Locale;
 
 import javax.tools.Diagnostic;
-import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 
 import static com.sun.tools.javac.jvm.ClassFile.*;
 

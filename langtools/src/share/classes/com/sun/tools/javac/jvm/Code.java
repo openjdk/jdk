@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1924,17 +1924,70 @@ public class Code {
                 if (length < Character.MAX_VALUE) {
                     v.length = length;
                     putVar(v);
+                    fillLocalVarPosition(v);
                 }
             }
         }
         state.defined.excl(adr);
     }
 
+    private void fillLocalVarPosition(LocalVar lv) {
+        if (lv == null || lv.sym == null
+                || lv.sym.annotations.isTypesEmpty())
+            return;
+        for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
+            TypeAnnotationPosition p = ta.position;
+            p.lvarOffset = new int[] { (int)lv.start_pc };
+            p.lvarLength = new int[] { (int)lv.length };
+            p.lvarIndex = new int[] { (int)lv.reg };
+            p.isValidOffset = true;
+        }
+    }
+
+    // Method to be called after compressCatchTable to
+    // fill in the exception table index for type
+    // annotations on exception parameters.
+    public void fillExceptionParameterPositions() {
+        for (int i = 0; i < varBufferSize; ++i) {
+            LocalVar lv = varBuffer[i];
+            if (lv == null || lv.sym == null
+                    || lv.sym.annotations.isTypesEmpty()
+                    || !lv.sym.isExceptionParameter())
+                return;
+
+            int exidx = findExceptionIndex(lv);
+
+            for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
+                TypeAnnotationPosition p = ta.position;
+                p.exception_index = exidx;
+            }
+        }
+    }
+
+    private int findExceptionIndex(LocalVar lv) {
+        List<char[]> iter = catchInfo.toList();
+        int len = catchInfo.length();
+        for (int i = 0; i < len; ++i) {
+            char[] catchEntry = iter.head;
+            iter = iter.tail;
+            char handlerpc = catchEntry[2];
+            if (lv.start_pc == handlerpc + 1) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     /** Put a live variable range into the buffer to be output to the
      *  class file.
      */
     void putVar(LocalVar var) {
-        if (!varDebugInfo) return;
+        // Keep local variables if
+        // 1) we need them for debug information
+        // 2) it is an exception type and it contains type annotations
+        if (!varDebugInfo &&
+                (!var.sym.isExceptionParameter() ||
+                var.sym.annotations.isTypesEmpty())) return;
         if ((var.sym.flags() & Flags.SYNTHETIC) != 0) return;
         if (varBuffer == null)
             varBuffer = new LocalVar[20];

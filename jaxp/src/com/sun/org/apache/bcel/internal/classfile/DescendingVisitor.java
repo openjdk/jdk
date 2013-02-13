@@ -210,6 +210,12 @@ public class DescendingVisitor implements Visitor {
     stack.pop();
   }
 
+  public void visitLocalVariableTypeTable(LocalVariableTypeTable obj) {
+    stack.push(obj);
+    obj.accept(visitor);
+    stack.pop();
+  }
+
   public void visitStackMap(StackMap table) {
     stack.push(table);
     table.accept(visitor);

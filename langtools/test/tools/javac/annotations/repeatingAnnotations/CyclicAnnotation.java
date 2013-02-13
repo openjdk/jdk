@@ -6,17 +6,14 @@
  * @compile/fail/ref=CyclicAnnotation.out -XDrawDiagnostics CyclicAnnotation.java
  */
 
-import java.lang.annotation.ContainedBy;
-import java.lang.annotation.ContainerFor;
+import java.lang.annotation.Repeatable;
 
-@ContainedBy(Foo.class)
-@ContainerFor(Baz.class)
+@Repeatable(Foo.class)
 @interface Baz {
     Foo[] value() default {};
 }
 
-@ContainedBy(Baz.class)
-@ContainerFor(Foo.class)
+@Repeatable(Baz.class)
 @interface Foo{
     Baz[] value() default {};
 }

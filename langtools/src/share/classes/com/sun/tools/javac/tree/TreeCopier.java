@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,26 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return lb.toList();
     }
 
+    public JCTree visitAnnotatedType(AnnotatedTypeTree node, P p) {
+        JCAnnotatedType t = (JCAnnotatedType) node;
+        List<JCAnnotation> annotations = copy(t.annotations, p);
+        JCExpression underlyingType = copy(t.underlyingType, p);
+        return M.at(t.pos).AnnotatedType(annotations, underlyingType);
+    }
+
     public JCTree visitAnnotation(AnnotationTree node, P p) {
         JCAnnotation t = (JCAnnotation) node;
         JCTree annotationType = copy(t.annotationType, p);
         List<JCExpression> args = copy(t.args, p);
-        return M.at(t.pos).Annotation(annotationType, args);
+        if (t.getKind() == Tree.Kind.TYPE_ANNOTATION) {
+            JCAnnotation newTA = M.at(t.pos).TypeAnnotation(annotationType, args);
+            newTA.attribute = t.attribute;
+            return newTA;
+        } else {
+            JCAnnotation newT = M.at(t.pos).Annotation(annotationType, args);
+            newT.attribute = t.attribute;
+            return newT;
+        }
     }
 
     public JCTree visitAssert(AssertTree node, P p) {
@@ -233,10 +248,11 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCExpression restype = copy(t.restype, p);
         List<JCTypeParameter> typarams = copy(t.typarams, p);
         List<JCVariableDecl> params = copy(t.params, p);
+        JCVariableDecl recvparam = copy(t.recvparam, p);
         List<JCExpression> thrown = copy(t.thrown, p);
         JCBlock body = copy(t.body, p);
         JCExpression defaultValue = copy(t.defaultValue, p);
-        return M.at(t.pos).MethodDef(mods, t.name, restype, typarams, params, thrown, body, defaultValue);
+        return M.at(t.pos).MethodDef(mods, t.name, restype, typarams, recvparam, params, thrown, body, defaultValue);
     }
 
     public JCTree visitMethodInvocation(MethodInvocationTree node, P p) {
@@ -384,8 +400,9 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 
     public JCTree visitTypeParameter(TypeParameterTree node, P p) {
         JCTypeParameter t = (JCTypeParameter) node;
+        List<JCAnnotation> annos = copy(t.annotations, p);
         List<JCExpression> bounds = copy(t.bounds, p);
-        return M.at(t.pos).TypeParameter(t.name, bounds);
+        return M.at(t.pos).TypeParameter(t.name, bounds, annos);
     }
 
     public JCTree visitInstanceOf(InstanceOfTree node, P p) {

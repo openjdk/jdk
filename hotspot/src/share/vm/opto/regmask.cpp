@@ -108,13 +108,13 @@ int find_hihghest_bit( uint32 mask ) {
 //------------------------------dump-------------------------------------------
 
 #ifndef PRODUCT
-void OptoReg::dump( int r ) {
-  switch( r ) {
-  case Special: tty->print("r---");   break;
-  case Bad:     tty->print("rBAD");   break;
+void OptoReg::dump(int r, outputStream *st) {
+  switch (r) {
+  case Special: st->print("r---"); break;
+  case Bad:     st->print("rBAD"); break;
   default:
-    if( r < _last_Mach_Reg ) tty->print(Matcher::regName[r]);
-    else tty->print("rS%d",r);
+    if (r < _last_Mach_Reg) st->print(Matcher::regName[r]);
+    else st->print("rS%d",r);
     break;
   }
 }
@@ -404,53 +404,53 @@ uint RegMask::Size() const {
 
 #ifndef PRODUCT
 //------------------------------print------------------------------------------
-void RegMask::dump( ) const {
-  tty->print("[");
+void RegMask::dump(outputStream *st) const {
+  st->print("[");
   RegMask rm = *this;           // Structure copy into local temp
 
   OptoReg::Name start = rm.find_first_elem(); // Get a register
-  if( OptoReg::is_valid(start) ) { // Check for empty mask
+  if (OptoReg::is_valid(start)) { // Check for empty mask
     rm.Remove(start);           // Yank from mask
-    OptoReg::dump(start);       // Print register
+    OptoReg::dump(start, st);   // Print register
     OptoReg::Name last = start;
 
     // Now I have printed an initial register.
     // Print adjacent registers as "rX-rZ" instead of "rX,rY,rZ".
     // Begin looping over the remaining registers.
-    while( 1 ) {                //
+    while (1) {                 //
       OptoReg::Name reg = rm.find_first_elem(); // Get a register
-      if( !OptoReg::is_valid(reg) )
+      if (!OptoReg::is_valid(reg))
         break;                  // Empty mask, end loop
       rm.Remove(reg);           // Yank from mask
 
-      if( last+1 == reg ) {     // See if they are adjacent
+      if (last+1 == reg) {      // See if they are adjacent
         // Adjacent registers just collect into long runs, no printing.
         last = reg;
       } else {                  // Ending some kind of run
-        if( start == last ) {   // 1-register run; no special printing
-        } else if( start+1 == last ) {
-          tty->print(",");      // 2-register run; print as "rX,rY"
-          OptoReg::dump(last);
+        if (start == last) {    // 1-register run; no special printing
+        } else if (start+1 == last) {
+          st->print(",");       // 2-register run; print as "rX,rY"
+          OptoReg::dump(last, st);
         } else {                // Multi-register run; print as "rX-rZ"
-          tty->print("-");
-          OptoReg::dump(last);
+          st->print("-");
+          OptoReg::dump(last, st);
         }
-        tty->print(",");        // Seperate start of new run
+        st->print(",");         // Seperate start of new run
         start = last = reg;     // Start a new register run
-        OptoReg::dump(start); // Print register
+        OptoReg::dump(start, st); // Print register
       } // End of if ending a register run or not
     } // End of while regmask not empty
 
-    if( start == last ) {       // 1-register run; no special printing
-    } else if( start+1 == last ) {
-      tty->print(",");          // 2-register run; print as "rX,rY"
-      OptoReg::dump(last);
+    if (start == last) {        // 1-register run; no special printing
+    } else if (start+1 == last) {
+      st->print(",");           // 2-register run; print as "rX,rY"
+      OptoReg::dump(last, st);
     } else {                    // Multi-register run; print as "rX-rZ"
-      tty->print("-");
-      OptoReg::dump(last);
+      st->print("-");
+      OptoReg::dump(last, st);
     }
-    if( rm.is_AllStack() ) tty->print("...");
+    if (rm.is_AllStack()) st->print("...");
   }
-  tty->print("]");
+  st->print("]");
 }
 #endif

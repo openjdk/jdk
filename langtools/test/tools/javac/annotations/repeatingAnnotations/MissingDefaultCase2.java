@@ -6,13 +6,11 @@
  * @compile/fail/ref=MissingDefaultCase2.out -XDrawDiagnostics MissingDefaultCase2.java
  */
 
-import java.lang.annotation.ContainedBy;
-import java.lang.annotation.ContainerFor;
+import java.lang.annotation.Repeatable;
 
-@ContainedBy(FooContainer.class)
+@Repeatable(FooContainer.class)
 @interface Foo {}
 
-@ContainerFor(Foo.class)
 @interface FooContainer {
     Foo[] value();
     Foo other();  // missing default clause and return type is an annotation
