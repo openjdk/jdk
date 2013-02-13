@@ -1445,22 +1445,49 @@ public class Lower extends TreeTranslator {
         return result;
     }
 
-    /** Definition for this$n field.
-     *  @param pos        The source code position of the definition.
-     *  @param owner      The class in which the definition goes.
-     */
-    JCVariableDecl outerThisDef(int pos, Symbol owner) {
-        long flags = FINAL | SYNTHETIC;
+    private VarSymbol makeOuterThisVarSymbol(Symbol owner, long flags) {
         if (owner.kind == TYP &&
             target.usePrivateSyntheticFields())
             flags |= PRIVATE;
         Type target = types.erasure(owner.enclClass().type.getEnclosingType());
-        VarSymbol outerThis = new VarSymbol(
-            flags, outerThisName(target, owner), target, owner);
+        VarSymbol outerThis =
+            new VarSymbol(flags, outerThisName(target, owner), target, owner);
         outerThisStack = outerThisStack.prepend(outerThis);
-        JCVariableDecl vd = make.at(pos).VarDef(outerThis, null);
+        return outerThis;
+    }
+
+    private JCVariableDecl makeOuterThisVarDecl(int pos, VarSymbol sym) {
+        JCVariableDecl vd = make.at(pos).VarDef(sym, null);
         vd.vartype = access(vd.vartype);
         return vd;
+    }
+
+    /** Definition for this$n field.
+     *  @param pos        The source code position of the definition.
+     *  @param owner      The method in which the definition goes.
+     */
+    JCVariableDecl outerThisDef(int pos, MethodSymbol owner) {
+        ClassSymbol c = owner.enclClass();
+        boolean isMandated =
+            // Anonymous constructors
+            (owner.isConstructor() && owner.isAnonymous()) ||
+            // Constructors of non-private inner member classes
+            (owner.isConstructor() && c.isInner() &&
+             !c.isPrivate() && !c.isStatic());
+        long flags =
+            FINAL | (isMandated ? MANDATED : SYNTHETIC);
+        VarSymbol outerThis = makeOuterThisVarSymbol(owner, flags);
+        owner.extraParams = owner.extraParams.prepend(outerThis);
+        return makeOuterThisVarDecl(pos, outerThis);
+    }
+
+    /** Definition for this$n field.
+     *  @param pos        The source code position of the definition.
+     *  @param owner      The class in which the definition goes.
+     */
+    JCVariableDecl outerThisDef(int pos, ClassSymbol owner) {
+        VarSymbol outerThis = makeOuterThisVarSymbol(owner, FINAL | SYNTHETIC);
+        return makeOuterThisVarDecl(pos, outerThis);
     }
 
     /** Return a list of trees that load the free variables in given list,
@@ -2568,7 +2595,6 @@ public class Lower extends TreeTranslator {
                                        "enum" + target.syntheticNameChar() + "name"),
                       syms.stringType, tree.sym);
             nameParam.mods.flags |= SYNTHETIC; nameParam.sym.flags_field |= SYNTHETIC;
-
             JCVariableDecl ordParam = make.
                 Param(names.fromString(target.syntheticNameChar() +
                                        "enum" + target.syntheticNameChar() +
@@ -2579,6 +2605,8 @@ public class Lower extends TreeTranslator {
             tree.params = tree.params.prepend(ordParam).prepend(nameParam);
 
             MethodSymbol m = tree.sym;
+            m.extraParams = m.extraParams.prepend(ordParam.sym);
+            m.extraParams = m.extraParams.prepend(nameParam.sym);
             Type olderasure = m.erasure(types);
             m.erasure_field = new MethodType(
                 olderasure.getParameterTypes().prepend(syms.intType).prepend(syms.stringType),
