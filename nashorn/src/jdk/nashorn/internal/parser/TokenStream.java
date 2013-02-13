@@ -34,8 +34,8 @@ package jdk.nashorn.internal.parser;
  *
  */
 public class TokenStream {
-    /** Buffer growth factor. */
-    private static final int growth = 256;
+    /** Initial buffer size. */
+    private static final int INITIAL_SIZE = 256;
 
     /** Token buffer. */
     private long[] buffer;
@@ -56,7 +56,7 @@ public class TokenStream {
      * Constructor.
      */
     public TokenStream() {
-        buffer = new long[growth];
+        buffer = new long[INITIAL_SIZE];
         count = 0;
         in = 0;
         out = 0;
@@ -193,7 +193,7 @@ public class TokenStream {
      */
     public void grow() {
         // Allocate new buffer.
-        final long[] newBuffer = new long[buffer.length + growth];
+        final long[] newBuffer = new long[buffer.length * 2];
 
         // If single chunk.
         if (in > out) {
