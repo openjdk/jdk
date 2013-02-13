@@ -992,12 +992,13 @@ public class ClassWriter extends ClassFile {
     void writePosition(TypeAnnotationPosition p) {
         databuf.appendByte(p.type.targetTypeValue()); // TargetType tag is a byte
         switch (p.type) {
-        // type cast
-        case CAST:
         // instanceof
         case INSTANCEOF:
         // new expression
         case NEW:
+        // constructor/method reference receiver
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE:
             databuf.appendChar(p.offset);
             break;
         // local variable
@@ -1042,9 +1043,12 @@ public class ClassWriter extends ClassFile {
         case METHOD_FORMAL_PARAMETER:
             databuf.appendByte(p.parameter_index);
             break;
+        // type cast
+        case CAST:
         // method/constructor/reference type argument
         case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
         case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT:
             databuf.appendChar(p.offset);
             databuf.appendByte(p.type_index);
@@ -1052,10 +1056,6 @@ public class ClassWriter extends ClassFile {
         // We don't need to worry about these
         case METHOD_RETURN:
         case FIELD:
-            break;
-        // lambda formal parameter
-        case LAMBDA_FORMAL_PARAMETER:
-            databuf.appendByte(p.parameter_index);
             break;
         case UNKNOWN:
             throw new AssertionError("jvm.ClassWriter: UNKNOWN target type should never occur!");
