@@ -366,7 +366,7 @@ public class ElementRepAnnoTester extends JavacTestingAbstractProcessor {
                 e.getEnclosingElement().toString())
                 || unofficialAnno.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(Foo.class);
+            actualAnnosArgs = e.getAnnotationsByType(Foo.class);
         }
         if (singularInheritedAnno.contains(
                 e.getEnclosingElement().toString())
@@ -376,25 +376,25 @@ public class ElementRepAnnoTester extends JavacTestingAbstractProcessor {
                 e.getEnclosingElement().toString())
                 || unofficialInheritedAnno.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(FooInherited.class);
+            actualAnnosArgs = e.getAnnotationsByType(FooInherited.class);
         }
         if (repeatableAnno.contains(
                 e.getEnclosingElement().toString())
                 || repeatableAnno.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(Bar.class);
+            actualAnnosArgs = e.getAnnotationsByType(Bar.class);
         }
         if (repeatableInheritedAnno.contains(
                 e.getEnclosingElement().toString())
                 || repeatableInheritedAnno.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(BarInherited.class);
+            actualAnnosArgs = e.getAnnotationsByType(BarInherited.class);
         }
         if (repeatableContainerInheritedAnno.contains(
                 e.getEnclosingElement().toString())
                 || repeatableContainerInheritedAnno.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(BarInheritedContainer.class);
+            actualAnnosArgs = e.getAnnotationsByType(BarInheritedContainer.class);
         }
         return actualAnnosArgs;
     }
@@ -406,31 +406,31 @@ public class ElementRepAnnoTester extends JavacTestingAbstractProcessor {
                 e.getEnclosingElement().toString())
                 || repeatableAnnoContainer.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(BarContainer.class);
+            actualAnnosArgs = e.getAnnotationsByType(BarContainer.class);
         }
         if (repeatableInheritedAnnoContainer.contains(
                 e.getEnclosingElement().toString())
                 || repeatableInheritedAnnoContainer.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(BarInheritedContainer.class);
+            actualAnnosArgs = e.getAnnotationsByType(BarInheritedContainer.class);
         }
         if (repeatableContainerInheritedAnnoContainer.contains(
                 e.getEnclosingElement().toString())
                 || repeatableContainerInheritedAnnoContainer.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(BarInheritedContainerContainer.class);
+            actualAnnosArgs = e.getAnnotationsByType(BarInheritedContainerContainer.class);
         }
         if (unofficialAnnoContainer.contains(
                 e.getEnclosingElement().toString())
                 || unofficialAnnoContainer.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(UnofficialContainer.class);
+            actualAnnosArgs = e.getAnnotationsByType(UnofficialContainer.class);
         }
         if (unofficialInheritedAnnoContainer.contains(
                 e.getEnclosingElement().toString())
                 || unofficialInheritedAnnoContainer.contains(
                 e.getSimpleName().toString())) {
-            actualAnnosArgs = e.getAnnotations(UnofficialInheritedContainer.class);
+            actualAnnosArgs = e.getAnnotationsByType(UnofficialInheritedContainer.class);
         }
         return actualAnnosArgs;
     }
