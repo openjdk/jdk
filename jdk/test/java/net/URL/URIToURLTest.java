@@ -28,20 +28,22 @@
  */
 
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class URIToURLTest {
     public static void main(String args[]) throws Exception {
-        String[] uris = {
-           "http://jag:cafebabe@java.sun.com:94/b/c/d?q#g",
-           "http://[1080:0:0:0:8:800:200C:417A]/index.html",
-           "http://a/b/c/d;p?q",
-           "ftp://ftp.is.co.za/rfc/rfc1808.txt",
-           "mailto:mduerst@ifi.unizh.ch", // opaque url
-           "http:comp.infosystems.www.servers.unix" //opaque url
-        };
+        List<String> uris = new ArrayList<>();
+        uris.add("http://jag:cafebabe@java.sun.com:94/b/c/d?q#g");
+        uris.add("http://[1080:0:0:0:8:800:200C:417A]/index.html");
+        uris.add("http://a/b/c/d;p?q");
+        uris.add("mailto:mduerst@ifi.unizh.ch");
+        uris.add("http:comp.infosystems.www.servers.unix");
+        if (hasFtp())
+            uris.add("ftp://ftp.is.co.za/rfc/rfc1808.txt");
 
-        for (int i = 0; i < uris.length; i++) {
-            URI uri = new URI(uris[i]);
+        for (String uriStr : uris) {
+            URI uri = new URI(uriStr);
             URL url = uri.toURL();
             String scheme = uri.getScheme();
             boolean schemeCheck = scheme == null? url.getProtocol() == null :
@@ -109,6 +111,15 @@ public class URIToURLTest {
                     throw new RuntimeException("uri.frag is " + frag +
                                                " url.ref is " +
                                                url.getRef());
+        }
+    }
+
+    private static boolean hasFtp() {
+        try {
+            return new java.net.URL("ftp://") != null;
+        } catch (java.net.MalformedURLException x) {
+            System.out.println("FTP not supported by this runtime.");
+            return false;
         }
     }
 }

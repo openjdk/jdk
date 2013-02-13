@@ -27,10 +27,11 @@
 
 #include "gc_implementation/shared/markSweep.inline.hpp"
 #include "oops/objArrayKlass.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/psCompactionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 void ObjArrayKlass::oop_follow_contents(oop obj, int index) {
   if (UseCompressedOops) {
@@ -63,7 +64,7 @@ void ObjArrayKlass::objarray_follow_contents(oop obj, int index) {
   }
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void ObjArrayKlass::oop_follow_contents(ParCompactionManager* cm, oop obj,
                                         int index) {
   if (UseCompressedOops) {
@@ -96,6 +97,6 @@ void ObjArrayKlass::objarray_follow_contents(ParCompactionManager* cm, oop obj,
     cm->push_objarray(a, end_index); // Push the continuation.
   }
 }
-#endif // #ifndef SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #endif // SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP

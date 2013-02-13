@@ -33,7 +33,8 @@
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/preserveException.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
@@ -42,7 +43,7 @@
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 template <class T>
 void specialized_oop_follow_contents(InstanceRefKlass* ref, oop obj) {
@@ -120,7 +121,7 @@ void InstanceRefKlass::oop_follow_contents(oop obj) {
   }
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 template <class T>
 void specialized_oop_follow_contents(InstanceRefKlass* ref,
                                      ParCompactionManager* cm,
@@ -194,7 +195,7 @@ void InstanceRefKlass::oop_follow_contents(ParCompactionManager* cm,
     specialized_oop_follow_contents<oop>(this, cm, obj);
   }
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #ifdef ASSERT
 template <class T> void trace_reference_gc(const char *s, oop obj,
@@ -317,7 +318,7 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
   }                                                                             \
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
                                                                                 \
 int InstanceRefKlass::                                                          \
@@ -333,7 +334,7 @@ oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        
     InstanceRefKlass_SPECIALIZED_OOP_ITERATE(oop, nv_suffix, contains);         \
   }                                                                             \
 }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 
 #define InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)      \
@@ -354,14 +355,14 @@ oop_oop_iterate##nv_suffix##_m(oop obj,                                         
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_DEFN)
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 template <class T>
 void specialized_oop_push_contents(InstanceRefKlass *ref,
                                    PSPromotionManager* pm, oop obj) {
@@ -444,7 +445,7 @@ int InstanceRefKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   }
   return size_helper();
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   // Clear the nonstatic oop-map entries corresponding to referent

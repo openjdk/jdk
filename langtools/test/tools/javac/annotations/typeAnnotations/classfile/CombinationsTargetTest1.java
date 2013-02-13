@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,22 +174,20 @@ public class CombinationsTargetTest1 extends ClassfileTestHelper {
 
             String sourceBase = new String("@Retention("+retentn+")\n" +
             "@Target({TYPE_USE,_OTHER_})\n" +
-            "@ContainedBy( AC.class )\n" +
+            "@Repeatable( AC.class )\n" +
             "@interface A { }\n\n" +
 
             "@Retention("+retentn+")\n" +
             "@Target({TYPE_USE,_OTHER_})\n" +
-            "@ContainerFor(A.class)\n" +
             "@interface AC { A[] value(); }\n\n" +
 
             "@Retention("+retentn+")\n" +
             "@Target({TYPE_USE,_OTHER_})\n" +
-            "@ContainedBy( BC.class )\n" +
+            "@Repeatable( BC.class )\n" +
             "@interface B { }\n\n" +
 
             "@Retention("+retentn+")\n" +
             "@Target({TYPE_USE,_OTHER_})\n" +
-            "@ContainerFor(B.class)\n" +
             "@interface BC { B[] value(); } \n\n" +
 
             "@Retention("+retentn+")\n" +
@@ -198,12 +196,11 @@ public class CombinationsTargetTest1 extends ClassfileTestHelper {
 
             "@Retention("+retentn+")\n" +
             "@Target({TYPE_USE,TYPE_PARAMETER,_OTHER_})\n" +
-            "@ContainedBy(DC.class)\n" +
+            "@Repeatable(DC.class)\n" +
             "@interface D { }\n\n" +
 
             "@Retention("+retentn+")\n" +
             "@Target({TYPE_USE,TYPE_PARAMETER,_OTHER_})\n" +
-            "@ContainerFor(D.class) \n" +
             "@interface DC { D[] value(); }\n\n");
 
         // Test case sources with sample generated source.

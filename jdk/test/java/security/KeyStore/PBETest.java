@@ -58,45 +58,46 @@ public class PBETest {
 
         new File(NEW_KEYSTORE).delete();
 
-        try {
-            KeyStore keystore = load(KEYSTORE_TYPE, KEYSTORE, PASSWORD);
-            KeyStore.Entry entry =
-                keystore.getEntry(ALIAS,
-                    new KeyStore.PasswordProtection(PASSWORD));
-            System.out.println("Retrieved entry named '" + ALIAS + "'");
-
-            // Set entry
-            KeyStore keystore2 = load(NEW_KEYSTORE_TYPE, null, null);
-            keystore2.setEntry(ALIAS, entry,
-                new KeyStore.PasswordProtection(PASSWORD, PBE_ALGO,
-                    new PBEParameterSpec(SALT, ITERATION_COUNT,
-                        new IvParameterSpec(IV))));
-            System.out.println("Encrypted entry using: " + PBE_ALGO);
-
-            System.out.println("Storing keystore to: " + NEW_KEYSTORE);
-            keystore2.store(new FileOutputStream(NEW_KEYSTORE), PASSWORD);
-
-            keystore2 = load(NEW_KEYSTORE_TYPE, NEW_KEYSTORE, PASSWORD);
-            entry = keystore2.getEntry(ALIAS,
+        KeyStore keystore = load(KEYSTORE_TYPE, KEYSTORE, PASSWORD);
+        KeyStore.Entry entry =
+            keystore.getEntry(ALIAS,
                 new KeyStore.PasswordProtection(PASSWORD));
-            System.out.println("Retrieved entry named '" + ALIAS + "'");
+        System.out.println("Retrieved entry named '" + ALIAS + "'");
 
-        } finally {
-            new File(NEW_KEYSTORE).delete();
-            System.out.println("Deleted keystore: " + NEW_KEYSTORE);
+        // Set entry
+        KeyStore keystore2 = load(NEW_KEYSTORE_TYPE, null, null);
+        keystore2.setEntry(ALIAS, entry,
+            new KeyStore.PasswordProtection(PASSWORD, PBE_ALGO,
+                new PBEParameterSpec(SALT, ITERATION_COUNT,
+                    new IvParameterSpec(IV))));
+        System.out.println("Encrypted entry using: " + PBE_ALGO);
+
+        try (FileOutputStream outStream = new FileOutputStream(NEW_KEYSTORE)) {
+            System.out.println("Storing keystore to: " + NEW_KEYSTORE);
+            keystore2.store(outStream, PASSWORD);
         }
+
+        keystore2 = load(NEW_KEYSTORE_TYPE, NEW_KEYSTORE, PASSWORD);
+        entry = keystore2.getEntry(ALIAS,
+            new KeyStore.PasswordProtection(PASSWORD));
+        System.out.println("Retrieved entry named '" + ALIAS + "'");
     }
 
     private static KeyStore load(String type, String path, char[] password)
         throws Exception {
-
-        FileInputStream stream = null;
-        if (path != null) {
-            stream = new FileInputStream(path);
-        }
         KeyStore keystore = KeyStore.getInstance(type);
-        System.out.println("Loading keystore from: " + path);
-        keystore.load(stream, password);
+
+        if (path != null) {
+
+            try (FileInputStream inStream = new FileInputStream(path)) {
+                System.out.println("Loading keystore from: " + path);
+                keystore.load(inStream, password);
+                System.out.println("Loaded keystore with " + keystore.size() +
+                    " entries");
+            }
+        } else {
+            keystore.load(null, null);
+        }
 
         return keystore;
     }

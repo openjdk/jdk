@@ -23,13 +23,15 @@
  */
 
 #include "precompiled.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/metablock.hpp"
 #include "memory/metachunk.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/macros.hpp"
 
 #ifndef PRODUCT
 template <class Chunk> Mutex* FreeBlockDictionary<Chunk>::par_lock() const {
@@ -56,7 +58,7 @@ template <class Chunk> void FreeBlockDictionary<Chunk>::verify_par_locked() cons
 template class FreeBlockDictionary<Metablock>;
 template class FreeBlockDictionary<Metachunk>;
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 // Explicitly instantiate for FreeChunk
 template class FreeBlockDictionary<FreeChunk>;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
