@@ -159,7 +159,7 @@ public class CompilerTest {
                 Context.setGlobal(global);
             }
             final Source source = new Source(file.getAbsolutePath(), buffer);
-            final ScriptFunction script = context.compileScript(source, global, context._strict);
+            final ScriptFunction script = context.compileScript(source, global);
             if (script == null || context.getErrorManager().getNumberOfErrors() > 0) {
                 log("Compile failed: " + file.getAbsolutePath());
                 failed++;

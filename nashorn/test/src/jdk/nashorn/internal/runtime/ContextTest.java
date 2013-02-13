@@ -111,7 +111,7 @@ public class ContextTest {
     private Object eval(final Context cx, final String name, final String code) {
         final Source source = new Source(name, code);
         final ScriptObject global = Context.getGlobal();
-        final ScriptFunction func = cx.compileScript(source, global, cx._strict);
+        final ScriptFunction func = cx.compileScript(source, global);
         return func != null ? ScriptRuntime.apply(func, global) : null;
     }
 

@@ -39,6 +39,7 @@ import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -124,7 +125,7 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
                     continue;
                 }
                 final File file = new File(fileName);
-                ScriptFunction script = context.compileScript(fileName, file.toURI().toURL(), global, context._strict);
+                ScriptFunction script = context.compileScript(new Source(fileName, file.toURI().toURL()), global);
                 if (script == null || errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
                 }
