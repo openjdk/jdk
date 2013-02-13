@@ -90,7 +90,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
                                 throws DebuggerException;
     private native ClosestSymbol lookupByAddress0(long address)
                                 throws DebuggerException;
-    private native long[] getThreadIntegerRegisterSet0(int lwp_id)
+    private native long[] getThreadIntegerRegisterSet0(long unique_thread_id)
                                 throws DebuggerException;
     private native byte[] readBytesFromProcess0(long address, long numBytes)
                                 throws DebuggerException;
@@ -400,9 +400,14 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     //
 
     /** From the ThreadAccess interface via Debugger and JVMDebugger */
-    public ThreadProxy getThreadForIdentifierAddress(Address addr) {
-        return new BsdThread(this, addr);
+    public ThreadProxy getThreadForIdentifierAddress(Address threadIdAddr, Address uniqueThreadIdAddr) {
+        return new BsdThread(this, threadIdAddr, uniqueThreadIdAddr);
     }
+    @Override
+    public ThreadProxy getThreadForIdentifierAddress(Address addr) {
+        throw new RuntimeException("unimplemented");
+    }
+
 
     /** From the ThreadAccess interface via Debugger and JVMDebugger */
     public ThreadProxy getThreadForThreadId(long id) {
@@ -455,22 +460,22 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     // Thread context access
     //
 
-    public synchronized long[] getThreadIntegerRegisterSet(int lwp_id)
+    public synchronized long[] getThreadIntegerRegisterSet(long unique_thread_id)
                                             throws DebuggerException {
         requireAttach();
         if (isCore) {
-            return getThreadIntegerRegisterSet0(lwp_id);
+            return getThreadIntegerRegisterSet0(unique_thread_id);
         } else {
             class GetThreadIntegerRegisterSetTask implements WorkerThreadTask {
-                int lwp_id;
+                long unique_thread_id;
                 long[] result;
                 public void doit(BsdDebuggerLocal debugger) {
-                    result = debugger.getThreadIntegerRegisterSet0(lwp_id);
+                    result = debugger.getThreadIntegerRegisterSet0(unique_thread_id);
                 }
             }
 
             GetThreadIntegerRegisterSetTask task = new GetThreadIntegerRegisterSetTask();
-            task.lwp_id = lwp_id;
+            task.unique_thread_id = unique_thread_id;
             workerThread.execute(task);
             return task.result;
         }
