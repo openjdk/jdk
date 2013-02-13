@@ -258,7 +258,8 @@ public final class Parameter implements AnnotatedElement {
      * {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    public <T extends Annotation> T[] getAnnotations(Class<T> annotationClass) {
+    @Override
+    public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
         return AnnotationSupport.getMultipleAnnotations(declaredAnnotations(), annotationClass);
@@ -284,11 +285,12 @@ public final class Parameter implements AnnotatedElement {
     /**
      * @throws NullPointerException {@inheritDoc}
      */
-    public <T extends Annotation> T[] getDeclaredAnnotations(Class<T> annotationClass) {
+    @Override
+    public <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotationClass) {
         // Only annotations on classes are inherited, for all other
         // objects getDeclaredAnnotations is the same as
         // getAnnotations.
-        return getAnnotations(annotationClass);
+        return getAnnotationsByType(annotationClass);
     }
 
     /**
