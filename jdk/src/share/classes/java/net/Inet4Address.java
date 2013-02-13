@@ -100,27 +100,28 @@ class Inet4Address extends InetAddress {
 
     Inet4Address() {
         super();
-        hostName = null;
-        address = 0;
-        family = IPv4;
+        holder().hostName = null;
+        holder().address = 0;
+        holder().family = IPv4;
     }
 
     Inet4Address(String hostName, byte addr[]) {
-        this.hostName = hostName;
-        this.family = IPv4;
+        holder().hostName = hostName;
+        holder().family = IPv4;
         if (addr != null) {
             if (addr.length == INADDRSZ) {
-                address  = addr[3] & 0xFF;
+                int address  = addr[3] & 0xFF;
                 address |= ((addr[2] << 8) & 0xFF00);
                 address |= ((addr[1] << 16) & 0xFF0000);
                 address |= ((addr[0] << 24) & 0xFF000000);
+                holder().address = address;
             }
         }
     }
     Inet4Address(String hostName, int address) {
-        this.hostName = hostName;
-        this.family = IPv4;
-        this.address = address;
+        holder().hostName = hostName;
+        holder().family = IPv4;
+        holder().address = address;
     }
 
     /**
@@ -134,8 +135,8 @@ class Inet4Address extends InetAddress {
     private Object writeReplace() throws ObjectStreamException {
         // will replace the to be serialized 'this' object
         InetAddress inet = new InetAddress();
-        inet.hostName = this.hostName;
-        inet.address = this.address;
+        inet.holder().hostName = holder().getHostName();
+        inet.holder().address = holder().getAddress();
 
         /**
          * Prior to 1.4 an InetAddress was created with a family
@@ -143,7 +144,7 @@ class Inet4Address extends InetAddress {
          * For compatibility reasons we must therefore write the
          * the InetAddress with this family.
          */
-        inet.family = 2;
+        inet.holder().family = 2;
 
         return inet;
     }
@@ -157,7 +158,7 @@ class Inet4Address extends InetAddress {
      * @since   JDK1.1
      */
     public boolean isMulticastAddress() {
-        return ((address & 0xf0000000) == 0xe0000000);
+        return ((holder().getAddress() & 0xf0000000) == 0xe0000000);
     }
 
     /**
@@ -167,7 +168,7 @@ class Inet4Address extends InetAddress {
      * @since 1.4
      */
     public boolean isAnyLocalAddress() {
-        return address == 0;
+        return holder().getAddress() == 0;
     }
 
     /**
@@ -195,6 +196,7 @@ class Inet4Address extends InetAddress {
         // defined in "Documenting Special Use IPv4 Address Blocks
         // that have been Registered with IANA" by Bill Manning
         // draft-manning-dsua-06.txt
+        int address = holder().getAddress();
         return (((address >>> 24) & 0xFF) == 169)
             && (((address >>> 16) & 0xFF) == 254);
     }
@@ -211,6 +213,7 @@ class Inet4Address extends InetAddress {
         // 10/8 prefix
         // 172.16/12 prefix
         // 192.168/16 prefix
+        int address = holder().getAddress();
         return (((address >>> 24) & 0xFF) == 10)
             || ((((address >>> 24) & 0xFF) == 172)
                 && (((address >>> 16) & 0xF0) == 16))
@@ -257,6 +260,7 @@ class Inet4Address extends InetAddress {
      */
     public boolean isMCLinkLocal() {
         // 224.0.0/24 prefix and ttl == 1
+        int address = holder().getAddress();
         return (((address >>> 24) & 0xFF) == 224)
             && (((address >>> 16) & 0xFF) == 0)
             && (((address >>> 8) & 0xFF) == 0);
@@ -272,6 +276,7 @@ class Inet4Address extends InetAddress {
      */
     public boolean isMCSiteLocal() {
         // 239.255/16 prefix or ttl < 32
+        int address = holder().getAddress();
         return (((address >>> 24) & 0xFF) == 239)
             && (((address >>> 16) & 0xFF) == 255);
     }
@@ -287,6 +292,7 @@ class Inet4Address extends InetAddress {
      */
     public boolean isMCOrgLocal() {
         // 239.192 - 239.195
+        int address = holder().getAddress();
         return (((address >>> 24) & 0xFF) == 239)
             && (((address >>> 16) & 0xFF) >= 192)
             && (((address >>> 16) & 0xFF) <= 195);
@@ -300,6 +306,7 @@ class Inet4Address extends InetAddress {
      * @return  the raw IP address of this object.
      */
     public byte[] getAddress() {
+        int address = holder().getAddress();
         byte[] addr = new byte[INADDRSZ];
 
         addr[0] = (byte) ((address >>> 24) & 0xFF);
@@ -325,7 +332,7 @@ class Inet4Address extends InetAddress {
      * @return  a hash code value for this IP address.
      */
     public int hashCode() {
-        return address;
+        return holder().getAddress();
     }
 
     /**
@@ -346,7 +353,7 @@ class Inet4Address extends InetAddress {
      */
     public boolean equals(Object obj) {
         return (obj != null) && (obj instanceof Inet4Address) &&
-            (((InetAddress)obj).address == address);
+            (((InetAddress)obj).holder().getAddress() == holder().getAddress());
     }
 
     // Utilities

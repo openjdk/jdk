@@ -552,14 +552,13 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
 
     iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&remote_addr, &port);
 #ifdef AF_INET6
-    family = (*env)->GetIntField(env, iaObj, ia_familyID) == IPv4?
-        AF_INET : AF_INET6;
+    family = getInetAddress_family(env, iaObj) == IPv4? AF_INET : AF_INET6;
 #else
     family = AF_INET;
 #endif
     if (family == AF_INET) { /* this API can't handle IPV6 addresses */
-        int address = (*env)->GetIntField(env, iaObj, ia_addressID);
-        (*env)->SetIntField(env, addressObj, ia_addressID, address);
+        int address = getInetAddress_addr(env, iaObj);
+        setInetAddress_addr(env, addressObj, address);
     }
     return port;
 }
@@ -1028,23 +1027,18 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketClose(JNIEnv *env,
  */
 static void mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject value) {
     static jfieldID ni_addrsID;
-    static jfieldID ia_addressID;
     struct in_addr in;
     jobjectArray addrArray;
     jsize len;
     jobject addr;
     int i;
 
-    if (ni_addrsID == NULL || ia_addressID == NULL) {
+    if (ni_addrsID == NULL ) {
         jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
         CHECK_NULL(c);
         ni_addrsID = (*env)->GetFieldID(env, c, "addrs",
                                         "[Ljava/net/InetAddress;");
         CHECK_NULL(ni_addrsID);
-        c = (*env)->FindClass(env,"java/net/InetAddress");
-        CHECK_NULL(c);
-        ia_addressID = (*env)->GetFieldID(env, c, "address", "I");
-        CHECK_NULL(ia_addressID);
     }
 
     addrArray = (*env)->GetObjectField(env, value, ni_addrsID);
@@ -1065,8 +1059,8 @@ static void mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject val
      */
     for (i = 0; i < len; i++) {
         addr = (*env)->GetObjectArrayElement(env, addrArray, i);
-        if ((*env)->GetIntField(env, addr, ia_familyID) == IPv4) {
-            in.s_addr = htonl((*env)->GetIntField(env, addr, ia_addressID));
+        if (getInetAddress_family(env, addr) == IPv4) {
+            in.s_addr = htonl(getInetAddress_addr(env, addr));
             break;
         }
     }
@@ -1116,17 +1110,9 @@ static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jobject val
  * Throw exception if failed.
  */
 static void mcast_set_if_by_addr_v4(JNIEnv *env, jobject this, int fd, jobject value) {
-    static jfieldID ia_addressID;
     struct in_addr in;
 
-    if (ia_addressID == NULL) {
-        jclass c = (*env)->FindClass(env,"java/net/InetAddress");
-        CHECK_NULL(c);
-        ia_addressID = (*env)->GetFieldID(env, c, "address", "I");
-        CHECK_NULL(ia_addressID);
-    }
-
-    in.s_addr = htonl( (*env)->GetIntField(env, value, ia_addressID) );
+    in.s_addr = htonl( getInetAddress_addr(env, value) );
 
     if (JVM_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                        (const char*)&in, sizeof(in)) < 0) {
@@ -1456,7 +1442,6 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
     if (isIPV4) {
         static jclass inet4_class;
         static jmethodID inet4_ctrID;
-        static jfieldID inet4_addrID;
 
         static jclass ni_class;
         static jmethodID ni_ctrID;
@@ -1486,15 +1471,13 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
             CHECK_NULL_RETURN(c, NULL);
             inet4_ctrID = (*env)->GetMethodID(env, c, "<init>", "()V");
             CHECK_NULL_RETURN(inet4_ctrID, NULL);
-            inet4_addrID = (*env)->GetFieldID(env, c, "address", "I");
-            CHECK_NULL_RETURN(inet4_addrID, NULL);
             inet4_class = (*env)->NewGlobalRef(env, c);
             CHECK_NULL_RETURN(inet4_class, NULL);
         }
         addr = (*env)->NewObject(env, inet4_class, inet4_ctrID, 0);
         CHECK_NULL_RETURN(addr, NULL);
 
-        (*env)->SetIntField(env, addr, inet4_addrID, ntohl(in.s_addr));
+        setInetAddress_addr(env, addr, ntohl(in.s_addr));
 
         /*
          * For IP_MULTICAST_IF return InetAddress
@@ -1942,7 +1925,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
     ipv6_join_leave = ipv6_available();
 
 #ifdef __linux__
-    if ((*env)->GetIntField(env, iaObj, ia_familyID) == IPv4) {
+    if (getInetAddress_family(env, iaObj) == IPv4) {
         ipv6_join_leave = JNI_FALSE;
     }
 #endif
@@ -1989,7 +1972,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
                     CHECK_NULL(ni_indexID);
                 }
 
-                mname.imr_multiaddr.s_addr = htonl((*env)->GetIntField(env, iaObj, ia_addressID));
+                mname.imr_multiaddr.s_addr = htonl(getInetAddress_addr(env, iaObj));
                 mname.imr_address.s_addr = 0;
                 mname.imr_ifindex =  (*env)->GetIntField(env, niObj, ni_indexID);
                 mname_len = sizeof(struct ip_mreqn);
@@ -2007,11 +1990,11 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
                 }
                 addr = (*env)->GetObjectArrayElement(env, addrArray, 0);
 
-                mname.imr_multiaddr.s_addr = htonl((*env)->GetIntField(env, iaObj, ia_addressID));
+                mname.imr_multiaddr.s_addr = htonl(getInetAddress_addr(env, iaObj));
 #ifdef __linux__
-                mname.imr_address.s_addr = htonl((*env)->GetIntField(env, addr, ia_addressID));
+                mname.imr_address.s_addr = htonl(getInetAddress_addr(env, addr));
 #else
-                mname.imr_interface.s_addr = htonl((*env)->GetIntField(env, addr, ia_addressID));
+                mname.imr_interface.s_addr = htonl(getInetAddress_addr(env, addr));
 #endif
                 mname_len = sizeof(struct ip_mreq);
             }
@@ -2046,7 +2029,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
                     return;
                 }
 
-                mname.imr_multiaddr.s_addr = htonl((*env)->GetIntField(env, iaObj, ia_addressID));
+                mname.imr_multiaddr.s_addr = htonl(getInetAddress_addr(env, iaObj));
                 mname.imr_address.s_addr = 0 ;
                 mname.imr_ifindex = index;
                 mname_len = sizeof(struct ip_mreqn);
@@ -2068,7 +2051,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
 #else
                 mname.imr_interface.s_addr = in.s_addr;
 #endif
-                mname.imr_multiaddr.s_addr = htonl((*env)->GetIntField(env, iaObj, ia_addressID));
+                mname.imr_multiaddr.s_addr = htonl(getInetAddress_addr(env, iaObj));
                 mname_len = sizeof(struct ip_mreq);
             }
         }
@@ -2133,10 +2116,10 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
         jbyte caddr[16];
         jint family;
         jint address;
-        family = (*env)->GetIntField(env, iaObj, ia_familyID) == IPv4? AF_INET : AF_INET6;
+        family = getInetAddress_family(env, iaObj) == IPv4? AF_INET : AF_INET6;
         if (family == AF_INET) { /* will convert to IPv4-mapped address */
             memset((char *) caddr, 0, 16);
-            address = (*env)->GetIntField(env, iaObj, ia_addressID);
+            address = getInetAddress_addr(env, iaObj);
 
             caddr[10] = 0xff;
             caddr[11] = 0xff;

@@ -777,7 +777,7 @@ JNIEXPORT int JNICALL
 NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr *him,
                           int *len, jboolean v4MappedAddress) {
     jint family;
-    family = (*env)->GetIntField(env, iaObj, ia_familyID);
+    family = getInetAddress_family(env, iaObj);
 #ifdef AF_INET6
     /* needs work. 1. family 2. clean up him6 etc deallocate memory */
     if (ipv6_available() && !(family == IPv4 && v4MappedAddress == JNI_FALSE)) {
@@ -789,7 +789,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
 
         if (family == IPv4) { /* will convert to IPv4-mapped address */
             memset((char *) caddr, 0, 16);
-            address = (*env)->GetIntField(env, iaObj, ia_addressID);
+            address = getInetAddress_addr(env, iaObj);
             if (address == INADDR_ANY) {
                 /* we would always prefer IPv6 wildcard address
                    caddr[10] = 0xff;
@@ -898,7 +898,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
               return -1;
             }
             memset((char *) him4, 0, sizeof(struct sockaddr_in));
-            address = (*env)->GetIntField(env, iaObj, ia_addressID);
+            address = getInetAddress_addr(env, iaObj);
             him4->sin_port = htons((short) port);
             him4->sin_addr.s_addr = (uint32_t) htonl(address);
             him4->sin_family = AF_INET;

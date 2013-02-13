@@ -53,9 +53,17 @@
  * i.e. psi_timeoutID is PlainSocketImpl's timeout field's ID.
  */
 extern jclass ia_class;
-extern jfieldID ia_addressID;
-extern jfieldID ia_familyID;
+extern jfieldID iac_addressID;
+extern jfieldID iac_familyID;
+extern jfieldID iac_hostNameID;
 extern jfieldID ia_preferIPv6AddressID;
+
+extern void setInetAddress_addr(JNIEnv *env, jobject iaObj, int address);
+extern void setInetAddress_family(JNIEnv *env, jobject iaObj, int family);
+extern void setInetAddress_hostName(JNIEnv *env, jobject iaObj, jobject h);
+extern int getInetAddress_addr(JNIEnv *env, jobject iaObj);
+extern int getInetAddress_family(JNIEnv *env, jobject iaObj);
+extern jobject getInetAddress_hostName(JNIEnv *env, jobject iaObj);
 
 extern jclass ia4_class;
 extern jmethodID ia4_ctrID;
