@@ -145,9 +145,10 @@ enum MemoryType {
   mtChunk             = 0x0B00,  // chunk that holds content of arenas
   mtJavaHeap          = 0x0C00,  // Java heap
   mtClassShared       = 0x0D00,  // class data sharing
-  mt_number_of_types  = 0x000D,  // number of memory types (mtDontTrack
+  mtTest              = 0x0E00,  // Test type for verifying NMT
+  mt_number_of_types  = 0x000E,  // number of memory types (mtDontTrack
                                  // is not included as validate type)
-  mtDontTrack         = 0x0E00,  // memory we do not or cannot track
+  mtDontTrack         = 0x0F00,  // memory we do not or cannot track
   mt_masks            = 0x7F00,
 
   // object type mask

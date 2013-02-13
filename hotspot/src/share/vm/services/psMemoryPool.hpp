@@ -25,7 +25,8 @@
 #ifndef SHARE_VM_SERVICES_PSMEMORYPOOL_HPP
 #define SHARE_VM_SERVICES_PSMEMORYPOOL_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
@@ -34,7 +35,7 @@
 #include "memory/space.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 class PSGenerationPool : public CollectedMemoryPool {
 private:

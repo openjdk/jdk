@@ -213,7 +213,7 @@ class MemRecorder : public CHeapObj<mtNMT|otNMTRecorder> {
   // used for linked list
   MemRecorder*             _next;
   // active recorder can only record a certain generation data
-  debug_only(unsigned long _generation;)
+  unsigned long            _generation;
 
  protected:
   _NOINLINE_ MemRecorder();
@@ -251,6 +251,8 @@ class MemRecorder : public CHeapObj<mtNMT|otNMTRecorder> {
 
   SequencedRecordIterator pointer_itr();
 
+  // return the generation of this recorder which it belongs to
+  unsigned long get_generation() const { return _generation; }
  protected:
   // number of MemRecorder instance
   static volatile jint _instance_count;
@@ -263,7 +265,7 @@ class MemRecorder : public CHeapObj<mtNMT|otNMTRecorder> {
   static int sort_record_fn(const void* e1, const void* e2);
 
   debug_only(void check_dup_seq(jint seq) const;)
-  debug_only(void set_generation();)
+  void set_generation();
 };
 
 #endif // SHARE_VM_SERVICES_MEM_RECORDER_HPP

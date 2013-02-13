@@ -467,7 +467,7 @@ public class ObjectHeap {
               liveRegions.add(tlab.start());
               liveRegions.add(tlab.start());
               liveRegions.add(tlab.top());
-              liveRegions.add(tlab.end());
+              liveRegions.add(tlab.hardEnd());
             }
           }
         }

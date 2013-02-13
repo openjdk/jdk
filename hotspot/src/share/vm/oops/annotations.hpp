@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 
 class ClassLoaderData;
 class outputStream;
+class KlassSizeStats;
 
 typedef Array<u1> AnnotationArray;
 
@@ -82,7 +83,12 @@ class Annotations: public MetaspaceObj {
                                Array<AnnotationArray*>* mda, TRAPS);
   void deallocate_contents(ClassLoaderData* loader_data);
   DEBUG_ONLY(bool on_stack() { return false; })  // for template
+
+  // Sizing (in words)
   static int size()    { return sizeof(Annotations) / wordSize; }
+#if INCLUDE_SERVICES
+  void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   // Constructor to initialize to null
   Annotations() : _class_annotations(NULL),
@@ -142,7 +148,7 @@ class Annotations: public MetaspaceObj {
   void set_methods_annotations_of(instanceKlassHandle ik,
                                   int idnum, AnnotationArray* anno,
                                   Array<AnnotationArray*>** md_p, TRAPS);
-
+  static julong count_bytes(Array<AnnotationArray*>* p);
  public:
   const char* internal_name() const { return "{constant pool}"; }
 #ifndef PRODUCT
