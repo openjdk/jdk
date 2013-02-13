@@ -23,6 +23,7 @@
 
 # @test
 # @bug 7182152
+# @bug 8007935
 # @summary Redefine a subclass that implements two interfaces and
 #   verify that the right methods are called.
 # @author Daniel D. Daugherty
@@ -38,6 +39,12 @@ then
   exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
@@ -50,7 +57,7 @@ then
   exit 1
 fi
 
-JAVAC="${TESTJAVA}"/bin/javac
+JAVAC="${COMPILEJAVA}"/bin/javac
 JAVA="${TESTJAVA}"/bin/java
 
 echo "INFO: building the replacement classes."
@@ -59,7 +66,8 @@ cp "${TESTSRC}"/RedefineSubclassWithTwoInterfacesTarget_1.java \
     RedefineSubclassWithTwoInterfacesTarget.java
 cp "${TESTSRC}"/RedefineSubclassWithTwoInterfacesImpl_1.java \
     RedefineSubclassWithTwoInterfacesImpl.java
-"${JAVAC}" -cp "${TESTCLASSES}" -d . \
+"${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
+    -cp "${TESTCLASSES}" -d . \
     RedefineSubclassWithTwoInterfacesTarget.java \
     RedefineSubclassWithTwoInterfacesImpl.java 
 status="$?"
