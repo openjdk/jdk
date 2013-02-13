@@ -2068,7 +2068,15 @@ public class Types {
 
             @Override
             public Type visitAnnotatedType(AnnotatedType t, Boolean recurse) {
-                return new AnnotatedType(t.typeAnnotations, erasure(t.underlyingType, recurse));
+                Type erased = erasure(t.underlyingType, recurse);
+                if (erased.getKind() == TypeKind.ANNOTATED) {
+                    // This can only happen when the underlying type is a
+                    // type variable and the upper bound of it is annotated.
+                    // The annotation on the type variable overrides the one
+                    // on the bound.
+                    erased = ((AnnotatedType)erased).underlyingType;
+                }
+                return new AnnotatedType(t.typeAnnotations, erased);
             }
         };
 
