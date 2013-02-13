@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2008 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +21,14 @@
  * questions.
  */
 
-import java.lang.annotation.*;
-
 /*
  * @test
  * @summary test acceptance of varargs annotations
  * @author Mahmood Ali
  * @compile Varargs.java
  */
+
+import java.lang.annotation.*;
 
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface A {}

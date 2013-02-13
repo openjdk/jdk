@@ -27,10 +27,7 @@
 
 #include "sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal.h"
 
-#ifdef _M_IA64
-  #include "sun_jvm_hotspot_debugger_ia64_IA64ThreadContext.h"
-  #define NPRGREG sun_jvm_hotspot_debugger_ia64_IA64ThreadContext_NPRGREG
-#elif _M_IX86
+#ifdef _M_IX86
   #include "sun_jvm_hotspot_debugger_x86_X86ThreadContext.h"
   #define NPRGREG sun_jvm_hotspot_debugger_x86_X86ThreadContext_NPRGREG
 #elif _M_AMD64
@@ -491,92 +488,7 @@ static bool addThreads(JNIEnv* env, jobject obj) {
      memset(&context, 0, sizeof(CONTEXT));
 
 #undef REG_INDEX
-#ifdef _M_IA64
-     #define REG_INDEX(x) sun_jvm_hotspot_debugger_ia64_IA64ThreadContext_##x
-
-     context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG;
-     ptrIDebugAdvanced->GetThreadContext(&context, sizeof(CONTEXT));
-
-     ptrRegs[REG_INDEX(GR0)]  = 0; // always 0
-     ptrRegs[REG_INDEX(GR1)]  = context.IntGp;  // r1
-     ptrRegs[REG_INDEX(GR2)]  = context.IntT0;  // r2-r3
-     ptrRegs[REG_INDEX(GR3)]  = context.IntT1;
-     ptrRegs[REG_INDEX(GR4)]  = context.IntS0;  // r4-r7
-     ptrRegs[REG_INDEX(GR5)]  = context.IntS1;
-     ptrRegs[REG_INDEX(GR6)]  = context.IntS2;
-     ptrRegs[REG_INDEX(GR7)]  = context.IntS3;
-     ptrRegs[REG_INDEX(GR8)]  = context.IntV0;  // r8
-     ptrRegs[REG_INDEX(GR9)]  = context.IntT2;  // r9-r11
-     ptrRegs[REG_INDEX(GR10)] = context.IntT3;
-     ptrRegs[REG_INDEX(GR11)] = context.IntT4;
-     ptrRegs[REG_INDEX(GR12)] = context.IntSp;  // r12 stack pointer
-     ptrRegs[REG_INDEX(GR13)] = context.IntTeb; // r13 teb
-     ptrRegs[REG_INDEX(GR14)] = context.IntT5;  // r14-r31
-     ptrRegs[REG_INDEX(GR15)] = context.IntT6;
-     ptrRegs[REG_INDEX(GR16)] = context.IntT7;
-     ptrRegs[REG_INDEX(GR17)] = context.IntT8;
-     ptrRegs[REG_INDEX(GR18)] = context.IntT9;
-     ptrRegs[REG_INDEX(GR19)] = context.IntT10;
-     ptrRegs[REG_INDEX(GR20)] = context.IntT11;
-     ptrRegs[REG_INDEX(GR21)] = context.IntT12;
-     ptrRegs[REG_INDEX(GR22)] = context.IntT13;
-     ptrRegs[REG_INDEX(GR23)] = context.IntT14;
-     ptrRegs[REG_INDEX(GR24)] = context.IntT15;
-     ptrRegs[REG_INDEX(GR25)] = context.IntT16;
-     ptrRegs[REG_INDEX(GR26)] = context.IntT17;
-     ptrRegs[REG_INDEX(GR27)] = context.IntT18;
-     ptrRegs[REG_INDEX(GR28)] = context.IntT19;
-     ptrRegs[REG_INDEX(GR29)] = context.IntT20;
-     ptrRegs[REG_INDEX(GR30)] = context.IntT21;
-     ptrRegs[REG_INDEX(GR31)] = context.IntT22;
-
-     ptrRegs[REG_INDEX(INT_NATS)] = context.IntNats;
-     ptrRegs[REG_INDEX(PREDS)]    = context.Preds;
-
-     ptrRegs[REG_INDEX(BR_RP)] = context.BrRp;
-     ptrRegs[REG_INDEX(BR1)]   = context.BrS0;  // b1-b5
-     ptrRegs[REG_INDEX(BR2)]   = context.BrS1;
-     ptrRegs[REG_INDEX(BR3)]   = context.BrS2;
-     ptrRegs[REG_INDEX(BR4)]   = context.BrS3;
-     ptrRegs[REG_INDEX(BR5)]   = context.BrS4;
-     ptrRegs[REG_INDEX(BR6)]   = context.BrT0;  // b6-b7
-     ptrRegs[REG_INDEX(BR7)]   = context.BrT1;
-
-     ptrRegs[REG_INDEX(AP_UNAT)] = context.ApUNAT;
-     ptrRegs[REG_INDEX(AP_LC)]   = context.ApLC;
-     ptrRegs[REG_INDEX(AP_EC)]   = context.ApEC;
-     ptrRegs[REG_INDEX(AP_CCV)]  = context.ApCCV;
-     ptrRegs[REG_INDEX(AP_DCR)]  = context.ApDCR;
-
-     ptrRegs[REG_INDEX(RS_PFS)]      = context.RsPFS;
-     ptrRegs[REG_INDEX(RS_BSP)]      = context.RsBSP;
-     ptrRegs[REG_INDEX(RS_BSPSTORE)] = context.RsBSPSTORE;
-     ptrRegs[REG_INDEX(RS_RSC)]      = context.RsRSC;
-     ptrRegs[REG_INDEX(RS_RNAT)]     = context.RsRNAT;
-
-     ptrRegs[REG_INDEX(ST_IPSR)] = context.StIPSR;
-     ptrRegs[REG_INDEX(ST_IIP)]  = context.StIIP;
-     ptrRegs[REG_INDEX(ST_IFS)]  = context.StIFS;
-
-     ptrRegs[REG_INDEX(DB_I0)] = context.DbI0;
-     ptrRegs[REG_INDEX(DB_I1)] = context.DbI1;
-     ptrRegs[REG_INDEX(DB_I2)] = context.DbI2;
-     ptrRegs[REG_INDEX(DB_I3)] = context.DbI3;
-     ptrRegs[REG_INDEX(DB_I4)] = context.DbI4;
-     ptrRegs[REG_INDEX(DB_I5)] = context.DbI5;
-     ptrRegs[REG_INDEX(DB_I6)] = context.DbI6;
-     ptrRegs[REG_INDEX(DB_I7)] = context.DbI7;
-
-     ptrRegs[REG_INDEX(DB_D0)] = context.DbD0;
-     ptrRegs[REG_INDEX(DB_D1)] = context.DbD1;
-     ptrRegs[REG_INDEX(DB_D2)] = context.DbD2;
-     ptrRegs[REG_INDEX(DB_D3)] = context.DbD3;
-     ptrRegs[REG_INDEX(DB_D4)] = context.DbD4;
-     ptrRegs[REG_INDEX(DB_D5)] = context.DbD5;
-     ptrRegs[REG_INDEX(DB_D6)] = context.DbD6;
-     ptrRegs[REG_INDEX(DB_D7)] = context.DbD7;
-
-#elif _M_IX86
+#ifdef _M_IX86
      #define REG_INDEX(x) sun_jvm_hotspot_debugger_x86_X86ThreadContext_##x
 
      context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;

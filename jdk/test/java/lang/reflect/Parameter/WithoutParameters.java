@@ -23,163 +23,152 @@
 
 /*
  * @test
+ * @bug 8004729
  * @summary javac should generate method parameters correctly.
  */
 
 import java.lang.*;
 import java.lang.reflect.*;
+import java.lang.annotation.*;
 import java.util.List;
+import java.util.Objects;
+
+import static java.lang.annotation.ElementType.*;
 
 public class WithoutParameters {
+    int errors = 0;
 
-    private static final Class<?>[] qux_types = {
-        int.class,
-        Foo.class,
-        List.class,
-        List.class,
-        List.class,
-        String[].class
-    };
+    private WithoutParameters() {}
 
     public static void main(String argv[]) throws Exception {
-        int error = 0;
-        Method[] methods = Foo.class.getMethods();
-        for(Method m : methods) {
-            System.err.println("Inspecting method " + m);
-            Parameter[] parameters = m.getParameters();
-            if(parameters == null)
-                throw new Exception("getParameters should never be null");
-            for(int i = 0; i < parameters.length; i++) {
-                    Parameter p = parameters[i];
-                    if(!p.getDeclaringExecutable().equals(m)) {
-                        System.err.println(p + ".getDeclaringExecutable != " + m);
-                        error++;
-                    }
-                    if(null == p.getType()) {
-                        System.err.println(p + ".getType() == null");
-                        error++;
-                    }
-                    if(null == p.getParameterizedType()) {
-                        System.err.println(p + ".getParameterizedType == null");
-                        error++;
-                    }
-            }
-            if(m.getName().equals("qux")) {
-                if(6 != parameters.length) {
-                    System.err.println("Wrong number of parameters for qux");
-                    error++;
-                }
-                for(int i = 0; i < parameters.length; i++) {
-                    Parameter p = parameters[i];
-                    // The getType family work with or without
-                    // parameter attributes compiled in.
-                    if(!parameters[i].getType().equals(qux_types[i])) {
-                        System.err.println("Wrong parameter type for " + parameters[0] + ": expected " + qux_types[i] + ", but got " + parameters[i].getType());
-                        error++;
-                    }
-                }
-                if(!parameters[0].getParameterizedType().equals(int.class)) {
-                    System.err.println("getParameterizedType for quux is wrong");
-                    error++;
-                }
-                if(!parameters[1].getParameterizedType().equals(Foo.class)) {
-                    System.err.println("getParameterizedType for quux is wrong");
-                    error++;
-                }
-                if(!(parameters[2].getParameterizedType() instanceof
-                     ParameterizedType)) {
-                    System.err.println("getParameterizedType for l is wrong");
-                    error++;
-                } else {
-                    ParameterizedType pt =
-                        (ParameterizedType) parameters[2].getParameterizedType();
-                    if(!pt.getRawType().equals(List.class)) {
-                        System.err.println("Raw type for l is wrong");
-                        error++;
-                    }
-                    if(1 != pt.getActualTypeArguments().length) {
-                        System.err.println("Number of type parameters for l is wrong");
-                        error++;
-                    }
-                    if(!(pt.getActualTypeArguments()[0] instanceof WildcardType)) {
-                        System.err.println("Type parameter for l is wrong");
-                        error++;
-                    }
-                }
-                if(!(parameters[3].getParameterizedType() instanceof
-                     ParameterizedType)) {
-                    System.err.println("getParameterizedType for l2 is wrong");
-                    error++;
-                } else {
-                    ParameterizedType pt =
-                        (ParameterizedType) parameters[3].getParameterizedType();
-                    if(!pt.getRawType().equals(List.class)) {
-                        System.err.println("Raw type for l2 is wrong");
-                        error++;
-                    }
-                    if(1 != pt.getActualTypeArguments().length) {
-                        System.err.println("Number of type parameters for l2 is wrong");
-                        error++;
-                    }
-                    if(!(pt.getActualTypeArguments()[0].equals(Foo.class))) {
-                        System.err.println("Type parameter for l2 is wrong");
-                        error++;
-                    }
-                }
-                if(!(parameters[4].getParameterizedType() instanceof
-                     ParameterizedType)) {
-                    System.err.println("getParameterizedType for l3 is wrong");
-                    error++;
-                } else {
-                    ParameterizedType pt =
-                        (ParameterizedType) parameters[4].getParameterizedType();
-                    if(!pt.getRawType().equals(List.class)) {
-                        System.err.println("Raw type for l3 is wrong");
-                        error++;
-                    }
-                    if(1 != pt.getActualTypeArguments().length) {
-                        System.err.println("Number of type parameters for l3 is wrong");
-                        error++;
-                    }
-                    if(!(pt.getActualTypeArguments()[0] instanceof WildcardType)) {
-                        System.err.println("Type parameter for l3 is wrong");
-                        error++;
-                    } else {
-                        WildcardType wt = (WildcardType)
-                            pt.getActualTypeArguments()[0];
-                        if(!wt.getUpperBounds()[0].equals(Foo.class)) {
-                            System.err.println("Upper bounds on type parameter fol l3 is wrong");
-                            error++;
-                        }
-                    }
-                }
-                if(!parameters[5].isVarArgs()) {
-                    System.err.println("isVarArg for rest is wrong");
-                    error++;
-                }
-                if(!(parameters[5].getParameterizedType().equals(String[].class))) {
-                    System.err.println("getParameterizedType for rest is wrong");
-                    error++;
-                }
+        WithoutParameters wp = new WithoutParameters();
+        wp.runTests(Foo.class.getMethods());
+        wp.runTests(Foo.Inner.class.getConstructors());
+        wp.checkForErrors();
+    }
 
+    void runTests(Method[] methods) throws Exception {
+        for(Method m : methods) {runTest(m);}
+    }
+
+    void runTests(Constructor[] constructors) throws Exception {
+        for(Constructor c : constructors) {runTest(c);}
+    }
+
+    void runTest(Executable e) throws Exception {
+        System.err.println("Inspecting executable " + e);
+        Parameter[] parameters = e.getParameters();
+        Objects.requireNonNull(parameters, "getParameters should never be null");
+
+        ExpectedParameterInfo epi = e.getAnnotation(ExpectedParameterInfo.class);
+        if (epi != null) {
+            abortIfTrue(epi.parameterCount() != e.getParameterCount(), "Bad parameter count for "+ e);
+            abortIfTrue(epi.isVarArgs() != e.isVarArgs(),"Bad varargs value for "+ e);
+        }
+        abortIfTrue(e.getParameterCount() != parameters.length, "Mismatched of parameter counts.");
+
+        for(int i = 0; i < parameters.length; i++) {
+            Parameter p = parameters[i];
+            errorIfTrue(!p.getDeclaringExecutable().equals(e), p + ".getDeclaringExecutable != " + e);
+            Objects.requireNonNull(p.getType(), "getType() should not be null");
+            Objects.requireNonNull(p.getParameterizedType(), "getParameterizedType() should not be null");
+
+            if (epi != null) {
+                Class<?> expectedParameterType = epi.parameterTypes()[i];
+                errorIfTrue(!p.getType().equals(expectedParameterType),
+                            "Wrong parameter type for " + p + ": expected " + expectedParameterType  +
+                            ", but got " + p.getType());
+
+                ParameterizedInfo[] expectedParameterizedTypes = epi.parameterizedTypes();
+                if (expectedParameterizedTypes.length > 0) {
+                    Type parameterizedType = p.getParameterizedType();
+                    Class<? extends Type> expectedParameterziedTypeType = expectedParameterizedTypes[i].value();
+                    errorIfTrue(!expectedParameterziedTypeType.isAssignableFrom(parameterizedType.getClass()),
+                                "Wrong class of parameteried type of " + p + ": expected " + expectedParameterziedTypeType  +
+                                ", but got " + parameterizedType.getClass());
+
+                    if (expectedParameterziedTypeType.equals(Class.class)) {
+                        errorIfTrue(!parameterizedType.equals(expectedParameterType),
+                                    "Wrong parameteried type for " + p + ": expected " + expectedParameterType  +
+                                    ", but got " + parameterizedType);
+                    } else {
+                        if (expectedParameterziedTypeType.equals(ParameterizedType.class)) {
+                            ParameterizedType ptype = (ParameterizedType)parameterizedType;
+                            errorIfTrue(!ptype.getRawType().equals(expectedParameterType),
+                                        "Wrong raw type for " + p + ": expected " + expectedParameterType  +
+                                        ", but got " + ptype.getRawType());
+                        }
+
+                        // Check string representation
+                        String expectedStringOfType = epi.parameterizedTypes()[i].string();
+                        errorIfTrue(!expectedStringOfType.equals(parameterizedType.toString()),
+                                    "Bad type string" + p + ": expected " + expectedStringOfType  +
+                                    ", but got " + parameterizedType.toString());
+                    }
+                }
             }
         }
-        if(0 != error)
-            throw new Exception("Failed " + error + " tests");
+    }
+
+    private void checkForErrors() {
+        if (errors > 0)
+            throw new RuntimeException("Failed " + errors + " tests");
+    }
+
+    private void errorIfTrue(boolean predicate, String errMessage) {
+        if (predicate) {
+            errors++;
+            System.err.println(errMessage);
+        }
+    }
+
+    private void abortIfTrue(boolean predicate, String errMessage) {
+        if (predicate) {
+            throw new RuntimeException(errMessage);
+        }
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({METHOD, CONSTRUCTOR})
+    @interface ExpectedParameterInfo {
+        int parameterCount() default 0;
+        Class<?>[] parameterTypes() default {};
+        ParameterizedInfo[] parameterizedTypes() default {};
+        boolean isVarArgs() default false;
+    }
+
+    @Target({})
+    @interface ParameterizedInfo {
+        Class<? extends Type> value() default Class.class;
+        String string() default "";
     }
 
     public class Foo {
         int thing;
+        @ExpectedParameterInfo(parameterCount = 6,
+                               parameterTypes =
+                               {int.class, Foo.class,
+                                List.class, List.class,
+                                List.class, String[].class},
+                               parameterizedTypes =
+                                {@ParameterizedInfo(Class.class),
+                                 @ParameterizedInfo(Class.class),
+                                 @ParameterizedInfo(value=ParameterizedType.class, string="java.util.List<?>"),
+                                 @ParameterizedInfo(value=ParameterizedType.class, string="java.util.List<WithoutParameters$Foo>"),
+                                 @ParameterizedInfo(value=ParameterizedType.class, string="java.util.List<? extends WithoutParameters$Foo>"),
+                                 @ParameterizedInfo(Class.class)},
+                               isVarArgs = true)
         public void qux(int quux, Foo quuux,
                         List<?> l, List<Foo> l2,
                         List<? extends Foo> l3,
                         String... rest) {}
         public class Inner {
             int thang;
+            @ExpectedParameterInfo(parameterCount = 2,
+                                   parameterTypes = {Foo.class, int.class})
             public Inner(int theng) {
                 thang = theng + thing;
             }
         }
     }
-
 }

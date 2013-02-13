@@ -836,7 +836,7 @@ EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
 $(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(IMAGES_OUTPUTDIR)/lib/rt.jar
 	$(RM) -r $(IMAGES_OUTPUTDIR)/symbols/META-INF/sym
 	$(MKDIR) -p $(IMAGES_OUTPUTDIR)/symbols/META-INF/sym
-	$(JAVA) $(JAVAC_JARS) \
+	$(JAVA) $(NEW_JAVAC) \
 	    -bootclasspath $(JDK_OUTPUTDIR)/classes \
 	    -XDprocess.packages -proc:only \
 	    -processor com.sun.tools.javac.sym.CreateSymbols \
