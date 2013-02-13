@@ -92,7 +92,13 @@ public final class ZoneInfoFile {
                 ids.add(id);
             }
         }
-        return ids.toArray(new String[ids.size()]);
+        // It appears the "zi" implementation returns the
+        // sorted list, though the specification does not
+        // specify it. Keep the same behavior for better
+        // compatibility.
+        String[] list = ids.toArray(new String[ids.size()]);
+        Arrays.sort(list);
+        return list;
     }
 
     public static ZoneInfo getZoneInfo(String zoneId) {

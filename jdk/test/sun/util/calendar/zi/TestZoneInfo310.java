@@ -23,7 +23,7 @@
 
 /*
  *@test
- *@bug 8007572
+ *@bug 8007572 8008161
  *@summary Test whether the TimeZone generated from JSR310 tzdb is the same
  *as the one from the tz data from javazic
  */
@@ -155,6 +155,24 @@ public class TestZoneInfo310 {
             System.out.printf("  FAILED:  ver=%s, expected=%s%n",
                               sun.util.calendar.ZoneInfoFile.getVersion(), ver);
             throw new RuntimeException("Version test failed");
+        }
+
+        // test getAvailableIDs(raw);
+        zids_new = TimeZone.getAvailableIDs(-8 * 60 * 60 * 1000);
+        //Arrays.sort(zids_new);
+        zids_old = ZoneInfoOld.getAvailableIDs(-8 * 60 * 60 * 1000);
+        if (!Arrays.equals(zids_new, zids_old)) {
+            System.out.println("------------------------");
+            System.out.println("NEW.getAvailableIDs(-8:00)");
+            for (String zid : zids_new) {
+                System.out.println(zid);
+            }
+            System.out.println("------------------------");
+            System.out.println("OLD.getAvailableIDs(-8:00)");
+            for (String zid : zids_old) {
+                System.out.println(zid);
+            }
+            throw new RuntimeException("  FAILED:  availableIds(offset) don't match");
         }
     }
 
