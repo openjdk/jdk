@@ -40,7 +40,7 @@ public class DummyProvider extends Provider {
         //
         // KeyStore
         //
-        put("KeyStore.DKS", "sun.security.provider.JavaKeyStore$JKS");
+        put("KeyStore.DummyKS", "sun.security.provider.JavaKeyStore$JKS");
 
         //
         // Signature engines
