@@ -74,6 +74,7 @@ public class Flags {
         if ((mask&DEPRECATED) != 0) flags.add(Flag.DEPRECATED);
         if ((mask&HASINIT) != 0) flags.add(Flag.HASINIT);
         if ((mask&ENUM) != 0) flags.add(Flag.ENUM);
+        if ((mask&MANDATED) != 0) flags.add(Flag.MANDATED);
         if ((mask&IPROXY) != 0) flags.add(Flag.IPROXY);
         if ((mask&NOOUTERTHIS) != 0) flags.add(Flag.NOOUTERTHIS);
         if ((mask&EXISTS) != 0) flags.add(Flag.EXISTS);
@@ -113,6 +114,9 @@ public class Flags {
     /** An enumeration type or an enumeration constant, added in
      *  classfile v49.0. */
     public static final int ENUM         = 1<<14;
+
+    /** Added in SE8, represents constructs implicitly declared in source. */
+    public static final int MANDATED     = 1<<15;
 
     public static final int StandardFlags = 0x0fff;
     public static final int ModifierFlags = StandardFlags & ~INTERFACE;
@@ -342,6 +346,7 @@ public class Flags {
         DEPRECATED("deprecated"),
         HASINIT("hasinit"),
         ENUM("enum"),
+        MANDATED("mandated"),
         IPROXY("iproxy"),
         NOOUTERTHIS("noouterthis"),
         EXISTS("exists"),
