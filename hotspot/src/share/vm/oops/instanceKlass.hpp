@@ -155,8 +155,8 @@ class InstanceKlass: public Klass {
                                           ReferenceType rt,
                                           AccessFlags access_flags,
                                           Symbol* name,
-                                        Klass* super_klass,
-                                          KlassHandle host_klass,
+                                          Klass* super_klass,
+                                          bool is_anonymous,
                                           TRAPS);
 
   InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
@@ -679,19 +679,19 @@ class InstanceKlass: public Klass {
   // annotations support
   Annotations* annotations() const          { return _annotations; }
   void set_annotations(Annotations* anno)   { _annotations = anno; }
+
   AnnotationArray* class_annotations() const {
-    if (annotations() == NULL) return NULL;
-    return annotations()->class_annotations();
+    return (_annotations != NULL) ? _annotations->class_annotations() : NULL;
   }
   Array<AnnotationArray*>* fields_annotations() const {
-    if (annotations() == NULL) return NULL;
-    return annotations()->fields_annotations();
+    return (_annotations != NULL) ? _annotations->fields_annotations() : NULL;
   }
-  Annotations* type_annotations() const {
-    if (annotations() == NULL) return NULL;
-    return annotations()->type_annotations();
+  AnnotationArray* class_type_annotations() const {
+    return (_annotations != NULL) ? _annotations->class_type_annotations() : NULL;
   }
-
+  Array<AnnotationArray*>* fields_type_annotations() const {
+    return (_annotations != NULL) ? _annotations->fields_type_annotations() : NULL;
+  }
   // allocation
   instanceOop allocate_instance(TRAPS);
 
@@ -810,6 +810,7 @@ class InstanceKlass: public Klass {
 
   // Sizing (in words)
   static int header_size()            { return align_object_offset(sizeof(InstanceKlass)/HeapWordSize); }
+
   static int size(int vtable_length, int itable_length,
                   int nonstatic_oop_map_size,
                   bool is_interface, bool is_anonymous) {
@@ -847,10 +848,14 @@ class InstanceKlass: public Klass {
     return (OopMapBlock*)(start_of_itable() + align_object_offset(itable_length()));
   }
 
+  Klass** end_of_nonstatic_oop_maps() const {
+    return (Klass**)(start_of_nonstatic_oop_maps() +
+                     nonstatic_oop_map_count());
+  }
+
   Klass** adr_implementor() const {
     if (is_interface()) {
-      return (Klass**)(start_of_nonstatic_oop_maps() +
-                    nonstatic_oop_map_count());
+      return (Klass**)end_of_nonstatic_oop_maps();
     } else {
       return NULL;
     }
@@ -862,8 +867,7 @@ class InstanceKlass: public Klass {
       if (adr_impl != NULL) {
         return adr_impl + 1;
       } else {
-        return (Klass**)(start_of_nonstatic_oop_maps() +
-                      nonstatic_oop_map_count());
+        return end_of_nonstatic_oop_maps();
       }
     } else {
       return NULL;

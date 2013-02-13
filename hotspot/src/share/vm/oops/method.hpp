@@ -101,6 +101,7 @@ class LocalVariableTableElement;
 class AdapterHandlerEntry;
 class MethodData;
 class ConstMethod;
+class InlineTableSizes;
 class KlassSizeStats;
 
 class Method : public Metadata {
@@ -157,12 +158,7 @@ class Method : public Metadata {
   static Method* allocate(ClassLoaderData* loader_data,
                           int byte_code_size,
                           AccessFlags access_flags,
-                          int compressed_line_number_size,
-                          int localvariable_table_length,
-                          int exception_table_length,
-                          int checked_exceptions_length,
-                          int method_parameters_length,
-                          u2 generic_signature_index,
+                          InlineTableSizes* sizes,
                           ConstMethod::MethodType method_type,
                           TRAPS);
 
@@ -207,33 +203,17 @@ class Method : public Metadata {
 
   // annotations support
   AnnotationArray* annotations() const           {
-    InstanceKlass* ik = method_holder();
-    if (ik->annotations() == NULL) {
-      return NULL;
-    }
-    return ik->annotations()->get_method_annotations_of(method_idnum());
+    return constMethod()->method_annotations();
   }
   AnnotationArray* parameter_annotations() const {
-    InstanceKlass* ik = method_holder();
-    if (ik->annotations() == NULL) {
-      return NULL;
-    }
-    return ik->annotations()->get_method_parameter_annotations_of(method_idnum());
+    return constMethod()->parameter_annotations();
   }
   AnnotationArray* annotation_default() const    {
-    InstanceKlass* ik = method_holder();
-    if (ik->annotations() == NULL) {
-      return NULL;
-    }
-    return ik->annotations()->get_method_default_annotations_of(method_idnum());
+    return constMethod()->default_annotations();
   }
-  AnnotationArray* type_annotations() const {
-  InstanceKlass* ik = method_holder();
-  Annotations* type_annos = ik->type_annotations();
-  if (type_annos == NULL)
-    return NULL;
-  return type_annos->get_method_annotations_of(method_idnum());
-}
+  AnnotationArray* type_annotations() const      {
+    return constMethod()->type_annotations();
+  }
 
 #ifdef CC_INTERP
   void set_result_index(BasicType type);
@@ -439,13 +419,6 @@ class Method : public Metadata {
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
   void set_interpreter_entry(address entry)      { _i2i_entry = entry;  _from_interpreted_entry = entry; }
-  int  interpreter_kind(void) {
-     return constMethod()->interpreter_kind();
-  }
-  void set_interpreter_kind();
-  void set_interpreter_kind(int kind) {
-    constMethod()->set_interpreter_kind(kind);
-  }
 
   // native function (used for native methods only)
   enum {
@@ -800,16 +773,15 @@ class Method : public Metadata {
   static bool has_unloaded_classes_in_signature(methodHandle m, TRAPS);
 
   // Printing
-  void print_short_name(outputStream* st = tty)  /*PRODUCT_RETURN*/; // prints as klassname::methodname; Exposed so field engineers can debug VM
+  void print_short_name(outputStream* st = tty); // prints as klassname::methodname; Exposed so field engineers can debug VM
+#if INCLUDE_JVMTI
+  void print_name(outputStream* st = tty); // prints as "virtual void foo(int)"; exposed for TraceRedefineClasses
+#else
   void print_name(outputStream* st = tty)        PRODUCT_RETURN; // prints as "virtual void foo(int)"
+#endif
 
   // Helper routine used for method sorting
-  static void sort_methods(Array<Method*>* methods,
-                           Array<AnnotationArray*>* methods_annotations,
-                           Array<AnnotationArray*>* methods_parameter_annotations,
-                           Array<AnnotationArray*>* methods_default_annotations,
-                           Array<AnnotationArray*>* methods_type_annotations,
-                           bool idempotent = false);
+  static void sort_methods(Array<Method*>* methods, bool idempotent = false);
 
   // Deallocation function for redefine classes or if an error occurs
   void deallocate_contents(ClassLoaderData* loader_data);
