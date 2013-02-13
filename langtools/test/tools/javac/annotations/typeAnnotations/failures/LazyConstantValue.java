@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,24 @@
  * questions.
  */
 
-import java.lang.annotation.*;
-
 /*
  * @test
- * @bug 6843077 8006775
- * @summary test type annotation on void generic methods
- * @author Mahmood Ali
- * @compile/fail VoidGenericMethod.java
+ * @bug 8008077
+ * @summary Type annotations in a lazy constant need to be attributed
+ *   in the correct order.
+ * @author Werner Dietl
+ * @compile LazyConstantValue.java
  */
-class VoidGenericMethod {
-  public @A <T> void method() { }
+
+import java.lang.annotation.*;
+
+class ClassA {
+    Object o = ClassB.lcv;
 }
 
-@Target(ElementType.TYPE_USE)
-@interface A { }
+class ClassB {
+    static final String[] lcv = new @TA String[0];
+}
+
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@interface TA {}

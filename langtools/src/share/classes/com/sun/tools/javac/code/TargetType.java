@@ -82,34 +82,37 @@ public enum TargetType {
     /** For annotations on an exception parameter. */
     EXCEPTION_PARAMETER(0x42, true),
 
-    /** For annotations on a typecast. */
-    CAST(0x43, true),
-
     /** For annotations on a type test. */
-    INSTANCEOF(0x44, true),
+    INSTANCEOF(0x43, true),
 
     /** For annotations on an object creation expression. */
-    NEW(0x45, true),
+    NEW(0x44, true),
+
+    /** For annotations on a constructor reference receiver. */
+    CONSTRUCTOR_REFERENCE(0x45, true),
+
+    /** For annotations on a method reference receiver. */
+    METHOD_REFERENCE(0x46, true),
+
+    /** For annotations on a typecast. */
+    CAST(0x47, true),
 
     /** For annotations on a type argument of an object creation expression. */
-    CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(0x46, true),
+    CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(0x48, true),
 
     /** For annotations on a type argument of a method call. */
-    METHOD_INVOCATION_TYPE_ARGUMENT(0x47, true),
+    METHOD_INVOCATION_TYPE_ARGUMENT(0x49, true),
 
-    /** For annotations on a lambda parameter type. */
-    LAMBDA_FORMAL_PARAMETER(0x48, true),
-
-    /** For annotations on a method reference. */
-    METHOD_REFERENCE(0x49, true),
+    /** For annotations on a type argument of a constructor reference. */
+    CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT(0x4A, true),
 
     /** For annotations on a type argument of a method reference. */
-    METHOD_REFERENCE_TYPE_ARGUMENT(0x50, true),
+    METHOD_REFERENCE_TYPE_ARGUMENT(0x4B, true),
 
     /** For annotations with an unknown target. */
     UNKNOWN(0xFF);
 
-    private static final int MAXIMUM_TARGET_TYPE_VALUE = 0x92;
+    private static final int MAXIMUM_TARGET_TYPE_VALUE = 0x4B;
 
     private final int targetTypeValue;
     private final boolean isLocal;

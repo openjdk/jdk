@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,23 @@
  * questions.
  */
 
-import java.lang.annotation.*;
-
 /*
  * @test
- * @bug 6843077 8006775
- * @summary test type annotation on void generic methods
- * @author Mahmood Ali
- * @compile/fail VoidGenericMethod.java
+ * @bug 8008077
+ * @summary Type annotations on a type variable, where the bound of
+ *   the type variable is also annotated, need to be processed correctly.
+ * @author Werner Dietl
+ * @compile TypeVariable.java
  */
-class VoidGenericMethod {
-  public @A <T> void method() { }
+
+import java.lang.annotation.*;
+
+class TypeVariable {
+    <TV extends  @TA Object> TV cast(TV p) {
+        return (@TA TV) p;
+    }
 }
 
-@Target(ElementType.TYPE_USE)
-@interface A { }
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@interface TA {}
+

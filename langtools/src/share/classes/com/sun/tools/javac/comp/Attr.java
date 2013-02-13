@@ -766,6 +766,8 @@ public class Attr extends JCTree.Visitor {
         JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
 
         try {
+            memberEnter.typeAnnotate(initializer, env, env.info.enclVar);
+            annotate.flush();
             Type itype = attribExpr(initializer, env, type);
             if (itype.constValue() != null)
                 return coerce(itype, type).constValue();
@@ -2539,7 +2541,7 @@ public class Attr extends JCTree.Visitor {
 
             if (exprType.isErroneous()) {
                 //if the qualifier expression contains problems,
-                //give up atttribution of method reference
+                //give up attribution of method reference
                 result = that.type = exprType;
                 return;
             }
