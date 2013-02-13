@@ -1884,9 +1884,9 @@ mlib_status CONV_FUNC_MxN
   mlib_s32 nchannel, chan1, chan2;
   mlib_s32 i, j, c, swid;
   d64_2x32 dd;
-  GET_SRC_DST_PARAMETERS(DTYPE);
-
   mlib_status status = MLIB_SUCCESS;
+
+  GET_SRC_DST_PARAMETERS(DTYPE);
 
   if (scale > 30) {
     fscale *= 1.0/(1 << 30);
