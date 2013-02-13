@@ -420,14 +420,24 @@ const char* InlineTree::check_can_parse(ciMethod* callee) {
 }
 
 //------------------------------print_inlining---------------------------------
-// Really, the failure_msg can be a success message also.
-void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci, const char* failure_msg) const {
-  C->print_inlining(callee_method, inline_level(), caller_bci, failure_msg ? failure_msg : "inline");
-  if (callee_method == NULL)  tty->print(" callee not monotonic or profiled");
-  if (Verbose && callee_method) {
-    const InlineTree *top = this;
-    while( top->caller_tree() != NULL ) { top = top->caller_tree(); }
-    //tty->print("  bcs: %d+%d  invoked: %d", top->count_inline_bcs(), callee_method->code_size(), callee_method->interpreter_invocation_count());
+void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
+                                const char* msg, bool success) const {
+  assert(msg != NULL, "just checking");
+  if (C->log() != NULL) {
+    if (success) {
+      C->log()->inline_success(msg);
+    } else {
+      C->log()->inline_fail(msg);
+    }
+  }
+  if (PrintInlining) {
+    C->print_inlining(callee_method, inline_level(), caller_bci, msg);
+    if (callee_method == NULL) tty->print(" callee not monotonic or profiled");
+    if (Verbose && callee_method) {
+      const InlineTree *top = this;
+      while( top->caller_tree() != NULL ) { top = top->caller_tree(); }
+      //tty->print("  bcs: %d+%d  invoked: %d", top->count_inline_bcs(), callee_method->code_size(), callee_method->interpreter_invocation_count());
+    }
   }
 }
 
@@ -451,23 +461,23 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
 
   // Do some initial checks.
   if (!pass_initial_checks(caller_method, caller_bci, callee_method)) {
-    if (PrintInlining)  print_inlining(callee_method, caller_bci, "failed initial checks");
+    print_inlining(callee_method, caller_bci, "failed initial checks",
+                   false /* !success */);
     return NULL;
   }
 
   // Do some parse checks.
   failure_msg = check_can_parse(callee_method);
   if (failure_msg != NULL) {
-    if (PrintInlining)  print_inlining(callee_method, caller_bci, failure_msg);
+    print_inlining(callee_method, caller_bci, failure_msg,
+                   false /* !success */);
     return NULL;
   }
 
   // Check if inlining policy says no.
   WarmCallInfo wci = *(initial_wci);
-  failure_msg = try_to_inline(callee_method, caller_method, caller_bci, profile, &wci, should_delay);
-  if (failure_msg != NULL && C->log() != NULL) {
-    C->log()->inline_fail(failure_msg);
-  }
+  failure_msg = try_to_inline(callee_method, caller_method, caller_bci, profile,
+                              &wci, should_delay);
 
 #ifndef PRODUCT
   if (UseOldInlining && InlineWarmCalls
@@ -487,7 +497,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
       wci = *(WarmCallInfo::always_hot());
     else
       wci = *(WarmCallInfo::always_cold());
-  }
+    }
   if (!InlineWarmCalls) {
     if (!wci.is_cold() && !wci.is_hot()) {
       // Do not inline the warm calls.
@@ -496,11 +506,10 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
   }
 
   if (!wci.is_cold()) {
-    // In -UseOldInlining, the failure_msg may also be a success message.
-    if (failure_msg == NULL)  failure_msg = "inline (hot)";
-
     // Inline!
-    if (PrintInlining)  print_inlining(callee_method, caller_bci, failure_msg);
+    print_inlining(callee_method, caller_bci,
+                   failure_msg ? failure_msg : "inline (hot)",
+                   true /* success */);
     if (UseOldInlining)
       build_inline_tree_for_callee(callee_method, jvms, caller_bci);
     if (InlineWarmCalls && !wci.is_hot())
@@ -509,8 +518,9 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
   }
 
   // Do not inline
-  if (failure_msg == NULL)  failure_msg = "too cold to inline";
-  if (PrintInlining)  print_inlining(callee_method, caller_bci, failure_msg);
+  print_inlining(callee_method, caller_bci,
+                 failure_msg ? failure_msg : "too cold to inline",
+                 false /* !success */ );
   return NULL;
 }
 

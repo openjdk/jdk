@@ -25,14 +25,15 @@
 #ifndef SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
 #define SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 inline void oopDesc::update_contents(ParCompactionManager* cm) {
   // The klass field must be updated before anything else

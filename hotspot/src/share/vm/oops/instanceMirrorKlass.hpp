@@ -28,6 +28,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/macros.hpp"
 
 // An InstanceMirrorKlass is a specialized InstanceKlass for
 // java.lang.Class instances.  These instances are special because
@@ -107,13 +108,13 @@ class InstanceMirrorKlass: public InstanceKlass {
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceMirrorKlass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceMirrorKlass_OOP_OOP_ITERATE_DECL)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix) \
   int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 };
 
 #endif // SHARE_VM_OOPS_INSTANCEMIRRORKLASS_HPP

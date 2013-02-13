@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
 #include "code/codeCache.hpp"
@@ -114,43 +115,6 @@ bool VM_RedefineClasses::doit_prologue() {
   RC_TIMER_STOP(_timer_vm_op_prologue);
   return true;
 }
-
-// Keep track of marked on-stack metadata so it can be cleared.
-GrowableArray<Metadata*>* _marked_objects = NULL;
-NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
-
-// Walk metadata on the stack and mark it so that redefinition doesn't delete
-// it.  Class unloading also walks the previous versions and might try to
-// delete it, so this class is used by class unloading also.
-MetadataOnStackMark::MetadataOnStackMark() {
-  assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
-  NOT_PRODUCT(_is_active = true;)
-  if (_marked_objects == NULL) {
-    _marked_objects = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(1000, true);
-  }
-  Threads::metadata_do(Metadata::mark_on_stack);
-  CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
-  CompileBroker::mark_on_stack();
-}
-
-MetadataOnStackMark::~MetadataOnStackMark() {
-  assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
-  // Unmark everything that was marked.   Can't do the same walk because
-  // redefine classes messes up the code cache so the set of methods
-  // might not be the same.
-  for (int i = 0; i< _marked_objects->length(); i++) {
-    _marked_objects->at(i)->set_on_stack(false);
-  }
-  _marked_objects->clear();   // reuse growable array for next time.
-  NOT_PRODUCT(_is_active = false;)
-}
-
-// Record which objects are marked so we can unmark the same objects.
-void MetadataOnStackMark::record(Metadata* m) {
-  assert(_is_active, "metadata on stack marking is active");
-  _marked_objects->push(m);
-}
-
 
 void VM_RedefineClasses::doit() {
   Thread *thread = Thread::current();
@@ -314,76 +278,23 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_NameAndType:
     {
       int name_ref_i = scratch_cp->name_ref_index_at(scratch_i);
-      int new_name_ref_i = 0;
-      bool match = (name_ref_i < *merge_cp_length_p) &&
-        scratch_cp->compare_entry_to(name_ref_i, *merge_cp_p, name_ref_i,
-          THREAD);
-      if (!match) {
-        // forward reference in *merge_cp_p or not a direct match
-
-        int found_i = scratch_cp->find_matching_entry(name_ref_i, *merge_cp_p,
-          THREAD);
-        if (found_i != 0) {
-          guarantee(found_i != name_ref_i,
-            "compare_entry_to() and find_matching_entry() do not agree");
-
-          // Found a matching entry somewhere else in *merge_cp_p so
-          // just need a mapping entry.
-          new_name_ref_i = found_i;
-          map_index(scratch_cp, name_ref_i, found_i);
-        } else {
-          // no match found so we have to append this entry to *merge_cp_p
-          append_entry(scratch_cp, name_ref_i, merge_cp_p, merge_cp_length_p,
-            THREAD);
-          // The above call to append_entry() can only append one entry
-          // so the post call query of *merge_cp_length_p is only for
-          // the sake of consistency.
-          new_name_ref_i = *merge_cp_length_p - 1;
-        }
-      }
+      int new_name_ref_i = find_or_append_indirect_entry(scratch_cp, name_ref_i, merge_cp_p,
+                                                         merge_cp_length_p, THREAD);
 
       int signature_ref_i = scratch_cp->signature_ref_index_at(scratch_i);
-      int new_signature_ref_i = 0;
-      match = (signature_ref_i < *merge_cp_length_p) &&
-        scratch_cp->compare_entry_to(signature_ref_i, *merge_cp_p,
-          signature_ref_i, THREAD);
-      if (!match) {
-        // forward reference in *merge_cp_p or not a direct match
-
-        int found_i = scratch_cp->find_matching_entry(signature_ref_i,
-          *merge_cp_p, THREAD);
-        if (found_i != 0) {
-          guarantee(found_i != signature_ref_i,
-            "compare_entry_to() and find_matching_entry() do not agree");
-
-          // Found a matching entry somewhere else in *merge_cp_p so
-          // just need a mapping entry.
-          new_signature_ref_i = found_i;
-          map_index(scratch_cp, signature_ref_i, found_i);
-        } else {
-          // no match found so we have to append this entry to *merge_cp_p
-          append_entry(scratch_cp, signature_ref_i, merge_cp_p,
-            merge_cp_length_p, THREAD);
-          // The above call to append_entry() can only append one entry
-          // so the post call query of *merge_cp_length_p is only for
-          // the sake of consistency.
-          new_signature_ref_i = *merge_cp_length_p - 1;
-        }
-      }
+      int new_signature_ref_i = find_or_append_indirect_entry(scratch_cp, signature_ref_i,
+                                                              merge_cp_p, merge_cp_length_p,
+                                                              THREAD);
 
       // If the referenced entries already exist in *merge_cp_p, then
       // both new_name_ref_i and new_signature_ref_i will both be 0.
       // In that case, all we are appending is the current entry.
-      if (new_name_ref_i == 0) {
-        new_name_ref_i = name_ref_i;
-      } else {
+      if (new_name_ref_i != name_ref_i) {
         RC_TRACE(0x00080000,
           ("NameAndType entry@%d name_ref_index change: %d to %d",
           *merge_cp_length_p, name_ref_i, new_name_ref_i));
       }
-      if (new_signature_ref_i == 0) {
-        new_signature_ref_i = signature_ref_i;
-      } else {
+      if (new_signature_ref_i != signature_ref_i) {
         RC_TRACE(0x00080000,
           ("NameAndType entry@%d signature_ref_index change: %d to %d",
           *merge_cp_length_p, signature_ref_i, new_signature_ref_i));
@@ -405,76 +316,12 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     case JVM_CONSTANT_Methodref:
     {
       int klass_ref_i = scratch_cp->uncached_klass_ref_index_at(scratch_i);
-      int new_klass_ref_i = 0;
-      bool match = (klass_ref_i < *merge_cp_length_p) &&
-        scratch_cp->compare_entry_to(klass_ref_i, *merge_cp_p, klass_ref_i,
-          THREAD);
-      if (!match) {
-        // forward reference in *merge_cp_p or not a direct match
+      int new_klass_ref_i = find_or_append_indirect_entry(scratch_cp, klass_ref_i,
+                                                          merge_cp_p, merge_cp_length_p, THREAD);
 
-        int found_i = scratch_cp->find_matching_entry(klass_ref_i, *merge_cp_p,
-          THREAD);
-        if (found_i != 0) {
-          guarantee(found_i != klass_ref_i,
-            "compare_entry_to() and find_matching_entry() do not agree");
-
-          // Found a matching entry somewhere else in *merge_cp_p so
-          // just need a mapping entry.
-          new_klass_ref_i = found_i;
-          map_index(scratch_cp, klass_ref_i, found_i);
-        } else {
-          // no match found so we have to append this entry to *merge_cp_p
-          append_entry(scratch_cp, klass_ref_i, merge_cp_p, merge_cp_length_p,
-            THREAD);
-          // The above call to append_entry() can only append one entry
-          // so the post call query of *merge_cp_length_p is only for
-          // the sake of consistency. Without the optimization where we
-          // use JVM_CONSTANT_UnresolvedClass, then up to two entries
-          // could be appended.
-          new_klass_ref_i = *merge_cp_length_p - 1;
-        }
-      }
-
-      int name_and_type_ref_i =
-        scratch_cp->uncached_name_and_type_ref_index_at(scratch_i);
-      int new_name_and_type_ref_i = 0;
-      match = (name_and_type_ref_i < *merge_cp_length_p) &&
-        scratch_cp->compare_entry_to(name_and_type_ref_i, *merge_cp_p,
-          name_and_type_ref_i, THREAD);
-      if (!match) {
-        // forward reference in *merge_cp_p or not a direct match
-
-        int found_i = scratch_cp->find_matching_entry(name_and_type_ref_i,
-          *merge_cp_p, THREAD);
-        if (found_i != 0) {
-          guarantee(found_i != name_and_type_ref_i,
-            "compare_entry_to() and find_matching_entry() do not agree");
-
-          // Found a matching entry somewhere else in *merge_cp_p so
-          // just need a mapping entry.
-          new_name_and_type_ref_i = found_i;
-          map_index(scratch_cp, name_and_type_ref_i, found_i);
-        } else {
-          // no match found so we have to append this entry to *merge_cp_p
-          append_entry(scratch_cp, name_and_type_ref_i, merge_cp_p,
-            merge_cp_length_p, THREAD);
-          // The above call to append_entry() can append more than
-          // one entry so the post call query of *merge_cp_length_p
-          // is required in order to get the right index for the
-          // JVM_CONSTANT_NameAndType entry.
-          new_name_and_type_ref_i = *merge_cp_length_p - 1;
-        }
-      }
-
-      // If the referenced entries already exist in *merge_cp_p, then
-      // both new_klass_ref_i and new_name_and_type_ref_i will both be
-      // 0. In that case, all we are appending is the current entry.
-      if (new_klass_ref_i == 0) {
-        new_klass_ref_i = klass_ref_i;
-      }
-      if (new_name_and_type_ref_i == 0) {
-        new_name_and_type_ref_i = name_and_type_ref_i;
-      }
+      int name_and_type_ref_i = scratch_cp->uncached_name_and_type_ref_index_at(scratch_i);
+      int new_name_and_type_ref_i = find_or_append_indirect_entry(scratch_cp, name_and_type_ref_i,
+                                                          merge_cp_p, merge_cp_length_p, THREAD);
 
       const char *entry_name;
       switch (scratch_cp->tag_at(scratch_i).value()) {
@@ -517,6 +364,72 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
       (*merge_cp_length_p)++;
     } break;
 
+    // this is an indirect CP entry so it needs special handling
+    case JVM_CONSTANT_MethodType:
+    {
+      int ref_i = scratch_cp->method_type_index_at(scratch_i);
+      int new_ref_i = find_or_append_indirect_entry(scratch_cp, ref_i, merge_cp_p,
+                                                    merge_cp_length_p, THREAD);
+      if (new_ref_i != ref_i) {
+        RC_TRACE(0x00080000,
+                 ("MethodType entry@%d ref_index change: %d to %d",
+                  *merge_cp_length_p, ref_i, new_ref_i));
+      }
+      (*merge_cp_p)->method_type_index_at_put(*merge_cp_length_p, new_ref_i);
+      if (scratch_i != *merge_cp_length_p) {
+        // The new entry in *merge_cp_p is at a different index than
+        // the new entry in scratch_cp so we need to map the index values.
+        map_index(scratch_cp, scratch_i, *merge_cp_length_p);
+      }
+      (*merge_cp_length_p)++;
+    } break;
+
+    // this is an indirect CP entry so it needs special handling
+    case JVM_CONSTANT_MethodHandle:
+    {
+      int ref_kind = scratch_cp->method_handle_ref_kind_at(scratch_i);
+      int ref_i = scratch_cp->method_handle_index_at(scratch_i);
+      int new_ref_i = find_or_append_indirect_entry(scratch_cp, ref_i, merge_cp_p,
+                                                    merge_cp_length_p, THREAD);
+      if (new_ref_i != ref_i) {
+        RC_TRACE(0x00080000,
+                 ("MethodHandle entry@%d ref_index change: %d to %d",
+                  *merge_cp_length_p, ref_i, new_ref_i));
+      }
+      (*merge_cp_p)->method_handle_index_at_put(*merge_cp_length_p, ref_kind, new_ref_i);
+      if (scratch_i != *merge_cp_length_p) {
+        // The new entry in *merge_cp_p is at a different index than
+        // the new entry in scratch_cp so we need to map the index values.
+        map_index(scratch_cp, scratch_i, *merge_cp_length_p);
+      }
+      (*merge_cp_length_p)++;
+    } break;
+
+    // this is an indirect CP entry so it needs special handling
+    case JVM_CONSTANT_InvokeDynamic:
+    {
+      // TBD: cross-checks and possible extra appends into CP and bsm operands
+      // are needed as well. This issue is tracked by a separate bug 8007037.
+      int bss_idx = scratch_cp->invoke_dynamic_bootstrap_specifier_index(scratch_i);
+
+      int ref_i = scratch_cp->invoke_dynamic_name_and_type_ref_index_at(scratch_i);
+      int new_ref_i = find_or_append_indirect_entry(scratch_cp, ref_i, merge_cp_p,
+                                                    merge_cp_length_p, THREAD);
+      if (new_ref_i != ref_i) {
+        RC_TRACE(0x00080000,
+                 ("InvokeDynamic entry@%d name_and_type ref_index change: %d to %d",
+                  *merge_cp_length_p, ref_i, new_ref_i));
+      }
+
+      (*merge_cp_p)->invoke_dynamic_at_put(*merge_cp_length_p, bss_idx, new_ref_i);
+      if (scratch_i != *merge_cp_length_p) {
+        // The new entry in *merge_cp_p is at a different index than
+        // the new entry in scratch_cp so we need to map the index values.
+        map_index(scratch_cp, scratch_i, *merge_cp_length_p);
+      }
+      (*merge_cp_length_p)++;
+    } break;
+
     // At this stage, Class or UnresolvedClass could be here, but not
     // ClassIndex
     case JVM_CONSTANT_ClassIndex: // fall through
@@ -541,6 +454,35 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
     } break;
   } // end switch tag value
 } // end append_entry()
+
+
+int VM_RedefineClasses::find_or_append_indirect_entry(constantPoolHandle scratch_cp,
+      int ref_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS) {
+
+  int new_ref_i = ref_i;
+  bool match = (ref_i < *merge_cp_length_p) &&
+               scratch_cp->compare_entry_to(ref_i, *merge_cp_p, ref_i, THREAD);
+
+  if (!match) {
+    // forward reference in *merge_cp_p or not a direct match
+    int found_i = scratch_cp->find_matching_entry(ref_i, *merge_cp_p, THREAD);
+    if (found_i != 0) {
+      guarantee(found_i != ref_i, "compare_entry_to() and find_matching_entry() do not agree");
+      // Found a matching entry somewhere else in *merge_cp_p so just need a mapping entry.
+      new_ref_i = found_i;
+      map_index(scratch_cp, ref_i, found_i);
+    } else {
+      // no match found so we have to append this entry to *merge_cp_p
+      append_entry(scratch_cp, ref_i, merge_cp_p, merge_cp_length_p, THREAD);
+      // The above call to append_entry() can only append one entry
+      // so the post call query of *merge_cp_length_p is only for
+      // the sake of consistency.
+      new_ref_i = *merge_cp_length_p - 1;
+    }
+  }
+
+  return new_ref_i;
+} // end find_or_append_indirect_entry()
 
 
 void VM_RedefineClasses::swap_all_method_annotations(int i, int j, instanceKlassHandle scratch_class, TRAPS) {
@@ -1158,6 +1100,8 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
       }
     } // end for each old_cp entry
 
+    ConstantPool::copy_operands(old_cp, *merge_cp_p, CHECK_0);
+
     // We don't need to sanity check that *merge_cp_length_p is within
     // *merge_cp_p bounds since we have the minimum on-entry check above.
     (*merge_cp_length_p) = old_i;
@@ -1341,8 +1285,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   _index_map_count = 0;
   _index_map_p = new intArray(scratch_cp->length(), -1);
 
+  // reference to the cp holder is needed for copy_operands()
+  merge_cp->set_pool_holder(scratch_class());
   bool result = merge_constant_pools(old_cp, scratch_cp, &merge_cp,
                   &merge_cp_length, THREAD);
+  merge_cp->set_pool_holder(NULL);
+
   if (!result) {
     // The merge can fail due to memory allocation failure or due
     // to robustness checks.
@@ -1594,6 +1542,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
       case Bytecodes::_getfield       : // fall through
       case Bytecodes::_getstatic      : // fall through
       case Bytecodes::_instanceof     : // fall through
+      case Bytecodes::_invokedynamic  : // fall through
       case Bytecodes::_invokeinterface: // fall through
       case Bytecodes::_invokespecial  : // fall through
       case Bytecodes::_invokestatic   : // fall through
@@ -2416,13 +2365,14 @@ void VM_RedefineClasses::set_new_constant_pool(
   assert(version != 0, "sanity check");
   smaller_cp->set_version(version);
 
+  // attach klass to new constant pool
+  // reference to the cp holder is needed for copy_operands()
+  smaller_cp->set_pool_holder(scratch_class());
+
   scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
   scratch_cp = smaller_cp;
 
   // attach new constant pool to klass
-  scratch_cp->set_pool_holder(scratch_class());
-
-  // attach klass to new constant pool
   scratch_class->set_constants(scratch_cp());
 
   int i;  // for portability
@@ -3140,11 +3090,9 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   Klass* the_class_oop = java_lang_Class::as_Klass(the_class_mirror);
   instanceKlassHandle the_class = instanceKlassHandle(THREAD, the_class_oop);
 
-#ifndef JVMTI_KERNEL
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   jvmti_breakpoints.clearall_in_class_at_safepoint(the_class_oop);
-#endif // !JVMTI_KERNEL
 
   if (the_class_oop == Universe::reflect_invoke_cache()->klass()) {
     // We are redefining java.lang.reflect.Method. Method.invoke() is

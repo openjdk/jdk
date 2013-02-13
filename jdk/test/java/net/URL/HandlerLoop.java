@@ -36,7 +36,7 @@ public class HandlerLoop {
     public static void main(String args[]) throws Exception {
         URL.setURLStreamHandlerFactory(
             new HandlerFactory("sun.net.www.protocol"));
-        URL url = new URL("file://bogus/index.html");
+        URL url = new URL("file:///bogus/index.html");
         System.out.println("url = " + url);
         url.openConnection();
     }

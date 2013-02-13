@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class Win32AMD64JavaThreadPDAccess implements JavaThreadPDAccess {
   private static AddressField  osThreadField;
 
   // Field from OSThread
-  private static Field         osThreadThreadHandleField;
+  private static Field         osThreadThreadIdField;
 
   // This is currently unneeded but is being kept in case we change
   // the currentFrameGuess algorithm
@@ -64,7 +64,7 @@ public class Win32AMD64JavaThreadPDAccess implements JavaThreadPDAccess {
     osThreadField           = type.getAddressField("_osthread");
 
     type = db.lookupType("OSThread");
-    osThreadThreadHandleField = type.getField("_thread_handle");
+    osThreadThreadIdField = type.getField("_thread_id");
   }
 
   public Address getLastJavaFP(Address addr) {
@@ -128,10 +128,10 @@ public class Win32AMD64JavaThreadPDAccess implements JavaThreadPDAccess {
     // Fetch the OSThread (for now and for simplicity, not making a
     // separate "OSThread" class in this package)
     Address osThreadAddr = osThreadField.getValue(addr);
-    // Get the address of the HANDLE within the OSThread
-    Address threadHandleAddr =
-      osThreadAddr.addOffsetTo(osThreadThreadHandleField.getOffset());
+    // Get the address of the thread_id within the OSThread
+    Address threadIdAddr =
+      osThreadAddr.addOffsetTo(osThreadThreadIdField.getOffset());
     JVMDebugger debugger = VM.getVM().getDebugger();
-    return debugger.getThreadForIdentifierAddress(threadHandleAddr);
+    return debugger.getThreadForIdentifierAddress(threadIdAddr);
   }
 }
