@@ -1651,9 +1651,9 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
   DEF_VARS(DTYPE);
   mlib_s32 chan2;
   mlib_s32 *buffo, *buffi;
-  GET_SRC_DST_PARAMETERS(DTYPE);
-
   mlib_status status = MLIB_SUCCESS;
+
+  GET_SRC_DST_PARAMETERS(DTYPE);
 
   if (scale > 30) {
     fscale *= 1.0/(1 << 30);
