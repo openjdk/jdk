@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,8 +106,9 @@ inflate_file(int fd, zentry *entry, int *size_out)
             *size_out = (int)entry->isize;
         }
         return (out);
-    } else
-        return (NULL);
+    }
+    free(in);
+    return (NULL);
 }
 
 static jboolean zip64_present = JNI_FALSE;
