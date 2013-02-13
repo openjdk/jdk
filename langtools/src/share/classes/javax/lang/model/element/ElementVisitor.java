@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,18 @@ import javax.lang.model.util.*;
  * API should generally use this visitor interface as the type for
  * parameters, return type, etc. rather than one of the abstract
  * classes.
+ *
+ * <p>Note that methods to accommodate new language constructs could
+ * be added in a source <em>compatible</em> way if they were added as
+ * <em>default methods</em>.  However, default methods are only
+ * available on Java SE 8 and higher releases and the {@code
+ * javax.lang.model.*} packages bundled in Java SE 8 are required to
+ * also be runnable on Java SE 7.  Therefore, default methods
+ * <em>cannot</em> be used when extending {@code javax.lang.model.*}
+ * to cover Java SE 8 language features.  However, default methods may
+ * be used in subsequent revisions of the {@code javax.lang.model.*}
+ * packages that are only required to run on Java SE 8 and higher
+ * platform versions.
  *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.

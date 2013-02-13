@@ -253,7 +253,7 @@ public class LambdaToMethod extends TreeTranslator {
         int refKind = referenceKind(sym);
 
         //convert to an invokedynamic call
-        result = makeMetaFactoryIndyCall(tree, tree.targetType, refKind, sym, indy_args);
+        result = makeMetaFactoryIndyCall(tree, refKind, sym, indy_args);
     }
 
     private JCIdent makeThis(Type type, Symbol owner) {
@@ -302,6 +302,7 @@ public class LambdaToMethod extends TreeTranslator {
             case UNBOUND:           /** Type :: instMethod */
             case STATIC:            /** Type :: staticMethod */
             case TOPLEVEL:          /** Top level :: new */
+            case ARRAY_CTOR:        /** ArrayType :: new */
                 init = null;
                 break;
 
@@ -313,7 +314,7 @@ public class LambdaToMethod extends TreeTranslator {
 
 
         //build a sam instance using an indy call to the meta-factory
-        result = makeMetaFactoryIndyCall(tree, tree.targetType, localContext.referenceKind(), refSym, indy_args);
+        result = makeMetaFactoryIndyCall(tree, localContext.referenceKind(), refSym, indy_args);
     }
 
     /**
@@ -502,19 +503,6 @@ public class LambdaToMethod extends TreeTranslator {
 
     // </editor-fold>
 
-    private MethodSymbol makeSamDescriptor(Type targetType) {
-        return (MethodSymbol)types.findDescriptorSymbol(targetType.tsym);
-    }
-
-    private Type makeFunctionalDescriptorType(Type targetType, MethodSymbol samDescriptor, boolean erased) {
-        Type descType = types.memberType(targetType, samDescriptor);
-        return erased ? types.erasure(descType) : descType;
-    }
-
-    private Type makeFunctionalDescriptorType(Type targetType, boolean erased) {
-        return makeFunctionalDescriptorType(targetType, makeSamDescriptor(targetType), erased);
-    }
-
     /**
      * Generate an adapter method "bridge" for a method reference which cannot
      * be used directly.
@@ -645,24 +633,33 @@ public class LambdaToMethod extends TreeTranslator {
          * to the first bridge synthetic parameter
          */
         private JCExpression bridgeExpressionNew() {
-            JCExpression encl = null;
-            switch (tree.kind) {
-                case UNBOUND:
-                case IMPLICIT_INNER:
-                    encl = make.Ident(params.first());
-            }
+            if (tree.kind == ReferenceKind.ARRAY_CTOR) {
+                //create the array creation expression
+                JCNewArray newArr = make.NewArray(make.Type(types.elemtype(tree.getQualifierExpression().type)),
+                        List.of(make.Ident(params.first())),
+                        null);
+                newArr.type = tree.getQualifierExpression().type;
+                return newArr;
+            } else {
+                JCExpression encl = null;
+                switch (tree.kind) {
+                    case UNBOUND:
+                    case IMPLICIT_INNER:
+                        encl = make.Ident(params.first());
+                }
 
-            //create the instance creation expression
-            JCNewClass newClass = make.NewClass(encl,
-                    List.<JCExpression>nil(),
-                    make.Type(tree.getQualifierExpression().type),
-                    convertArgs(tree.sym, args.toList(), tree.varargsElement),
-                    null);
-            newClass.constructor = tree.sym;
-            newClass.constructorType = tree.sym.erasure(types);
-            newClass.type = tree.getQualifierExpression().type;
-            setVarargsIfNeeded(newClass, tree.varargsElement);
-            return newClass;
+                //create the instance creation expression
+                JCNewClass newClass = make.NewClass(encl,
+                        List.<JCExpression>nil(),
+                        make.Type(tree.getQualifierExpression().type),
+                        convertArgs(tree.sym, args.toList(), tree.varargsElement),
+                        null);
+                newClass.constructor = tree.sym;
+                newClass.constructorType = tree.sym.erasure(types);
+                newClass.type = tree.getQualifierExpression().type;
+                setVarargsIfNeeded(newClass, tree.varargsElement);
+                return newClass;
+            }
         }
 
         private VarSymbol addParameter(String name, Type p, boolean genArg) {
@@ -688,12 +685,12 @@ public class LambdaToMethod extends TreeTranslator {
     /**
      * Generate an indy method call to the meta factory
      */
-    private JCExpression makeMetaFactoryIndyCall(JCExpression tree, Type targetType, int refKind, Symbol refSym, List<JCExpression> indy_args) {
+    private JCExpression makeMetaFactoryIndyCall(JCFunctionalExpression tree, int refKind, Symbol refSym, List<JCExpression> indy_args) {
         //determine the static bsm args
-        Type mtype = makeFunctionalDescriptorType(targetType, true);
+        Type mtype = types.erasure(tree.descriptorType);
+        MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.type.tsym);
         List<Object> staticArgs = List.<Object>of(
-                new Pool.MethodHandle(ClassFile.REF_invokeInterface,
-                    types.findDescriptorSymbol(targetType.tsym), types),
+                new Pool.MethodHandle(ClassFile.REF_invokeInterface, types.findDescriptorSymbol(tree.type.tsym), types),
                 new Pool.MethodHandle(refKind, refSym, types),
                 new MethodType(mtype.getParameterTypes(),
                         mtype.getReturnType(),
@@ -862,8 +859,8 @@ public class LambdaToMethod extends TreeTranslator {
             finally {
                 frameStack = prevStack;
             }
-            if (frameStack.nonEmpty() && enclosingLambda() != null) {
-                // Any class defined within a lambda is an implicit 'this' reference
+            if (!tree.sym.isStatic() && frameStack.nonEmpty() && enclosingLambda() != null) {
+                // Any (non-static) class defined within a lambda is an implicit 'this' reference
                 // because its constructor will reference the enclosing class
                 ((LambdaTranslationContext) context()).addSymbol(tree.sym.type.getEnclosingType().tsym, CAPTURED_THIS);
             }
@@ -997,6 +994,11 @@ public class LambdaToMethod extends TreeTranslator {
          * (required to skip synthetic lambda symbols)
          */
         private Symbol owner() {
+            return owner(false);
+        }
+
+        @SuppressWarnings("fallthrough")
+        private Symbol owner(boolean skipLambda) {
             List<Frame> frameStack2 = frameStack;
             while (frameStack2.nonEmpty()) {
                 switch (frameStack2.head.tree.getTag()) {
@@ -1015,7 +1017,8 @@ public class LambdaToMethod extends TreeTranslator {
                     case METHODDEF:
                         return ((JCMethodDecl)frameStack2.head.tree).sym;
                     case LAMBDA:
-                        return ((LambdaTranslationContext)contextMap.get(frameStack2.head.tree)).translatedSym;
+                        if (!skipLambda)
+                            return ((LambdaTranslationContext)contextMap.get(frameStack2.head.tree)).translatedSym;
                     default:
                         frameStack2 = frameStack2.tail;
                 }
@@ -1155,7 +1158,7 @@ public class LambdaToMethod extends TreeTranslator {
          * This class is used to store important information regarding translation of
          * lambda expression/method references (see subclasses).
          */
-        private abstract class TranslationContext<T extends JCTree> {
+        private abstract class TranslationContext<T extends JCFunctionalExpression> {
 
             /** the underlying (untranslated) tree */
             T tree;
@@ -1314,12 +1317,13 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             Type enclosingType() {
-                //local inner classes defined inside a lambda are always non-static
-                return owner.enclClass().type;
+                return owner.isStatic() ?
+                        Type.noType :
+                        owner.enclClass().type;
             }
 
             Type generatedLambdaSig() {
-                return types.erasure(types.findDescriptorType(tree.targetType));
+                return types.erasure(tree.descriptorType);
             }
         }
 
@@ -1375,7 +1379,7 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             Type bridgedRefSig() {
-                return types.erasure(types.findDescriptorSymbol(tree.targetType.tsym).type);
+                return types.erasure(types.findDescriptorSymbol(tree.targets.head).type);
             }
         }
     }

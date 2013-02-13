@@ -23,14 +23,18 @@
 
 /**
  * @test
- * @bug 8003280 8004102
+ * @bug 8003280 8004102 8006694
  * @summary Add lambda tests
  *  perform several automated checks in lambda conversion, esp. around accessibility
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @author  Maurizio Cimadamore
  * @library ../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main FunctionalInterfaceConversionTest
+ * @run main/othervm FunctionalInterfaceConversionTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.io.IOException;
 import java.net.URI;

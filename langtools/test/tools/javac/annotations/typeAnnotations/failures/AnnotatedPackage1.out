@@ -1,0 +1,3 @@
+AnnotatedPackage1.java:9:14: compiler.err.expected: token.identifier
+AnnotatedPackage1.java:9:15: compiler.err.expected3: class, interface, enum
+2 errors

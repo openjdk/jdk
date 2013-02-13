@@ -149,14 +149,6 @@ public class SamConversion {
         test2(A::method3, 4);
         test2(new A()::method4, 5);
         test2(new A()::method5, 6);
-        A a = new A(A::method1); //A(Foo f) called
-        assertTrue(a.method2(1) == 11);
-        assertTrue(a.method4(1) == 11);
-        assertTrue(a.method5(1) == 11);
-        A a2 = new A(new A()::method2); //A(Bar b) called
-        assertTrue(a2.method2(1) == 12);
-        assertTrue(a2.method4(1) == 12);
-        assertTrue(a2.method5(1) == 12);
     }
 
     /**
@@ -279,7 +271,7 @@ public class SamConversion {
         testConditionalExpression(false);
         testLambdaExpressionBody();
 
-        assertTrue(assertionCount == 38);
+        assertTrue(assertionCount == 32);
     }
 
     static class MyException extends Exception {}

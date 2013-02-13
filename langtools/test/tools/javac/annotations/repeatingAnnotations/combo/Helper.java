@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,13 @@ import javax.tools.JavaCompiler.CompilationTask;
 public class Helper {
 
     enum ContentVars {
-        IMPORTCONTAINERSTMTS("\nimport java.lang.annotation.ContainedBy;\n" +
-                            "\nimport java.lang.annotation.ContainerFor;\n"),
+        IMPORTCONTAINERSTMTS("\nimport java.lang.annotation.Repeatable;\n"),
         IMPORTDEPRECATED("import java.lang.Deprecated;\n"),
         IMPORTDOCUMENTED("import java.lang.annotation.Documented;\n"),
         IMPORTINHERITED("import java.lang.annotation.Inherited;\n"),
         IMPORTRETENTION("import java.lang.annotation.Retention;\n" +
                         "\nimport java.lang.annotation.RetentionPolicy;\n"),
-        CONTAINEDBY("\n@ContainedBy(FooContainer.class)\n"),
-        CONTAINERFOR("@ContainerFor(Foo.class)\n"),
+        REPEATABLE("\n@Repeatable(FooContainer.class)\n"),
         CONTAINER("@interface FooContainer {\n" +"  Foo[] value();\n}\n"),
         BASE("@interface Foo {}\n"),
         REPEATABLEANNO("\n@Foo() @Foo()"),

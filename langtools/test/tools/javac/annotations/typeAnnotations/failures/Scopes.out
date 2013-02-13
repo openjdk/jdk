@@ -1,0 +1,3 @@
+Scopes.java:8:25: compiler.err.cant.resolve: kindname.class, UniqueInner, , 
+Scopes.java:8:24: compiler.err.annotation.type.not.applicable
+2 errors

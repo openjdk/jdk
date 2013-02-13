@@ -77,6 +77,10 @@ void SharkFunction::initialize(const char *name) {
   // Walk the tree from the start block to determine which
   // blocks are entered and which blocks require phis
   SharkTopLevelBlock *start_block = block(flow()->start_block_num());
+  if (is_osr() && start_block->stack_depth_at_entry() != 0) {
+    env()->record_method_not_compilable("can't compile OSR block with incoming stack-depth > 0");
+    return;
+  }
   assert(start_block->start() == flow()->start_bci(), "blocks out of order");
   start_block->enter();
 

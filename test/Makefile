@@ -63,7 +63,8 @@ JDK_DEFAULT_TEST_LIST = \
 	jdk_nio \
 	jdk_security1 \
 	jdk_text  \
-	jdk_util
+	jdk_util  \
+	jdk_time
 
 # These tests are not part of the default testing list
 JDK_NONDEFAULT_TEST_LIST = \

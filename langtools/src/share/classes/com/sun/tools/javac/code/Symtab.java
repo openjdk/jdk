@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,10 +161,10 @@ public class Symtab {
     public final Type autoCloseableType;
     public final Type trustMeType;
     public final Type lambdaMetafactory;
-    public final Type containedByType;
-    public final Type containerForType;
+    public final Type repeatableType;
     public final Type documentedType;
     public final Type elementTypeType;
+    public final Type functionalInterfaceType;
 
     /** The symbol representing the length field of an array.
      */
@@ -494,8 +494,7 @@ public class Symtab {
         deprecatedType = enterClass("java.lang.Deprecated");
         suppressWarningsType = enterClass("java.lang.SuppressWarnings");
         inheritedType = enterClass("java.lang.annotation.Inherited");
-        containedByType = enterClass("java.lang.annotation.ContainedBy");
-        containerForType = enterClass("java.lang.annotation.ContainerFor");
+        repeatableType = enterClass("java.lang.annotation.Repeatable");
         documentedType = enterClass("java.lang.annotation.Documented");
         elementTypeType = enterClass("java.lang.annotation.ElementType");
         systemType = enterClass("java.lang.System");
@@ -509,6 +508,7 @@ public class Symtab {
         nativeHeaderType = enterClass("java.lang.annotation.Native");
         nativeHeaderType_old = enterClass("javax.tools.annotation.GenerateNativeHeader");
         lambdaMetafactory = enterClass("java.lang.invoke.LambdaMetafactory");
+        functionalInterfaceType = enterClass("java.lang.FunctionalInterface");
 
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);

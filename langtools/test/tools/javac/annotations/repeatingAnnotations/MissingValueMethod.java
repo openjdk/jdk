@@ -6,13 +6,11 @@
  * @compile/fail/ref=MissingValueMethod.out -XDrawDiagnostics MissingValueMethod.java
  */
 
-import java.lang.annotation.ContainedBy;
-import java.lang.annotation.ContainerFor;
+import java.lang.annotation.Repeatable;
 
-@ContainedBy(FooContainer.class)
+@Repeatable(FooContainer.class)
 @interface Foo {}
 
-@ContainerFor(Foo.class)
 @interface FooContainer{
     Foo[] values();  // wrong method name
 }

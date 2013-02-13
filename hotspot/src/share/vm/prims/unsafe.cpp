@@ -24,9 +24,10 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 #include "memory/allocation.inline.hpp"
 #include "prims/jni.h"
 #include "prims/jvm.h"
@@ -189,7 +190,7 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObject140(JNIEnv *env, jobject unsafe, jobject o
   if (obj == NULL)  THROW_0(vmSymbols::java_lang_NullPointerException());
   GET_OOP_FIELD(obj, offset, v)
   jobject ret = JNIHandles::make_local(env, v);
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // We could be accessing the referent field in a reference
   // object. If G1 is enabled then we need to register a non-null
   // referent with the SATB barrier.
@@ -212,7 +213,7 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObject140(JNIEnv *env, jobject unsafe, jobject o
       G1SATBCardTableModRefBS::enqueue(referent);
     }
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
   return ret;
 UNSAFE_END
 
@@ -247,7 +248,7 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObject(JNIEnv *env, jobject unsafe, jobject obj,
   UnsafeWrapper("Unsafe_GetObject");
   GET_OOP_FIELD(obj, offset, v)
   jobject ret = JNIHandles::make_local(env, v);
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // We could be accessing the referent field in a reference
   // object. If G1 is enabled then we need to register non-null
   // referent with the SATB barrier.
@@ -270,7 +271,7 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObject(JNIEnv *env, jobject unsafe, jobject obj,
       G1SATBCardTableModRefBS::enqueue(referent);
     }
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
   return ret;
 UNSAFE_END
 

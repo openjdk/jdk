@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
 package com.sun.tools.javadoc;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Locale;
+
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.javadoc.*;
-
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -374,5 +375,13 @@ public class RootDocImpl extends DocImpl implements RootDoc {
      */
     public JavaFileManager getFileManager() {
         return env.fileManager;
+    }
+
+    public void initDocLint(Collection<String> opts) {
+        env.initDoclint(opts);
+    }
+
+    public boolean showTagMessages() {
+        return env.showTagMessages();
     }
 }

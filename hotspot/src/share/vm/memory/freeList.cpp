@@ -31,10 +31,11 @@
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/macros.hpp"
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 // Free list.  A FreeList is used to access a linked list of chunks
 // of space in the heap.  The head and tail are maintained so that
@@ -341,6 +342,6 @@ void FreeList<Chunk_t>::print_on(outputStream* st, const char* c) const {
 
 template class FreeList<Metablock>;
 template class FreeList<Metachunk>;
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 template class FreeList<FreeChunk>;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS

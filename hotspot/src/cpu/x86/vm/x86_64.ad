@@ -10495,6 +10495,23 @@ instruct array_equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
+// encode char[] to byte[] in ISO_8859_1
+instruct encode_iso_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
+                          regD tmp1, regD tmp2, regD tmp3, regD tmp4,
+                          rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
+
+  format %{ "Encode array $src,$dst,$len -> $result    // KILL RCX, RDX, $tmp1, $tmp2, $tmp3, $tmp4, RSI, RDI " %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
 //----------Control Flow Instructions------------------------------------------
 // Signed compare Instructions
 

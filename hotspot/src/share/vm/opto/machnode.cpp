@@ -506,7 +506,7 @@ int MachConstantNode::constant_offset() {
 #ifndef PRODUCT
 void MachNullCheckNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   int reg = ra_->get_reg_first(in(1)->in(_vidx));
-  tty->print("%s %s", Name(), Matcher::regName[reg]);
+  st->print("%s %s", Name(), Matcher::regName[reg]);
 }
 #endif
 

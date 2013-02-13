@@ -1737,10 +1737,10 @@ void SpaceManager::get_initial_chunk_sizes(Metaspace::MetaspaceType type,
     *class_chunk_word_size = ClassSmallChunk;
     break;
   }
-  assert(chunk_word_size != 0 && class_chunk_word_size != 0,
+  assert(*chunk_word_size != 0 && *class_chunk_word_size != 0,
     err_msg("Initial chunks sizes bad: data  " SIZE_FORMAT
             " class " SIZE_FORMAT,
-            chunk_word_size, class_chunk_word_size));
+            *chunk_word_size, *class_chunk_word_size));
 }
 
 size_t SpaceManager::sum_free_in_chunks_in_use() const {
@@ -2040,7 +2040,7 @@ SpaceManager::~SpaceManager() {
            align_size_up(humongous_chunks->word_size(),
                              HumongousChunkGranularity),
            err_msg("Humongous chunk size is wrong: word size " SIZE_FORMAT
-                   " granularity " SIZE_FORMAT,
+                   " granularity %d",
                    humongous_chunks->word_size(), HumongousChunkGranularity));
     Metachunk* next_humongous_chunks = humongous_chunks->next();
     chunk_manager->humongous_dictionary()->return_chunk(humongous_chunks);
@@ -2264,7 +2264,8 @@ void SpaceManager::verify_allocation_total() {
   }
   MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
   assert(allocation_total() == sum_used_in_chunks_in_use(),
-    err_msg("allocation total is not consistent %d vs %d",
+    err_msg("allocation total is not consistent " SIZE_FORMAT
+            " vs " SIZE_FORMAT,
             allocation_total(), sum_used_in_chunks_in_use()));
 }
 
@@ -2578,7 +2579,8 @@ void Metaspace::global_initialize() {
 // argument passed in is at the top of the compressed space
 void Metaspace::initialize_class_space(ReservedSpace rs) {
   // The reserved space size may be bigger because of alignment, esp with UseLargePages
-  assert(rs.size() >= ClassMetaspaceSize, err_msg("%d != %d", rs.size(), ClassMetaspaceSize));
+  assert(rs.size() >= ClassMetaspaceSize,
+         err_msg(SIZE_FORMAT " != " UINTX_FORMAT, rs.size(), ClassMetaspaceSize));
   _class_space_list = new VirtualSpaceList(rs);
 }
 

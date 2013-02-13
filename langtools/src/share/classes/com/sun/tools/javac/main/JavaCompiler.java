@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,7 +513,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     public CompileState shouldStopPolicyIfNoError;
 
-    /** A queue of all as yet unattributed classes.oLo
+    /** A queue of all as yet unattributed classes.
      */
     public Todo todo;
 
@@ -629,6 +629,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             if (!taskListener.isEmpty()) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
                 taskListener.started(e);
+                keepComments = true;
+                genEndPos = true;
             }
             Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
             tree = parser.parseCompilationUnit();

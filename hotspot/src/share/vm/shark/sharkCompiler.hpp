@@ -46,6 +46,9 @@ class SharkCompiler : public AbstractCompiler {
   // Missing feature tests
   bool supports_native() { return true; }
   bool supports_osr()    { return true; }
+  bool can_compile_method(methodHandle method)  {
+    return ! (method->is_method_handle_intrinsic() || method->is_compiled_lambda_form());
+  }
 
   // Customization
   bool needs_adapters()  { return false; }

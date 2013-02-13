@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ PlaceholderEntry* PlaceholderTable::find_and_add(int index, unsigned int hash,
 }
 
 
-// placeholder used to track class loading internal states
+// placeholder is used to track class loading internal states
 // placeholder existence now for loading superclass/superinterface
 // superthreadQ tracks class circularity, while loading superclass/superinterface
 // loadInstanceThreadQ tracks load_instance_class calls
@@ -153,15 +153,17 @@ PlaceholderEntry* PlaceholderTable::find_and_add(int index, unsigned int hash,
 // All claimants remove SeenThread after completing action
 // On removal: if definer and all queues empty, remove entry
 // Note: you can be in both placeholders and systemDictionary
-// see parse_stream for redefine classes
 // Therefore - must always check SD first
 // Ignores the case where entry is not found
 void PlaceholderTable::find_and_remove(int index, unsigned int hash,
-                       Symbol* name, ClassLoaderData* loader_data, Thread* thread) {
+                                       Symbol* name, ClassLoaderData* loader_data,
+                                       classloadAction action,
+                                       Thread* thread) {
     assert_locked_or_safepoint(SystemDictionary_lock);
     PlaceholderEntry *probe = get_entry(index, hash, name, loader_data);
     if (probe != NULL) {
-       // No other threads using this entry
+       probe->remove_seen_thread(thread, action);
+       // If no other threads using this entry, and this thread is not using this entry for other states
        if ((probe->superThreadQ() == NULL) && (probe->loadInstanceThreadQ() == NULL)
           && (probe->defineThreadQ() == NULL) && (probe->definer() == NULL)) {
          remove_entry(index, hash, name, loader_data);

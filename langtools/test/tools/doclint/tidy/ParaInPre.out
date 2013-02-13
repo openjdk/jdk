@@ -1,4 +1,4 @@
-ParaInPre.java:16: warning: unexpected use of <p> inside <pre> element
+ParaInPre.java:16: error: tag not allowed here: <p>
  *     <p>
        ^
-1 warning
+1 error

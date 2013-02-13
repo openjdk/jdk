@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.EnumSet;
-import java.util.Set;
-
-import static com.sun.tools.javac.code.TargetType.TargetAttribute.*;
+import com.sun.tools.javac.util.Assert;
 
 /**
  * Describes the type of program element an extended annotation (or extended
@@ -44,178 +41,89 @@ import static com.sun.tools.javac.code.TargetType.TargetAttribute.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+// Code duplicated in com.sun.tools.classfile.TypeAnnotation.TargetType
 public enum TargetType {
+    /** For annotations on a class type parameter declaration. */
+    CLASS_TYPE_PARAMETER(0x00),
 
-    //
-    // Some target types are commented out, because Java doesn't permit such
-    // targets.  They are included here to confirm that their omission is
-    // intentional omission not an accidental omission.
-    //
-
-    /** For annotations on typecasts. */
-    TYPECAST(0x00, IsLocal),
-
-    /** For annotations on a type argument or nested array of a typecast. */
-    TYPECAST_GENERIC_OR_ARRAY(0x01, HasLocation, IsLocal),
-
-    /** For annotations on type tests. */
-    INSTANCEOF(0x02, IsLocal),
-
-    /** For annotations on a type argument or nested array of a type test. */
-    INSTANCEOF_GENERIC_OR_ARRAY(0x03, HasLocation, IsLocal),
-
-    /** For annotations on object creation expressions. */
-    NEW(0x04, IsLocal),
-
-    /**
-     * For annotations on a type argument or nested array of an object creation
-     * expression.
-     */
-    NEW_GENERIC_OR_ARRAY(0x05, HasLocation, IsLocal),
-
-
-    /** For annotations on the method receiver. */
-    METHOD_RECEIVER(0x06),
-
-    // invalid location
-    //@Deprecated METHOD_RECEIVER_GENERIC_OR_ARRAY(0x07, HasLocation),
-
-    /** For annotations on local variables. */
-    LOCAL_VARIABLE(0x08, IsLocal),
-
-    /** For annotations on a type argument or nested array of a local. */
-    LOCAL_VARIABLE_GENERIC_OR_ARRAY(0x09, HasLocation, IsLocal),
-
-    // handled by regular annotations
-    //@Deprecated METHOD_RETURN(0x0A),
-
-    /**
-     * For annotations on a type argument or nested array of a method return
-     * type.
-     */
-    METHOD_RETURN_GENERIC_OR_ARRAY(0x0B, HasLocation),
-
-    // handled by regular annotations
-    //@Deprecated METHOD_PARAMETER(0x0C),
-
-    /** For annotations on a type argument or nested array of a method parameter. */
-    METHOD_PARAMETER_GENERIC_OR_ARRAY(0x0D, HasLocation),
-
-    // handled by regular annotations
-    //@Deprecated FIELD(0x0E),
-
-    /** For annotations on a type argument or nested array of a field. */
-    FIELD_GENERIC_OR_ARRAY(0x0F, HasLocation),
-
-    /** For annotations on a bound of a type parameter of a class. */
-    CLASS_TYPE_PARAMETER_BOUND(0x10, HasBound, HasParameter),
-
-    /**
-     * For annotations on a type argument or nested array of a bound of a type
-     * parameter of a class.
-     */
-    CLASS_TYPE_PARAMETER_BOUND_GENERIC_OR_ARRAY(0x11, HasBound, HasLocation, HasParameter),
-
-    /** For annotations on a bound of a type parameter of a method. */
-    METHOD_TYPE_PARAMETER_BOUND(0x12, HasBound, HasParameter),
-
-    /**
-     * For annotations on a type argument or nested array of a bound of a type
-     * parameter of a method.
-     */
-    METHOD_TYPE_PARAMETER_BOUND_GENERIC_OR_ARRAY(0x13, HasBound, HasLocation, HasParameter),
+    /** For annotations on a method type parameter declaration. */
+    METHOD_TYPE_PARAMETER(0x01),
 
     /** For annotations on the type of an "extends" or "implements" clause. */
-    CLASS_EXTENDS(0x14),
+    CLASS_EXTENDS(0x10),
 
-    /** For annotations on the inner type of an "extends" or "implements" clause. */
-    CLASS_EXTENDS_GENERIC_OR_ARRAY(0x15, HasLocation),
+    /** For annotations on a bound of a type parameter of a class. */
+    CLASS_TYPE_PARAMETER_BOUND(0x11),
+
+    /** For annotations on a bound of a type parameter of a method. */
+    METHOD_TYPE_PARAMETER_BOUND(0x12),
+
+    /** For annotations on a field. */
+    FIELD(0x13),
+
+    /** For annotations on a method return type. */
+    METHOD_RETURN(0x14),
+
+    /** For annotations on the method receiver. */
+    METHOD_RECEIVER(0x15),
+
+    /** For annotations on a method parameter. */
+    METHOD_FORMAL_PARAMETER(0x16),
 
     /** For annotations on a throws clause in a method declaration. */
-    THROWS(0x16),
+    THROWS(0x17),
 
-    // invalid location
-    //@Deprecated THROWS_GENERIC_OR_ARRAY(0x17, HasLocation),
+    /** For annotations on a local variable. */
+    LOCAL_VARIABLE(0x40, true),
 
-    /** For annotations in type arguments of object creation expressions. */
-    NEW_TYPE_ARGUMENT(0x18, IsLocal),
-    NEW_TYPE_ARGUMENT_GENERIC_OR_ARRAY(0x19, HasLocation, IsLocal),
+    /** For annotations on a resource variable. */
+    RESOURCE_VARIABLE(0x41, true),
 
-    METHOD_TYPE_ARGUMENT(0x1A, IsLocal),
-    METHOD_TYPE_ARGUMENT_GENERIC_OR_ARRAY(0x1B, HasLocation, IsLocal),
+    /** For annotations on an exception parameter. */
+    EXCEPTION_PARAMETER(0x42, true),
 
-    WILDCARD_BOUND(0x1C, HasBound),
-    WILDCARD_BOUND_GENERIC_OR_ARRAY(0x1D, HasBound, HasLocation),
+    /** For annotations on a typecast. */
+    CAST(0x43, true),
 
-    CLASS_LITERAL(0x1E, IsLocal),
-    CLASS_LITERAL_GENERIC_OR_ARRAY(0x1F, HasLocation, IsLocal),
+    /** For annotations on a type test. */
+    INSTANCEOF(0x44, true),
 
-    METHOD_TYPE_PARAMETER(0x20, HasParameter),
+    /** For annotations on an object creation expression. */
+    NEW(0x45, true),
 
-    // invalid location
-    //@Deprecated METHOD_TYPE_PARAMETER_GENERIC_OR_ARRAY(0x21, HasLocation, HasParameter),
+    /** For annotations on a type argument of an object creation expression. */
+    CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(0x46, true),
 
-    CLASS_TYPE_PARAMETER(0x22, HasParameter),
+    /** For annotations on a type argument of a method call. */
+    METHOD_INVOCATION_TYPE_ARGUMENT(0x47, true),
 
-    // invalid location
-    //@Deprecated CLASS_TYPE_PARAMETER_GENERIC_OR_ARRAY(0x23, HasLocation, HasParameter),
+    /** For annotations on a lambda parameter type. */
+    LAMBDA_FORMAL_PARAMETER(0x48, true),
+
+    /** For annotations on a method reference. */
+    METHOD_REFERENCE(0x49, true),
+
+    /** For annotations on a type argument of a method reference. */
+    METHOD_REFERENCE_TYPE_ARGUMENT(0x50, true),
 
     /** For annotations with an unknown target. */
-    UNKNOWN(-1);
+    UNKNOWN(0xFF);
 
-    static final int MAXIMUM_TARGET_TYPE_VALUE = 0x22;
+    private static final int MAXIMUM_TARGET_TYPE_VALUE = 0x92;
 
     private final int targetTypeValue;
-    private final Set<TargetAttribute> flags;
+    private final boolean isLocal;
 
-    TargetType(int targetTypeValue, TargetAttribute... attributes) {
-        if (targetTypeValue < Byte.MIN_VALUE
-                || targetTypeValue > Byte.MAX_VALUE)
-                throw new AssertionError("attribute type value needs to be a byte: " + targetTypeValue);
-        this.targetTypeValue = (byte)targetTypeValue;
-        flags = EnumSet.noneOf(TargetAttribute.class);
-        for (TargetAttribute attr : attributes)
-            flags.add(attr);
+    private TargetType(int targetTypeValue) {
+        this(targetTypeValue, false);
     }
 
-    /**
-     * Returns whether or not this TargetType represents an annotation whose
-     * target is an inner type of a generic or array type.
-     *
-     * @return true if this TargetType represents an annotation on an inner
-     *         type, false otherwise
-     */
-    public boolean hasLocation() {
-        return flags.contains(HasLocation);
-    }
-
-    public TargetType getGenericComplement() {
-        if (hasLocation())
-            return this;
-        else
-            return fromTargetTypeValue(targetTypeValue() + 1);
-    }
-
-    /**
-     * Returns whether or not this TargetType represents an annotation whose
-     * target has a parameter index.
-     *
-     * @return true if this TargetType has a parameter index,
-     *         false otherwise
-     */
-    public boolean hasParameter() {
-        return flags.contains(HasParameter);
-    }
-
-    /**
-     * Returns whether or not this TargetType represents an annotation whose
-     * target is a type parameter bound.
-     *
-     * @return true if this TargetType represents an type parameter bound
-     *         annotation, false otherwise
-     */
-    public boolean hasBound() {
-        return flags.contains(HasBound);
+    private TargetType(int targetTypeValue, boolean isLocal) {
+        if (targetTypeValue < 0
+                || targetTypeValue > 255)
+                Assert.error("Attribute type value needs to be an unsigned byte: " + String.format("0x%02X", targetTypeValue));
+        this.targetTypeValue = targetTypeValue;
+        this.isLocal = isLocal;
     }
 
     /**
@@ -226,7 +134,7 @@ public enum TargetType {
      * member declaration signature tree
      */
     public boolean isLocal() {
-        return flags.contains(IsLocal);
+        return isLocal;
     }
 
     public int targetTypeValue() {
@@ -239,7 +147,7 @@ public enum TargetType {
         targets = new TargetType[MAXIMUM_TARGET_TYPE_VALUE + 1];
         TargetType[] alltargets = values();
         for (TargetType target : alltargets) {
-            if (target.targetTypeValue >= 0)
+            if (target.targetTypeValue != UNKNOWN.targetTypeValue)
                 targets[target.targetTypeValue] = target;
         }
         for (int i = 0; i <= MAXIMUM_TARGET_TYPE_VALUE; ++i) {
@@ -249,22 +157,18 @@ public enum TargetType {
     }
 
     public static boolean isValidTargetTypeValue(int tag) {
-        if (((byte)tag) == ((byte)UNKNOWN.targetTypeValue))
+        if (tag == UNKNOWN.targetTypeValue)
             return true;
 
         return (tag >= 0 && tag < targets.length);
     }
 
     public static TargetType fromTargetTypeValue(int tag) {
-        if (((byte)tag) == ((byte)UNKNOWN.targetTypeValue))
+        if (tag == UNKNOWN.targetTypeValue)
             return UNKNOWN;
 
         if (tag < 0 || tag >= targets.length)
-            throw new IllegalArgumentException("Unknown TargetType: " + tag);
+            Assert.error("Unknown TargetType: " + tag);
         return targets[tag];
-    }
-
-    static enum TargetAttribute {
-        HasLocation, HasParameter, HasBound, IsLocal;
     }
 }

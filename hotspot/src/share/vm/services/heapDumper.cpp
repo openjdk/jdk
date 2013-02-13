@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,10 @@
 #include "services/heapDumper.hpp"
 #include "services/threadService.hpp"
 #include "utilities/ostream.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 /*
  * HPROF binary format - description copied from:
@@ -1866,7 +1867,7 @@ int HeapDumper::dump(const char* path) {
     if (error() == NULL) {
       char msg[256];
       sprintf(msg, "Heap dump file created [%s bytes in %3.3f secs]",
-        os::jlong_format_specifier(), timer()->seconds());
+        JLONG_FORMAT, timer()->seconds());
       tty->print_cr(msg, writer.bytes_written());
     } else {
       tty->print_cr("Dump file is incomplete: %s", writer.error());

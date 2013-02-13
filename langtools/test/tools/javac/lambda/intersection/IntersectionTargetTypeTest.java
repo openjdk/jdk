@@ -248,7 +248,7 @@ public class IntersectionTargetTypeTest {
 
     void run(JavaCompiler tool, StandardJavaFileManager fm) throws Exception {
         JavacTask ct = (JavacTask)tool.getTask(null, fm, diagChecker,
-                Arrays.asList("-XDallowIntersectionTypes"), null, Arrays.asList(source));
+                null, null, Arrays.asList(source));
         try {
             ct.analyze();
         } catch (Throwable ex) {

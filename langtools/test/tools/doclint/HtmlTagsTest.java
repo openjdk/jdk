@@ -54,5 +54,17 @@ public class HtmlTagsTest {
      * <i> </b> </i>
      */
     public void end_unexpected() { }
+
+    /**
+     * <ul> text <li> ... </li> </ul>
+     */
+    public void text_not_allowed() { }
+
+    /**
+     * <ul> <b>text</b> <li> ... </li> </ul>
+     */
+    public void inline_not_allowed() { }
+
+
 }
 

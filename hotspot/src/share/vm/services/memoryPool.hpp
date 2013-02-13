@@ -30,9 +30,10 @@
 #include "memory/heap.hpp"
 #include "memory/space.hpp"
 #include "services/memoryUsage.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // A memory pool represents the memory area that the VM manages.
 // The Java virtual machine has at least one memory pool
@@ -185,7 +186,7 @@ public:
   }
 };
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 class CompactibleFreeListSpacePool : public CollectedMemoryPool {
 private:
   CompactibleFreeListSpace* _space;
@@ -199,7 +200,7 @@ public:
   MemoryUsage get_memory_usage();
   size_t used_in_bytes()            { return _space->used(); }
 };
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 
 class GenerationPool : public CollectedMemoryPool {

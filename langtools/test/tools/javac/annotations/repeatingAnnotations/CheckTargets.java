@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,32 +32,29 @@
 
 import java.lang.annotation.*;
 
-@ContainedBy(Foos.class)
+@Repeatable(Foos.class)
 @Target(ElementType.TYPE)
 @interface Foo {}
 
-@ContainerFor(Foo.class)
 @Target(ElementType.ANNOTATION_TYPE)
 @interface Foos {
     Foo[] value();
 }
 
-@ContainedBy(Bars.class)
+@Repeatable(Bars.class)
 @Target(ElementType.TYPE)
 @interface Bar {}
 
-@ContainerFor(Bar.class)
 @Target({ ElementType.ANNOTATION_TYPE, ElementType.TYPE })
 @interface Bars {
     Bar[] value();
 }
 
 
-@ContainedBy(Bazs.class)
+@Repeatable(Bazs.class)
 @Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE })
 @interface Baz {}
 
-@ContainerFor(Baz.class)
 @Target({ ElementType.ANNOTATION_TYPE, ElementType.TYPE })
 @interface Bazs {
     Baz[] value();

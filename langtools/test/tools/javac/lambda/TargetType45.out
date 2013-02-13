@@ -1,2 +1,0 @@
-TargetType45.java:27:28: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.assignment.exists: U,V, (compiler.misc.inconvertible.types: TargetType45.Mapper<java.lang.String,java.lang.Integer>, TargetType45.Mapper<? super java.lang.Object,? extends java.lang.Integer>))
-1 error

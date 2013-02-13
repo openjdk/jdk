@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -640,10 +640,6 @@ class os: AllStatic {
   static int get_host_name(char* name, int namelen);
 
   static struct hostent* get_host_by_name(char* name);
-
-  // Printing 64 bit integers
-  static const char* jlong_format_specifier();
-  static const char* julong_format_specifier();
 
   // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
   static void  signal_init();

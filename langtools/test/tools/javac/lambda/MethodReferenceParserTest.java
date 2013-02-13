@@ -24,13 +24,17 @@
 /*
  * @test
  * @bug 7115052
- * @bug 8003280
+ * @bug 8003280 8006694
  * @summary Add lambda tests
  *  Add parser support for method references
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main MethodReferenceParserTest
+ * @run main/othervm MethodReferenceParserTest
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,7 @@
  * an annotation processor is present
  */
 
-import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.Trees;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -72,16 +68,17 @@ public class EndPositions extends AbstractProcessor {
         JavacTask task = (JavacTask)javac.getTask(null, null, diagnostics, options, null, compilationUnits);
         boolean valid = task.call();
         if (valid)
-            throw new AssertionError("Compilation succeeded unexpectedly");
+            throw new AssertionError("Expected one error, but found none.");
 
         List<Diagnostic<? extends JavaFileObject>> errors = diagnostics.getDiagnostics();
         if (errors.size() != 1)
-            throw new AssertionError("Expected one error only, but found " + errors.size() + " errors");
+            throw new AssertionError("Expected one error only, but found " + errors.size() + "; errors: " + errors);
 
         Diagnostic<?> error = errors.get(0);
         if (error.getStartPosition() >= error.getEndPosition())
             throw new AssertionError("Expected start to be less than end position: start [" +
-                    error.getStartPosition() + "], end [" + error.getEndPosition() +"]");
+                    error.getStartPosition() + "], end [" + error.getEndPosition() +"]" +
+                    "; diagnostics code: " + error.getCode());
 
         System.out.println("All is good!");
     }

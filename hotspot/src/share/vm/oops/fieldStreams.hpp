@@ -160,9 +160,26 @@ class FieldStreamBase : public StackObj {
     return field()->offset();
   }
 
+  int allocation_type() const {
+    return field()->allocation_type();
+  }
+
   void set_offset(int offset) {
     field()->set_offset(offset);
   }
+
+  bool is_offset_set() const {
+    return field()->is_offset_set();
+  }
+
+  bool is_contended() const {
+    return field()->is_contended();
+  }
+
+  int contended_group() const {
+    return field()->contended_group();
+  }
+
 };
 
 // Iterate over only the internal fields

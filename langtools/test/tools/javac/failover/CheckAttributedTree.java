@@ -23,12 +23,16 @@
 
 /*
  * @test
- * @bug 6970584
+ * @bug 6970584 8006694
  * @summary assorted position errors in compiler syntax trees
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main CheckAttributedTree -q -r -et ERRONEOUS .
+ * @run main/othervm CheckAttributedTree -q -r -et ERRONEOUS .
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -358,11 +362,18 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
             }
 
             Info self = new Info(tree, endPosTable);
-            check(!mandatoryType(tree) ||
-                    (tree.type != null &&
-                    checkFields(tree)),
-                    "'null' found in tree ",
-                    self);
+            if (mandatoryType(tree)) {
+                check(tree.type != null,
+                        "'null' field 'type' found in tree ", self);
+                if (tree.type==null)
+                    new Throwable().printStackTrace();
+            }
+
+            Field errField = checkFields(tree);
+            if (errField!=null) {
+                check(false,
+                        "'null' field '" + errField.getName() + "' found in tree ", self);
+            }
 
             Info prevEncl = encl;
             encl = self;
@@ -391,7 +402,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
             }
         }
 
-        boolean checkFields(JCTree t) {
+        Field checkFields(JCTree t) {
             List<Field> fieldsToCheck = treeUtil.getFieldsOfType(t,
                     excludedFields,
                     Symbol.class,
@@ -399,7 +410,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
             for (Field f : fieldsToCheck) {
                 try {
                     if (f.get(t) == null) {
-                        return false;
+                        return f;
                     }
                 }
                 catch (IllegalAccessException e) {
@@ -407,7 +418,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
                     //swallow it
                 }
             }
-            return true;
+            return null;
         }
 
         @Override
@@ -505,7 +516,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
         }
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-            out.println(diagnostic);
+            //out.println(diagnostic);
             switch (diagnostic.getKind()) {
                 case ERROR:
                     errors++;

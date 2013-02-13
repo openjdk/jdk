@@ -1,0 +1,37 @@
+AnchorTest.java:19: error: anchor already defined: foo
+     * <a name=foo></a>
+          ^
+AnchorTest.java:24: error: invalid name for anchor: ""
+     * <a name=></a>
+          ^
+AnchorTest.java:29: error: invalid name for anchor: "123"
+     * <a name=123 ></a>
+          ^
+AnchorTest.java:34: error: no value given for anchor
+     * <a name ></a>
+          ^
+AnchorTest.java:46: error: anchor already defined: foo
+     * <a id=foo></a>
+          ^
+AnchorTest.java:51: error: invalid name for anchor: ""
+     * <a id=></a>
+          ^
+AnchorTest.java:56: error: invalid name for anchor: "123"
+     * <a id=123 ></a>
+          ^
+AnchorTest.java:61: error: no value given for anchor
+     * <a id ></a>
+          ^
+AnchorTest.java:73: error: anchor already defined: foo
+     * <p id=foo>text</p>
+          ^
+AnchorTest.java:78: error: invalid name for anchor: ""
+     * <p id=>text</p>
+          ^
+AnchorTest.java:83: error: invalid name for anchor: "123"
+     * <p id=123 >text</p>
+          ^
+AnchorTest.java:88: error: no value given for anchor
+     * <p id >text</p>
+          ^
+12 errors

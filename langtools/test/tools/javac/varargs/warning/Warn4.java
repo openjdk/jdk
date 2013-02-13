@@ -23,13 +23,17 @@
 
 /**
  * @test
- * @bug     6945418 6993978
+ * @bug     6945418 6993978 8006694
  * @summary Project Coin: Simplified Varargs Method Invocation
+ *  temporarily workaround combo tests are causing time out in several platforms
  * @author  mcimadamore
  * @library ../../lib
  * @build JavacTestingAbstractThreadedTest
- * @run main Warn4
+ * @run main/othervm Warn4
  */
+
+// use /othervm to avoid jtreg timeout issues (CODETOOLS-7900047)
+// see JDK-8006746
 
 import java.net.URI;
 import java.util.Arrays;
@@ -238,7 +242,6 @@ public class Warn4
         for (Warning wkind : Warning.values()) {
             boolean isSuppressed = wkind.isSuppressed(trustMe, sourceLevel,
                     suppressLevelClient, suppressLevelDecl, modKind);
-            System.out.println("SUPPRESSED = " + isSuppressed);
             badOutput |= (warnArr[wkind.ordinal()] && !isSuppressed) !=
                     diagChecker.warnings.contains(wkind);
         }

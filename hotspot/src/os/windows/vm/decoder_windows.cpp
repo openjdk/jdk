@@ -49,7 +49,7 @@ void WindowsDecoder::initialize() {
     pfn_SymSetOptions _pfnSymSetOptions = (pfn_SymSetOptions)::GetProcAddress(handle, "SymSetOptions");
     pfn_SymInitialize _pfnSymInitialize = (pfn_SymInitialize)::GetProcAddress(handle, "SymInitialize");
     _pfnSymGetSymFromAddr64 = (pfn_SymGetSymFromAddr64)::GetProcAddress(handle, "SymGetSymFromAddr64");
-    _pfnUndecorateSymbolName = (pfn_UndecorateSymbolName)GetProcAddress(handle, "UnDecorateSymbolName");
+    _pfnUndecorateSymbolName = (pfn_UndecorateSymbolName)::GetProcAddress(handle, "UnDecorateSymbolName");
 
     if (_pfnSymSetOptions == NULL || _pfnSymInitialize == NULL || _pfnSymGetSymFromAddr64 == NULL) {
       _pfnSymGetSymFromAddr64 = NULL;
@@ -60,14 +60,86 @@ void WindowsDecoder::initialize() {
       return;
     }
 
-    _pfnSymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
-    if (!_pfnSymInitialize(GetCurrentProcess(), NULL, TRUE)) {
+    HANDLE hProcess = ::GetCurrentProcess();
+    _pfnSymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS | SYMOPT_EXACT_SYMBOLS);
+    if (!_pfnSymInitialize(hProcess, NULL, TRUE)) {
       _pfnSymGetSymFromAddr64 = NULL;
       _pfnUndecorateSymbolName = NULL;
       ::FreeLibrary(handle);
       _dbghelp_handle = NULL;
       _decoder_status = helper_init_error;
       return;
+    }
+
+    // set pdb search paths
+    pfn_SymSetSearchPath  _pfn_SymSetSearchPath =
+      (pfn_SymSetSearchPath)::GetProcAddress(handle, "SymSetSearchPath");
+    pfn_SymGetSearchPath  _pfn_SymGetSearchPath =
+      (pfn_SymGetSearchPath)::GetProcAddress(handle, "SymGetSearchPath");
+    if (_pfn_SymSetSearchPath != NULL && _pfn_SymGetSearchPath != NULL) {
+      char paths[MAX_PATH];
+      int  len = sizeof(paths);
+      if (!_pfn_SymGetSearchPath(hProcess, paths, len)) {
+        paths[0] = '\0';
+      } else {
+        // available spaces in path buffer
+        len -= (int)strlen(paths);
+      }
+
+      char tmp_path[MAX_PATH];
+      DWORD dwSize;
+      HMODULE hJVM = ::GetModuleHandle("jvm.dll");
+      tmp_path[0] = '\0';
+      // append the path where jvm.dll is located
+      if (hJVM != NULL && (dwSize = ::GetModuleFileName(hJVM, tmp_path, sizeof(tmp_path))) > 0) {
+        while (dwSize > 0 && tmp_path[dwSize] != '\\') {
+          dwSize --;
+        }
+
+        tmp_path[dwSize] = '\0';
+
+        if (dwSize > 0 && len > (int)dwSize + 1) {
+          strncat(paths, os::path_separator(), 1);
+          strncat(paths, tmp_path, dwSize);
+          len -= dwSize + 1;
+        }
+      }
+
+      // append $JRE/bin. Arguments::get_java_home actually returns $JRE
+      // path
+      char *p = Arguments::get_java_home();
+      assert(p != NULL, "empty java home");
+      size_t java_home_len = strlen(p);
+      if (len > (int)java_home_len + 5) {
+        strncat(paths, os::path_separator(), 1);
+        strncat(paths, p, java_home_len);
+        strncat(paths, "\\bin", 4);
+        len -= (int)(java_home_len + 5);
+      }
+
+      // append $JDK/bin path if it exists
+      assert(java_home_len < MAX_PATH, "Invalid path length");
+      // assume $JRE is under $JDK, construct $JDK/bin path and
+      // see if it exists or not
+      if (strncmp(&p[java_home_len - 3], "jre", 3) == 0) {
+        strncpy(tmp_path, p, java_home_len - 3);
+        tmp_path[java_home_len - 3] = '\0';
+        strncat(tmp_path, "bin", 3);
+
+        // if the directory exists
+        DWORD dwAttrib = GetFileAttributes(tmp_path);
+        if (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+            (dwAttrib & FILE_ATTRIBUTE_DIRECTORY)) {
+          // tmp_path should have the same length as java_home_len, since we only
+          // replaced 'jre' with 'bin'
+          if (len > (int)java_home_len + 1) {
+            strncat(paths, os::path_separator(), 1);
+            strncat(paths, tmp_path, java_home_len);
+          }
+        }
+      }
+
+      _pfn_SymSetSearchPath(hProcess, paths);
     }
 
      // find out if jvm.dll contains private symbols, by decoding

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class TestTagInheritence extends JavadocTester {
 
     private static final String BUG_ID = "4496223-4496270-4618686-4720974-4812240-6253614-6253604";
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", "firstSentence", "firstSentence2"
+        "-Xdoclint:none", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", "firstSentence", "firstSentence2"
     };
 
     /**

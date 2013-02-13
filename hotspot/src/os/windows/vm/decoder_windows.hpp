@@ -35,6 +35,8 @@ typedef DWORD (WINAPI *pfn_SymSetOptions)(DWORD);
 typedef BOOL  (WINAPI *pfn_SymInitialize)(HANDLE, PCTSTR, BOOL);
 typedef BOOL  (WINAPI *pfn_SymGetSymFromAddr64)(HANDLE, DWORD64, PDWORD64, PIMAGEHLP_SYMBOL64);
 typedef DWORD (WINAPI *pfn_UndecorateSymbolName)(const char*, char*, DWORD, DWORD);
+typedef BOOL  (WINAPI *pfn_SymSetSearchPath)(HANDLE, PCTSTR);
+typedef BOOL  (WINAPI *pfn_SymGetSearchPath)(HANDLE, PTSTR, int);
 
 class WindowsDecoder : public AbstractDecoder {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,9 @@ public class MessageRetriever {
     private ResourceBundle messageRB;
 
     /**
-     * Initilize the ResourceBundle with the given resource.
+     * Initialize the ResourceBundle with the given resource.
      *
-     * @param rb the esource bundle to read.
+     * @param rb the resource bundle to read.
      */
     public MessageRetriever(ResourceBundle rb) {
         this.configuration = null;
@@ -71,7 +71,7 @@ public class MessageRetriever {
     }
 
     /**
-     * Initilize the ResourceBundle with the given resource.
+     * Initialize the ResourceBundle with the given resource.
      *
      * @param configuration the configuration
      * @param resourcelocation Resource.
@@ -189,7 +189,8 @@ public class MessageRetriever {
      * @param args arguments to be replaced in the message.
      */
     public void warning(SourcePosition pos, String key, Object... args) {
-        printWarning(pos, getText(key, args));
+        if (configuration.showMessage(pos, key))
+            printWarning(pos, getText(key, args));
     }
 
     /**

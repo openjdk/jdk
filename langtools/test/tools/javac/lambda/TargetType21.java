@@ -26,8 +26,8 @@ class TargetType21 {
 
     void test() {
         call(x -> { throw new Exception(); }); //ambiguous
-        call(x -> { System.out.println(""); }); //ok - resolves to call(SAM2)
-        call(x -> { return (Object) null; }); //error - call(SAM3) is not applicable because of cyclic inference
-        call(x -> { return null; }); ////ok - resolves to call(SAM1)
+        call(x -> { System.out.println(""); }); //ambiguous
+        call(x -> { return (Object) null; }); //cyclic inference
+        call(x -> { return null; }); //ambiguous
     }
 }

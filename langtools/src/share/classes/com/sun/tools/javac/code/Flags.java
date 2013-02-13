@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,23 +233,23 @@ public class Flags {
     public static final long PROPRIETARY = 1L<<38;
 
     /**
-     * Flag that marks a a multi-catch parameter
+     * Flag that marks a multi-catch parameter.
      */
     public static final long UNION = 1L<<39;
 
     /**
-     * Flag that marks a special kind of bridge methods (the ones that
-     * come from restricted supertype bounds)
+     * Flag that marks a special kind of bridge method (the ones that
+     * come from restricted supertype bounds).
      */
     public static final long OVERRIDE_BRIDGE = 1L<<40;
 
     /**
-     * Flag that marks an 'effectively final' local variable
+     * Flag that marks an 'effectively final' local variable.
      */
     public static final long EFFECTIVELY_FINAL = 1L<<41;
 
     /**
-     * Flag that marks non-override equivalent methods with the same signature
+     * Flag that marks non-override equivalent methods with the same signature.
      */
     public static final long CLASH = 1L<<42;
 
@@ -280,7 +280,7 @@ public class Flags {
                                 SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
         ExtendedStandardFlags       = (long)StandardFlags | DEFAULT,
-        InterfaceDefaultMethodMask  = ABSTRACT | PUBLIC | STRICTFP | SYNCHRONIZED | DEFAULT,
+        InterfaceMethodMask         = ABSTRACT | STATIC | PUBLIC | STRICTFP | DEFAULT,
         LocalVarFlags               = FINAL | PARAMETER;
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,56 @@ public interface Element {
      * @see MirroredTypesException
      */
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
+
+    /**
+     * Returns an array of all of this element's annotation for the
+     * specified type if such annotations are present, else an empty
+     * array.  The annotation may be either inherited or directly
+     * present on this element. This method will look through a container
+     * annotation (if present) if the supplied annotation type is
+     * repeatable.
+     *
+     * <p> The annotations returned by this method could contain an element
+     * whose value is of type {@code Class}.
+     * This value cannot be returned directly:  information necessary to
+     * locate and load a class (such as the class loader to use) is
+     * not available, and the class might not be loadable at all.
+     * Attempting to read a {@code Class} object by invoking the relevant
+     * method on the returned annotation
+     * will result in a {@link MirroredTypeException},
+     * from which the corresponding {@link TypeMirror} may be extracted.
+     * Similarly, attempting to read a {@code Class[]}-valued element
+     * will result in a {@link MirroredTypesException}.
+     *
+     * <blockquote>
+     * <i>Note:</i> This method is unlike others in this and related
+     * interfaces.  It operates on runtime reflective information &mdash;
+     * representations of annotation types currently loaded into the
+     * VM &mdash; rather than on the representations defined by and used
+     * throughout these interfaces.  Consequently, calling methods on
+     * the returned annotation object can throw many of the exceptions
+     * that can be thrown when calling methods on an annotation object
+     * returned by core reflection.  This method is intended for
+     * callers that are written to operate on a known, fixed set of
+     * annotation types.
+     * </blockquote>
+     *
+     * @param <A>  the annotation type
+     * @param annotationType  the {@code Class} object corresponding to
+     *          the annotation type
+     * @return this element's annotations for the specified annotation
+     *         type if present on this element, else an empty array
+     *
+     * @see #getAnnotationMirrors()
+     * @see #getAnnotation(java.lang.Class)
+     * @see java.lang.reflect.AnnotatedElement#getAnnotations
+     * @see EnumConstantNotPresentException
+     * @see AnnotationTypeMismatchException
+     * @see IncompleteAnnotationException
+     * @see MirroredTypeException
+     * @see MirroredTypesException
+     */
+    <A extends Annotation> A[] getAnnotations(Class<A> annotationType);
 
     /**
      * Returns the modifiers of this element, excluding annotations.

@@ -1,13 +1,14 @@
 compiler.err.already.annotated                          # internal compiler error?
 compiler.err.already.defined.this.unit                  # seems to be masked by compiler.err.duplicate.class
 compiler.err.annotation.value.not.allowable.type        # cannot happen: precluded by complete type-specific tests
+compiler.err.bad.functional.intf.anno                   # seems to be masked by compiler.err.annotation.type.not.applicable
 compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
 compiler.err.dc.unterminated.string                     # cannot happen
 compiler.err.illegal.char.for.encoding
-compiler.err.invalid.containedby.annotation             # should not happen
-compiler.err.invalid.containedby.annotation.invalid.value # "can't" happen
-compiler.err.invalid.containedby.annotation.multiple.values # can't happen
+compiler.err.invalid.repeatable.annotation              # should not happen
+compiler.err.invalid.repeatable.annotation.invalid.value # "can't" happen
+compiler.err.invalid.repeatable.annotation.multiple.values # can't happen
 compiler.err.io.exception                               # (javah.JavahTask?)
 compiler.err.limit.code                                 # Code
 compiler.err.limit.code.too.large.for.try.stmt          # Gen
@@ -47,6 +48,7 @@ compiler.misc.bad.enclosing.class                       # bad class file
 compiler.misc.bad.enclosing.method                      # bad class file
 compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
+compiler.misc.bad.type.annotation.value
 compiler.misc.base.membership                           # UNUSED
 compiler.misc.ccf.found.later.version
 compiler.misc.ccf.unrecognized.attribute
@@ -58,6 +60,7 @@ compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
 compiler.misc.fatal.err.cant.close	                # JavaCompiler
 compiler.misc.file.does.not.contain.package
 compiler.misc.illegal.start.of.class.file
+compiler.misc.inferred.do.not.conform.to.lower.bounds   # cannot happen?
 compiler.misc.kindname.annotation
 compiler.misc.kindname.enum
 compiler.misc.kindname.package
@@ -67,6 +70,7 @@ compiler.misc.kindname.type.variable.bound
 compiler.misc.kindname.value
 compiler.misc.incompatible.eq.lower.bounds              # cannot happen?
 compiler.misc.no.unique.minimal.instance.exists
+compiler.misc.no.unique.maximal.instance.exists         # cannot happen?
 compiler.misc.resume.abort                              # prompt for a response
 compiler.misc.source.unavailable                        # DiagnosticSource
 compiler.misc.token.bad-symbol

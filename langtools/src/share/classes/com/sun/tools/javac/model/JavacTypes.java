@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package com.sun.tools.javac.model;
 
+import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -333,4 +333,28 @@ public class JavacTypes implements javax.lang.model.util.Types {
 
         return results;
     }
+
+    public List<? extends AnnotationMirror> typeAnnotationsOf(TypeMirror type) {
+        // TODO: these methods can be removed.
+        return null; // ((Type)type).typeAnnotations;
+    }
+
+    public <A extends Annotation> A typeAnnotationOf(TypeMirror type,
+            Class<A> annotationType) {
+        // TODO: these methods can be removed.
+        return null; // JavacElements.getAnnotation(((Type)type).typeAnnotations, annotationType);
+    }
+
+    public TypeMirror receiverTypeOf(ExecutableType type) {
+        return ((Type)type).asMethodType().recvtype;
+    }
+
+    /*
+    public <A extends Annotation> A receiverTypeAnnotationOf(
+            ExecutableType type, Class<A> annotationType) {
+        return JavacElements.getAnnotation(
+                ((Type)type).asMethodType().receiverTypeAnnotations,
+                annotationType);
+    }*/
+
 }
