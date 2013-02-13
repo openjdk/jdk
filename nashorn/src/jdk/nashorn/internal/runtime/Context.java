@@ -492,29 +492,11 @@ public final class Context {
      *
      * @param source the source
      * @param scope  the scope
-     * @param strict are we in strict mode
      *
      * @return top level function for script
      */
-    public ScriptFunction compileScript(final Source source, final ScriptObject scope, final boolean strict) {
-        return compileScript(source, scope, this.errors, strict);
-    }
-
-    /**
-     * Compile a top level script - no Source given, but an URL to
-     * load it from
-     *
-     * @param name    name of script/source
-     * @param url     URL to source
-     * @param scope   the scope
-     * @param strict  are we in strict mode
-     *
-     * @return top level function for the script
-     *
-     * @throws IOException if URL cannot be resolved
-     */
-    public ScriptFunction compileScript(final String name, final URL url, final ScriptObject scope, final boolean strict) throws IOException {
-        return compileScript(name, url, scope, this.errors, strict);
+    public ScriptFunction compileScript(final Source source, final ScriptObject scope) {
+        return compileScript(source, scope, this.errors);
     }
 
     /**
@@ -591,26 +573,25 @@ public final class Context {
      * expression
      *
      * @param scope  the scope
-     * @param source source expression for script
+     * @param from   source expression for script
      *
      * @return return value for load call (undefined)
      *
      * @throws IOException if source cannot be found or loaded
      */
-    public Object load(final ScriptObject scope, final Object source) throws IOException {
-        Object src = source;
-        URL url = null;
-        String srcName = null;
+    public Object load(final ScriptObject scope, final Object from) throws IOException {
+        Object src = (from instanceof ConsString)?  from.toString() : from;
+        Source source = null;
 
-        if (src instanceof ConsString) {
-            src = src.toString();
-        }
+        // load accepts a String (which could be a URL or a file name), a File, a URL
+        // or a ScriptObject that has "name" and "source" (string valued) properties.
         if (src instanceof String) {
-            srcName = (String)src;
+            String srcStr = (String)src;
             final File file = new File((String)src);
-            if (srcName.indexOf(':') != -1) {
+            if (srcStr.indexOf(':') != -1) {
                 try {
-                    url = new URL((String)src);
+                    final URL url = new URL((String)src);
+                    source = new Source(url.toString(), url);
                 } catch (final MalformedURLException e) {
                     // fallback URL - nashorn:foo.js - check under jdk/nashorn/internal/runtime/resources
                     final String str = (String)src;
@@ -618,7 +599,7 @@ public final class Context {
                         final String resource = "resources/" + str.substring("nashorn:".length());
                         // NOTE: even sandbox scripts should be able to load scripts in nashorn: scheme
                         // These scripts are always available and are loaded from nashorn.jar's resources.
-                        final Source code = AccessController.doPrivileged(
+                        source = AccessController.doPrivileged(
                                 new PrivilegedAction<Source>() {
                                     @Override
                                     public Source run() {
@@ -630,43 +611,30 @@ public final class Context {
                                         }
                                     }
                                 });
-                        if (code == null) {
-                            throw e;
-                        }
-                        return evaluateSource(code, scope, scope);
                     } else {
                         throw e;
                     }
                 }
             } else if (file.isFile()) {
-                url = file.toURI().toURL();
+                source = new Source(srcStr, file);
             }
-            src = url;
-        }
-
-        if (src instanceof File && ((File)src).isFile()) {
+        } else if (src instanceof File && ((File)src).isFile()) {
             final File file = (File)src;
-            url = file.toURI().toURL();
-            if (srcName == null) {
-                srcName = file.getCanonicalPath();
-            }
+            source = new Source(file.getName(), file);
         } else if (src instanceof URL) {
-            url = (URL)src;
-            if (srcName == null) {
-                srcName = url.toString();
-            }
-        }
-
-        if (url != null) {
-            assert srcName != null : "srcName null here!";
-            return evaluateSource(srcName, url, scope, scope);
+            final URL url = (URL)src;
+            source = new Source(url.toString(), url);
         } else if (src instanceof ScriptObject) {
             final ScriptObject sobj = (ScriptObject)src;
             if (sobj.has("script") && sobj.has("name")) {
                 final String script = JSType.toString(sobj.get("script"));
                 final String name   = JSType.toString(sobj.get("name"));
-                return evaluateSource(new Source(name, script), scope, scope);
+                source = new Source(name, script);
             }
+        }
+
+        if (source != null) {
+            return evaluateSource(source, scope, scope);
         }
 
         typeError("cant.load.script", ScriptRuntime.safeToString(source));
@@ -850,23 +818,11 @@ public final class Context {
         return (context != null) ? context : Context.getContextTrusted();
     }
 
-    private Object evaluateSource(final String name, final URL url, final ScriptObject scope, final ScriptObject thiz) throws IOException {
-        ScriptFunction script = null;
-
-        try {
-            script = compileScript(name, url, scope, new Context.ThrowErrorManager(), _strict);
-        } catch (final ParserException e) {
-            e.throwAsEcmaException();
-        }
-
-        return ScriptRuntime.apply(script, thiz);
-    }
-
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
         ScriptFunction script = null;
 
         try {
-            script = compileScript(source, scope, new Context.ThrowErrorManager(), _strict);
+            script = compileScript(source, scope, new Context.ThrowErrorManager());
         } catch (final ParserException e) {
             e.throwAsEcmaException();
         }
@@ -902,19 +858,11 @@ public final class Context {
         return ((GlobalObject)Context.getGlobalTrusted()).newScriptFunction(RUN_SCRIPT.tag(), runMethodHandle, scope, strict);
     }
 
-    private ScriptFunction compileScript(final String name, final URL url, final ScriptObject scope, final ErrorManager errMan, final boolean strict) throws IOException {
-        return getRunScriptFunction(compile(new Source(name, url), url, errMan, strict), scope);
+    private ScriptFunction compileScript(final Source source, final ScriptObject scope, final ErrorManager errMan) {
+        return getRunScriptFunction(compile(source, errMan, this._strict), scope);
     }
 
-    private ScriptFunction compileScript(final Source source, final ScriptObject scope, final ErrorManager errMan, final boolean strict) {
-        return getRunScriptFunction(compile(source, null, errMan, strict), scope);
-    }
-
-    private Class<?> compile(final Source source, final ErrorManager errMan, final boolean strict) {
-        return compile(source, null, errMan, strict);
-    }
-
-   private synchronized Class<?> compile(final Source source, final URL url, final ErrorManager errMan, final boolean strict) {
+    private synchronized Class<?> compile(final Source source, final ErrorManager errMan, final boolean strict) {
         // start with no errors, no warnings.
         errMan.reset();
 
@@ -935,6 +883,7 @@ public final class Context {
             return null;
         }
 
+        final URL url = source.getURL();
         final ScriptLoader loader = _loader_per_compile ? createNewLoader() : scriptLoader;
         final CodeSource   cs     = url == null ? null : new CodeSource(url, (CodeSigner[])null);
 

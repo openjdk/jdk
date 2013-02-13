@@ -71,13 +71,20 @@ public final class Source {
     /** Cached hash code */
     private int hash;
 
+    /** Source URL if available */
+    private final URL url;
+
     private static final int BUFSIZE = 8 * 1024;
 
-    private Source(final String name, final String base, final char[] content) {
+    // Do *not* make this public ever! Trusts the URL and content. So has to be called
+    // from other public constructors. Note that this can not be some init method as
+    // we initialize final fields from here.
+    private Source(final String name, final String base, final char[] content, final URL url) {
         this.name    = name;
         this.base    = base;
         this.content = content;
         this.length  = content.length;
+        this.url     = url;
     }
 
     /**
@@ -87,7 +94,7 @@ public final class Source {
      * @param content contents as char array
      */
     public Source(final String name, final char[] content) {
-        this(name, baseName(name, null), content);
+        this(name, baseName(name, null), content, null);
     }
 
     /**
@@ -109,7 +116,7 @@ public final class Source {
      * @throws IOException if source cannot be loaded
      */
     public Source(final String name, final URL url) throws IOException {
-        this(name, baseURL(url, null), readFully(url.openStream()));
+        this(name, baseURL(url, null), readFully(url.openStream()), url);
     }
 
     /**
@@ -121,7 +128,7 @@ public final class Source {
      * @throws IOException if source cannot be loaded
      */
     public Source(final String name, final File file) throws IOException {
-        this(name, dirName(file, null), readFully(file));
+        this(name, dirName(file, null), readFully(file), getURLFromFile(file));
     }
 
     @Override
@@ -203,6 +210,16 @@ public final class Source {
         final int start = Token.descPosition(startTokenDesc);
         final int end   = Token.descPosition(endTokenDesc) + Token.descLength(endTokenDesc);
         return new String(content, start, end - start);
+    }
+
+    /**
+     * Returns the source URL of this script Source. Can be null if Source
+     * was created from a String or a char[].
+     *
+     * @return URL source or null
+     */
+    public URL getURL() {
+        return url;
     }
 
     /**
@@ -288,7 +305,7 @@ public final class Source {
      * @return content
      */
     public char[] getContent() {
-        return content;
+        return content.clone();
     }
 
     /**
@@ -432,5 +449,13 @@ public final class Source {
     @Override
     public String toString() {
         return getName();
+    }
+
+    private static URL getURLFromFile(final File file) {
+        try {
+            return file.toURI().toURL();
+        } catch (final SecurityException | MalformedURLException ignored) {
+            return null;
+        }
     }
 }

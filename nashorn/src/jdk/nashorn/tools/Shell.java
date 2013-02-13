@@ -282,7 +282,7 @@ public class Shell {
             // For each file on the command line.
             for (final String fileName : files) {
                 final File file = new File(fileName);
-                ScriptFunction script = context.compileScript(fileName, file.toURI().toURL(), global, context._strict);
+                ScriptFunction script = context.compileScript(new Source(fileName, file.toURI().toURL()), global);
                 if (script == null || errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
                 }

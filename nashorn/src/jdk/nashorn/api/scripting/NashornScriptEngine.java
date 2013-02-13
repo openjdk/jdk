@@ -453,7 +453,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 setNashornGlobal(ctxtGlobal);
             }
 
-            return nashornContext.compileScript(source, ctxtGlobal, nashornContext._strict);
+            return nashornContext.compileScript(source, ctxtGlobal);
         } catch (final Exception e) {
             throwAsScriptException(e);
             throw new AssertionError("should not reach here");
