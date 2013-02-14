@@ -34,7 +34,7 @@
 
 #define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header)
 #define WB_END JNI_END
-#define WB_METHOD_DECLARE extern "C" jobjectArray JNICALL
+#define WB_METHOD_DECLARE(result_type) extern "C" result_type JNICALL
 
 class WhiteBox : public AllStatic {
  private:
