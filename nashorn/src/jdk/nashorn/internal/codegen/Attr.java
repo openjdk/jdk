@@ -542,6 +542,10 @@ final class Attr extends NodeOperatorVisitor {
                             caseNode.setTest(LiteralNode.newInstance(lit, lit.getInt32()).accept(this));
                         }
                     }
+                } else {
+                    // the "all integer" case that CodeGenerator optimizes for currently assumes literals only
+                    type = Type.OBJECT;
+                    break;
                 }
 
                 type = Type.widest(type, caseNode.getTest().getType());

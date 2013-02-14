@@ -1803,7 +1803,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 final Node test = caseNode.getTest();
 
                 if (test != null) {
-                    final Integer value = (Integer)((LiteralNode<?>) test).getValue();
+                    final Integer value = (Integer)((LiteralNode<?>)test).getValue();
                     final Label   entry = caseNode.getEntry();
 
                     // Take first duplicate.
