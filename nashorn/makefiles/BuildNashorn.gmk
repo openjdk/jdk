@@ -35,8 +35,6 @@ JAVAC_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac
 		-jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
 
 JDK_CLASSES := $(JDK_OUTPUTDIR)/classes
-# TODO: Remove dependency?
-DYNALINK_JAR := $(NASHORN_TOPDIR)/build/dynalink/dynalink.jar
 
 NASHORN_JAR := $(NASHORN_DIST)/nashorn.jar
 NASHORN_VERSION := $(JDK_VERSION)
@@ -61,8 +59,7 @@ $(eval $(call SetupJavaCompilation,BUILD_NASHORN,\
     SETUP:=COMPILER_SETUP,\
     SRC:=$(NASHORN_TOPDIR)/src,\
     COPY:=.properties .js,\
-    BIN:=$(NASHORN_OUTPUTDIR)/nashorn_classes,\
-    ADD_JAVAC_FLAGS:=-cp $(DYNALINK_JAR)))
+    BIN:=$(NASHORN_OUTPUTDIR)/nashorn_classes))
 
 # Build nasgen
 $(eval $(call SetupJavaCompilation,BUILD_NASGEN,\
@@ -89,14 +86,6 @@ $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run: $(BUILD_NASGEN)
         done
 	$(TOUCH) $@
 
-# Unpack dynalink.jar for inclusion in nashorn.jar
-$(NASHORN_OUTPUTDIR)/classes/_the.dynalink.unpacked: $(DYNALINK_JAR)
-	$(ECHO) Unpacking dynalink.jar
-	$(MKDIR) -p $(@D)
-	$(RM) -rf $(@D)/org
-	$(UNZIP) -q $(DYNALINK_JAR) -x "META-INF*" -d $(@D)
-	$(TOUCH) $@
-
 # Version file needs to be processed with version numbers
 VERSION_FILE := $(NASHORN_OUTPUTDIR)/classes/jdk/nashorn/internal/runtime/resources/version.properties
 # Needs to happen after nasgen run since nasgen run deletes it
@@ -114,7 +103,6 @@ MANIFEST_ATTRIBUTES:=Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\nI
 # Create nashorn.jar from the final classes dir
 $(eval $(call SetupArchive,BUILD_NASHORN_JAR,\
     $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run \
-    $(NASHORN_OUTPUTDIR)/classes/_the.dynalink.unpacked \
     $(VERSION_FILE),\
     SRCS:=$(NASHORN_OUTPUTDIR)/classes,\
     SUFFIXES:=.class .clazz .js .properties Factory,\
