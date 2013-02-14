@@ -329,7 +329,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         final ScriptObject ctxtGlobal    = getNashornGlobalFrom(context);
         final boolean globalChanged = (oldGlobal != ctxtGlobal);
 
-        Object self = selfObject;
+        Object self = globalChanged? ScriptObjectMirror.wrap(selfObject, oldGlobal) : selfObject;
 
         try {
             if (globalChanged) {
@@ -354,7 +354,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             if (value instanceof ScriptFunction) {
                 final Object res;
                 try {
-                    res = ScriptRuntime.apply((ScriptFunction)value, self, ScriptObjectMirror.unwrapArray(args, ctxtGlobal));
+                    final Object[] modArgs = globalChanged? ScriptObjectMirror.wrapArray(args, oldGlobal) : args;
+                    res = ScriptRuntime.checkAndApply((ScriptFunction)value, self, ScriptObjectMirror.unwrapArray(modArgs, ctxtGlobal));
                 } catch (final Exception e) {
                     throwAsScriptException(e);
                     throw new AssertionError("should not reach here");

@@ -104,38 +104,30 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
     // JSObject methods
     @Override
     public Object call(final String methodName, final Object args[]) {
-        final Object val = sobj.get(methodName);
         final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
         final boolean globalChanged = (oldGlobal != global);
 
-        if (val instanceof ScriptFunction) {
-            final Object[] modifiedArgs = unwrapArray(args, global);
-            if (modifiedArgs != null) {
-                for (int i = 0; i < modifiedArgs.length; i++) {
-                    final Object arg = modifiedArgs[i];
-                    if (arg instanceof ScriptObject) {
-                        modifiedArgs[i] = wrap(arg, oldGlobal);
-                    }
-                }
+        try {
+            if (globalChanged) {
+                NashornScriptEngine.setNashornGlobal(global);
             }
 
-            try {
-                if (globalChanged) {
-                    NashornScriptEngine.setNashornGlobal(global);
-                }
-                return wrap(((ScriptFunction)val).invoke(sobj, modifiedArgs), global);
-            } catch (final RuntimeException | Error e) {
-                throw e;
-            } catch (final Throwable t) {
-                throw new RuntimeException(t);
-            } finally {
-                if (globalChanged) {
-                    NashornScriptEngine.setNashornGlobal(oldGlobal);
-                }
+            final Object val = sobj.get(methodName);
+            if (! (val instanceof ScriptFunction)) {
+                throw new RuntimeException("No such method: " + methodName);
             }
-       }
 
-       throw new RuntimeException("No such method: " + methodName);
+            final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
+            return wrap(ScriptRuntime.checkAndApply((ScriptFunction)val, sobj, unwrapArray(modArgs, global)), global);
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        } finally {
+            if (globalChanged) {
+                NashornScriptEngine.setNashornGlobal(oldGlobal);
+            }
+        }
     }
 
     @Override
@@ -180,7 +172,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
 
     @Override
     public void setMember(final String name, final Object value) {
-        put(name, wrap(value, NashornScriptEngine.getNashornGlobal()));
+        put(name, value);
     }
 
     @Override
@@ -275,20 +267,27 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
 
     @Override
     public Object put(final String key, final Object value) {
+        final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
+        final boolean globalChanged = (oldGlobal != global);
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return sobj.put(key, unwrap(value, global));
+                final Object modValue = globalChanged? wrap(value, oldGlobal) : value;
+                return translateUndefined(wrap(sobj.put(key, unwrap(modValue, global)), global));
             }
         });
     }
 
     @Override
     public void putAll(final Map<? extends String, ? extends Object> map) {
+        final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
+        final boolean globalChanged = (oldGlobal != global);
         final boolean strict = sobj.isStrictContext();
         inGlobal(new Callable<Object>() {
             @Override public Object call() {
                 for (final Map.Entry<? extends String, ? extends Object> entry : map.entrySet()) {
-                    sobj.set(entry.getKey(), unwrap(entry.getValue(), global), strict);
+                    final Object value = entry.getValue();
+                    final Object modValue = globalChanged? wrap(value, oldGlobal) : value;
+                    sobj.set(entry.getKey(), unwrap(modValue, global), strict);
                 }
                 return null;
             }
@@ -321,7 +320,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
                 final Iterator<Object> iter   = sobj.valueIterator();
 
                 while (iter.hasNext()) {
-                    values.add(wrap(iter.next(), global));
+                    values.add(translateUndefined(wrap(iter.next(), global)));
                 }
 
                 return Collections.unmodifiableList(values);
