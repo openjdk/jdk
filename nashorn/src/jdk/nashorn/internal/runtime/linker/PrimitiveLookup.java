@@ -29,12 +29,12 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
+import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import org.dynalang.dynalink.CallSiteDescriptor;
-import org.dynalang.dynalink.linker.GuardedInvocation;
-import org.dynalang.dynalink.linker.LinkRequest;
-import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
-import org.dynalang.dynalink.support.Guards;
 
 /**
  * Implements lookup of methods to link for dynamic operations on JavaScript primitive values (booleans, strings, and

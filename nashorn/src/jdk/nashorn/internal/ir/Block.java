@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.Frame;
 import jdk.nashorn.internal.codegen.MethodEmitter.Label;
 import jdk.nashorn.internal.ir.annotations.Ignore;

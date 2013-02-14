@@ -30,6 +30,8 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -37,8 +39,6 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
-import org.dynalang.dynalink.beans.StaticClass;
-import org.dynalang.dynalink.support.TypeUtilities;
 
 /**
  * This class is the implementation for the {@code Java} global object exposed to programs running under Nashorn. This

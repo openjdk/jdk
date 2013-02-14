@@ -43,14 +43,14 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import jdk.internal.dynalink.ChainedCallSite;
+import jdk.internal.dynalink.DynamicLinker;
+import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.options.Options;
-import org.dynalang.dynalink.ChainedCallSite;
-import org.dynalang.dynalink.DynamicLinker;
-import org.dynalang.dynalink.linker.GuardedInvocation;
 
 
 /**

@@ -29,23 +29,22 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.ConversionComparator;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
+import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
+import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Undefined;
-import org.dynalang.dynalink.CallSiteDescriptor;
-import org.dynalang.dynalink.linker.ConversionComparator;
-import org.dynalang.dynalink.linker.GuardedInvocation;
-import org.dynalang.dynalink.linker.GuardingTypeConverterFactory;
-import org.dynalang.dynalink.linker.LinkRequest;
-import org.dynalang.dynalink.linker.LinkerServices;
-import org.dynalang.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import org.dynalang.dynalink.support.Guards;
 
 /**
  * This is the main dynamic linker for Nashorn. It is used for linking all {@link ScriptObject} and its subclasses (this
  * includes {@link ScriptFunction} and its subclasses) as well as {@link Undefined}. This linker is exported to other
- * language runtimes by being declared in {@code META-INF/services/org.dynalang.dynalink.linker.GuardingDynamicLinker}
+ * language runtimes by being declared in {@code META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker}
  * file of Nashorn's distribution.
  */
 public class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {

@@ -54,17 +54,9 @@
 
   <target name="clean" depends="init, clean-nasgen">
     <delete includeemptydirs="true">
-      <fileset dir="${build.dir}" excludes="${dynalink.dir.name}/**/*" erroronmissingdir="false"/>
+      <fileset dir="${build.dir}" erroronmissingdir="false"/>
     </delete>
     <delete dir="${dist.dir}"/>
-  </target>
-
-  <target name="clean-dynalink">
-    <delete dir="${dynalink.dir}"/>
-  </target>
-
-  <target name="clean-all" depends="clean-dynalink, clean">
-    <delete dir="${build.dir}"/>
   </target>
 
   <!-- do it only if ASM is not available -->
@@ -79,29 +71,7 @@
            includeantruntime="false"/>
   </target>
 
-  <target name="check-dynalink-uptodate" depends="init">
-    <property name="versioned.dynalink.jar" value="${dynalink.dir}/dynalink-${dynalink.jar.version}.jar"/>
-    <condition property="dynalink.uptodate">
-      <and>
-        <available file="${versioned.dynalink.jar}"/>
-        <filesmatch file1="${versioned.dynalink.jar}" file2="${dynalink.jar}"/>
-      </and>
-    </condition>
-  </target>
-
-  <target name="get-dynalink" depends="check-dynalink-uptodate" unless="dynalink.uptodate">
-    <mkdir dir="${dynalink.dir}"/>
-    <!-- Delete previous snapshots, if any -->
-    <delete>
-      <fileset dir="${dynalink.dir}" includes="*"/>
-    </delete>
-    <property name="dynalink.download.base.url" value="http://oss.sonatype.org/content/repositories/${dynalink.version.type}s/org/dynalang/dynalink/${dynalink.version}/dynalink-${dynalink.jar.version}"/>
-    <get src="${dynalink.download.base.url}.jar" dest="${versioned.dynalink.jar}" usetimestamp="true"/>
-    <get src="${dynalink.download.base.url}-sources.jar" dest="${dynalink.dir}/dynalink-sources.jar" usetimestamp="true"/>
-    <copy file="${versioned.dynalink.jar}" tofile="${dynalink.jar}" overwrite="true"/>
-  </target>
-
-  <target name="compile" depends="compile-asm, get-dynalink" description="Compiles nashorn">
+  <target name="compile" depends="compile-asm" description="Compiles nashorn">
     <javac srcdir="${src.dir}"
            destdir="${build.classes.dir}"
            classpath="${javac.classpath}"
@@ -126,6 +96,8 @@
     <copy todir="${build.classes.dir}/jdk/nashorn/tools/resources">
        <fileset dir="${src.dir}/jdk/nashorn/tools/resources/"/>
     </copy>
+    <copy file="${src.dir}/jdk/internal/dynalink/support/messages.properties" todir="${build.classes.dir}/jdk/internal/dynalink/support"/>
+
     <echo message="full=${nashorn.fullversion}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
     <echo file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true">${line.separator}</echo>
     <echo message="release=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
@@ -134,7 +106,6 @@
   <target name="jar" depends="compile, run-nasgen" description="Creates nashorn.jar">
     <jar jarfile="${dist.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
       <fileset dir="${build.classes.dir}"/>
-      <zipfileset src="${dynalink.jar}"/>
       <manifest>
         <attribute name="Archiver-Version" value="n/a"/>
         <attribute name="Build-Jdk" value="${java.runtime.version}"/>
@@ -152,12 +123,10 @@
     <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" windowtitle="${nashorn.product.name} ${nashorn.version}" additionalparam="-quiet" failonerror="true">
       <classpath>
         <pathelement location="${build.classes.dir}"/>
-        <pathelement location="${dynalink.jar}"/>
       </classpath>
       <fileset dir="${src.dir}" includes="**/*.java"/>
       <fileset dir="${jdk.asm.src.dir}" includes="**/*.java"/>
       <link href="http://docs.oracle.com/javase/7/docs/api/"/>
-      <link href="http://szegedi.github.com/dynalink/0.4/javadoc/"/>
       <!-- The following tags are used only in ASM sources - just ignore these -->
       <tag name="label" description="label tag in ASM sources" enabled="false"/>
       <tag name="linked" description="linked tag in ASM sources" enabled="false"/>

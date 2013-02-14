@@ -29,16 +29,16 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import jdk.internal.dynalink.linker.ConversionComparator;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
+import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
+import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.GlobalObject;
-import org.dynalang.dynalink.linker.ConversionComparator;
-import org.dynalang.dynalink.linker.GuardedInvocation;
-import org.dynalang.dynalink.linker.GuardingTypeConverterFactory;
-import org.dynalang.dynalink.linker.LinkRequest;
-import org.dynalang.dynalink.linker.LinkerServices;
-import org.dynalang.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import org.dynalang.dynalink.support.TypeUtilities;
 
 /**
  * Internal linker for String, Boolean, and Number objects, only ever used by Nashorn engine and not exposed to other
@@ -90,7 +90,7 @@ class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Guarding
      * @param sourceType the source type to convert from
      * @param targetType1 one candidate target type
      * @param targetType2 another candidate target type
-     * @return one of {@link org.dynalang.dynalink.linker.ConversionComparator.Comparison} values signifying which
+     * @return one of {@link jdk.internal.dynalink.linker.ConversionComparator.Comparison} values signifying which
      * target type should be favored for conversion.
      */
     @Override

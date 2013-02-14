@@ -33,10 +33,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.Map;
+import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import org.dynalang.dynalink.support.TypeUtilities;
 
 /**
  * Utility class shared by {@link NashornLinker} and {@code NashornPrimitiveLinker} for converting JS values to Java

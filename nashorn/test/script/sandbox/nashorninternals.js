@@ -55,3 +55,7 @@ checkClass("jdk.nashorn.internal.parser.Parser");
 checkClass("jdk.nashorn.internal.parser.JSONParser");
 checkClass("jdk.nashorn.internal.parser.Lexer");
 checkClass("jdk.nashorn.internal.parser.Scanner");
+checkClass("jdk.internal.dynalink.CallSiteDescriptor");
+checkClass("jdk.internal.dynalink.beans.StaticClass");
+checkClass("jdk.internal.dynalink.linker.LinkRequest");
+checkClass("jdk.internal.dynalink.support.AbstractRelinkableCallSite");

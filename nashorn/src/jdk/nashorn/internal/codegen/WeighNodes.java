@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.List;
 import java.util.Map;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;

@@ -58,8 +58,6 @@ final class StructureLoader extends NashornLoader {
 
     @Override
     protected synchronized Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
-        checkPackageAccess(name);
-
         // check the cache first
         final Class<?> loadedClass = findLoadedClass(name);
         if (loadedClass != null) {
