@@ -180,7 +180,7 @@
 
   </target>
 
-  <target name="generate-policy-file">
+  <target name="generate-policy-file" depends="prepare">
     <!-- Generating nashorn.policy file -->
 
     <!-- nashorn internal tests jar requires AllPermission -->
