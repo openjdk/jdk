@@ -1029,7 +1029,8 @@ class Field extends AccessibleObject implements Member {
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
-    public <T extends Annotation> T[] getAnnotations(Class<T> annotationClass) {
+    @Override
+    public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
         return AnnotationSupport.getMultipleAnnotations(declaredAnnotations(), annotationClass);

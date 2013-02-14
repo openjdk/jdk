@@ -43,7 +43,12 @@ package sun.text.resources.sr;
 import java.util.ListResourceBundle;
 
 public class FormatData_sr extends ListResourceBundle {
+    @Override
     protected final Object[][] getContents() {
+        final String[] rocEras = {
+            "\u041f\u0440\u0435 \u0420\u041a",
+            "\u0420\u041a",
+        };
         return new Object[][] {
             { "MonthNames",
                 new String[] {
@@ -182,12 +187,8 @@ public class FormatData_sr extends ListResourceBundle {
                     "M/d/yy G",
                 }
             },
-            { "roc.Eras",
-                new String[] {
-                    "\u041f\u0440\u0435 \u0420\u041a",
-                    "\u0420\u041a",
-                }
-            },
+            { "roc.Eras", rocEras },
+            { "roc.short.Eras", rocEras },
             { "islamic.MonthNames",
                 new String[] {
                     "\u041c\u0443\u0440\u0430\u0445\u0430\u043c",
