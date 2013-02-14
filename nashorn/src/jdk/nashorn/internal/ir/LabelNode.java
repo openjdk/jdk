@@ -125,6 +125,7 @@ public class LabelNode extends Node {
      * @param breakNode the break node
      */
     public void setBreakNode(final Node breakNode) {
+        assert breakNode instanceof BreakableNode || breakNode instanceof Block : "Invalid break node: " + breakNode;
         this.breakNode = breakNode;
     }
 
@@ -141,6 +142,7 @@ public class LabelNode extends Node {
      * @param continueNode the continue node
      */
     public void setContinueNode(final Node continueNode) {
+        assert continueNode instanceof WhileNode : "invalid continue node: " + continueNode;
         this.continueNode = continueNode;
     }
 
