@@ -192,7 +192,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @return ScriptFunction result.
      * @throws Throwable if there is an exception/error with the invocation or thrown from it
      */
-    public Object invoke(final Object self, final Object... arguments) throws Throwable {
+    Object invoke(final Object self, final Object... arguments) throws Throwable {
         if (Context.DEBUG) {
             invokes++;
         }
