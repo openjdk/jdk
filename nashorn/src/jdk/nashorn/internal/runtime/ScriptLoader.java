@@ -39,6 +39,12 @@ final class ScriptLoader extends NashornLoader {
         super(parent, context);
     }
 
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        checkPackageAccess(name);
+        return super.loadClassTrusted(name, resolve);
+    }
+
     // package-private and private stuff below this point
 
     /**

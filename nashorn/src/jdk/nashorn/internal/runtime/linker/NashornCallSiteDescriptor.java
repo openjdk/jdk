@@ -28,9 +28,9 @@ package jdk.nashorn.internal.runtime.linker;
 import java.lang.invoke.MethodType;
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
-import org.dynalang.dynalink.CallSiteDescriptor;
-import org.dynalang.dynalink.support.AbstractCallSiteDescriptor;
-import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.support.AbstractCallSiteDescriptor;
+import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 
 /**
  * Nashorn-specific implementation of Dynalink's {@link CallSiteDescriptor}. The reason we have our own subclass is that

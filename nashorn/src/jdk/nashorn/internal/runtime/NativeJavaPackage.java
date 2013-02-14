@@ -25,13 +25,13 @@
 
 package jdk.nashorn.internal.runtime;
 
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.objects.NativeJava;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
-import org.dynalang.dynalink.CallSiteDescriptor;
-import org.dynalang.dynalink.beans.StaticClass;
-import org.dynalang.dynalink.linker.GuardedInvocation;
-import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * An object that exposes Java packages and classes as its properties. Packages are exposed as objects that have further

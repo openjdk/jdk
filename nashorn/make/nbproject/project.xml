@@ -164,7 +164,6 @@
             </compilation-unit>
             <compilation-unit>
                 <package-root>../src</package-root>
-                <classpath mode="compile">../build/dynalink/dynalink.jar</classpath>
                 <source-level>1.7</source-level>
             </compilation-unit>
             <compilation-unit>

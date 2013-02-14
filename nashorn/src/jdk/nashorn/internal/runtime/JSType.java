@@ -28,9 +28,9 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
+import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.parser.Lexer;
-import org.dynalang.dynalink.beans.StaticClass;
 
 /**
  * Representation for ECMAScript types - this maps directly to the ECMA script standard

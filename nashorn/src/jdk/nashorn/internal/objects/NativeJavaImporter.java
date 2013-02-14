@@ -25,16 +25,16 @@
 
 package jdk.nashorn.internal.objects;
 
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import org.dynalang.dynalink.CallSiteDescriptor;
-import org.dynalang.dynalink.beans.StaticClass;
-import org.dynalang.dynalink.linker.GuardedInvocation;
-import org.dynalang.dynalink.linker.LinkRequest;
 
 /**
  * This is "JavaImporter" constructor. This constructor allows you to use Java types omitting explicit package names.

@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.ir;
 
 import java.util.IdentityHashMap;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;

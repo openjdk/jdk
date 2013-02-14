@@ -25,16 +25,16 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.beans.BeansLinker;
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardingDynamicLinker;
+import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
+import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.runtime.ECMAErrors;
-import org.dynalang.dynalink.CallSiteDescriptor;
-import org.dynalang.dynalink.beans.BeansLinker;
-import org.dynalang.dynalink.beans.StaticClass;
-import org.dynalang.dynalink.linker.GuardedInvocation;
-import org.dynalang.dynalink.linker.GuardingDynamicLinker;
-import org.dynalang.dynalink.linker.LinkRequest;
-import org.dynalang.dynalink.linker.LinkerServices;
-import org.dynalang.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import org.dynalang.dynalink.support.Guards;
 
 /**
  * Internal linker for {@link StaticClass} objects, only ever used by Nashorn engine and not exposed to other engines.

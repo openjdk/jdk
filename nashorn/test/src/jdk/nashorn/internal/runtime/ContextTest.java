@@ -35,7 +35,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
-import jdk.nashorn.api.scripting.ScriptEngineTest;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.testng.annotations.Test;
 

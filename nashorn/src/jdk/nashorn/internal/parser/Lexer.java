@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
 import static jdk.nashorn.internal.parser.TokenType.ERROR;
 import static jdk.nashorn.internal.parser.TokenType.ESCSTRING;
+import static jdk.nashorn.internal.parser.TokenType.EXECSTRING;
 import static jdk.nashorn.internal.parser.TokenType.FLOATING;
 import static jdk.nashorn.internal.parser.TokenType.HEXADECIMAL;
 import static jdk.nashorn.internal.parser.TokenType.LBRACE;
@@ -40,7 +41,6 @@ import static jdk.nashorn.internal.parser.TokenType.RBRACE;
 import static jdk.nashorn.internal.parser.TokenType.REGEX;
 import static jdk.nashorn.internal.parser.TokenType.RPAREN;
 import static jdk.nashorn.internal.parser.TokenType.STRING;
-import static jdk.nashorn.internal.parser.TokenType.EXECSTRING;
 import static jdk.nashorn.internal.parser.TokenType.XML;
 
 import jdk.nashorn.internal.runtime.ECMAErrors;

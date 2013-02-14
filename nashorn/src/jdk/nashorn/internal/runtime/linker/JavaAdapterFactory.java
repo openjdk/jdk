@@ -70,6 +70,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -83,8 +85,6 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Undefined;
-import org.dynalang.dynalink.beans.StaticClass;
-import org.dynalang.dynalink.support.LinkRequestImpl;
 
 /**
  * A factory class that generates adapter classes. Adapter classes allow implementation of Java interfaces and

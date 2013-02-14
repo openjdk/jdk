@@ -31,10 +31,10 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import org.dynalang.dynalink.CallSiteDescriptor;
-import org.dynalang.dynalink.linker.GuardedInvocation;
-import org.dynalang.dynalink.support.CallSiteDescriptorFactory;
-import org.dynalang.dynalink.support.Guards;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
+import jdk.internal.dynalink.support.Guards;
 
 /**
  * Unique instance of this class is used to represent JavaScript undefined.

@@ -71,6 +71,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.EnumSet;
 import java.util.Iterator;
+import jdk.internal.dynalink.support.NameCodec;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
@@ -94,7 +95,6 @@ import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.options.Options;
-import org.dynalang.dynalink.support.NameCodec;
 
 /**
  * This is the main function responsible for emitting method code
