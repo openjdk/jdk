@@ -206,6 +206,8 @@ enum {
 
 #define LDC_METHOD_HANDLE_MAJOR_VERSION 51
 
+#define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION  52
+
 #define ALLOC_STACK_SIZE 16 /* big enough */
 
 typedef struct alloc_stack_type {
@@ -1246,11 +1248,24 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         jclass cb = context->class;
         fullinfo_type clazz_info;
         int is_constructor, is_internal, is_invokedynamic;
-        int kind = (opcode == JVM_OPC_invokeinterface
-                            ? 1 << JVM_CONSTANT_InterfaceMethodref
-                  : opcode == JVM_OPC_invokedynamic
-                            ? 1 << JVM_CONSTANT_NameAndType
-                            : 1 << JVM_CONSTANT_Methodref);
+        int kind;
+
+        switch (opcode ) {
+        case JVM_OPC_invokestatic:
+            kind = ((context->major_version < STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION)
+                       ? (1 << JVM_CONSTANT_Methodref)
+                       : ((1 << JVM_CONSTANT_InterfaceMethodref) | (1 << JVM_CONSTANT_Methodref)));
+            break;
+        case JVM_OPC_invokedynamic:
+            kind = 1 << JVM_CONSTANT_NameAndType;
+            break;
+        case JVM_OPC_invokeinterface:
+            kind = 1 << JVM_CONSTANT_InterfaceMethodref;
+            break;
+        default:
+            kind = 1 << JVM_CONSTANT_Methodref;
+        }
+
         is_invokedynamic = opcode == JVM_OPC_invokedynamic;
         /* Make sure the constant pool item is the right type. */
         verify_constant_pool_type(context, key, kind);
