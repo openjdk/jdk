@@ -52,6 +52,8 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -166,8 +168,8 @@ public class ClassEmitter implements Emitter {
      * @param unitClassName Compile unit class name.
      * @param strictMode    Should we generate this method in strict mode
      */
-    ClassEmitter(final Compiler compiler, final String unitClassName, final boolean strictMode) {
-        this(compiler.getContext(),
+    ClassEmitter(final Context context, final String sourceName, final String unitClassName, final boolean strictMode) {
+        this(context,
              new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
                 private static final String OBJECT_CLASS  = "java/lang/Object";
 
@@ -187,10 +189,20 @@ public class ClassEmitter implements Emitter {
         this.unitClassName        = unitClassName;
         this.constantMethodNeeded = new HashSet<>();
 
-        cw.visit(V1_7, ACC_PUBLIC | ACC_SUPER, unitClassName, null, Compiler.pathName(jdk.nashorn.internal.scripts.JS$.class.getName()), null);
-        cw.visitSource(compiler.getSource().getName(), null);
+        cw.visit(V1_7, ACC_PUBLIC | ACC_SUPER, unitClassName, null, pathName(jdk.nashorn.internal.scripts.JS$.class.getName()), null);
+        cw.visitSource(sourceName, null);
 
         defineCommonStatics(strictMode);
+    }
+
+    /**
+     * Convert a binary name to a package/class name.
+     *
+     * @param name Binary name.
+     * @return Package/class name.
+     */
+    private static String pathName(final String name) {
+        return name.replace('.', '/');
     }
 
     /**
@@ -295,7 +307,7 @@ public class ClassEmitter implements Emitter {
      * Ensure a get constant method is issued for the class.
      * @param cls Class of constant.
      */
-    public void needGetConstantMethod(final Class<?> cls) {
+    void needGetConstantMethod(final Class<?> cls) {
         constantMethodNeeded.add(cls);
     }
 
@@ -348,22 +360,15 @@ public class ClassEmitter implements Emitter {
 
     /**
      * Disassemble an array of byte code.
-     *
-     * @param context   the context
      * @param bytecode  byte array representing bytecode
+     * @return disassembly as human readable string
      */
-    public static void disassemble(final Context context, final byte[] bytecode) {
-        new ClassReader(bytecode).accept(new TraceClassVisitor(context.getErr()), 0);
-    }
-
-    /**
-     * Verify an array of byte code as a valid Java class
-     *
-     * @param context  the context
-     * @param bytecode the bytecode array
-     */
-    public static void verify(final Context context, final byte[] bytecode) {
-        context.verify(bytecode);
+    public static String disassemble(final byte[] bytecode) {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (final PrintWriter pw = new PrintWriter(baos)) {
+            new ClassReader(bytecode).accept(new TraceClassVisitor(pw), 0);
+        }
+        return new String(baos.toByteArray());
     }
 
     /**
@@ -459,7 +464,7 @@ public class ClassEmitter implements Emitter {
         final MethodVisitor mv = cw.visitMethod(
             ACC_PUBLIC | ACC_STATIC | (functionNode.isVarArg() ? ACC_VARARGS : 0),
             functionNode.getName(),
-            FunctionSignature.functionSignature(functionNode),
+            new FunctionSignature(functionNode).toString(),
             null,
             null);
 

@@ -25,12 +25,16 @@
 
 package jdk.nashorn.internal.codegen;
 
+import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
+
+import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 /**
  * Class that generates function signatures for dynamic calls
@@ -45,6 +49,9 @@ public final class FunctionSignature {
 
     /** valid Java descriptor string for function */
     private final String descriptor;
+
+    /** {@link MethodType} for function */
+    private final MethodType methodType;
 
     /**
      * Constructor
@@ -126,8 +133,31 @@ public final class FunctionSignature {
             assert false : "isVarArgs cannot be false when argTypes are null";
         }
 
-        returnType = retType;
-        descriptor = Type.getMethodDescriptor(returnType, paramTypes);
+        this.returnType = retType;
+        this.descriptor = Type.getMethodDescriptor(returnType, paramTypes);
+
+        final List<Class<?>> paramTypeList = new ArrayList<>();
+        for (final Type paramType : paramTypes) {
+            paramTypeList.add(paramType.getTypeClass());
+        }
+
+        this.methodType = MH.type(returnType.getTypeClass(), paramTypeList.toArray(new Class[paramTypes.length]));
+    }
+
+    /**
+     * Create a function signature given a function node, using as much
+     * type information for parameters and return types that is availabe
+     *
+     * @param functionNode the function node
+     */
+    public FunctionSignature(final FunctionNode functionNode) {
+        this(
+            true,
+            functionNode.needsCallee(),
+            functionNode.getReturnType(),
+            (functionNode.isVarArg() && !functionNode.isScript()) ?
+                null :
+                functionNode.getParameters());
     }
 
     /**
@@ -165,20 +195,13 @@ public final class FunctionSignature {
     }
 
     /**
-     * Returns the generic signature of the function being compiled.
-     *
-     * @param functionNode function being compiled.
-     * @return function signature.
+     * Return the {@link MethodType} for this function signature
+     * @return the method type
      */
-    public static String functionSignature(final FunctionNode functionNode) {
-        return new FunctionSignature(
-            true,
-            functionNode.needsCallee(),
-            functionNode.getReturnType(),
-            (functionNode.isVarArg() && !functionNode.isScript()) ?
-                null :
-                functionNode.getParameters()).toString();
+    public MethodType getMethodType() {
+        return methodType;
     }
+
 
     private static Type[] objectArgs(final int nArgs) {
         final Type[] array = new Type[nArgs];

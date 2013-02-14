@@ -51,7 +51,7 @@ public class CompileUnit {
      * Add weight to this compile unit
      * @param w weight to add
      */
-    public void addWeight(final long w) {
+    void addWeight(final long w) {
         this.weight += w;
     }
 
@@ -59,7 +59,7 @@ public class CompileUnit {
      * Get the current weight of the compile unit.
      * @return the unit's weight
      */
-    public long getWeight() {
+    long getWeight() {
         return weight;
     }
 

@@ -66,7 +66,6 @@ import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Lower to more primitive operations. After lowering, an AST has symbols and
@@ -83,18 +82,9 @@ import jdk.nashorn.internal.runtime.Source;
 
 final class FinalizeTypes extends NodeOperatorVisitor {
 
-    /** Current source. */
-    private final Source source;
-
     private static final DebugLogger LOG = new DebugLogger("finalize");
 
-    /**
-     * Constructor.
-     *
-     * @param compiler the compiler
-     */
-    FinalizeTypes(final Compiler compiler) {
-        this.source = compiler.getSource();
+    FinalizeTypes() {
     }
 
     @Override
@@ -424,16 +414,20 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node enter(final FunctionNode functionNode) {
+        if (functionNode.isLazy()) {
+            return null;
+        }
+
         // If the function doesn't need a callee, we ensure its __callee__ symbol doesn't get a slot. We can't do
         // this earlier, as access to scoped variables, self symbol, etc. in previous phases can all trigger the
         // need for the callee.
-        if(!functionNode.needsCallee()) {
+        if (!functionNode.needsCallee()) {
             functionNode.getCalleeNode().getSymbol().setNeedsSlot(false);
         }
         // Similar reasoning applies to __scope__ symbol: if the function doesn't need either parent scope or its
         // own scope, we ensure it doesn't get a slot, but we can't determine whether it needs a scope earlier than
         // this phase.
-        if(!(functionNode.needsScope() || functionNode.needsParentScope())) {
+        if (!(functionNode.needsScope() || functionNode.needsParentScope())) {
             functionNode.getScopeNode().getSymbol().setNeedsSlot(false);
         }
 
@@ -443,8 +437,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leave(final IfNode ifNode) {
-        final Node test = convert(ifNode.getTest(), Type.BOOLEAN);
-        ifNode.setTest(test);
+        ifNode.setTest(convert(ifNode.getTest(), Type.BOOLEAN));
         return ifNode;
     }
 
@@ -518,6 +511,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leave(final VarNode varNode) {
+
         final Node rhs = varNode.getInit();
         if (rhs != null) {
             Type destType = specialize(varNode);
@@ -823,7 +817,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
                 setTypeOverride(node, to);
                 return resultNode;
             }
-            resultNode = new UnaryNode(source, Token.recast(node.getToken(), TokenType.CONVERT), node);
+            resultNode = new UnaryNode(node.getSource(), Token.recast(node.getToken(), TokenType.CONVERT), node);
         }
 
         LOG.info("CONVERT('" + node + "', " + to + ") => '" + resultNode + "'");
@@ -836,11 +830,11 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         return resultNode;
     }
 
-    private Node discard(final Node node) {
+    private static Node discard(final Node node) {
         node.setDiscard(true);
 
         if (node.getSymbol() != null) {
-            final Node discard = new UnaryNode(source, Token.recast(node.getToken(), TokenType.DISCARD), node);
+            final Node discard = new UnaryNode(node.getSource(), Token.recast(node.getToken(), TokenType.DISCARD), node);
             //discard never has a symbol in the discard node - then it would be a nop
             discard.copyTerminalFlags(node);
             return discard;

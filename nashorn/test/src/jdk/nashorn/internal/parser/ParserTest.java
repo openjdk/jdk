@@ -156,10 +156,7 @@ public class ParserTest {
                 Context.setGlobal(global);
             }
             final Source   source   = new Source(file.getAbsolutePath(), buffer);
-            final Compiler compiler = Compiler.compiler(source, context, errors, context._strict);
-
-            final Parser parser = new Parser(compiler);
-            parser.parse(CompilerConstants.RUN_SCRIPT.tag());
+            new Parser(context, source, errors).parse();
             if (errors.getNumberOfErrors() > 0) {
                 log("Parse failed: " + file.getAbsolutePath());
                 failed++;

@@ -54,14 +54,21 @@ public final class ScriptingFunctions {
     /** Handle to implementation of {@link ScriptingFunctions#exec} - Nashorn extension */
     public static final MethodHandle EXEC = findOwnMH("exec",     Object.class, Object.class, Object.class, Object.class);
 
-    /** Names of special properties used by $EXEC API. */
-    public  static final String EXEC_NAME = "$EXEC";
-    public  static final String OUT_NAME  = "$OUT";
-    public  static final String ERR_NAME  = "$ERR";
-    public  static final String EXIT_NAME = "$EXIT";
+    /** EXEC name - special property used by $EXEC API. */
+    public static final String EXEC_NAME = "$EXEC";
+
+    /** OUT name - special property used by $EXEC API. */
+    public static final String OUT_NAME  = "$OUT";
+
+    /** ERR name - special property used by $EXEC API. */
+    public static final String ERR_NAME  = "$ERR";
+
+    /** EXIT name - special property used by $EXEC API. */
+    public static final String EXIT_NAME = "$EXIT";
 
     /** Names of special properties used by $ENV API. */
     public  static final String ENV_NAME  = "$ENV";
+
     private static final String PWD_NAME  = "PWD";
 
     private ScriptingFunctions() {
@@ -114,8 +121,11 @@ public final class ScriptingFunctions {
      *
      * @param self   self reference
      * @param string string to execute
+     * @param input
      *
      * @return output string from the request
+     * @throws IOException
+     * @throws InterruptedException
      */
     public static Object exec(final Object self, final Object string, final Object input) throws IOException, InterruptedException {
         // Current global is need to fetch additional inputs and for additional results.

@@ -89,10 +89,6 @@ import jdk.nashorn.internal.runtime.Source;
 
 final class Lower extends NodeOperatorVisitor {
 
-    private final Compiler compiler;
-
-    private final Source source;
-
     /**
      * Nesting level stack. Currently just used for loops to avoid the problem
      * with terminal bodies that end with throw/return but still do continues to
@@ -111,9 +107,7 @@ final class Lower extends NodeOperatorVisitor {
      *
      * @param compiler the compiler
      */
-    Lower(final Compiler compiler) {
-        this.compiler   = compiler;
-        this.source     = compiler.getSource();
+    Lower() {
         this.nesting    = new ArrayDeque<>();
         this.statements = new ArrayList<>();
     }
@@ -204,7 +198,7 @@ final class Lower extends NodeOperatorVisitor {
         if (getCurrentFunctionNode().isScript()) {
             if (!(expr instanceof Block)) {
                 if (!isInternalExpression(expr) && !isEvalResultAssignment(expr)) {
-                    executeNode.setExpression(new BinaryNode(source, Token.recast(executeNode.getToken(), TokenType.ASSIGN),
+                    executeNode.setExpression(new BinaryNode(executeNode.getSource(), Token.recast(executeNode.getToken(), TokenType.ASSIGN),
                             getCurrentFunctionNode().getResultNode(),
                             expr));
                 }
@@ -254,6 +248,11 @@ final class Lower extends NodeOperatorVisitor {
     public Node enter(final FunctionNode functionNode) {
         LOG.info("START FunctionNode: " + functionNode.getName());
 
+        if (functionNode.isLazy()) {
+            LOG.info("LAZY: " + functionNode.getName());
+            return null;
+        }
+
         initFunctionNode(functionNode);
 
         Node initialEvalResult = LiteralNode.newInstance(functionNode, ScriptRuntime.UNDEFINED);
@@ -299,7 +298,7 @@ final class Lower extends NodeOperatorVisitor {
             }
 
             if (functionNode.isScript()) {
-                new ExecuteNode(source, functionNode.getFirstToken(), functionNode.getFinish(), initialEvalResult).accept(this);
+                new ExecuteNode(functionNode.getSource(), functionNode.getFirstToken(), functionNode.getFinish(), initialEvalResult).accept(this);
             }
 
             //do the statements - this fills the block with code
@@ -379,6 +378,8 @@ final class Lower extends NodeOperatorVisitor {
         if (tryNode != null) {
             //we are inside a try block - we don't necessarily have a result node yet. attr will do that.
             if (expr != null) {
+                final Source source = getCurrentFunctionNode().getSource();
+
                 //we need to evaluate the result of the return in case it is complex while
                 //still in the try block, store it in a result value and return it afterwards
                 final long token        = returnNode.getToken();
@@ -518,6 +519,7 @@ final class Lower extends NodeOperatorVisitor {
          * finally_body_inlined marked (*) will fix it before rethrowing
          * whatever problem there was for identical semantic.
          */
+        final Source source = getCurrentFunctionNode().getSource();
 
         // if try node does not contain a catch we can skip creation of a new
         // try node and just append our synthetic catch to the existing try node.
@@ -559,7 +561,7 @@ final class Lower extends NodeOperatorVisitor {
         final CatchNode catchAllNode;
         final IdentNode exception;
 
-        exception    = new IdentNode(source, token, finish, compiler.uniqueName("catch_all"));
+        exception    = new IdentNode(source, token, finish, getCurrentFunctionNode().uniqueName("catch_all"));
         catchAllNode = new CatchNode(source, token, finish, new IdentNode(exception), null, catchBody);
         catchAllNode.setIsSyntheticRethrow();
 
@@ -632,7 +634,7 @@ final class Lower extends NodeOperatorVisitor {
             if (whileNode instanceof DoWhileNode) {
                 setTerminal(whileNode, true);
             } else if (conservativeAlwaysTrue(test)) {
-                node = new ForNode(source, whileNode.getToken(), whileNode.getFinish());
+                node = new ForNode(whileNode.getSource(), whileNode.getToken(), whileNode.getFinish());
                 ((ForNode)node).setBody(body);
                 ((ForNode)node).accept(this);
                 setTerminal(node, !escapes);
@@ -799,7 +801,7 @@ final class Lower extends NodeOperatorVisitor {
         }
 
         //create a return statement
-        final Node returnNode = new ReturnNode(source, functionNode.getLastToken(), functionNode.getFinish(), resultNode, null);
+        final Node returnNode = new ReturnNode(functionNode.getSource(), functionNode.getLastToken(), functionNode.getFinish(), resultNode, null);
         returnNode.accept(this);
     }
 
@@ -897,7 +899,7 @@ final class Lower extends NodeOperatorVisitor {
             finallyBody = (Block)finallyBody.clone();
             final boolean hasTerminalFlags = finallyBody.hasTerminalFlags();
 
-            new ExecuteNode(source, finallyBody.getToken(), finallyBody.getFinish(), finallyBody).accept(this);
+            new ExecuteNode(finallyBody.getSource(), finallyBody.getToken(), finallyBody.getFinish(), finallyBody).accept(this);
 
             if (hasTerminalFlags) {
                 getCurrentBlock().copyTerminalFlags(finallyBody);
@@ -951,17 +953,18 @@ final class Lower extends NodeOperatorVisitor {
      * TODO : only create those that are needed.
      * TODO : make sure slot numbering is not hardcoded in {@link CompilerConstants} - now creation order is significant
      */
-    private void initFunctionNode(final FunctionNode functionNode) {
-        final long token  = functionNode.getToken();
-        final int  finish = functionNode.getFinish();
+    private static void initFunctionNode(final FunctionNode functionNode) {
+        final Source source = functionNode.getSource();
+        final long token    = functionNode.getToken();
+        final int  finish   = functionNode.getFinish();
 
         functionNode.setThisNode(new IdentNode(source, token, finish, THIS.tag()));
         functionNode.setScopeNode(new IdentNode(source, token, finish, SCOPE.tag()));
         functionNode.setResultNode(new IdentNode(source, token, finish, SCRIPT_RETURN.tag()));
         functionNode.setCalleeNode(new IdentNode(source, token, finish, CALLEE.tag()));
-        if(functionNode.isVarArg()) {
+        if (functionNode.isVarArg()) {
             functionNode.setVarArgsNode(new IdentNode(source, token, finish, VARARGS.tag()));
-            if(functionNode.needsArguments()) {
+            if (functionNode.needsArguments()) {
                 functionNode.setArgumentsNode(new IdentNode(source, token, finish, ARGUMENTS.tag()));
             }
         }

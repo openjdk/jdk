@@ -351,6 +351,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     /**
      * Constructor
+     *
+     * @param context the context
      */
     public Global(final Context context) {
         this.context = context;

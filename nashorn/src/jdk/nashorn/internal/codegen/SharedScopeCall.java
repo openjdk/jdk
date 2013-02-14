@@ -106,11 +106,11 @@ public class SharedScopeCall {
     /**
      * Set the compile unit and method name.
      * @param compileUnit the compile unit
-     * @param compiler the compiler to generate a unique method name
+     * @param methodName the method name
      */
-    protected void setClassAndName(final CompileUnit compileUnit, final Compiler compiler) {
+    protected void setClassAndName(final CompileUnit compileUnit, final String methodName) {
         this.compileUnit = compileUnit;
-        this.methodName = compiler.uniqueName("scopeCall");
+        this.methodName  = methodName;
     }
 
     /**

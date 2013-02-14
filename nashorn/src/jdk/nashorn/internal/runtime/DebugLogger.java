@@ -73,8 +73,11 @@ public final class DebugLogger {
      * Get the output writer for the logger. Loggers always default to
      * stderr for output as they are used mainly to output debug info
      *
+     * Can be inherited so this should not be static.
+     *
      * @return print writer for log output.
      */
+    @SuppressWarnings("static-method")
     public PrintWriter getOutputStream() {
         return Context.getCurrentErr();
     }
