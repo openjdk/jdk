@@ -498,10 +498,11 @@ loop:
      */
     private void pushControlNode(final Node node) {
         final boolean isLoop = node instanceof WhileNode;
+        final boolean isBreakable = node instanceof BreakableNode || node instanceof Block;
         function.getControlStack().push(node);
 
         for (final LabelNode labelNode : function.getLabelStack()) {
-            if (labelNode.getBreakNode() == null) {
+            if (isBreakable && labelNode.getBreakNode() == null) {
                 labelNode.setBreakNode(node);
             }
 
