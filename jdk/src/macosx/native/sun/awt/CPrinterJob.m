@@ -384,31 +384,6 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
 }
 
 /*
- * Class:     sun_lwawt_macosx_EventDispatchAccess
- * Method:    pumpEventsAndWait
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_EventDispatchAccess_pumpEventsAndWait
-(JNIEnv *env, jobject eda)
-{
-    static JNF_CLASS_CACHE(jc_Thread, "java/lang/Thread");
-    static JNF_STATIC_MEMBER_CACHE(jm_currentThread, jc_Thread, "currentThread", "()Ljava/lang/Thread;");
-    static JNF_CLASS_CACHE(jc_EventDispatchThread, "java/awt/EventDispatchThread");
-    static JNF_MEMBER_CACHE(jm_macosxGetConditional, jc_EventDispatchThread, "_macosxGetConditional", "(Ljava/lang/Object;)Ljava/awt/Conditional;");
-    static JNF_MEMBER_CACHE(jm_pumpEvents, jc_EventDispatchThread, "pumpEvents", "(Ljava/awt/Conditional;)V");
-
-JNF_COCOA_DURING(env);
-
-    jobject thread = JNFCallStaticObjectMethod(env, jm_currentThread);
-    jobject conditional = JNFCallObjectMethod(env, thread, jm_macosxGetConditional, eda);
-    if (conditional != NULL) {
-        JNFCallVoidMethod(env, thread, jm_pumpEvents, conditional);
-    }
-
-JNF_COCOA_HANDLE(env);
-}
-
-/*
  * Class:     sun_lwawt_macosx_CPrinterJob
  * Method:    abortDoc
  * Signature: ()V

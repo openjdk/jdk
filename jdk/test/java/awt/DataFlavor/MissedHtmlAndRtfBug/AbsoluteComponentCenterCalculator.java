@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,17 +21,17 @@
  * questions.
  */
 
-package sun.lwawt.macosx;
+import java.awt.*;
 
-// This exists strictly to work around the fact that java.awt.Conditional isn't a public class.
-// It uses java reflection to get the EventDispatchThread class and call a MacOSX only
-// method on it.
-//
-// NOTE: This uses reflection in its implementation, so it is not for performance critical code.
-//
-// See java.awt.EventDispatchThread and apple.awt.CPrintJob for more.
-//
-public abstract class EventDispatchAccess {
-    public native void pumpEventsAndWait();
-    public abstract boolean evaluate();
+class AbsoluteComponentCenterCalculator {
+    private AbsoluteComponentCenterCalculator() {
+    }
+
+    public static int calculateXCenterCoordinate(Component component) {
+        return (int) component.getLocationOnScreen().getX() + (component.getWidth() / 2);
+    }
+
+    public static int calculateYCenterCoordinate(Component component) {
+        return (int) component.getLocationOnScreen().getY() + (component.getHeight() / 2);
+    }
 }
