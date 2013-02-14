@@ -227,6 +227,7 @@ public final class TzdbZoneRulesCompiler {
         Map<String, SortedMap<String, ZoneRules>> allBuiltZones = new TreeMap<>();
         Set<String> allRegionIds = new TreeSet<String>();
         Set<ZoneRules> allRules = new HashSet<ZoneRules>();
+        Map<String, Map<String, String>> allLinks = new TreeMap<>();
 
         for (File srcDir : srcDirs) {
             // source files in this directory
@@ -242,7 +243,8 @@ public final class TzdbZoneRulesCompiler {
             }
 
             // compile
-            String loopVersion = srcDir.getName();
+            String loopVersion = (srcDirs.size() == 1 && version != null)
+                                 ? version : srcDir.getName();
             TzdbZoneRulesCompiler compiler = new TzdbZoneRulesCompiler(loopVersion, srcFiles, verbose);
             try {
                 // compile
@@ -255,12 +257,13 @@ public final class TzdbZoneRulesCompiler {
                 if (verbose) {
                     System.out.println("Outputting file: " + dstFile);
                 }
-                outputFile(dstFile, loopVersion, builtZones);
+                outputFile(dstFile, loopVersion, builtZones, compiler.links);
 
                 // create totals
                 allBuiltZones.put(loopVersion, builtZones);
                 allRegionIds.addAll(builtZones.keySet());
                 allRules.addAll(builtZones.values());
+                allLinks.put(loopVersion, compiler.links);
             } catch (Exception ex) {
                 System.out.println("Failed: " + ex.toString());
                 ex.printStackTrace();
@@ -274,7 +277,7 @@ public final class TzdbZoneRulesCompiler {
             if (verbose) {
                 System.out.println("Outputting combined file: " + dstFile);
             }
-            outputFile(dstFile, allBuiltZones, allRegionIds, allRules);
+            outputFile(dstFile, allBuiltZones, allRegionIds, allRules, allLinks);
         }
     }
 
@@ -283,12 +286,15 @@ public final class TzdbZoneRulesCompiler {
      */
     private static void outputFile(File dstFile,
                                    String version,
-                                   SortedMap<String, ZoneRules> builtZones) {
+                                   SortedMap<String, ZoneRules> builtZones,
+                                   Map<String, String> links) {
         Map<String, SortedMap<String, ZoneRules>> loopAllBuiltZones = new TreeMap<>();
         loopAllBuiltZones.put(version, builtZones);
         Set<String> loopAllRegionIds = new TreeSet<String>(builtZones.keySet());
         Set<ZoneRules> loopAllRules = new HashSet<ZoneRules>(builtZones.values());
-        outputFile(dstFile, loopAllBuiltZones, loopAllRegionIds, loopAllRules);
+        Map<String, Map<String, String>> loopAllLinks = new TreeMap<>();
+        loopAllLinks.put(version, links);
+        outputFile(dstFile, loopAllBuiltZones, loopAllRegionIds, loopAllRules, loopAllLinks);
     }
 
     /**
@@ -297,10 +303,10 @@ public final class TzdbZoneRulesCompiler {
     private static void outputFile(File dstFile,
                                    Map<String, SortedMap<String, ZoneRules>> allBuiltZones,
                                    Set<String> allRegionIds,
-                                   Set<ZoneRules> allRules)
-    {
+                                   Set<ZoneRules> allRules,
+                                   Map<String, Map<String, String>> allLinks) {
         try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(dstFile))) {
-            outputTZEntry(jos, allBuiltZones, allRegionIds, allRules);
+            outputTZEntry(jos, allBuiltZones, allRegionIds, allRules, allLinks);
         } catch (Exception ex) {
             System.out.println("Failed: " + ex.toString());
             ex.printStackTrace();
@@ -314,7 +320,8 @@ public final class TzdbZoneRulesCompiler {
     private static void outputTZEntry(JarOutputStream jos,
                                       Map<String, SortedMap<String, ZoneRules>> allBuiltZones,
                                       Set<String> allRegionIds,
-                                      Set<ZoneRules> allRules) {
+                                      Set<ZoneRules> allRules,
+                                      Map<String, Map<String, String>> allLinks) {
         // this format is not publicly specified
         try {
             jos.putNextEntry(new ZipEntry("TZDB.dat"));
@@ -357,6 +364,16 @@ public final class TzdbZoneRulesCompiler {
                      int rulesIndex = rulesList.indexOf(entry.getValue());
                      out.writeShort(regionIndex);
                      out.writeShort(rulesIndex);
+                }
+            }
+            // alias-region
+            for (String version : allLinks.keySet()) {
+                out.writeShort(allLinks.get(version).size());
+                for (Map.Entry<String, String> entry : allLinks.get(version).entrySet()) {
+                     int aliasIndex = Arrays.binarySearch(regionArray, entry.getKey());
+                     int regionIndex = Arrays.binarySearch(regionArray, entry.getValue());
+                     out.writeShort(aliasIndex);
+                     out.writeShort(regionIndex);
                 }
             }
             out.flush();
@@ -621,7 +638,8 @@ public final class TzdbZoneRulesCompiler {
     private int parseYear(String str, int defaultYear) {
         if (YEAR.reset(str).matches()) {
             if (YEAR.group("min") != null) {
-                return YEAR_MIN_VALUE;
+                //return YEAR_MIN_VALUE;
+                return 1900;  // systemv has min
             } else if (YEAR.group("max") != null) {
                 return YEAR_MAX_VALUE;
             } else if (YEAR.group("only") != null) {
@@ -742,16 +760,20 @@ public final class TzdbZoneRulesCompiler {
                 if (realRules == null) {
                     throw new IllegalArgumentException("Alias '" + aliasId + "' links to invalid zone '" + realId + "' for '" + version + "'");
                 }
+                links.put(aliasId, realId);
+
             }
             builtZones.put(aliasId, realRules);
         }
 
         // remove UTC and GMT
-        builtZones.remove("UTC");
-        builtZones.remove("GMT");
-        builtZones.remove("GMT0");
+        //builtZones.remove("UTC");
+        //builtZones.remove("GMT");
+        //builtZones.remove("GMT0");
         builtZones.remove("GMT+0");
         builtZones.remove("GMT-0");
+        links.remove("GMT+0");
+        links.remove("GMT-0");
     }
 
     //-----------------------------------------------------------------------
@@ -785,7 +807,6 @@ public final class TzdbZoneRulesCompiler {
         boolean endOfDay;
         /** The time of the cutover. */
         TimeDefinition timeDefinition = TimeDefinition.WALL;
-
         void adjustToFowards(int year) {
             if (adjustForwards == false && dayOfMonth > 0) {
                 LocalDate adjustedDate = LocalDate.of(year, month, dayOfMonth).minusDays(6);

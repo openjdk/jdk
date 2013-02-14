@@ -79,7 +79,7 @@ import java.time.ZoneId;
  * See {@link ChronoField} for the standard set of fields.
  * <p>
  * Two pieces of date/time information cannot be represented by numbers,
- * the {@linkplain Chrono chronology} and the {@linkplain ZoneId time-zone}.
+ * the {@linkplain java.time.chrono.Chronology chronology} and the {@linkplain ZoneId time-zone}.
  * These can be accessed via {@link #query(TemporalQuery) queries} using
  * the static methods defined on {@link Queries}.
  * <p>
@@ -91,7 +91,7 @@ import java.time.ZoneId;
  * around instances of concrete types, such as {@code LocalDate}.
  * There are many reasons for this, part of which is that implementations
  * of this interface may be in calendar systems other than ISO.
- * See {@link ChronoLocalDate} for a fuller discussion of the issues.
+ * See {@link java.time.chrono.ChronoLocalDate} for a fuller discussion of the issues.
  *
  * <h3>Specification for implementors</h3>
  * This interface places no restrictions on the mutability of implementations,
@@ -113,7 +113,7 @@ public interface TemporalAccessor {
      * If the field is supported, then true is returned, otherwise false
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doIsSupported(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.isSupportedBy(TemporalAccessor)}
      * passing {@code this} as the argument.
      * <p>
      * Implementations must not alter either this object.
@@ -142,7 +142,7 @@ public interface TemporalAccessor {
      * If unsupported, then a {@code DateTimeException} must be thrown.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doRange(TemporalAccessorl)}
+     * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessorl)}
      * passing {@code this} as the argument.
      * <p>
      * Implementations must not alter either this object.
@@ -155,7 +155,7 @@ public interface TemporalAccessor {
      *    }
      *    throw new DateTimeException("Unsupported field: " + field.getName());
      *  }
-     *  return field.doRange(this);
+     *  return field.rangeRefinedBy(this);
      * </pre>
      *
      * @param field  the field to query the range for, not null
@@ -169,7 +169,7 @@ public interface TemporalAccessor {
             }
             throw new DateTimeException("Unsupported field: " + field.getName());
         }
-        return field.doRange(this);
+        return field.rangeRefinedBy(this);
     }
 
     /**
@@ -187,7 +187,7 @@ public interface TemporalAccessor {
      * If unsupported, then a {@code DateTimeException} must be thrown.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doGet(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument.
      * <p>
      * Implementations must not alter either this object.
@@ -222,7 +222,7 @@ public interface TemporalAccessor {
      * If unsupported, then a {@code DateTimeException} must be thrown.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doGet(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument.
      * <p>
      * Implementations must not alter either this object.
@@ -253,7 +253,7 @@ public interface TemporalAccessor {
      * <h3>Specification for implementors</h3>
      * The default implementation must behave equivalent to this code:
      * <pre>
-     *  if (query == Queries.zoneId() || query == Queries.chrono() || query == Queries.precision()) {
+     *  if (query == Queries.zoneId() || query == Queries.chronology() || query == Queries.precision()) {
      *    return null;
      *  }
      *  return query.queryFrom(this);
@@ -283,7 +283,7 @@ public interface TemporalAccessor {
      * @throws ArithmeticException if numeric overflow occurs
      */
     public default <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.zoneId() || query == Queries.chrono() || query == Queries.precision()) {
+        if (query == Queries.zoneId() || query == Queries.chronology() || query == Queries.precision()) {
             return null;
         }
         return query.queryFrom(this);

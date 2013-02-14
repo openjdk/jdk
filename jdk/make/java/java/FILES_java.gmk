@@ -255,7 +255,6 @@ JAVA_JAVA_java = \
         java/util/SimpleTimeZone.java \
         sun/util/calendar/ZoneInfo.java \
         sun/util/calendar/ZoneInfoFile.java \
-        sun/util/calendar/TzIDOldMapping.java \
     java/util/TooManyListenersException.java \
     java/util/Comparator.java \
     java/util/Collections.java \
@@ -389,6 +388,7 @@ JAVA_JAVA_java = \
     java/util/concurrent/locks/ReadWriteLock.java \
     java/util/concurrent/locks/ReentrantLock.java \
     java/util/concurrent/locks/ReentrantReadWriteLock.java \
+    java/util/concurrent/locks/StampedLock.java \
     java/util/regex/Pattern.java \
     java/util/regex/Matcher.java \
     java/util/regex/MatchResult.java \
