@@ -353,6 +353,9 @@ Java_sun_java2d_loops_TransformHelper_Transform
         pInterpFunc = pBicubicFunc;
         maxlinepix = LINE_SIZE / 16;
         break;
+    default:
+        // Should not happen, but just in case.
+        return;
     }
 
     srcInfo.bounds.x1 = sx1;
