@@ -44,9 +44,12 @@ import jdk.nashorn.internal.runtime.Source;
 /**
  * Simple constant folding pass, executed before IR is starting to be lowered.
  */
-public class FoldConstants extends NodeVisitor {
+final class FoldConstants extends NodeVisitor {
 
     private static final DebugLogger LOG = new DebugLogger("fold");
+
+    FoldConstants() {
+    }
 
     @Override
     public Node leave(final UnaryNode unaryNode) {

@@ -126,6 +126,7 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
                 }
                 final File file = new File(fileName);
                 ScriptFunction script = context.compileScript(new Source(fileName, file.toURI().toURL()), global);
+
                 if (script == null || errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
                 }

@@ -32,7 +32,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
  * A {@code ScriptFunctionImpl} subclass for functions created using {@code Function.prototype.bind}. Such functions
- * must track their {@code [[TargetFunction]] property for purposes of correctly implementing {@code [[HasInstance]]};
+ * must track their {@code [[TargetFunction]]} property for purposes of correctly implementing {@code [[HasInstance]]};
  * see {@link ScriptFunction#isInstance(ScriptObject)}.
  */
 class BoundScriptFunctionImpl extends ScriptFunctionImpl {

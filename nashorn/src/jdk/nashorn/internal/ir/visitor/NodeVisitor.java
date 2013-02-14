@@ -70,7 +70,7 @@ public abstract class NodeVisitor {
     private FunctionNode currentFunctionNode;
 
     /** Current compile unit used for class generation. */
-    protected CompileUnit compileUnit;
+    private CompileUnit compileUnit;
 
     /**
      * Current method visitor used for method generation.

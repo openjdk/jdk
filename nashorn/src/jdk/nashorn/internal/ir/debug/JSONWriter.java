@@ -25,11 +25,8 @@
 
 package jdk.nashorn.internal.ir.debug;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
-import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -87,8 +84,7 @@ public final class JSONWriter extends NodeVisitor {
      * @return JSON string representation of AST of the supplied code
      */
     public static String parse(final Context context, final String code, final String name, final boolean includeLoc) {
-        final Compiler     compiler   = Compiler.compiler(new Source(name, code), context, new Context.ThrowErrorManager(), context._strict);
-        final Parser       parser     = new Parser(compiler, context._strict);
+        final Parser       parser     = new Parser(context, new Source(name, code), new Context.ThrowErrorManager(), context._strict);
         final JSONWriter   jsonWriter = new JSONWriter(includeLoc);
         try {
             final FunctionNode functionNode = parser.parse(CompilerConstants.RUN_SCRIPT.tag());

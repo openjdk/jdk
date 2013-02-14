@@ -34,14 +34,21 @@ package jdk.nashorn.internal.runtime;
  * The compiler still retains most of the state around code emission
  * and management internally, so this is to avoid passing around any
  * logic that isn't directly related to installing a class
+ * @param <T> owner class type for this code installer
  *
  */
-public interface CodeInstaller {
+public interface CodeInstaller<T> {
+    /**
+     * Return the owner for the CodeInstaller, e.g. a {@link Context}
+     * @return owner
+     */
+    public T getOwner();
+
     /**
      * Install a class
      * @param className name of the class with / separation
-      * @param bytecode  bytecode
-      * @return the installed class
+     * @param bytecode  bytecode
+     * @return the installed class
      */
     public Class<?> install(final String className, final byte[] bytecode);
 }

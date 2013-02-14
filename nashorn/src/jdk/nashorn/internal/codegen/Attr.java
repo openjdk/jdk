@@ -84,7 +84,6 @@ import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * This is the attribution pass of the code generator. Attr takes Lowered IR,
@@ -102,11 +101,8 @@ import jdk.nashorn.internal.runtime.Source;
  */
 
 final class Attr extends NodeOperatorVisitor {
-    /** Current compiler. */
-    private final Compiler compiler;
-
-    /** Current source. */
-    private final Source source;
+    /** Context compiler. */
+    private final Context context;
 
     /**
      * Local definitions in current block (to discriminate from function
@@ -122,16 +118,16 @@ final class Attr extends NodeOperatorVisitor {
      */
     private Set<String> localUses;
 
-    private static final DebugLogger LOG = new DebugLogger("attr");
+    private static final DebugLogger LOG   = new DebugLogger("attr");
+    private static final boolean     DEBUG = LOG.isEnabled();
 
     /**
      * Constructor.
      *
      * @param compiler the compiler
      */
-    Attr(final Compiler compiler) {
-        this.compiler = compiler;
-        this.source   = compiler.getSource();
+    Attr(final Context context) {
+        this.context = context;
     }
 
     @Override
@@ -231,6 +227,11 @@ final class Attr extends NodeOperatorVisitor {
     @Override
     public Node enter(final FunctionNode functionNode) {
         start(functionNode, false);
+        if (functionNode.isLazy()) {
+            LOG.info("LAZY: " + functionNode.getName());
+            end(functionNode);
+            return null;
+        }
 
         clearLocalDefs();
         clearLocalUses();
@@ -257,7 +258,7 @@ final class Attr extends NodeOperatorVisitor {
         }
 
         if (functionNode.isScript()) {
-            initFromPropertyMap(compiler.getContext(), functionNode);
+            initFromPropertyMap(context, functionNode);
         }
 
         // Add function name as local symbol
@@ -378,7 +379,7 @@ final class Attr extends NodeOperatorVisitor {
                 final FunctionNode functionNode = (FunctionNode)symbol.getNode();
                 assert functionNode.getCalleeNode() != null;
 
-                final VarNode var = new VarNode(source, functionNode.getToken(), functionNode.getFinish(), functionNode.getIdent(), functionNode.getCalleeNode());
+                final VarNode var = new VarNode(functionNode.getSource(), functionNode.getToken(), functionNode.getFinish(), functionNode.getIdent(), functionNode.getCalleeNode());
                 //newTemporary(Type.OBJECT, var); //ScriptFunction? TODO
 
                 functionNode.setNeedsSelfSymbol(var);
@@ -489,15 +490,21 @@ final class Attr extends NodeOperatorVisitor {
         if (functionNode != null) {
             functionNode.addReferencingParentBlock(getCurrentBlock());
         }
-        end(referenceNode);
-
         return referenceNode;
     }
 
     @Override
     public Node leave(final ReferenceNode referenceNode) {
         newTemporary(Type.OBJECT, referenceNode); //reference node type is always an object, i.e. the scriptFunction. the function return type varies though
+
+        final FunctionNode functionNode = referenceNode.getReference();
+        //assert !functionNode.getType().isUnknown() || functionNode.isLazy() : functionNode.getType();
+        if (functionNode.isLazy()) {
+            LOG.info("Lazy function node call reference: " + functionNode.getName() + " => Promoting to OBJECT");
+            functionNode.setReturnType(Type.OBJECT);
+        }
         end(referenceNode);
+
         return referenceNode;
     }
 
@@ -546,7 +553,7 @@ final class Attr extends NodeOperatorVisitor {
             type = Type.OBJECT;
         }
 
-        switchNode.setTag(newInternal(compiler.uniqueName(SWITCH_TAG_PREFIX.tag()), type));
+        switchNode.setTag(newInternal(getCurrentFunctionNode().uniqueName(SWITCH_TAG_PREFIX.tag()), type));
 
         end(switchNode);
 
@@ -1111,7 +1118,7 @@ final class Attr extends NodeOperatorVisitor {
     @Override
     public Node leave(final ForNode forNode) {
         if (forNode.isForIn()) {
-            forNode.setIterator(newInternal(getCurrentFunctionNode(), compiler.uniqueName(ITERATOR_PREFIX.tag()), Type.OBJECT)); //NASHORN-73
+            forNode.setIterator(newInternal(getCurrentFunctionNode(), getCurrentFunctionNode().uniqueName(ITERATOR_PREFIX.tag()), Type.OBJECT)); //NASHORN-73
             /*
              * Iterators return objects, so we need to widen the scope of the
              * init variable if it, for example, has been assigned double type
@@ -1321,7 +1328,7 @@ final class Attr extends NodeOperatorVisitor {
     }
 
     private Symbol exceptionSymbol() {
-        return newInternal(compiler.uniqueName(EXCEPTION_PREFIX.tag()), Type.typeFor(ECMAException.class));
+        return newInternal(getCurrentFunctionNode().uniqueName(EXCEPTION_PREFIX.tag()), Type.typeFor(ECMAException.class));
     }
 
     /**
@@ -1380,6 +1387,11 @@ final class Attr extends NodeOperatorVisitor {
                         newType(node.getSymbol(), to);
                         changed.add(node);
                     }
+                }
+
+                @Override
+                public Node enter(final FunctionNode node) {
+                    return node.isLazy() ? null : node;
                 }
 
                 /**
@@ -1553,17 +1565,19 @@ final class Attr extends NodeOperatorVisitor {
     }
 
     private Node start(final Node node, final boolean printNode) {
-        final StringBuilder sb = new StringBuilder();
+        if (DEBUG) {
+            final StringBuilder sb = new StringBuilder();
 
-        sb.append("[ENTER ").
-            append(name(node)).
-            append("] ").
-            append(printNode ? node.toString() : "").
-            append(" in '").
-            append(getCurrentFunctionNode().getName()).
-            append("'");
-        LOG.info(sb.toString());
-        LOG.indent();
+            sb.append("[ENTER ").
+                append(name(node)).
+                append("] ").
+                append(printNode ? node.toString() : "").
+                append(" in '").
+                append(getCurrentFunctionNode().getName()).
+                append("'");
+            LOG.info(sb.toString());
+            LOG.indent();
+        }
 
         return node;
     }
@@ -1573,23 +1587,25 @@ final class Attr extends NodeOperatorVisitor {
     }
 
     private Node end(final Node node, final boolean printNode) {
-        final StringBuilder sb = new StringBuilder();
+        if (DEBUG) {
+            final StringBuilder sb = new StringBuilder();
 
-        sb.append("[LEAVE ").
-            append(name(node)).
-            append("] ").
-            append(printNode ? node.toString() : "").
-            append(" in '").
-            append(getCurrentFunctionNode().getName());
+            sb.append("[LEAVE ").
+                append(name(node)).
+                append("] ").
+                append(printNode ? node.toString() : "").
+                append(" in '").
+                append(getCurrentFunctionNode().getName());
 
-        if (node.getSymbol() == null) {
-            sb.append(" <NO SYMBOL>");
-        } else {
-            sb.append(" <symbol=").append(node.getSymbol()).append('>');
+            if (node.getSymbol() == null) {
+                sb.append(" <NO SYMBOL>");
+            } else {
+                sb.append(" <symbol=").append(node.getSymbol()).append('>');
+            }
+
+            LOG.unindent();
+            LOG.info(sb.toString());
         }
-
-        LOG.unindent();
-        LOG.info(sb.toString());
 
         return node;
     }

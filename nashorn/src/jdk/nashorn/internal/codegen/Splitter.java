@@ -49,13 +49,14 @@ import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * Split the IR into smaller compile units.
  */
-public class Splitter extends NodeVisitor {
+final class Splitter extends NodeVisitor {
     /** Current compiler. */
     private final Compiler compiler;
 
@@ -63,7 +64,7 @@ public class Splitter extends NodeVisitor {
     private final FunctionNode functionNode;
 
     /** Compile unit for the main script. */
-    private final CompileUnit scriptCompileUnit;
+    private final CompileUnit outermostCompileUnit;
 
     /** Cache for calculated block weights. */
     private final Map<Node, Long> weightCache = new HashMap<>();
@@ -71,27 +72,35 @@ public class Splitter extends NodeVisitor {
     /** Weight threshold for when to start a split. */
     public static final long SPLIT_THRESHOLD = Options.getIntProperty("nashorn.compiler.splitter.threshold", 32 * 1024);
 
+    private static final DebugLogger LOG = Compiler.LOG;
+
     /**
      * Constructor.
      *
-     * @param compiler           the compiler
-     * @param functionNode       function node to split
-     * @param scriptCompileUnit  script compile unit
+     * @param compiler              the compiler
+     * @param functionNode          function node to split
+     * @param outermostCompileUnit  compile unit for outermost function, if non-lazy this is the script's compile unit
      */
-    public Splitter(final Compiler compiler, final FunctionNode functionNode, final CompileUnit scriptCompileUnit) {
-        this.compiler     = compiler;
-        this.functionNode = functionNode;
-        this.scriptCompileUnit = scriptCompileUnit;
+    public Splitter(final Compiler compiler, final FunctionNode functionNode, final CompileUnit outermostCompileUnit) {
+        this.compiler             = compiler;
+        this.functionNode         = functionNode;
+        this.outermostCompileUnit = outermostCompileUnit;
     }
 
     /**
      * Execute the split
      */
     void split() {
+        if (functionNode.isLazy()) {
+            LOG.info("Postponing split of '" + functionNode.getName() + "' as it's lazy");
+            return;
+        }
+        LOG.info("Initiating split of '" + functionNode.getName() + "'");
+
         long weight = WeighNodes.weigh(functionNode);
 
         if (weight >= SPLIT_THRESHOLD) {
-            Compiler.LOG.info("Splitting '" + functionNode.getName() + "' as its weight " + weight + " exceeds split threshold " + SPLIT_THRESHOLD);
+            LOG.info("Splitting '" + functionNode.getName() + "' as its weight " + weight + " exceeds split threshold " + SPLIT_THRESHOLD);
 
             functionNode.accept(this);
 
@@ -111,20 +120,18 @@ public class Splitter extends NodeVisitor {
 
         assert functionNode.getCompileUnit() == null : "compile unit already set";
 
-        if (functionNode.isScript()) {
-            assert scriptCompileUnit != null : "script compile unit is null";
+        if (compiler.getFunctionNode() == functionNode) { //functionNode.isScript()) {
+            assert outermostCompileUnit != null : "outermost compile unit is null";
 
-            functionNode.setCompileUnit(scriptCompileUnit);
-            scriptCompileUnit.addWeight(weight + WeighNodes.FUNCTION_WEIGHT);
+            functionNode.setCompileUnit(outermostCompileUnit);
+            outermostCompileUnit.addWeight(weight + WeighNodes.FUNCTION_WEIGHT);
         } else {
             functionNode.setCompileUnit(findUnit(weight));
         }
 
         // Recursively split nested functions
-        final List<FunctionNode> functions = functionNode.getFunctions();
-
-        for (final FunctionNode function : functions) {
-            new Splitter(compiler, function, scriptCompileUnit).split();
+        for (final FunctionNode function : functionNode.getFunctions()) {
+            new Splitter(compiler, function, outermostCompileUnit).split();
         }
     }
 
@@ -192,7 +199,7 @@ public class Splitter extends NodeVisitor {
         final Source source = parent.getSource();
         final long   token  = parent.getToken();
         final int    finish = parent.getFinish();
-        final String name   = compiler.uniqueName(SPLIT_PREFIX.tag());
+        final String name   = parent.getFunction().uniqueName(SPLIT_PREFIX.tag());
 
         final Block newBlock = new Block(source, token, finish, parent, functionNode);
         newBlock.setFrame(new Frame(parent.getFrame()));
@@ -284,6 +291,10 @@ public class Splitter extends NodeVisitor {
 
     @Override
     public Node enter(final FunctionNode node) {
+        if (node.isLazy()) {
+            return null;
+        }
+
         final List<Node> statements = node.getStatements();
 
         for (final Node statement : statements) {

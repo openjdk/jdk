@@ -66,7 +66,7 @@ import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
  * Computes the "byte code" weight of an AST segment. This is used
  * for Splitting too large class files
  */
-public class WeighNodes extends NodeOperatorVisitor {
+final class WeighNodes extends NodeOperatorVisitor {
     /*
      * Weight constants.
      */

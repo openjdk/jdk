@@ -472,11 +472,11 @@ public final class ObjectClassGenerator {
         final byte[] code = classEmitter.toByteArray();
 
         if (context != null && context._print_code) {
-            ClassEmitter.disassemble(context, code);
+            Context.getCurrentErr().println(ClassEmitter.disassemble(code));
         }
 
         if (context != null && context._verify_code) {
-            ClassEmitter.verify(context, code);
+            context.verify(code);
         }
 
         return code;

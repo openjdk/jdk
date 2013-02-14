@@ -35,7 +35,7 @@ import java.util.Map;
  * Manages constants needed by code generation.  Objects are maintained in an
  * interning maps to remove duplicates.
  */
-public class ConstantData {
+class ConstantData {
     /** Constant table. */
     final List<Object> constants;
 

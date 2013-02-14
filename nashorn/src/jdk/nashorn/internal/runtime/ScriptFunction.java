@@ -78,12 +78,14 @@ public abstract class ScriptFunction extends ScriptObject {
     /**
      * Constructor
      *
-     * @param name         function name
-     * @param methodHandle method handle to function (if specializations are present, assumed to be most generic)
-     * @param map          property map
-     * @param scope        scope
-     * @param specs        specialized version of this function - other method handles
-     *
+     * @param name          function name
+     * @param methodHandle  method handle to function (if specializations are present, assumed to be most generic)
+     * @param map           property map
+     * @param scope         scope
+     * @param specs         specialized version of this function - other method handles
+     * @param strict        is this a strict mode function?
+     * @param builtin       is this a built in function?
+     * @param isConstructor is this a constructor?
      */
     protected ScriptFunction(
             final String name,
@@ -240,10 +242,17 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param args additional arguments to bind to this function. Can be null or empty to not bind additional arguments.
      * @return a function with the specified self and parameters bound.
      */
-    protected ScriptFunction makeBoundFunction(Object self, Object[] args) {
+    protected ScriptFunction makeBoundFunction(final Object self, final Object[] args) {
         return makeBoundFunction(data.makeBoundFunctionData(this, self, args));
     }
 
+    /**
+     * Create a version of this function as in {@link ScriptFunction#makeBoundFunction(Object, Object[])},
+     * but using a {@link ScriptFunctionData} for the bound data.
+     *
+     * @param boundData ScriptFuntionData for the bound function
+     * @return a function with the bindings performed according to the given data
+     */
     protected abstract ScriptFunction makeBoundFunction(ScriptFunctionData boundData);
 
     @Override
@@ -347,6 +356,15 @@ public abstract class ScriptFunction extends ScriptObject {
      */
     public final ScriptObject getScope() {
         return scope;
+    }
+
+    /**
+     * Reset the invoker handle. This is used by trampolines for
+     * lazy code generation
+     * @param invoker new invoker
+     */
+    protected void resetInvoker(final MethodHandle invoker) {
+        data.resetInvoker(invoker);
     }
 
     /**

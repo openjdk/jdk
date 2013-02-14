@@ -41,6 +41,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
+import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -241,13 +243,14 @@ public class Shell {
 
             // For each file on the command line.
             for (final String fileName : files) {
-                final File file = new File(fileName);
-                final Source source = new Source(fileName, file);
-                final Compiler compiler = Compiler.compiler(source, context);
-                compiler.compile();
+                final FunctionNode functionNode = new Parser(context, new Source(fileName, new File(fileName)), errors).parse();
+
                 if (errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
                 }
+
+                //null - pass no code installer - this is compile only
+                new Compiler(context, functionNode).compile();
             }
         } finally {
             context.getOut().flush();
@@ -282,7 +285,7 @@ public class Shell {
             // For each file on the command line.
             for (final String fileName : files) {
                 final File file = new File(fileName);
-                ScriptFunction script = context.compileScript(new Source(fileName, file.toURI().toURL()), global);
+                final ScriptFunction script = context.compileScript(new Source(fileName, file.toURI().toURL()), global);
                 if (script == null || errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
                 }

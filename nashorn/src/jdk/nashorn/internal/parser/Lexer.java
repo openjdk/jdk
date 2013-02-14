@@ -289,6 +289,11 @@ public class Lexer extends Scanner {
         add(type, start, position);
     }
 
+    /**
+     * Return the String of valid whitespace characters for regular
+     * expressions in JavaScript
+     * @return regexp whitespace string
+     */
     public static String getWhitespaceRegExp() {
         return JAVASCRIPT_WHITESPACE_IN_REGEXP;
     }
@@ -958,6 +963,8 @@ public class Lexer extends Scanner {
                 case '\'':
                     // Add string token without editing.
                     add(type, stringState.position, stringState.limit);
+                    break;
+                default:
                     break;
                 }
             } else {

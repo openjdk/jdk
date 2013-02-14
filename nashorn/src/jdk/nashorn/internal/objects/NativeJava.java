@@ -385,6 +385,7 @@ public final class NativeJava {
     public static Object extend(final Object self, final Object... types) {
         if(types == null || types.length == 0) {
             typeError("extend.expects.at.least.one.argument");
+            throw new AssertionError(); //circumvent warning for types == null below
         }
         final Class<?>[] stypes = new Class<?>[types.length];
         try {

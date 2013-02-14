@@ -36,7 +36,7 @@ import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
 public final class FindProperty {
     /** Object where search began. */
     private final ScriptObject self;
-    ;
+
     /** Object where search finish. */
     private final ScriptObject prototype;
 

@@ -39,7 +39,6 @@ import static jdk.nashorn.internal.parser.TokenType.DECPREFIX;
 import static jdk.nashorn.internal.parser.TokenType.ELSE;
 import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
-import static jdk.nashorn.internal.parser.TokenType.EXECSTRING;
 import static jdk.nashorn.internal.parser.TokenType.FINALLY;
 import static jdk.nashorn.internal.parser.TokenType.FUNCTION;
 import static jdk.nashorn.internal.parser.TokenType.IDENT;
@@ -60,7 +59,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import jdk.nashorn.internal.codegen.Compiler;
+
+import jdk.nashorn.internal.codegen.CompilerConstants;
+import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -97,8 +98,10 @@ import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 
 /**
@@ -106,49 +109,72 @@ import jdk.nashorn.internal.runtime.ScriptingFunctions;
  *
  */
 public class Parser extends AbstractParser {
-    /** Code generator. */
-    private final Compiler compiler;
-
     /** Current context. */
     private final Context context;
 
     /** Is scripting mode. */
     private final boolean scripting;
 
-    /** Top level script being compiled. */
+    /** Top level script being parsed. */
     private FunctionNode script;
 
-    /** Current function being compiled. */
+    /** Current function being parsed. */
     private FunctionNode function;
 
     /** Current parsing block. */
     private Block block;
 
+    /** Namespace for function names where not explicitly given */
+    private final Namespace namespace;
+
     /**
-     * Construct a parser.
-     * @param compiler Compiler state used to parse.
+     * Constructor
+     *
+     * @param context parser context
+     * @param source  source to parse
+     * @param errors  error manager
      */
-    public Parser(final Compiler compiler) {
-        this(compiler, compiler.getContext()._strict);
+    public Parser(final Context context, final Source source, final ErrorManager errors) {
+        this(context, source, errors, context._strict);
     }
 
     /**
      * Construct a parser.
-     * @param compiler Compiler state used to parse.
-     * @param strict parser created with strict mode enabled.
+     *
+     * @param context parser context
+     * @param source  source to parse
+     * @param errors  error manager
+     * @param strict  parser created with strict mode enabled.
      */
-    public Parser(final Compiler compiler, final boolean strict) {
-        super(compiler.getSource(), compiler.getErrors(), strict);
-
-        this.compiler = compiler;
-        this.context  = compiler.getContext();
-        this.scripting = this.context._scripting;
+    public Parser(final Context context, final Source source, final ErrorManager errors, final boolean strict) {
+        super(source, errors, strict);
+        this.context   = context;
+        this.namespace = new Namespace(context.getNamespace());
+        this.scripting = context._scripting;
     }
 
     /**
-     * Parse source content.
-     * @param scriptName file name for script
-     * @return Top level function (script).
+     * Execute parse and return the resulting function node.
+     * Errors will be thrown and the error manager will contain information
+     * if parsing should fail
+     *
+     * This is the default parse call, which will name the function node
+     * "runScript" {@link CompilerConstants#RUN_SCRIPT}
+     *
+     * @return function node resulting from successful parse
+     */
+    public FunctionNode parse() {
+        return parse(RUN_SCRIPT.tag());
+    }
+
+    /**
+     * Execute parse and return the resulting function node.
+     * Errors will be thrown and the error manager will contain information
+     * if parsing should fail
+     *
+     * @param scriptName name for the script, given to the parsed FunctionNode
+     *
+     * @return function node resulting from successful parse
      */
     public FunctionNode parse(final String scriptName) {
         try {
@@ -257,11 +283,11 @@ loop:
         }
 
         sb.append(ident != null ? ident.getName() : FUNCTION_PREFIX.tag());
-        final String name = compiler.uniqueName(sb.toString());
+        final String name = namespace.uniqueName(sb.toString());
         assert function != null || name.equals(RUN_SCRIPT.tag())  : "name = " + name;// must not rename runScript().
 
         // Start new block.
-        final FunctionNode functionBlock = new FunctionNode(source, token, Token.descPosition(token), compiler, block, ident, name);
+        final FunctionNode functionBlock = new FunctionNode(source, token, Token.descPosition(token), namespace, block, ident, name);
         block = function = functionBlock;
         function.setStrictMode(isStrictMode);
 

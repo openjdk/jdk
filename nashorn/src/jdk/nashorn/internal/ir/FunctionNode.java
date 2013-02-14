@@ -32,15 +32,16 @@ import static jdk.nashorn.internal.ir.Symbol.IS_TEMP;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
+
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Frame;
 import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.codegen.Namespace;
-import jdk.nashorn.internal.codegen.Splitter;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -65,6 +66,28 @@ public class FunctionNode extends Block {
         GETTER,
         /** a setter, @see {@link UserAccessorProperty} */
         SETTER
+    }
+
+    /** Compilation states available */
+    public enum CompilationState {
+        /** compiler is ready */
+        INITIALIZED,
+        /** method has been parsed */
+        PARSED,
+        /** method has been parsed */
+        PARSE_ERROR,
+        /** constant folding pass */
+        CONSTANT_FOLDED,
+        /** method has been lowered */
+        LOWERED,
+        /** method hass been attributed */
+        ATTR,
+        /** method has been split */
+        SPLIT,
+        /** method has had its types finalized */
+        FINALIZED,
+        /** method has been emitted to bytecode */
+        EMITTED
     }
 
     /** External function identifier. */
@@ -147,6 +170,10 @@ public class FunctionNode extends Block {
     @Ignore
     private Node selfSymbolInit;
 
+    /** Current compilation state */
+    @Ignore
+    private final EnumSet<CompilationState> compilationState;
+
     /** Function flags. */
     private int flags;
 
@@ -200,16 +227,16 @@ public class FunctionNode extends Block {
     /**
      * Constructor
      *
-     * @param source   the source
-     * @param token    token
-     * @param finish   finish
-     * @param compiler the compiler
-     * @param parent   the parent block
-     * @param ident    the identifier
-     * @param name     the name of the function
+     * @param source    the source
+     * @param token     token
+     * @param finish    finish
+     * @param namespace the namespace
+     * @param parent    the parent block
+     * @param ident     the identifier
+     * @param name      the name of the function
      */
     @SuppressWarnings("LeakingThisInConstructor")
-    public FunctionNode(final Source source, final long token, final int finish, final Compiler compiler, final Block parent, final IdentNode ident, final String name) {
+    public FunctionNode(final Source source, final long token, final int finish, final Namespace namespace, final Block parent, final IdentNode ident, final String name) {
         super(source, token, finish, parent, null);
 
         this.ident             = ident;
@@ -219,7 +246,7 @@ public class FunctionNode extends Block {
         this.functions         = new ArrayList<>();
         this.firstToken        = token;
         this.lastToken         = token;
-        this.namespace         = new Namespace(compiler.getNamespace().getParent());
+        this.namespace         = namespace;
         this.labelStack        = new Stack<>();
         this.controlStack      = new Stack<>();
         this.declarations      = new ArrayList<>();
@@ -227,6 +254,7 @@ public class FunctionNode extends Block {
         // it as such a leak - this is a false positive as we're setting this into a field of the object being
         // constructed, so it can't be seen from other threads.
         this.function          = this;
+        this.compilationState  = EnumSet.of(CompilationState.INITIALIZED);
     }
 
     @SuppressWarnings("LeakingThisInConstructor")
@@ -269,6 +297,8 @@ public class FunctionNode extends Block {
         // it as such a leak - this is a false positive as we're setting this into a field of the object being
         // constructed, so it can't be seen from other threads.
         this.function = this;
+
+        this.compilationState = EnumSet.copyOf(functionNode.compilationState);
     }
 
     @Override
@@ -344,6 +374,41 @@ public class FunctionNode extends Block {
         return super.needsScope() || isScript();
     }
 
+    /**
+     * Check whether this FunctionNode has reached a give CompilationState.
+     *
+     * @param state the state to check for
+     * @return true of the node is in the given state
+     */
+    public boolean hasState(final EnumSet<CompilationState> state) {
+        return compilationState.equals(state);
+    }
+
+    /**
+     * Check whether the state of this FunctionNode contains a given compilation
+     * state.
+     *
+     * A node can be in many states at once, e.g. both lowered and initialized.
+     * To check for an exact state, use {FunctionNode{@link #hasState(EnumSet)}
+     *
+     * @param state state to check for
+     * @return true if state is present in the total compilation state of this FunctionNode
+     */
+    public boolean hasState(final CompilationState state) {
+        return compilationState.contains(state);
+    }
+
+    /**
+     * Add a state to the total CompilationState of this node, e.g. if
+     * FunctionNode has been lowered, the compiler will add
+     * {@code CompilationState#LOWERED} to the state vector
+     *
+     * @param state {@link CompilationState} to add
+     */
+    public void setState(final CompilationState state) {
+        compilationState.add(state);
+    }
+
     /*
      * Frame management.
      */
@@ -363,17 +428,6 @@ public class FunctionNode extends Block {
      */
     public final void popFrame() {
         frames = frames.getPrevious();
-    }
-
-    /**
-     * return a unique name in the scope of the function.
-     *
-     * @param base Base string.
-     *
-     * @return Unique name.
-     */
-    public String uniqueName(final String base) {
-        return namespace.uniqueName(base);
     }
 
     /**
@@ -408,6 +462,15 @@ public class FunctionNode extends Block {
     }
 
     /**
+     * Create a unique name in the namespace of this FunctionNode
+     * @param base prefix for name
+     * @return base if no collision exists, otherwise a name prefix with base
+     */
+    public String uniqueName(final String base) {
+        return namespace.uniqueName(base);
+    }
+
+    /**
      * Add a new temporary variable to the current frame
      *
      * @param type Strong type of symbol
@@ -428,11 +491,11 @@ public class FunctionNode extends Block {
      */
     public Symbol newLiteral(final LiteralNode<?> literalNode) {
         final String uname = uniqueName(LITERAL_PREFIX.tag());
-        final Symbol sym = new Symbol(uname, IS_CONSTANT, literalNode.getType());
-        sym.setNode(literalNode);
-        literalNode.setSymbol(sym);
+        final Symbol symbol = new Symbol(uname, IS_CONSTANT, literalNode.getType());
+        symbol.setNode(literalNode);
+        literalNode.setSymbol(symbol);
 
-        return sym;
+        return symbol;
     }
 
     @Override
@@ -806,7 +869,6 @@ public class FunctionNode extends Block {
 
     /**
      * Checks if this function is a sub-function generated by splitting a larger one
-     * @see Splitter
      *
      * @return true if this function is split from a larger one
      */
@@ -816,7 +878,6 @@ public class FunctionNode extends Block {
 
     /**
      * Flag this function node as being a sub-function generated by the splitter
-     * @see Splitter
      */
     public void setIsSplit() {
         this.flags |= IS_SPLIT;
@@ -1149,7 +1210,6 @@ public class FunctionNode extends Block {
     /**
      * Get the compile unit used to compile this function
      * @see Compiler
-     * @see Splitter
      * @return the compile unit
      */
     public CompileUnit getCompileUnit() {
@@ -1159,7 +1219,6 @@ public class FunctionNode extends Block {
     /**
      * Reset the compile unit used to compile this function
      * @see Compiler
-     * @see Splitter
      * @param compileUnit the compile unit
      */
     public void setCompileUnit(final CompileUnit compileUnit) {

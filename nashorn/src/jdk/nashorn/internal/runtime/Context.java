@@ -45,12 +45,16 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.Locale;
 import java.util.TimeZone;
+
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.internal.codegen.ClassEmitter;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.debug.PrintVisitor;
+import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.options.KeyValueOption;
@@ -62,6 +66,36 @@ import sun.reflect.Reflection;
  * This class manages the global state of execution. Context is immutable.
  */
 public final class Context {
+
+    /**
+     * ContextCodeInstaller that has the privilege of installing classes in the Context.
+     * Can only be instantiated from inside the context and is opaque to other classes
+     */
+    public static class ContextCodeInstaller implements CodeInstaller<Context> {
+        private final Context      context;
+        private final ScriptLoader loader;
+        private final CodeSource   codeSource;
+
+        private ContextCodeInstaller(final Context context, final ScriptLoader loader, final CodeSource codeSource) {
+            this.context    = context;
+            this.loader     = loader;
+            this.codeSource = codeSource;
+        }
+
+        /**
+         * Return the context for this installer
+         * @return context
+         */
+        @Override
+        public Context getOwner() {
+            return context;
+        }
+
+        @Override
+        public Class<?> install(final String className, final byte[] bytecode) {
+            return loader.installClass(className, bytecode, codeSource);
+        }
+    }
 
     /** Is Context global debug mode enabled ? */
     public static final boolean DEBUG = Options.getBooleanProperty("nashorn.debug");
@@ -751,6 +785,7 @@ public final class Context {
     /**
      * Initialize given global scope object.
      *
+     * @param global the global
      * @return the initialized global scope object.
      */
     public ScriptObject initGlobal(final ScriptObject global) {
@@ -877,22 +912,24 @@ public final class Context {
             }
         }
 
-        final Compiler compiler = Compiler.compiler(source, this, errMan, strict);
-
-        if (!compiler.compile()) {
+        final FunctionNode functionNode = new Parser(this, source, errMan, strict).parse();
+        if (errors.hasErrors() || _parse_only) {
             return null;
         }
 
-        final URL url = source.getURL();
+        if (_print_lower_parse) {
+            getErr().println(new PrintVisitor(functionNode));
+        }
+
+        final URL          url    = source.getURL();
         final ScriptLoader loader = _loader_per_compile ? createNewLoader() : scriptLoader;
         final CodeSource   cs     = url == null ? null : new CodeSource(url, (CodeSigner[])null);
+        final CodeInstaller<Context> installer = new ContextCodeInstaller(this, loader, cs);
 
-        script = compiler.install(new CodeInstaller() {
-            @Override
-            public Class<?> install(final String className, final byte[] bytecode) {
-                return loader.installClass(className, bytecode, cs);
-            }
-        });
+        final Compiler compiler = new Compiler(installer, functionNode, strict);
+
+        compiler.compile();
+        script = compiler.install();
 
         if (global != null) {
             global.cacheClass(source, script);
@@ -917,15 +954,14 @@ public final class Context {
     private ScriptObject newGlobalTrusted() {
         try {
             final Class<?> clazz = Class.forName("jdk.nashorn.internal.objects.Global", true, scriptLoader);
-            final Constructor cstr = clazz.getConstructor(Context.class);
+            final Constructor<?> cstr = clazz.getConstructor(Context.class);
             return (ScriptObject) cstr.newInstance(this);
         } catch (final Exception e) {
             printStackTrace(e);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException)e;
-            } else {
-                throw new RuntimeException(e);
             }
+            throw new RuntimeException(e);
         }
     }
 }

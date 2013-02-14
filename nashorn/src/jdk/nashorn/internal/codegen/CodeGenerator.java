@@ -25,8 +25,10 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.codegen.ClassEmitter.Flag.HANDLE_STATIC;
 import static jdk.nashorn.internal.codegen.ClassEmitter.Flag.PRIVATE;
 import static jdk.nashorn.internal.codegen.ClassEmitter.Flag.STATIC;
+import static jdk.nashorn.internal.codegen.CompilerConstants.ALLOCATE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.GET_MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.GET_STRING;
 import static jdk.nashorn.internal.codegen.CompilerConstants.LEAF;
@@ -35,6 +37,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.REGEX_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SPLIT_ARRAY_ARG;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SPLIT_PREFIX;
+import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.interfaceCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
@@ -48,6 +51,7 @@ import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALL
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
 
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -63,8 +67,8 @@ import jdk.nashorn.internal.codegen.MethodEmitter.Condition;
 import jdk.nashorn.internal.codegen.MethodEmitter.Label;
 import jdk.nashorn.internal.codegen.RuntimeCallSite.SpecializedRuntimeNode;
 import jdk.nashorn.internal.codegen.objects.FieldObjectCreator;
-import jdk.nashorn.internal.codegen.objects.FunctionObjectCreator;
 import jdk.nashorn.internal.codegen.objects.MapCreator;
+import jdk.nashorn.internal.codegen.objects.ObjectCreator;
 import jdk.nashorn.internal.codegen.objects.ObjectMapCreator;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -111,11 +115,13 @@ import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Lexer.RegexToken;
 import jdk.nashorn.internal.parser.TokenType;
+import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
@@ -143,11 +149,17 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  */
 public final class CodeGenerator extends NodeOperatorVisitor {
 
-    /** Current compiler */
-    private final Compiler compiler;
+    /** Name of the Global object, cannot be referred to as .class, @see CodeGenerator */
+    private static final String GLOBAL_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "Global";
 
-    /** Compiler context */
-    private final Context context;
+    /** Name of the ScriptFunctionImpl, cannot be referred to as .class @see FunctionObjectCreator */
+    private static final String SCRIPTFUNCTION_IMPL_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "ScriptFunctionImpl";
+
+    private static final String SCRIPTFUNCTION_TRAMPOLINE_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "ScriptFunctionTrampolineImpl";
+
+    /** Constant data & installation. The only reason the compiler keeps this is because it is assigned
+     *  by reflection in class installation */
+    private final Compiler compiler;
 
     /** Call site flags given to the code generator to be used for all generated call sites */
     private final int callSiteFlags;
@@ -168,17 +180,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
      */
     CodeGenerator(final Compiler compiler) {
         this.compiler      = compiler;
-        this.context       = compiler.getContext();
-        this.callSiteFlags = context._callsite_flags;
-    }
-
-    /**
-     * Get the compiler
-     *
-     * @return the compiler used
-     */
-    public Compiler getCompiler() {
-        return compiler;
+        this.callSiteFlags = compiler.getContext()._callsite_flags;
     }
 
     /**
@@ -320,7 +322,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
          */
         final CodeGenerator codegen = this;
 
-        node.accept(new NodeVisitor(compileUnit, method) {
+        node.accept(new NodeVisitor(getCurrentCompileUnit(), method) {
             @Override
             public Node enter(final IdentNode identNode) {
                 loadIdent(identNode);
@@ -534,7 +536,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         final FunctionNode currentFunction = getCurrentFunctionNode();
         final Block        currentBlock    = getCurrentBlock();
 
-        function.accept(new NodeVisitor(compileUnit, method) {
+        function.accept(new NodeVisitor(getCurrentCompileUnit(), method) {
 
             private void sharedScopeCall(final IdentNode identNode, final int flags) {
                 final Symbol symbol = identNode.getSymbol();
@@ -651,7 +653,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                 final String signature = new FunctionSignature(true, callee.needsCallee(), callee.getReturnType(), isVarArg ? null : callee.getParameters()).toString();
 
                 if (callee.needsCallee()) {
-                    new FunctionObjectCreator(CodeGenerator.this, callee).makeObject(method);
+                    newFunctionObject(callee);
                 }
 
                 if (callee.isStrictMode()) { // self is undefined
@@ -969,14 +971,18 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public Node enter(final FunctionNode functionNode) {
+        if (functionNode.isLazy()) {
+            return null;
+        }
+
         if (functionNode.testResolved()) {
             return null;
         }
 
-        compileUnit = functionNode.getCompileUnit();
-        assert compileUnit != null;
+        setCurrentCompileUnit(functionNode.getCompileUnit());
+        assert getCurrentCompileUnit() != null;
 
-        method = compileUnit.getClassEmitter().method(functionNode);
+        method = getCurrentCompileUnit().getClassEmitter().method(functionNode);
         functionNode.setMethodEmitter(method);
         // Mark end for variable tables.
         method.begin();
@@ -1100,18 +1106,18 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         final Type elementType = arrayType.getElementType();
 
         if (units != null) {
-            final CompileUnit   savedCompileUnit = compileUnit;
-            final MethodEmitter savedMethod      = method;
+            final CompileUnit   savedCompileUnit = getCurrentCompileUnit();
+            final MethodEmitter savedMethod      = getCurrentMethodEmitter();
 
             try {
                 for (final ArrayUnit unit : units) {
-                    compileUnit = unit.getCompileUnit();
+                    setCurrentCompileUnit(unit.getCompileUnit());
 
-                    final String className = compileUnit.getUnitClassName();
-                    final String name      = compiler.uniqueName(SPLIT_PREFIX.tag());
+                    final String className = getCurrentCompileUnit().getUnitClassName();
+                    final String name      = getCurrentFunctionNode().uniqueName(SPLIT_PREFIX.tag());
                     final String signature = methodDescriptor(type, Object.class, ScriptFunction.class, ScriptObject.class, type);
 
-                    method = compileUnit.getClassEmitter().method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), name, signature);
+                    method = getCurrentCompileUnit().getClassEmitter().method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), name, signature);
                     method.setFunctionNode(getCurrentFunctionNode());
                     method.begin();
 
@@ -1135,8 +1141,8 @@ public final class CodeGenerator extends NodeOperatorVisitor {
                     savedMethod.invokeStatic(className, name, signature);
                 }
             } finally {
-                compileUnit = savedCompileUnit;
-                method      = savedMethod;
+                setCurrentCompileUnit(savedCompileUnit);
+                setCurrentMethodEmitter(savedMethod);
             }
 
             return method;
@@ -1186,8 +1192,8 @@ public final class CodeGenerator extends NodeOperatorVisitor {
      * @param string string to load
      */
     public void loadConstant(final String string) {
-        final String       unitClassName = compileUnit.getUnitClassName();
-        final ClassEmitter classEmitter  = compileUnit.getClassEmitter();
+        final String       unitClassName = getCurrentCompileUnit().getUnitClassName();
+        final ClassEmitter classEmitter  = getCurrentCompileUnit().getClassEmitter();
         final int          index         = compiler.getConstantData().add(string);
 
         method.load(index);
@@ -1202,8 +1208,8 @@ public final class CodeGenerator extends NodeOperatorVisitor {
      * @param object object to load
      */
     public void loadConstant(final Object object) {
-        final String       unitClassName = compileUnit.getUnitClassName();
-        final ClassEmitter classEmitter  = compileUnit.getClassEmitter();
+        final String       unitClassName = getCurrentCompileUnit().getUnitClassName();
+        final ClassEmitter classEmitter  = getCurrentCompileUnit().getClassEmitter();
         final int          index         = compiler.getConstantData().add(object);
         final Class<?>     cls           = object.getClass();
 
@@ -1272,14 +1278,14 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             return loadRegexToken(regexToken);
         }
         // emit field
-        final String       regexName    = compiler.uniqueName(REGEX_PREFIX.tag());
-        final ClassEmitter classEmitter = compileUnit.getClassEmitter();
+        final String       regexName    = getCurrentFunctionNode().uniqueName(REGEX_PREFIX.tag());
+        final ClassEmitter classEmitter = getCurrentCompileUnit().getClassEmitter();
 
         classEmitter.field(EnumSet.of(PRIVATE, STATIC), regexName, Object.class);
         regexFieldCount++;
 
         // get field, if null create new regex, finally clone regex object
-        method.getStatic(compileUnit.getUnitClassName(), regexName, typeDescriptor(Object.class));
+        method.getStatic(getCurrentCompileUnit().getUnitClassName(), regexName, typeDescriptor(Object.class));
         method.dup();
         final Label cachedLabel = new Label("cached");
         method.ifnonnull(cachedLabel);
@@ -1287,7 +1293,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         method.pop();
         loadRegexToken(regexToken);
         method.dup();
-        method.putStatic(compileUnit.getUnitClassName(), regexName, typeDescriptor(Object.class));
+        method.putStatic(getCurrentCompileUnit().getUnitClassName(), regexName, typeDescriptor(Object.class));
 
         method.label(cachedLabel);
         globalRegExpCopy();
@@ -1409,7 +1415,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             return null;
         }
 
-        new FunctionObjectCreator(this, referenceNode.getReference()).makeObject(method);
+        newFunctionObject(referenceNode.getReference());
 
         return null;
     }
@@ -1551,6 +1557,10 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         return true;
     }
 
+    private static boolean isReducible(final Request request) {
+        return Request.isComparison(request) || request == Request.ADD;
+    }
+
     @Override
     public Node enter(final RuntimeNode runtimeNode) {
         if (runtimeNode.testResolved()) {
@@ -1563,9 +1573,10 @@ public final class CodeGenerator extends NodeOperatorVisitor {
          *
          * TODO - remove this - Access Specializer will always know after Attr/Lower
          */
-        if (runtimeNode.isPrimitive() && !runtimeNode.isFinal()) {
+        if (runtimeNode.isPrimitive() && !runtimeNode.isFinal() && isReducible(runtimeNode.getRequest())) {
             final Node lhs = runtimeNode.getArgs().get(0);
-            final Node rhs = runtimeNode.getArgs().size() > 1 ? runtimeNode.getArgs().get(1) : null;
+            assert runtimeNode.getArgs().size() > 1 : runtimeNode + " must have two args";
+            final Node rhs = runtimeNode.getArgs().get(1);
 
             final Type   type   = runtimeNode.getType();
             final Symbol symbol = runtimeNode.getSymbol();
@@ -1709,7 +1720,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
             method.end();
         } catch (final Throwable t) {
             Context.printStackTrace(t);
-            final VerifyError e = new VerifyError("Code generation bug in \"" + splitNode.getName() + "\": likely stack misaligned: " + t + " " + compiler.getSource().getName());
+            final VerifyError e = new VerifyError("Code generation bug in \"" + splitNode.getName() + "\": likely stack misaligned: " + t + " " + getCurrentFunctionNode().getSource().getName());
             e.initCause(t);
             throw e;
         }
@@ -1898,7 +1909,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         method._new(ECMAException.class).dup();
 
         final Node   expression = throwNode.getExpression();
-        final Source source     = compiler.getSource();
+        final Source source     = throwNode.getSource();
         final int    position   = throwNode.position();
         final int    line       = source.getLine(position);
         final int    column     = source.getColumn(position);
@@ -2928,7 +2939,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         if (scopeCalls.containsKey(scopeCall)) {
             return scopeCalls.get(scopeCall);
         }
-        scopeCall.setClassAndName(compileUnit, compiler);
+        scopeCall.setClassAndName(getCurrentCompileUnit(), getCurrentFunctionNode().uniqueName("scopeCall"));
         scopeCalls.put(scopeCall, scopeCall);
         return scopeCall;
     }
@@ -2947,7 +2958,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
         if (scopeCalls.containsKey(scopeCall)) {
             return scopeCalls.get(scopeCall);
         }
-        scopeCall.setClassAndName(compileUnit, compiler);
+        scopeCall.setClassAndName(getCurrentCompileUnit(), getCurrentFunctionNode().uniqueName("scopeCall"));
         scopeCalls.put(scopeCall, scopeCall);
         return scopeCall;
     }
@@ -2959,12 +2970,12 @@ public final class CodeGenerator extends NodeOperatorVisitor {
      * @param ident identifier for block or function where applicable
      */
     private void printSymbols(final Block block, final String ident) {
-        if (!context._print_symbols) {
+        if (!compiler.getContext()._print_symbols) {
             return;
         }
 
         @SuppressWarnings("resource")
-        final PrintWriter out = context.getErr();
+        final PrintWriter out = compiler.getContext().getErr();
         out.println("[BLOCK in '" + ident + "']");
         if (!block.printSymbols(out)) {
             out.println("<no symbols>");
@@ -3057,7 +3068,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
              * on the stack throughout the store and used at the end to execute it
              */
 
-            target.accept(new NodeVisitor(compileUnit, method) {
+            target.accept(new NodeVisitor(getCurrentCompileUnit(), method) {
                 @Override
                 public Node enter(final IdentNode node) {
                     if (targetSymbol.isScope()) {
@@ -3124,7 +3135,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
          * @return the quick symbol
          */
         private Symbol quickSymbol(final Type type, final String prefix) {
-            final String name = compiler.uniqueName(prefix);
+            final String name = getCurrentFunctionNode().uniqueName(prefix);
             final Symbol symbol = new Symbol(name, IS_TEMP | IS_INTERNAL, null, null);
 
             symbol.setType(type);
@@ -3166,7 +3177,7 @@ public final class CodeGenerator extends NodeOperatorVisitor {
              */
             method.convert(target.getType());
 
-            target.accept(new NodeVisitor(compileUnit, method) {
+            target.accept(new NodeVisitor(getCurrentCompileUnit(), method) {
                 @Override
                 protected Node enterDefault(Node node) {
                     throw new AssertionError("Unexpected node " + node + " in store epilogue");
@@ -3228,42 +3239,83 @@ public final class CodeGenerator extends NodeOperatorVisitor {
 
     }
 
+    private void newFunctionObject(final FunctionNode functionNode) {
+        final boolean isLazy = functionNode.isLazy();
+        final Class<?>[] cparams = new Class<?>[] { ScriptFunctionData.class, ScriptObject.class, MethodHandle.class };
+
+        new ObjectCreator(this, new ArrayList<String>(), new ArrayList<Symbol>(), false, false) {
+            @Override
+            public void makeObject(final MethodEmitter method) {
+                final String className = isLazy ? SCRIPTFUNCTION_TRAMPOLINE_OBJECT : SCRIPTFUNCTION_IMPL_OBJECT;
+
+                method._new(className).dup();
+                if (isLazy) {
+                    loadConstant(compiler.getCodeInstaller());
+                    loadConstant(functionNode);
+                } else {
+                    final String signature = new FunctionSignature(true, functionNode.needsCallee(), functionNode.getReturnType(), functionNode.isVarArg() ? null : functionNode.getParameters()).toString();
+                    method.loadHandle(functionNode.getCompileUnit().getUnitClassName(), functionNode.getName(), signature, EnumSet.of(HANDLE_STATIC)); // function
+                }
+                loadConstant(new ScriptFunctionData(functionNode, makeMap()));
+
+                if (isLazy || functionNode.needsParentScope()) {
+                    method.loadScope();
+                } else {
+                    method.loadNull();
+                }
+
+                method.loadHandle(getClassName(), ALLOCATE.tag(), methodDescriptor(ScriptObject.class, PropertyMap.class), EnumSet.of(HANDLE_STATIC));
+
+                final List<Class<?>> cparamList = new ArrayList<>();
+                if (isLazy) {
+                    cparamList.add(CodeInstaller.class);
+                    cparamList.add(FunctionNode.class);
+                } else {
+                    cparamList.add(MethodHandle.class);
+                }
+                cparamList.addAll(Arrays.asList(cparams));
+
+                method.invoke(constructorNoLookup(className, cparamList.toArray(new Class<?>[cparamList.size()])));
+            }
+        }.makeObject(method);
+    }
+
     /*
      * Globals are special. We cannot refer to any Global (or NativeObject) class by .class, as they are different
      * for different contexts. As far as I can tell, the only NativeObject that we need to deal with like this
      * is from the code pipeline is Global
      */
     private MethodEmitter globalInstance() {
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "instance", "()L" + Compiler.GLOBAL_OBJECT + ';');
+        return method.invokeStatic(GLOBAL_OBJECT, "instance", "()L" + GLOBAL_OBJECT + ';');
     }
 
     private MethodEmitter globalObjectPrototype() {
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "objectPrototype", methodDescriptor(ScriptObject.class));
+        return method.invokeStatic(GLOBAL_OBJECT, "objectPrototype", methodDescriptor(ScriptObject.class));
     }
 
     private MethodEmitter globalAllocateArguments() {
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "allocateArguments", methodDescriptor(ScriptObject.class, Object[].class, Object.class, int.class));
+        return method.invokeStatic(GLOBAL_OBJECT, "allocateArguments", methodDescriptor(ScriptObject.class, Object[].class, Object.class, int.class));
     }
 
     private MethodEmitter globalNewRegExp() {
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "newRegExp", methodDescriptor(Object.class, String.class, String.class));
+        return method.invokeStatic(GLOBAL_OBJECT, "newRegExp", methodDescriptor(Object.class, String.class, String.class));
     }
 
     private MethodEmitter globalRegExpCopy() {
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "regExpCopy", methodDescriptor(Object.class, Object.class));
+        return method.invokeStatic(GLOBAL_OBJECT, "regExpCopy", methodDescriptor(Object.class, Object.class));
     }
 
     private MethodEmitter globalAllocateArray(final ArrayType type) {
         //make sure the native array is treated as an array type
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "allocate", "(" + type.getDescriptor() + ")Ljdk/nashorn/internal/objects/NativeArray;");
+        return method.invokeStatic(GLOBAL_OBJECT, "allocate", "(" + type.getDescriptor() + ")Ljdk/nashorn/internal/objects/NativeArray;");
     }
 
     private MethodEmitter globalIsEval() {
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "isEval", methodDescriptor(boolean.class, Object.class));
+        return method.invokeStatic(GLOBAL_OBJECT, "isEval", methodDescriptor(boolean.class, Object.class));
     }
 
     private MethodEmitter globalDirectEval() {
-        return method.invokeStatic(Compiler.GLOBAL_OBJECT, "directEval",
+        return method.invokeStatic(GLOBAL_OBJECT, "directEval",
                 methodDescriptor(Object.class, Object.class, Object.class, Object.class, Object.class, Object.class));
     }
 }

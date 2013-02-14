@@ -39,17 +39,15 @@
  * and FunctionNode because of package-access check and so reflective calls.
  */
 
+var Parser         = Java.type("jdk.nashorn.internal.parser.Parser")
 var Compiler       = Java.type("jdk.nashorn.internal.codegen.Compiler")
 var Context        = Java.type("jdk.nashorn.internal.runtime.Context")
 var Source         = Java.type("jdk.nashorn.internal.runtime.Source")
 var FunctionNode   = Java.type("jdk.nashorn.internal.ir.FunctionNode")
 
 // Compiler class methods and fields
-
-// Compiler.compile(Source, Context)
-var compilerMethod = Compiler.class.getMethod("compiler", Source.class, Context.class);
-// Compiler.compile()
-var compileMethod  = Compiler.class.getMethod("compile");
+var parseMethod = Parser.class.getMethod("parse");
+var compileMethod = Compiler.class.getMethod("compile");
 
 // NOTE: private field. But this is a trusted test!
 // Compiler.functionNode
@@ -90,10 +88,14 @@ function getFirstFunction(functionNode) {
 // source code, returns a jdk.nashorn.internal.ir.FunctionNode object 
 // representing it.
 function compile(source) {
-   var compiler = compilerMethod.invoke(null,
-       new Source("<no name>", source), Context.getContext())
-   compileMethod.invoke(compiler);
-   return getScriptNode(compiler)
+    var source   = new Source("<no name>", source);
+    var parser   = new Parser(Context.getContext(), source, null);
+    var func     = parseMethod.invoke(parser);
+    var compiler = new Compiler(Context.getContext(), func);
+
+    compileMethod.invoke(compiler);
+
+    return getScriptNode(compiler);
 };
 
 var allAssertions = (function() {

@@ -101,11 +101,13 @@ public final class ScriptFunctionData {
 
     /**
      * Constructor
+     *
      * @param name the function name
      * @param methodHandle the method handle
      * @param specs array of specialized method handles
      * @param strict strict flag
      * @param builtin builtin flag
+     * @param isConstructor constructor flags
      */
     public ScriptFunctionData(final String name, final MethodHandle methodHandle, final MethodHandle[] specs, final boolean strict, final boolean builtin, final boolean isConstructor) {
         this(name, null, 0L, methodHandle, specs, strict, builtin, isConstructor);
@@ -432,7 +434,7 @@ public final class ScriptFunctionData {
      * @param invoker the invoker handle
      * @param allocator the allocator handle
      */
-    public void setMethodHandles(MethodHandle invoker, MethodHandle allocator) {
+    public void setMethodHandles(final MethodHandle invoker, final MethodHandle allocator) {
         // We can't make method handle fields final because they're not available during codegen
         // and they're set when first called, so we enforce set-once here.
         if (this.invoker == null) {
@@ -440,6 +442,16 @@ public final class ScriptFunctionData {
             this.constructor = null; // delay constructor composition
             this.allocator   = allocator;
         }
+    }
+
+    /**
+     * Used by the trampoline. Must not be any wider than package
+     * private
+     * @param invoker new invoker
+     */
+    void resetInvoker(final MethodHandle invoker) {
+        this.invoker     = invoker;
+        this.constructor = null; //delay constructor composition
     }
 
     /**
