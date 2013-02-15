@@ -31,7 +31,7 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 import java.lang.invoke.MethodHandle;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.runtime.linker.Lookup;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;

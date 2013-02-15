@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.codegen.MethodEmitter;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -72,7 +72,7 @@ public class ContinueNode extends LabeledNode {
      * Return the target label of this continue node.
      * @return the target label.
      */
-    public MethodEmitter.Label getTargetLabel() {
+    public Label getTargetLabel() {
         assert targetNode instanceof WhileNode : "continue target must be a while node";
         return ((WhileNode)targetNode).getContinueLabel();
     }

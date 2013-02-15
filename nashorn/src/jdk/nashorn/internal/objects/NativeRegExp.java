@@ -203,8 +203,7 @@ public final class NativeRegExp extends ScriptObject {
     }
 
     /**
-     * External constructor used in generated code created by {@link jdk.nashorn.internal.codegen.CodeGenerator}, which
-     * explain the {@code public} access.
+     * External constructor used in generated code, which explains the public access
      *
      * @param regexp regexp
      * @param flags  flags

@@ -51,8 +51,9 @@ import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.internal.codegen.ClassEmitter;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Namespace;
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
@@ -917,7 +918,11 @@ public final class Context {
             return null;
         }
 
-        if (_print_lower_parse) {
+        if (_print_ast) {
+            getErr().println(new ASTWriter(functionNode));
+        }
+
+        if (_print_parse) {
             getErr().println(new PrintVisitor(functionNode));
         }
 

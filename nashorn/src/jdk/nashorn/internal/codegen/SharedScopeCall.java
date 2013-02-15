@@ -48,7 +48,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * <p>Scope calls must not be shared between normal callsites and callsites contained in a <tt>with</tt>
  * statement as this condition is not handled by current guards and will cause a runtime error.</p>
  */
-public class SharedScopeCall {
+class SharedScopeCall {
 
     /** Threshold for using shared scope calls with fast scope access. */
     public static final int FAST_SCOPE_CALL_THRESHOLD = 4;
@@ -118,7 +118,7 @@ public class SharedScopeCall {
      * @param method the method emitter
      */
     public void generateInvoke(final MethodEmitter method) {
-        method.invokeStatic(compileUnit.getUnitClassName(), methodName, getStaticSignature());
+        method.invokestatic(compileUnit.getUnitClassName(), methodName, getStaticSignature());
     }
 
     /**
@@ -138,8 +138,8 @@ public class SharedScopeCall {
 
         // Load correct scope by calling getProto() on the scope argument as often as specified
         // by the second argument.
-        final MethodEmitter.Label parentLoopStart = new MethodEmitter.Label("parent_loop_start");
-        final MethodEmitter.Label parentLoopDone = new MethodEmitter.Label("parent_loop_done");
+        final Label parentLoopStart = new Label("parent_loop_start");
+        final Label parentLoopDone  = new Label("parent_loop_done");
         method.load(Type.OBJECT, 0);
         method.label(parentLoopStart);
         method.load(Type.INT, 1);

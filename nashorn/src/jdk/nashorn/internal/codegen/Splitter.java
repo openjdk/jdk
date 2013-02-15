@@ -396,7 +396,7 @@ final class Splitter extends NodeVisitor {
          * @param targetNode the jump target node.
          * @param targetLabel the jump target label.
          */
-        private void searchJumpTarget(final Node targetNode, final MethodEmitter.Label targetLabel) {
+        private void searchJumpTarget(final Node targetNode, final Label targetLabel) {
 
             final SplitNode targetSplit = targetNodes.get(targetNode);
             // Note that targetSplit may be null, indicating that targetNode is in top level method.
@@ -406,7 +406,7 @@ final class Splitter extends NodeVisitor {
                 if (split == targetSplit) {
                     break;
                 }
-                final List<MethodEmitter.Label> externalTargets = split.getExternalTargets();
+                final List<Label> externalTargets = split.getExternalTargets();
                 if (!externalTargets.contains(targetLabel)) {
                     split.addExternalTarget(targetLabel);
                 }

@@ -43,10 +43,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IFNULL;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ACMPNE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPEQ;
-import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGE;
-import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGT;
-import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLE;
-import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLT;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPNE;
 import static jdk.internal.org.objectweb.asm.Opcodes.INSTANCEOF;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEINTERFACE;
@@ -114,7 +110,7 @@ public class MethodEmitter implements Emitter {
     private final MethodVisitor method;
 
     /** Current type stack for current evaluation */
-    protected ArrayDeque<Type> stack;
+    private ArrayDeque<Type> stack;
 
     /** Parent classEmitter representing the class of this method */
     private final ClassEmitter classEmitter;
@@ -287,7 +283,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the type at position "pos" on the stack
      */
-    public final Type peekType(final int pos) {
+    final Type peekType(final int pos) {
         final Iterator<Type> iter = stack.iterator();
         for (int i = 0; i < pos; i++) {
             iter.next();
@@ -300,7 +296,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the type at the top of the stack
      */
-    public final Type peekType() {
+    final Type peekType() {
         return stack.peek();
     }
 
@@ -312,7 +308,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter _new(final String classDescriptor) {
+    MethodEmitter _new(final String classDescriptor) {
         debug("new", classDescriptor);
         method.visitTypeInsn(NEW, classDescriptor);
         pushType(Type.OBJECT);
@@ -327,7 +323,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter _new(final Class<?> clazz) {
+    MethodEmitter _new(final Class<?> clazz) {
         return _new(className(clazz));
     }
 
@@ -338,7 +334,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter newInstance(final Class<?> clazz) {
+    MethodEmitter newInstance(final Class<?> clazz) {
         return invoke(constructorNoLookup(clazz));
     }
 
@@ -352,7 +348,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter, or null if depth is illegal and
      *  has no instruction equivalent.
      */
-    public MethodEmitter dup(final int depth) {
+    MethodEmitter dup(final int depth) {
         if (peekType().dup(method, depth) == null) {
             return null;
         }
@@ -396,7 +392,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter dup2() {
+    MethodEmitter dup2() {
         debug("dup2");
 
         if (peekType().isCategory2()) {
@@ -417,7 +413,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter dup() {
+    MethodEmitter dup() {
         return dup(0);
     }
 
@@ -426,7 +422,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter pop() {
+    MethodEmitter pop() {
         debug("pop", peekType());
         popType().pop(method);
         return this;
@@ -438,7 +434,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter pop2() {
+    MethodEmitter pop2() {
         if (peekType().isCategory2()) {
             popType();
         } else {
@@ -453,7 +449,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter swap() {
+    MethodEmitter swap() {
         debug("swap");
 
         final Type p0 = popType();
@@ -473,7 +469,7 @@ public class MethodEmitter implements Emitter {
      * @param start  start of scope
      * @param end    end of scope
      */
-    public void localVariable(final Symbol symbol, final Label start, final Label end) {
+    void localVariable(final Symbol symbol, final Label start, final Label end) {
         if (!symbol.hasSlot()) {
             return;
         }
@@ -492,7 +488,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter newStringBuilder() {
+    MethodEmitter newStringBuilder() {
         return invoke(constructorNoLookup(StringBuilder.class)).dup();
     }
 
@@ -503,7 +499,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter stringBuilderAppend() {
+    MethodEmitter stringBuilderAppend() {
         convert(Type.STRING);
         return invoke(virtualCallNoLookup(StringBuilder.class, "append", StringBuilder.class, String.class));
     }
@@ -515,7 +511,7 @@ public class MethodEmitter implements Emitter {
      * @param start start
      * @param end   end
      */
-    public void markerVariable(final String name, final Label start, final Label end) {
+    void markerVariable(final String name, final Label start, final Label end) {
         method.visitLocalVariable(name, Type.OBJECT.getDescriptor(), null, start, end, 0);
     }
 
@@ -525,7 +521,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter and() {
+    MethodEmitter and() {
         debug("and");
         pushType(get2i().and(method));
         return this;
@@ -537,7 +533,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter or() {
+    MethodEmitter or() {
         debug("or");
         pushType(get2i().or(method));
         return this;
@@ -549,7 +545,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter xor() {
+    MethodEmitter xor() {
         debug("xor");
         pushType(get2i().xor(method));
         return this;
@@ -561,7 +557,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter shr() {
+    MethodEmitter shr() {
         debug("shr");
         popType(Type.INT);
         pushType(popInteger().shr(method));
@@ -574,7 +570,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter shl() {
+    MethodEmitter shl() {
         debug("shl");
         popType(Type.INT);
         pushType(popInteger().shl(method));
@@ -587,7 +583,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter sar() {
+    MethodEmitter sar() {
         debug("sar");
         popType(Type.INT);
         pushType(popInteger().sar(method));
@@ -599,7 +595,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter neg() {
+    MethodEmitter neg() {
         debug("neg");
         pushType(popNumeric().neg(method));
         return this;
@@ -611,7 +607,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param recovery label pointing to start of catch block
      */
-    public void _catch(final Label recovery) {
+    void _catch(final Label recovery) {
         stack.clear();
         stack.push(Type.OBJECT);
         label(recovery);
@@ -625,7 +621,7 @@ public class MethodEmitter implements Emitter {
      * @param recovery       start label for catch
      * @param typeDescriptor type descriptor for exception
      */
-    public void _try(final Label entry, final Label exit, final Label recovery, final String typeDescriptor) {
+    void _try(final Label entry, final Label exit, final Label recovery, final String typeDescriptor) {
         method.visitTryCatchBlock(entry, exit, recovery, typeDescriptor);
     }
 
@@ -637,7 +633,7 @@ public class MethodEmitter implements Emitter {
      * @param recovery start label for catch
      * @param clazz    exception class
      */
-    public void _try(final Label entry, final Label exit, final Label recovery, final Class<?> clazz) {
+    void _try(final Label entry, final Label exit, final Label recovery, final Class<?> clazz) {
         method.visitTryCatchBlock(entry, exit, recovery, CompilerConstants.className(clazz));
     }
 
@@ -648,7 +644,7 @@ public class MethodEmitter implements Emitter {
      * @param exit     end label for try
      * @param recovery start label for catch
      */
-    public void _try(final Label entry, final Label exit, final Label recovery) {
+    void _try(final Label entry, final Label exit, final Label recovery) {
         _try(entry, exit, recovery, (String)null);
     }
 
@@ -658,7 +654,7 @@ public class MethodEmitter implements Emitter {
      * @param unitClassName name of the compile unit from which to load constants
      * @return this method emitter
      */
-    public MethodEmitter loadConstants(final String unitClassName) {
+    MethodEmitter loadConstants(final String unitClassName) {
         getStatic(unitClassName, CONSTANTS.tag(), CONSTANTS.descriptor());
         assert peekType().isArray() : peekType();
         return this;
@@ -673,7 +669,7 @@ public class MethodEmitter implements Emitter {
      * @param type the type for which to push UNDEFINED
      * @return the method emitter
      */
-    public MethodEmitter loadUndefined(final Type type) {
+    MethodEmitter loadUndefined(final Type type) {
         debug("load undefined " + type);
         pushType(type.loadUndefined(method));
         return this;
@@ -685,7 +681,7 @@ public class MethodEmitter implements Emitter {
      * @param type the type
      * @return the method emitter
      */
-    public MethodEmitter loadEmpty(final Type type) {
+    MethodEmitter loadEmpty(final Type type) {
         debug("load empty " + type);
         pushType(type.loadEmpty(method));
         return this;
@@ -696,7 +692,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter loadNull() {
+    MethodEmitter loadNull() {
         debug("aconst_null");
         pushType(Type.OBJECT.ldc(method, null));
         return this;
@@ -709,7 +705,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter loadType(final String className) {
+    MethodEmitter loadType(final String className) {
         debug("load type", className);
         method.visitLdcInsn(jdk.internal.org.objectweb.asm.Type.getObjectType(className));
         pushType(Type.OBJECT);
@@ -723,7 +719,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter load(final boolean b) {
+    MethodEmitter load(final boolean b) {
         debug("load boolean", b);
         pushType(Type.BOOLEAN.ldc(method, b));
         return this;
@@ -736,7 +732,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter load(final int i) {
+    MethodEmitter load(final int i) {
         debug("load int", i);
         pushType(Type.INT.ldc(method, i));
         return this;
@@ -749,7 +745,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter load(final double d) {
+    MethodEmitter load(final double d) {
         debug("load double", d);
         pushType(Type.NUMBER.ldc(method, d));
         return this;
@@ -762,7 +758,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter load(final long l) {
+    MethodEmitter load(final long l) {
         debug("load long", l);
         pushType(Type.LONG.ldc(method, l));
         return this;
@@ -772,7 +768,7 @@ public class MethodEmitter implements Emitter {
      * Fetch the length of an array.
      * @return Array length.
      */
-    public MethodEmitter arraylength() {
+    MethodEmitter arraylength() {
         debug("arraylength");
         popType(Type.OBJECT);
         pushType(Type.OBJECT_ARRAY.arraylength(method));
@@ -786,7 +782,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter load(final String s) {
+    MethodEmitter load(final String s) {
         debug("load string", s);
 
         if (s == null) {
@@ -826,7 +822,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter load(final Symbol symbol) {
+    MethodEmitter load(final Symbol symbol) {
         assert symbol != null;
         if (symbol.hasSlot()) {
             final int slot = symbol.getSlot();
@@ -837,7 +833,7 @@ public class MethodEmitter implements Emitter {
             assert !symbol.isScope();
             assert functionNode.isVarArg() : "Non-vararg functions have slotted parameters";
             final int index = symbol.getFieldIndex();
-            if(functionNode.needsArguments()) {
+            if (functionNode.needsArguments()) {
                 // ScriptObject.getArgument(int) on arguments
                 debug("load symbol", symbol.getName(), " arguments index=", index);
                 loadArguments();
@@ -864,7 +860,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter load(final Type type, final int slot) {
+    MethodEmitter load(final Type type, final int slot) {
         debug("explicit load", type, slot);
         final Type loadType = type.load(method, slot);
         pushType(loadType == Type.OBJECT && isThisSlot(slot) ? Type.THIS : loadType);
@@ -886,7 +882,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter loadThis() {
+    MethodEmitter loadThis() {
         load(functionNode.getThisNode().getSymbol());
         return this;
     }
@@ -896,7 +892,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter loadScope() {
+    MethodEmitter loadScope() {
         if (peekType() == Type.SCOPE) {
             dup();
             return this;
@@ -910,7 +906,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter loadResult() {
+    MethodEmitter loadResult() {
         load(functionNode.getResultNode().getSymbol());
         return this;
     }
@@ -924,11 +920,9 @@ public class MethodEmitter implements Emitter {
      * @param descName   descriptor
      * @param flags      flags that describe this handle, e.g. invokespecial new, or invoke virtual
      *
-     * @see ClassEmitter.Flag
-     *
      * @return the method emitter
      */
-    public MethodEmitter loadHandle(final String className, final String methodName, final String descName, final EnumSet<Flag> flags) {
+    MethodEmitter loadHandle(final String className, final String methodName, final String descName, final EnumSet<Flag> flags) {
         debug("load handle ");
         pushType(Type.OBJECT.ldc(method, new Handle(Flag.getValue(flags), className, methodName, descName)));
         return this;
@@ -939,7 +933,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter loadVarArgs() {
+    MethodEmitter loadVarArgs() {
         debug("load var args " + functionNode.getVarArgsNode().getSymbol());
         return load(functionNode.getVarArgsNode().getSymbol());
     }
@@ -949,7 +943,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter loadArguments() {
+    MethodEmitter loadArguments() {
         debug("load arguments ", functionNode.getArgumentsNode().getSymbol());
         assert functionNode.getArgumentsNode().getSymbol().getSlot() != 0;
         return load(functionNode.getArgumentsNode().getSymbol());
@@ -960,7 +954,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter loadCallee() {
+    MethodEmitter loadCallee() {
         final Symbol calleeSymbol = functionNode.getCalleeNode().getSymbol();
         debug("load callee ", calleeSymbol);
         assert calleeSymbol.getSlot() == 0 : "callee has wrong slot " + calleeSymbol.getSlot() + " in " + functionNode.getName();
@@ -971,7 +965,7 @@ public class MethodEmitter implements Emitter {
     /**
      * Pop the scope from the stack and store it in its predefined slot
      */
-    public void storeScope() {
+    void storeScope() {
         debug("store scope");
         store(functionNode.getScopeNode().getSymbol());
     }
@@ -979,7 +973,7 @@ public class MethodEmitter implements Emitter {
     /**
      * Pop the return from the stack and store it in its predefined slot
      */
-    public void storeResult() {
+    void storeResult() {
         debug("store result");
         store(functionNode.getResultNode().getSymbol());
     }
@@ -987,7 +981,7 @@ public class MethodEmitter implements Emitter {
     /**
      * Pop the arguments array from the stack and store it in its predefined slot
      */
-    public void storeArguments() {
+    void storeArguments() {
         debug("store arguments");
         store(functionNode.getArgumentsNode().getSymbol());
     }
@@ -996,7 +990,7 @@ public class MethodEmitter implements Emitter {
      * Load an element from an array, determining type automatically
      * @return the method emitter
      */
-    public MethodEmitter arrayload() {
+    MethodEmitter arrayload() {
         debug("Xaload");
         popType(Type.INT);
         pushType(popArray().aload(method));
@@ -1007,7 +1001,7 @@ public class MethodEmitter implements Emitter {
      * Pop a value, an index and an array from the stack and store
      * the value at the given index in the array.
      */
-    public void arraystore() {
+    void arraystore() {
         debug("Xastore");
         final Type value = popType();
         final Type index = popType(Type.INT);
@@ -1025,7 +1019,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param symbol symbol to store stack to
      */
-    public void store(final Symbol symbol) {
+    void store(final Symbol symbol) {
         assert symbol != null : "No symbol to store";
         if (symbol.hasSlot()) {
             final int slot = symbol.getSlot();
@@ -1035,7 +1029,7 @@ public class MethodEmitter implements Emitter {
             assert !symbol.isScope();
             assert functionNode.isVarArg() : "Non-vararg functions have slotted parameters";
             final int index = symbol.getFieldIndex();
-            if(functionNode.needsArguments()) {
+            if (functionNode.needsArguments()) {
                 debug("store symbol", symbol.getName(), " arguments index=", index);
                 loadArguments();
                 load(index);
@@ -1057,7 +1051,7 @@ public class MethodEmitter implements Emitter {
      * @param type the type to pop
      * @param slot the slot
      */
-    public void store(final Type type, final int slot) {
+    void store(final Type type, final int slot) {
         popType(type);
         type.store(method, slot);
     }
@@ -1068,7 +1062,7 @@ public class MethodEmitter implements Emitter {
      * @param slot the int slot
      * @param increment the amount to increment
      */
-    public void iinc(final int slot, final int increment) {
+    void iinc(final int slot, final int increment) {
         debug("iinc");
         method.visitIincInsn(slot, increment);
     }
@@ -1094,7 +1088,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter _instanceof(final String classDescriptor) {
+    MethodEmitter _instanceof(final String classDescriptor) {
         debug("instanceof", classDescriptor);
         popType(Type.OBJECT);
         method.visitTypeInsn(INSTANCEOF, classDescriptor);
@@ -1111,7 +1105,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter _instanceof(final Class<?> clazz) {
+    MethodEmitter _instanceof(final Class<?> clazz) {
         return _instanceof(CompilerConstants.className(clazz));
     }
 
@@ -1123,7 +1117,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter checkcast(final String classDescriptor) {
+    MethodEmitter checkcast(final String classDescriptor) {
         debug("checkcast", classDescriptor);
         assert peekType().isObject();
         method.visitTypeInsn(CHECKCAST, classDescriptor);
@@ -1138,7 +1132,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter checkcast(final Class<?> clazz) {
+    MethodEmitter checkcast(final Class<?> clazz) {
         return checkcast(CompilerConstants.className(clazz));
     }
 
@@ -1150,7 +1144,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter newarray(final ArrayType arrayType) {
+    MethodEmitter newarray(final ArrayType arrayType) {
         debug("newarray ", "arrayType=" + arrayType);
         popType(Type.INT); //LENGTH
         pushType(arrayType.newarray(method));
@@ -1166,7 +1160,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter multinewarray(final ArrayType arrayType, final int dims) {
+    MethodEmitter multinewarray(final ArrayType arrayType, final int dims) {
         debug("multianewarray ", arrayType, dims);
         for (int i = 0; i < dims; i++) {
             popType(Type.INT); //LENGTH
@@ -1200,7 +1194,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter invoke(final Call call) {
+    MethodEmitter invoke(final Call call) {
         return call.invoke(this);
     }
 
@@ -1229,7 +1223,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter invokeSpecial(final String className, final String methodName, final String methodDescriptor) {
+    MethodEmitter invokespecial(final String className, final String methodName, final String methodDescriptor) {
         debug("invokespecial", className + "." + methodName + methodDescriptor);
         return invoke(INVOKESPECIAL, className, methodName, methodDescriptor, true);
     }
@@ -1243,7 +1237,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter invokeVirtual(final String className, final String methodName, final String methodDescriptor) {
+    MethodEmitter invokevirtual(final String className, final String methodName, final String methodDescriptor) {
         debug("invokevirtual", className + "." + methodName + methodDescriptor + " " + stack);
         return invoke(INVOKEVIRTUAL, className, methodName, methodDescriptor, true);
     }
@@ -1257,7 +1251,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter invokeStatic(final String className, final String methodName, final String methodDescriptor) {
+    MethodEmitter invokestatic(final String className, final String methodName, final String methodDescriptor) {
         debug("invokestatic", className + "." + methodName + methodDescriptor);
         invoke(INVOKESTATIC, className, methodName, methodDescriptor, false);
         return this;
@@ -1274,8 +1268,8 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter invokeStatic(final String className, final String methodName, final String methodDescriptor, final Type returnType) {
-        invokeStatic(className, methodName, methodDescriptor);
+    MethodEmitter invokeStatic(final String className, final String methodName, final String methodDescriptor, final Type returnType) {
+        invokestatic(className, methodName, methodDescriptor);
         popType();
         pushType(returnType);
         return this;
@@ -1290,7 +1284,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter invokeInterface(final String className, final String methodName, final String methodDescriptor) {
+    MethodEmitter invokeinterface(final String className, final String methodName, final String methodDescriptor) {
         debug("invokeinterface", className + "." + methodName + methodDescriptor);
         return invoke(INVOKEINTERFACE, className, methodName, methodDescriptor, true);
     }
@@ -1302,7 +1296,7 @@ public class MethodEmitter implements Emitter {
      * @param values       case values for the table
      * @param table        default label
      */
-    public void lookupSwitch(final Label defaultLabel, final int[] values, final Label[] table) {
+    void lookupswitch(final Label defaultLabel, final int[] values, final Label[] table) {
         debug("lookupswitch", peekType());
         popType(Type.INT);
         method.visitLookupSwitchInsn(defaultLabel, values, table);
@@ -1315,7 +1309,7 @@ public class MethodEmitter implements Emitter {
      * @param defaultLabel  default label
      * @param table         label table
      */
-    public void tableSwitch(final int lo, final int hi, final Label defaultLabel, final Label[] table) {
+    void tableswitch(final int lo, final int hi, final Label defaultLabel, final Label[] table) {
         debug("tableswitch", peekType());
         popType(Type.INT);
         method.visitTableSwitchInsn(lo, hi, defaultLabel, table);
@@ -1357,7 +1351,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param type the type for the return
      */
-    public void _return(final Type type) {
+    void _return(final Type type) {
         debug("return", type);
         assert stack.size() == 1 : "Only return value on stack allowed at return point - depth=" + stack.size() + " stack = " + stack;
         final Type stackType = peekType();
@@ -1371,14 +1365,14 @@ public class MethodEmitter implements Emitter {
     /**
      * Perform a return using the stack top value as the guide for the type
      */
-    public void _return() {
+    void _return() {
         _return(peekType());
     }
 
     /**
      * Perform a void return.
      */
-    public void returnVoid() {
+    void returnVoid() {
         debug("return [void]");
         assert stack.isEmpty() : stack;
         method.visitInsn(RETURN);
@@ -1392,7 +1386,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label destination label
      */
-    public void splitAwareGoto(final Label label) {
+    void splitAwareGoto(final Label label) {
 
         if (splitNode != null) {
             final int index = splitNode.getExternalTargets().indexOf(label);
@@ -1418,7 +1412,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter cmp(final boolean isCmpG) {
+    MethodEmitter cmp(final boolean isCmpG) {
         pushType(get2n().cmp(method, isCmpG));
         return this;
     }
@@ -1443,7 +1437,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void if_acmpeq(final Label label) {
+    void if_acmpeq(final Label label) {
         debug("if_acmpeq", label);
         jump(IF_ACMPEQ, label, 2);
     }
@@ -1453,7 +1447,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void if_acmpne(final Label label) {
+    void if_acmpne(final Label label) {
         debug("if_acmpne", label);
         jump(IF_ACMPNE, label, 2);
     }
@@ -1463,7 +1457,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void ifnull(final Label label) {
+    void ifnull(final Label label) {
         debug("ifnull", label);
         jump(IFNULL, label, 1);
     }
@@ -1473,7 +1467,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void ifnonnull(final Label label) {
+    void ifnonnull(final Label label) {
         debug("ifnonnull", label);
         jump(IFNONNULL, label, 1);
     }
@@ -1483,7 +1477,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void ifeq(final Label label) {
+    void ifeq(final Label label) {
         debug("ifeq ", label);
         jump(IFEQ, label, 1);
     }
@@ -1493,7 +1487,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void if_icmpeq(final Label label) {
+    void if_icmpeq(final Label label) {
         debug("if_icmpeq", label);
         jump(IF_ICMPEQ, label, 2);
     }
@@ -1503,8 +1497,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-
-    public void ifne(final Label label) {
+    void ifne(final Label label) {
         debug("ifne", label);
         jump(IFNE, label, 1);
     }
@@ -1514,7 +1507,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void if_icmpne(final Label label) {
+    void if_icmpne(final Label label) {
         debug("if_icmpne", label);
         jump(IF_ICMPNE, label, 2);
     }
@@ -1524,7 +1517,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void iflt(final Label label) {
+    void iflt(final Label label) {
         debug("iflt", label);
         jump(IFLT, label, 1);
     }
@@ -1534,7 +1527,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void ifle(final Label label) {
+    void ifle(final Label label) {
         debug("ifle", label);
         jump(IFLE, label, 1);
     }
@@ -1544,7 +1537,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void ifgt(final Label label) {
+    void ifgt(final Label label) {
         debug("ifgt", label);
         jump(IFGT, label, 1);
     }
@@ -1554,7 +1547,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label label to true case
      */
-    public void ifge(final Label label) {
+    void ifge(final Label label) {
         debug("ifge", label);
         jump(IFGE, label, 1);
     }
@@ -1564,7 +1557,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label destination label
      */
-    public void _goto(final Label label) {
+    void _goto(final Label label) {
         debug("goto", label);
         jump(GOTO, label, 0);
         stack = null;
@@ -1617,7 +1610,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label the label
      */
-    public void label(final Label label) {
+    void label(final Label label) {
         /*
          * If stack == null, this means that we came here not through a fallthrough.
          * E.g. a label after an athrow. Then we create a new stack if one doesn't exist
@@ -1643,7 +1636,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter convert(final Type to) {
+    MethodEmitter convert(final Type to) {
         final Type type = peekType().convert(method, to);
         if (type != null) {
             if (peekType() != to) {
@@ -1696,7 +1689,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter add() {
+    MethodEmitter add() {
         debug("add");
         pushType(get2().add(method));
         return this;
@@ -1707,7 +1700,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter sub() {
+    MethodEmitter sub() {
         debug("sub");
         pushType(get2n().sub(method));
         return this;
@@ -1718,7 +1711,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter mul() {
+    MethodEmitter mul() {
         debug("mul ");
         pushType(get2n().mul(method));
         return this;
@@ -1729,7 +1722,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter div() {
+    MethodEmitter div() {
         debug("div");
         pushType(get2n().div(method));
         return this;
@@ -1740,7 +1733,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter rem() {
+    MethodEmitter rem() {
         debug("rem");
         pushType(get2n().rem(method));
         return this;
@@ -1795,7 +1788,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter dynamicNew(final int argCount, final int flags) {
+    MethodEmitter dynamicNew(final int argCount, final int flags) {
         debug("dynamic_new", "argcount=" + argCount);
         final String signature = getDynamicSignature(Type.OBJECT, argCount);
         method.visitInvokeDynamicInsn("dyn:new", signature, LINKERBOOTSTRAP, flags);
@@ -1812,7 +1805,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter dynamicCall(final Type returnType, final int argCount, final int flags) {
+    MethodEmitter dynamicCall(final Type returnType, final int argCount, final int flags) {
         debug("dynamic_call", "args=" + argCount, "returnType=" + returnType);
         final String signature = getDynamicSignature(returnType, argCount); // +1 because the function itself is the 1st parameter for dynamic calls (what you call - call target)
         debug("   signature", signature);
@@ -1831,7 +1824,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter dynamicRuntimeCall(final String name, final Type returnType, final RuntimeNode.Request request) {
+    MethodEmitter dynamicRuntimeCall(final String name, final Type returnType, final RuntimeNode.Request request) {
         debug("dynamic_runtime_call", name, "args=" + request.getArity(), "returnType=" + returnType);
         final String signature = getDynamicSignature(returnType, request.getArity());
         debug("   signature", signature);
@@ -1851,7 +1844,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter dynamicGet(final Type valueType, final String name, final int flags, final boolean isMethod) {
+    MethodEmitter dynamicGet(final Type valueType, final String name, final int flags, final boolean isMethod) {
         debug("dynamic_get", name, valueType);
 
         Type type = valueType;
@@ -1877,7 +1870,7 @@ public class MethodEmitter implements Emitter {
      * @param name      name of property
      * @param flags     call site flags
      */
-     public void dynamicSet(final Type valueType, final String name, final int flags) {
+     void dynamicSet(final Type valueType, final String name, final int flags) {
         debug("dynamic_set", name, peekType());
 
         Type type = valueType;
@@ -1902,7 +1895,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter dynamicGetIndex(final Type result, final int flags, final boolean isMethod) {
+    MethodEmitter dynamicGetIndex(final Type result, final int flags, final boolean isMethod) {
         debug("dynamic_get_index", peekType(1) + "[" + peekType() + "]");
 
         Type resultType = result;
@@ -1938,7 +1931,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param flags call site flags for setter
      */
-    public void dynamicSetIndex(final int flags) {
+    void dynamicSetIndex(final int flags) {
         debug("dynamic_set_index", peekType(2) + "[" + peekType(1) + "] =", peekType());
 
         Type value = peekType();
@@ -2015,7 +2008,7 @@ public class MethodEmitter implements Emitter {
       *
       * @return the method emitter
       */
-    public MethodEmitter getField(final FieldAccess fa) {
+    MethodEmitter getField(final FieldAccess fa) {
         return fa.get(this);
     }
 
@@ -2024,7 +2017,7 @@ public class MethodEmitter implements Emitter {
       *
       * @param fa the field access
       */
-    public void putField(final FieldAccess fa) {
+    void putField(final FieldAccess fa) {
         fa.put(this);
     }
 
@@ -2038,7 +2031,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter getField(final String className, final String fieldName, final String fieldDescriptor) {
+    MethodEmitter getField(final String className, final String fieldName, final String fieldDescriptor) {
         debug("getfield", "receiver=" + peekType(), className + "." + fieldName + fieldDescriptor);
         final Type receiver = popType();
         assert receiver.isObject();
@@ -2056,7 +2049,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return the method emitter
      */
-    public MethodEmitter getStatic(final String className, final String fieldName, final String fieldDescriptor) {
+    MethodEmitter getStatic(final String className, final String fieldName, final String fieldDescriptor) {
         debug("getstatic", className + "." + fieldName + "." + fieldDescriptor);
         method.visitFieldInsn(GETSTATIC, className, fieldName, fieldDescriptor);
         pushType(fieldType(fieldDescriptor));
@@ -2070,7 +2063,7 @@ public class MethodEmitter implements Emitter {
      * @param fieldName       field name
      * @param fieldDescriptor field descriptor
      */
-    public void putField(final String className, final String fieldName, final String fieldDescriptor) {
+    void putField(final String className, final String fieldName, final String fieldDescriptor) {
         debug("putfield", "receiver=" + peekType(1), "value=" + peekType());
         popType(fieldType(fieldDescriptor));
         popType(Type.OBJECT);
@@ -2084,7 +2077,7 @@ public class MethodEmitter implements Emitter {
      * @param fieldName       field name
      * @param fieldDescriptor field descriptor
      */
-    public void putStatic(final String className, final String fieldName, final String fieldDescriptor) {
+    void putStatic(final String className, final String fieldName, final String fieldDescriptor) {
         debug("putfield", "value=" + peekType());
         popType(fieldType(fieldDescriptor));
         method.visitFieldInsn(PUTSTATIC, className, fieldName, fieldDescriptor);
@@ -2096,7 +2089,7 @@ public class MethodEmitter implements Emitter {
      * @param line  line number
      * @param label label
      */
-    public void lineNumber(final int line, final Label label) {
+    void lineNumber(final int line, final Label label) {
         method.visitLineNumber(line, label);
     }
 
@@ -2112,7 +2105,7 @@ public class MethodEmitter implements Emitter {
     /**
      * Emit a System.err.print statement of whatever is on top of the bytecode stack
      */
-     public void print() {
+     void print() {
          getField(ERR_STREAM);
          swap();
          convert(Type.OBJECT);
@@ -2122,7 +2115,7 @@ public class MethodEmitter implements Emitter {
     /**
      * Emit a System.err.println statement of whatever is on top of the bytecode stack
      */
-     public void println() {
+     void println() {
          getField(ERR_STREAM);
          swap();
          convert(Type.OBJECT);
@@ -2133,7 +2126,7 @@ public class MethodEmitter implements Emitter {
       * Emit a System.err.print statement
       * @param string string to print
       */
-     public void print(final String string) {
+     void print(final String string) {
          getField(ERR_STREAM);
          load(string);
          invoke(PRINT);
@@ -2143,7 +2136,7 @@ public class MethodEmitter implements Emitter {
       * Emit a System.err.println statement
       * @param string string to print
       */
-     public void println(final String string) {
+     void println(final String string) {
          getField(ERR_STREAM);
          load(string);
          invoke(PRINTLN);
@@ -2152,7 +2145,7 @@ public class MethodEmitter implements Emitter {
      /**
       * Print a stacktrace to S
       */
-     public void stacktrace() {
+     void stacktrace() {
          _new(Throwable.class);
          dup();
          invoke(constructorNoLookup(Throwable.class));
@@ -2254,130 +2247,11 @@ public class MethodEmitter implements Emitter {
         }
     }
 
-
-    /**
-     * Abstraction for labels, separating a label from the underlying
-     * byte code emitter. Also augmenting label with e.g. a name
-     * for easier debugging and reading code
-     *
-     * see -Dnashorn.codegen.debug, --log=codegen
-     */
-    public static class Label extends jdk.internal.org.objectweb.asm.Label {
-        /** Name of this label */
-        private final String name;
-
-        /** Type stack at this label */
-        private ArrayDeque<Type> stack;
-
-        /**
-         * Constructor
-         *
-         * @param name name of this label
-         */
-        public Label(final String name) {
-            super();
-            this.name = name;
-        }
-
-        /**
-         * Copy constructor
-         *
-         * @param label a label to clone
-         */
-        public Label(final Label label) {
-            super();
-            name = label.name;
-        }
-
-        ArrayDeque<Type> getStack() {
-            return stack;
-        }
-
-        void setStack(final ArrayDeque<Type> stack) {
-            this.stack = stack;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            String s = super.toString();
-            s = s.substring(1, s.length());
-            sb.append(name).append('_').append(Long.toHexString(Long.parseLong(s)));
-
-            return sb.toString();
-        }
-    }
-
-    /**
-     * Condition enum used for all kinds of jumps, regardless of type
-     */
-    static enum Condition {
-        EQ,
-        NE,
-        LE,
-        LT,
-        GE,
-        GT;
-
-        public static Condition forRuntimeRequest(final RuntimeNode.Request request) {
-            try {
-                final String reqString = request.toString().replace("_STRICT", "");
-                return Condition.valueOf(reqString);
-            } catch (final IllegalArgumentException e) {
-                return null;
-            }
-        }
-
-        public static int toUnary(final Condition c) {
-            switch (c) {
-            case EQ:
-                return IFEQ;
-            case NE:
-                return IFNE;
-            case LE:
-                return IFLE;
-            case LT:
-                return IFLT;
-            case GE:
-                return IFGE;
-            case GT:
-                return IFGT;
-            default:
-                assert false;
-                return -1;
-            }
-        }
-
-        public static int toBinary(final Condition c) {
-            return toBinary(c, false);
-        }
-
-        public static int toBinary(final Condition c, final boolean isObject) {
-            switch (c) {
-            case EQ:
-                return isObject ? IF_ACMPEQ : IF_ICMPEQ;
-            case NE:
-                return isObject ? IF_ACMPNE : IF_ICMPNE;
-            case LE:
-                return IF_ICMPLE;
-            case LT:
-                return IF_ICMPLT;
-            case GE:
-                return IF_ICMPGE;
-            case GT:
-                return IF_ICMPGT;
-            default:
-                assert false;
-                return -1;
-            }
-        }
-    }
-
     /**
      * Set the current function node being emitted
      * @param functionNode the function node
      */
-    public void setFunctionNode(final FunctionNode functionNode) {
+    void setFunctionNode(final FunctionNode functionNode) {
         this.functionNode = functionNode;
     }
 
@@ -2387,7 +2261,7 @@ public class MethodEmitter implements Emitter {
      *
      * @return split node
      */
-    public SplitNode getSplitNode() {
+    SplitNode getSplitNode() {
         return splitNode;
     }
 
@@ -2395,7 +2269,7 @@ public class MethodEmitter implements Emitter {
      * Set the split node for this method emitter
      * @param splitNode split node
      */
-    public void setSplitNode(final SplitNode splitNode) {
+    void setSplitNode(final SplitNode splitNode) {
         this.splitNode = splitNode;
     }
 }

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.codegen.objects;
+package jdk.nashorn.internal.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +53,7 @@ public class MapCreator {
      * @param keys      list of keys for map
      * @param symbols   list of symbols for map
      */
-    public MapCreator(final Class<?> structure, final List<String> keys, final List<Symbol> symbols) {
+    MapCreator(final Class<?> structure, final List<String> keys, final List<Symbol> symbols) {
         final int size   = keys.size();
 
         this.structure = structure;
@@ -68,7 +68,7 @@ public class MapCreator {
      *
      * @return New map populated with accessor properties.
      */
-    public PropertyMap makeMap(final boolean hasArguments) {
+    PropertyMap makeMap(final boolean hasArguments) {
         final List<Property> properties = new ArrayList<>();
 
         assert keys != null;
@@ -86,8 +86,7 @@ public class MapCreator {
     }
 
     /**
-     * Compute property flags given local state of a field. Maybe be overridden and extended,
-     * as is the case in {@link ObjectMapCreator}
+     * Compute property flags given local state of a field. May be overridden and extended,
      *
      * @param symbol       symbol to check
      * @param hasArguments does the created object have an "arguments" property

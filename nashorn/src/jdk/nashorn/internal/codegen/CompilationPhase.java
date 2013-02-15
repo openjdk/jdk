@@ -76,18 +76,7 @@ enum CompilationPhase {
     CONSTANT_FOLDING_PHASE(EnumSet.of(INITIALIZED), CONSTANT_FOLDED) {
         @Override
         boolean transform(final Compiler compiler, final FunctionNode fn) {
-            final Context context = compiler.getContext();
-
-            if (context._print_ast) {
-                context.getErr().println(new ASTWriter(fn));
-            }
-
-            if (context._print_parse) {
-                context.getErr().println(new PrintVisitor(fn));
-            }
-
             fn.accept(new FoldConstants());
-
             return true;
         }
 
@@ -137,7 +126,7 @@ enum CompilationPhase {
 
                 if (context._print_lower_parse) {
                     context.getErr().println(new PrintVisitor(fn));
-                }
+               }
             }
         }
 

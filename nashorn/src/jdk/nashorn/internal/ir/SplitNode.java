@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.codegen.CompileUnit;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Reference;
@@ -57,7 +58,7 @@ public class SplitNode extends Node {
 
     /** A list of target labels in parent methods this split node may encounter. */
     @Ignore
-    private final List<MethodEmitter.Label> externalTargets;
+    private final List<Label> externalTargets;
 
     /** True if this split node or any of its children contain a return statement. */
     private boolean hasReturn;
@@ -85,10 +86,10 @@ public class SplitNode extends Node {
     private SplitNode(final SplitNode splitNode, final CopyState cs) {
         super(splitNode);
 
-        name         = splitNode.name;
-        functionNode = (FunctionNode)cs.existingOrSame(splitNode.functionNode);
-        body         = cs.existingOrCopy(splitNode.body);
-        externalTargets = new ArrayList<>();
+        this.name         = splitNode.name;
+        this.functionNode = (FunctionNode)cs.existingOrSame(splitNode.functionNode);
+        this.body         = cs.existingOrCopy(splitNode.body);
+        this.externalTargets = new ArrayList<>();
     }
 
     @Override
@@ -196,7 +197,7 @@ public class SplitNode extends Node {
      * Get the external targets for this SplitNode
      * @return list of external targets
      */
-    public List<MethodEmitter.Label> getExternalTargets() {
+    public List<Label> getExternalTargets() {
         return Collections.unmodifiableList(externalTargets);
     }
 
@@ -204,7 +205,7 @@ public class SplitNode extends Node {
      * Add an external target for this SplitNode
      * @param targetLabel target label
      */
-    public void addExternalTarget(final MethodEmitter.Label targetLabel) {
+    public void addExternalTarget(final Label targetLabel) {
         externalTargets.add(targetLabel);
     }
 

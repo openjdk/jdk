@@ -22,33 +22,62 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.nashorn.internal.codegen;
 
-package jdk.nashorn.internal.codegen.objects;
+import java.util.ArrayDeque;
 
-import java.util.List;
-import jdk.nashorn.internal.ir.Symbol;
-import jdk.nashorn.internal.runtime.Property;
+import jdk.nashorn.internal.codegen.types.Type;
 
 /**
- * This map creator is used to guarantee that all properties start out as
- * object types. Only semantically significant in the -Dnashorn.fields.dual=true world,
- * where we want to avoid invalidation upon initialization e.g. for var x = {a:"str"};
+ * Abstraction for labels, separating a label from the underlying
+ * byte code emitter. Also augmenting label with e.g. a name
+ * for easier debugging and reading code
+ *
+ * see -Dnashorn.codegen.debug, --log=codegen
  */
+public class Label extends jdk.internal.org.objectweb.asm.Label {
+    /** Name of this label */
+    private final String name;
 
-public class ObjectMapCreator extends MapCreator {
+    /** Type stack at this label */
+    private ArrayDeque<Type> stack;
+
     /**
      * Constructor
      *
-     * @param structure structure for object class
-     * @param keys      keys in object
-     * @param symbols   symbols in object corresponding to keys
+     * @param name name of this label
      */
-    public ObjectMapCreator(final Class<?> structure, final List<String> keys, final List<Symbol> symbols) {
-        super(structure, keys, symbols);
+    public Label(final String name) {
+        super();
+        this.name = name;
+    }
+
+    /**
+     * Copy constructor
+     *
+     * @param label a label to clone
+     */
+    public Label(final Label label) {
+        super();
+        this.name = label.name;
+    }
+
+    ArrayDeque<Type> getStack() {
+        return stack;
+    }
+
+    void setStack(final ArrayDeque<Type> stack) {
+        this.stack = stack;
     }
 
     @Override
-    protected int getPropertyFlags(final Symbol symbol, final boolean isVarArg) {
-        return super.getPropertyFlags(symbol, isVarArg) | Property.IS_ALWAYS_OBJECT;
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        String s = super.toString();
+        s = s.substring(1, s.length());
+        sb.append(name).append('_').append(Long.toHexString(Long.parseLong(s)));
+
+        return sb.toString();
     }
 }
+

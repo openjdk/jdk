@@ -65,8 +65,8 @@ public class ReturnNode extends Node {
     private ReturnNode(final ReturnNode returnNode, final CopyState cs) {
         super(returnNode);
 
-        expression = cs.existingOrCopy(returnNode.expression);
-        tryChain   = (TryNode)cs.existingOrSame(returnNode.tryChain);
+        this.expression = cs.existingOrCopy(returnNode.expression);
+        this.tryChain   = (TryNode)cs.existingOrSame(returnNode.tryChain);
     }
 
     @Override

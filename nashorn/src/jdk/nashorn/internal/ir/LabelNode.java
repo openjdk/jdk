@@ -68,10 +68,10 @@ public class LabelNode extends Node {
     private LabelNode(final LabelNode labelNode, final CopyState cs) {
         super(labelNode);
 
-        label        = (IdentNode)cs.existingOrCopy(labelNode.label);
-        body         = (Block)cs.existingOrCopy(labelNode.body);
-        breakNode    = cs.existingOrSame(labelNode.breakNode);
-        continueNode = cs.existingOrSame(labelNode.continueNode);
+        this.label        = (IdentNode)cs.existingOrCopy(labelNode.label);
+        this.body         = (Block)cs.existingOrCopy(labelNode.body);
+        this.breakNode    = cs.existingOrSame(labelNode.breakNode);
+        this.continueNode = cs.existingOrSame(labelNode.continueNode);
     }
 
     @Override

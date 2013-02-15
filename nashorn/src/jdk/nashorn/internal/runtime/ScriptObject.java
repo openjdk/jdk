@@ -60,7 +60,7 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.objects.AccessorPropertyDescriptor;
 import jdk.nashorn.internal.objects.DataPropertyDescriptor;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
@@ -144,13 +144,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /** Method handle for setting a function argument at a given index. Used from MapCreator */
     public static final Call SET_ARGUMENT       = virtualCall(ScriptObject.class, "setArgument", void.class, int.class, Object.class);
 
-    /** Method handle for getting the proto of a ScriptObject - used by {@link jdk.nashorn.internal.codegen.CodeGenerator} */
+    /** Method handle for getting the proto of a ScriptObject */
     public static final Call GET_PROTO          = virtualCallNoLookup(ScriptObject.class, "getProto", ScriptObject.class);
 
-    /** Method handle for setting the proto of a ScriptObject - used by {@link jdk.nashorn.internal.codegen.CodeGenerator} */
+    /** Method handle for setting the proto of a ScriptObject */
     public static final Call SET_PROTO          = virtualCallNoLookup(ScriptObject.class, "setProto", void.class, ScriptObject.class);
 
-    /** Method handle for setting the user accessors of a ScriptObject - used by {@link jdk.nashorn.internal.codegen.CodeGenerator} */
+    /** Method handle for setting the user accessors of a ScriptObject */
     public static final Call SET_USER_ACCESSORS = virtualCall(ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
 
     /** Method handle for getter for {@link UserAccessorProperty}, given a slot */
