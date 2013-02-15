@@ -1856,6 +1856,154 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(instanceKlassHandle k) 
 #define MAX_CODE_SIZE 65535
 #define INITIAL_MAX_LVT_NUMBER 256
 
+/* Copy class file LVT's/LVTT's into the HotSpot internal LVT.
+ *
+ * Rules for LVT's and LVTT's are:
+ *   - There can be any number of LVT's and LVTT's.
+ *   - If there are n LVT's, it is the same as if there was just
+ *     one LVT containing all the entries from the n LVT's.
+ *   - There may be no more than one LVT entry per local variable.
+ *     Two LVT entries are 'equal' if these fields are the same:
+ *        start_pc, length, name, slot
+ *   - There may be no more than one LVTT entry per each LVT entry.
+ *     Each LVTT entry has to match some LVT entry.
+ *   - HotSpot internal LVT keeps natural ordering of class file LVT entries.
+ */
+void ClassFileParser::copy_localvariable_table(ConstMethod* cm,
+                                               int lvt_cnt,
+                                               u2* localvariable_table_length,
+                                               u2** localvariable_table_start,
+                                               int lvtt_cnt,
+                                               u2* localvariable_type_table_length,
+                                               u2** localvariable_type_table_start,
+                                               TRAPS) {
+
+  LVT_Hash** lvt_Hash = NEW_RESOURCE_ARRAY(LVT_Hash*, HASH_ROW_SIZE);
+  initialize_hashtable(lvt_Hash);
+
+  // To fill LocalVariableTable in
+  Classfile_LVT_Element*  cf_lvt;
+  LocalVariableTableElement* lvt = cm->localvariable_table_start();
+
+  for (int tbl_no = 0; tbl_no < lvt_cnt; tbl_no++) {
+    cf_lvt = (Classfile_LVT_Element *) localvariable_table_start[tbl_no];
+    for (int idx = 0; idx < localvariable_table_length[tbl_no]; idx++, lvt++) {
+      copy_lvt_element(&cf_lvt[idx], lvt);
+      // If no duplicates, add LVT elem in hashtable lvt_Hash.
+      if (LVT_put_after_lookup(lvt, lvt_Hash) == false
+          && _need_verify
+          && _major_version >= JAVA_1_5_VERSION) {
+        clear_hashtable(lvt_Hash);
+        ConstantPool* cp = cm->constants();
+        classfile_parse_error("Duplicated LocalVariableTable attribute "
+                              "entry for '%s' in class file %s",
+                               cp->symbol_at(lvt->name_cp_index)->as_utf8(),
+                               CHECK);
+      }
+    }
+  }
+
+  // To merge LocalVariableTable and LocalVariableTypeTable
+  Classfile_LVT_Element* cf_lvtt;
+  LocalVariableTableElement lvtt_elem;
+
+  for (int tbl_no = 0; tbl_no < lvtt_cnt; tbl_no++) {
+    cf_lvtt = (Classfile_LVT_Element *) localvariable_type_table_start[tbl_no];
+    for (int idx = 0; idx < localvariable_type_table_length[tbl_no]; idx++) {
+      copy_lvt_element(&cf_lvtt[idx], &lvtt_elem);
+      int index = hash(&lvtt_elem);
+      LVT_Hash* entry = LVT_lookup(&lvtt_elem, index, lvt_Hash);
+      if (entry == NULL) {
+        if (_need_verify) {
+          clear_hashtable(lvt_Hash);
+          ConstantPool* cp = cm->constants();
+          classfile_parse_error("LVTT entry for '%s' in class file %s "
+                                "does not match any LVT entry",
+                                 cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
+                                 CHECK);
+        }
+      } else if (entry->_elem->signature_cp_index != 0 && _need_verify) {
+        clear_hashtable(lvt_Hash);
+        ConstantPool* cp = cm->constants();
+        classfile_parse_error("Duplicated LocalVariableTypeTable attribute "
+                              "entry for '%s' in class file %s",
+                               cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
+                               CHECK);
+      } else {
+        // to add generic signatures into LocalVariableTable
+        entry->_elem->signature_cp_index = lvtt_elem.descriptor_cp_index;
+      }
+    }
+  }
+  clear_hashtable(lvt_Hash);
+}
+
+
+void ClassFileParser::copy_method_annotations(ClassLoaderData* loader_data,
+                                       ConstMethod* cm,
+                                       u1* runtime_visible_annotations,
+                                       int runtime_visible_annotations_length,
+                                       u1* runtime_invisible_annotations,
+                                       int runtime_invisible_annotations_length,
+                                       u1* runtime_visible_parameter_annotations,
+                                       int runtime_visible_parameter_annotations_length,
+                                       u1* runtime_invisible_parameter_annotations,
+                                       int runtime_invisible_parameter_annotations_length,
+                                       u1* runtime_visible_type_annotations,
+                                       int runtime_visible_type_annotations_length,
+                                       u1* runtime_invisible_type_annotations,
+                                       int runtime_invisible_type_annotations_length,
+                                       u1* annotation_default,
+                                       int annotation_default_length,
+                                       TRAPS) {
+
+  AnnotationArray* a;
+
+  if (runtime_visible_annotations_length +
+      runtime_invisible_annotations_length > 0) {
+     a = assemble_annotations(loader_data,
+                              runtime_visible_annotations,
+                              runtime_visible_annotations_length,
+                              runtime_invisible_annotations,
+                              runtime_invisible_annotations_length,
+                              CHECK);
+     cm->set_method_annotations(a);
+  }
+
+  if (runtime_visible_parameter_annotations_length +
+      runtime_invisible_parameter_annotations_length > 0) {
+    a = assemble_annotations(loader_data,
+                             runtime_visible_parameter_annotations,
+                             runtime_visible_parameter_annotations_length,
+                             runtime_invisible_parameter_annotations,
+                             runtime_invisible_parameter_annotations_length,
+                             CHECK);
+    cm->set_parameter_annotations(a);
+  }
+
+  if (annotation_default_length > 0) {
+    a = assemble_annotations(loader_data,
+                             annotation_default,
+                             annotation_default_length,
+                             NULL,
+                             0,
+                             CHECK);
+    cm->set_default_annotations(a);
+  }
+
+  if (runtime_visible_type_annotations_length +
+      runtime_invisible_type_annotations_length > 0) {
+    a = assemble_annotations(loader_data,
+                             runtime_visible_type_annotations,
+                             runtime_visible_type_annotations_length,
+                             runtime_invisible_type_annotations,
+                             runtime_invisible_type_annotations_length,
+                             CHECK);
+    cm->set_type_annotations(a);
+  }
+}
+
+
 // Note: the parse_method below is big and clunky because all parsing of the code and exceptions
 // attribute is inlined. This is cumbersome to avoid since we inline most of the parts in the
 // Method* to save footprint, so we only know the size of the resulting Method* when the
@@ -1869,10 +2017,6 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
                                            constantPoolHandle cp,
                                            bool is_interface,
                                            AccessFlags *promoted_flags,
-                                           AnnotationArray** method_annotations,
-                                           AnnotationArray** method_parameter_annotations,
-                                           AnnotationArray** method_default_annotations,
-                                           AnnotationArray** method_type_annotations,
                                            TRAPS) {
   ClassFileStream* cfs = stream();
   methodHandle nullHandle;
@@ -2273,10 +2417,24 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   }
 
   // All sizing information for a Method* is finally available, now create it
+  InlineTableSizes sizes(
+      total_lvt_length,
+      linenumber_table_length,
+      exception_table_length,
+      checked_exceptions_length,
+      method_parameters_length,
+      generic_signature_index,
+      runtime_visible_annotations_length +
+           runtime_invisible_annotations_length,
+      runtime_visible_parameter_annotations_length +
+           runtime_invisible_parameter_annotations_length,
+      runtime_visible_type_annotations_length +
+           runtime_invisible_type_annotations_length,
+      annotation_default_length,
+      0);
+
   Method* m = Method::allocate(
-      loader_data, code_length, access_flags, linenumber_table_length,
-      total_lvt_length, exception_table_length, checked_exceptions_length,
-      method_parameters_length, generic_signature_index,
+      loader_data, code_length, access_flags, &sizes,
       ConstMethod::NORMAL, CHECK_(nullHandle));
 
   ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
@@ -2347,107 +2505,37 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
     copy_u2_with_conversion((u2*) m->checked_exceptions_start(), checked_exceptions_start, size);
   }
 
-  /* Copy class file LVT's/LVTT's into the HotSpot internal LVT.
-   *
-   * Rules for LVT's and LVTT's are:
-   *   - There can be any number of LVT's and LVTT's.
-   *   - If there are n LVT's, it is the same as if there was just
-   *     one LVT containing all the entries from the n LVT's.
-   *   - There may be no more than one LVT entry per local variable.
-   *     Two LVT entries are 'equal' if these fields are the same:
-   *        start_pc, length, name, slot
-   *   - There may be no more than one LVTT entry per each LVT entry.
-   *     Each LVTT entry has to match some LVT entry.
-   *   - HotSpot internal LVT keeps natural ordering of class file LVT entries.
-   */
+  // Copy class file LVT's/LVTT's into the HotSpot internal LVT.
   if (total_lvt_length > 0) {
-    int tbl_no, idx;
-
     promoted_flags->set_has_localvariable_table();
-
-    LVT_Hash** lvt_Hash = NEW_RESOURCE_ARRAY(LVT_Hash*, HASH_ROW_SIZE);
-    initialize_hashtable(lvt_Hash);
-
-    // To fill LocalVariableTable in
-    Classfile_LVT_Element*  cf_lvt;
-    LocalVariableTableElement* lvt = m->localvariable_table_start();
-
-    for (tbl_no = 0; tbl_no < lvt_cnt; tbl_no++) {
-      cf_lvt = (Classfile_LVT_Element *) localvariable_table_start[tbl_no];
-      for (idx = 0; idx < localvariable_table_length[tbl_no]; idx++, lvt++) {
-        copy_lvt_element(&cf_lvt[idx], lvt);
-        // If no duplicates, add LVT elem in hashtable lvt_Hash.
-        if (LVT_put_after_lookup(lvt, lvt_Hash) == false
-          && _need_verify
-          && _major_version >= JAVA_1_5_VERSION ) {
-          clear_hashtable(lvt_Hash);
-          classfile_parse_error("Duplicated LocalVariableTable attribute "
-                                "entry for '%s' in class file %s",
-                                 cp->symbol_at(lvt->name_cp_index)->as_utf8(),
-                                 CHECK_(nullHandle));
-        }
-      }
-    }
-
-    // To merge LocalVariableTable and LocalVariableTypeTable
-    Classfile_LVT_Element* cf_lvtt;
-    LocalVariableTableElement lvtt_elem;
-
-    for (tbl_no = 0; tbl_no < lvtt_cnt; tbl_no++) {
-      cf_lvtt = (Classfile_LVT_Element *) localvariable_type_table_start[tbl_no];
-      for (idx = 0; idx < localvariable_type_table_length[tbl_no]; idx++) {
-        copy_lvt_element(&cf_lvtt[idx], &lvtt_elem);
-        int index = hash(&lvtt_elem);
-        LVT_Hash* entry = LVT_lookup(&lvtt_elem, index, lvt_Hash);
-        if (entry == NULL) {
-          if (_need_verify) {
-            clear_hashtable(lvt_Hash);
-            classfile_parse_error("LVTT entry for '%s' in class file %s "
-                                  "does not match any LVT entry",
-                                   cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
-                                   CHECK_(nullHandle));
-          }
-        } else if (entry->_elem->signature_cp_index != 0 && _need_verify) {
-          clear_hashtable(lvt_Hash);
-          classfile_parse_error("Duplicated LocalVariableTypeTable attribute "
-                                "entry for '%s' in class file %s",
-                                 cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
-                                 CHECK_(nullHandle));
-        } else {
-          // to add generic signatures into LocalVariableTable
-          entry->_elem->signature_cp_index = lvtt_elem.descriptor_cp_index;
-        }
-      }
-    }
-    clear_hashtable(lvt_Hash);
+    copy_localvariable_table(m->constMethod(), lvt_cnt,
+                             localvariable_table_length,
+                             localvariable_table_start,
+                             lvtt_cnt,
+                             localvariable_type_table_length,
+                             localvariable_type_table_start, CHECK_NULL);
   }
 
   if (parsed_annotations.has_any_annotations())
     parsed_annotations.apply_to(m);
-  *method_annotations = assemble_annotations(loader_data,
-                                             runtime_visible_annotations,
-                                             runtime_visible_annotations_length,
-                                             runtime_invisible_annotations,
-                                             runtime_invisible_annotations_length,
-                                             CHECK_(nullHandle));
-  *method_parameter_annotations = assemble_annotations(loader_data,
-                                                       runtime_visible_parameter_annotations,
-                                                       runtime_visible_parameter_annotations_length,
-                                                       runtime_invisible_parameter_annotations,
-                                                       runtime_invisible_parameter_annotations_length,
-                                                       CHECK_(nullHandle));
-  *method_default_annotations = assemble_annotations(loader_data,
-                                                     annotation_default,
-                                                     annotation_default_length,
-                                                     NULL,
-                                                     0,
-                                                     CHECK_(nullHandle));
-  *method_type_annotations = assemble_annotations(loader_data,
-                                                  runtime_visible_type_annotations,
-                                                  runtime_visible_type_annotations_length,
-                                                  runtime_invisible_type_annotations,
-                                                  runtime_invisible_type_annotations_length,
-                                                  CHECK_(nullHandle));
+
+  // Copy annotations
+  copy_method_annotations(loader_data, m->constMethod(),
+                          runtime_visible_annotations,
+                          runtime_visible_annotations_length,
+                          runtime_invisible_annotations,
+                          runtime_invisible_annotations_length,
+                          runtime_visible_parameter_annotations,
+                          runtime_visible_parameter_annotations_length,
+                          runtime_invisible_parameter_annotations,
+                          runtime_invisible_parameter_annotations_length,
+                          runtime_visible_type_annotations,
+                          runtime_visible_type_annotations_length,
+                          runtime_invisible_type_annotations,
+                          runtime_invisible_type_annotations_length,
+                          annotation_default,
+                          annotation_default_length,
+                          CHECK_NULL);
 
   if (name == vmSymbols::finalize_method_name() &&
       signature == vmSymbols::void_method_signature()) {
@@ -2463,6 +2551,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
     _has_vanilla_constructor = true;
   }
 
+  NOT_PRODUCT(m->verify());
   return m;
 }
 
@@ -2476,17 +2565,9 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
                                                bool is_interface,
                                                AccessFlags* promoted_flags,
                                                bool* has_final_method,
-                                               Array<AnnotationArray*>** methods_annotations,
-                                               Array<AnnotationArray*>** methods_parameter_annotations,
-                                               Array<AnnotationArray*>** methods_default_annotations,
-                                               Array<AnnotationArray*>** methods_type_annotations,
                                                bool* has_default_methods,
                                                TRAPS) {
   ClassFileStream* cfs = stream();
-  AnnotationArray* method_annotations = NULL;
-  AnnotationArray* method_parameter_annotations = NULL;
-  AnnotationArray* method_default_annotations = NULL;
-  AnnotationArray* method_type_annotations = NULL;
   cfs->guarantee_more(2, CHECK_NULL);  // length
   u2 length = cfs->get_u2_fast();
   if (length == 0) {
@@ -2500,10 +2581,6 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
       methodHandle method = parse_method(loader_data,
                                          cp, is_interface,
                                          promoted_flags,
-                                         &method_annotations,
-                                         &method_parameter_annotations,
-                                         &method_default_annotations,
-                                         &method_type_annotations,
                                          CHECK_NULL);
 
       if (method->is_final()) {
@@ -2514,38 +2591,6 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
         *has_default_methods = true;
       }
       methods->at_put(index, method());
-
-      if (method_annotations != NULL) {
-        if (*methods_annotations == NULL) {
-          *methods_annotations =
-              MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
-        }
-        (*methods_annotations)->at_put(index, method_annotations);
-      }
-
-      if (method_parameter_annotations != NULL) {
-        if (*methods_parameter_annotations == NULL) {
-          *methods_parameter_annotations =
-              MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
-        }
-        (*methods_parameter_annotations)->at_put(index, method_parameter_annotations);
-      }
-
-      if (method_default_annotations != NULL) {
-        if (*methods_default_annotations == NULL) {
-          *methods_default_annotations =
-              MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
-        }
-        (*methods_default_annotations)->at_put(index, method_default_annotations);
-      }
-
-      if (method_type_annotations != NULL) {
-        if (*methods_type_annotations == NULL) {
-          *methods_type_annotations =
-              MetadataFactory::new_array<AnnotationArray*>(loader_data, length, NULL, CHECK_NULL);
-        }
-        (*methods_type_annotations)->at_put(index, method_type_annotations);
-      }
     }
 
     if (_need_verify && length > 1) {
@@ -2578,11 +2623,7 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
 
 Array<int>* ClassFileParser::sort_methods(ClassLoaderData* loader_data,
                                           Array<Method*>* methods,
-                                          Array<AnnotationArray*>* methods_annotations,
-                                          Array<AnnotationArray*>* methods_parameter_annotations,
-                                          Array<AnnotationArray*>* methods_default_annotations,
-                                          Array<AnnotationArray*>* methods_type_annotations,
-                                              TRAPS) {
+                                          TRAPS) {
   int length = methods->length();
   // If JVMTI original method ordering or sharing is enabled we have to
   // remember the original class file ordering.
@@ -2598,10 +2639,7 @@ Array<int>* ClassFileParser::sort_methods(ClassLoaderData* loader_data,
   }
   // Sort method array by ascending method name (for faster lookups & vtable construction)
   // Note that the ordering is not alphabetical, see Symbol::fast_compare
-  Method::sort_methods(methods, methods_annotations,
-                       methods_parameter_annotations,
-                       methods_default_annotations,
-                       methods_type_annotations);
+  Method::sort_methods(methods);
 
   // If JVMTI original method ordering or sharing is enabled construct int
   // array remembering the original ordering
@@ -3048,9 +3086,6 @@ void ClassFileParser::apply_parsed_class_attributes(instanceKlassHandle k) {
     k->set_source_debug_extension(_sde_buffer, _sde_length);
   }
   k->set_inner_classes(_inner_classes);
-  if (_annotations != NULL) {
-    k->annotations()->set_class_annotations(_annotations);
-  }
 }
 
 AnnotationArray* ClassFileParser::assemble_annotations(ClassLoaderData* loader_data,
@@ -3361,19 +3396,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     bool has_final_method = false;
     AccessFlags promoted_flags;
     promoted_flags.set_flags(0);
-
-    Array<AnnotationArray*>* methods_annotations = NULL;
-    Array<AnnotationArray*>* methods_parameter_annotations = NULL;
-    Array<AnnotationArray*>* methods_default_annotations = NULL;
-    Array<AnnotationArray*>* methods_type_annotations = NULL;
     Array<Method*>* methods = parse_methods(loader_data,
                                             cp, access_flags.is_interface(),
                                             &promoted_flags,
                                             &has_final_method,
-                                            &methods_annotations,
-                                            &methods_parameter_annotations,
-                                            &methods_default_annotations,
-                                            &methods_type_annotations,
                                             &has_default_methods,
                                             CHECK_(nullHandle));
 
@@ -3432,10 +3458,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // sort methods
     Array<int>* method_ordering = sort_methods(loader_data,
                                                methods,
-                                               methods_annotations,
-                                               methods_parameter_annotations,
-                                               methods_default_annotations,
-                                               methods_type_annotations,
                                                CHECK_(nullHandle));
 
     // promote flags from parse_methods() to the klass' flags
@@ -4035,7 +4057,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     const unsigned int total_oop_map_count =
       compute_oop_map_count(super_klass, nonstatic_oop_map_count,
                             first_nonstatic_oop_offset);
-
     // Compute reference type
     ReferenceType rt;
     if (super_klass() == NULL) {
@@ -4057,7 +4078,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                        access_flags,
                                                        name,
                                                        super_klass(),
-                                                       host_klass,
+                                                       !host_klass.is_null(),
                                                        CHECK_(nullHandle));
 
     // Add all classes to our internal class loader list here,
@@ -4103,31 +4124,15 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     if (is_anonymous())  // I am well known to myself
       cp->klass_at_put(this_class_index, this_klass()); // eagerly resolve
 
-    // Allocate an annotation type if needed.
-    if (fields_annotations != NULL ||
-        methods_annotations != NULL ||
-        methods_parameter_annotations != NULL ||
-        methods_default_annotations != NULL ||
-        fields_type_annotations != NULL ||
-        methods_type_annotations != NULL) {
-      Annotations* anno = Annotations::allocate(loader_data,
-                            fields_annotations, methods_annotations,
-                            methods_parameter_annotations,
-                            methods_default_annotations, CHECK_(nullHandle));
-      this_klass->set_annotations(anno);
-    } else {
-      this_klass->set_annotations(NULL);
-    }
-
-    if (fields_type_annotations != NULL ||
-        methods_type_annotations != NULL) {
-      assert(this_klass->annotations() != NULL, "annotations should have been allocated");
-      Annotations* anno = Annotations::allocate(loader_data,
-                                                fields_type_annotations,
-                                                methods_type_annotations,
-                                                NULL,
-                                                NULL, CHECK_(nullHandle));
-      this_klass->annotations()->set_type_annotations(anno);
+    // Assign allocations if needed
+    if (_annotations != NULL || _type_annotations != NULL ||
+        fields_annotations != NULL || fields_type_annotations != NULL) {
+      Annotations* annotations = Annotations::allocate(loader_data, CHECK_NULL);
+      annotations->set_class_annotations(_annotations);
+      annotations->set_class_type_annotations(_type_annotations);
+      annotations->set_fields_annotations(fields_annotations);
+      annotations->set_fields_type_annotations(fields_type_annotations);
+      this_klass->set_annotations(annotations);
     }
 
     this_klass->set_minor_version(minor_version);
@@ -4153,26 +4158,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // Fill in field values obtained by parse_classfile_attributes
     if (parsed_annotations.has_any_annotations())
       parsed_annotations.apply_to(this_klass);
-
-    // Create annotations
-    if (_annotations != NULL && this_klass->annotations() == NULL) {
-      Annotations* anno = Annotations::allocate(loader_data, CHECK_NULL);
-      this_klass->set_annotations(anno);
-    }
     apply_parsed_class_attributes(this_klass);
-
-    // Create type annotations
-    if (_type_annotations != NULL) {
-      if (this_klass->annotations() == NULL) {
-        Annotations* anno = Annotations::allocate(loader_data, CHECK_NULL);
-        this_klass->set_annotations(anno);
-      }
-      if (this_klass->annotations()->type_annotations() == NULL) {
-        Annotations* anno = Annotations::allocate(loader_data, CHECK_NULL);
-        this_klass->annotations()->set_type_annotations(anno);
-      }
-      this_klass->annotations()->type_annotations()->set_class_annotations(_type_annotations);
-    }
 
     // Miranda methods
     if ((num_miranda_methods > 0) ||
