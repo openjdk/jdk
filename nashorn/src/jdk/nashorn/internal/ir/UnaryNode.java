@@ -67,7 +67,7 @@ public class UnaryNode extends Node implements Assignment<Node> {
     protected UnaryNode(final UnaryNode unaryNode, final CopyState cs) {
         super(unaryNode);
 
-        rhs = cs.existingOrCopy(unaryNode.rhs);
+        this.rhs = cs.existingOrCopy(unaryNode.rhs);
     }
 
     /**

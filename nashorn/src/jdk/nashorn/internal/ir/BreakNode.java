@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.codegen.MethodEmitter;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -75,7 +75,7 @@ public class BreakNode extends LabeledNode {
      * Return the target label of this break node.
      * @return the target label.
      */
-    public MethodEmitter.Label getTargetLabel() {
+    public Label getTargetLabel() {
         if (targetNode instanceof BreakableNode) {
             return ((BreakableNode)targetNode).getBreakLabel();
         } else if (targetNode instanceof Block) {

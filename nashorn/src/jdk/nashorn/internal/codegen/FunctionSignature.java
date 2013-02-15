@@ -202,7 +202,6 @@ public final class FunctionSignature {
         return methodType;
     }
 
-
     private static Type[] objectArgs(final int nArgs) {
         final Type[] array = new Type[nArgs];
         for (int i = 0; i < nArgs; i++) {

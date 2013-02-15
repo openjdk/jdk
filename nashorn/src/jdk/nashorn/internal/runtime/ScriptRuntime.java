@@ -71,27 +71,25 @@ public final class ScriptRuntime {
     /** Method handle to generic === operator, operating on objects */
     public static final Call EQ_STRICT = staticCallNoLookup(ScriptRuntime.class, "EQ_STRICT", boolean.class, Object.class, Object.class);
 
-    /** Method handle used to enter a {@code with} scope at runtime. Used from {@link jdk.nashorn.internal.codegen.CodeGenerator} */
+    /** Method handle used to enter a {@code with} scope at runtime. */
     public static final Call OPEN_WITH = staticCallNoLookup(ScriptRuntime.class, "openWith", ScriptObject.class, ScriptObject.class, Object.class);
 
-    /** Method handle used to exit a {@code with} scope at runtime. Used from {@link jdk.nashorn.internal.codegen.CodeGenerator} */
+    /** Method handle used to exit a {@code with} scope at runtime. */
     public static final Call CLOSE_WITH = staticCallNoLookup(ScriptRuntime.class, "closeWith", ScriptObject.class, ScriptObject.class);
 
     /**
      * Method used to place a scope's variable into the Global scope, which has to be done for the
-     * properties declared at outermost script level. Used from {@link jdk.nashorn.internal.codegen.CodeGenerator}
+     * properties declared at outermost script level.
      */
     public static final Call MERGE_SCOPE = staticCallNoLookup(ScriptRuntime.class, "mergeScope", ScriptObject.class, ScriptObject.class);
 
     /**
      * Return an appropriate iterator for the elements in a for-in construct
-     * Used from {@link jdk.nashorn.internal.codegen.CodeGenerator}
      */
     public static final Call TO_PROPERTY_ITERATOR = staticCallNoLookup(ScriptRuntime.class, "toPropertyIterator", Iterator.class, Object.class);
 
     /**
      * Return an appropriate iterator for the elements in a for-each construct
-     * Used from {@link jdk.nashorn.internal.codegen.CodeGenerator}
      */
     public static final Call TO_VALUE_ITERATOR = staticCallNoLookup(ScriptRuntime.class, "toValueIterator", Iterator.class, Object.class);
 

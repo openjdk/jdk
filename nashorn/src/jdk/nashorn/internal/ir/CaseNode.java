@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.codegen.MethodEmitter.Label;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 

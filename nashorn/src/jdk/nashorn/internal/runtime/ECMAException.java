@@ -46,7 +46,6 @@ import jdk.nashorn.internal.scripts.JS$;
 public final class ECMAException extends NashornException {
     /**
      * Method handle pointing to the constructor {@link ECMAException#ECMAException(Object, String, int, int)},
-     * used from {@link jdk.nashorn.internal.codegen.CodeGenerator}
      */
     public static final Call THROW_INIT = constructorNoLookup(ECMAException.class, Object.class, String.class, int.class, int.class);
 

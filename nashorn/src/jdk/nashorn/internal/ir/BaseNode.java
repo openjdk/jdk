@@ -60,7 +60,7 @@ public abstract class BaseNode extends Node implements FunctionCall {
      */
     protected BaseNode(final BaseNode baseNode, final CopyState cs) {
         super(baseNode);
-        base = cs.existingOrCopy(baseNode.getBase());
+        this.base = cs.existingOrCopy(baseNode.getBase());
         setStart(base.getStart());
     }
 

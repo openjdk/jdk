@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.codegen.MethodEmitter;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
@@ -35,7 +35,7 @@ import jdk.nashorn.internal.runtime.Source;
 public abstract class BreakableNode extends Node {
 
     /** break label. */
-    protected MethodEmitter.Label breakLabel;
+    protected Label breakLabel;
 
     /**
      * Constructor
@@ -61,7 +61,7 @@ public abstract class BreakableNode extends Node {
      * Return the break label, i.e. the location to go to on break.
      * @return the break label
      */
-    public MethodEmitter.Label getBreakLabel() {
+    public Label getBreakLabel() {
         return breakLabel;
     }
 

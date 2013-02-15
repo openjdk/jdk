@@ -23,13 +23,9 @@
  * questions.
  */
 
-package jdk.nashorn.internal.codegen.objects;
+package jdk.nashorn.internal.codegen;
 
 import java.util.List;
-import jdk.nashorn.internal.codegen.CodeGenerator;
-import jdk.nashorn.internal.codegen.CompileUnit;
-import jdk.nashorn.internal.codegen.Compiler;
-import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -114,7 +110,7 @@ public abstract class ObjectCreator {
      * Generate code for making the object.
      * @param method Script method.
      */
-    public abstract void makeObject(final MethodEmitter method);
+    protected abstract void makeObject(final MethodEmitter method);
 
     /**
      * Create a new MapCreator
@@ -154,7 +150,7 @@ public abstract class ObjectCreator {
      *
      * @return script class name
      */
-    public String getClassName() {
+    String getClassName() {
         return fieldObjectClassName;
     }
 

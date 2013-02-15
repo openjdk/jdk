@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.codegen.objects;
+package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
@@ -32,8 +32,6 @@ import static jdk.nashorn.internal.codegen.types.Type.OBJECT;
 
 import java.util.Iterator;
 import java.util.List;
-import jdk.nashorn.internal.codegen.CodeGenerator;
-import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -63,7 +61,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
      * @param symbols  symbols for fields in object
      * @param values   list of values corresponding to keys
      */
-    public FieldObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<T> values) {
+    FieldObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<T> values) {
         this(codegen, keys, symbols, values, false, false);
     }
 
@@ -77,7 +75,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
      * @param isScope      is this a scope object
      * @param hasArguments does the created object have an "arguments" property
      */
-    public FieldObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<T> values, final boolean isScope, final boolean hasArguments) {
+    FieldObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<T> values, final boolean isScope, final boolean hasArguments) {
         super(codegen, keys, symbols, isScope, hasArguments);
         this.values        = values;
         this.callSiteFlags = codegen.getCallSiteFlags();
@@ -97,7 +95,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
      * @param method the method emitter
      */
     @Override
-    public void makeObject(final MethodEmitter method) {
+    protected void makeObject(final MethodEmitter method) {
         makeMap();
 
         method._new(getClassName()).dup(); // create instance
@@ -190,5 +188,4 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
         loadValue(value);
         method.dynamicSetIndex(callSiteFlags);
     }
-
 }

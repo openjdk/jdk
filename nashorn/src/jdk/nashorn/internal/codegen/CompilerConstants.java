@@ -320,7 +320,7 @@ public enum CompilerConstants {
         return new Call(null, className, name, desc) {
             @Override
             public MethodEmitter invoke(final MethodEmitter method) {
-                return method.invokeSpecial(className, name, descriptor);
+                return method.invokespecial(className, name, descriptor);
             }
         };
     }
@@ -354,7 +354,7 @@ public enum CompilerConstants {
         return new Call(null, className, name, desc) {
             @Override
             public MethodEmitter invoke(final MethodEmitter method) {
-                return method.invokeStatic(className, name, descriptor);
+                return method.invokestatic(className, name, descriptor);
             }
         };
     }
@@ -389,7 +389,7 @@ public enum CompilerConstants {
         return new Call(null, className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
             public MethodEmitter invoke(final MethodEmitter method) {
-                return method.invokeVirtual(className, name, descriptor);
+                return method.invokevirtual(className, name, descriptor);
             }
         };
     }
@@ -409,7 +409,7 @@ public enum CompilerConstants {
         return new Call(null, className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
             public MethodEmitter invoke(final MethodEmitter method) {
-                return method.invokeInterface(className, name, descriptor);
+                return method.invokeinterface(className, name, descriptor);
             }
         };
     }
@@ -519,7 +519,7 @@ public enum CompilerConstants {
         return new Call(MH.findStatic(lookup, clazz, name, MH.type(rtype, ptypes)), className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
             public MethodEmitter invoke(final MethodEmitter method) {
-                return method.invokeStatic(className, name, descriptor);
+                return method.invokestatic(className, name, descriptor);
             }
         };
     }
@@ -553,7 +553,7 @@ public enum CompilerConstants {
         return new Call(MH.findVirtual(lookup, clazz, name, MH.type(rtype, ptypes)), className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
             public MethodEmitter invoke(final MethodEmitter method) {
-                return method.invokeVirtual(className, name, descriptor);
+                return method.invokevirtual(className, name, descriptor);
             }
         };
     }

@@ -53,7 +53,7 @@ public class LineNumberNode extends Node {
    private LineNumberNode(final LineNumberNode lineNumberNode) {
         super(lineNumberNode);
 
-        lineNumber = lineNumberNode.getLineNumber();
+        this.lineNumber = lineNumberNode.getLineNumber();
     }
 
     @Override

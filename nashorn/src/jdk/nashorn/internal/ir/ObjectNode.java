@@ -68,8 +68,8 @@ public class ObjectNode extends Node {
             newElements.add(cs.existingOrCopy(element));
         }
 
-        context  = (Block)cs.existingOrCopy(objectNode.context);
-        elements = newElements;
+        this.context  = (Block)cs.existingOrCopy(objectNode.context);
+        this.elements = newElements;
     }
 
     @Override

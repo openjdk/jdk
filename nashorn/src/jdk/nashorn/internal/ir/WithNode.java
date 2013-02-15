@@ -57,8 +57,8 @@ public class WithNode extends Node {
     private WithNode(final WithNode withNode, final CopyState cs) {
         super(withNode);
 
-        expression = cs.existingOrCopy(withNode.expression);
-        body       = (Block)cs.existingOrCopy(withNode.body);
+        this.expression = cs.existingOrCopy(withNode.expression);
+        this.body       = (Block)cs.existingOrCopy(withNode.body);
     }
 
     @Override

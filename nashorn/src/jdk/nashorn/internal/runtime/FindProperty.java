@@ -28,7 +28,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
  * This class represents the result from a find property search.

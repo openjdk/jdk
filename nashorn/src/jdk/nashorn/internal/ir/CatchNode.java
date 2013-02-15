@@ -67,10 +67,10 @@ public class CatchNode extends Node {
     private CatchNode(final CatchNode catchNode, final CopyState cs) {
         super(catchNode);
 
-        exception          = (IdentNode)cs.existingOrCopy(catchNode.exception);
-        exceptionCondition = cs.existingOrCopy(catchNode.exceptionCondition);
-        body               = (Block)cs.existingOrCopy(catchNode.body);
-        isSyntheticRethrow = catchNode.isSyntheticRethrow;
+        this.exception          = (IdentNode)cs.existingOrCopy(catchNode.exception);
+        this.exceptionCondition = cs.existingOrCopy(catchNode.exceptionCondition);
+        this.body               = (Block)cs.existingOrCopy(catchNode.body);
+        this.isSyntheticRethrow = catchNode.isSyntheticRethrow;
      }
 
     @Override

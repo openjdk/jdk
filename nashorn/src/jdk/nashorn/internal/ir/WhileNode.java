@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.codegen.MethodEmitter.Label;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -53,10 +53,8 @@ public class WhileNode extends BreakableNode {
     public WhileNode(final Source source, final long token, final int finish) {
         super(source, token, finish);
 
-        test          = null;
-        body          = null;
-        breakLabel    = new Label("while_break");
-        continueLabel = new Label("while_continue");
+        this.breakLabel    = new Label("while_break");
+        this.continueLabel = new Label("while_continue");
     }
 
     /**
@@ -68,10 +66,10 @@ public class WhileNode extends BreakableNode {
     protected WhileNode(final WhileNode whileNode, final CopyState cs) {
         super(whileNode);
 
-        test          = cs.existingOrCopy(whileNode.test);
-        body          = (Block)cs.existingOrCopy(whileNode.body);
-        breakLabel    = new Label(whileNode.breakLabel);
-        continueLabel = new Label(whileNode.continueLabel);
+        this.test          = cs.existingOrCopy(whileNode.test);
+        this.body          = (Block)cs.existingOrCopy(whileNode.body);
+        this.breakLabel    = new Label(whileNode.breakLabel);
+        this.continueLabel = new Label(whileNode.continueLabel);
     }
 
     @Override

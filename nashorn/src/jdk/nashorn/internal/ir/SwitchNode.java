@@ -28,7 +28,7 @@ package jdk.nashorn.internal.ir;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import jdk.nashorn.internal.codegen.MethodEmitter.Label;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
@@ -59,12 +59,7 @@ public class SwitchNode extends BreakableNode {
      */
     public SwitchNode(final Source source, final long token, final int finish) {
         super(source, token, finish);
-
-        expression  = null;
-        tag         = null;
-        cases       = null;
-        defaultCase = null;
-        breakLabel  = new Label("switch_break");
+        this.breakLabel  = new Label("switch_break");
     }
 
     private SwitchNode(final SwitchNode switchNode, final CopyState cs) {
@@ -76,11 +71,11 @@ public class SwitchNode extends BreakableNode {
            newCases.add((CaseNode)cs.existingOrCopy(caseNode));
         }
 
-        expression  = cs.existingOrCopy(switchNode.getExpression());
-        tag         = switchNode.getTag();
-        cases       = newCases;
-        defaultCase = (CaseNode)cs.existingOrCopy(switchNode.getDefaultCase());
-        breakLabel  = new Label(switchNode.getBreakLabel());
+        this.expression  = cs.existingOrCopy(switchNode.getExpression());
+        this.tag         = switchNode.getTag();
+        this.cases       = newCases;
+        this.defaultCase = (CaseNode)cs.existingOrCopy(switchNode.getDefaultCase());
+        this.breakLabel  = new Label(switchNode.getBreakLabel());
     }
 
     @Override

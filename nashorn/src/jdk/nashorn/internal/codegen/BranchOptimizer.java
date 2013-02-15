@@ -25,14 +25,14 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.MethodEmitter.Condition.EQ;
-import static jdk.nashorn.internal.codegen.MethodEmitter.Condition.GE;
-import static jdk.nashorn.internal.codegen.MethodEmitter.Condition.GT;
-import static jdk.nashorn.internal.codegen.MethodEmitter.Condition.LE;
-import static jdk.nashorn.internal.codegen.MethodEmitter.Condition.LT;
-import static jdk.nashorn.internal.codegen.MethodEmitter.Condition.NE;
+import static jdk.nashorn.internal.codegen.Condition.EQ;
+import static jdk.nashorn.internal.codegen.Condition.GE;
+import static jdk.nashorn.internal.codegen.Condition.GT;
+import static jdk.nashorn.internal.codegen.Condition.LE;
+import static jdk.nashorn.internal.codegen.Condition.LT;
+import static jdk.nashorn.internal.codegen.Condition.NE;
 
-import jdk.nashorn.internal.codegen.MethodEmitter.Label;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Node;

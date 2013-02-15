@@ -60,8 +60,8 @@ public class ThrowNode extends Node {
     private ThrowNode(final ThrowNode throwNode, final CopyState cs) {
         super(throwNode);
 
-        expression = cs.existingOrCopy(throwNode.expression);
-        tryChain = (TryNode)cs.existingOrSame(throwNode.tryChain);
+        this.expression = cs.existingOrCopy(throwNode.expression);
+        this.tryChain = (TryNode)cs.existingOrSame(throwNode.tryChain);
     }
 
     @Override

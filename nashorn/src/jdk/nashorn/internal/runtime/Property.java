@@ -31,7 +31,7 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Objects;
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 
 /**

@@ -59,7 +59,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.runtime.JSType;
 
 /**

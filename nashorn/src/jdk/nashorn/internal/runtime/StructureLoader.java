@@ -38,7 +38,7 @@ import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
  * Responsible for on the fly construction of structure classes as well

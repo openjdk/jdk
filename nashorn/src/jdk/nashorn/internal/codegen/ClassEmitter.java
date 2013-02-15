@@ -62,6 +62,7 @@ import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.util.TraceClassVisitor;
+import jdk.nashorn.internal.codegen.Emitter;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.runtime.Context;
@@ -102,7 +103,6 @@ import jdk.nashorn.internal.runtime.Source;
  * detect if this is not true
  *
  * @see Compiler
- * @see CodeGenerator
  */
 public class ClassEmitter implements Emitter {
 
@@ -156,7 +156,7 @@ public class ClassEmitter implements Emitter {
      * @param superClassName  super class name for class
      * @param interfaceNames  names of interfaces implemented by this class, or null if none
      */
-    public ClassEmitter(final Context context, final String className, final String superClassName, final String... interfaceNames) {
+    ClassEmitter(final Context context, final String className, final String superClassName, final String... interfaceNames) {
         this(context, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
         cw.visit(V1_7, ACC_PUBLIC | ACC_SUPER, className, null, superClassName, interfaceNames);
     }
@@ -363,7 +363,7 @@ public class ClassEmitter implements Emitter {
      * @param bytecode  byte array representing bytecode
      * @return disassembly as human readable string
      */
-    public static String disassemble(final byte[] bytecode) {
+    static String disassemble(final byte[] bytecode) {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (final PrintWriter pw = new PrintWriter(baos)) {
             new ClassReader(bytecode).accept(new TraceClassVisitor(pw), 0);
@@ -411,7 +411,7 @@ public class ClassEmitter implements Emitter {
      *
      * @return method emitter to use for weaving this method
      */
-    public MethodEmitter method(final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
+    MethodEmitter method(final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
         return method(DEFAULT_METHOD_FLAGS, methodName, rtype, ptypes); //TODO why public default ?
     }
 
@@ -425,7 +425,7 @@ public class ClassEmitter implements Emitter {
      *
      * @return method emitter to use for weaving this method
      */
-    public MethodEmitter method(final EnumSet<Flag> methodFlags, final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
+    MethodEmitter method(final EnumSet<Flag> methodFlags, final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
         return new MethodEmitter(this, cw.visitMethod(Flag.getValue(methodFlags), methodName, methodDescriptor(rtype, ptypes), null, null));
     }
 
@@ -437,7 +437,7 @@ public class ClassEmitter implements Emitter {
      *
      * @return method emitter to use for weaving this method
      */
-    public MethodEmitter method(final String methodName, final String descriptor) {
+    MethodEmitter method(final String methodName, final String descriptor) {
         return method(DEFAULT_METHOD_FLAGS, methodName, descriptor);
     }
 
@@ -450,7 +450,7 @@ public class ClassEmitter implements Emitter {
      *
      * @return method emitter to use for weaving this method
      */
-    public MethodEmitter method(final EnumSet<Flag> methodFlags, final String methodName, final String descriptor) {
+    MethodEmitter method(final EnumSet<Flag> methodFlags, final String methodName, final String descriptor) {
         return new MethodEmitter(this, cw.visitMethod(Flag.getValue(methodFlags), methodName, descriptor, null, null));
     }
 
@@ -460,7 +460,7 @@ public class ClassEmitter implements Emitter {
      * @param functionNode the function node to generate a method for
      * @return method emitter to use for weaving this method
      */
-    public MethodEmitter method(final FunctionNode functionNode) {
+    MethodEmitter method(final FunctionNode functionNode) {
         final MethodVisitor mv = cw.visitMethod(
             ACC_PUBLIC | ACC_STATIC | (functionNode.isVarArg() ? ACC_VARARGS : 0),
             functionNode.getName(),
@@ -476,7 +476,7 @@ public class ClassEmitter implements Emitter {
      *
      * @return method emitter to use for weaving <clinit>
      */
-    public MethodEmitter clinit() {
+    MethodEmitter clinit() {
         return method(EnumSet.of(Flag.STATIC), CLINIT.tag(), void.class);
     }
 
@@ -485,7 +485,7 @@ public class ClassEmitter implements Emitter {
      *
      * @return method emitter to use for weaving <init>()V
      */
-    public MethodEmitter init() {
+    MethodEmitter init() {
         return method(INIT.tag(), void.class);
     }
 
@@ -495,7 +495,7 @@ public class ClassEmitter implements Emitter {
      * @param ptypes parameter types for constructor
      * @return method emitter to use for weaving <init>()V
      */
-    public MethodEmitter init(final Class<?>... ptypes) {
+    MethodEmitter init(final Class<?>... ptypes) {
         return method(INIT.tag(), void.class, ptypes);
     }
 
@@ -507,7 +507,7 @@ public class ClassEmitter implements Emitter {
      *
      * @return method emitter to use for weaving <init>(...)V
      */
-    public MethodEmitter init(final EnumSet<Flag> flags, final Class<?>... ptypes) {
+    MethodEmitter init(final EnumSet<Flag> flags, final Class<?>... ptypes) {
         return method(flags, INIT.tag(), void.class, ptypes);
     }
 
@@ -521,7 +521,7 @@ public class ClassEmitter implements Emitter {
      *
      * @see ClassEmitter.Flag
      */
-    public final void field(final EnumSet<Flag> fieldFlags, final String fieldName, final Class<?> fieldType, final Object value) {
+    final void field(final EnumSet<Flag> fieldFlags, final String fieldName, final Class<?> fieldType, final Object value) {
         cw.visitField(Flag.getValue(fieldFlags), fieldName, typeDescriptor(fieldType), null, value).visitEnd();
     }
 
@@ -534,7 +534,7 @@ public class ClassEmitter implements Emitter {
      *
      * @see ClassEmitter.Flag
      */
-    public final void field(final EnumSet<Flag> fieldFlags, final String fieldName, final Class<?> fieldType) {
+    final void field(final EnumSet<Flag> fieldFlags, final String fieldName, final Class<?> fieldType) {
         field(fieldFlags, fieldName, fieldType, null);
     }
 
@@ -544,7 +544,7 @@ public class ClassEmitter implements Emitter {
      * @param fieldName  name of field
      * @param fieldType  type of field
      */
-    public final void field(final String fieldName, final Class<?> fieldType) {
+    final void field(final String fieldName, final Class<?> fieldType) {
         field(EnumSet.of(Flag.PUBLIC), fieldName, fieldType, null);
     }
 
@@ -554,7 +554,7 @@ public class ClassEmitter implements Emitter {
      *
      * @return byte code array for generated class, null if class generation hasn't been ended with {@link ClassEmitter#end()}
      */
-    public byte[] toByteArray() {
+    byte[] toByteArray() {
         assert classEnded;
         if (!classEnded) {
             return null;
@@ -572,7 +572,7 @@ public class ClassEmitter implements Emitter {
      * Flags are provided for method handles, protection levels, static/virtual
      * fields/methods.
      */
-    public static enum Flag {
+    static enum Flag {
         /** method handle with static access */
         HANDLE_STATIC(H_INVOKESTATIC),
         /** method handle with new invoke special access */
@@ -603,7 +603,7 @@ public class ClassEmitter implements Emitter {
          * Get the value of this flag
          * @return the int value
          */
-        public int getValue() {
+        int getValue() {
             return value;
         }
 
@@ -613,7 +613,7 @@ public class ClassEmitter implements Emitter {
          * @param flags enum set of flags
          * @return an integer value representing the flags intrinsic values or:ed together
          */
-        public static int getValue(final EnumSet<Flag> flags) {
+        static int getValue(final EnumSet<Flag> flags) {
             int v = 0;
             for (final Flag flag : flags) {
                 v |= flag.getValue();
@@ -621,5 +621,4 @@ public class ClassEmitter implements Emitter {
             return v;
         }
     }
-
 }

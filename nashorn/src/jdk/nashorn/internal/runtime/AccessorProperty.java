@@ -25,24 +25,24 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.ACCESSOR_TYPES;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.DEBUG_FIELDS;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.LOG;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.PRIMITIVE_TYPE;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.createGetter;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.createGuardBoxedPrimitiveSetter;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.createSetter;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.getAccessorType;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.getAccessorTypeIndex;
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.getNumberOfAccessorTypes;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.ACCESSOR_TYPES;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.LOG;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.PRIMITIVE_TYPE;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createGetter;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createGuardBoxedPrimitiveSetter;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createSetter;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getAccessorType;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getAccessorTypeIndex;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getNumberOfAccessorTypes;
 import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 import static jdk.nashorn.internal.runtime.linker.MethodHandleFactory.stripName;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.linker.Lookup;
 import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;

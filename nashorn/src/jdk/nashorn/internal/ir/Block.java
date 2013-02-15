@@ -40,7 +40,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import jdk.nashorn.internal.codegen.Frame;
-import jdk.nashorn.internal.codegen.MethodEmitter.Label;
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.ParentNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -94,7 +94,6 @@ public class Block extends Node {
         this.function   = function;
         this.statements = new ArrayList<>();
         this.symbols    = new HashMap<>();
-        this.frame      = null;
         this.entryLabel = new Label("block_entry");
         this.breakLabel = new Label("block_break");
     }
@@ -108,16 +107,16 @@ public class Block extends Node {
     protected Block(final Block block, final CopyState cs) {
         super(block);
 
-        parent     = block.parent;
-        function   = block.function;
-        statements = new ArrayList<>();
+        this.parent     = block.parent;
+        this.function   = block.function;
+        this.statements = new ArrayList<>();
         for (final Node statement : block.getStatements()) {
             statements.add(cs.existingOrCopy(statement));
         }
-        symbols    = new HashMap<>();
-        frame      = block.frame == null ? null : block.frame.copy();
-        entryLabel = new Label(block.entryLabel);
-        breakLabel = new Label(block.breakLabel);
+        this.symbols    = new HashMap<>();
+        this.frame      = block.frame == null ? null : block.frame.copy();
+        this.entryLabel = new Label(block.entryLabel);
+        this.breakLabel = new Label(block.breakLabel);
 
         assert block.symbols.isEmpty() : "must not clone with symbols";
     }

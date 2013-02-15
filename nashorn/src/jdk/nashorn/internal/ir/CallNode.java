@@ -164,10 +164,10 @@ public class CallNode extends Node implements TypeOverride {
             newArgs.add(cs.existingOrCopy(arg));
         }
 
-        function     = cs.existingOrCopy(callNode.function);     //TODO existing or same?
-        args         = newArgs;
-        isNew        = callNode.isNew;
-        inWithBlock  = callNode.inWithBlock;
+        this.function     = cs.existingOrCopy(callNode.function);     //TODO existing or same?
+        this.args         = newArgs;
+        this.isNew        = callNode.isNew;
+        this.inWithBlock  = callNode.inWithBlock;
     }
 
 

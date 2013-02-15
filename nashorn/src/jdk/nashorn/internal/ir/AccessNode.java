@@ -25,9 +25,9 @@
 
 package jdk.nashorn.internal.ir;
 
-import static jdk.nashorn.internal.codegen.objects.ObjectClassGenerator.DEBUG_FIELDS;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
 
-import jdk.nashorn.internal.codegen.objects.ObjectClassGenerator;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.codegen.objects;
+package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.Compiler.SCRIPTS_PACKAGE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.ALLOCATE;
@@ -45,9 +45,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.nashorn.internal.codegen.ClassEmitter;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
-import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Context;
@@ -67,7 +65,7 @@ public final class ObjectClassGenerator {
     /**
      * Marker for scope parameters.
      */
-    public static final String SCOPE_MARKER = "P";
+    static final String SCOPE_MARKER = "P";
 
     /**
      * Debug field logger
