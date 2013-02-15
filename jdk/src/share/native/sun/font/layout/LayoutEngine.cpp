@@ -33,6 +33,7 @@
 #include "LETypes.h"
 #include "LEScripts.h"
 #include "LELanguages.h"
+#include "LESwaps.h"
 
 #include "LayoutEngine.h"
 #include "ArabicLayoutEngine.h"
@@ -44,6 +45,8 @@
 #include "ThaiLayoutEngine.h"
 #include "TibetanLayoutEngine.h"
 #include "GXLayoutEngine.h"
+#include "GXLayoutEngine2.h"
+
 #include "ScriptAndLanguageTags.h"
 #include "CharSubstitutionFilter.h"
 
@@ -62,6 +65,10 @@ U_NAMESPACE_BEGIN
 
 /* Leave this copyright notice here! It needs to go somewhere in this library. */
 static const char copyright[] = U_COPYRIGHT_STRING;
+
+/* TODO: remove these? */
+const le_int32 LayoutEngine::kTypoFlagKern = LE_Kerning_FEATURE_FLAG;
+const le_int32 LayoutEngine::kTypoFlagLiga = LE_Ligatures_FEATURE_FLAG;
 
 const LEUnicode32 DefaultCharMapper::controlChars[] = {
     0x0009, 0x000A, 0x000D,
@@ -251,7 +258,7 @@ le_int32 LayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 off
         return 0;
     }
 
-    if ((fTypoFlags & 0x4) == 0) { // no canonical processing
+    if ((fTypoFlags & LE_NoCanon_FEATURE_FLAG) == 0) { // no canonical processing
       return count;
     }
 
@@ -572,6 +579,7 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
 {
     static const le_uint32 gsubTableTag = LE_GSUB_TABLE_TAG;
     static const le_uint32 mortTableTag = LE_MORT_TABLE_TAG;
+    static const le_uint32 morxTableTag = LE_MORX_TABLE_TAG;
 
     if (LE_FAILURE(success)) {
         return NULL;
@@ -606,6 +614,11 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
 
         case arabScriptCode:
             result = new ArabicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, gsubTable, success);
+            break;
+
+        case hebrScriptCode:
+            // Disable hebrew ligatures since they have only archaic uses, see ticket #8318
+            result = new OpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags & ~kTypoFlagLiga, gsubTable, success);
             break;
 
         case hangScriptCode:
@@ -646,26 +659,29 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
             break;
         }
     } else {
-        const MorphTableHeader *morphTable = (MorphTableHeader *) fontInstance->getFontTable(mortTableTag);
-
-        if (morphTable != NULL) {
-            result = new GXLayoutEngine(fontInstance, scriptCode, languageCode, morphTable, success);
+        MorphTableHeader2 *morxTable = (MorphTableHeader2 *)fontInstance->getFontTable(morxTableTag);
+        if (morxTable != NULL) {
+            result = new GXLayoutEngine2(fontInstance, scriptCode, languageCode, morxTable, typoFlags, success);
         } else {
-            switch (scriptCode) {
-            case bengScriptCode:
-            case devaScriptCode:
-            case gujrScriptCode:
-            case kndaScriptCode:
-            case mlymScriptCode:
-            case oryaScriptCode:
-            case guruScriptCode:
-            case tamlScriptCode:
-            case teluScriptCode:
-            case sinhScriptCode:
-            {
-                result = new IndicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
-                break;
-            }
+            const MorphTableHeader *mortTable = (MorphTableHeader *) fontInstance->getFontTable(mortTableTag);
+            if (mortTable != NULL) { // mort
+                result = new GXLayoutEngine(fontInstance, scriptCode, languageCode, mortTable, success);
+            } else {
+                switch (scriptCode) {
+                    case bengScriptCode:
+                    case devaScriptCode:
+                    case gujrScriptCode:
+                    case kndaScriptCode:
+                    case mlymScriptCode:
+                    case oryaScriptCode:
+                    case guruScriptCode:
+                    case tamlScriptCode:
+                    case teluScriptCode:
+                    case sinhScriptCode:
+                    {
+                        result = new IndicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
+                        break;
+                    }
 
             case arabScriptCode:
             //case hebrScriptCode:
@@ -683,9 +699,10 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
                 result = new HangulOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
                 break;
 
-            default:
-                result = new LayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
-                break;
+                    default:
+                        result = new LayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
+                        break;
+                }
             }
         }
     }

@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 2002-2008 - All Rights Reserved
+ * (C) Copyright IBM Corp. 2002-2013 - All Rights Reserved
  *
  */
 
@@ -65,9 +65,9 @@ void MPreFixups::add(le_int32 baseIndex, le_int32 mpreIndex)
     }
 }
 
-void MPreFixups::apply(LEGlyphStorage &glyphStorage, LEErrorCode& leSuccess)
+void MPreFixups::apply(LEGlyphStorage &glyphStorage, LEErrorCode& success)
 {
-    if (LE_FAILURE(leSuccess)) {
+    if (LE_FAILURE(success)) {
         return;
     }
 

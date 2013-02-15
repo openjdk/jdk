@@ -25,12 +25,12 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
+ * (C) Copyright IBM Corp.  and others 1998-2013 - All Rights Reserved
  *
  */
 
-#ifndef __LIGATURESUBSTITUTION_H
-#define __LIGATURESUBSTITUTION_H
+#ifndef __LIGATURESUBSTITUTIONPROCESSOR2_H
+#define __LIGATURESUBSTITUTIONPROCESSOR2_H
 
 /**
  * \file
@@ -38,53 +38,58 @@
  */
 
 #include "LETypes.h"
-#include "LayoutTables.h"
-#include "StateTables.h"
 #include "MorphTables.h"
-#include "MorphStateTables.h"
+#include "SubtableProcessor2.h"
+#include "StateTableProcessor2.h"
+#include "LigatureSubstitution.h"
 
 U_NAMESPACE_BEGIN
 
-struct LigatureSubstitutionHeader : MorphStateTableHeader
-{
-    ByteOffset ligatureActionTableOffset;
-    ByteOffset componentTableOffset;
-    ByteOffset ligatureTableOffset;
-};
+class LEGlyphStorage;
 
-struct LigatureSubstitutionHeader2 : MorphStateTableHeader2
+#define nComponents 16
+
+class LigatureSubstitutionProcessor2 : public StateTableProcessor2
 {
+public:
+    virtual void beginStateTable();
+
+    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index);
+
+    virtual void endStateTable();
+
+    LigatureSubstitutionProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    virtual ~LigatureSubstitutionProcessor2();
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
+
+private:
+    LigatureSubstitutionProcessor2();
+
+protected:
     le_uint32 ligActionOffset;
     le_uint32 componentOffset;
     le_uint32 ligatureOffset;
-};
 
-enum LigatureSubstitutionFlags
-{
-    lsfSetComponent     = 0x8000,
-    lsfDontAdvance      = 0x4000,
-    lsfActionOffsetMask = 0x3FFF, // N/A in morx
-    lsfPerformAction    = 0x2000
-};
+    const LigatureSubstitutionStateEntry2 *entryTable;
 
-struct LigatureSubstitutionStateEntry : StateEntry
-{
-};
+    le_int32 componentStack[nComponents];
+    le_int16 m;
 
-struct LigatureSubstitutionStateEntry2
-{
-    le_uint16 nextStateIndex;
-    le_uint16 entryFlags;
-    le_uint16 ligActionIndex;
-};
+    const LigatureSubstitutionHeader2 *ligatureSubstitutionHeader;
 
-typedef le_uint32 LigatureActionEntry;
-
-enum LigatureActionFlags
-{
-    lafLast                 = 0x80000000,
-    lafStore                = 0x40000000,
-    lafComponentOffsetMask  = 0x3FFFFFFF
 };
 
 U_NAMESPACE_END

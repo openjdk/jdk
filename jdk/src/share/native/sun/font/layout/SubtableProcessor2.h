@@ -25,12 +25,12 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
+ * (C) Copyright IBM Corp.  and others 1998-2013 - All Rights Reserved
  *
  */
 
-#ifndef __STATETABLES_H
-#define __STATETABLES_H
+#ifndef __SUBTABLEPROCESSOR2_H
+#define __SUBTABLEPROCESSOR2_H
 
 /**
  * \file
@@ -38,69 +38,33 @@
  */
 
 #include "LETypes.h"
-#include "LayoutTables.h"
+#include "MorphTables.h"
 
 U_NAMESPACE_BEGIN
 
-struct StateTableHeader
-{
-    le_int16 stateSize;
-    ByteOffset classTableOffset;
-    ByteOffset stateArrayOffset;
-    ByteOffset entryTableOffset;
-};
+class LEGlyphStorage;
 
-struct StateTableHeader2
-{
-    le_uint32 nClasses;
-    le_uint32 classTableOffset;
-    le_uint32 stateArrayOffset;
-    le_uint32 entryTableOffset;
-};
+class SubtableProcessor2 : public UMemory {
+public:
+    virtual void process(LEGlyphStorage &glyphStorage) = 0;
+    virtual ~SubtableProcessor2();
 
-enum ClassCodes
-{
-    classCodeEOT = 0,
-    classCodeOOB = 1,
-    classCodeDEL = 2,
-    classCodeEOL = 3,
-    classCodeFirstFree = 4,
-    classCodeMAX = 0xFF
-};
+protected:
+    SubtableProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
 
-typedef le_uint8 ClassCode;
+    SubtableProcessor2();
 
-struct ClassTable
-{
-    TTGlyphID firstGlyph;
-    le_uint16 nGlyphs;
-    ClassCode classArray[ANY_NUMBER];
-};
+    le_uint32 length;
+    SubtableCoverage2 coverage;
+    FeatureFlags subtableFeatures;
 
-enum StateNumber
-{
-    stateSOT        = 0,
-    stateSOL        = 1,
-    stateFirstFree  = 2,
-    stateMAX        = 0xFF
-};
+    const MorphSubtableHeader2 *subtableHeader;
 
-typedef le_uint8 EntryTableIndex;
+private:
 
-struct StateEntry
-{
-    ByteOffset  newStateOffset;
-    le_int16    flags;
-};
-
-typedef le_uint16 EntryTableIndex2;
-
-struct StateEntry2 // same struct different interpretation
-{
-    le_uint16    newStateIndex;
-    le_uint16    flags;
+    SubtableProcessor2(const SubtableProcessor2 &other); // forbid copying of this class
+    SubtableProcessor2 &operator=(const SubtableProcessor2 &other); // forbid copying of this class
 };
 
 U_NAMESPACE_END
 #endif
-

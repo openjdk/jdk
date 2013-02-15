@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -95,10 +95,9 @@ le_int32 LookupProcessor::process(LEGlyphStorage &glyphStorage, GlyphPositionAdj
 
         if (selectMask != 0) {
             const LookupTable *lookupTable = lookupListTable->getLookupTable(lookup);
-
-            if (!lookupTable)
+            if (!lookupTable) {
                 continue;
-
+            }
             le_uint16 lookupFlags = SWAPW(lookupTable->lookupFlags);
 
             glyphIterator.reset(lookupFlags, selectMask);
@@ -143,9 +142,9 @@ le_int32 LookupProcessor::selectLookups(const FeatureTable *featureTable, Featur
 
     for (le_uint16 lookup = 0; lookup < lookupCount; lookup += 1) {
         le_uint16 lookupListIndex = SWAPW(featureTable->lookupListIndexArray[lookup]);
-
-        if (lookupListIndex >= lookupSelectCount)
+        if (lookupListIndex >= lookupSelectCount) {
             continue;
+        }
 
         lookupSelectArray[lookupListIndex] |= featureMask;
         lookupOrderArray[store++] = lookupListIndex;
@@ -224,11 +223,15 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
         le_uint16 featureIndex = SWAPW(langSysTable->featureIndexArray[feature]);
 
         featureTable = featureListTable->getFeatureTable(featureIndex, &featureTag);
-
-        if (!featureTable)
-            continue;
-
+        if (!featureTable) {
+             continue;
+        }
         featureReferences += SWAPW(featureTable->lookupCount);
+    }
+
+    if (!featureTable) {
+        success = LE_INTERNAL_ERROR;
+        return;
     }
 
     if (requiredFeatureIndex != 0xFFFF) {
