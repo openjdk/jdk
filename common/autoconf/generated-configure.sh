@@ -641,6 +641,7 @@ CXXFLAGS_JDKEXE
 CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
 CFLAGS_JDKLIB
+MACOSX_REQUIRED_VERSION
 PACKAGE_PATH
 LEGACY_EXTRA_LDFLAGS
 LEGACY_EXTRA_CXXFLAGS
@@ -3723,7 +3724,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1359971740
+DATE_WHEN_GENERATED=1360921109
 
 ###############################################################################
 #
@@ -28233,6 +28234,10 @@ if test "x$OPENJDK_TARGET_OS" = xsolaris; then
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE"
+    # Adding these macros will make it an error to link to mac APIs newer than OS version 10.7
+    MACOSX_REQUIRED_VERSION=1070
+
+    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(MACOSX_REQUIRED_VERSION) -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(MACOSX_REQUIRED_VERSION)"
 fi
 if test "x$OPENJDK_TARGET_OS" = xbsd; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DBSD -D_ALLBSD_SOURCE"
