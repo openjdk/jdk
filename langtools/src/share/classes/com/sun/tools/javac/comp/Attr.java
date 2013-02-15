@@ -2622,8 +2622,11 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
+            that.sym = refSym.baseSymbol();
+            that.kind = lookupHelper.referenceKind(that.sym);
+
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
-                if (refSym.isStatic() && TreeInfo.isStaticSelector(that.expr, names) &&
+                if (that.sym.isStatic() && TreeInfo.isStaticSelector(that.expr, names) &&
                         exprType.getTypeArguments().nonEmpty()) {
                     //static ref with class type-args
                     log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
@@ -2632,13 +2635,18 @@ public class Attr extends JCTree.Visitor {
                     return;
                 }
 
-                if (refSym.isStatic() && !TreeInfo.isStaticSelector(that.expr, names) &&
-                        !lookupHelper.referenceKind(refSym).isUnbound()) {
+                if (that.sym.isStatic() && !TreeInfo.isStaticSelector(that.expr, names) &&
+                        !that.kind.isUnbound()) {
                     //no static bound mrefs
                     log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
                             diags.fragment("static.bound.mref"));
                     result = that.type = types.createErrorType(target);
                     return;
+                }
+
+                if (!refSym.isStatic() && that.kind == JCMemberReference.ReferenceKind.SUPER) {
+                    // Check that super-qualified symbols are not abstract (JLS)
+                    rs.checkNonAbstract(that.pos(), that.sym);
                 }
             }
 
