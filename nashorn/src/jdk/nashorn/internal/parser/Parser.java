@@ -1742,6 +1742,10 @@ loop:
         // TRY tested in caller.
         next();
 
+        // Container block needed to act as target for labeled break statements
+        final Block outer = newBlock();
+        pushControlNode(outer);
+
         // Create try.
         final TryNode tryNode = new TryNode(source, tryToken, Token.descPosition(tryToken), findControl(TryNode.class));
         pushControlNode(tryNode);
@@ -1819,12 +1823,17 @@ loop:
             tryNode.setCatchBlocks(catchBlocks);
             tryNode.setFinallyBody(finallyStatements);
             tryNode.setFinish(finish);
+            outer.setFinish(finish);
 
             // Add try.
-            block.addStatement(tryNode);
+            outer.addStatement(tryNode);
         } finally {
             popControlNode(tryNode);
+            restoreBlock();
+            popControlNode(outer);
         }
+
+        block.addStatement(new ExecuteNode(source, outer.getToken(), outer.getFinish(), outer));
     }
 
     /**
