@@ -2501,10 +2501,10 @@ public class Resolve {
 
         //merge results
         Pair<Symbol, ReferenceLookupHelper> res;
-        if (unboundSym.kind != MTH) {
+        if (!lookupSuccess(unboundSym)) {
             res = new Pair<Symbol, ReferenceLookupHelper>(boundSym, boundLookupHelper);
             env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
-        } else if (boundSym.kind == MTH) {
+        } else if (lookupSuccess(boundSym)) {
             res = new Pair<Symbol, ReferenceLookupHelper>(ambiguityError(boundSym, unboundSym), boundLookupHelper);
             env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
         } else {
@@ -2514,6 +2514,10 @@ public class Resolve {
 
         return res;
     }
+    //private
+        boolean lookupSuccess(Symbol s) {
+            return s.kind == MTH || s.kind == AMBIGUOUS;
+        }
 
     /**
      * Helper for defining custom method-like lookup logic; a lookup helper
@@ -2706,9 +2710,11 @@ public class Resolve {
 
         UnboundMethodReferenceLookupHelper(JCMemberReference referenceTree, Name name, Type site,
                 List<Type> argtypes, List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
-            super(referenceTree, name,
-                    site.isRaw() ? types.asSuper(argtypes.head, site.tsym) : site,
-                    argtypes.tail, typeargtypes, maxPhase);
+            super(referenceTree, name, site, argtypes.tail, typeargtypes, maxPhase);
+            Type asSuperSite = types.asSuper(argtypes.head, site.tsym);
+            if (site.isRaw() && !asSuperSite.isErroneous()) {
+                this.site = asSuperSite;
+            }
         }
 
         @Override
