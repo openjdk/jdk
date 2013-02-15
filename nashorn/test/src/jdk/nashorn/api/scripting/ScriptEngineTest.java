@@ -50,17 +50,12 @@ import javax.script.SimpleScriptContext;
 import jdk.nashorn.internal.runtime.Version;
 import netscape.javascript.JSObject;
 import org.testng.Assert;
-import org.testng.TestNG;
 import org.testng.annotations.Test;
 
 /**
  * Tests for JSR-223 script engine for Nashorn.
  */
 public class ScriptEngineTest {
-
-    public static void main(final String[] args) {
-        TestNG.main(args);
-    }
 
     private void log(String msg) {
         org.testng.Reporter.log(msg, true);
@@ -132,6 +127,7 @@ public class ScriptEngineTest {
         assertEquals(fac.getEngineName(), "Oracle Nashorn");
         assertEquals(fac.getEngineVersion(), Version.version());
         assertEquals(fac.getOutputStatement("context"), "print(context)");
+        assertEquals(fac.getProgram("print('hello')", "print('world')"), "print('hello');print('world');");
         assertEquals(fac.getParameter(ScriptEngine.NAME), "javascript");
 
         boolean seenJS = false;
@@ -808,6 +804,9 @@ public class ScriptEngineTest {
                 fail("obj.prop is not deleted!");
             }
 
+            // Simple eval tests
+            assertEquals(obj.eval("typeof Object"), "function");
+            assertEquals(obj.eval("'nashorn'.substring(3)"), "horn");
         } catch (final Exception exp) {
             exp.printStackTrace();
             fail(exp.getMessage());

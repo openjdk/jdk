@@ -59,7 +59,7 @@ public class Scanner {
      * @param start   position index in content where to start
      * @param length  length of input
      */
-    public Scanner(final char[] content, final int line, final int start, final int length) {
+    protected Scanner(final char[] content, final int line, final int start, final int length) {
         this.content  = content;
         this.position = start;
         this.limit    = start + length;
@@ -75,7 +75,7 @@ public class Scanner {
      *
      * @param content content to scan
      */
-    public Scanner(final String content) {
+    protected Scanner(final String content) {
         this(content.toCharArray(), 0, 0, content.length());
     }
 

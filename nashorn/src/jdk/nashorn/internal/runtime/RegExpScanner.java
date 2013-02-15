@@ -614,11 +614,7 @@ final class RegExpScanner extends Scanner {
         final Token token = new Token(Token.Type.PATTERN);
 
         final Token child = disjunction();
-        if (child != null) {
-            return token.add(child);
-        }
-
-        return null;
+        return token.add(child);
     }
 
     /*

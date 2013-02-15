@@ -192,12 +192,14 @@ public class Shell {
         final Options options = new Options("nashorn", werr);
 
         // parse options
-        try {
-            options.process(args);
-        } catch (final IllegalArgumentException e) {
-            werr.println(bundle.getString("shell.usage"));
-            options.displayHelp(e);
-            return null;
+        if (args != null) {
+            try {
+                options.process(args);
+            } catch (final IllegalArgumentException e) {
+                werr.println(bundle.getString("shell.usage"));
+                options.displayHelp(e);
+                return null;
+            }
         }
 
         // detect scripting mode by any source's first character being '#'

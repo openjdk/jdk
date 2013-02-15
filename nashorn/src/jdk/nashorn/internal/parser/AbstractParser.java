@@ -101,15 +101,6 @@ public abstract class AbstractParser {
     }
 
     /**
-     * Get the Source
-     *
-     * @return the Source
-     */
-    public Source getSource() {
-        return source;
-    }
-
-    /**
      * Get the ith token.
      *
      * @param i Index of token.
@@ -261,7 +252,7 @@ public abstract class AbstractParser {
      * @return the message string
      */
     protected final String expectMessage(final TokenType expected) {
-        final String tokenString = Token.toString(source, token, false);
+        final String tokenString = Token.toString(source, token);
         String msg;
 
         if (expected == null) {

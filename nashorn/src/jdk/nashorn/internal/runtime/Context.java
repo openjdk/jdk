@@ -672,7 +672,7 @@ public final class Context {
             return evaluateSource(source, scope, scope);
         }
 
-        typeError("cant.load.script", ScriptRuntime.safeToString(source));
+        typeError("cant.load.script", ScriptRuntime.safeToString(from));
 
         return UNDEFINED;
     }

@@ -201,18 +201,6 @@ public final class Source {
     }
 
     /**
-     * Fetch a portion of source content associated with a range of tokens.
-     * @param startTokenDesc Starting token descriptor.
-     * @param endTokenDesc   Ending token descriptor.
-     * @return Source content portion.
-     */
-    public String getString(final long startTokenDesc, final long endTokenDesc) {
-        final int start = Token.descPosition(startTokenDesc);
-        final int end   = Token.descPosition(endTokenDesc) + Token.descLength(endTokenDesc);
-        return new String(content, start, end - start);
-    }
-
-    /**
      * Returns the source URL of this script Source. Can be null if Source
      * was created from a String or a char[].
      *
