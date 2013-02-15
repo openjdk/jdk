@@ -23,7 +23,7 @@
 
 /*
  *@test
- *@bug 8007520
+ *@bug 8007520 8008254
  *@summary Test those bridge methods to/from java.time date/time classes
  */
 
@@ -53,13 +53,10 @@ public class JavatimeTest {
             int nanos = r.nextInt(NANOS_PER_SECOND);
             int nanos_ms = nanos / 1000000 * 1000000; // millis precision
             long millis = secs * 1000 + r.nextInt(1000);
-
             LocalDateTime ldt = LocalDateTime.ofEpochSecond(secs, nanos, ZoneOffset.UTC);
             LocalDateTime ldt_ms = LocalDateTime.ofEpochSecond(secs, nanos_ms, ZoneOffset.UTC);
             Instant inst = Instant.ofEpochSecond(secs, nanos);
             Instant inst_ms = Instant.ofEpochSecond(secs, nanos_ms);
-            //System.out.printf("ms: %16d  ns: %10d  ldt:[%s]%n", millis, nanos, ldt);
-
             ///////////// java.util.Date /////////////////////////
             Date jud = new java.util.Date(millis);
             Instant inst0 = jud.toInstant();
@@ -77,6 +74,8 @@ public class JavatimeTest {
             }
             //////////// java.util.GregorianCalendar /////////////
             GregorianCalendar cal = new GregorianCalendar();
+            // non-roundtrip of tz name between j.u.tz and j.t.zid
+            cal.setTimeZone(TimeZone.getTimeZone(ZoneId.systemDefault()));
             cal.setGregorianChange(new java.util.Date(Long.MIN_VALUE));
             cal.setFirstDayOfWeek(Calendar.MONDAY);
             cal.setMinimalDaysInFirstWeek(4);
@@ -84,6 +83,9 @@ public class JavatimeTest {
             ZonedDateTime zdt0 = cal.toZonedDateTime();
             if (cal.getTimeInMillis() != zdt0.toInstant().toEpochMilli() ||
                 !cal.equals(GregorianCalendar.from(zdt0))) {
+                System.out.println("cal:" + cal);
+                System.out.println("zdt:" + zdt0);
+                System.out.println("calNew:" + GregorianCalendar.from(zdt0));
                 System.out.printf("ms: %16d  ns: %10d  ldt:[%s]%n", millis, nanos, ldt);
                 throw new RuntimeException("FAILED: gcal -> zdt -> gcal");
             }
