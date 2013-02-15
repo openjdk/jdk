@@ -2532,8 +2532,7 @@ public class Attr extends JCTree.Visitor {
         try {
             //attribute member reference qualifier - if this is a constructor
             //reference, the expected kind must be a type
-            Type exprType = attribTree(that.expr,
-                    env, new ResultInfo(that.getMode() == ReferenceMode.INVOKE ? VAL | TYP : TYP, Type.noType));
+            Type exprType = attribTree(that.expr, env, memberReferenceQualifierResult(that));
 
             if (that.getMode() == JCMemberReference.ReferenceMode.NEW) {
                 exprType = chk.checkConstructorRefType(that.expr, exprType);
@@ -2688,6 +2687,12 @@ public class Attr extends JCTree.Visitor {
             return;
         }
     }
+    //where
+        ResultInfo memberReferenceQualifierResult(JCMemberReference tree) {
+            //if this is a constructor reference, the expected kind must be a type
+            return new ResultInfo(tree.getMode() == ReferenceMode.INVOKE ? VAL | TYP : TYP, Type.noType);
+        }
+
 
     @SuppressWarnings("fallthrough")
     void checkReferenceCompatible(JCMemberReference tree, Type descriptor, Type refType, CheckContext checkContext, boolean speculativeAttr) {
