@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/**
+/*
  * @test
- * @bug 7009359
- * @summary HS with -XX:+AggressiveOpts optimize new StringBuffer(null) so it does not throw NPE as expected
- *
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeStringConcat -XX:CompileCommand=dontinline,Test7009359,stringmakerBUG Test7009359
- *
+ * @bug 8006298
+ * @summary Setting an invalid value for a bool argument should result in a useful error message
+ * @library /testlibrary
  */
 
-public class Test7009359 {
-    public static void main (String[] args) {
-        for(int i = 0; i < 100000; i++) {
-            if(!stringmakerBUG(null).equals("NPE")) {
-                System.out.println("StringBuffer(null) does not throw NPE");
-                System.exit(97);
-            }
-        }
-    }
+import com.oracle.java.testlibrary.*;
 
-    public static String stringmakerBUG(String str) {
-       try {
-           return new StringBuffer(str).toString();
-       } catch (NullPointerException e) {
-           return "NPE";
-       }
-    }
+public class BooleanFlagWithInvalidValue {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        "-XX:+UseLargePages=8", "-version");
+
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldContain("Improperly specified VM option 'UseLargePages=8'");
+    output.shouldHaveExitValue(1);
+
+    pb = ProcessTools.createJavaProcessBuilder(
+        "-XX:-UseLargePages=8", "-version");
+
+    output = new OutputAnalyzer(pb.start());
+    output.shouldContain("Improperly specified VM option 'UseLargePages=8'");
+    output.shouldHaveExitValue(1);
+  }
 }
-
