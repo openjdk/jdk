@@ -2606,16 +2606,17 @@ public class Types {
                 candidates = candidates.prepend((MethodSymbol)s);
             }
         }
-        return prune(candidates, ownerComparator);
+        return prune(candidates);
     }
 
-    public List<MethodSymbol> prune(List<MethodSymbol> methods, Comparator<MethodSymbol> cmp) {
+    public List<MethodSymbol> prune(List<MethodSymbol> methods) {
         ListBuffer<MethodSymbol> methodsMin = ListBuffer.lb();
         for (MethodSymbol m1 : methods) {
             boolean isMin_m1 = true;
             for (MethodSymbol m2 : methods) {
                 if (m1 == m2) continue;
-                if (cmp.compare(m2, m1) < 0) {
+                if (m2.owner != m1.owner &&
+                        asSuper(m2.owner.type, m1.owner) != null) {
                     isMin_m1 = false;
                     break;
                 }
@@ -2625,12 +2626,6 @@ public class Types {
         }
         return methodsMin.toList();
     }
-
-    Comparator<MethodSymbol> ownerComparator = new Comparator<MethodSymbol>() {
-        public int compare(MethodSymbol s1, MethodSymbol s2) {
-            return s1.owner.isSubClass(s2.owner, Types.this) ? -1 : 1;
-        }
-    };
     // where
             private class MethodFilter implements Filter<Symbol> {
 
