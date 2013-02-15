@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -46,6 +46,10 @@
 U_NAMESPACE_BEGIN
 
 struct IndicRearrangementSubtableHeader : MorphStateTableHeader
+{
+};
+
+struct IndicRearrangementSubtableHeader2 : MorphStateTableHeader2
 {
 };
 
@@ -82,6 +86,10 @@ enum IndicRearrangementVerb
 };
 
 struct IndicRearrangementStateEntry : StateEntry
+{
+};
+
+struct IndicRearrangementStateEntry2 : StateEntry2
 {
 };
 

@@ -26,7 +26,7 @@
 /*
  *
  *
- * (C) Copyright IBM Corp. 1998-2003 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -46,6 +46,11 @@
 U_NAMESPACE_BEGIN
 
 struct NonContextualGlyphSubstitutionHeader : MorphSubtableHeader
+{
+    LookupTable table;
+};
+
+struct NonContextualGlyphSubstitutionHeader2 : MorphSubtableHeader2
 {
     LookupTable table;
 };

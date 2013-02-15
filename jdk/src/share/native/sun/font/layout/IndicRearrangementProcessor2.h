@@ -25,12 +25,12 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
+ * (C) Copyright IBM Corp.  and others 1998-2013 - All Rights Reserved
  *
  */
 
-#ifndef __CONTEXTUALGLYPHINSERTION_H
-#define __CONTEXTUALGLYPHINSERTION_H
+#ifndef __INDICREARRANGEMENTPROCESSOR2_H
+#define __INDICREARRANGEMENTPROCESSOR2_H
 
 /**
  * \file
@@ -38,44 +38,50 @@
  */
 
 #include "LETypes.h"
-#include "LayoutTables.h"
-#include "StateTables.h"
 #include "MorphTables.h"
-#include "MorphStateTables.h"
+#include "SubtableProcessor.h"
+#include "StateTableProcessor2.h"
+#include "IndicRearrangement.h"
 
 U_NAMESPACE_BEGIN
 
-struct ContextualGlyphInsertionHeader : MorphStateTableHeader
-{
-};
+class LEGlyphStorage;
 
-struct ContextualGlyphInsertionHeader2 : MorphStateTableHeader2
+class IndicRearrangementProcessor2 : public StateTableProcessor2
 {
-    le_uint32 insertionTableOffset;
-};
+public:
+    virtual void beginStateTable();
 
-enum ContextualGlyphInsertionFlags
-{
-    cgiSetMark                  = 0x8000,
-    cgiDontAdvance              = 0x4000,
-    cgiCurrentIsKashidaLike     = 0x2000,
-    cgiMarkedIsKashidaLike      = 0x1000,
-    cgiCurrentInsertBefore      = 0x0800,
-    cgiMarkInsertBefore         = 0x0400,
-    cgiCurrentInsertCountMask   = 0x03E0,
-    cgiMarkedInsertCountMask    = 0x001F
-};
+    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index);
 
-struct ContextualGlyphInsertionStateEntry : StateEntry
-{
-    ByteOffset currentInsertionListOffset;
-    ByteOffset markedInsertionListOffset;
-};
+    virtual void endStateTable();
 
-struct ContextualGlyphInsertionStateEntry2 : StateEntry2
-{
-    le_uint16 currentInsertionListIndex;
-    le_uint16 markedInsertionListIndex;
+    void doRearrangementAction(LEGlyphStorage &glyphStorage, IndicRearrangementVerb verb) const;
+
+    IndicRearrangementProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    virtual ~IndicRearrangementProcessor2();
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
+
+protected:
+    le_int32 firstGlyph;
+    le_int32 lastGlyph;
+
+    const IndicRearrangementStateEntry2 *entryTable;
+    const IndicRearrangementSubtableHeader2 *indicRearrangementSubtableHeader;
+
 };
 
 U_NAMESPACE_END

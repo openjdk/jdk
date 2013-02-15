@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2010. All Rights Reserved.
+ * (C) Copyright IBM Corp. 1998-2013. All Rights Reserved.
  *
  * WARNING: THIS FILE IS MACHINE GENERATED. DO NOT HAND EDIT IT UNLESS
  * YOU REALLY KNOW WHAT YOU'RE DOING.
@@ -241,8 +241,27 @@ enum ScriptCodes {
     palmScriptCode = 144,
     sindScriptCode = 145,
     waraScriptCode = 146,
+/**
+ * @stable ICU 4.8
+ */
 
-    scriptCodeCount = 147
+    afakScriptCode = 147,
+    jurcScriptCode = 148,
+    mrooScriptCode = 149,
+    nshuScriptCode = 150,
+    shrdScriptCode = 151,
+    soraScriptCode = 152,
+    takrScriptCode = 153,
+    tangScriptCode = 154,
+    woleScriptCode = 155,
+/**
+ * @stable ICU 49
+ */
+
+    khojScriptCode = 156,
+    tirhScriptCode = 157,
+
+    scriptCodeCount = 158
 };
 
 U_NAMESPACE_END

@@ -26,7 +26,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2008 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -90,6 +90,14 @@ class LEGlyphStorage;
  * @stable ICU 2.8
  */
 class U_LAYOUT_API LayoutEngine : public UObject {
+public:
+#ifndef U_HIDE_INTERNAL_API
+    /** @internal Flag to request kerning. Use LE_Kerning_FEATURE_FLAG instead. */
+    static const le_int32 kTypoFlagKern;
+    /** @internal Flag to request ligatures. Use LE_Ligatures_FEATURE_FLAG instead. */
+    static const le_int32 kTypoFlagLiga;
+#endif  /* U_HIDE_INTERNAL_API */
+
 protected:
     /**
      * The object which holds the glyph storage
@@ -140,6 +148,7 @@ protected:
      */
     le_bool fFilterZeroWidth;
 
+#ifndef U_HIDE_INTERNAL_API
     /**
      * This constructs an instance for a given font, script and language. Subclass constructors
      * must call this constructor.
@@ -161,7 +170,10 @@ protected:
                  le_int32 languageCode,
                  le_int32 typoFlags,
                  LEErrorCode &success);
+#endif  /* U_HIDE_INTERNAL_API */
 
+    // Do not enclose the protected default constructor with #ifndef U_HIDE_INTERNAL_API
+    // or else the compiler will create a public default constructor.
     /**
      * This overrides the default no argument constructor to make it
      * difficult for clients to call it. Clients are expected to call
@@ -302,6 +314,7 @@ protected:
      */
     virtual void mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, le_bool mirror, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
+#ifndef U_HIDE_INTERNAL_API
     /**
      * This is a convenience method that forces the advance width of mark
      * glyphs to be zero, which is required for proper selection and highlighting.
@@ -336,7 +349,7 @@ protected:
      * @internal
      */
     static void adjustMarkGlyphs(const LEUnicode chars[], le_int32 charCount, le_bool reverse, LEGlyphStorage &glyphStorage, LEGlyphFilter *markFilter, LEErrorCode &success);
-
+#endif  /* U_HIDE_INTERNAL_API */
 
 public:
     /**

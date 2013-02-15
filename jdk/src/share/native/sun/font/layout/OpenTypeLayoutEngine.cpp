@@ -26,7 +26,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -64,11 +64,27 @@ UOBJECT_DEFINE_RTTI_IMPLEMENTATION(OpenTypeLayoutEngine)
 #define loclFeatureTag LE_LOCL_FEATURE_TAG
 #define caltFeatureTag LE_CALT_FEATURE_TAG
 
-// 'dlig' not used at the moment
-#define dligFeatureTag 0x646C6967
+#define dligFeatureTag LE_DLIG_FEATURE_TAG
+#define rligFeatureTag LE_RLIG_FEATURE_TAG
+#define paltFeatureTag LE_PALT_FEATURE_TAG
 
-// 'palt'
-#define paltFeatureTag 0x70616C74
+#define hligFeatureTag LE_HLIG_FEATURE_TAG
+#define smcpFeatureTag LE_SMCP_FEATURE_TAG
+#define fracFeatureTag LE_FRAC_FEATURE_TAG
+#define afrcFeatureTag LE_AFRC_FEATURE_TAG
+#define zeroFeatureTag LE_ZERO_FEATURE_TAG
+#define swshFeatureTag LE_SWSH_FEATURE_TAG
+#define cswhFeatureTag LE_CSWH_FEATURE_TAG
+#define saltFeatureTag LE_SALT_FEATURE_TAG
+#define naltFeatureTag LE_NALT_FEATURE_TAG
+#define rubyFeatureTag LE_RUBY_FEATURE_TAG
+#define ss01FeatureTag LE_SS01_FEATURE_TAG
+#define ss02FeatureTag LE_SS02_FEATURE_TAG
+#define ss03FeatureTag LE_SS03_FEATURE_TAG
+#define ss04FeatureTag LE_SS04_FEATURE_TAG
+#define ss05FeatureTag LE_SS05_FEATURE_TAG
+#define ss06FeatureTag LE_SS06_FEATURE_TAG
+#define ss07FeatureTag LE_SS07_FEATURE_TAG
 
 #define ccmpFeatureMask 0x80000000UL
 #define ligaFeatureMask 0x40000000UL
@@ -80,10 +96,27 @@ UOBJECT_DEFINE_RTTI_IMPLEMENTATION(OpenTypeLayoutEngine)
 #define loclFeatureMask 0x01000000UL
 #define caltFeatureMask 0x00800000UL
 
+#define dligFeatureMask 0x00400000UL
+#define rligFeatureMask 0x00200000UL
+#define hligFeatureMask 0x00100000UL
+#define smcpFeatureMask 0x00080000UL
+#define fracFeatureMask 0x00040000UL
+#define afrcFeatureMask 0x00020000UL
+#define zeroFeatureMask 0x00010000UL
+#define swshFeatureMask 0x00008000UL
+#define cswhFeatureMask 0x00004000UL
+#define saltFeatureMask 0x00002000UL
+#define naltFeatureMask 0x00001000UL
+#define rubyFeatureMask 0x00000800UL
+#define ss01FeatureMask 0x00000400UL
+#define ss02FeatureMask 0x00000200UL
+#define ss03FeatureMask 0x00000100UL
+#define ss04FeatureMask 0x00000080UL
+#define ss05FeatureMask 0x00000040UL
+#define ss06FeatureMask 0x00000020UL
+#define ss07FeatureMask 0x00000010UL
+
 #define minimalFeatures     (ccmpFeatureMask | markFeatureMask | mkmkFeatureMask | loclFeatureMask | caltFeatureMask)
-#define ligaFeatures        (ligaFeatureMask | cligFeatureMask | minimalFeatures)
-#define kernFeatures        (kernFeatureMask | paltFeatureMask | minimalFeatures)
-#define kernAndLigaFeatures (ligaFeatures    | kernFeatures)
 
 static const FeatureMap featureMap[] =
 {
@@ -95,7 +128,24 @@ static const FeatureMap featureMap[] =
     {markFeatureTag, markFeatureMask},
     {mkmkFeatureTag, mkmkFeatureMask},
     {loclFeatureTag, loclFeatureMask},
-    {caltFeatureTag, caltFeatureMask}
+    {caltFeatureTag, caltFeatureMask},
+    {hligFeatureTag, hligFeatureMask},
+    {smcpFeatureTag, smcpFeatureMask},
+    {fracFeatureTag, fracFeatureMask},
+    {afrcFeatureTag, afrcFeatureMask},
+    {zeroFeatureTag, zeroFeatureMask},
+    {swshFeatureTag, swshFeatureMask},
+    {cswhFeatureTag, cswhFeatureMask},
+    {saltFeatureTag, saltFeatureMask},
+    {naltFeatureTag, naltFeatureMask},
+    {rubyFeatureTag, rubyFeatureMask},
+    {ss01FeatureTag, ss01FeatureMask},
+    {ss02FeatureTag, ss02FeatureMask},
+    {ss03FeatureTag, ss03FeatureMask},
+    {ss04FeatureTag, ss04FeatureMask},
+    {ss05FeatureTag, ss05FeatureMask},
+    {ss06FeatureTag, ss06FeatureMask},
+    {ss07FeatureTag, ss07FeatureMask}
 };
 
 static const le_int32 featureMapCount = LE_ARRAY_SIZE(featureMap);
@@ -110,17 +160,65 @@ OpenTypeLayoutEngine::OpenTypeLayoutEngine(const LEFontInstance *fontInstance, l
     static const le_uint32 gposTableTag = LE_GPOS_TABLE_TAG;
     const GlyphPositioningTableHeader *gposTable = (const GlyphPositioningTableHeader *) getFontTable(gposTableTag);
 
-    // todo: switch to more flags and bitfield rather than list of feature tags?
-    switch (typoFlags & ~0x80000000L) {
-    case 0: break; // default
-    case 1: fFeatureMask = kernFeatures; break;
-    case 2: fFeatureMask = ligaFeatures; break;
-    case 3: fFeatureMask = kernAndLigaFeatures; break;
-    default: break;
+    switch (typoFlags & (LE_SS01_FEATURE_FLAG
+                         | LE_SS02_FEATURE_FLAG
+                         | LE_SS03_FEATURE_FLAG
+                         | LE_SS04_FEATURE_FLAG
+                         | LE_SS05_FEATURE_FLAG
+                         | LE_SS06_FEATURE_FLAG
+                         | LE_SS07_FEATURE_FLAG)) {
+        case LE_SS01_FEATURE_FLAG:
+            fFeatureMask |= ss01FeatureMask;
+            break;
+        case LE_SS02_FEATURE_FLAG:
+            fFeatureMask |= ss02FeatureMask;
+            break;
+        case LE_SS03_FEATURE_FLAG:
+            fFeatureMask |= ss03FeatureMask;
+            break;
+        case LE_SS04_FEATURE_FLAG:
+            fFeatureMask |= ss04FeatureMask;
+            break;
+        case LE_SS05_FEATURE_FLAG:
+            fFeatureMask |= ss05FeatureMask;
+            break;
+        case LE_SS06_FEATURE_FLAG:
+            fFeatureMask |= ss06FeatureMask;
+            break;
+        case LE_SS07_FEATURE_FLAG:
+            fFeatureMask |= ss07FeatureMask;
+            break;
     }
 
-    if (typoFlags & 0x80000000L) {
-        fSubstitutionFilter = new CharSubstitutionFilter(fontInstance);
+    if (typoFlags & LE_Kerning_FEATURE_FLAG) {
+      fFeatureMask |= (kernFeatureMask | paltFeatureMask);
+      // Convenience.
+    }
+    if (typoFlags & LE_Ligatures_FEATURE_FLAG) {
+      fFeatureMask |= (ligaFeatureMask | cligFeatureMask);
+      // Convenience TODO: should add: .. dligFeatureMask | rligFeatureMask ?
+    }
+    if (typoFlags & LE_CLIG_FEATURE_FLAG) fFeatureMask |= cligFeatureMask;
+    if (typoFlags & LE_DLIG_FEATURE_FLAG) fFeatureMask |= dligFeatureMask;
+    if (typoFlags & LE_HLIG_FEATURE_FLAG) fFeatureMask |= hligFeatureMask;
+    if (typoFlags & LE_LIGA_FEATURE_FLAG) fFeatureMask |= ligaFeatureMask;
+    if (typoFlags & LE_RLIG_FEATURE_FLAG) fFeatureMask |= rligFeatureMask;
+    if (typoFlags & LE_SMCP_FEATURE_FLAG) fFeatureMask |= smcpFeatureMask;
+    if (typoFlags & LE_FRAC_FEATURE_FLAG) fFeatureMask |= fracFeatureMask;
+    if (typoFlags & LE_AFRC_FEATURE_FLAG) fFeatureMask |= afrcFeatureMask;
+    if (typoFlags & LE_ZERO_FEATURE_FLAG) fFeatureMask |= zeroFeatureMask;
+    if (typoFlags & LE_SWSH_FEATURE_FLAG) fFeatureMask |= swshFeatureMask;
+    if (typoFlags & LE_CSWH_FEATURE_FLAG) fFeatureMask |= cswhFeatureMask;
+    if (typoFlags & LE_SALT_FEATURE_FLAG) fFeatureMask |= saltFeatureMask;
+    if (typoFlags & LE_RUBY_FEATURE_FLAG) fFeatureMask |= rubyFeatureMask;
+    if (typoFlags & LE_NALT_FEATURE_FLAG) {
+      // Mutually exclusive with ALL other features. http://www.microsoft.com/typography/otspec/features_ko.htm
+      fFeatureMask = naltFeatureMask;
+    }
+
+    if (typoFlags & LE_CHAR_FILTER_FEATURE_FLAG) {
+      // This isn't a font feature, but requests a Char Substitution Filter
+      fSubstitutionFilter = new CharSubstitutionFilter(fontInstance);
     }
 
     setScriptAndLanguageTags();
@@ -325,7 +423,7 @@ le_int32 OpenTypeLayoutEngine::computeGlyphs(const LEUnicode chars[], le_int32 o
 {
     LEUnicode *outChars = NULL;
     LEGlyphStorage fakeGlyphStorage;
-    le_int32 outCharCount, outGlyphCount, fakeGlyphCount;
+    le_int32 outCharCount, outGlyphCount;
 
     if (LE_FAILURE(success)) {
         return 0;
@@ -343,11 +441,13 @@ le_int32 OpenTypeLayoutEngine::computeGlyphs(const LEUnicode chars[], le_int32 o
     }
 
     if (outChars != NULL) {
-        fakeGlyphCount = glyphProcessing(outChars, 0, outCharCount, outCharCount, rightToLeft, fakeGlyphStorage, success);
+        // le_int32 fakeGlyphCount =
+        glyphProcessing(outChars, 0, outCharCount, outCharCount, rightToLeft, fakeGlyphStorage, success);
         LE_DELETE_ARRAY(outChars); // FIXME: a subclass may have allocated this, in which case this delete might not work...
         //adjustGlyphs(outChars, 0, outCharCount, rightToLeft, fakeGlyphs, fakeGlyphCount);
     } else {
-        fakeGlyphCount = glyphProcessing(chars, offset, count, max, rightToLeft, fakeGlyphStorage, success);
+        // le_int32 fakeGlyphCount =
+        glyphProcessing(chars, offset, count, max, rightToLeft, fakeGlyphStorage, success);
         //adjustGlyphs(chars, offset, count, rightToLeft, fakeGlyphs, fakeGlyphCount);
     }
 

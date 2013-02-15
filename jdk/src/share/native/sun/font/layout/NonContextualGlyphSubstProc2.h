@@ -25,12 +25,12 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
+ * (C) Copyright IBM Corp.  and others 1998-2013 - All Rights Reserved
  *
  */
 
-#ifndef __STATETABLES_H
-#define __STATETABLES_H
+#ifndef __NONCONTEXTUALGLYPHSUBSTITUTIONPROCESSOR2_H
+#define __NONCONTEXTUALGLYPHSUBSTITUTIONPROCESSOR2_H
 
 /**
  * \file
@@ -38,69 +38,31 @@
  */
 
 #include "LETypes.h"
-#include "LayoutTables.h"
+#include "MorphTables.h"
+#include "SubtableProcessor2.h"
+#include "NonContextualGlyphSubst.h"
 
 U_NAMESPACE_BEGIN
 
-struct StateTableHeader
+class LEGlyphStorage;
+
+class NonContextualGlyphSubstitutionProcessor2 : public SubtableProcessor2
 {
-    le_int16 stateSize;
-    ByteOffset classTableOffset;
-    ByteOffset stateArrayOffset;
-    ByteOffset entryTableOffset;
-};
+public:
+    virtual void process(LEGlyphStorage &glyphStorage) = 0;
 
-struct StateTableHeader2
-{
-    le_uint32 nClasses;
-    le_uint32 classTableOffset;
-    le_uint32 stateArrayOffset;
-    le_uint32 entryTableOffset;
-};
+    static SubtableProcessor2 *createInstance(const MorphSubtableHeader2 *morphSubtableHeader);
 
-enum ClassCodes
-{
-    classCodeEOT = 0,
-    classCodeOOB = 1,
-    classCodeDEL = 2,
-    classCodeEOL = 3,
-    classCodeFirstFree = 4,
-    classCodeMAX = 0xFF
-};
+protected:
+    NonContextualGlyphSubstitutionProcessor2();
+    NonContextualGlyphSubstitutionProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
 
-typedef le_uint8 ClassCode;
+    virtual ~NonContextualGlyphSubstitutionProcessor2();
 
-struct ClassTable
-{
-    TTGlyphID firstGlyph;
-    le_uint16 nGlyphs;
-    ClassCode classArray[ANY_NUMBER];
-};
-
-enum StateNumber
-{
-    stateSOT        = 0,
-    stateSOL        = 1,
-    stateFirstFree  = 2,
-    stateMAX        = 0xFF
-};
-
-typedef le_uint8 EntryTableIndex;
-
-struct StateEntry
-{
-    ByteOffset  newStateOffset;
-    le_int16    flags;
-};
-
-typedef le_uint16 EntryTableIndex2;
-
-struct StateEntry2 // same struct different interpretation
-{
-    le_uint16    newStateIndex;
-    le_uint16    flags;
+private:
+    NonContextualGlyphSubstitutionProcessor2(const NonContextualGlyphSubstitutionProcessor2 &other); // forbid copying of this class
+    NonContextualGlyphSubstitutionProcessor2 &operator=(const NonContextualGlyphSubstitutionProcessor2 &other); // forbid copying of this class
 };
 
 U_NAMESPACE_END
 #endif
-

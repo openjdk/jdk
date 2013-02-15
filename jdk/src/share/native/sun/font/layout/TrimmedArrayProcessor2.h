@@ -25,12 +25,12 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
+ * (C) Copyright IBM Corp.  and others 1998-2013 - All Rights Reserved
  *
  */
 
-#ifndef __STATETABLES_H
-#define __STATETABLES_H
+#ifndef __TRIMMEDARRAYPROCESSOR2_H
+#define __TRIMMEDARRAYPROCESSOR2_H
 
 /**
  * \file
@@ -38,69 +38,47 @@
  */
 
 #include "LETypes.h"
-#include "LayoutTables.h"
+#include "MorphTables.h"
+#include "SubtableProcessor2.h"
+#include "NonContextualGlyphSubst.h"
+#include "NonContextualGlyphSubstProc2.h"
 
 U_NAMESPACE_BEGIN
 
-struct StateTableHeader
-{
-    le_int16 stateSize;
-    ByteOffset classTableOffset;
-    ByteOffset stateArrayOffset;
-    ByteOffset entryTableOffset;
-};
+class LEGlyphStorage;
 
-struct StateTableHeader2
+class TrimmedArrayProcessor2 : public NonContextualGlyphSubstitutionProcessor2
 {
-    le_uint32 nClasses;
-    le_uint32 classTableOffset;
-    le_uint32 stateArrayOffset;
-    le_uint32 entryTableOffset;
-};
+public:
+    virtual void process(LEGlyphStorage &glyphStorage);
 
-enum ClassCodes
-{
-    classCodeEOT = 0,
-    classCodeOOB = 1,
-    classCodeDEL = 2,
-    classCodeEOL = 3,
-    classCodeFirstFree = 4,
-    classCodeMAX = 0xFF
-};
+    TrimmedArrayProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
 
-typedef le_uint8 ClassCode;
+    virtual ~TrimmedArrayProcessor2();
 
-struct ClassTable
-{
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
+
+private:
+    TrimmedArrayProcessor2();
+
+protected:
     TTGlyphID firstGlyph;
-    le_uint16 nGlyphs;
-    ClassCode classArray[ANY_NUMBER];
-};
+    TTGlyphID lastGlyph;
+    const TrimmedArrayLookupTable *trimmedArrayLookupTable;
 
-enum StateNumber
-{
-    stateSOT        = 0,
-    stateSOL        = 1,
-    stateFirstFree  = 2,
-    stateMAX        = 0xFF
-};
-
-typedef le_uint8 EntryTableIndex;
-
-struct StateEntry
-{
-    ByteOffset  newStateOffset;
-    le_int16    flags;
-};
-
-typedef le_uint16 EntryTableIndex2;
-
-struct StateEntry2 // same struct different interpretation
-{
-    le_uint16    newStateIndex;
-    le_uint16    flags;
 };
 
 U_NAMESPACE_END
 #endif
-
