@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 /*
-  @test %I% %E%
-  @bug 6572263 6571808
+  @test
+  @bug 6572263 6571808 8005920
   @summary  PIT:FileDialog minimized to taskbar(through 'Show Desktop')selecting the fileDialog using windowList
   @author dmitry.cherepanov: area=awt.modal
   @run main/manual Winkey
@@ -48,12 +48,14 @@ public class Winkey
 
         String[] instructions =
         {
+            " 0. This test is for MS Windows only, if you use other OS, press \"pass\" button.",
             " 1. there is a frame with a 'show modal' button, ",
             " 2. press the button to show a modal dialog, ",
             " 3. the modal dialog will be shown over the frame, ",
             " 4. please verify that all (5.1, 5.2.1, 5.2.2) the following tests pass: ",
             " ",
             " 5.1. press combination Windows Key and M key to minimize all windows, ",
+            "      note that the modal dialog and modal blocked windows are NOT minimized",
             " 5.2. press combination Windows Key and D key to show desktop, ",
             "      5.2.1. restore the dialog by choosing this one in the ALT-TAB list, ",
             "      5.2.2. restore the dialog by mouse click on taskbar (on java or any other item)",
