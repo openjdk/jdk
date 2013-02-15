@@ -32,7 +32,7 @@ import javax.sound.midi.*;
  *
  * @author Florian Bomers
  */
-class FastSysexMessage extends SysexMessage {
+final class FastSysexMessage extends SysexMessage {
 
     FastSysexMessage(byte[] data) throws InvalidMidiDataException {
         super(data);
