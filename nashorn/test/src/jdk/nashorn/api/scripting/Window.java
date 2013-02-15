@@ -59,17 +59,8 @@ public class Window {
         return self.setTimeout(code, delay);
     }
 
-    public static void clearTimeout(final Window self, final int id) {
-        self.clearTimeout(id);
-    }
-
     public int setTimeout(final String code, final int delay) {
         System.out.println("window.setTimeout: " + delay + ", code: " + code);
         return 0;
     }
-
-    public void clearTimeout(final int id) {
-        System.out.println("window.clearTimeout: " + id);
-    }
-
 }

@@ -34,7 +34,7 @@ import java.util.StringTokenizer;
  * the separators are quoted either by ' and ", or whatever quotes the user
  * supplies they will be ignored and considered part of another token
  */
-public class QuotedStringTokenizer {
+public final class QuotedStringTokenizer {
     private final LinkedList<String> tokens;
 
     private final char quotes[];
@@ -72,7 +72,7 @@ public class QuotedStringTokenizer {
      *            all the characters that should be accepted as quotes, default
      *            is ' or "
      */
-    public QuotedStringTokenizer(final String str, final String delim, final char[] quotes) {
+    private QuotedStringTokenizer(final String str, final String delim, final char[] quotes) {
         this.quotes = quotes;
 
         boolean delimIsWhitespace = true;

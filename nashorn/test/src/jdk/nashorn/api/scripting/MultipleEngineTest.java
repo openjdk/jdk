@@ -28,7 +28,6 @@ package jdk.nashorn.api.scripting;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import org.testng.TestNG;
 import org.testng.annotations.Test;
 
 /**
@@ -37,10 +36,6 @@ import org.testng.annotations.Test;
  */
 
 public class MultipleEngineTest {
-    public static void main(final String[] args) {
-        TestNG.main(args);
-    }
-
     @Test
     public void createAndUseManyEngine() throws ScriptException {
         final ScriptEngineManager m = new ScriptEngineManager();

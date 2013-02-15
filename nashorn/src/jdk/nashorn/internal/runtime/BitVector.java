@@ -67,7 +67,7 @@ public final class BitVector implements Cloneable {
      * @param bits a bits array from another bit vector
      */
     public BitVector(final long[] bits) {
-        this.bits = bits;
+        this.bits = bits.clone();
     }
 
     /**
@@ -75,7 +75,7 @@ public final class BitVector implements Cloneable {
      * @param other the source
      */
     public void copy(final BitVector other) {
-        bits = Arrays.copyOf(other.bits, other.bits.length);
+        bits = other.bits.clone();
     }
 
     /**
