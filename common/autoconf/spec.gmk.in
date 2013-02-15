@@ -282,6 +282,9 @@ X_CFLAGS:=@X_CFLAGS@
 X_LIBS:=@X_LIBS@
 OPENWIN_HOME:=@OPENWIN_HOME@
 
+# The lowest required version of macosx to enforce compatiblity for
+MACOSX_REQUIRED_VERSION=@MACOSX_REQUIRED_VERSION@
+
 # There are two types: CC or CL
 # CC is gcc and others behaving reasonably similar.
 # CL is cl.exe only.
