@@ -48,6 +48,7 @@ import static com.sun.tools.javac.code.Scope.*;
 import static com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Type.*;
 import static com.sun.tools.javac.code.TypeTag.*;
+import static com.sun.tools.javac.jvm.ClassFile.externalize;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
 /**
@@ -4352,6 +4353,174 @@ public class Types {
             }
         }
         return vis;
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="Signature Generation">
+
+    public static abstract class SignatureGenerator {
+
+        private final Types types;
+
+        protected abstract void append(char ch);
+        protected abstract void append(byte[] ba);
+        protected abstract void append(Name name);
+        protected void classReference(ClassSymbol c) { /* by default: no-op */ }
+
+        protected SignatureGenerator(Types types) {
+            this.types = types;
+        }
+
+        /**
+         * Assemble signature of given type in string buffer.
+         */
+        public void assembleSig(Type type) {
+            type = type.unannotatedType();
+            switch (type.getTag()) {
+                case BYTE:
+                    append('B');
+                    break;
+                case SHORT:
+                    append('S');
+                    break;
+                case CHAR:
+                    append('C');
+                    break;
+                case INT:
+                    append('I');
+                    break;
+                case LONG:
+                    append('J');
+                    break;
+                case FLOAT:
+                    append('F');
+                    break;
+                case DOUBLE:
+                    append('D');
+                    break;
+                case BOOLEAN:
+                    append('Z');
+                    break;
+                case VOID:
+                    append('V');
+                    break;
+                case CLASS:
+                    append('L');
+                    assembleClassSig(type);
+                    append(';');
+                    break;
+                case ARRAY:
+                    ArrayType at = (ArrayType) type;
+                    append('[');
+                    assembleSig(at.elemtype);
+                    break;
+                case METHOD:
+                    MethodType mt = (MethodType) type;
+                    append('(');
+                    assembleSig(mt.argtypes);
+                    append(')');
+                    assembleSig(mt.restype);
+                    if (hasTypeVar(mt.thrown)) {
+                        for (List<Type> l = mt.thrown; l.nonEmpty(); l = l.tail) {
+                            append('^');
+                            assembleSig(l.head);
+                        }
+                    }
+                    break;
+                case WILDCARD: {
+                    Type.WildcardType ta = (Type.WildcardType) type;
+                    switch (ta.kind) {
+                        case SUPER:
+                            append('-');
+                            assembleSig(ta.type);
+                            break;
+                        case EXTENDS:
+                            append('+');
+                            assembleSig(ta.type);
+                            break;
+                        case UNBOUND:
+                            append('*');
+                            break;
+                        default:
+                            throw new AssertionError(ta.kind);
+                    }
+                    break;
+                }
+                case TYPEVAR:
+                    append('T');
+                    append(type.tsym.name);
+                    append(';');
+                    break;
+                case FORALL:
+                    Type.ForAll ft = (Type.ForAll) type;
+                    assembleParamsSig(ft.tvars);
+                    assembleSig(ft.qtype);
+                    break;
+                default:
+                    throw new AssertionError("typeSig " + type.getTag());
+            }
+        }
+
+        public boolean hasTypeVar(List<Type> l) {
+            while (l.nonEmpty()) {
+                if (l.head.hasTag(TypeTag.TYPEVAR)) {
+                    return true;
+                }
+                l = l.tail;
+            }
+            return false;
+        }
+
+        public void assembleClassSig(Type type) {
+            type = type.unannotatedType();
+            ClassType ct = (ClassType) type;
+            ClassSymbol c = (ClassSymbol) ct.tsym;
+            classReference(c);
+            Type outer = ct.getEnclosingType();
+            if (outer.allparams().nonEmpty()) {
+                boolean rawOuter =
+                        c.owner.kind == Kinds.MTH || // either a local class
+                        c.name == types.names.empty; // or anonymous
+                assembleClassSig(rawOuter
+                        ? types.erasure(outer)
+                        : outer);
+                append('.');
+                Assert.check(c.flatname.startsWith(c.owner.enclClass().flatname));
+                append(rawOuter
+                        ? c.flatname.subName(c.owner.enclClass().flatname.getByteLength() + 1, c.flatname.getByteLength())
+                        : c.name);
+            } else {
+                append(externalize(c.flatname));
+            }
+            if (ct.getTypeArguments().nonEmpty()) {
+                append('<');
+                assembleSig(ct.getTypeArguments());
+                append('>');
+            }
+        }
+
+        public void assembleParamsSig(List<Type> typarams) {
+            append('<');
+            for (List<Type> ts = typarams; ts.nonEmpty(); ts = ts.tail) {
+                Type.TypeVar tvar = (Type.TypeVar) ts.head;
+                append(tvar.tsym.name);
+                List<Type> bounds = types.getBounds(tvar);
+                if ((bounds.head.tsym.flags() & INTERFACE) != 0) {
+                    append(':');
+                }
+                for (List<Type> l = bounds; l.nonEmpty(); l = l.tail) {
+                    append(':');
+                    assembleSig(l.head);
+                }
+            }
+            append('>');
+        }
+
+        private void assembleSig(List<Type> types) {
+            for (List<Type> ts = types; ts.nonEmpty(); ts = ts.tail) {
+                assembleSig(ts.head);
+            }
+        }
     }
     // </editor-fold>
 }
