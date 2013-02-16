@@ -126,6 +126,7 @@ public class Symtab {
     public final Type stringBuilderType;
     public final Type cloneableType;
     public final Type serializableType;
+    public final Type serializedLambdaType;
     public final Type methodHandleType;
     public final Type methodHandleLookupType;
     public final Type methodTypeType;
@@ -458,6 +459,7 @@ public class Symtab {
         cloneableType = enterClass("java.lang.Cloneable");
         throwableType = enterClass("java.lang.Throwable");
         serializableType = enterClass("java.io.Serializable");
+        serializedLambdaType = enterClass("java.lang.invoke.SerializedLambda");
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
         methodHandleLookupType = enterClass("java.lang.invoke.MethodHandles$Lookup");
         methodTypeType = enterClass("java.lang.invoke.MethodType");
@@ -514,6 +516,7 @@ public class Symtab {
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);
         synthesizeEmptyInterfaceIfMissing(lambdaMetafactory);
+        synthesizeEmptyInterfaceIfMissing(serializedLambdaType);
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);
