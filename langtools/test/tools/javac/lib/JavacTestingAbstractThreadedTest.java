@@ -41,14 +41,20 @@ import javax.tools.ToolProvider;
  *
  * If the property is not set the class will use a heuristic to determine the
  * maximum number of threads that can be fired to execute a given test.
+ *
+ * This code will have to be revisited if jprt starts using concurrency for
+ * for running jtreg tests.
  */
 public abstract class JavacTestingAbstractThreadedTest {
+
+    protected static AtomicInteger numberOfThreads = new AtomicInteger();
 
     protected static int getThreadPoolSize() {
         Integer testConc = Integer.getInteger("test.concurrency");
         if (testConc != null) return testConc;
         int cores = Runtime.getRuntime().availableProcessors();
-        return Math.max(2, Math.min(8, cores / 2));
+        numberOfThreads.set(Math.max(2, Math.min(8, cores / 2)));
+        return numberOfThreads.get();
     }
 
     protected static void checkAfterExec() throws InterruptedException {
@@ -82,11 +88,18 @@ public abstract class JavacTestingAbstractThreadedTest {
         } else if (printCheckCount) {
             outWriter.println("Total check executed: " + checkCount.get());
         }
+        /*
+         * This output is for supporting debugging. It does not mean that a given
+         * test had executed that number of threads concurrently. The value printed
+         * here is the maximum possible amount.
+         */
         closePrinters();
         if (printAll) {
             System.out.println(errSWriter.toString());
             System.out.println(outSWriter.toString());
         }
+        System.out.println("Total number of threads in thread pool: " +
+                numberOfThreads.get());
     }
 
     protected static void closePrinters() {

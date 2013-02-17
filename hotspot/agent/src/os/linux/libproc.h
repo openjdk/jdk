@@ -79,14 +79,6 @@ combination of ptrace and /proc calls.
 
 *************************************************************************************/
 
-#ifdef ia64
-struct user_regs_struct {
-/* copied from user.h which doesn't define this in a struct */
-
-#define IA64_REG_COUNT (EF_SIZE/8+32)   /* integer and fp regs */
-unsigned long   regs[IA64_REG_COUNT];     /* integer and fp regs */
-};
-#endif
 
 #if defined(sparc)  || defined(sparcv9)
 #define user_regs_struct  pt_regs

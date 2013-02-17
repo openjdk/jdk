@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/specialized_oop_closures.hpp"
 #include "oops/metadata.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/top.hpp"
 
 // oopDesc is the top baseclass for objects classes.  The {name}Desc classes describe
@@ -298,7 +299,7 @@ class oopDesc {
   // reference field in "this".
   void follow_contents(void);
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // Parallel Scavenge
   void push_contents(PSPromotionManager* pm);
 
@@ -306,7 +307,7 @@ class oopDesc {
   void update_contents(ParCompactionManager* cm);
 
   void follow_contents(ParCompactionManager* cm);
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   bool is_scavengable() const;
 
@@ -316,13 +317,13 @@ class oopDesc {
   void forward_to(oop p);
   bool cas_forward_to(oop p, markOop compare);
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
   // this call returns "NULL" for that thread; any other thread has the
   // value of the forwarding pointer returned and does not modify "this".
   oop forward_to_atomic(oop p);
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   oop forwardee() const;
 
@@ -334,10 +335,10 @@ class oopDesc {
   // return the size of this oop.  This is used by the MarkSweep collector.
   int adjust_pointers();
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // Parallel old
   void update_header(ParCompactionManager* cm);
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // mark-sweep support
   void follow_body(int begin, int end);
@@ -354,7 +355,7 @@ class oopDesc {
   ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DECL)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
 #define OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)            \
   int oop_iterate_backwards(OopClosureType* blk);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ class LocalVariableTableElement;
 class AdapterHandlerEntry;
 class MethodData;
 class ConstMethod;
+class KlassSizeStats;
 
 class Method : public Metadata {
  friend class VMStructs;
@@ -127,8 +128,8 @@ class Method : public Metadata {
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequencey-based optimizations
 
 #ifdef TIERED
-  jlong             _prev_time;                   // Previous time the rate was acquired
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
+  jlong             _prev_time;                   // Previous time the rate was acquired
 #endif
 
 #ifndef PRODUCT
@@ -593,6 +594,9 @@ class Method : public Metadata {
   static int header_size()                       { return sizeof(Method)/HeapWordSize; }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
+#if INCLUDE_SERVICES
+  void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   // interpreter support
   static ByteSize const_offset()                 { return byte_offset_of(Method, _constMethod       ); }
@@ -760,18 +764,18 @@ class Method : public Metadata {
   // whether it is not compilable for another reason like having a
   // breakpoint set in it.
   bool  is_not_compilable(int comp_level = CompLevel_any) const;
-  void set_not_compilable(int comp_level = CompLevel_all, bool report = true);
+  void set_not_compilable(int comp_level = CompLevel_all, bool report = true, const char* reason = NULL);
   void set_not_compilable_quietly(int comp_level = CompLevel_all) {
     set_not_compilable(comp_level, false);
   }
   bool  is_not_osr_compilable(int comp_level = CompLevel_any) const;
-  void set_not_osr_compilable(int comp_level = CompLevel_all, bool report = true);
+  void set_not_osr_compilable(int comp_level = CompLevel_all, bool report = true, const char* reason = NULL);
   void set_not_osr_compilable_quietly(int comp_level = CompLevel_all) {
     set_not_osr_compilable(comp_level, false);
   }
 
  private:
-  void print_made_not_compilable(int comp_level, bool is_osr, bool report);
+  void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
 
  public:
   bool  is_not_c1_compilable() const          { return access_flags().is_not_c1_compilable(); }

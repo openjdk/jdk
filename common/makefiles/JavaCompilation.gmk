@@ -143,8 +143,8 @@ define SetupArchive
     ifneq (,$2)
         $1_DEPS:=$2
     else
-        $1_DEPS:=$$(filter $$(addprefix %,$$($1_FIND_PATTERNS)),\
-                    $$(call CacheFind $$($1_SRCS)))
+        $1_DEPS:=$$(filter $$(addprefix %,$$($1_SUFFIXES)),\
+                    $$(call CacheFind,$$($1_SRCS)))
         ifneq (,$$($1_GREP_INCLUDE_PATTERNS))
             $1_DEPS:=$$(filter $$(addsuffix %,$$($1_GREP_INCLUDE_PATTERNS)),$$($1_DEPS))
         endif

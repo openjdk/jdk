@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,6 @@ CXX_FLAGS=$(CXX_FLAGS) /D "ASSERT"
 
 !if "$(Variant)" == "core"
 # No need to define anything, CORE is defined as !COMPILER1 && !COMPILER2
-!endif
-
-!if "$(Variant)" == "kernel"
-CXX_FLAGS=$(CXX_FLAGS) /D "KERNEL"
 !endif
 
 !if "$(Variant)" == "compiler1"

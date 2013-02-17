@@ -114,6 +114,7 @@ public class VM {
   private int          invalidOSREntryBCI;
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
+  private int          reserveForAllocationPrefetch;
 
   // System.getProperties from debuggee VM
   private Properties   sysProps;
@@ -293,6 +294,10 @@ public class VM {
        vmRelease = CStringUtilities.getString(releaseAddr);
        Address vmInternalInfoAddr = vmVersion.getAddressField("_s_internal_vm_info_string").getValue();
        vmInternalInfo = CStringUtilities.getString(vmInternalInfoAddr);
+
+       CIntegerType intType = (CIntegerType) db.lookupType("int");
+       CIntegerField reserveForAllocationPrefetchField = vmVersion.getCIntegerField("_reserve_for_allocation_prefetch");
+       reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
     } catch (Exception exp) {
        throw new RuntimeException("can't determine target's VM version : " + exp.getMessage());
     }
@@ -776,6 +781,10 @@ public class VM {
   // returns null, if not available.
   public String getVMInternalInfo() {
     return vmInternalInfo;
+  }
+
+  public int getReserveForAllocationPrefetch() {
+    return reserveForAllocationPrefetch;
   }
 
   public boolean isSharingEnabled() {

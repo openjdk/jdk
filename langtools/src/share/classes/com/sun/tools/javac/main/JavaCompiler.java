@@ -629,6 +629,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             if (!taskListener.isEmpty()) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
                 taskListener.started(e);
+                keepComments = true;
+                genEndPos = true;
             }
             Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
             tree = parser.parseCompilationUnit();
