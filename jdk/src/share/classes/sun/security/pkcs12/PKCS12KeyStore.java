@@ -326,7 +326,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             DerValue val = new DerValue(encrInfo.getAlgorithm().encode());
             DerInputStream in = val.toDerInputStream();
             algOid = in.getOID();
-            algParams = parseAlgParameters(in);
+            algParams = parseAlgParameters(algOid, in);
 
         } catch (IOException ioe) {
             UnrecoverableKeyException uke =
@@ -342,7 +342,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 try {
                     // Use JCE
                     SecretKey skey = getPBEKey(password);
-                    Cipher cipher = Cipher.getInstance(algOid.toString());
+                    Cipher cipher = Cipher.getInstance(
+                        mapPBEParamsToAlgorithm(algOid, algParams));
                     cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
                     keyInfo = cipher.doFinal(encryptedKey);
                     break;
@@ -759,8 +760,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     /*
      * parse Algorithm Parameters
      */
-    private AlgorithmParameters parseAlgParameters(DerInputStream in)
-        throws IOException
+    private AlgorithmParameters parseAlgParameters(ObjectIdentifier algorithm,
+        DerInputStream in) throws IOException
     {
         AlgorithmParameters algParams = null;
         try {
@@ -774,7 +775,11 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
             }
             if (params != null) {
-                algParams = AlgorithmParameters.getInstance("PBE");
+                if (algorithm.equals(pbes2_OID)) {
+                    algParams = AlgorithmParameters.getInstance("PBES2");
+                } else {
+                    algParams = AlgorithmParameters.getInstance("PBE");
+                }
                 algParams.init(params.toByteArray());
             }
         } catch (Exception e) {
@@ -834,13 +839,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 } else {
                     algParams = getAlgorithmParameters(algorithm);
                 }
-                ObjectIdentifier pbeOID = mapPBEAlgorithmToOID(algorithm);
-                if (pbeOID != null) {
-                    algid = new AlgorithmId(pbeOID, algParams);
-                } else {
-                    throw new IOException("PBE algorithm '" + algorithm +
-                        " 'is not supported for key entry protection");
-                }
             } else {
                 // Check default key protection algorithm for PKCS12 keystores
                 algorithm = AccessController.doPrivileged(
@@ -856,12 +854,16 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                             return prop;
                         }
                     });
-                if (algorithm == null) {
+                if (algorithm == null || algorithm.isEmpty()) {
                     algorithm = "PBEWithSHA1AndDESede";
                 }
                 algParams = getAlgorithmParameters(algorithm);
-                algid = new AlgorithmId(pbeWithSHAAnd3KeyTripleDESCBC_OID,
-                    algParams);
+            }
+
+            ObjectIdentifier pbeOID = mapPBEAlgorithmToOID(algorithm);
+            if (pbeOID == null) {
+                    throw new IOException("PBE algorithm '" + algorithm +
+                        " 'is not supported for key entry protection");
             }
 
             // Use JCE
@@ -869,6 +871,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             Cipher cipher = Cipher.getInstance(algorithm);
             cipher.init(Cipher.ENCRYPT_MODE, skey, algParams);
             byte[] encryptedKey = cipher.doFinal(data);
+            algid = new AlgorithmId(pbeOID, cipher.getParameters());
 
             if (debug != null) {
                 debug.println("  (Cipher algorithm: " + cipher.getAlgorithm() +
@@ -894,13 +897,25 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     /*
      * Map a PBE algorithm name onto its object identifier
      */
-    private ObjectIdentifier mapPBEAlgorithmToOID(String algorithm)
+    private static ObjectIdentifier mapPBEAlgorithmToOID(String algorithm)
         throws NoSuchAlgorithmException {
         // Check for PBES2 algorithms
         if (algorithm.toLowerCase().startsWith("pbewithhmacsha")) {
             return pbes2_OID;
         }
         return AlgorithmId.get(algorithm).getOID();
+    }
+
+    /*
+     * Map a PBE algorithm parameters onto its algorithm name
+     */
+    private static String mapPBEParamsToAlgorithm(ObjectIdentifier algorithm,
+        AlgorithmParameters algParams) throws NoSuchAlgorithmException {
+        // Check for PBES2 algorithms
+        if (algorithm.equals(pbes2_OID) && algParams != null) {
+            return algParams.toString();
+        }
+        return algorithm.toString();
     }
 
     /**
@@ -1116,7 +1131,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (privateKeyCount > 0 || secretKeyCount > 0) {
 
             if (debug != null) {
-                debug.println("Storing " + privateKeyCount +
+                debug.println("Storing " + (privateKeyCount + secretKeyCount) +
                     " protected key(s) in a PKCS#7 data content-type");
             }
 
@@ -1933,7 +1948,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 // parse Algorithm parameters
                 DerInputStream in = seq[1].toDerInputStream();
                 ObjectIdentifier algOid = in.getOID();
-                AlgorithmParameters algParams = parseAlgParameters(in);
+                AlgorithmParameters algParams = parseAlgParameters(algOid, in);
 
                 while (true) {
                     try {
@@ -2122,6 +2137,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 SecretKeyEntry kEntry = new SecretKeyEntry();
                 kEntry.protectedSecretKey = secretValue.getOctetString();
                 bagItem = kEntry;
+                secretKeyCount++;
             } else {
 
                 if (debug != null) {
@@ -2220,6 +2236,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 if (bagItem instanceof PrivateKeyEntry) {
                     keyList.add((PrivateKeyEntry) entry);
                 }
+                if (entry.attributes == null) {
+                    entry.attributes = new HashSet<>();
+                }
+                entry.attributes.addAll(attributes);
                 if (alias == null) {
                    alias = getUnfriendlyName();
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,12 @@ class Utils {
      * produced by this utility.
      */
     static final String PACK_ZIP_ARCHIVE_MARKER_COMMENT = "PACK200";
+
+    /*
+     * behaviour when we hit a class format error, but not necessarily
+     * an unknown attribute, by default it is allowed to PASS.
+     */
+    static final String CLASS_FORMAT_ERROR = COM_PREFIX+"class.format.error";
 
     // Keep a TLS point to the global data and environment.
     // This makes it simpler to supply environmental options

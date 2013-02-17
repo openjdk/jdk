@@ -52,6 +52,7 @@
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
+#include "utilities/macros.hpp"
 #ifdef TARGET_ARCH_x86
 # include "nativeInst_x86.hpp"
 # include "vmreg_x86.inline.hpp"
@@ -72,10 +73,10 @@
 # include "nativeInst_ppc.hpp"
 # include "vmreg_ppc.inline.hpp"
 #endif
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/shared/concurrentGCThread.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif
@@ -103,7 +104,7 @@ void SafepointSynchronize::begin() {
     _ts_of_current_safepoint = tty->time_stamp().seconds();
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   if (UseConcMarkSweepGC) {
     // In the future we should investigate whether CMS can use the
     // more-general mechanism below.  DLD (01/05).
@@ -111,7 +112,7 @@ void SafepointSynchronize::begin() {
   } else if (UseG1GC) {
     ConcurrentGCThread::safepoint_synchronize();
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // By getting the Threads_lock, we assure that no threads are about to start or
   // exit. It is released again in SafepointSynchronize::end().
@@ -480,14 +481,14 @@ void SafepointSynchronize::end() {
     Threads_lock->unlock();
 
   }
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // If there are any concurrent GC threads resume them.
   if (UseConcMarkSweepGC) {
     ConcurrentMarkSweepThread::desynchronize(false);
   } else if (UseG1GC) {
     ConcurrentGCThread::safepoint_desynchronize();
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
   // record this time so VMThread can keep track how much time has elasped
   // since last safepoint.
   _end_of_last_safepoint = os::javaTimeMillis();

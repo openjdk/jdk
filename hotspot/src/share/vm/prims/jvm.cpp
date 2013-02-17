@@ -1620,7 +1620,7 @@ JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
       // For a 0 index, give a NULL symbol
       Symbol* const sym = 0 != params[i].name_cp_index ?
         mh->constants()->symbol_at(params[i].name_cp_index) : NULL;
-      int flags = build_int_from_shorts(params[i].flags_lo, params[i].flags_hi);
+      int flags = params[i].flags;
       oop param = Reflection::new_parameter(reflected_method, i, sym,
                                             flags, CHECK_NULL);
       result->obj_at_put(i, param);
@@ -2301,6 +2301,15 @@ JVM_QUICK_ENTRY(jboolean, JVM_IsConstructorIx(JNIEnv *env, jclass cls, int metho
   return method->name() == vmSymbols::object_initializer_name();
 JVM_END
 
+
+JVM_QUICK_ENTRY(jboolean, JVM_IsVMGeneratedMethodIx(JNIEnv *env, jclass cls, int method_index))
+  JVMWrapper("JVM_IsVMGeneratedMethodIx");
+  ResourceMark rm(THREAD);
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
+  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  return method->is_overpass();
+JVM_END
 
 JVM_ENTRY(const char*, JVM_GetMethodIxNameUTF(JNIEnv *env, jclass cls, jint method_index))
   JVMWrapper("JVM_GetMethodIxIxUTF");
@@ -4519,10 +4528,6 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   // consider to expose this new capability in the sun.rt.jvmCapabilities jvmstat
   // counter defined in runtimeService.cpp.
   info->is_attachable = AttachListener::is_attach_supported();
-#ifdef KERNEL
-  info->is_kernel_jvm = 1; // true;
-#else  // KERNEL
   info->is_kernel_jvm = 0; // false;
-#endif // KERNEL
 }
 JVM_END

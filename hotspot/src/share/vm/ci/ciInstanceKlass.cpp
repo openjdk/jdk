@@ -580,6 +580,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
   }
   void do_field(fieldDescriptor* fd) {
     if (fd->is_final() && !fd->has_initial_value()) {
+      ResourceMark rm;
       oop mirror = fd->field_holder()->java_mirror();
       _out->print("staticfield %s %s %s ", _holder, fd->name()->as_quoted_ascii(), fd->signature()->as_quoted_ascii());
       switch (fd->field_type()) {
@@ -643,6 +644,8 @@ class StaticFinalFieldPrinter : public FieldClosure {
 
 void ciInstanceKlass::dump_replay_data(outputStream* out) {
   ASSERT_IN_VM;
+  ResourceMark rm;
+
   InstanceKlass* ik = get_instanceKlass();
   ConstantPool*  cp = ik->constants();
 

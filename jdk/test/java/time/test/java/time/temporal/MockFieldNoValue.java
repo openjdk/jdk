@@ -59,13 +59,15 @@
  */
 package test.java.time.temporal;
 
-import java.time.format.DateTimeBuilder;
-import java.time.temporal.*;
-
 import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.WEEKS;
 
 import java.time.DateTimeException;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalUnit;
+import java.time.temporal.ValueRange;
 
 /**
  * Mock TemporalField that returns null.
@@ -96,29 +98,23 @@ public enum MockFieldNoValue implements TemporalField {
 
     //-----------------------------------------------------------------------
     @Override
-    public boolean doIsSupported(TemporalAccessor temporal) {
+    public boolean isSupportedBy(TemporalAccessor temporal) {
         return true;
     }
 
     @Override
-    public ValueRange doRange(TemporalAccessor temporal) {
+    public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
         return ValueRange.of(1, 20);
     }
 
     @Override
-    public long doGet(TemporalAccessor temporal) {
+    public long getFrom(TemporalAccessor temporal) {
         throw new DateTimeException("Mock");
     }
 
     @Override
-    public <R extends Temporal> R doWith(R temporal, long newValue) {
+    public <R extends Temporal> R adjustInto(R temporal, long newValue) {
         throw new DateTimeException("Mock");
-    }
-
-    //-----------------------------------------------------------------------
-    @Override
-    public boolean resolve(DateTimeBuilder dateTimeBuilder, long value) {
-        return false;
     }
 
 }

@@ -74,7 +74,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.ZoneOffset;
-import java.time.temporal.ISOChrono;
+import java.time.chrono.IsoChronology;
 import java.util.Objects;
 
 /**
@@ -430,7 +430,7 @@ public final class ZoneOffsetTransitionRule implements Serializable {
     public ZoneOffsetTransition createTransition(int year) {
         LocalDate date;
         if (dom < 0) {
-            date = LocalDate.of(year, month, month.length(ISOChrono.INSTANCE.isLeapYear(year)) + 1 + dom);
+            date = LocalDate.of(year, month, month.length(IsoChronology.INSTANCE.isLeapYear(year)) + 1 + dom);
             if (dow != null) {
                 date = date.with(previousOrSame(dow));
             }
