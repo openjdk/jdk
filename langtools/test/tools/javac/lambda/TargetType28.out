@@ -1,3 +1,2 @@
-TargetType28.java:20:32: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.eq.bounds: java.lang.Number, java.lang.Number,java.lang.String)
-TargetType28.java:21:33: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.eq.bounds: java.lang.Number, java.lang.Number,java.lang.Integer)
-2 errors
+TargetType28.java:20:32: compiler.err.prob.found.req: (compiler.misc.incompatible.eq.upper.bounds: X, java.lang.String,X, java.lang.Object,java.lang.Number)
+1 error

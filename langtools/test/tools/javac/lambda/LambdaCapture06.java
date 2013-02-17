@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @ignore investigate as to whether code generation fails
  * @bug 8003280
  * @summary Add lambda tests
  *  Compiler crash when local inner class nested inside lambda captures local variables from enclosing scope

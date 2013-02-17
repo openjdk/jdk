@@ -237,10 +237,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     protected void addOverviewComment(Content htmltree) {
         if (root.inlineTags().length > 0) {
             htmltree.addContent(getMarkerAnchor("overview_description"));
-            HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            div.addStyle(HtmlStyle.subTitle);
-            addInlineComment(root, div);
-            htmltree.addContent(div);
+            addInlineComment(root, htmltree);
         }
     }
 
@@ -252,7 +249,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     protected void addOverview(Content body) throws IOException {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.footer);
+        div.addStyle(HtmlStyle.contentContainer);
         addOverviewComment(div);
         addTagsInfo(root, div);
         body.addContent(div);

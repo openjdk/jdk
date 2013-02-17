@@ -71,7 +71,7 @@ SWINGBEAN_DEBUG_FLAG = false
 $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo: $(BEANS_SRC) $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/SwingBeanInfoBase.java $(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java $(BUILD_TOOLS)
 	$(ECHO) Generating beaninfo
 	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing
-	$(JAVA) -Djava.awt.headless=true -jar $(JAVADOC_JARS) -doclet GenDocletBeanInfo \
+	$(JAVA) -Djava.awt.headless=true $(NEW_JAVADOC) -doclet GenDocletBeanInfo \
 	-x $(SWINGBEAN_DEBUG_FLAG) -d $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing \
 	-t $(DOCLETSRC_DIR)/SwingBeanInfo.template -docletpath $(JDK_OUTPUTDIR)/btclasses \
 	-XDignore.symbol.file=true \

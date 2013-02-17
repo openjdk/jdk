@@ -280,7 +280,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   return (err == PS_OK)? array : 0;
 }
 
-#if defined(i386) || defined(ia64) || defined(amd64) || defined(sparc) || defined(sparcv9)
+#if defined(i386) || defined(amd64) || defined(sparc) || defined(sparcv9)
 JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_getThreadIntegerRegisterSet0
   (JNIEnv *env, jobject this_obj, jint lwp_id) {
 
@@ -298,9 +298,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
 #undef NPRGREG
 #ifdef i386
 #define NPRGREG sun_jvm_hotspot_debugger_x86_X86ThreadContext_NPRGREG
-#endif
-#ifdef ia64
-#define NPRGREG IA64_REG_COUNT
 #endif
 #ifdef amd64
 #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
@@ -335,13 +332,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   regs[REG_INDEX(SS)]  = (uintptr_t) gregs.xss;
 
 #endif /* i386 */
-
-#if ia64
-  regs = (*env)->GetLongArrayElements(env, array, &isCopy);
-  for (i = 0; i < NPRGREG; i++ ) {
-    regs[i] = 0xDEADDEAD;
-  }
-#endif /* ia64 */
 
 #ifdef amd64
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_##reg

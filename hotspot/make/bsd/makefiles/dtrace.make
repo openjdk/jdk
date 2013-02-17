@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 # Rules to build jvm_db/dtrace, used by vm.make
 
 # We build libjvm_dtrace/libjvm_db/dtrace for COMPILER1 and COMPILER2
-# but not for CORE or KERNEL configurations.
+# but not for CORE configuration.
 
 ifneq ("${TYPE}", "CORE")
-ifneq ("${TYPE}", "KERNEL")
 
 ifeq ($(OS_VENDOR), Darwin)
 # we build dtrace for macosx using USDT2 probes
@@ -279,13 +278,6 @@ endif # ifneq ("${dtraceFound}", "")
 
 endif # ifeq ($(OS_VENDOR), Darwin)
 
-
-else # KERNEL build
-
-dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled for KERNEL builds"
-
-endif # ifneq ("${TYPE}", "KERNEL")
 
 else # CORE build
 
