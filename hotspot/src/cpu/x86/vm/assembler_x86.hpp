@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -543,7 +543,7 @@ class Assembler : public AbstractAssembler  {
   // of instructions are freely declared without the need for wrapping them an ifdef.
   // (Some dangerous instructions are ifdef's out of inappropriate jvm's.)
   // In the .cpp file the implementations are wrapped so that they are dropped out
-  // of the resulting jvm. This is done mostly to keep the footprint of KERNEL
+  // of the resulting jvm. This is done mostly to keep the footprint of MINIMAL
   // to the size it was prior to merging up the 32bit and 64bit assemblers.
   //
   // This does mean you'll get a linker/runtime error if you use a 64bit only instruction

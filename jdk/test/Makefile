@@ -342,8 +342,8 @@ prep: clean
 
 # Cleanup
 clean:
-	$(RM) -r $(ABS_TEST_OUTPUT_DIR)
-	$(RM) $(ARCHIVE_BUNDLE)
+	@$(RM) -r $(ABS_TEST_OUTPUT_DIR)
+	@$(RM) $(ARCHIVE_BUNDLE)
 
 ################################################################
 
@@ -401,7 +401,7 @@ $(EXCLUDELIST): $(PROBLEM_LISTS) $(TEST_DEPENDENCIES)
           ($(ECHO) "#") ;\
         ) | $(SED) -e 's@^[\ ]*@@' \
           | $(EGREP) -v '^#' > $@.temp1
-	for tdir in $(TESTDIRS) SOLARIS_10_SH_BUG_NO_EMPTY_FORS ; do \
+	@for tdir in $(TESTDIRS) SOLARIS_10_SH_BUG_NO_EMPTY_FORS ; do \
           ( ( $(CAT) $@.temp1 | $(EGREP) "^$${tdir}" ) ; $(ECHO) "#" ) >> $@.temp2 ; \
         done
 	@$(ECHO) "# at least one line" >> $@.temp2
@@ -431,6 +431,7 @@ endef
 # ------------------------------------------------------------------
 
 # Batches of tests (somewhat arbitrary assigments to jdk_* targets)
+# NOTE: These *do not* run the same tests as make/jprt.properties
 JDK_DEFAULT_TARGETS =
 JDK_ALL_TARGETS =
 
@@ -614,15 +615,24 @@ jdk_util: $(call TestDirs, java/util sun/util)
 # ------------------------------------------------------------------
 
 # Run default tests
+# note that this *does not* have the same meaning as jprt.properties :: jprt.make.rule.default.test.targets
 jdk_default: $(JDK_DEFAULT_TARGETS)
 	@$(SummaryInfo)
 
+# Run core tests
+# please keep this in sync with jdk/make/jprt.properties :: jprt.make.rule.core.test.targets
+jdk_core: jdk_lang jdk_math jdk_util jdk_io jdk_net jdk_nio \
+        jdk_security1 jdk_security2 jdk_security3 jdk_rmi \
+        jdk_management jdk_jmx jdk_text jdk_tools jdk_jfr jdk_other
+	@$(SummaryInfo)
+
 # Run all tests
+# note that this *does not* have the same meaning as jprt.properties :: jprt.make.rule.all.test.targets
 jdk_all: $(JDK_ALL_TARGETS)
 	@$(SummaryInfo)
 
 # These are all phony targets
-PHONY_LIST += $(JDK_ALL_TARGETS)
+PHONY_LIST += $(JDK_ALL_TARGETS) jdk_default jdk_core jdk_all
 
 # ------------------------------------------------------------------
 
@@ -892,4 +902,3 @@ PHONY_LIST += jck_all _generic_jck_tests \
 .PHONY: all clean prep $(PHONY_LIST)
 
 ################################################################
-

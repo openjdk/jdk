@@ -59,9 +59,6 @@
  */
 package tck.java.time.zone;
 
-import java.time.zone.*;
-import test.java.time.zone.*;
-
 import static org.testng.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
@@ -75,7 +72,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.ZoneOffset;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
+import java.time.zone.ZoneRules;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

@@ -30,6 +30,8 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -46,6 +48,8 @@ public class CPrinterJob extends RasterPrinterJob {
     // future compatibility and the state keeping that it handles.
 
     private static String sShouldNotReachHere = "Should not reach here.";
+
+    private volatile SecondaryLoop printingLoop;
 
     private boolean noDefaultPrinter = false;
 
@@ -160,10 +164,21 @@ public class CPrinterJob extends RasterPrinterJob {
 
     volatile boolean onEventThread;
 
+    @Override
+    protected void cancelDoc() throws PrinterAbortException {
+        super.cancelDoc();
+        if (printingLoop != null) {
+            printingLoop.exit();
+        }
+    }
+
     private void completePrintLoop() {
         Runnable r = new Runnable() { public void run() {
             synchronized(this) {
                 performingPrinting = false;
+            }
+            if (printingLoop != null) {
+                printingLoop.exit();
             }
         }};
 
@@ -219,17 +234,21 @@ public class CPrinterJob extends RasterPrinterJob {
 
                 onEventThread = true;
 
+                printingLoop = AccessController.doPrivileged(new PrivilegedAction<SecondaryLoop>() {
+                    @Override
+                    public SecondaryLoop run() {
+                        return Toolkit.getDefaultToolkit()
+                                .getSystemEventQueue()
+                                .createSecondaryLoop();
+                    }
+                });
+
                 try {
                     // Fire off the print rendering loop on the AppKit thread, and don't have
                     //  it wait and block this thread.
                     if (printLoop(false, firstPage, lastPage)) {
-                        // Fire off the EventConditional that will what until the condition is met,
-                        //  but will still process AWTEvent's as they occur.
-                        new EventDispatchAccess() {
-                            public boolean evaluate() {
-                                return performingPrinting;
-                            }
-                        }.pumpEventsAndWait();
+                        // Start a secondary loop on EDT until printing operation is finished or cancelled
+                        printingLoop.enter();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -252,6 +271,9 @@ public class CPrinterJob extends RasterPrinterJob {
                 // printing. They should cancel the print loop.
                 performingPrinting = false;
                 notify();
+            }
+            if (printingLoop != null) {
+                printingLoop.exit();
             }
         }
 

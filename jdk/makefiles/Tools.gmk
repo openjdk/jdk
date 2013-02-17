@@ -103,9 +103,6 @@ TOOL_HASHER=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 TOOL_JARSPLIT=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 	build.tools.jarsplit.JarSplit
 
-TOOL_JAVAZIC=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
-	build.tools.javazic.Main
-
 TOOL_TZDB=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 	build.tools.tzdb.TzdbZoneRulesCompiler
 

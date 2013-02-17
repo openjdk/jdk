@@ -33,6 +33,7 @@
 #include "memory/tenuredGeneration.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/macros.hpp"
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                      size_t initial_byte_size, int level,
@@ -61,7 +62,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   _space_counters = new CSpaceCounters(gen_name, 0,
                                        _virtual_space.reserved_size(),
                                        _the_space, _gen_counters);
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   if (UseParNewGC) {
     typedef ParGCAllocBufferWithBOT* ParGCAllocBufferWithBOTPtr;
     _alloc_buffers = NEW_C_HEAP_ARRAY(ParGCAllocBufferWithBOTPtr,
@@ -77,7 +78,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   } else {
     _alloc_buffers = NULL;
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 }
 
 
@@ -339,7 +340,7 @@ void TenuredGeneration::update_counters() {
 }
 
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 oop TenuredGeneration::par_promote(int thread_num,
                                    oop old, markOop m, size_t word_sz) {
 
@@ -423,10 +424,10 @@ void TenuredGeneration::verify_alloc_buffers_clean() {
   }
 }
 
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
 void TenuredGeneration::retire_alloc_buffers_before_full_gc() {}
 void TenuredGeneration::verify_alloc_buffers_clean() {}
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = max_contiguous_available();

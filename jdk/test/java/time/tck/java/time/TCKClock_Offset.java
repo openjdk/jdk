@@ -91,8 +91,8 @@ public class TCKClock_Offset extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     public void test_offset_ClockDuration() {
         Clock test = Clock.offset(Clock.fixed(INSTANT, PARIS), OFFSET);
-        System.out.println(test.instant());
-        System.out.println(INSTANT.plus(OFFSET));
+        //System.out.println(test.instant());
+        //System.out.println(INSTANT.plus(OFFSET));
         assertEquals(test.instant(), INSTANT.plus(OFFSET));
         assertEquals(test.getZone(), PARIS);
     }
@@ -163,14 +163,6 @@ public class TCKClock_Offset extends AbstractTCKTest {
 
         Clock d = Clock.offset(Clock.system(PARIS), OFFSET.minusNanos(1));
         assertEquals(a.hashCode() == d.hashCode(), false);
-    }
-
-    //-----------------------------------------------------------------------
-    public void test_toString() {
-        // spec requires "full state" in toString()
-        Clock test = Clock.offset(Clock.system(PARIS), OFFSET);
-        assertEquals(test.toString().contains("Europe/Paris"), true);
-        assertEquals(test.toString().contains("PT2S"), true);
     }
 
 }

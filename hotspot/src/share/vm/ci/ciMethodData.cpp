@@ -374,6 +374,7 @@ void ciMethodData::print_impl(outputStream* st) {
 
 void ciMethodData::dump_replay_data(outputStream* out) {
   ASSERT_IN_VM;
+  ResourceMark rm;
   MethodData* mdo = get_MethodData();
   Method* method = mdo->method();
   Klass* holder = method->method_holder();

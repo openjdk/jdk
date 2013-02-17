@@ -80,6 +80,7 @@ class CPSlot VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+class KlassSizeStats;
 class ConstantPool : public Metadata {
   friend class VMStructs;
   friend class BytecodeInterpreter;  // Directly extracts an oop in the pool for fast instanceof/checkcast
@@ -95,10 +96,15 @@ class ConstantPool : public Metadata {
   jobject              _resolved_references;
   Array<u2>*           _reference_map;
 
-  int                  _flags;         // a few header bits to describe contents for GC
-  int                  _length; // number of elements in the array
+  enum {
+    _has_invokedynamic = 1,           // Flags
+    _has_pseudo_string = 2,
+    _has_preresolution = 4,
+    _on_stack          = 8
+  };
 
-  bool                 _on_stack;     // Redefined method still executing refers to this constant pool.
+  int                  _flags;  // old fashioned bit twiddling
+  int                  _length; // number of elements in the array
 
   union {
     // set for CDS to restore resolved references
@@ -115,17 +121,8 @@ class ConstantPool : public Metadata {
 
   void set_operands(Array<u2>* operands)       { _operands = operands; }
 
-  enum FlagBit {
-    FB_has_invokedynamic = 1,
-    FB_has_pseudo_string = 2,
-    FB_has_preresolution = 3
-  };
-
-  int flags() const                         { return _flags; }
-  void set_flags(int f)                     { _flags = f; }
-  bool flag_at(FlagBit fb) const            { return (_flags & (1 << (int)fb)) != 0; }
-  void set_flag_at(FlagBit fb);
-  // no clear_flag_at function; they only increase
+  int flags() const                            { return _flags; }
+  void set_flags(int f)                        { _flags = f; }
 
  private:
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(ConstantPool)); }
@@ -178,18 +175,20 @@ class ConstantPool : public Metadata {
   Array<u1>* tags() const                   { return _tags; }
   Array<u2>* operands() const               { return _operands; }
 
-  bool has_pseudo_string() const            { return flag_at(FB_has_pseudo_string); }
-  bool has_invokedynamic() const            { return flag_at(FB_has_invokedynamic); }
-  bool has_preresolution() const            { return flag_at(FB_has_preresolution); }
-  void set_pseudo_string()                  {    set_flag_at(FB_has_pseudo_string); }
-  void set_invokedynamic()                  {    set_flag_at(FB_has_invokedynamic); }
-  void set_preresolution()                  {    set_flag_at(FB_has_preresolution); }
+  bool has_invokedynamic() const            { return (_flags & _has_invokedynamic) != 0; }
+  void set_has_invokedynamic()              { _flags |= _has_invokedynamic; }
+
+  bool has_pseudo_string() const            { return (_flags & _has_pseudo_string) != 0; }
+  void set_has_pseudo_string()              { _flags |= _has_pseudo_string; }
+
+  bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
+  void set_has_preresolution()              { _flags |= _has_preresolution; }
 
   // Redefine classes support.  If a method refering to this constant pool
   // is on the executing stack, or as a handle in vm code, this constant pool
   // can't be removed from the set of previous versions saved in the instance
   // class.
-  bool on_stack() const                     { return _on_stack; }
+  bool on_stack() const                      { return (_flags &_on_stack) != 0; }
   void set_on_stack(const bool value);
 
   // Klass holding pool
@@ -457,7 +456,7 @@ class ConstantPool : public Metadata {
 
   void pseudo_string_at_put(int which, int obj_index, oop x) {
     assert(EnableInvokeDynamic, "");
-    set_pseudo_string();        // mark header
+    set_has_pseudo_string();        // mark header
     assert(tag_at(which).is_string(), "Corrupted constant pool");
     string_at_put(which, obj_index, x);    // this works just fine
   }
@@ -686,9 +685,13 @@ class ConstantPool : public Metadata {
     return 0 <= index && index < length();
   }
 
+  // Sizing (in words)
   static int header_size()             { return sizeof(ConstantPool)/HeapWordSize; }
   static int size(int length)          { return align_object_size(header_size() + length); }
   int size() const                     { return size(length()); }
+#if INCLUDE_SERVICES
+  void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   friend class ClassFileParser;
   friend class SystemDictionary;
@@ -783,6 +786,7 @@ class ConstantPool : public Metadata {
   }
   static void copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS);
   static void copy_entry_to(constantPoolHandle from_cp, int from_i, constantPoolHandle to_cp, int to_i, TRAPS);
+  static void copy_operands(constantPoolHandle from_cp, constantPoolHandle to_cp, TRAPS);
   int  find_matching_entry(int pattern_i, constantPoolHandle search_cp, TRAPS);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }

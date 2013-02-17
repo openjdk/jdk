@@ -85,6 +85,9 @@
         <property name="includes" value="(nothing)"/>
         <property name="excludes" value=""/>
         <property name="javadoc.dir" location="${build.dir}/javadoc/${ant.project.name}"/>
+        <condition property="os.macosx">
+            <os family="mac"/>
+        </condition>
         <condition property="os.linux">
             <os name="linux"/>
         </condition>
@@ -126,10 +129,6 @@
                 <javac srcdir="@{srcdir}" includes="@{includes}" excludes="@{excludes}" sourcepath="" 
                     destdir="@{classesdir}" fork="true" executable="${bootstrap.javac}"
                     debug="${javac.debug}" debuglevel="${javac.debuglevel}">
-                    <compilerarg value="-source"/>
-                    <compilerarg value="1.5"/>
-                    <compilerarg value="-target"/>
-                    <compilerarg value="1.6"/> <!-- for usability of JDK 6 as snapshot; change to 1.7 when JSR 294 put back -->
                     <!-- Mandatory for compiling partial JDK sources against a snapshot; should NEVER be used for any other purpose: -->
                     <compilerarg value="-XDignore.symbol.file=true"/>
                     <compilerarg line="${javac.options}"/>

@@ -34,7 +34,7 @@ JNIEXPORT jlong JNICALL Java_com_apple_jobjc_SEL_getSelectorPtr
     const char *selNameAsChars = (*env)->GetStringUTFChars(env, selName, JNI_FALSE);
     const SEL sel = sel_registerName(selNameAsChars);
     (*env)->ReleaseStringUTFChars(env, selName, selNameAsChars);
-    return ptr_to_jlong(sel);
+    return ptr_to_jlong((void*)sel);
 }
 
 JNIEXPORT jstring JNICALL Java_com_apple_jobjc_SEL_getSelectorName

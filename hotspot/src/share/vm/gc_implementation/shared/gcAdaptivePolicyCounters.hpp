@@ -25,10 +25,11 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GCADAPTIVEPOLICYCOUNTERS_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCADAPTIVEPOLICYCOUNTERS_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/shared/adaptiveSizePolicy.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // This class keeps statistical information and computes the
 // size of the heap.
