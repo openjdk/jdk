@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,4 +86,16 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      * @return the name of this type variable, as it appears in the source code
      */
     String getName();
+
+    /**
+     * Returns an array of AnnotatedType objects that represent the use of
+     * types to denote the upper bounds of the type parameter represented by
+     * this TypeVariable. The order of the objects in the array corresponds to
+     * the order of the bounds in the declaration of the type parameter.
+     *
+     * Returns an array of length 0 if the type parameter declares no bounds.
+     *
+     * @since 1.8
+     */
+     AnnotatedType[] getAnnotatedBounds();
 }

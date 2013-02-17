@@ -75,7 +75,14 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
   all: overlay-images
 endif
 
-start-make:
+# Setup a rule for SPEC file that fails if executed. This check makes sure the configuration
+# is up to date after changes to configure
+$(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
+	@$(ECHO) ERROR: $(SPEC) is not up to date
+	@$(ECHO) Please rerun configure!
+	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
+
+start-make: $(SPEC)
 	@$(call AtMakeStart)
 
 langtools: langtools-only
@@ -173,7 +180,7 @@ bootcycle-images:
 
 test: start-make
 	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) MAKEFLAGS= -j1 PRODUCT_HOME=$(OUTPUT_ROOT)/jdk JPRT_JAVA_HOME=$(OUTPUT_ROOT)/jdk ALT_OUTPUTDIR=$(OUTPUT_ROOT) $(TEST)) || true
+	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 -k MAKEFLAGS= PRODUCT_HOME=$(OUTPUT_ROOT)/jdk JPRT_JAVA_HOME=$(OUTPUT_ROOT)/jdk ALT_OUTPUTDIR=$(OUTPUT_ROOT) $(TEST)) || true
 	@$(call TargetExit)
 
 # Stores the tips for each repository. This file is be used when constructing the jdk image and can be
