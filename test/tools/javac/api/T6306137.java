@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
  * @test
  * @bug     6306137
  * @summary JSR 199: encoding option doesn't affect standard file manager
+ * @compile -encoding utf-8 T6306137.java
+ * @run main T6306137
  * @author  Peter von der Ahé
- * @ignore
- *    Need to make the contentCache in JavacFileManager be aware of changes to the encoding.
- *    Need to propogate -source (and -encoding?) down to the JavacFileManager
  */
 
 import java.io.File;

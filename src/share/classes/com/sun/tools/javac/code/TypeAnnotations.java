@@ -217,6 +217,9 @@ public class TypeAnnotations {
         // Such an annotation is _not_ part of an JCAnnotatedType tree and we therefore
         // need to set its position explicitly.
         // The method returns a copy of type that contains these annotations.
+        //
+        // As a side effect the method sets the type annotation position of "annotations".
+        // Note that it is assumed that all annotations share the same position.
         private static Type typeWithAnnotations(final JCTree typetree, final Type type,
                 final List<Attribute.TypeCompound> annotations, Log log) {
             // System.out.printf("typeWithAnnotations(typetree: %s, type: %s, annotations: %s)%n",
@@ -267,7 +270,9 @@ public class TypeAnnotations {
                 }
                 Type arelemType = typeWithAnnotations(arTree.elemtype, arType.elemtype, annotations, log);
                 tomodify.elemtype = arelemType;
-                for (Attribute.TypeCompound a : annotations) {
+                {
+                    // All annotations share the same position; modify the first one.
+                    Attribute.TypeCompound a = annotations.get(0);
                     TypeAnnotationPosition p = a.position;
                     p.location = p.location.prependList(depth.toList());
                 }
@@ -345,10 +350,10 @@ public class TypeAnnotations {
                 if (depth.nonEmpty()) {
                     // Only need to change the annotation positions
                     // if they are on an enclosed type.
-                    for (Attribute.TypeCompound a : annotations) {
-                        TypeAnnotationPosition p = a.position;
-                        p.location = p.location.appendList(depth.toList());
-                    }
+                    // All annotations share the same position; modify the first one.
+                    Attribute.TypeCompound a = annotations.get(0);
+                    TypeAnnotationPosition p = a.position;
+                    p.location = p.location.appendList(depth.toList());
                 }
 
                 Type ret = typeWithAnnotations(type, enclTy, annotations);
@@ -463,8 +468,7 @@ public class TypeAnnotations {
 
                 @Override
                 public Type visitType(Type t, List<TypeCompound> s) {
-                    // Error?
-                    return t;
+                    return new AnnotatedType(s, t);
                 }
             };
 
@@ -575,6 +579,10 @@ public class TypeAnnotations {
             System.out.println("Resolving tree: " + tree + " kind: " + tree.getKind());
             System.out.println("    Framing tree: " + frame + " kind: " + frame.getKind());
             */
+
+            // Note that p.offset is set in
+            // com.sun.tools.javac.jvm.Gen.setTypeAnnotationPositions(int)
+
             switch (frame.getKind()) {
                 case TYPE_CAST:
                     p.type = TargetType.CAST;
@@ -656,6 +664,45 @@ public class TypeAnnotations {
 
                     List<JCTree> newPath = path.tail;
                     resolveFrame(newPath.head, newPath.tail.head, newPath, p);
+                    return;
+                }
+
+                case MEMBER_REFERENCE: {
+                    JCMemberReference mrframe = (JCMemberReference) frame;
+
+                    if (mrframe.expr == tree) {
+                        switch (mrframe.mode) {
+                        case INVOKE:
+                            p.type = TargetType.METHOD_REFERENCE;
+                            break;
+                        case NEW:
+                            p.type = TargetType.CONSTRUCTOR_REFERENCE;
+                            break;
+                        default:
+                            Assert.error("Unknown method reference mode " + mrframe.mode +
+                                    " for tree " + tree + " within frame " + frame);
+                        }
+                        p.pos = frame.pos;
+                    } else if (mrframe.typeargs != null &&
+                            mrframe.typeargs.contains(tree)) {
+                        int arg = mrframe.typeargs.indexOf(tree);
+                        p.type_index = arg;
+                        switch (mrframe.mode) {
+                        case INVOKE:
+                            p.type = TargetType.METHOD_REFERENCE_TYPE_ARGUMENT;
+                            break;
+                        case NEW:
+                            p.type = TargetType.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT;
+                            break;
+                        default:
+                            Assert.error("Unknown method reference mode " + mrframe.mode +
+                                    " for tree " + tree + " within frame " + frame);
+                        }
+                        p.pos = frame.pos;
+                    } else {
+                        Assert.error("Could not determine type argument position of tree " + tree +
+                                " within frame " + frame);
+                    }
                     return;
                 }
 
@@ -761,6 +808,14 @@ public class TypeAnnotations {
                 case UNION_TYPE: {
                     // TODO: can we store any information here to help in
                     // determining the final position?
+                    List<JCTree> newPath = path.tail;
+                    resolveFrame(newPath.head, newPath.tail.head, newPath, p);
+                    return;
+                }
+
+                case INTERSECTION_TYPE: {
+                    JCTypeIntersection isect = (JCTypeIntersection)frame;
+                    p.type_index = isect.bounds.indexOf(tree);
                     List<JCTree> newPath = path.tail;
                     resolveFrame(newPath.head, newPath.tail.head, newPath, p);
                     return;
@@ -911,6 +966,8 @@ public class TypeAnnotations {
         public void visitVarDef(final JCVariableDecl tree) {
             if (tree.sym == null) {
                 // Something is wrong already. Quietly ignore.
+            } else if (tree.sym.getKind() == ElementKind.PARAMETER) {
+                // Parameters are handled in visitMethodDef above.
             } else if (tree.sym.getKind() == ElementKind.FIELD) {
                 if (sigOnly) {
                     TypeAnnotationPosition pos = new TypeAnnotationPosition();
@@ -924,7 +981,6 @@ public class TypeAnnotations {
                 pos.pos = tree.pos;
                 separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
             } else if (tree.sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
-                // System.out.println("Found exception param: " + tree);
                 TypeAnnotationPosition pos = new TypeAnnotationPosition();
                 pos.type = TargetType.EXCEPTION_PARAMETER;
                 pos.pos = tree.pos;
@@ -934,9 +990,11 @@ public class TypeAnnotations {
                 pos.type = TargetType.RESOURCE_VARIABLE;
                 pos.pos = tree.pos;
                 separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
+            } else if (tree.sym.getKind() == ElementKind.ENUM_CONSTANT) {
+                // No type annotations can occur here.
             } else {
                 // There is nothing else in a variable declaration that needs separation.
-                // System.out.println("We found a: " + tree);
+                Assert.error("Unhandled variable kind: " + tree + " of kind: " + tree.sym.getKind());
             }
 
             push(tree);

@@ -465,7 +465,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                       names.valueOf,
                       make.Type(tree.sym.type),
                       List.<JCTypeParameter>nil(),
-                      List.of(make.VarDef(make.Modifiers(Flags.PARAMETER),
+                      List.of(make.VarDef(make.Modifiers(Flags.PARAMETER |
+                                                         Flags.MANDATED),
                                             names.fromString("name"),
                                             make.Type(syms.stringType), null)),
                       List.<JCExpression>nil(), // thrown

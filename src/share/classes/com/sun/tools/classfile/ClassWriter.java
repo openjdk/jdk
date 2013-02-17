@@ -727,12 +727,13 @@ public class ClassWriter {
         private void write(TypeAnnotation.Position p, ClassOutputStream out) {
             out.writeByte(p.type.targetTypeValue());
             switch (p.type) {
-            // type cast
-            case CAST:
             // instanceof
             case INSTANCEOF:
             // new expression
             case NEW:
+            // constructor/method reference receiver
+            case CONSTRUCTOR_REFERENCE:
+            case METHOD_REFERENCE:
                 out.writeShort(p.offset);
                 break;
             // local variable
@@ -779,9 +780,12 @@ public class ClassWriter {
             case METHOD_FORMAL_PARAMETER:
                 out.writeByte(p.parameter_index);
                 break;
+            // type cast
+            case CAST:
             // method/constructor/reference type argument
             case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
             case METHOD_INVOCATION_TYPE_ARGUMENT:
+            case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
             case METHOD_REFERENCE_TYPE_ARGUMENT:
                 out.writeShort(p.offset);
                 out.writeByte(p.type_index);
@@ -789,10 +793,6 @@ public class ClassWriter {
             // We don't need to worry about these
             case METHOD_RETURN:
             case FIELD:
-                break;
-            // lambda formal parameter
-            case LAMBDA_FORMAL_PARAMETER:
-                out.writeByte(p.parameter_index);
                 break;
             case UNKNOWN:
                 throw new AssertionError("ClassWriter: UNKNOWN target type should never occur!");

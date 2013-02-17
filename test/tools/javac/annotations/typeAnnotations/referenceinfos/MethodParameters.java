@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,28 @@ public class MethodParameters {
     })
     public String methodParamAsArray() {
         return "void test(Object b, @TC String @TA [] @TB [] a) { }";
+    }
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1),
+        @TADescription(annotation = "TB", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1)
+    })
+    public String methodParamAsArray2() {
+        return "void test(Object b, @TA @TB String [] a) { }";
+    }
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1),
+        @TADescription(annotation = "TB", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1),
+        @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1)
+    })
+    public String methodParamAsArray3() {
+        return "void test(Object b, @TA @TB @TC String [] a) { }";
     }
 
     @TADescriptions({

@@ -1490,12 +1490,13 @@ public class ClassReader implements Completer {
         position.type = type;
 
         switch (type) {
-        // type cast
-        case CAST:
         // instanceof
         case INSTANCEOF:
         // new expression
         case NEW:
+        // constructor/method reference receiver
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE:
             position.offset = nextChar();
             break;
         // local variable
@@ -1544,9 +1545,12 @@ public class ClassReader implements Completer {
         case METHOD_FORMAL_PARAMETER:
             position.parameter_index = nextByte();
             break;
+        // type cast
+        case CAST:
         // method/constructor/reference type argument
         case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
         case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT:
             position.offset = nextChar();
             position.type_index = nextByte();
@@ -1554,10 +1558,6 @@ public class ClassReader implements Completer {
         // We don't need to worry about these
         case METHOD_RETURN:
         case FIELD:
-            break;
-        // lambda formal parameter
-        case LAMBDA_FORMAL_PARAMETER:
-            position.parameter_index = nextByte();
             break;
         case UNKNOWN:
             throw new AssertionError("jvm.ClassReader: UNKNOWN target type should never occur!");
