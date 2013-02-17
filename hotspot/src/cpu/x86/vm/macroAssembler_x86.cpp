@@ -37,11 +37,12 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -3207,7 +3208,7 @@ void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src
 
 
 //////////////////////////////////////////////////////////////////////////////////
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
 void MacroAssembler::g1_write_barrier_pre(Register obj,
                                           Register pre_val,
@@ -3417,7 +3418,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   bind(done);
 }
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 //////////////////////////////////////////////////////////////////////////////////
 
 

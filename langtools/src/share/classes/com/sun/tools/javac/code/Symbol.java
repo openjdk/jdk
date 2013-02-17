@@ -217,6 +217,14 @@ public abstract class Symbol implements Element {
         return (flags() & INTERFACE) != 0;
     }
 
+    public boolean isPrivate() {
+        return (flags_field & Flags.AccessFlags) == PRIVATE;
+    }
+
+    public boolean isEnum() {
+        return (flags() & ENUM) != 0;
+    }
+
     /** Is this symbol declared (directly or indirectly) local
      *  to a method or variable initializer?
      *  Also includes fields of inner classes which are in
@@ -479,7 +487,7 @@ public abstract class Symbol implements Element {
     }
 
     // This method is part of the javax.lang.model API, do not use this in javac code.
-    public <A extends java.lang.annotation.Annotation> A[] getAnnotations(Class<A> annoType) {
+    public <A extends java.lang.annotation.Annotation> A[] getAnnotationsByType(Class<A> annoType) {
         return JavacElements.getAnnotations(this, annoType);
     }
 
@@ -496,9 +504,9 @@ public abstract class Symbol implements Element {
         return l.toList();
     }
 
-    public static class DelegatedSymbol extends Symbol {
-        protected Symbol other;
-        public DelegatedSymbol(Symbol other) {
+    public static class DelegatedSymbol<T extends Symbol> extends Symbol {
+        protected T other;
+        public DelegatedSymbol(T other) {
             super(other.kind, other.flags_field, other.name, other.type, other.owner);
             this.other = other;
         }
@@ -531,6 +539,10 @@ public abstract class Symbol implements Element {
 
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitSymbol(other, p);
+        }
+
+        public T getUnderlyingSymbol() {
+            return other;
         }
     }
 
@@ -1077,6 +1089,9 @@ public abstract class Symbol implements Element {
 
         /** The code of the method. */
         public Code code = null;
+
+        /** The extra (synthetic/mandated) parameters of the method. */
+        public List<VarSymbol> extraParams = List.nil();
 
         /** The parameters of the method. */
         public List<VarSymbol> params = null;

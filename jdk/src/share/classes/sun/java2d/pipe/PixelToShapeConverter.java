@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,12 +103,12 @@ public class PixelToShapeConverter
         GeneralPath gp = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
         if (nPoints > 0) {
             gp.moveTo(xPoints[0], yPoints[0]);
-        }
-        for (int i = 1; i < nPoints; i++) {
-            gp.lineTo(xPoints[i], yPoints[i]);
-        }
-        if (close) {
-            gp.closePath();
+            for (int i = 1; i < nPoints; i++) {
+                gp.lineTo(xPoints[i], yPoints[i]);
+            }
+            if (close) {
+                gp.closePath();
+            }
         }
         return gp;
     }

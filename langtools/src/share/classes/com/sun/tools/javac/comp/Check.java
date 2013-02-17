@@ -42,7 +42,7 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
-import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
+import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 
@@ -533,7 +533,7 @@ public class Check {
             inferenceContext.addFreeTypeListener(List.of(req), new FreeTypeListener() {
                 @Override
                 public void typesInferred(InferenceContext inferenceContext) {
-                    checkType(pos, found, inferenceContext.asInstType(req, types), checkContext);
+                    checkType(pos, found, inferenceContext.asInstType(req), checkContext);
                 }
             });
         }
@@ -1026,7 +1026,7 @@ public class Check {
         };
 
     /** Check that given modifiers are legal for given symbol and
-     *  return modifiers together with any implicit modififiers for that symbol.
+     *  return modifiers together with any implicit modifiers for that symbol.
      *  Warning: we can't use flags() here since this method
      *  is called during class enter, when flags() would cause a premature
      *  completion.
@@ -1072,7 +1072,7 @@ public class Check {
             }
             // Imply STRICTFP if owner has STRICTFP set.
             if (((flags|implicit) & Flags.ABSTRACT) == 0)
-              implicit |= sym.owner.flags_field & STRICTFP;
+                implicit |= sym.owner.flags_field & STRICTFP;
             break;
         case TYP:
             if (sym.isLocal()) {
