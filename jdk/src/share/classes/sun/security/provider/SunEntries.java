@@ -208,6 +208,7 @@ final class SunEntries {
         map.put("KeyStore.JKS", "sun.security.provider.JavaKeyStore$JKS");
         map.put("KeyStore.CaseExactJKS",
                         "sun.security.provider.JavaKeyStore$CaseExactJKS");
+        map.put("KeyStore.DKS", "sun.security.provider.DomainKeyStore$DKS");
 
         /*
          * Policy

@@ -218,18 +218,12 @@ public class TestDuration extends AbstractTest {
                 Duration b = durations[j];
                 if (i < j) {
                     assertEquals(a.compareTo(b)< 0, true, a + " <=> " + b);
-                    assertEquals(a.isLessThan(b), true, a + " <=> " + b);
-                    assertEquals(a.isGreaterThan(b), false, a + " <=> " + b);
                     assertEquals(a.equals(b), false, a + " <=> " + b);
                 } else if (i > j) {
                     assertEquals(a.compareTo(b) > 0, true, a + " <=> " + b);
-                    assertEquals(a.isLessThan(b), false, a + " <=> " + b);
-                    assertEquals(a.isGreaterThan(b), true, a + " <=> " + b);
                     assertEquals(a.equals(b), false, a + " <=> " + b);
                 } else {
                     assertEquals(a.compareTo(b), 0, a + " <=> " + b);
-                    assertEquals(a.isLessThan(b), false, a + " <=> " + b);
-                    assertEquals(a.isGreaterThan(b), false, a + " <=> " + b);
                     assertEquals(a.equals(b), true, a + " <=> " + b);
                 }
             }

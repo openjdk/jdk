@@ -127,6 +127,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "multiple Codebase expressions"},
         {"multiple.SignedBy.expressions","multiple SignedBy expressions"},
+        {"duplicate.keystore.domain.name","duplicate keystore domain name: {0}"},
+        {"duplicate.keystore.name","duplicate keystore name: {0}"},
         {"SignedBy.has.empty.alias","SignedBy has empty alias"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "can not specify Principal with a wildcard class without a wildcard name"},
