@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -78,14 +79,14 @@ class NashornBottomLinker implements GuardingDynamicLinker {
         final String operator = desc.getFirstOperator();
         switch (operator) {
         case "new":
-            if(isJavaDynamicMethod(self)) {
+            if(BeansLinker.isDynamicMethod(self)) {
                 typeError("method.not.constructor", ScriptRuntime.safeToString(self));
             } else {
                 typeError("not.a.function", ScriptRuntime.safeToString(self));
             }
             break;
         case "call":
-            if(isJavaDynamicMethod(self)) {
+            if(BeansLinker.isDynamicMethod(self)) {
                 typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
             } else {
                 typeError("not.a.function", ScriptRuntime.safeToString(self));
@@ -111,16 +112,6 @@ class NashornBottomLinker implements GuardingDynamicLinker {
             break;
         }
         throw new AssertionError("unknown call type " + desc);
-    }
-
-    /**
-     * Returns true if the object is a Dynalink dynamic method. Unfortunately, the dynamic method classes are package
-     * private in Dynalink, so this is the closest we can get to determining it.
-     * @param obj the object we want to test for being a dynamic method
-     * @return true if it is a dynamic method, false otherwise.
-     */
-    private static boolean isJavaDynamicMethod(Object obj) {
-        return obj.getClass().getName().endsWith("DynamicMethod");
     }
 
     private static GuardedInvocation getInvocation(final MethodHandle handle, final Object self, final LinkerServices linkerServices, final CallSiteDescriptor desc) {

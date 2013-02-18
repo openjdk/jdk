@@ -159,6 +159,16 @@ public class BeansLinker implements GuardingDynamicLinker {
         return linkers.get(clazz);
     }
 
+    /*
+     * Returns true if the object is a Dynalink Java dynamic method.
+     *
+     * @param obj the object we want to test for being a dynamic method
+     * @return true if it is a dynamic method, false otherwise.
+     */
+    public static boolean isDynamicMethod(final Object obj) {
+        return obj instanceof DynamicMethod;
+    }
+
     @Override
     public GuardedInvocation getGuardedInvocation(LinkRequest request, final LinkerServices linkerServices)
             throws Exception {
