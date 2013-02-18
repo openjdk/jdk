@@ -1865,7 +1865,7 @@ void os::abort(bool dump_core) {
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
-  _exit(-1);
+  ::abort(); // dump core (for debugging)
 }
 
 // unused
