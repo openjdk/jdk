@@ -1,0 +1,2 @@
+- compiler.warn.override.equals.but.not.hashcode: Other
+1 warning

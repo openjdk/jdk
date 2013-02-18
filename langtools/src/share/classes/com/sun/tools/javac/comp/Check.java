@@ -1588,6 +1588,7 @@ public class Check {
                    (other.flags() & STATIC) == 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.static",
                       cannotOverride(m, other));
+            m.flags_field |= BAD_OVERRIDE;
             return;
         }
 
@@ -1599,6 +1600,7 @@ public class Check {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.meth",
                       cannotOverride(m, other),
                       asFlagSet(other.flags() & (FINAL | STATIC)));
+            m.flags_field |= BAD_OVERRIDE;
             return;
         }
 
@@ -1615,6 +1617,7 @@ public class Check {
                       other.flags() == 0 ?
                           Flag.PACKAGE :
                           asFlagSet(other.flags() & AccessFlags));
+            m.flags_field |= BAD_OVERRIDE;
             return;
         }
 
@@ -1642,6 +1645,7 @@ public class Check {
                           "override.incompatible.ret",
                           cannotOverride(m, other),
                           mtres, otres);
+                m.flags_field |= BAD_OVERRIDE;
                 return;
             }
         } else if (overrideWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
@@ -1661,6 +1665,7 @@ public class Check {
                       "override.meth.doesnt.throw",
                       cannotOverride(m, other),
                       unhandledUnerased.head);
+            m.flags_field |= BAD_OVERRIDE;
             return;
         }
         else if (unhandledUnerased.nonEmpty()) {
@@ -1953,6 +1958,33 @@ public class Check {
                 }
             }
             e = e.next();
+        }
+    }
+
+    public void checkClassOverrideEqualsAndHash(ClassSymbol someClass) {
+        if (lint.isEnabled(LintCategory.OVERRIDES)) {
+            boolean hasEquals = false;
+            boolean hasHashCode = false;
+
+            Scope.Entry equalsAtObject = syms.objectType.tsym.members().lookup(names.equals);
+            Scope.Entry hashCodeAtObject = syms.objectType.tsym.members().lookup(names.hashCode);
+            for (Symbol s: someClass.members().getElements(new Filter<Symbol>() {
+                    public boolean accepts(Symbol s) {
+                        return s.kind == Kinds.MTH &&
+                                (s.flags() & BAD_OVERRIDE) == 0;
+                    }
+                })) {
+                MethodSymbol m = (MethodSymbol)s;
+                hasEquals |= m.name.equals(names.equals) &&
+                        m.overrides(equalsAtObject.sym, someClass, types, false);
+
+                hasHashCode |= m.name.equals(names.hashCode) &&
+                        m.overrides(hashCodeAtObject.sym, someClass, types, false);
+            }
+            if (hasEquals && !hasHashCode) {
+                log.warning(LintCategory.OVERRIDES, (DiagnosticPosition) null,
+                        "override.equals.but.not.hashcode", someClass.fullname);
+            }
         }
     }
 
