@@ -43,8 +43,14 @@ BUILD_MANIFEST=true
 #
 TZDATA_DIR := ../javazic/tzdata
 TZDATA_VER := $(subst tzdata,,$(shell $(GREP) '^tzdata' $(TZDATA_DIR)/VERSION))
-TZFILE := africa antarctica asia australasia europe northamerica southamerica backward etcetera
+TZFILE := \
+    africa antarctica asia australasia europe northamerica \
+    pacificnew southamerica backward etcetera \
+    gmt jdk11_backward
+
 TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZFILE))
+
+
 
 TZDB_JAR = tzdb.jar
 
@@ -61,7 +67,7 @@ build: $(LIBDIR)/$(TZDB_JAR)
 $(LIBDIR)/$(TZDB_JAR): $(TZFILES)
 	$(prep-target)
 	echo build tzdb from version $(TZDATA_VER)
-	$(BOOT_JAVA_CMD) -jar $(BUILDTOOLJARDIR)/tzdb.jar -verbose \
+	$(BOOT_JAVA_CMD) -jar $(BUILDTOOLJARDIR)/tzdb.jar \
 	  -version $(TZDATA_VER) -srcdir $(TZDATA_DIR) -dstdir $(LIBDIR) $(TZFILE)
 
 clean clobber::

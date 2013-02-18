@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1120,7 +1120,9 @@ public class BasicComboBoxUI extends ComboBoxUI {
             listBox.setSelectedIndex( si + 1 );
             listBox.ensureIndexIsVisible( si + 1 );
             if ( !isTableCellEditor ) {
-                comboBox.setSelectedIndex(si+1);
+                if (!(UIManager.getBoolean("ComboBox.noActionOnKeyNavigation") && comboBox.isPopupVisible())) {
+                    comboBox.setSelectedIndex(si+1);
+                }
             }
             comboBox.repaint();
         }
@@ -1144,7 +1146,9 @@ public class BasicComboBoxUI extends ComboBoxUI {
             listBox.setSelectedIndex( si - 1 );
             listBox.ensureIndexIsVisible( si - 1 );
             if ( !isTableCellEditor ) {
-                comboBox.setSelectedIndex(si-1);
+                if (!(UIManager.getBoolean("ComboBox.noActionOnKeyNavigation") && comboBox.isPopupVisible())) {
+                    comboBox.setSelectedIndex(si-1);
+                }
             }
             comboBox.repaint();
         }
@@ -1490,7 +1494,13 @@ public class BasicComboBoxUI extends ComboBoxUI {
                      key == HOME || key == END) {
                 int index = getNextIndex(comboBox, key);
                 if (index >= 0 && index < comboBox.getItemCount()) {
-                    comboBox.setSelectedIndex(index);
+                    if (UIManager.getBoolean("ComboBox.noActionOnKeyNavigation") && comboBox.isPopupVisible()) {
+                        ui.listBox.setSelectedIndex(index);
+                        ui.listBox.ensureIndexIsVisible(index);
+                        comboBox.repaint();
+                    } else {
+                        comboBox.setSelectedIndex(index);
+                    }
                 }
             }
             else if (key == DOWN) {
@@ -1558,22 +1568,33 @@ public class BasicComboBoxUI extends ComboBoxUI {
 
             else if (key == ENTER) {
                 if (comboBox.isPopupVisible()) {
-                    // Forces the selection of the list item
-                    boolean isEnterSelectablePopup =
-                            UIManager.getBoolean("ComboBox.isEnterSelectablePopup");
-                    if (!comboBox.isEditable() || isEnterSelectablePopup
-                            || ui.isTableCellEditor) {
+                    // If ComboBox.noActionOnKeyNavigation is set,
+                    // forse selection of list item
+                    if (UIManager.getBoolean("ComboBox.noActionOnKeyNavigation")) {
                         Object listItem = ui.popup.getList().getSelectedValue();
                         if (listItem != null) {
-                            // Use the selected value from popup
-                            // to set the selected item in combo box,
-                            // but ensure before that JComboBox.actionPerformed()
-                            // won't use editor's value to set the selected item
                             comboBox.getEditor().setItem(listItem);
                             comboBox.setSelectedItem(listItem);
                         }
+                        comboBox.setPopupVisible(false);
+                    } else {
+                        // Forces the selection of the list item
+                        boolean isEnterSelectablePopup =
+                                UIManager.getBoolean("ComboBox.isEnterSelectablePopup");
+                        if (!comboBox.isEditable() || isEnterSelectablePopup
+                                || ui.isTableCellEditor) {
+                            Object listItem = ui.popup.getList().getSelectedValue();
+                            if (listItem != null) {
+                                // Use the selected value from popup
+                                // to set the selected item in combo box,
+                                // but ensure before that JComboBox.actionPerformed()
+                                // won't use editor's value to set the selected item
+                                comboBox.getEditor().setItem(listItem);
+                                comboBox.setSelectedItem(listItem);
+                            }
+                        }
+                        comboBox.setPopupVisible(false);
                     }
-                    comboBox.setPopupVisible(false);
                 }
                 else {
                     // Hide combo box if it is a table cell editor
@@ -1604,14 +1625,20 @@ public class BasicComboBoxUI extends ComboBoxUI {
         }
 
         private int getNextIndex(JComboBox comboBox, String key) {
+            int listHeight = comboBox.getMaximumRowCount();
+
+            int selectedIndex = comboBox.getSelectedIndex();
+            if (UIManager.getBoolean("ComboBox.noActionOnKeyNavigation")
+                    && (comboBox.getUI() instanceof BasicComboBoxUI)) {
+                selectedIndex = ((BasicComboBoxUI) comboBox.getUI()).listBox.getSelectedIndex();
+            }
+
             if (key == PAGE_UP) {
-                int listHeight = comboBox.getMaximumRowCount();
-                int index = comboBox.getSelectedIndex() - listHeight;
+                int index = selectedIndex - listHeight;
                 return (index < 0 ? 0: index);
             }
             else if (key == PAGE_DOWN) {
-                int listHeight = comboBox.getMaximumRowCount();
-                int index = comboBox.getSelectedIndex() + listHeight;
+                int index = selectedIndex + listHeight;
                 int max = comboBox.getItemCount();
                 return (index < max ? index: max-1);
             }

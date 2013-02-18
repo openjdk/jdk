@@ -64,30 +64,42 @@ import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
 import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.MICROS;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.NANOS;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.time.temporal.ChronoUnit.WEEKS;
+import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
 import java.time.temporal.Queries;
+import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -396,39 +408,173 @@ public class TCKInstant extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // query(TemporalQuery)
     //-----------------------------------------------------------------------
-    @Test
-    public void test_query_chrono() {
-        assertEquals(TEST_12345_123456789.query(Queries.chrono()), null);
-        assertEquals(Queries.chrono().queryFrom(TEST_12345_123456789), null);
+    @DataProvider(name="query")
+    Object[][] data_query() {
+        return new Object[][] {
+                {TEST_12345_123456789, Queries.chronology(), null},
+                {TEST_12345_123456789, Queries.zoneId(), null},
+                {TEST_12345_123456789, Queries.precision(), NANOS},
+                {TEST_12345_123456789, Queries.zone(), null},
+                {TEST_12345_123456789, Queries.offset(), null},
+                {TEST_12345_123456789, Queries.localDate(), null},
+                {TEST_12345_123456789, Queries.localTime(), null},
+        };
     }
 
-    @Test
-    public void test_query_zoneId() {
-        assertEquals(TEST_12345_123456789.query(Queries.zoneId()), null);
-        assertEquals(Queries.zoneId().queryFrom(TEST_12345_123456789), null);
+    @Test(dataProvider="query")
+    public <T> void test_query(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(temporal.query(query), expected);
     }
 
-    @Test
-    public void test_query_precision() {
-        assertEquals(TEST_12345_123456789.query(Queries.precision()), NANOS);
-        assertEquals(Queries.precision().queryFrom(TEST_12345_123456789), NANOS);
-    }
-
-    @Test
-    public void test_query_offset() {
-        assertEquals(TEST_12345_123456789.query(Queries.offset()), null);
-        assertEquals(Queries.offset().queryFrom(TEST_12345_123456789), null);
-    }
-
-    @Test
-    public void test_query_zone() {
-        assertEquals(TEST_12345_123456789.query(Queries.zone()), null);
-        assertEquals(Queries.zone().queryFrom(TEST_12345_123456789), null);
+    @Test(dataProvider="query")
+    public <T> void test_queryFrom(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(query.queryFrom(temporal), expected);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_query_null() {
         TEST_12345_123456789.query(null);
+    }
+
+    //-----------------------------------------------------------------------
+    // truncated(TemporalUnit)
+    //-----------------------------------------------------------------------
+    TemporalUnit NINETY_MINS = new TemporalUnit() {
+        @Override
+        public String getName() {
+            return "NinetyMins";
+        }
+        @Override
+        public Duration getDuration() {
+            return Duration.ofMinutes(90);
+        }
+        @Override
+        public boolean isDurationEstimated() {
+            return false;
+        }
+        @Override
+        public boolean isSupportedBy(Temporal temporal) {
+            return false;
+        }
+        @Override
+        public <R extends Temporal> R addTo(R temporal, long amount) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public long between(Temporal temporal1, Temporal temporal2) {
+            throw new UnsupportedOperationException();
+        }
+    };
+
+    TemporalUnit NINETY_FIVE_MINS = new TemporalUnit() {
+        @Override
+        public String getName() {
+            return "NinetyFiveMins";
+        }
+        @Override
+        public Duration getDuration() {
+            return Duration.ofMinutes(95);
+        }
+        @Override
+        public boolean isDurationEstimated() {
+            return false;
+        }
+        @Override
+        public boolean isSupportedBy(Temporal temporal) {
+            return false;
+        }
+        @Override
+        public <R extends Temporal> R addTo(R temporal, long amount) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public long between(Temporal temporal1, Temporal temporal2) {
+            throw new UnsupportedOperationException();
+        }
+    };
+
+    @DataProvider(name="truncatedToValid")
+    Object[][] data_truncatedToValid() {
+        return new Object[][] {
+                {Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789), NANOS, Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789)},
+                {Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789), MICROS, Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_000)},
+                {Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789), MILLIS, Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 1230_00_000)},
+                {Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789), SECONDS, Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 0)},
+                {Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789), MINUTES, Instant.ofEpochSecond(86400 + 3600 + 60, 0)},
+                {Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789), HOURS, Instant.ofEpochSecond(86400 + 3600, 0)},
+                {Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789), DAYS, Instant.ofEpochSecond(86400, 0)},
+
+                {Instant.ofEpochSecond(86400 + 3600 + 60 + 1, 123_456_789), NINETY_MINS, Instant.ofEpochSecond(86400 + 0, 0)},
+                {Instant.ofEpochSecond(86400 + 7200 + 60 + 1, 123_456_789), NINETY_MINS, Instant.ofEpochSecond(86400 + 5400, 0)},
+                {Instant.ofEpochSecond(86400 + 10800 + 60 + 1, 123_456_789), NINETY_MINS, Instant.ofEpochSecond(86400 + 10800, 0)},
+        };
+    }
+    @Test(groups={"tck"}, dataProvider="truncatedToValid")
+    public void test_truncatedTo_valid(Instant input, TemporalUnit unit, Instant expected) {
+        assertEquals(input.truncatedTo(unit), expected);
+    }
+
+    @DataProvider(name="truncatedToInvalid")
+    Object[][] data_truncatedToInvalid() {
+        return new Object[][] {
+                {Instant.ofEpochSecond(1, 123_456_789), NINETY_FIVE_MINS},
+                {Instant.ofEpochSecond(1, 123_456_789), WEEKS},
+                {Instant.ofEpochSecond(1, 123_456_789), MONTHS},
+                {Instant.ofEpochSecond(1, 123_456_789), YEARS},
+        };
+    }
+
+    @Test(groups={"tck"}, dataProvider="truncatedToInvalid", expectedExceptions=DateTimeException.class)
+    public void test_truncatedTo_invalid(Instant input, TemporalUnit unit) {
+        input.truncatedTo(unit);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    public void test_truncatedTo_null() {
+        TEST_12345_123456789.truncatedTo(null);
+    }
+
+    //-----------------------------------------------------------------------
+    // plus(TemporalAmount)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="plusTemporalAmount")
+    Object[][] data_plusTemporalAmount() {
+        return new Object[][] {
+                {DAYS, MockSimplePeriod.of(1, DAYS), 86401, 0},
+                {HOURS, MockSimplePeriod.of(2, HOURS), 7201, 0},
+                {MINUTES, MockSimplePeriod.of(4, MINUTES), 241, 0},
+                {SECONDS, MockSimplePeriod.of(5, SECONDS), 6, 0},
+                {NANOS, MockSimplePeriod.of(6, NANOS), 1, 6},
+                {DAYS, MockSimplePeriod.of(10, DAYS), 864001, 0},
+                {HOURS, MockSimplePeriod.of(11, HOURS), 39601, 0},
+                {MINUTES, MockSimplePeriod.of(12, MINUTES), 721, 0},
+                {SECONDS, MockSimplePeriod.of(13, SECONDS), 14, 0},
+                {NANOS, MockSimplePeriod.of(14, NANOS), 1, 14},
+                {SECONDS, Duration.ofSeconds(20, 40), 21, 40},
+                {NANOS, Duration.ofSeconds(30, 300), 31, 300},
+        };
+    }
+
+    @Test(dataProvider="plusTemporalAmount")
+    public void test_plusTemporalAmount(TemporalUnit unit, TemporalAmount amount, int seconds, int nanos) {
+        Instant inst = Instant.ofEpochMilli(1000);
+        Instant actual = inst.plus(amount);
+        Instant expected = Instant.ofEpochSecond(seconds, nanos);
+        assertEquals(actual, expected, "plus(TemporalAmount) failed");
+    }
+
+    @DataProvider(name="badTemporalAmount")
+    Object[][] data_badPlusTemporalAmount() {
+        return new Object[][] {
+                {MockSimplePeriod.of(2, YEARS)},
+                {MockSimplePeriod.of(2, MONTHS)},
+        };
+    }
+
+    @Test(dataProvider="badTemporalAmount",expectedExceptions=DateTimeException.class)
+    public void test_badPlusTemporalAmount(TemporalAmount amount) {
+        Instant inst = Instant.ofEpochMilli(1000);
+        inst.plus(amount);
     }
 
     //-----------------------------------------------------------------------
@@ -1431,6 +1577,50 @@ public class TCKInstant extends AbstractDateTimeTest {
     public void minusNanos_long_overflowTooSmall() {
         Instant i = Instant.ofEpochSecond(MIN_SECOND, 0);
         i.minusNanos(1);
+    }
+
+    //-----------------------------------------------------------------------
+    // atOffset()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_atOffset() {
+        for (int i = 0; i < (24 * 60 * 60); i++) {
+            Instant instant = Instant.ofEpochSecond(i);
+            OffsetDateTime test = instant.atOffset(ZoneOffset.ofHours(1));
+            assertEquals(test.getYear(), 1970);
+            assertEquals(test.getMonthValue(), 1);
+            assertEquals(test.getDayOfMonth(), 1 + (i >= 23 * 60 * 60 ? 1 : 0));
+            assertEquals(test.getHour(), ((i / (60 * 60)) + 1) % 24);
+            assertEquals(test.getMinute(), (i / 60) % 60);
+            assertEquals(test.getSecond(), i % 60);
+        }
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_atOffset_null() {
+        TEST_12345_123456789.atOffset(null);
+    }
+
+    //-----------------------------------------------------------------------
+    // atZone()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_atZone() {
+        for (int i = 0; i < (24 * 60 * 60); i++) {
+            Instant instant = Instant.ofEpochSecond(i);
+            ZonedDateTime test = instant.atZone(ZoneOffset.ofHours(1));
+            assertEquals(test.getYear(), 1970);
+            assertEquals(test.getMonthValue(), 1);
+            assertEquals(test.getDayOfMonth(), 1 + (i >= 23 * 60 * 60 ? 1 : 0));
+            assertEquals(test.getHour(), ((i / (60 * 60)) + 1) % 24);
+            assertEquals(test.getMinute(), (i / 60) % 60);
+            assertEquals(test.getSecond(), i % 60);
+        }
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_atZone_null() {
+        TEST_12345_123456789.atZone(null);
     }
 
     //-----------------------------------------------------------------------

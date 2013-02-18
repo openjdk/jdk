@@ -34,7 +34,7 @@ GENDATA_TIMEZONE_TMP := $(JDK_OUTPUTDIR)/gendata_timezone
 TZFILE0 := \
     africa antarctica asia australasia europe northamerica \
     pacificnew southamerica backward \
-    etcetera solar87 solar88 solar89 systemv
+    etcetera systemv
 
 TZFILE1 := \
     gmt jdk11_backward

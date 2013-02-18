@@ -57,6 +57,7 @@
 package tck.java.time;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -87,6 +88,12 @@ public abstract class AbstractTCKTest {
         assertEquals(object instanceof Serializable, true);
         Object deserializedObject = writeThenRead(object);
         assertEquals(deserializedObject, object);
+    }
+
+    protected static void assertSerializableSame(Object object) throws IOException, ClassNotFoundException {
+        assertEquals(object instanceof Serializable, true);
+        Object deserializedObject = writeThenRead(object);
+        assertSame(deserializedObject, object);
     }
 
     private static Object writeThenRead(Object object) throws IOException, ClassNotFoundException {

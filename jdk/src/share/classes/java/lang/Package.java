@@ -389,8 +389,9 @@ public class Package implements java.lang.reflect.AnnotatedElement {
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
-    public  <A extends Annotation> A[] getAnnotations(Class<A> annotationClass) {
-        return getPackageInfo().getAnnotations(annotationClass);
+    @Override
+    public  <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass) {
+        return getPackageInfo().getAnnotationsByType(annotationClass);
     }
 
     /**
@@ -404,6 +405,7 @@ public class Package implements java.lang.reflect.AnnotatedElement {
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
+    @Override
     public <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass) {
         return getPackageInfo().getDeclaredAnnotation(annotationClass);
     }
@@ -412,8 +414,9 @@ public class Package implements java.lang.reflect.AnnotatedElement {
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
-    public <A extends Annotation> A[] getDeclaredAnnotations(Class<A> annotationClass) {
-        return getPackageInfo().getDeclaredAnnotations(annotationClass);
+    @Override
+    public <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) {
+        return getPackageInfo().getDeclaredAnnotationsByType(annotationClass);
     }
 
     /**

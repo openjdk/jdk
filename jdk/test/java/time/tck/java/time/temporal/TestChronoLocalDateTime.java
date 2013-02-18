@@ -63,31 +63,28 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.Chrono;
-import java.time.temporal.ChronoLocalDateTime;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.SimplePeriod;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
-import java.time.format.DateTimeBuilder;
-import java.time.temporal.TemporalAdder;
 import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalSubtractor;
-import java.time.temporal.ValueRange;
 import java.time.temporal.TemporalUnit;
-import java.time.temporal.ISOChrono;
-import java.time.calendar.HijrahChrono;
-import java.time.calendar.JapaneseChrono;
-import java.time.calendar.MinguoChrono;
-import java.time.calendar.ThaiBuddhistChrono;
+import java.time.temporal.ValueRange;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -103,21 +100,21 @@ public class TestChronoLocalDateTime {
     // regular data factory for names and descriptions of available calendars
     //-----------------------------------------------------------------------
     @DataProvider(name = "calendars")
-    Chrono<?>[][] data_of_calendars() {
-        return new Chrono<?>[][]{
-                    {HijrahChrono.INSTANCE},
-                    {ISOChrono.INSTANCE},
-                    {JapaneseChrono.INSTANCE},
-                    {MinguoChrono.INSTANCE},
-                    {ThaiBuddhistChrono.INSTANCE}};
+    Chronology[][] data_of_calendars() {
+        return new Chronology[][]{
+                    {HijrahChronology.INSTANCE},
+                    {IsoChronology.INSTANCE},
+                    {JapaneseChronology.INSTANCE},
+                    {MinguoChronology.INSTANCE},
+                    {ThaiBuddhistChronology.INSTANCE}};
     }
 
     @Test(groups={"tck"}, dataProvider="calendars")
-    public void test_badWithAdjusterChrono(Chrono<?> chrono) {
+    public void test_badWithAdjusterChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoLocalDateTime<?> cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chrono<?>[] clist : data_of_calendars()) {
-            Chrono<?> chrono2 = clist[0];
+        for (Chronology[] clist : data_of_calendars()) {
+            Chronology chrono2 = clist[0];
             ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
             TemporalAdjuster adjuster = new FixedAdjuster(cdt2);
             if (chrono != chrono2) {
@@ -137,13 +134,13 @@ public class TestChronoLocalDateTime {
     }
 
     @Test(groups={"tck"}, dataProvider="calendars")
-    public void test_badPlusAdjusterChrono(Chrono<?> chrono) {
+    public void test_badPlusAdjusterChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoLocalDateTime<?> cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chrono<?>[] clist : data_of_calendars()) {
-            Chrono<?> chrono2 = clist[0];
+        for (Chronology[] clist : data_of_calendars()) {
+            Chronology chrono2 = clist[0];
             ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
-            TemporalAdder adjuster = new FixedAdjuster(cdt2);
+            TemporalAmount adjuster = new FixedAdjuster(cdt2);
             if (chrono != chrono2) {
                 try {
                     cdt.plus(adjuster);
@@ -161,13 +158,13 @@ public class TestChronoLocalDateTime {
     }
 
     @Test(groups={"tck"}, dataProvider="calendars")
-    public void test_badMinusAdjusterChrono(Chrono<?> chrono) {
+    public void test_badMinusAdjusterChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoLocalDateTime<?> cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chrono<?>[] clist : data_of_calendars()) {
-            Chrono<?> chrono2 = clist[0];
+        for (Chronology[] clist : data_of_calendars()) {
+            Chronology chrono2 = clist[0];
             ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
-            TemporalSubtractor adjuster = new FixedAdjuster(cdt2);
+            TemporalAmount adjuster = new FixedAdjuster(cdt2);
             if (chrono != chrono2) {
                 try {
                     cdt.minus(adjuster);
@@ -185,11 +182,11 @@ public class TestChronoLocalDateTime {
     }
 
     @Test(groups={"tck"}, dataProvider="calendars")
-    public void test_badPlusTemporalUnitChrono(Chrono<?> chrono) {
+    public void test_badPlusTemporalUnitChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoLocalDateTime<?> cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chrono<?>[] clist : data_of_calendars()) {
-            Chrono<?> chrono2 = clist[0];
+        for (Chronology[] clist : data_of_calendars()) {
+            Chronology chrono2 = clist[0];
             ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
             TemporalUnit adjuster = new FixedTemporalUnit(cdt2);
             if (chrono != chrono2) {
@@ -209,11 +206,11 @@ public class TestChronoLocalDateTime {
     }
 
     @Test(groups={"tck"}, dataProvider="calendars")
-    public void test_badMinusTemporalUnitChrono(Chrono<?> chrono) {
+    public void test_badMinusTemporalUnitChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoLocalDateTime<?> cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chrono<?>[] clist : data_of_calendars()) {
-            Chrono<?> chrono2 = clist[0];
+        for (Chronology[] clist : data_of_calendars()) {
+            Chronology chrono2 = clist[0];
             ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
             TemporalUnit adjuster = new FixedTemporalUnit(cdt2);
             if (chrono != chrono2) {
@@ -233,11 +230,11 @@ public class TestChronoLocalDateTime {
     }
 
     @Test(groups={"tck"}, dataProvider="calendars")
-    public void test_badTemporalFieldChrono(Chrono<?> chrono) {
+    public void test_badTemporalFieldChrono(Chronology chrono) {
         LocalDate refDate = LocalDate.of(1900, 1, 1);
         ChronoLocalDateTime<?> cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chrono<?>[] clist : data_of_calendars()) {
-            Chrono<?> chrono2 = clist[0];
+        for (Chronology[] clist : data_of_calendars()) {
+            Chronology chrono2 = clist[0];
             ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
             TemporalField adjuster = new FixedTemporalField(cdt2);
             if (chrono != chrono2) {
@@ -260,7 +257,7 @@ public class TestChronoLocalDateTime {
     // isBefore, isAfter, isEqual
     //-----------------------------------------------------------------------
     @Test(groups={"tck"}, dataProvider="calendars")
-    public void test_datetime_comparisons(Chrono<?> chrono) {
+    public void test_datetime_comparisons(Chronology chrono) {
         List<ChronoLocalDateTime<?>> dates = new ArrayList<>();
 
         ChronoLocalDateTime<?> date = chrono.date(LocalDate.of(1900, 1, 1)).atTime(LocalTime.MIN);
@@ -287,11 +284,11 @@ public class TestChronoLocalDateTime {
         dates.add(date.plus(100, ChronoUnit.YEARS));
 
         // Check these dates against the corresponding dates for every calendar
-        for (Chrono<?>[] clist : data_of_calendars()) {
+        for (Chronology[] clist : data_of_calendars()) {
             List<ChronoLocalDateTime<?>> otherDates = new ArrayList<>();
-            Chrono<?> chrono2 = clist[0];
+            Chronology chrono2 = clist[0];
             for (ChronoLocalDateTime<?> d : dates) {
-                otherDates.add(chrono2.date(d).atTime(d.getTime()));
+                otherDates.add(chrono2.date(d).atTime(d.toLocalTime()));
             }
 
             // Now compare  the sequence of original dates with the sequence of converted dates
@@ -325,9 +322,9 @@ public class TestChronoLocalDateTime {
     // Test Serialization of ISO via chrono API
     //-----------------------------------------------------------------------
     @Test( groups={"tck"}, dataProvider="calendars")
-    public <C extends Chrono<C>> void test_ChronoLocalDateTimeSerialization(C chrono) throws Exception {
+    public void test_ChronoLocalDateTimeSerialization(Chronology chrono) throws Exception {
         LocalDateTime ref = LocalDate.of(2000, 1, 5).atTime(12, 1, 2, 3);
-        ChronoLocalDateTime<C> orginal = chrono.date(ref).atTime(ref.getTime());
+        ChronoLocalDateTime<?> orginal = chrono.date(ref).atTime(ref.toLocalTime());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(baos);
         out.writeObject(orginal);
@@ -335,7 +332,7 @@ public class TestChronoLocalDateTime {
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ObjectInputStream in = new ObjectInputStream(bais);
         @SuppressWarnings("unchecked")
-        ChronoLocalDateTime<C> ser = (ChronoLocalDateTime<C>) in.readObject();
+        ChronoLocalDateTime<?> ser = (ChronoLocalDateTime<?>) in.readObject();
         assertEquals(ser, orginal, "deserialized date is wrong");
     }
 
@@ -343,7 +340,7 @@ public class TestChronoLocalDateTime {
      * FixedAdjusted returns a fixed Temporal in all adjustments.
      * Construct an adjuster with the Temporal that should be returned from adjust.
      */
-    static class FixedAdjuster implements TemporalAdjuster, TemporalAdder, TemporalSubtractor {
+    static class FixedAdjuster implements TemporalAdjuster, TemporalAmount {
         private Temporal datetime;
 
         FixedAdjuster(Temporal datetime) {
@@ -365,11 +362,21 @@ public class TestChronoLocalDateTime {
             return datetime;
         }
 
+        @Override
+        public long get(TemporalUnit unit) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public List<TemporalUnit> getUnits() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
     }
 
     /**
      * FixedTemporalUnit returns a fixed Temporal in all adjustments.
-     * Construct an FixedTemporalUnit with the Temporal that should be returned from doPlus.
+     * Construct an FixedTemporalUnit with the Temporal that should be returned from addTo.
      */
     static class FixedTemporalUnit implements TemporalUnit {
         private Temporal temporal;
@@ -394,25 +401,25 @@ public class TestChronoLocalDateTime {
         }
 
         @Override
-        public boolean isSupported(Temporal temporal) {
+        public boolean isSupportedBy(Temporal temporal) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <R extends Temporal> R doPlus(R dateTime, long periodToAdd) {
+        public <R extends Temporal> R addTo(R temporal, long amount) {
             return (R) this.temporal;
         }
 
         @Override
-        public <R extends Temporal> SimplePeriod between(R dateTime1, R dateTime2) {
+        public long between(Temporal temporal1, Temporal temporal2) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
     /**
      * FixedTemporalField returns a fixed Temporal in all adjustments.
-     * Construct an FixedTemporalField with the Temporal that should be returned from doWith.
+     * Construct an FixedTemporalField with the Temporal that should be returned from adjustInto.
      */
     static class FixedTemporalField implements TemporalField {
         private Temporal temporal;
@@ -441,30 +448,24 @@ public class TestChronoLocalDateTime {
         }
 
         @Override
-        public boolean doIsSupported(TemporalAccessor temporal) {
+        public boolean isSupportedBy(TemporalAccessor temporal) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public ValueRange doRange(TemporalAccessor temporal) {
+        public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public long doGet(TemporalAccessor temporal) {
+        public long getFrom(TemporalAccessor temporal) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <R extends Temporal> R doWith(R temporal, long newValue) {
+        public <R extends Temporal> R adjustInto(R temporal, long newValue) {
             return (R) this.temporal;
         }
-
-        @Override
-        public boolean resolve(DateTimeBuilder builder, long value) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
     }
 }
