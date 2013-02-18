@@ -102,7 +102,6 @@ import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.LinkerServicesImpl;
 import jdk.internal.dynalink.support.TypeConverterFactory;
 
-
 /**
  * A factory class for creating {@link DynamicLinker}s. The most usual dynamic linker is a linker that is a composition
  * of all {@link GuardingDynamicLinker}s known and pre-created by the caller as well as any
@@ -256,14 +255,16 @@ public class DynamicLinkerFactory {
 
         // Gather classes of all precreated (prioritized and fallback) linkers.
         // We'll filter out any discovered linkers of the same class.
-        final Set<Class<? extends GuardingDynamicLinker>> knownLinkerClasses = new HashSet<>();
+        final Set<Class<? extends GuardingDynamicLinker>> knownLinkerClasses =
+                new HashSet<>();
         addClasses(knownLinkerClasses, prioritizedLinkers);
         addClasses(knownLinkerClasses, fallbackLinkers);
 
         final List<GuardingDynamicLinker> discovered = AutoDiscovery.loadLinkers(classLoader);
         // Now, concatenate ...
-        final List<GuardingDynamicLinker> linkers = new ArrayList<>(prioritizedLinkers.size() + discovered.size()
-                + fallbackLinkers.size());
+        final List<GuardingDynamicLinker> linkers =
+                new ArrayList<>(prioritizedLinkers.size() + discovered.size()
+                        + fallbackLinkers.size());
         // ... prioritized linkers, ...
         linkers.addAll(prioritizedLinkers);
         // ... filtered discovered linkers, ...

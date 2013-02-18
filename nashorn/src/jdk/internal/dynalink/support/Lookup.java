@@ -231,9 +231,8 @@ public class Lookup {
                     m.setAccessible(true);
                 }
                 return unreflect(m);
-            } else {
-                return lookup.findSpecial(declaringClass, name, type, declaringClass);
             }
+            return lookup.findSpecial(declaringClass, name, type, declaringClass);
         } catch(IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to access special method " + methodDescription(
                     declaringClass, name, type));

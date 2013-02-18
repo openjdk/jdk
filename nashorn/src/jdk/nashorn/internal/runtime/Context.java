@@ -45,7 +45,6 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.Locale;
 import java.util.TimeZone;
-
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.internal.codegen.ClassEmitter;

@@ -97,7 +97,6 @@ import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.internal.dynalink.support.Lookup;
 import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
 
-
 /**
  * The linker for {@link RelinkableCallSite} objects. Users of it (scripting frameworks and language runtimes) have to
  * create a linker using the {@link DynamicLinkerFactory} and invoke its link method from the invokedynamic bootstrap
@@ -246,14 +245,15 @@ public class DynamicLinker {
             }
         }
 
-        if(unstableDetectionEnabled && relinkCount <= unstableRelinkThreshold && relinkCount++ == unstableRelinkThreshold) {
-            // Note that we'll increase the relinkCount until threshold+1 and not increase it beyond that. Threshold+1
-            // is treated as a special value to signal that resetAndRelink has already executed once for the unstable
-            // call site; we only want the call site to throw away its current linkage once, when it transitions to
-            // unstable.
-            callSite.resetAndRelink(guardedInvocation, createRelinkAndInvokeMethod(callSite, relinkCount));
+        int newRelinkCount = relinkCount;
+        // Note that the short-circuited "&&" evaluation below ensures we'll increment the relinkCount until
+        // threshold + 1 but not beyond that. Threshold + 1 is treated as a special value to signal that resetAndRelink
+        // has already executed once for the unstable call site; we only want the call site to throw away its current
+        // linkage once, when it transitions to unstable.
+        if(unstableDetectionEnabled && newRelinkCount <= unstableRelinkThreshold && newRelinkCount++ == unstableRelinkThreshold) {
+            callSite.resetAndRelink(guardedInvocation, createRelinkAndInvokeMethod(callSite, newRelinkCount));
         } else {
-            callSite.relink(guardedInvocation, createRelinkAndInvokeMethod(callSite, relinkCount));
+            callSite.relink(guardedInvocation, createRelinkAndInvokeMethod(callSite, newRelinkCount));
         }
         if(syncOnRelink) {
             MutableCallSite.syncAll(new MutableCallSite[] { (MutableCallSite)callSite });

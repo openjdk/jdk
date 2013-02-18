@@ -7,6 +7,7 @@ import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.FINALIZED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.INITIALIZED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOWERED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,9 +16,9 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
+import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 
