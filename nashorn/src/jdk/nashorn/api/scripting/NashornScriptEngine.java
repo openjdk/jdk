@@ -119,7 +119,12 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     @Override
     public Object eval(final Reader reader, final ScriptContext ctxt) throws ScriptException {
         try {
-            return evalImpl(Source.readFully(reader), ctxt);
+            if (reader instanceof URLReader) {
+                final URL url = ((URLReader)reader).getURL();
+                return evalImpl(compileImpl(new Source(url.toString(), url), ctxt), ctxt);
+            } else {
+                return evalImpl(Source.readFully(reader), ctxt);
+            }
         } catch (final IOException e) {
             throw new ScriptException(e);
         }
@@ -442,14 +447,16 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private ScriptFunction compileImpl(final char[] buf, final ScriptContext ctxt) throws ScriptException {
+        final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
+        final String fileName = (val != null) ? val.toString() : "<eval>";
+        return compileImpl(new Source(fileName, buf), ctxt);
+    }
+
+    private ScriptFunction compileImpl(final Source source, final ScriptContext ctxt) throws ScriptException {
         final ScriptObject oldGlobal = getNashornGlobal();
         final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
         final boolean globalChanged = (oldGlobal != ctxtGlobal);
         try {
-            final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
-            final String fileName = (val != null) ? val.toString() : "<eval>";
-
-            final Source source = new Source(fileName, buf);
             if (globalChanged) {
                 setNashornGlobal(ctxtGlobal);
             }
