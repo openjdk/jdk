@@ -37,6 +37,9 @@ ifeq ($(BUILD_LANGTOOLS), true)
    NASHORN_BUILD_ARGUMENTS += ALT_LANGTOOLS_DIST=$(ABS_LANGTOOLS_DIST)
 endif
 
+# Default targets
+NASHORN = nashorn-build
+
 nashorn: nashorn-build
 nashorn-build:
 	$(MKDIR) -p $(NASHORN_OUTPUTDIR)
