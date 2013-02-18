@@ -90,7 +90,6 @@ import java.lang.reflect.Array;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Guards;
 
-
 /**
  * A dynamic method bound to exactly one, non-overloaded Java method. Handles varargs.
  *
@@ -164,14 +163,13 @@ class SimpleDynamicMethod extends DynamicMethod {
             // Less actual arguments than number of fixed declared arguments; can't invoke.
             return null;
         }
-        // Method handle of the same number of arguments as the call site type
+        // Method handle has the same number of fixed arguments as the call site type
         if(argsLen == fixParamsLen) {
             // Method handle that matches the number of actual arguments as the number of fixed arguments
             final MethodHandle matchedMethod;
             if(varArgs) {
                 // If vararg, add a zero-length array of the expected type as the last argument to signify no variable
                 // arguments.
-                // TODO: check whether collectArguments() would handle this too.
                 matchedMethod = MethodHandles.insertArguments(fixTarget, fixParamsLen, Array.newInstance(
                         methodType.parameterType(fixParamsLen).getComponentType(), 0));
             } else {
@@ -195,22 +193,22 @@ class SimpleDynamicMethod extends DynamicMethod {
                 // Call site signature guarantees we'll always be passed a single compatible array; just link directly
                 // to the method.
                 return createConvertingInvocation(fixTarget, linkerServices, callSiteType);
-            } else if(!linkerServices.canConvert(callSiteLastArgType, varArgType)) {
+            }
+            if(!linkerServices.canConvert(callSiteLastArgType, varArgType)) {
                 // Call site signature guarantees the argument can definitely not be an array (i.e. it is primitive);
                 // link immediately to a vararg-packing method handle.
                 return createConvertingInvocation(collectArguments(fixTarget, argsLen), linkerServices, callSiteType);
-            } else {
-                // Call site signature makes no guarantees that the single argument in the vararg position will be
-                // compatible across all invocations. Need to insert an appropriate guard and fall back to generic
-                // vararg method when it is not.
-                return MethodHandles.guardWithTest(Guards.isInstance(varArgType, fixParamsLen, callSiteType),
-                        createConvertingInvocation(fixTarget, linkerServices, callSiteType),
-                        createConvertingInvocation(collectArguments(fixTarget, argsLen), linkerServices, callSiteType));
             }
-        } else {
-            // Remaining case: more than one vararg.
-            return createConvertingInvocation(collectArguments(fixTarget, argsLen), linkerServices, callSiteType);
+            // Call site signature makes no guarantees that the single argument in the vararg position will be
+            // compatible across all invocations. Need to insert an appropriate guard and fall back to generic vararg
+            // method when it is not.
+            return MethodHandles.guardWithTest(Guards.isInstance(varArgType, fixParamsLen, callSiteType),
+                    createConvertingInvocation(fixTarget, linkerServices, callSiteType),
+                    createConvertingInvocation(collectArguments(fixTarget, argsLen), linkerServices, callSiteType));
         }
+
+        // Remaining case: more than one vararg.
+        return createConvertingInvocation(collectArguments(fixTarget, argsLen), linkerServices, callSiteType);
     }
 
     @Override

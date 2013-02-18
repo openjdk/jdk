@@ -94,7 +94,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Lookup;
 
-
 /**
  * Represents a subset of overloaded methods for a certain method name on a certain class. It can be either a fixarg or
  * a vararg subset depending on the subclass. The method is for a fixed number of arguments though (as it is generated

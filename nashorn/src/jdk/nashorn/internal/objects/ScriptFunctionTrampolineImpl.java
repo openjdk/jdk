@@ -1,12 +1,10 @@
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-
-
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
-
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.FunctionSignature;
 import jdk.nashorn.internal.codegen.types.Type;

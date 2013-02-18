@@ -87,7 +87,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
 
-
 /**
  * A call site descriptor that stores a specific {@link Lookup}. It does not, however, store static bootstrap arguments.
  * @author Attila Szegedi

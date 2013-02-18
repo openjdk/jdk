@@ -93,7 +93,6 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 
-
 /**
  * A composite type-based guarding dynamic linker. When a receiver of a not yet seen class is encountered, all linkers
  * are queried sequentially on their {@link TypeBasedGuardingDynamicLinker#canLinkType(Class)} method. The linkers

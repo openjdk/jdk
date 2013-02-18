@@ -88,7 +88,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.util.Objects;
 import jdk.internal.dynalink.CallSiteDescriptor;
 
-
 /**
  * A base class for call site descriptor implementations. Provides reconstruction of the name from the tokens, as well
  * as a generally useful {@code equals} and {@code hashCode} methods.
