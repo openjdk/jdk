@@ -145,6 +145,22 @@ public class RuntimeNode extends Node implements TypeOverride {
         }
 
         /**
+         * Get the non-strict name for this request.
+         *
+         * @return the name without _STRICT suffix
+         */
+        public String nonStrictName() {
+            switch(this) {
+            case NE_STRICT:
+                return NE.name();
+            case EQ_STRICT:
+                return EQ.name();
+            default:
+                return name();
+            }
+        }
+
+        /**
          * Is this an EQ or EQ_STRICT?
          *
          * @param request a request
