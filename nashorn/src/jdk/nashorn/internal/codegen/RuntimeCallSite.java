@@ -279,7 +279,7 @@ public final class RuntimeCallSite extends MutableCallSite {
                 // number and boolean are never strictly equal, e.g. 0 !== false
                 mh = MH.dropArguments(MH.constant(boolean.class, request == Request.NE_STRICT), 0, type().parameterArray());
             } else {
-                mh = METHODS.get(request.name().replace("_STRICT", "") + primitiveType.getSimpleName());
+                mh = METHODS.get(request.nonStrictName() + primitiveType.getSimpleName());
                 // unbox objects
 
                 for (int i = 0; i < type().parameterCount(); i++) {

@@ -39,7 +39,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPGT;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLT;
 import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPNE;
-import jdk.nashorn.internal.ir.RuntimeNode;
 
 /**
  * Condition enum used for all kinds of jumps, regardless of type
@@ -51,15 +50,6 @@ enum Condition {
     LT,
     GE,
     GT;
-
-    static Condition forRuntimeRequest(final RuntimeNode.Request request) {
-        try {
-            final String reqString = request.toString().replace("_STRICT", "");
-            return Condition.valueOf(reqString);
-        } catch (final IllegalArgumentException e) {
-            return null;
-        }
-    }
 
     static int toUnary(final Condition c) {
         switch (c) {
@@ -79,10 +69,6 @@ enum Condition {
             assert false;
             return -1;
         }
-    }
-
-    static int toBinary(final Condition c) {
-        return toBinary(c, false);
     }
 
     static int toBinary(final Condition c, final boolean isObject) {
