@@ -51,6 +51,7 @@ PROFILE_1_RTJAR_INCLUDE_PACKAGES := \
     java/security/spec \
     java/text \
     java/text/spi \
+    java/time \
     java/util \
     java/util/concurrent \
     java/util/concurrent/atomic \
