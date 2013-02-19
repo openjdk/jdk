@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,7 +702,7 @@ public final class Currency implements Serializable {
                         " ignored since cutover date has not passed :" + curdata, null);
                 return;
             }
-        } catch (IndexOutOfBoundsException | NullPointerException | ParseException ex) {
+        } catch (ParseException ex) {
             info("currency.properties entry for " + ctry +
                         " ignored since exception encountered :" + ex.getMessage(), null);
             return;
@@ -732,8 +732,7 @@ public final class Currency implements Serializable {
         setMainTableEntry(ctry.charAt(0), ctry.charAt(1), entry);
     }
 
-    private static boolean isPastCutoverDate(String s)
-            throws IndexOutOfBoundsException, NullPointerException, ParseException {
+    private static boolean isPastCutoverDate(String s) throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         format.setLenient(false);
