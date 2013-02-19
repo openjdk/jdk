@@ -36,12 +36,14 @@ import com.sun.source.tree.CompilationUnitTree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
+@jdk.Supported
 public final class TaskEvent
 {
     /**
      * Kind of task event.
      * @since 1.6
      */
+    @jdk.Supported
     public enum Kind {
         /**
          * For events related to the parsing of a file.

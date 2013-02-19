@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import com.sun.source.tree.Tree;
  *
  * @author Peter von der Ah&eacute;
  */
+@jdk.Supported
 public abstract class Trees {
     /**
      * Gets a Trees object for a given CompilationTask.
