@@ -25,22 +25,21 @@
 package java.util.function;
 
 /**
- * An operation upon an {@code int} input value. The operation may modify
- * external state.
+ * An operation which accepts a single long argument and returns no result.
+ * This is the {@code long}-consuming primitive type specialization of
+ * {@link Consumer}. Unlike most other functional interfaces, {@code LongConsumer}
+ * is expected to operate via side-effects.
  *
- * <p/>This is the primitive type specialization of {@link Block} for
- * {@code int} and also may be used as a {@code Block<Integer>}.
- *
+ * @see Consumer
  * @since 1.8
  */
 @FunctionalInterface
-public interface IntBlock {
+public interface LongConsumer {
 
     /**
-     * Use the {@code int} input value in an operation which may modify external
-     * state.
+     * Accept an input value.
      *
-     * @param t the input value
+     * @param value the input value
      */
-   public void accept(int t);
+    public void accept(long value);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,21 @@
 package java.util.function;
 
 /**
- * A supplier of {@code long} values. This is the {@code long}-providing
- * primitive specialization of {@link Supplier}.
+ * An operation which accepts a single input argument and returns no result.
+ * Unlike most other functional interfaces, {@code Consumer} is expected to
+ * operate via side-effects.
  *
- * @see Supplier
+ * @param <T> The type of input objects to {@code accept}
+ *
  * @since 1.8
  */
 @FunctionalInterface
-public interface LongSupplier {
+public interface Consumer<T> {
 
     /**
-     * Returns a {@code long} value.
+     * Accept an input value.
      *
-     * @return a {@code long} value
+     * @param t the input object
      */
-    public long getAsLong();
+    public void accept(T t);
 }

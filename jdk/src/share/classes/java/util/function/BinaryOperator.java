@@ -25,24 +25,14 @@
 package java.util.function;
 
 /**
- * An operation upon two operands yielding a result. The operands and the result
- * are all of the same type.
+ * An operation upon two operands yielding a result. This is a specialization of
+ * {@code BiFunction} where the operands and the result are all of the same type.
  *
- * @param <T> the type of operands to {@code operate} and of the result
+ * @param <T> the type of operands to {@code apply} and of the result
  *
+ * @see BiFunction.
  * @since 1.8
  */
 @FunctionalInterface
-public interface BinaryOperator<T> {
-
-    /**
-     * Returns the result of the operation upon the operands.
-     * The operands are named {@code left} and {@code right} for operations
-     * where the order of operands matters.
-     *
-     * @param left the left operand
-     * @param right the right operand
-     * @return the result of the operation
-     */
-    public T operate(T left, T right);
+public interface BinaryOperator<T> extends BiFunction<T,T,T> {
 }

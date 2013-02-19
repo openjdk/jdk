@@ -24,20 +24,21 @@
  */
 package java.util.function;
 
+
 /**
- * A supplier of {@code long} values. This is the {@code long}-providing
+ * A supplier of {@code boolean} values. This is the {@code boolean}-providing
  * primitive specialization of {@link Supplier}.
  *
  * @see Supplier
  * @since 1.8
  */
 @FunctionalInterface
-public interface LongSupplier {
+public interface BooleanSupplier {
 
     /**
-     * Returns a {@code long} value.
+     * Returns a {@code boolean} value.
      *
-     * @return a {@code long} value
+     * @return a {@code boolean} value
      */
-    public long getAsLong();
+    public boolean getAsBoolean();
 }
