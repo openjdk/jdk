@@ -99,50 +99,75 @@ class LCMSImageLayout {
     int offset;
 
     Object dataArray;
-    private LCMSImageLayout(int np, int pixelType, int pixelSize) {
+    private int dataArrayLength; /* in bytes */
+
+    private LCMSImageLayout(int np, int pixelType, int pixelSize)
+            throws ImageLayoutException
+    {
         this.pixelType = pixelType;
         width = np;
         height = 1;
-        nextRowOffset = np*pixelSize;
+        nextRowOffset = safeMult(pixelSize, np);
         offset = 0;
     }
 
     private LCMSImageLayout(int width, int height, int pixelType,
-                            int pixelSize) {
+                            int pixelSize)
+            throws ImageLayoutException
+    {
         this.pixelType = pixelType;
         this.width = width;
         this.height = height;
-        nextRowOffset = width*pixelSize;
+        nextRowOffset = safeMult(pixelSize, width);
         offset = 0;
     }
 
 
-    public LCMSImageLayout(byte[] data, int np, int pixelType, int pixelSize) {
+    public LCMSImageLayout(byte[] data, int np, int pixelType, int pixelSize)
+            throws ImageLayoutException
+    {
         this(np, pixelType, pixelSize);
         dataType = DT_BYTE;
         dataArray = data;
+        dataArrayLength = data.length;
+
+        verify();
     }
 
-    public LCMSImageLayout(short[] data, int np, int pixelType, int pixelSize) {
+    public LCMSImageLayout(short[] data, int np, int pixelType, int pixelSize)
+            throws ImageLayoutException
+    {
         this(np, pixelType, pixelSize);
         dataType = DT_SHORT;
         dataArray = data;
+        dataArrayLength = 2 * data.length;
+
+        verify();
     }
 
-    public LCMSImageLayout(int[] data, int np, int pixelType, int pixelSize) {
+    public LCMSImageLayout(int[] data, int np, int pixelType, int pixelSize)
+            throws ImageLayoutException
+    {
         this(np, pixelType, pixelSize);
         dataType = DT_INT;
         dataArray = data;
+        dataArrayLength = 4 * data.length;
+
+        verify();
     }
 
     public LCMSImageLayout(double[] data, int np, int pixelType, int pixelSize)
+            throws ImageLayoutException
     {
         this(np, pixelType, pixelSize);
         dataType = DT_DOUBLE;
         dataArray = data;
+        dataArrayLength = 8 * data.length;
+
+        verify();
     }
 
-    public LCMSImageLayout(BufferedImage image) {
+    public LCMSImageLayout(BufferedImage image) throws ImageLayoutException {
         ShortComponentRaster shortRaster;
         IntegerComponentRaster intRaster;
         ByteComponentRaster byteRaster;
@@ -186,9 +211,13 @@ class LCMSImageLayout {
             case BufferedImage.TYPE_INT_ARGB:
             case BufferedImage.TYPE_INT_BGR:
                 intRaster = (IntegerComponentRaster)image.getRaster();
-                nextRowOffset = intRaster.getScanlineStride()*4;
-                offset = intRaster.getDataOffset(0)*4;
+
+                nextRowOffset = safeMult(4, intRaster.getScanlineStride());
+
+                offset = safeMult(4, intRaster.getDataOffset(0));
+
                 dataArray = intRaster.getDataStorage();
+                dataArrayLength = 4 * intRaster.getDataStorage().length;
                 dataType = DT_INT;
                 break;
 
@@ -199,6 +228,7 @@ class LCMSImageLayout {
                 int firstBand = image.getSampleModel().getNumBands() - 1;
                 offset = byteRaster.getDataOffset(firstBand);
                 dataArray = byteRaster.getDataStorage();
+                dataArrayLength = byteRaster.getDataStorage().length;
                 dataType = DT_BYTE;
                 break;
 
@@ -207,17 +237,20 @@ class LCMSImageLayout {
                 nextRowOffset = byteRaster.getScanlineStride();
                 offset = byteRaster.getDataOffset(0);
                 dataArray = byteRaster.getDataStorage();
+                dataArrayLength = byteRaster.getDataStorage().length;
                 dataType = DT_BYTE;
                 break;
 
             case BufferedImage.TYPE_USHORT_GRAY:
                 shortRaster = (ShortComponentRaster)image.getRaster();
-                nextRowOffset = shortRaster.getScanlineStride()*2;
-                offset = shortRaster.getDataOffset(0) * 2;
+                nextRowOffset = safeMult(2, shortRaster.getScanlineStride());
+                offset = safeMult(2, shortRaster.getDataOffset(0));
                 dataArray = shortRaster.getDataStorage();
+                dataArrayLength = 2 * shortRaster.getDataStorage().length;
                 dataType = DT_SHORT;
                 break;
         }
+        verify();
     }
 
     public static boolean isSupported(BufferedImage image) {
@@ -232,5 +265,46 @@ class LCMSImageLayout {
                 return true;
         }
         return false;
+    }
+
+    private void verify() throws ImageLayoutException {
+
+        if (offset < 0 || offset >= dataArrayLength) {
+            throw new ImageLayoutException("Invalid image layout");
+        }
+
+        int lastPixelOffset = safeMult(nextRowOffset, (height - 1));
+
+        lastPixelOffset = safeAdd(lastPixelOffset, (width - 1));
+
+        int off = safeAdd(offset, lastPixelOffset);
+
+        if (off < 0 || off >= dataArrayLength) {
+            throw new ImageLayoutException("Invalid image layout");
+        }
+    }
+
+    static int safeAdd(int a, int b) throws ImageLayoutException {
+        long res = a;
+        res += b;
+        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) {
+            throw new ImageLayoutException("Invalid image layout");
+        }
+        return (int)res;
+    }
+
+    static int safeMult(int a, int b) throws ImageLayoutException {
+        long res = a;
+        res *= b;
+        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) {
+            throw new ImageLayoutException("Invalid image layout");
+        }
+        return (int)res;
+    }
+
+    public static class ImageLayoutException extends Exception {
+        public ImageLayoutException(String message) {
+            super(message);
+        }
     }
 }
