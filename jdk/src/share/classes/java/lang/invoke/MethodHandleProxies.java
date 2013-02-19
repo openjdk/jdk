@@ -141,12 +141,15 @@ public class MethodHandleProxies {
     <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
             throw new IllegalArgumentException("not a public interface: "+intfc.getName());
-        SecurityManager smgr = System.getSecurityManager();
-        if (smgr != null) {
+        final MethodHandle mh;
+        if (System.getSecurityManager() != null) {
             final int CALLER_FRAME = 2; // 0: Reflection, 1: asInterfaceInstance, 2: caller
             final Class<?> caller = Reflection.getCallerClass(CALLER_FRAME);
-            final ClassLoader ccl = caller.getClassLoader();
+            final ClassLoader ccl = caller != null ? caller.getClassLoader() : null;
             ReflectUtil.checkProxyPackageAccess(ccl, intfc);
+            mh = ccl != null ? bindCaller(target, caller) : target;
+        } else {
+            mh = target;
         }
         ClassLoader proxyLoader = intfc.getClassLoader();
         if (proxyLoader == null) {
@@ -160,7 +163,7 @@ public class MethodHandleProxies {
         for (int i = 0; i < methods.length; i++) {
             Method sm = methods[i];
             MethodType smMT = MethodType.methodType(sm.getReturnType(), sm.getParameterTypes());
-            MethodHandle checkTarget = target.asType(smMT);  // make throw WMT
+            MethodHandle checkTarget = mh.asType(smMT);  // make throw WMT
             checkTarget = checkTarget.asType(checkTarget.type().changeReturnType(Object.class));
             vaTargets[i] = checkTarget.asSpreader(Object[].class, smMT.parameterCount());
         }
@@ -183,8 +186,8 @@ public class MethodHandleProxies {
                 }
             };
 
-        Object proxy;
-        if (smgr != null) {
+        final Object proxy;
+        if (System.getSecurityManager() != null) {
             // sun.invoke.WrapperInstance is a restricted interface not accessible
             // by any non-null class loader.
             final ClassLoader loader = proxyLoader;
@@ -202,6 +205,16 @@ public class MethodHandleProxies {
                                            ih);
         }
         return intfc.cast(proxy);
+    }
+
+    private static MethodHandle bindCaller(MethodHandle target, Class<?> hostClass) {
+        MethodHandle cbmh = MethodHandleImpl.bindCaller(target, hostClass);
+        if (target.isVarargsCollector()) {
+            MethodType type = cbmh.type();
+            int arity = type.parameterCount();
+            return cbmh.asVarargsCollector(type.parameterType(arity-1));
+        }
+        return cbmh;
     }
 
     /**
