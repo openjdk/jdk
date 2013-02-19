@@ -323,16 +323,20 @@ public final class JSONWriter extends NodeVisitor {
     public Node enter(final ForNode forNode) {
         enterDefault(forNode);
 
-        if (forNode.isForIn() || forNode.isForEach()) {
+        if (forNode.isForIn() || (forNode.isForEach() && forNode.getInit() != null)) {
             type("ForInStatement");
             comma();
 
+            Node init = forNode.getInit();
+            assert init != null;
             property("left");
-            forNode.getInit().accept(this);
+            init.accept(this);
             comma();
 
+            Node modify = forNode.getModify();
+            assert modify != null;
             property("right");
-            forNode.getModify().accept(this);
+            modify.accept(this);
             comma();
 
             property("body");
@@ -618,6 +622,9 @@ public final class JSONWriter extends NodeVisitor {
             // setter
             final Node setter = propertyNode.getSetter();
             if (setter != null) {
+                if (getter != null) {
+                    comma();
+                }
                 objectStart();
                 location(propertyNode);
 
@@ -770,11 +777,11 @@ public final class JSONWriter extends NodeVisitor {
             final boolean prefix;
             final String operator;
             switch (tokenType) {
-                case DECPOSTFIX:
+                case INCPOSTFIX:
                     prefix = false;
                     operator = "++";
                     break;
-                case INCPOSTFIX:
+                case DECPOSTFIX:
                     prefix = false;
                     operator = "--";
                     break;
@@ -938,8 +945,12 @@ public final class JSONWriter extends NodeVisitor {
         int idx = 0;
         arrayStart(name);
         for (final Node node : nodes) {
-            if (! node.isDebug()) {
-                node.accept(this);
+            if (node == null || !node.isDebug()) {
+                if (node != null) {
+                    node.accept(this);
+                } else {
+                    nullValue();
+                }
                 if (idx != (size - 1)) {
                     comma();
                 }
