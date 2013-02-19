@@ -151,8 +151,8 @@ package.access=sun.,\
                com.sun.xml.internal.ws.,\
                com.sun.imageio.,\
                com.sun.istack.internal.,\
-               com.sun.jmx.defaults.,\
-               com.sun.jmx.remote.util.,\
+               com.sun.jmx.,\
+               com.sun.proxy.,\
                com.sun.org.apache.xerces.internal.utils.,\
                com.sun.org.apache.xalan.internal.utils.,\
                com.sun.org.glassfish.external.,\
@@ -175,8 +175,8 @@ package.definition=sun.,\
                    com.sun.xml.internal.ws.,\
                    com.sun.imageio.,\
                    com.sun.istack.internal.,\
-                   com.sun.jmx.defaults.,\
-                   com.sun.jmx.remote.util.,\
+                   com.sun.jmx.,\
+                   com.sun.proxy.,\
                    com.sun.org.apache.xerces.internal.utils.,\
                    com.sun.org.apache.xalan.internal.utils.,\
                    com.sun.org.glassfish.external.,\

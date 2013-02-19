@@ -202,5 +202,7 @@ public final class ReflectUtil {
         }
     }
 
-    public static final String PROXY_PACKAGE = "sun.proxy";
+    // Note that bytecode instrumentation tools may exclude 'sun.*'
+    // classes but not generated proxy classes and so keep it in com.sun.*
+    public static final String PROXY_PACKAGE = "com.sun.proxy";
 }
