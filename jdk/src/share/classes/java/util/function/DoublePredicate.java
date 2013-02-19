@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,24 @@ package java.util.function;
 import java.util.Objects;
 
 /**
- * Determines if the input object matches some criteria.
+ * Determines if the {@code double} input value matches some criteria. This is
+ * the {@code double}-consuming primitive type specialization of
+ * {@link Predicate}.
  *
- * @param <T> the type of argument to {@code test}
- *
+ * @see Predicate
  * @since 1.8
  */
 @FunctionalInterface
-public interface Predicate<T> {
+public interface DoublePredicate {
 
     /**
-     * Returns {@code true} if the input object matches some criteria.
+     * Returns {@code true} if the input value matches some criteria.
      *
-     * @param t the input object
-     * @return {@code true} if the input object matches some criteria, otherwise
-     * {@code false}
+     * @param value the value to be tested.
+     * @return {@code true} if the input value matches some criteria, otherwise
+     * {@code false}.
      */
-    public boolean test(T t);
+    public boolean test(double value);
 
     /**
      * Returns a predicate which evaluates to {@code true} only if this
@@ -55,9 +56,9 @@ public interface Predicate<T> {
      * @return a new predicate which returns {@code true} only if both
      * predicates return {@code true}.
      */
-    public default Predicate<T> and(Predicate<? super T> p) {
+    public default DoublePredicate and(DoublePredicate p) {
         Objects.requireNonNull(p);
-        return (t) -> test(t) && p.test(t);
+        return (value) -> test(value) && p.test(value);
     }
 
     /**
@@ -66,8 +67,8 @@ public interface Predicate<T> {
      * @return a new predicate who's result is always the opposite of this
      * predicate.
      */
-    public default Predicate<T> negate() {
-        return (t) -> !test(t);
+    public default DoublePredicate negate() {
+        return (value) -> !test(value);
     }
 
     /**
@@ -76,25 +77,25 @@ public interface Predicate<T> {
      * predicate returns {@code true} then the remaining predicate is not
      * evaluated.
      *
-     * @param p a predicate which will be logically-ORed with this predicate.
+     * @param p a predicate which will be logically-ANDed with this predicate.
      * @return a new predicate which returns {@code true} if either predicate
      * returns {@code true}.
      */
-    public default Predicate<T> or(Predicate<? super T> p) {
+    public default DoublePredicate or(DoublePredicate p) {
         Objects.requireNonNull(p);
-        return (t) -> test(t) || p.test(t);
+        return (value) -> test(value) || p.test(value);
     }
 
     /**
      * Returns a predicate that evaluates to {@code true} if both or neither of
      * the component predicates evaluate to {@code true}.
      *
-     * @param p a predicate which will be logically-XORed with this predicte.
-     * @return a predicate that evaluates to {@code true} if both or neither of
-     * the component predicates evaluate to {@code true}.
+     * @param p a predicate which will be logically-XORed with this predicate.
+     * @return a predicate that evaluates to {@code true} if all or none of the
+     * component predicates evaluate to {@code true}.
      */
-    public default Predicate<T> xor(Predicate<? super T> p) {
+    public default DoublePredicate xor(DoublePredicate p) {
         Objects.requireNonNull(p);
-        return (t) -> test(t) ^ p.test(t);
+        return (value) -> test(value) ^ p.test(value);
     }
 }

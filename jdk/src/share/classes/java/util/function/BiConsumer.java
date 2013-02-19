@@ -25,19 +25,26 @@
 package java.util.function;
 
 /**
- * A supplier of {@code long} values. This is the {@code long}-providing
- * primitive specialization of {@link Supplier}.
+ * An operation which accepts two input arguments and returns no result. This is
+ * the two-arity specialization of {@link Consumer}. Unlike most other
+ * functional interfaces, {@code BiConsumer} is expected to operate via
+ * side-effects.
  *
- * @see Supplier
+ * @param <T> the type of the first argument to the {@code accept} operation.
+ * @param <U> the type of the second argument to the {@code accept} operation.
+ *
+ * @see Consumer
  * @since 1.8
  */
 @FunctionalInterface
-public interface LongSupplier {
+public interface BiConsumer<T, U> {
 
     /**
-     * Returns a {@code long} value.
+     * Performs operations upon the provided objects which may modify those
+     * objects and/or external state.
      *
-     * @return a {@code long} value
+     * @param t an input object
+     * @param u an input object
      */
-    public long getAsLong();
+    void accept(T t, U u);
 }

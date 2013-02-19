@@ -25,19 +25,22 @@
 package java.util.function;
 
 /**
- * A supplier of {@code long} values. This is the {@code long}-providing
- * primitive specialization of {@link Supplier}.
+ * Apply a function to the input argument, yielding an appropriate result.
+ * This is the {@code long}-bearing specialization for {@link Function}.
  *
- * @see Supplier
+ * @param <T> the type of input objects to the function
+ *
+ * @see Function
  * @since 1.8
  */
 @FunctionalInterface
-public interface LongSupplier {
+public interface ToLongFunction<T> {
 
     /**
-     * Returns a {@code long} value.
+     * Compute the result of applying the function to the input arguments.
      *
-     * @return a {@code long} value
+     * @param t the input object
+     * @return the function result value
      */
-    public long getAsLong();
+    public long applyAsLong(T t);
 }

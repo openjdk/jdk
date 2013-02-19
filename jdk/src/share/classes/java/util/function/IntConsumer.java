@@ -25,22 +25,21 @@
 package java.util.function;
 
 /**
- * An operation upon a {@code double} input value. The operation may modify
- * external state.
+ * An operation which accepts a single integer argument and returns no result.
+ * This is the primitive type specialization of {@link Consumer} for {@code int}.
+ * Unlike most other functional interfaces, {@code IntConsumer} is expected to
+ * operate via side-effects.
  *
- * <p/>This is the primitive type specialization of {@link Block} for
- * {@code double} and also may be used as a {@code Block<Double>}.
- *
+ * @see Consumer
  * @since 1.8
  */
 @FunctionalInterface
-public interface DoubleBlock {
+public interface IntConsumer {
 
     /**
-     * Use the {@code double} input value in an operation which may modify
-     * external state.
+     * Accept an input value.
      *
-     * @param t the input value
+     * @param value the input value
      */
-    public void accept(double t);
+    public void accept(int value);
 }

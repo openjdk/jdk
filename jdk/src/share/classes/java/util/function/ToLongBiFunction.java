@@ -25,19 +25,26 @@
 package java.util.function;
 
 /**
- * A supplier of {@code long} values. This is the {@code long}-providing
- * primitive specialization of {@link Supplier}.
+ * Apply a function to the input arguments, yielding an appropriate result.
+ * This is the {@code long}-bearing specialization for {@link BiFunction}.
  *
- * @see Supplier
+ * @param <T> the type of the first argument to the {@code applyAsLong}
+ * operation.
+ * @param <U> the type of the second argument to the {@code applyAsLong}
+ * operation.
+ *
+ * @see BiFunction
  * @since 1.8
  */
 @FunctionalInterface
-public interface LongSupplier {
+public interface ToLongBiFunction<T, U> {
 
     /**
-     * Returns a {@code long} value.
+     * Compute the result of applying the function to the input arguments.
      *
-     * @return a {@code long} value
+     * @param t an input object
+     * @param u an input object
+     * @return the function result value
      */
-    public long getAsLong();
+    public long applyAsLong(T t, U u);
 }
