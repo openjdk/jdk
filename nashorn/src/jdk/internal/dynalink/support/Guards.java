@@ -90,7 +90,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jdk.internal.dynalink.linker.LinkerServices;
 
-
 /**
  * Utility methods for creating typical guards. TODO: introduce reasonable caching of created guards.
  *

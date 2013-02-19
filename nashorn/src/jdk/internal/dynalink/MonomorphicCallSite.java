@@ -87,7 +87,6 @@ import java.lang.invoke.MethodHandle;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
 
-
 /**
  * A relinkable call site that implements monomorphic inline caching strategy. After it linked a method, it will keep it
  * until either its guard evaluates to false, or its switchpoint is invalidated, at which time it will throw away the

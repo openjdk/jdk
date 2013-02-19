@@ -92,7 +92,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
 
-
 /**
  * A relinkable call site that maintains a chain of linked method handles. In the default implementation, up to 8 method
  * handles can be chained, cascading from one to the other through

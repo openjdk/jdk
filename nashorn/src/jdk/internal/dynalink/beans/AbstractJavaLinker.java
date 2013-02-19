@@ -103,7 +103,6 @@ import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
 import jdk.internal.dynalink.support.Lookup;
 
-
 /**
  * A base class for both {@link StaticClassLinker} and {@link BeanLinker}. Deals with common aspects of property
  * exposure and method calls for both static and instance facets of a class.
@@ -128,50 +127,46 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         this.assignableGuard = assignableGuard;
 
         final FacetIntrospector introspector = createFacetIntrospector();
-        try {
-            // Add methods and properties
-            for(Method method: introspector.getMethods()) {
-                final String name = method.getName();
-                final MethodHandle methodHandle = introspector.unreflect(method);
-                // Add method
-                addMember(name, methodHandle, methods);
-                // Add the method as a property getter and/or setter
-                if(name.startsWith("get") && name.length() > 3 && method.getParameterTypes().length == 0) {
-                    // Property getter
-                    setPropertyGetter(Introspector.decapitalize(name.substring(3)), introspector.unreflect(
-                            getMostGenericGetter(method)), ValidationType.INSTANCE_OF);
-                } else if(name.startsWith("is") && name.length() > 2 && method.getParameterTypes().length == 0 &&
-                        method.getReturnType() == boolean.class) {
-                    // Boolean property getter
-                    setPropertyGetter(Introspector.decapitalize(name.substring(2)), introspector.unreflect(
-                            getMostGenericGetter(method)), ValidationType.INSTANCE_OF);
-                } else if(name.startsWith("set") && name.length() > 3 && method.getParameterTypes().length == 1) {
-                    // Property setter
-                    addMember(Introspector.decapitalize(name.substring(3)), methodHandle, propertySetters);
-                }
+        // Add methods and properties
+        for(Method method: introspector.getMethods()) {
+            final String name = method.getName();
+            final MethodHandle methodHandle = introspector.unreflect(method);
+            // Add method
+            addMember(name, methodHandle, methods);
+            // Add the method as a property getter and/or setter
+            if(name.startsWith("get") && name.length() > 3 && method.getParameterTypes().length == 0) {
+                // Property getter
+                setPropertyGetter(Introspector.decapitalize(name.substring(3)), introspector.unreflect(
+                        getMostGenericGetter(method)), ValidationType.INSTANCE_OF);
+            } else if(name.startsWith("is") && name.length() > 2 && method.getParameterTypes().length == 0 &&
+                    method.getReturnType() == boolean.class) {
+                // Boolean property getter
+                setPropertyGetter(Introspector.decapitalize(name.substring(2)), introspector.unreflect(
+                        getMostGenericGetter(method)), ValidationType.INSTANCE_OF);
+            } else if(name.startsWith("set") && name.length() > 3 && method.getParameterTypes().length == 1) {
+                // Property setter
+                addMember(Introspector.decapitalize(name.substring(3)), methodHandle, propertySetters);
             }
+        }
 
-            // Add field getter/setters as property getters/setters.
-            for(Field field: introspector.getFields()) {
-                final String name = field.getName();
-                // Only add a property getter when one is not defined already as a getXxx()/isXxx() method.
-                if(!propertyGetters.containsKey(name)) {
-                    setPropertyGetter(name, introspector.unreflectGetter(field), ValidationType.EXACT_CLASS);
-                }
-                if(!(Modifier.isFinal(field.getModifiers()) || propertySetters.containsKey(name))) {
-                    addMember(name, introspector.unreflectSetter(field), propertySetters);
-                }
+        // Add field getter/setters as property getters/setters.
+        for(Field field: introspector.getFields()) {
+            final String name = field.getName();
+            // Only add a property getter when one is not defined already as a getXxx()/isXxx() method.
+            if(!propertyGetters.containsKey(name)) {
+                setPropertyGetter(name, introspector.unreflectGetter(field), ValidationType.EXACT_CLASS);
             }
+            if(!(Modifier.isFinal(field.getModifiers()) || propertySetters.containsKey(name))) {
+                addMember(name, introspector.unreflectSetter(field), propertySetters);
+            }
+        }
 
-            // Add inner classes, but only those for which we don't hide a property with it
-            for(Map.Entry<String, MethodHandle> innerClassSpec: introspector.getInnerClassGetters().entrySet()) {
-                final String name = innerClassSpec.getKey();
-                if(!propertyGetters.containsKey(name)) {
-                    setPropertyGetter(name, innerClassSpec.getValue(), ValidationType.EXACT_CLASS);
-                }
+        // Add inner classes, but only those for which we don't hide a property with it
+        for(Map.Entry<String, MethodHandle> innerClassSpec: introspector.getInnerClassGetters().entrySet()) {
+            final String name = innerClassSpec.getKey();
+            if(!propertyGetters.containsKey(name)) {
+                setPropertyGetter(name, innerClassSpec.getValue(), ValidationType.EXACT_CLASS);
             }
-        } finally {
-            introspector.close();
         }
     }
 
@@ -394,10 +389,8 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
                             IS_METHOD_HANDLE_NOT_NULL, invokeHandleFolded, fallbackFolded), typedGetter);
                 if(nextComponent == null) {
                     return getClassGuardedInvocationComponent(compositeSetter, type);
-                } else {
-                    return nextComponent.compose(compositeSetter, getClassGuard(type), clazz,
-                            ValidationType.EXACT_CLASS);
                 }
+                return nextComponent.compose(compositeSetter, getClassGuard(type), clazz, ValidationType.EXACT_CLASS);
             }
             case 3: {
                 // Must have two arguments: target object and property value
@@ -474,10 +467,8 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
                             IS_ANNOTATED_HANDLE_NOT_NULL, invokeHandleFolded, fallbackFolded), typedGetter);
                 if(nextComponent == null) {
                     return getClassGuardedInvocationComponent(compositeGetter, type);
-                } else {
-                    return nextComponent.compose(compositeGetter, getClassGuard(type), clazz,
-                            ValidationType.EXACT_CLASS);
                 }
+                return nextComponent.compose(compositeGetter, getClassGuard(type), clazz, ValidationType.EXACT_CLASS);
             }
             case 3: {
                 // Must have exactly one argument: receiver
@@ -521,8 +512,10 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             case NONE: {
                 return null;
             }
+            default: {
+                throw new AssertionError();
+            }
         }
-        throw new AssertionError();
     }
 
     private static final MethodHandle IS_DYNAMIC_METHOD_NOT_NULL = Guards.asType(Guards.isNotNull(),
@@ -541,32 +534,30 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
                 if(nextComponent == null) {
                     // No next component operation; just return a component for this operation.
                     return getClassGuardedInvocationComponent(linkerServices.asType(getDynamicMethod, type), type);
-                } else {
-                    // What's below is basically:
-                    //   foldArguments(guardWithTest(isNotNull, identity, nextComponent.invocation), getter)
-                    // only with a bunch of method signature adjustments. Basically, execute method getter; if
-                    // it returns a non-null DynamicMethod, use identity to return it, otherwise delegate to
-                    // nextComponent's invocation.
-
-                    final MethodHandle typedGetter = linkerServices.asType(getDynamicMethod, type.changeReturnType(
-                            DynamicMethod.class));
-                    // Since it is part of the foldArgument() target, it will have extra args that we need to drop.
-                    final MethodHandle returnMethodHandle = linkerServices.asType(MethodHandles.dropArguments(
-                            DYNAMIC_METHOD_IDENTITY, 1, type.parameterList()), type.insertParameterTypes(0,
-                                    DynamicMethod.class));
-                    final MethodHandle nextComponentInvocation = nextComponent.getGuardedInvocation().getInvocation();
-                    // The assumption is that getGuardedInvocationComponent() already asType()'d it correctly
-                    assert nextComponentInvocation.type().equals(type);
-                    // Since it is part of the foldArgument() target, we have to drop an extra arg it receives.
-                    final MethodHandle nextCombinedInvocation = MethodHandles.dropArguments(nextComponentInvocation, 0,
-                            DynamicMethod.class);
-                    // Assemble it all into a fold(guard(isNotNull, identity, nextInvocation), get)
-                    final MethodHandle compositeGetter = MethodHandles.foldArguments(MethodHandles.guardWithTest(
-                            IS_DYNAMIC_METHOD_NOT_NULL, returnMethodHandle, nextCombinedInvocation), typedGetter);
-
-                    return nextComponent.compose(compositeGetter, getClassGuard(type), clazz,
-                            ValidationType.EXACT_CLASS);
                 }
+
+                // What's below is basically:
+                // foldArguments(guardWithTest(isNotNull, identity, nextComponent.invocation), getter) only with a
+                // bunch of method signature adjustments. Basically, execute method getter; if it returns a non-null
+                // DynamicMethod, use identity to return it, otherwise delegate to nextComponent's invocation.
+
+                final MethodHandle typedGetter = linkerServices.asType(getDynamicMethod, type.changeReturnType(
+                        DynamicMethod.class));
+                // Since it is part of the foldArgument() target, it will have extra args that we need to drop.
+                final MethodHandle returnMethodHandle = linkerServices.asType(MethodHandles.dropArguments(
+                        DYNAMIC_METHOD_IDENTITY, 1, type.parameterList()), type.insertParameterTypes(0,
+                                DynamicMethod.class));
+                final MethodHandle nextComponentInvocation = nextComponent.getGuardedInvocation().getInvocation();
+                // The assumption is that getGuardedInvocationComponent() already asType()'d it correctly
+                assert nextComponentInvocation.type().equals(type);
+                // Since it is part of the foldArgument() target, we have to drop an extra arg it receives.
+                final MethodHandle nextCombinedInvocation = MethodHandles.dropArguments(nextComponentInvocation, 0,
+                        DynamicMethod.class);
+                // Assemble it all into a fold(guard(isNotNull, identity, nextInvocation), get)
+                final MethodHandle compositeGetter = MethodHandles.foldArguments(MethodHandles.guardWithTest(
+                        IS_DYNAMIC_METHOD_NOT_NULL, returnMethodHandle, nextCombinedInvocation), typedGetter);
+
+                return nextComponent.compose(compositeGetter, getClassGuard(type), clazz, ValidationType.EXACT_CLASS);
             }
             case 3: {
                 // Must have exactly one argument: receiver
@@ -638,7 +629,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
      * @return the dynamic method (either {@link SimpleDynamicMethod} or {@link OverloadedDynamicMethod}, or null if the
      * method with the specified name does not exist.
      */
-    public DynamicMethod getDynamicMethod(String name) {
+    DynamicMethod getDynamicMethod(String name) {
         return getDynamicMethod(name, methods);
     }
 

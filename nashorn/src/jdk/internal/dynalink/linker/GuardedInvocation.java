@@ -92,7 +92,6 @@ import java.util.List;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.Guards;
 
-
 /**
  * Represents a conditionally valid method handle. It is an immutable triple of an invocation method handle, a guard
  * method handle that defines the applicability of the invocation handle, and a switch point that can be used for

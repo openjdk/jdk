@@ -222,14 +222,14 @@ class CheckRestrictedPackageInternal {
                         resolveClass(clazz);
                     }
                     return clazz;
-                } else {
-                    return super.loadClass(name, resolve);
                 }
+
+                return super.loadClass(name, resolve);
             }
         };
     }
 
-    private static byte[] getTesterClassBytes() {
+    static byte[] getTesterClassBytes() {
         try {
             final InputStream in = CheckRestrictedPackage.class.getResourceAsStream("RestrictedPackageTester.class");
             try {

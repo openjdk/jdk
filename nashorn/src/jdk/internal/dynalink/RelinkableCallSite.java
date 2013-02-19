@@ -89,7 +89,6 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.VolatileCallSite;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 
-
 /**
  * Interface for relinkable call sites. Language runtimes wishing to use this framework must use subclasses of
  * {@link CallSite} that also implement this interface as their call sites. There is a readily usable
