@@ -94,7 +94,6 @@ import java.util.StringTokenizer;
 import java.util.WeakHashMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
 
-
 /**
  * Usable as a default factory for call site descriptor implementations. It is weakly canonicalizing, meaning it will
  * return the same immutable call site descriptor for identical inputs, i.e. repeated requests for a descriptor
@@ -129,9 +128,8 @@ public class CallSiteDescriptorFactory {
         final String[] tokenizedName = tokenizeName(name);
         if(isPublicLookup(lookup)) {
             return getCanonicalPublicDescriptor(createPublicCallSiteDescriptor(tokenizedName, methodType));
-        } else {
-            return new LookupCallSiteDescriptor(tokenizedName, methodType, lookup);
         }
+        return new LookupCallSiteDescriptor(tokenizedName, methodType, lookup);
     }
 
     static CallSiteDescriptor getCanonicalPublicDescriptor(final CallSiteDescriptor desc) {

@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +35,6 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
-
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 
 /**
  * Class that generates function signatures for dynamic calls

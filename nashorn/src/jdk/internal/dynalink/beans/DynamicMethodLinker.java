@@ -93,7 +93,6 @@ import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.Guards;
 
-
 /**
  * Simple linker that implements the "dyn:call" operation for {@link DynamicMethod} objects - the objects returned by
  * "dyn:getMethod" from {@link AbstractJavaLinker}.
@@ -102,7 +101,7 @@ class DynamicMethodLinker implements TypeBasedGuardingDynamicLinker {
     @Override
     public boolean canLinkType(Class<?> type) {
         return DynamicMethod.class.isAssignableFrom(type);
-    };
+    }
 
     @Override
     public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest, LinkerServices linkerServices) {

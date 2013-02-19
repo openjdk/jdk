@@ -93,7 +93,6 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 
-
 /**
  * A linker for POJOs. Normally used as the ultimate fallback linker by the {@link DynamicLinkerFactory} so it is given
  * the chance to link calls to all objects that no other language runtime recognizes. Specifically, this linker will:
@@ -158,6 +157,16 @@ public class BeansLinker implements GuardingDynamicLinker {
      */
     public static TypeBasedGuardingDynamicLinker getLinkerForClass(Class<?> clazz) {
         return linkers.get(clazz);
+    }
+
+    /*
+     * Returns true if the object is a Dynalink Java dynamic method.
+     *
+     * @param obj the object we want to test for being a dynamic method
+     * @return true if it is a dynamic method, false otherwise.
+     */
+    public static boolean isDynamicMethod(final Object obj) {
+        return obj instanceof DynamicMethod;
     }
 
     @Override

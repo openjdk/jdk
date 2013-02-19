@@ -89,7 +89,6 @@ import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 
-
 /**
  * Interface for services provided to {@link GuardingDynamicLinker} instances by the {@link DynamicLinker} that owns
  * them. You can think of it as the interface of the {@link DynamicLinker} that faces the {@link GuardingDynamicLinker}

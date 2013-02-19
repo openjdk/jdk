@@ -91,7 +91,6 @@ import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Guards;
 import jdk.internal.dynalink.support.TypeUtilities;
 
-
 /**
  *
  * @author Attila Szegedi
