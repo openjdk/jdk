@@ -129,11 +129,6 @@ else
   endif
 endif 
 
-ifdef ALT_BOOTDIR
-  ANT_OPTIONS += -Dboot.java.home=$(ALT_BOOTDIR)
-  ANT_JAVA_HOME = JAVA_HOME=$(ALT_BOOTDIR)
-endif
-
 # To facilitate bootstrapping, much of langtools can be compiled with (just)
 # a boot JDK. However, some source files need to be compiled against 
 # new JDK API. In a bootstrap build, an import JDK may not be available,
