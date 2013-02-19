@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,21 @@
 
 /*
  * @test
- * @bug 4914724 4973116 5014511
- * @summary Ensure that a supplementary character can be used as part/whole of a
- * class name on platforms that have Unicode aware filesystems.
- * @run main SupplementaryJavaID6
+ * @bug 4798312
+ * @summary In Windows, javap doesnt load classes from rt.jar
+ * @library /tools/javac/lib
+ * @build ToolBox
+ * @run main JavapShouldLoadClassesFromRTJarTest
  */
+public class JavapShouldLoadClassesFromRTJarTest {
 
-public class SupplementaryJavaID6 {
-    public static void main(String[] s) {
-        new SupplementaryJavaID6().test();
+    public static void main(String[] args) throws Exception {
+//        "${TESTJAVA}${FS}bin${FS}javap" ${TESTTOOLVMOPTS} java.lang.String
+        ToolBox.JavaToolArgs params =
+                new ToolBox.JavaToolArgs().
+                setAllArgs("-v", "java.lang.String");
+        if (ToolBox.javap(params).isEmpty())
+            throw new AssertionError("javap generated no output");
     }
 
-    void test() {
-        \ud801\udc00 instance = new \ud801\udc00();
-        instance.\ud801\udc01();
-    }
-
-    class \ud801\udc00 {
-        void \ud801\udc01() {
-            // If Java can create the strangely named class file,
-            // then Java can delete it, while `rm' might be unable to.
-            new java.io.File(this.getClass().getName() + ".class")
-                .deleteOnExit();
-            System.out.println("success");
-        }
-    }
 }

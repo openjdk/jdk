@@ -1,5 +1,9 @@
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +27,26 @@
 
 /*
  * @test
- * @bug 4914724 4973116 5014511
- * @summary Ensure that a supplementary character can be used as part/whole of a
- * class name on platforms that have Unicode aware filesystems.
- * @run main SupplementaryJavaID6
+ * @bug 4866831
+ * @summary Verify that javap marks public interfaces as public
+ * @library /tools/javac/lib
+ * @build ToolBox
+ * @run main PublicInterfaceTest
  */
 
-public class SupplementaryJavaID6 {
-    public static void main(String[] s) {
-        new SupplementaryJavaID6().test();
+//original test: test/tools/javap/PublicInterfaceTest.sh
+public class PublicInterfaceTest {
+    public interface Test {}
+
+    public static void main(String[] args) throws Exception {
+//        "$JAVAP" ${TESTTOOLVMOPTS} -classpath "${TESTCLASSES}" NotPackagePrivateInterface | grep public
+        Path pathToClass = Paths.get(System.getProperty("test.classes"),
+                "PublicInterfaceTest$Test.class");
+        ToolBox.JavaToolArgs javapParams =
+                new ToolBox.JavaToolArgs()
+                .setAllArgs(pathToClass.toString());
+        if (!ToolBox.javap(javapParams).contains("public"))
+            throw new AssertionError("The javap output does not contain \"public\"");
     }
 
-    void test() {
-        \ud801\udc00 instance = new \ud801\udc00();
-        instance.\ud801\udc01();
-    }
-
-    class \ud801\udc00 {
-        void \ud801\udc01() {
-            // If Java can create the strangely named class file,
-            // then Java can delete it, while `rm' might be unable to.
-            new java.io.File(this.getClass().getName() + ".class")
-                .deleteOnExit();
-            System.out.println("success");
-        }
-    }
 }
