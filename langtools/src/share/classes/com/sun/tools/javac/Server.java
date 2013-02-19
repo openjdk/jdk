@@ -44,6 +44,7 @@ import javax.tools.*;
  * @author Peter von der Ah&eacute;
  * @since 1.6
  */
+@jdk.Supported(false)
 class Server implements Runnable {
     private final BufferedReader in;
     private final OutputStream out;
