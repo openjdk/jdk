@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,28 @@
 
 /*
  * @test
- * @bug 4914724 4973116 5014511
- * @summary Ensure that a supplementary character can be used as part/whole of a
- * class name on platforms that have Unicode aware filesystems.
- * @run main SupplementaryJavaID6
+ * @bug 4509051 4785453
+ * @summary javac <AT>sourcefiles should catch Exception, when sourcefiles
+ * doesn't exist.
+ * @library /tools/javac/lib
+ * @build ToolBox
+ * @run main MissingIncludeTest
  */
 
-public class SupplementaryJavaID6 {
-    public static void main(String[] s) {
-        new SupplementaryJavaID6().test();
+//original test: test/tools/javac/MissingInclude.sh
+public class MissingIncludeTest {
+
+    private static final String MissingIncludeSrc =
+        "class MissingInclude {}";
+
+    public static void main(String[] args) throws Exception {
+        ToolBox.createJavaFileFromSource(MissingIncludeSrc);
+
+//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} @/nonexistent_file MissingInclude.java 2> ${TMP1}
+        ToolBox.JavaToolArgs params =
+                new ToolBox.JavaToolArgs(ToolBox.Expect.FAIL)
+                .setAllArgs("@/nonexistent_file", "MissingInclude.java");
+        ToolBox.javac(params);
     }
 
-    void test() {
-        \ud801\udc00 instance = new \ud801\udc00();
-        instance.\ud801\udc01();
-    }
-
-    class \ud801\udc00 {
-        void \ud801\udc01() {
-            // If Java can create the strangely named class file,
-            // then Java can delete it, while `rm' might be unable to.
-            new java.io.File(this.getClass().getName() + ".class")
-                .deleteOnExit();
-            System.out.println("success");
-        }
-    }
 }
