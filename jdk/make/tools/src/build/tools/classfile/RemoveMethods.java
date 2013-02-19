@@ -30,14 +30,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
 
 import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.Attributes;
 import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassReader;
 import com.sun.tools.classfile.ClassWriter;
 import com.sun.tools.classfile.ConstantPool;
 import com.sun.tools.classfile.Field;

@@ -743,9 +743,18 @@ ifneq ($(PROFILE),)
 $(foreach f,$(CUSTOM_PROFILE_JARS),\
     $(eval $(call AddFileToCopy,$(IMAGES_OUTPUTDIR)/lib$(PROFILE),$(JRE_IMAGE_DIR)/lib,$f,JRE_LIB_TARGETS)))
 
+PROFILE_IMAGE_JARS := $(filter %.jar, $(JRE_LIB_TARGETS))
+
+PROFILE_IMAGE_JARS_CHECKED := $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/_jars_checked
+
+$(PROFILE_IMAGE_JARS_CHECKED) : $(PROFILE_IMAGE_JARS)
+	$(TOOL_CHECKDEPS) $(JRE_IMAGE_DIR) \
+	    $(call profile_name, $(call profile_number, $(PROFILE)))
+	$(TOUCH) $@
+
 profile-image: $(JRE_BIN_TARGETS) $(JRE_LIB_TARGETS) \
 	$(JRE_IMAGE_DIR)/lib/meta-index $(JRE_IMAGE_DIR)/lib/ext/meta-index \
-	$(JRE_INFO_FILE) $(JRE_STRIP_LIST)
+	$(JRE_INFO_FILE) $(JRE_STRIP_LIST) $(PROFILE_IMAGE_JARS_CHECKED)
 
 .PHONY: profile-image
 

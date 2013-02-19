@@ -134,8 +134,7 @@ PROFILE_1_RTJAR_INCLUDE_PACKAGES := \
     sun/util/logging/resources \
     sun/util/resources
 
-PROFILE_1_RTJAR_INCLUDE_TYPES := \
-    com/sun/security/auth/PrincipalComparator.class
+PROFILE_1_RTJAR_INCLUDE_TYPES :=
 
 PROFILE_1_RTJAR_EXCLUDE_TYPES := 
 
@@ -456,7 +455,12 @@ PROFILE_3_RTJAR_EXCLUDE_TYPES := \
     javax/management/remote/rmi/_RMIConnectionImpl_Tie.class \
     javax/management/remote/rmi/_RMIConnection_Stub.class \
     javax/management/remote/rmi/_RMIServerImpl_Tie.class \
-    javax/management/remote/rmi/_RMIServer_Stub.class
+    javax/management/remote/rmi/_RMIServer_Stub.class \
+    com/sun/security/auth/callback/DialogCallbackHandler.class \
+    com/sun/security/auth/callback/DialogCallbackHandler\$$$$1.class \
+    com/sun/security/auth/callback/DialogCallbackHandler\$$$$2.class \
+    com/sun/security/auth/callback/DialogCallbackHandler\$$$$Action.class \
+    com/sun/security/auth/callback/DialogCallbackHandler\$$$$ConfirmationInfo.class
 
 PROFILE_3_INCLUDE_METAINF_SERVICES := \
     META-INF/services/javax.script.ScriptEngineFactory 
