@@ -187,6 +187,10 @@ void band::setIndexByTag(byte tag) {
 
 entry* band::getRefCommon(cpindex* ix_, bool nullOKwithCaller) {
   CHECK_0;
+  if (ix_ == NULL) {
+      abort("no index");
+      return NULL;
+  }
   assert(ix_->ixTag == ixTag
          || ((ixTag == CONSTANT_All ||
               ixTag == CONSTANT_LoadableValue ||

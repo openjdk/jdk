@@ -129,9 +129,8 @@ final class ClientHandshaker extends Handshaker {
      */
     @Override
     void processMessage(byte type, int messageLen) throws IOException {
-        if (state > type
-                && (type != HandshakeMessage.ht_hello_request
-                    && state != HandshakeMessage.ht_client_hello)) {
+        if (state >= type
+                && (type != HandshakeMessage.ht_hello_request)) {
             throw new SSLProtocolException(
                     "Handshake message sequence violation, " + type);
         }
@@ -194,8 +193,12 @@ final class ClientHandshaker extends Handshaker {
                 }
                 break;
             case K_DH_ANON:
-                this.serverKeyExchange(new DH_ServerKeyExchange(
+                try {
+                    this.serverKeyExchange(new DH_ServerKeyExchange(
                                                 input, protocolVersion));
+                } catch (GeneralSecurityException e) {
+                    throwSSLException("Server key", e);
+                }
                 break;
             case K_DHE_DSS:
             case K_DHE_RSA:
@@ -921,7 +924,7 @@ final class ClientHandshaker extends Handshaker {
         case K_DHE_RSA:
         case K_DHE_DSS:
         case K_DH_ANON:
-            preMasterSecret = dh.getAgreedSecret(serverDH);
+            preMasterSecret = dh.getAgreedSecret(serverDH, true);
             break;
         case K_ECDHE_RSA:
         case K_ECDHE_ECDSA:

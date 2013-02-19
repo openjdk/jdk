@@ -1752,6 +1752,12 @@ public class ObjectInputStream
         ObjectStreamClass desc = readClassDesc(false);
         desc.checkDeserialize();
 
+        Class<?> cl = desc.forClass();
+        if (cl == String.class || cl == Class.class
+                || cl == ObjectStreamClass.class) {
+            throw new InvalidClassException("invalid class descriptor");
+        }
+
         Object obj;
         try {
             obj = desc.isInstantiable() ? desc.newInstance() : null;
