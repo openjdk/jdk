@@ -91,10 +91,11 @@ demos:
 	+$(MAKE) -f CopySamples.gmk
 
 # Create the final jdk and jre images, to be wrapped up
-# into packages, or installed.
+# into packages, or installed. Ensure PROFILE is not set
+# in these cases.
 images:
-	+$(MAKE) -f CreateJars.gmk
-	+$(MAKE) -f Images.gmk
+	+$(MAKE) PROFILE="" -f CreateJars.gmk
+	+$(MAKE) PROFILE="" -f Images.gmk
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 	+$(MAKE) -f Bundles.gmk
 endif
