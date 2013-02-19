@@ -348,7 +348,8 @@ public class MessageFormat extends Format {
     private static final long serialVersionUID = 6479157306784022952L;
 
     /**
-     * Constructs a MessageFormat for the default locale and the
+     * Constructs a MessageFormat for the default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale and the
      * specified pattern.
      * The constructor first sets the locale, then parses the pattern and
      * creates a list of subformats for the format elements contained in it.

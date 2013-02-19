@@ -472,12 +472,18 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Gets the symbol of this currency for the default locale.
+     * Gets the symbol of this currency for the default
+     * {@link Locale.Category#DISPLAY DISPLAY} locale.
      * For example, for the US Dollar, the symbol is "$" if the default
      * locale is the US, while for other locales it may be "US$". If no
      * symbol can be determined, the ISO 4217 currency code is returned.
+     * <p>
+     * This is equivalent to calling
+     * {@link #getSymbol(Locale)
+     *     getSymbol(Locale.getDefault(Locale.Category.DISPLAY))}.
      *
-     * @return the symbol of this currency for the default locale
+     * @return the symbol of this currency for the default
+     *     {@link Locale.Category#DISPLAY DISPLAY} locale
      */
     public String getSymbol() {
         return getSymbol(Locale.getDefault(Locale.Category.DISPLAY));
@@ -533,10 +539,16 @@ public final class Currency implements Serializable {
 
     /**
      * Gets the name that is suitable for displaying this currency for
-     * the default locale.  If there is no suitable display name found
+     * the default {@link Locale.Category#DISPLAY DISPLAY} locale.
+     * If there is no suitable display name found
      * for the default locale, the ISO 4217 currency code is returned.
+     * <p>
+     * This is equivalent to calling
+     * {@link #getDisplayName(Locale)
+     *     getDisplayName(Locale.getDefault(Locale.Category.DISPLAY))}.
      *
-     * @return the display name of this currency for the default locale
+     * @return the display name of this currency for the default
+     *     {@link Locale.Category#DISPLAY DISPLAY} locale
      * @since 1.7
      */
     public String getDisplayName() {
