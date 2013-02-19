@@ -121,10 +121,16 @@ public final class DateTimeFormatSymbols {
     }
 
     /**
-     * Obtains symbols for the default locale.
+     * Obtains symbols for the default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * <p>
      * This method provides access to locale sensitive symbols.
+     * <p>
+     * This is equivalent to calling
+     * {@link #of(Locale)
+     *     of(Locale.getDefault(Locale.Category.FORMAT))}.
      *
+     * @see java.util.Locale.Category#FORMAT
      * @return the info, not null
      */
     public static DateTimeFormatSymbols ofDefaultLocale() {

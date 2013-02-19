@@ -151,7 +151,8 @@ import sun.misc.LRUCache;
  * <p> An instance of this class is capable of scanning numbers in the standard
  * formats as well as in the formats of the scanner's locale. A scanner's
  * <a name="initial-locale">initial locale </a>is the value returned by the {@link
- * java.util.Locale#getDefault} method; it may be changed via the {@link
+ * java.util.Locale#getDefault(Locale.Category)
+ * Locale.getDefault(Locale.Category.FORMAT)} method; it may be changed via the {@link
  * #useLocale} method. The {@link #reset} method will reset the value of the
  * scanner's locale to the initial locale regardless of whether it was
  * previously changed.
@@ -2641,7 +2642,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *
      * <blockquote><pre>
      *   scanner.useDelimiter("\\p{javaWhitespace}+")
-     *          .useLocale(Locale.getDefault())
+     *          .useLocale(Locale.getDefault(Locale.Category.FORMAT))
      *          .useRadix(10);
      * </pre></blockquote>
      *
