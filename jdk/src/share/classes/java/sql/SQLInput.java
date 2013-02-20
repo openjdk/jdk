@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,4 +421,38 @@ public interface SQLInput {
      */
     RowId readRowId() throws SQLException;
 
+    //--------------------------JDBC 4.2 -----------------------------
+
+    /**
+     * Reads the next attribute in the stream and returns it as an
+     * {@code Object} in the Java programming language. The
+     * actual type of the object returned is determined by the specified
+     * Java data type, and any customizations present in this
+     * stream's type map.
+     *
+     * <P>A type map is registered with the stream by the JDBC driver before the
+     * stream is passed to the application.
+     *
+     * <P>When the attribute at the head of the stream is an SQL {@code NULL}
+     * the method returns {@code null}. If the attribute is an SQL
+     * structured or distinct
+     * type, it determines the SQL type of the attribute at the head of the stream.
+     * If the stream's type map has an entry for that SQL type, the driver
+     * constructs an object of the appropriate class and calls the method
+     * {@code SQLData.readSQL} on that object, which reads additional data from the
+     * stream, using the protocol described for that method.
+     *<p>
+     * The default implementation will throw {@code SQLFeatureNotSupportedException}
+     *
+     * @param type Class representing the Java data type to convert the attribute to.
+     * @return the attribute at the head of the stream as an {@code Object} in the
+     * Java programming language;{@code null} if the attribute is SQL {@code NULL}
+     * @exception SQLException if a database access error occurs
+     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * this method
+     * @since 1.8
+     */
+    default <T> T readObject(Class<T> type) throws SQLException {
+       throw new SQLFeatureNotSupportedException();
+    }
 }

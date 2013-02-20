@@ -59,22 +59,21 @@
  */
 package tck.java.time.format;
 
-import java.time.format.*;
-
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
 
 import java.text.ParsePosition;
-import java.time.format.DateTimeBuilder;
-
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.WeekFields;
 
-import test.java.time.format.AbstractTestPrinterParser;
-
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import test.java.time.format.AbstractTestPrinterParser;
 
 /**
  * Test TCKLocalizedFieldParser.
@@ -114,12 +113,12 @@ public class TCKLocalizedFieldParser extends AbstractTestPrinterParser {
         DateTimeFormatterBuilder b
                 = new DateTimeFormatterBuilder().appendPattern(pattern);
         DateTimeFormatter dtf = b.toFormatter(locale);
-        DateTimeBuilder dtb = dtf.parseToBuilder(text, ppos);
+        TemporalAccessor parsed = dtf.parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
             assertEquals(ppos.getErrorIndex(), expectedPos);
         } else {
             assertEquals(ppos.getIndex(), expectedPos, "Incorrect ending parse position");
-            long value = dtb.getLong(field);
+            long value = parsed.getLong(field);
             assertEquals(value, expectedValue, "Value incorrect for " + field);
         }
     }
@@ -143,20 +142,23 @@ public class TCKLocalizedFieldParser extends AbstractTestPrinterParser {
                 "Date: 2012, day-of-week: 6, week-of-year: 29", 0, 44, LocalDate.of(2012, 7, 20)},
         };
     }
+
    @Test(dataProvider="LocalDatePatterns",groups={"tck"})
     public void test_parse_textLocalDate(String pattern, String text, int pos, int expectedPos, LocalDate expectedValue) {
-        WeekFields weekDef = WeekFields.of(locale);
         ParsePosition ppos = new ParsePosition(pos);
-        DateTimeFormatterBuilder b
-                = new DateTimeFormatterBuilder().appendPattern(pattern);
+        DateTimeFormatterBuilder b = new DateTimeFormatterBuilder().appendPattern(pattern);
         DateTimeFormatter dtf = b.toFormatter(locale);
-        DateTimeBuilder dtb = dtf.parseToBuilder(text, ppos);
+        TemporalAccessor parsed = dtf.parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
             assertEquals(ppos.getErrorIndex(), expectedPos);
         } else {
             assertEquals(ppos.getIndex(), expectedPos, "Incorrect ending parse position");
-            dtb.resolve();
-            LocalDate result = dtb.query(LocalDate::from);
+            assertEquals(parsed.isSupported(YEAR), true);
+            assertEquals(parsed.isSupported(WeekFields.of(locale).dayOfWeek()), true);
+            assertEquals(parsed.isSupported(WeekFields.of(locale).weekOfMonth()) ||
+                    parsed.isSupported(WeekFields.of(locale).weekOfYear()), true);
+            // ensure combination resolves into a date
+            LocalDate result = LocalDate.parse(text, dtf);
             assertEquals(result, expectedValue, "LocalDate incorrect for " + pattern);
         }
     }

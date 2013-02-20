@@ -59,12 +59,10 @@
  */
 package test.java.time.format;
 
-import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static org.testng.Assert.assertEquals;
 
 import java.time.DateTimeException;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeBuilder;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -150,25 +148,25 @@ public class TestZoneOffsetPrinter extends AbstractTestPrinterParser {
     }
 
     @Test(dataProvider="offsets")
-    public void test_print(String pattern, String expected, ZoneOffset offset) throws Exception {
+    public void test_format(String pattern, String expected, ZoneOffset offset) throws Exception {
         buf.append("EXISTING");
-        getFormatter(pattern, "NO-OFFSET").printTo(new DateTimeBuilder(OFFSET_SECONDS, offset.getTotalSeconds()), buf);
+        getFormatter(pattern, "NO-OFFSET").formatTo(offset, buf);
         assertEquals(buf.toString(), "EXISTING" + expected);
     }
 
     @Test(dataProvider="offsets")
     public void test_toString(String pattern, String expected, ZoneOffset offset) throws Exception {
-        assertEquals(getFormatter(pattern, "NO-OFFSET").toString(), "Offset('NO-OFFSET'," + pattern + ")");
+        assertEquals(getFormatter(pattern, "NO-OFFSET").toString(), "Offset(" + pattern + ",'NO-OFFSET')");
     }
 
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=DateTimeException.class)
     public void test_print_emptyCalendrical() throws Exception {
-        getFormatter("+HH:MM:ss", "Z").printTo(EMPTY_DTA, buf);
+        getFormatter("+HH:MM:ss", "Z").formatTo(EMPTY_DTA, buf);
     }
 
     public void test_print_emptyAppendable() throws Exception {
-        getFormatter("+HH:MM:ss", "Z").printTo(new DateTimeBuilder(OFFSET_SECONDS, OFFSET_0130.getTotalSeconds()), buf);
+        getFormatter("+HH:MM:ss", "Z").formatTo(OFFSET_0130, buf);
         assertEquals(buf.toString(), "+01:30");
     }
 

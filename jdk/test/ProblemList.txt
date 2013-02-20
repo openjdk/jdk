@@ -45,8 +45,8 @@
 #   as to why they are here and use a label:
 #     generic-all       Problems on all platforms
 #     generic-ARCH      Where ARCH is one of: sparc, sparcv9, x64, i586, etc.
-#     OSNAME-all        Where OSNAME is one of: solaris, linux, windows
-#     OSNAME-ARCH       Specific on to one OSNAME and ARCH, e.g. solaris-x64
+#     OSNAME-all        Where OSNAME is one of: solaris, linux, windows, macosx
+#     OSNAME-ARCH       Specific on to one OSNAME and ARCH, e.g. solaris-amd64
 #     OSNAME-REV        Specific on to one OSNAME and REV, e.g. solaris-5.8
 #
 # More than one label is allowed but must be on the same line.
@@ -317,12 +317,15 @@ sun/tools/jconsole/ImmutableResourceTest.sh                     generic-all
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 
-# Tests take too long, see 7143279
-tools/pack200/CommandLineTests.java                             generic-all
-tools/pack200/Pack200Test.java                                  generic-all
+# Tests take too long, on sparcs see 7143279
+tools/pack200/CommandLineTests.java                             solaris-all, macosx-all 
+tools/pack200/Pack200Test.java                                  solaris-all, macosx-all
 
 # 7150569
 tools/launcher/UnicodeTest.java                                 macosx-all
+
+# 8006039
+tools/launcher/I18NJarTest.java                                 macosx-all
 
 # 8007410
 tools/launcher/FXLauncherTest.java                              linux-all
