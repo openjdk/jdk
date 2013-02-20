@@ -101,9 +101,22 @@ public final class ServiceCreds {
         if (serverPrincipal != null) {      // A named principal
             sc.kp = new KerberosPrincipal(serverPrincipal);
         } else {
-            if (sc.allPrincs.size() == 1) { // choose the only one
-                sc.kp = sc.allPrincs.iterator().next();
-                serverPrincipal = sc.kp.getName();
+            // For compatibility reason, we set the name of default principal
+            // to the "only possible" name it can take, which means there is
+            // only one KerberosPrincipal and there is no unbound keytabs
+            if (sc.allPrincs.size() == 1) {
+                boolean hasUnbound = false;
+                for (KeyTab ktab: SubjectComber.findMany(
+                        subj, null, null, KeyTab.class)) {
+                    if (!ktab.isBound()) {
+                        hasUnbound = true;
+                        break;
+                    }
+                }
+                if (!hasUnbound) {
+                    sc.kp = sc.allPrincs.iterator().next();
+                    serverPrincipal = sc.kp.getName();
+                }
             }
         }
 
@@ -131,20 +144,35 @@ public final class ServiceCreds {
     }
 
     /**
-     * Gets keys for someone unknown.
-     * Used by TLS or as a fallback in getEKeys(). Can still return an
-     * empty array.
+     * Gets keys for "someone". Used in 2 cases:
+     * 1. By TLS because it needs to get keys before client comes in.
+     * 2. As a fallback in getEKeys() below.
+     * This method can still return an empty array.
      */
     public KerberosKey[] getKKeys() {
         if (destroyed) {
             throw new IllegalStateException("This object is destroyed");
         }
-        if (kp != null) {
-            return getKKeys(kp);
-        } else if (!allPrincs.isEmpty()) {
-            return getKKeys(allPrincs.iterator().next());
+        KerberosPrincipal one = kp;                 // named principal
+        if (one == null && !allPrincs.isEmpty()) {  // or, a known principal
+            one = allPrincs.iterator().next();
         }
-        return new KerberosKey[0];
+        if (one == null) {                          // Or, some random one
+            for (KeyTab ktab: ktabs) {
+                // Must be unbound keytab, otherwise, allPrincs is not empty
+                PrincipalName pn =
+                        Krb5Util.snapshotFromJavaxKeyTab(ktab).getOneName();
+                if (pn != null) {
+                    one = new KerberosPrincipal(pn.getName());
+                    break;
+                }
+            }
+        }
+        if (one != null) {
+            return getKKeys(one);
+        } else {
+            return new KerberosKey[0];
+        }
     }
 
     /**
@@ -152,15 +180,13 @@ public final class ServiceCreds {
      * @param princ the target name initiator requests. Not null.
      * @return keys for the princ, never null, might be empty
      */
-    private KerberosKey[] getKKeys(KerberosPrincipal princ) {
-        ArrayList<KerberosKey> keys = new ArrayList<>();
-        if (kp != null && !princ.equals(kp)) {
-            return new KerberosKey[0];      // Not me
+    public KerberosKey[] getKKeys(KerberosPrincipal princ) {
+        if (destroyed) {
+            throw new IllegalStateException("This object is destroyed");
         }
-        if (!allPrincs.contains(princ)) {
-            return new KerberosKey[0];      // Not someone I know, This check
-                                            // is necessary but a KeyTab has
-                                            // no principal name recorded.
+        ArrayList<KerberosKey> keys = new ArrayList<>();
+        if (kp != null && !princ.equals(kp)) {      // named principal
+            return new KerberosKey[0];
         }
         for (KerberosKey k: kk) {
             if (k.getPrincipal().equals(princ)) {
@@ -168,6 +194,13 @@ public final class ServiceCreds {
             }
         }
         for (KeyTab ktab: ktabs) {
+            if (ktab.getPrincipal() == null && ktab.isBound()) {
+                // legacy bound keytab. although we don't know who
+                // the bound principal is, it must be in allPrincs
+                if (!allPrincs.contains(princ)) {
+                    continue;   // skip this legacy bound keytab
+                }
+            }
             for (KerberosKey k: ktab.getKeys(princ)) {
                 keys.add(k);
             }
@@ -186,12 +219,12 @@ public final class ServiceCreds {
         }
         KerberosKey[] kkeys = getKKeys(new KerberosPrincipal(princ.getName()));
         if (kkeys.length == 0) {
-            // Note: old JDK does not perform real name checking. If the
-            // acceptor starts by name A but initiator requests for B,
-            // as long as their keys match (i.e. A's keys can decrypt B's
-            // service ticket), the authentication is OK. There are real
-            // customers depending on this to use different names for a
-            // single service.
+            // Fallback: old JDK does not perform real name checking. If the
+            // acceptor has host.sun.com but initiator requests for host,
+            // as long as their keys match (i.e. keys for one can decrypt
+            // the other's service ticket), the authentication is OK.
+            // There are real customers depending on this to use different
+            // names for a single service.
             kkeys = getKKeys();
         }
         EncryptionKey[] ekeys = new EncryptionKey[kkeys.length];

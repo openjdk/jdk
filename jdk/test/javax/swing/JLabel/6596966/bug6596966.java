@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,17 @@
 /* @test
    @bug 6596966
    @summary Some JFileChooser mnemonics do not work with sticky keys
+   @library ../../regtesthelpers
+   @build Util
    @run main bug6596966
    @author Pavel Porvatov
 */
 
-
-import sun.awt.SunToolkit;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import javax.swing.*;
+import sun.awt.SunToolkit;
 
 public class bug6596966 {
     private static JFrame frame;
@@ -71,11 +72,14 @@ public class bug6596966 {
 
         toolkit.realSync();
 
-        robot.keyPress(KeyEvent.VK_ALT);
+        ArrayList<Integer> keys = Util.getSystemMnemonicKeyCodes();
+        for (int i = 0; i < keys.size(); ++i) {
+            robot.keyPress(keys.get(i));
+        }
+
         robot.keyPress(KeyEvent.VK_L);
 
         toolkit.realSync();
-
         toolkit.getSystemEventQueue().postEvent(new KeyEvent(label, KeyEvent.KEY_RELEASED,
                 EventQueue.getMostRecentEventTime(), 0, KeyEvent.VK_L, 'L'));
 
@@ -90,7 +94,11 @@ public class bug6596966 {
                 }
             });
         } finally {
-            robot.keyRelease(KeyEvent.VK_ALT);
+            robot.keyRelease(KeyEvent.VK_L);
+            for (int i = 0; i < keys.size(); ++i) {
+                robot.keyRelease(keys.get(i));
+            }
+            toolkit.realSync();
         }
     }
 }

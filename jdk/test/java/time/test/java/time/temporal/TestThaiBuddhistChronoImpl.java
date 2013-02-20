@@ -65,8 +65,9 @@ import java.util.TimeZone;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.ChronoLocalDate;
-import java.time.calendar.ThaiBuddhistChrono;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ThaiBuddhistChronology;
+import java.time.chrono.ThaiBuddhistDate;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
@@ -97,7 +98,7 @@ public class TestThaiBuddhistChronoImpl {
         Calendar cal = java.util.Calendar.getInstance(locale);
         assertEquals(cal.getCalendarType(), "buddhist", "Unexpected calendar type");
 
-        ChronoLocalDate<ThaiBuddhistChrono> thaiDate = ThaiBuddhistChrono.INSTANCE.date(isoStartDate);
+        ThaiBuddhistDate thaiDate = ThaiBuddhistChronology.INSTANCE.date(isoStartDate);
 
         cal.setTimeZone(TimeZone.getTimeZone("GMT+00"));
         cal.set(Calendar.YEAR, thaiDate.get(ChronoField.YEAR));

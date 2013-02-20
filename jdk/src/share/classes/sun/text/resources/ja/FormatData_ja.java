@@ -82,7 +82,20 @@ public class FormatData_ja extends ListResourceBundle {
     /**
      * Overrides ListResourceBundle
      */
+    @Override
     protected final Object[][] getContents() {
+        // era strings for Japanese imperial calendar
+        final String[] japaneseEras = {
+            "\u897f\u66a6", // Seireki (Gregorian)
+            "\u660e\u6cbb", // Meiji
+            "\u5927\u6b63", // Taisho
+            "\u662d\u548c", // Showa
+            "\u5e73\u6210", // Heisei
+        };
+        final String[] rocEras = {
+            "\u6c11\u56fd\u524d",
+            "\u6c11\u56fd",
+        };
         return new Object[][] {
             { "MonthNames",
                 new String[] {
@@ -177,15 +190,8 @@ public class FormatData_ja extends ListResourceBundle {
                     "Gy/MM/dd",
                 }
             },
-            { "japanese.Eras",
-                new String[] { // era strings for Japanese imperial calendar
-                    "\u897f\u66a6",     // Seireki (Gregorian)
-                    "\u660e\u6cbb",     // Meiji
-                    "\u5927\u6b63",     // Taisho
-                    "\u662d\u548c",     // Showa
-                    "\u5e73\u6210",     // Heisei
-                }
-            },
+            { "japanese.Eras", japaneseEras },
+            { "cldr.japanese.short.Eras", japaneseEras },
             { "japanese.FirstYear",
                 new String[] {  // first year name
                     "\u5143",   // "Gan"-nen
@@ -257,12 +263,8 @@ public class FormatData_ja extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "roc.Eras",
-                new String[] {
-                    "\u6c11\u56fd\u524d",
-                    "\u6c11\u56fd",
-                }
-            },
+            { "roc.Eras", rocEras },
+            { "roc.short.Eras", rocEras },
             { "cldr.roc.DatePatterns",
                 new String[] {
                     "Gy\u5e74M\u6708d\u65e5EEEE",
