@@ -659,7 +659,7 @@ public class ClassWriter extends ClassFile {
                     ((int) s.flags() & (FINAL | SYNTHETIC | MANDATED)) |
                     ((int) m.flags() & SYNTHETIC);
                 databuf.appendChar(pool.put(s.name));
-                databuf.appendInt(flags);
+                databuf.appendChar(flags);
             }
             endAttr(attrIndex);
             return 1;
