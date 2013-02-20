@@ -33,6 +33,7 @@ import java.awt.event.InputMethodListener;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
 import java.awt.im.InputMethodRequests;
+import java.lang.ref.WeakReference;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.text.AttributedString;
@@ -55,7 +56,7 @@ class CompositionAreaHandler implements InputMethodListener,
 
     private AttributedCharacterIterator composedText;
     private TextHitInfo caret = null;
-    private Component clientComponent = null;
+    private WeakReference<Component> clientComponent = new WeakReference<>(null);
     private InputMethodContext inputMethodContext;
 
     /**
@@ -76,8 +77,9 @@ class CompositionAreaHandler implements InputMethodListener,
             }
             // If the client component is an active client using below-the-spot style, then
             // make the composition window undecorated without a title bar.
-            if(clientComponent!=null){
-                InputMethodRequests req = clientComponent.getInputMethodRequests();
+            Component client = clientComponent.get();
+            if(client != null){
+                InputMethodRequests req = client.getInputMethodRequests();
                 if (req != null && inputMethodContext.useBelowTheSpotInput()) {
                     setCompositionAreaUndecorated(true);
                 }
@@ -86,7 +88,7 @@ class CompositionAreaHandler implements InputMethodListener,
     }
 
     void setClientComponent(Component clientComponent) {
-        this.clientComponent = clientComponent;
+        this.clientComponent = new WeakReference<>(clientComponent);
     }
 
     /**
@@ -256,8 +258,9 @@ class CompositionAreaHandler implements InputMethodListener,
      * the composed text are forwarded to the client component.
      */
     InputMethodRequests getClientInputMethodRequests() {
-        if (clientComponent != null) {
-            return clientComponent.getInputMethodRequests();
+        Component client = clientComponent.get();
+        if (client != null) {
+            return client.getInputMethodRequests();
         }
 
         return null;

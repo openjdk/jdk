@@ -35,22 +35,43 @@ import java.lang.annotation.Annotation;
  * arrays returned by accessors for array-valued enum members; it will
  * have no affect on the arrays returned to other callers.
  *
- * <p>An annotation A is <em>directly present</em> on an element E if the
- * RuntimeVisibleAnnotations or RuntimeVisibleParameterAnnotations attribute
- * associated with E either:
+ * <p>The {@link #getAnnotationsByType(Class)} and {@link
+ * #getDeclaredAnnotationsByType(Class)} methods support multiple
+ * annotations of the same type on an element. If the argument to either method
+ * is a repeatable annotation type (JLS 9.6), then the method will "look
+ * through" a container annotation (JLS 9.7) which was generated at
+ * compile-time to wrap multiple annotations of the argument type.
+ *
+ * <p>The terms <em>directly present</em> and <em>present</em> are used
+ * throughout this interface to describe precisely which annotations are
+ * returned by methods:
+ *
  * <ul>
- * <li>contains A; or
- * <li>for invocations of get[Declared]Annotations(Class<T>),
- * contains A or exactly one annotation C whose type is the containing
- * annotation type of A's type (JLS 9.6) and whose value element contains A
+ * <li>An annotation A is <em>directly present</em> on an element E if E is
+ * associated with a RuntimeVisibleAnnotations or
+ * RuntimeVisibleParameterAnnotations attribute, and:
+ *
+ * <ul>
+ * <li>for an invocation of {@code get[Declared]Annotation(Class<T>)} or
+ * {@code get[Declared]Annotations()}, the attribute contains A.
+ *
+ * <li>for an invocation of {@code get[Declared]AnnotationsByType(Class<T>)}, the
+ * attribute either contains A or, if the type of A is repeatable, contains
+ * exactly one annotation whose value element contains A and whose type is the
+ * containing annotation type of A's type (JLS 9.6).
  * </ul>
  *
- * <p>An annotation A is <em>present</em> on an element E if either:
+ * <p>
+ * <li>An annotation A is <em>present</em> on an element E if either:
+ *
  * <ul>
  * <li>A is <em>directly present</em> on E; or
- * <li>There are no annotations of A's type which are <em>directly present</em>
- * on E, and E is a class, and A's type is inheritable (JLS 9.6.3.3), and A is
- * present on the superclass of E
+ *
+ * <li>A is not <em>directly present</em> on E, and E is a class, and A's type
+ * is inheritable (JLS 9.6.3.3), and A is <em>present</em> on the superclass of
+ * E.
+ * </ul>
+ *
  * </ul>
  *
  * <p>If an annotation returned by a method in this interface contains
@@ -119,12 +140,19 @@ public interface AnnotatedElement {
     <T extends Annotation> T getAnnotation(Class<T> annotationClass);
 
     /**
-     * Returns an array of all this element's annotations for the
-     * specified type if one or more of such annotation is present,
-     * else an array of length zero.
+     * Returns annotations that are <em>present</em> on this element.
      *
-     * The caller of this method is free to modify the returned array;
-     * it will have no effect on the arrays returned to other callers.
+     * If there are no annotations <em>present</em> on this element, the return
+     * value is an array of length 0.
+     *
+     * The difference between this method and {@link #getAnnotation(Class)}
+     * is that this method detects if its argument is a <em>repeatable
+     * annotation type</em> (JLS 9.6), and if so, attempts to find one or
+     * more annotations of that type by "looking through" a container
+     * annotation.
+     *
+     * The caller of this method is free to modify the returned array; it will
+     * have no effect on the arrays returned to other callers.
      *
      * @param annotationClass the Class object corresponding to the
      *        annotation type
@@ -133,7 +161,7 @@ public interface AnnotatedElement {
      * @throws NullPointerException if the given annotation class is null
      * @since 1.8
      */
-    <T extends Annotation> T[] getAnnotations(Class<T> annotationClass);
+    <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass);
 
     /**
      * Returns annotations that are <em>present</em> on this element.
@@ -165,16 +193,21 @@ public interface AnnotatedElement {
      */
     <T extends Annotation> T getDeclaredAnnotation(Class<T> annotationClass);
 
-   /**
-     * Returns an array of all this element's annotations for the
-     * specified type if one or more of such annotation is directly
-     * present, else an array of length zero.
+    /**
+     * Returns annotations that are <em>directly present</em> on this element.
+     * This method ignores inherited annotations.
      *
-     * This method ignores inherited annotations. (Returns
-     * an array of length zero if no annotations are directly present
-     * on this element.)  The caller of this method is free to modify
-     * the returned array; it will have no effect on the arrays
-     * returned to other callers.
+     * If there are no annotations <em>directly present</em> on this element,
+     * the return value is an array of length 0.
+     *
+     * The difference between this method and {@link
+     * #getDeclaredAnnotation(Class)} is that this method detects if its
+     * argument is a <em>repeatable annotation type</em> (JLS 9.6), and if so,
+     * attempts to find one or more annotations of that type by "looking
+     * through" a container annotation.
+     *
+     * The caller of this method is free to modify the returned array; it will
+     * have no effect on the arrays returned to other callers.
      *
      * @param annotationClass the Class object corresponding to the
      *        annotation type
@@ -183,7 +216,7 @@ public interface AnnotatedElement {
      * @throws NullPointerException if the given annotation class is null
      * @since 1.8
      */
-    <T extends Annotation> T[] getDeclaredAnnotations(Class<T> annotationClass);
+    <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotationClass);
 
     /**
      * Returns annotations that are <em>directly present</em> on this element.

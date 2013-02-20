@@ -100,33 +100,13 @@ IMPORT_TARGET_FILES += $(IMPORT_TARGET_CLASSES) $(IMPORT_TARGET_SOURCES) $(IMPOR
 
 #######
 
-ifeq ($(OPENJDK_TARGET_OS),solaris)
-define do-install-file
-	$(MKDIR) -p '$$(@D)'
-	$(RM) '$$@'
-	$(CP) -r -P '$$<' '$$(@D)'
-endef
-else ifeq ($(OPENJDK_TARGET_OS),macosx)
-define do-install-file
-	$(MKDIR) -p '$$(@D)'
-	$(RM) '$$@'
-	$(CP) -pRP '$$<' '$$@'
-endef
-else
-define do-install-file
-	$(MKDIR) -p '$$(@D)'
-	$(RM) '$$@'
-	$(CP) -P '$$<' '$$@'
-endef
-endif
-
 define CopyDir
         $1_SRC_FILES := $(shell $(FIND) $2 -type f -a \( -name DUMMY $(addprefix -o$(SPACE)-name$(SPACE),$4) \))
         $1_DST_FILES := $$(patsubst $2/%,$3/%,$$($1_SRC_FILES))
         IMPORT_TARGET_FILES += $$($1_DST_FILES)
 $3/% : $2/%
 	$(ECHO) $(LOG_INFO) Copying $$(@F)
-	$(do-install-file)
+	$$(install-file)
 endef
 
 #######
@@ -153,6 +133,12 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
         IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
         ifneq (,$(JSIG_DEBUGINFO))
             IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+        endif
+    endif
+    ifeq ($(JVM_VARIANT_MINIMAL1), true)
+        IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+        ifneq (,$(JSIG_DEBUGINFO))
+            IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
         endif
     endif
 endif
@@ -195,27 +181,24 @@ $(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(RM) $(basename $@).debuginfo
 	$(MV) $@.tmp $@
 
-#######
+$(INSTALL_LIBRARIES_HERE)/minimal/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(LN) -s ../$(@F) $@
 
-ifeq ($(OPENJDK_TARGET_OS),solaris)
-define install-file
-	$(MKDIR) -p '$(@D)'
-	$(RM) '$@'
-	$(CP) -r -P '$<' '$(@D)'
-endef
-else ifeq ($(OPENJDK_TARGET_OS),macosx)
-define install-file
-	$(MKDIR) -p '$(@D)'
-	$(RM) '$@'
-	$(CP) -pRP '$<' '$@'
-endef
-else
-define install-file
-	$(MKDIR) -p '$(@D)'
-	$(RM) '$@'
-	$(CP) -P '$<' '$@'
-endef
-endif
+$(INSTALL_LIBRARIES_HERE)/minimal/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/minimal/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(RM) $@.tmp $(basename $@).debuginfo
+	$(LN) -s ../$(basename $(@F)).debuginfo $(basename $@).debuginfo
+	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).debuginfo
+	$(RM) $(basename $@).debuginfo
+	$(MV) $@.tmp $@
 
 #######
 

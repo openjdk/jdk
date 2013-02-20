@@ -61,10 +61,19 @@
  */
 package java.time.format;
 
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
+import java.time.temporal.ChronoField;
+import java.time.temporal.Queries;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -84,7 +93,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
-final class DateTimeParseContext {
+final class DateTimeParseContext implements TemporalAccessor {
 
     /**
      * The formatter, not null.
@@ -130,7 +139,7 @@ final class DateTimeParseContext {
      *
      * @return the locale, not null
      */
-    public Locale getLocale() {
+    Locale getLocale() {
         return formatter.getLocale();
     }
 
@@ -141,8 +150,24 @@ final class DateTimeParseContext {
      *
      * @return the formatting symbols, not null
      */
-    public DateTimeFormatSymbols getSymbols() {
+    DateTimeFormatSymbols getSymbols() {
         return formatter.getSymbols();
+    }
+
+    /**
+     * Gets the effective chronology during parsing.
+     *
+     * @return the effective parsing chronology, not null
+     */
+    Chronology getEffectiveChronology() {
+        Chronology chrono = currentParsed().chrono;
+        if (chrono == null) {
+            chrono = formatter.getChronology();
+            if (chrono == null) {
+                chrono = IsoChronology.INSTANCE;
+            }
+        }
+        return chrono;
     }
 
     //-----------------------------------------------------------------------
@@ -151,7 +176,7 @@ final class DateTimeParseContext {
      *
      * @return true if parsing is case sensitive, false if case insensitive
      */
-    public boolean isCaseSensitive() {
+    boolean isCaseSensitive() {
         return caseSensitive;
     }
 
@@ -160,10 +185,11 @@ final class DateTimeParseContext {
      *
      * @param caseSensitive  changes the parsing to be case sensitive or not from now on
      */
-    public void setCaseSensitive(boolean caseSensitive) {
+    void setCaseSensitive(boolean caseSensitive) {
         this.caseSensitive = caseSensitive;
     }
 
+    //-----------------------------------------------------------------------
     /**
      * Helper to compare two {@code CharSequence} instances.
      * This uses {@link #isCaseSensitive()}.
@@ -175,7 +201,7 @@ final class DateTimeParseContext {
      * @param length  the length to check, valid
      * @return true if equal
      */
-    public boolean subSequenceEquals(CharSequence cs1, int offset1, CharSequence cs2, int offset2, int length) {
+    boolean subSequenceEquals(CharSequence cs1, int offset1, CharSequence cs2, int offset2, int length) {
         if (offset1 + length > cs1.length() || offset2 + length > cs2.length()) {
             return false;
         }
@@ -200,6 +226,34 @@ final class DateTimeParseContext {
         return true;
     }
 
+    /**
+     * Helper to compare two {@code char}.
+     * This uses {@link #isCaseSensitive()}.
+     *
+     * @param ch1  the first character
+     * @param ch2  the second character
+     * @return true if equal
+     */
+    boolean charEquals(char ch1, char ch2) {
+        if (isCaseSensitive()) {
+            return ch1 == ch2;
+        }
+        return charEqualsIgnoreCase(ch1, ch2);
+    }
+
+    /**
+     * Compares two characters ignoring case.
+     *
+     * @param c1  the first
+     * @param c2  the second
+     * @return true if equal
+     */
+    static boolean charEqualsIgnoreCase(char c1, char c2) {
+        return c1 == c2 ||
+                Character.toUpperCase(c1) == Character.toUpperCase(c2) ||
+                Character.toLowerCase(c1) == Character.toLowerCase(c2);
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Checks if parsing is strict.
@@ -208,7 +262,7 @@ final class DateTimeParseContext {
      *
      * @return true if parsing is strict, false if lenient
      */
-    public boolean isStrict() {
+    boolean isStrict() {
         return strict;
     }
 
@@ -217,7 +271,7 @@ final class DateTimeParseContext {
      *
      * @param strict  changes the parsing to be strict or lenient from now on
      */
-    public void setStrict(boolean strict) {
+    void setStrict(boolean strict) {
         this.strict = strict;
     }
 
@@ -264,45 +318,8 @@ final class DateTimeParseContext {
      * @param field  the field to query from the map, null returns null
      * @return the value mapped to the specified field, null if field was not parsed
      */
-    public Long getParsed(TemporalField field) {
-        for (Object obj : currentParsed().parsed) {
-            if (obj instanceof FieldValue) {
-                FieldValue fv = (FieldValue) obj;
-                if (fv.field.equals(field)) {
-                    return fv.value;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Gets the first value that was parsed for the specified type.
-     * <p>
-     * This searches the results of the parse, returning the first date-time found
-     * of the specified type. No attempt is made to derive a value.
-     *
-     * @param clazz  the type to query from the map, not null
-     * @return the temporal object, null if it was not parsed
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T getParsed(Class<T> clazz) {
-        for (Object obj : currentParsed().parsed) {
-            if (clazz.isInstance(obj)) {
-                return (T) obj;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Gets the list of parsed temporal information.
-     *
-     * @return the list of parsed temporal objects, not null, no nulls
-     */
-    List<Object> getParsed() {
-        // package scoped for testing
-        return currentParsed().parsed;
+    Long getParsed(TemporalField field) {
+        return currentParsed().fieldValues.get(field);
     }
 
     /**
@@ -313,23 +330,40 @@ final class DateTimeParseContext {
      *
      * @param field  the field to set in the field-value map, not null
      * @param value  the value to set in the field-value map
+     * @param errorPos  the position of the field being parsed
+     * @param successPos  the position after the field being parsed
+     * @return the new position
      */
-    public void setParsedField(TemporalField field, long value) {
+    int setParsedField(TemporalField field, long value, int errorPos, int successPos) {
         Objects.requireNonNull(field, "field");
-        currentParsed().parsed.add(new FieldValue(field, value));
+        Long old = currentParsed().fieldValues.put(field, value);
+        return (old != null && old.longValue() != value) ? ~errorPos : successPos;
     }
 
     /**
-     * Stores the parsed complete object.
+     * Stores the parsed chronology.
      * <p>
-     * This stores a complete object that has been parsed.
-     * No validation is performed on the date-time other than ensuring it is not null.
+     * This stores the chronology that has been parsed.
+     * No validation is performed other than ensuring it is not null.
      *
-     * @param object  the parsed object, not null
+     * @param chrono  the parsed chronology, not null
      */
-    public <T> void setParsed(Object object) {
-        Objects.requireNonNull(object, "object");
-        currentParsed().parsed.add(object);
+    void setParsed(Chronology chrono) {
+        Objects.requireNonNull(chrono, "chrono");
+        currentParsed().chrono = chrono;
+    }
+
+    /**
+     * Stores the parsed zone.
+     * <p>
+     * This stores the zone that has been parsed.
+     * No validation is performed other than ensuring it is not null.
+     *
+     * @param zone  the parsed zone, not null
+     */
+    void setParsed(ZoneId zone) {
+        Objects.requireNonNull(zone, "zone");
+        currentParsed().zone = zone;
     }
 
     //-----------------------------------------------------------------------
@@ -345,18 +379,96 @@ final class DateTimeParseContext {
      *
      * @return a new builder with the results of the parse, not null
      */
-    public DateTimeBuilder toBuilder() {
-        List<Object> cals = currentParsed().parsed;
+    DateTimeBuilder toBuilder() {
+        Parsed parsed = currentParsed();
         DateTimeBuilder builder = new DateTimeBuilder();
-        for (Object obj : cals) {
-            if (obj instanceof FieldValue) {
-                FieldValue fv = (FieldValue) obj;
-                builder.addFieldValue(fv.field, fv.value);
-            } else {
-                builder.addCalendrical(obj);
-            }
+        for (Map.Entry<TemporalField, Long> fv : parsed.fieldValues.entrySet()) {
+            builder.addFieldValue(fv.getKey(), fv.getValue());
+        }
+        builder.addObject(getEffectiveChronology());
+        if (parsed.zone != null) {
+            builder.addObject(parsed.zone);
         }
         return builder;
+    }
+
+    /**
+     * Resolves the fields in this context.
+     *
+     * @return this, for method chaining
+     * @throws DateTimeException if resolving one field results in a value for
+     *  another field that is in conflict
+     */
+    DateTimeParseContext resolveFields() {
+        Parsed data = currentParsed();
+        outer:
+        while (true) {
+            for (Map.Entry<TemporalField, Long> entry : data.fieldValues.entrySet()) {
+                TemporalField targetField = entry.getKey();
+                Map<TemporalField, Long> changes = targetField.resolve(this, entry.getValue());
+                if (changes != null) {
+                    resolveMakeChanges(data, targetField, changes);
+                    data.fieldValues.remove(targetField);  // helps avoid infinite loops
+                    continue outer;  // have to restart to avoid concurrent modification
+                }
+            }
+            break;
+        }
+        return this;
+    }
+
+    private void resolveMakeChanges(Parsed data, TemporalField targetField, Map<TemporalField, Long> changes) {
+        for (Map.Entry<TemporalField, Long> change : changes.entrySet()) {
+            TemporalField changeField = change.getKey();
+            Long changeValue = change.getValue();
+            Objects.requireNonNull(changeField, "changeField");
+            if (changeValue != null) {
+                Long old = currentParsed().fieldValues.put(changeField, changeValue);
+                if (old != null && old.longValue() != changeValue.longValue()) {
+                    throw new DateTimeException("Conflict found: " + changeField + " " + old +
+                            " differs from " + changeField + " " + changeValue +
+                            " while resolving  " + targetField);
+                }
+            } else {
+                data.fieldValues.remove(changeField);
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    // TemporalAccessor methods
+    // should only to be used once parsing is complete
+    @Override
+    public boolean isSupported(TemporalField field) {
+        if (currentParsed().fieldValues.containsKey(field)) {
+            return true;
+        }
+        return (field instanceof ChronoField == false) && field.isSupportedBy(this);
+    }
+
+    @Override
+    public long getLong(TemporalField field) {
+        Long value = currentParsed().fieldValues.get(field);
+        if (value != null) {
+            return value;
+        }
+        if (field instanceof ChronoField) {
+            throw new DateTimeException("Unsupported field: " + field.getName());
+        }
+        return field.getFrom(this);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <R> R query(TemporalQuery<R> query) {
+        if (query == Queries.chronology()) {
+            return (R) currentParsed().chrono;
+        } else if (query == Queries.zoneId()) {
+            return (R) currentParsed().zone;
+        } else if (query == Queries.precision()) {
+            return null;
+        }
+        return query.queryFrom(this);
     }
 
     //-----------------------------------------------------------------------
@@ -375,34 +487,21 @@ final class DateTimeParseContext {
      * Temporary store of parsed data.
      */
     private static final class Parsed {
-        final List<Object> parsed = new ArrayList<>();
+        Chronology chrono = null;
+        ZoneId zone = null;
+        final Map<TemporalField, Long> fieldValues = new HashMap<>();
         private Parsed() {
         }
         protected Parsed copy() {
             Parsed cloned = new Parsed();
-            cloned.parsed.addAll(this.parsed);
+            cloned.chrono = this.chrono;
+            cloned.zone = this.zone;
+            cloned.fieldValues.putAll(this.fieldValues);
             return cloned;
         }
         @Override
         public String toString() {
-            return parsed.toString();
-        }
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Temporary store of a field-value pair.
-     */
-    private static final class FieldValue {
-        final TemporalField field;
-        final long value;
-        private FieldValue(TemporalField field, long value) {
-            this.field = field;
-            this.value = value;
-        }
-        @Override
-        public String toString() {
-            return field.getName() + ' ' + value;
+            return fieldValues.toString() + "," + chrono + "," + zone;
         }
     }
 

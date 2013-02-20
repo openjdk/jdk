@@ -91,12 +91,13 @@ public class AnnotationWriter extends BasicWriter {
         print(pos.type);
 
         switch (pos.type) {
-        // type cast
-        case CAST:
         // instanceof
         case INSTANCEOF:
         // new expression
         case NEW:
+        // constructor/method reference receiver
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE:
             if (showOffsets) {
                 print(", offset=");
                 print(pos.offset);
@@ -162,9 +163,12 @@ public class AnnotationWriter extends BasicWriter {
             print(", param_index=");
             print(pos.parameter_index);
             break;
+        // type cast
+        case CAST:
         // method/constructor/reference type argument
         case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
         case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT:
             if (showOffsets) {
                 print(", offset=");
@@ -176,11 +180,6 @@ public class AnnotationWriter extends BasicWriter {
         // We don't need to worry about these
         case METHOD_RETURN:
         case FIELD:
-            break;
-        // lambda formal parameter
-        case LAMBDA_FORMAL_PARAMETER:
-            print(", param_index=");
-            print(pos.parameter_index);
             break;
         case UNKNOWN:
             throw new AssertionError("AnnotationWriter: UNKNOWN target type should never occur!");

@@ -48,6 +48,8 @@
 #include "services/memTracker.hpp"
 #endif // INCLUDE_NMT
 
+#include "compiler/compileBroker.hpp"
+
 bool WhiteBox::_used = false;
 
 WB_ENTRY(jlong, WB_GetObjectAddress(JNIEnv* env, jobject o, jobject obj))
@@ -169,6 +171,89 @@ WB_END
 
 #endif // INCLUDE_NMT
 
+static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
+  assert(method != NULL, "method should not be null");
+  ThreadToNativeFromVM ttn(thread);
+  return env->FromReflectedMethod(method);
+}
+
+WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
+  MutexLockerEx mu(Compile_lock);
+  CodeCache::mark_all_nmethods_for_deoptimization();
+  VM_Deoptimize op;
+  VMThread::execute(&op);
+WB_END
+
+WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  MutexLockerEx mu(Compile_lock);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  int result = 0;
+  nmethod* code = mh->code();
+  if (code != NULL) {
+    code->mark_for_deoptimization();
+    ++result;
+  }
+  result += CodeCache::mark_for_deoptimization(mh());
+  if (result > 0) {
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
+  return result;
+WB_END
+
+WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  MutexLockerEx mu(Compile_lock);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  nmethod* code = mh->code();
+  if (code == NULL) {
+    return JNI_FALSE;
+  }
+  return (code->is_alive() && !code->is_marked_for_deoptimization());
+WB_END
+
+WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  MutexLockerEx mu(Compile_lock);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  return !mh->is_not_compilable();
+WB_END
+
+WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  MutexLockerEx mu(Compile_lock);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  return mh->queued_for_compilation();
+WB_END
+
+WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  nmethod* code = mh->code();
+  return (code != NULL ? code->comp_level() : CompLevel_none);
+WB_END
+
+
+WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  mh->set_not_compilable();
+WB_END
+
+WB_ENTRY(jboolean, WB_SetDontInlineMethod(JNIEnv* env, jobject o, jobject method, jboolean value))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  bool result = mh->dont_inline();
+  mh->set_dont_inline(value == JNI_TRUE);
+  return result;
+WB_END
+
+WB_ENTRY(jint, WB_GetCompileQueuesSize(JNIEnv* env, jobject o))
+  return CompileBroker::queue_size(CompLevel_full_optimization) /* C2 */ +
+         CompileBroker::queue_size(CompLevel_full_profile) /* C1 */;
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -225,9 +310,9 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 static JNINativeMethod methods[] = {
   {CC"getObjectAddress",   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
   {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
-  {CC"isClassAlive0",       CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
-  {CC "parseCommandLine",
-      CC "(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
+  {CC"isClassAlive0",      CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
+  {CC"parseCommandLine",
+      CC"(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
 #if INCLUDE_ALL_GCS
@@ -241,6 +326,23 @@ static JNINativeMethod methods[] = {
   {CC"NMTFreeTestMemory",  CC"()Z",                   (void*)&WB_NMTFreeTestMemory },
   {CC"NMTWaitForDataMerge",CC"()Z",                   (void*)&WB_NMTWaitForDataMerge},
 #endif // INCLUDE_NMT
+  {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
+  {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Method;)I",
+                                                      (void*)&WB_DeoptimizeMethod  },
+  {CC"isMethodCompiled",   CC"(Ljava/lang/reflect/Method;)Z",
+                                                      (void*)&WB_IsMethodCompiled  },
+  {CC"isMethodCompilable", CC"(Ljava/lang/reflect/Method;)Z",
+                                                      (void*)&WB_IsMethodCompilable},
+  {CC"isMethodQueuedForCompilation",
+      CC"(Ljava/lang/reflect/Method;)Z",              (void*)&WB_IsMethodQueuedForCompilation},
+  {CC"makeMethodNotCompilable",
+      CC"(Ljava/lang/reflect/Method;)V",              (void*)&WB_MakeMethodNotCompilable},
+  {CC"setDontInlineMethod",
+      CC"(Ljava/lang/reflect/Method;Z)Z",             (void*)&WB_SetDontInlineMethod},
+  {CC"getMethodCompilationLevel",
+      CC"(Ljava/lang/reflect/Method;)I",              (void*)&WB_GetMethodCompilationLevel},
+  {CC"getCompileQueuesSize",
+      CC"()I",                                        (void*)&WB_GetCompileQueuesSize},
 };
 
 #undef CC

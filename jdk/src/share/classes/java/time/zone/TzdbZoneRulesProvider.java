@@ -66,43 +66,36 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
-import java.nio.file.FileSystems;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.time.DateTimeException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipFile;
 
 /**
  * Loads time-zone rules for 'TZDB'.
- * <p>
- * This class is public for the service loader to access.
- *
- * <h3>Specification for implementors</h3>
- * This class is immutable and thread-safe.
  *
  * @since 1.8
  */
 final class TzdbZoneRulesProvider extends ZoneRulesProvider {
-    // service loader seems to need it to be public
 
     /**
      * All the regions that are available.
      */
-    private final Set<String> regionIds = new CopyOnWriteArraySet<>();
+    private List<String> regionIds;
     /**
-     * All the versions that are available.
+     * Version Id of this tzdb rules
      */
-    private final ConcurrentNavigableMap<String, Version> versions = new ConcurrentSkipListMap<>();
+    private String versionId;
+    /**
+     * Region to rules mapping
+     */
+    private final Map<String, Object> regionToRules = new ConcurrentHashMap<>();
 
     /**
      * Creates an instance.
@@ -111,85 +104,52 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
      * @throws ZoneRulesException if unable to load
      */
     public TzdbZoneRulesProvider() {
-        super();
-        if (load(ClassLoader.getSystemClassLoader()) == false) {
-            throw new ZoneRulesException("No time-zone rules found for 'TZDB'");
+        try {
+            String libDir = System.getProperty("java.home") + File.separator + "lib";
+            File tzdbJar = new File(libDir, "tzdb.jar");
+            try (ZipFile zf = new ZipFile(tzdbJar);
+                 DataInputStream dis = new DataInputStream(
+                     zf.getInputStream(zf.getEntry("TZDB.dat")))) {
+                load(dis);
+            }
+        } catch (Exception ex) {
+            throw new ZoneRulesException("Unable to load TZDB time-zone rules", ex);
         }
     }
 
-    //-----------------------------------------------------------------------
     @Override
     protected Set<String> provideZoneIds() {
         return new HashSet<>(regionIds);
     }
 
     @Override
-    protected ZoneRules provideRules(String zoneId) {
-        Objects.requireNonNull(zoneId, "zoneId");
-        ZoneRules rules = versions.lastEntry().getValue().getRules(zoneId);
-        if (rules == null) {
+    protected ZoneRules provideRules(String zoneId, boolean forCaching) {
+        // forCaching flag is ignored because this is not a dynamic provider
+        Object obj = regionToRules.get(zoneId);
+        if (obj == null) {
             throw new ZoneRulesException("Unknown time-zone ID: " + zoneId);
         }
-        return rules;
+        try {
+            if (obj instanceof byte[]) {
+                byte[] bytes = (byte[]) obj;
+                DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes));
+                obj = Ser.read(dis);
+                regionToRules.put(zoneId, obj);
+            }
+            return (ZoneRules) obj;
+        } catch (Exception ex) {
+            throw new ZoneRulesException("Invalid binary time-zone data: TZDB:" + zoneId + ", version: " + versionId, ex);
+        }
     }
 
     @Override
     protected NavigableMap<String, ZoneRules> provideVersions(String zoneId) {
         TreeMap<String, ZoneRules> map = new TreeMap<>();
-        for (Version version : versions.values()) {
-            ZoneRules rules = version.getRules(zoneId);
-            if (rules != null) {
-                map.put(version.versionId, rules);
-            }
+        ZoneRules rules = getRules(zoneId, false);
+        if (rules != null) {
+            map.put(versionId, rules);
         }
         return map;
-    }
-
-    //-------------------------------------------------------------------------
-    /**
-     * Loads the rules.
-     *
-     * @param classLoader  the class loader to use, not null
-     * @return true if updated
-     * @throws ZoneRulesException if unable to load
-     */
-    private boolean load(ClassLoader classLoader) {
-        Object updated = Boolean.FALSE;
-        try {
-            updated = AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IOException, ClassNotFoundException {
-                    File tzdbJar = null;
-                    // TBD: workaround for now, so test/java/time tests can be
-                    //      run against Java runtime that does not have tzdb
-                    String tzdbProp = System.getProperty("java.time.zone.tzdbjar");
-                    if (tzdbProp != null) {
-                        tzdbJar = new File(tzdbProp);
-                    } else {
-                        String libDir = System.getProperty("java.home") + File.separator + "lib";
-                        try {
-                            libDir = FileSystems.getDefault().getPath(libDir).toRealPath().toString();
-                        } catch(Exception e) {}
-                        tzdbJar = new File(libDir, "tzdb.jar");
-                    }
-                    try (ZipFile zf = new ZipFile(tzdbJar);
-                         DataInputStream dis = new DataInputStream(
-                             zf.getInputStream(zf.getEntry("TZDB.dat")))) {
-                        Iterable<Version> loadedVersions = load(dis);
-                        for (Version loadedVersion : loadedVersions) {
-                            if (versions.putIfAbsent(loadedVersion.versionId, loadedVersion) != null) {
-                                throw new DateTimeException(
-                                    "Data already loaded for TZDB time-zone rules version: " +
-                                    loadedVersion.versionId);
-                            }
-                        }
-                    }
-                    return Boolean.TRUE;
-                }
-            });
-        } catch (Exception ex) {
-            throw new ZoneRulesException("Unable to load TZDB time-zone rules", ex);
-        }
-        return updated == Boolean.TRUE;
     }
 
     /**
@@ -198,7 +158,7 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
      * @param dis  the DateInputStream to load, not null
      * @throws Exception if an error occurs
      */
-    private Iterable<Version> load(DataInputStream dis) throws ClassNotFoundException, IOException {
+    private void load(DataInputStream dis) throws Exception {
         if (dis.readByte() != 1) {
             throw new StreamCorruptedException("File format not recognised");
         }
@@ -209,9 +169,8 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
         }
         // versions
         int versionCount = dis.readShort();
-        String[] versionArray = new String[versionCount];
         for (int i = 0; i < versionCount; i++) {
-            versionArray[i] = dis.readUTF();
+            versionId = dis.readUTF();
         }
         // regions
         int regionCount = dis.readShort();
@@ -219,7 +178,7 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
         for (int i = 0; i < regionCount; i++) {
             regionArray[i] = dis.readUTF();
         }
-        regionIds.addAll(Arrays.asList(regionArray));
+        regionIds = Arrays.asList(regionArray);
         // rules
         int ruleCount = dis.readShort();
         Object[] ruleArray = new Object[ruleCount];
@@ -228,71 +187,20 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
             dis.readFully(bytes);
             ruleArray[i] = bytes;
         }
-        AtomicReferenceArray<Object> ruleData = new AtomicReferenceArray<>(ruleArray);
         // link version-region-rules
-        Set<Version> versionSet = new HashSet<Version>(versionCount);
         for (int i = 0; i < versionCount; i++) {
             int versionRegionCount = dis.readShort();
-            String[] versionRegionArray = new String[versionRegionCount];
-            short[] versionRulesArray = new short[versionRegionCount];
+            regionToRules.clear();
             for (int j = 0; j < versionRegionCount; j++) {
-                versionRegionArray[j] = regionArray[dis.readShort()];
-                versionRulesArray[j] = dis.readShort();
+                String region = regionArray[dis.readShort()];
+                Object rule = ruleArray[dis.readShort() & 0xffff];
+                regionToRules.put(region, rule);
             }
-            versionSet.add(new Version(versionArray[i], versionRegionArray, versionRulesArray, ruleData));
         }
-        return versionSet;
     }
 
     @Override
     public String toString() {
-        return "TZDB";
+        return "TZDB[" + versionId + "]";
     }
-
-    //-----------------------------------------------------------------------
-    /**
-     * A version of the TZDB rules.
-     */
-    static class Version {
-        private final String versionId;
-        private final String[] regionArray;
-        private final short[] ruleIndices;
-        private final AtomicReferenceArray<Object> ruleData;
-
-        Version(String versionId, String[] regionIds, short[] ruleIndices, AtomicReferenceArray<Object> ruleData) {
-            this.ruleData = ruleData;
-            this.versionId = versionId;
-            this.regionArray = regionIds;
-            this.ruleIndices = ruleIndices;
-        }
-
-        ZoneRules getRules(String regionId) {
-            int regionIndex = Arrays.binarySearch(regionArray, regionId);
-            if (regionIndex < 0) {
-                return null;
-            }
-            try {
-                return createRule(ruleIndices[regionIndex]);
-            } catch (Exception ex) {
-                throw new ZoneRulesException("Invalid binary time-zone data: TZDB:" + regionId + ", version: " + versionId, ex);
-            }
-        }
-
-        ZoneRules createRule(short index) throws Exception {
-            Object obj = ruleData.get(index);
-            if (obj instanceof byte[]) {
-                byte[] bytes = (byte[]) obj;
-                DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes));
-                obj = Ser.read(dis);
-                ruleData.set(index, obj);
-            }
-            return (ZoneRules) obj;
-        }
-
-        @Override
-        public String toString() {
-            return versionId;
-        }
-    }
-
 }
