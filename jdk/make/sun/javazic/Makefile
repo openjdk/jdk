@@ -33,11 +33,11 @@ include $(BUILDDIR)/common/Defs.gmk
 
 # Time zone data file creation
 TZDATA = ./tzdata/
-TZDATA_VER = `$(GREP) '^tzdata' $(TZDATA)VERSION`
+TZDATA_VER := $(shell $(GREP) '^tzdata' $(TZDATA)VERSION)
 TZFILE = \
     africa antarctica asia australasia europe northamerica \
     pacificnew southamerica backward \
-    etcetera solar87 solar88 solar89 systemv
+    etcetera systemv
 JDKTZDATA = ./tzdata_jdk/
 JDKTZFILES = gmt jdk11_backward
 TZFILES = \

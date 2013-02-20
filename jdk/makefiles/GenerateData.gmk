@@ -44,9 +44,6 @@ GENDATA += $(BREAK_ITERATOR)
 include GendataFontConfig.gmk
 GENDATA += $(GENDATA_FONT_CONFIG)
 
-include GendataTimeZone.gmk
-GENDATA += $(GENDATA_TIMEZONE)
-
 include GendataTZDB.gmk
 GENDATA += $(GENDATA_TZDB)
 

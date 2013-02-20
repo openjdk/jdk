@@ -44,7 +44,7 @@ public final class Parameter implements AnnotatedElement {
     private final String name;
     private final int modifiers;
     private final Executable executable;
-    private int index;
+    private final int index;
 
     /**
      * Package-private constructor for {@code Parameter}.
@@ -95,9 +95,14 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
-     * Returns a string representation of the parameter's modifiers,
-     * its attributes, its type, its name, and a trailing ... if it is
-     * a variadic parameter.
+     * Returns a string describing this parameter.  The format is the
+     * modifiers for the parameter, if any, in canonical order as
+     * recommended by <cite>The Java&trade; Language
+     * Specification</cite>, followed by the fully- qualified type of
+     * the parameter (excluding the last [] if the parameter is
+     * variable arity), followed by "..." if the parameter is variable
+     * arity, followed by a space, followed by the name of the
+     * parameter.
      *
      * @return A string representation of the parameter and associated
      * information.
@@ -118,7 +123,7 @@ public final class Parameter implements AnnotatedElement {
             sb.append(typename);
 
         sb.append(" ");
-        sb.append(name);
+        sb.append(getName());
 
         return sb.toString();
     }
@@ -143,11 +148,23 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
-     * Returns the name of the parameter represented by this
-     * {@code Parameter} object.
+     * Returns the name of the parameter.  The names of the parameters
+     * of a single executable must all the be distinct.  When names
+     * from the originating source are available, they are returned.
+     * Otherwise, an implementation of this method is free to create a
+     * name of this parameter, subject to the unquiness requirments.
      */
     public String getName() {
-        return name;
+        // As per the spec, if a parameter has no name, return argX,
+        // where x is the index.
+        //
+        // Note: spec updates now outlaw empty strings as parameter
+        // names.  The .equals("") is for compatibility with current
+        // JVM behavior.  It may be removed at some point.
+        if(name == null || name.equals(""))
+            return "arg" + index;
+        else
+            return name;
     }
 
     /**
@@ -190,20 +207,21 @@ public final class Parameter implements AnnotatedElement {
     private transient volatile Class<?> parameterClassCache = null;
 
     /**
-     * Returns {@code true} if this parameter is a synthesized
-     * construct; returns {@code false} otherwise.
+     * Returns {@code true} if this parameter is implicitly declared
+     * in source code; returns {@code false} otherwise.
      *
-     * @return true if and only if this parameter is a synthesized
-     * construct as defined by
-     * <cite>The Java&trade; Language Specification</cite>.
+     * @return true if and only if this parameter is implicitly
+     * declared as defined by <cite>The Java&trade; Language
+     * Specification</cite>.
      */
-    public boolean isSynthesized() {
-        return Modifier.isSynthesized(getModifiers());
+    public boolean isImplicit() {
+        return Modifier.isMandated(getModifiers());
     }
 
     /**
-     * Returns {@code true} if this parameter is a synthetic
-     * construct; returns {@code false} otherwise.
+     * Returns {@code true} if this parameter is neither implicitly
+     * nor explicitly declared in source code; returns {@code false}
+     * otherwise.
      *
      * @jls 13.1 The Form of a Binary
      * @return true if and only if this parameter is a synthetic
@@ -240,7 +258,8 @@ public final class Parameter implements AnnotatedElement {
      * {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    public <T extends Annotation> T[] getAnnotations(Class<T> annotationClass) {
+    @Override
+    public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
         return AnnotationSupport.getMultipleAnnotations(declaredAnnotations(), annotationClass);
@@ -266,11 +285,12 @@ public final class Parameter implements AnnotatedElement {
     /**
      * @throws NullPointerException {@inheritDoc}
      */
-    public <T extends Annotation> T[] getDeclaredAnnotations(Class<T> annotationClass) {
+    @Override
+    public <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotationClass) {
         // Only annotations on classes are inherited, for all other
         // objects getDeclaredAnnotations is the same as
         // getAnnotations.
-        return getAnnotations(annotationClass);
+        return getAnnotationsByType(annotationClass);
     }
 
     /**
