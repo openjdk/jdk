@@ -354,7 +354,7 @@ const band_init all_band_inits[] = {
   BAND_INIT(method_metadata_bands, -1, -1),
   BAND_INIT(method_MethodParameters_NB, BYTE1_spec, 0),
   BAND_INIT(method_MethodParameters_name_RUN, UNSIGNED5_spec, NULL_OR_INDEX(CONSTANT_Utf8)),
-  BAND_INIT(method_MethodParameters_flag_I, UNSIGNED5_spec, 0),
+  BAND_INIT(method_MethodParameters_flag_FH, UNSIGNED5_spec, 0),
   BAND_INIT(method_attr_bands, -1, -1),
   BAND_INIT(class_flags_hi, UNSIGNED5_spec, 0),
   BAND_INIT(class_flags_lo, UNSIGNED5_spec, 0),

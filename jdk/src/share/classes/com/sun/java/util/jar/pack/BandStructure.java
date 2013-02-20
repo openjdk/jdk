@@ -1505,7 +1505,7 @@ class BandStructure {
     // band for predefine method parameters
     IntBand  method_MethodParameters_NB = method_attr_bands.newIntBand("method_MethodParameters_NB", BYTE1);
     CPRefBand method_MethodParameters_name_RUN = method_attr_bands.newCPRefBand("method_MethodParameters_name_RUN", UNSIGNED5, CONSTANT_Utf8, NULL_IS_OK);
-    IntBand   method_MethodParameters_flag_I = method_attr_bands.newIntBand("method_MethodParameters_flag_I");
+    IntBand   method_MethodParameters_flag_FH = method_attr_bands.newIntBand("method_MethodParameters_flag_FH");
 
     MultiBand class_attr_bands = class_bands.newMultiBand("(class_attr_bands)", UNSIGNED5);
     IntBand class_flags_hi = class_attr_bands.newIntBand("class_flags_hi");
@@ -1776,9 +1776,9 @@ class BandStructure {
                            new Band[]{
                                 method_MethodParameters_NB,
                                 method_MethodParameters_name_RUN,
-                                method_MethodParameters_flag_I
+                                method_MethodParameters_flag_FH
                            },
-                           "MethodParameters", "NB[RUNHI]");
+                           "MethodParameters", "NB[RUNHFH]");
         assert(attrCodeEmpty == Package.attrCodeEmpty);
         predefineAttribute(X_ATTR_Signature, ATTR_CONTEXT_METHOD,
                            new Band[] { method_Signature_RS },

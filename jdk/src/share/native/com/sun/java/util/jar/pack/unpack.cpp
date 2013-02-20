@@ -2488,7 +2488,7 @@ void unpacker::read_attrs(int attrc, int obj_count) {
     method_MethodParameters_NB.readData(count);
     count = method_MethodParameters_NB.getIntTotal();
     method_MethodParameters_name_RUN.readData(count);
-    method_MethodParameters_flag_I.readData(count);
+    method_MethodParameters_flag_FH.readData(count);
     CHECK;
     break;
 
@@ -4431,7 +4431,7 @@ int unpacker::write_attrs(int attrc, julong indexBits) {
         putu1(count = method_MethodParameters_NB.getByte());
         for (j = 0; j < count; j++) {
           putref(method_MethodParameters_name_RUN.getRefN());
-          putu4(method_MethodParameters_flag_I.getInt());
+          putu2(method_MethodParameters_flag_FH.getInt());
         }
         break;
 
