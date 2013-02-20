@@ -59,7 +59,7 @@
  */
 package test.java.time.zone;
 
-import java.time.zone.*;
+import java.time.zone.ZoneRules;
 
 import static org.testng.Assert.assertEquals;
 

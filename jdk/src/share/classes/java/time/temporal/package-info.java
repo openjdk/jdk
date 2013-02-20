@@ -62,8 +62,7 @@
 
 /**
  * <p>
- * Access to date and time using fields and units, additional value type classes and
- * base support for calendar systems other than the default ISO.
+ * Access to date and time using fields and units, and date time adjusters.
  * </p>
  * <p>
  * This package expands on the base package to provide additional functionality for
@@ -74,8 +73,6 @@
  * <li>Fields of date-time, such as month-of-year, day-of-week or hour-of-day</li>
  * <li>Date-time adjustment functions</li>
  * <li>Different definitions of weeks</li>
- * <li>Alternate calendar systems</li>
- * <li>Additional value types</li>
  * </ul>
  *
  * <h3>Fields and Units</h3>
@@ -91,7 +88,7 @@
  * All fields implement {@link java.time.temporal.TemporalField}.
  * The set of well known fields are defined in {@link java.time.temporal.ChronoField}, such as {@code HOUR_OF_DAY}.
  * Additional fields are defined by {@link java.time.temporal.JulianFields}, {@link java.time.temporal.WeekFields}
- * and {@link java.time.temporal.ISOFields}.
+ * and {@link java.time.temporal.IsoFields}.
  * The field interface is designed to allow applications defined fields.
  * </p>
  * <p>
@@ -122,8 +119,7 @@
  * Applications can also define adjusters by implementing {@code TemporalAdjuster}.
  * </p>
  * <p>
- * There are additional interfaces to model addition to and subtraction from a date-time.
- * These are {@link java.time.temporal.TemporalAdder} and {@link java.time.temporal.TemporalSubtractor}.
+ * The {@link java.time.temporal.TemporalAmount} interface models amounts of relative time.
  * </p>
  * <p>
  * In addition to adjusting a date-time, an interface is provided to enable querying -
@@ -144,59 +140,8 @@
  * <p>
  * The ISO calendar system defines an additional week-based division of years.
  * This defines a year based on whole Monday to Monday weeks.
- * This is modeled in {@link java.time.temporal.ISOFields}.
+ * This is modeled in {@link java.time.temporal.IsoFields}.
  * </p>
- *
- * <h3>Alternate calendar systems</h3>
- * <p>
- * The main API is based around the calendar system defined in ISO-8601.
- * However, there are other calendar systems, and this package provides basic support for them.
- * The alternate calendars are provided in the {@code java.time.calendar} package.
- * </p>
- * <p>
- * A calendar system is defined by the {@link java.time.temporal.Chrono} interface,
- * while a date in a calendar system is defined by the {@link java.time.temporal.ChronoLocalDate} interface.
- * </p>
- * <p>
- * It is intended that applications use the main API whenever possible, including code to read and write
- * from a persistent data store, such as a database, and to send dates and times across a network.
- * The "chrono" classes are then used at the user interface level to deal with localized input/output.
- * </p>
- * <p>
- * Using non-ISO calendar systems in an application introduces significant extra complexity.
- * Ensure that the warnings and recommendations in {@code ChronoLocalDate} have been read before
- * working with the "chrono" interfaces.
- * </p>
- * <p>
- * This example creates and uses a date in a non-ISO calendar system.
- * </p>
- * <pre>
- *   // Print the Thai Buddhist date
- *       ChronoLocalDate&lt;ThaiBuddhistChrono&gt; now1 = ThaiBuddhistChrono.INSTANCE.dateNow();
- *       int day = now1.get(ChronoField.DAY_OF_MONTH);
- *       int dow = now1.get(ChronoField.DAY_OF_WEEK);
- *       int month = now1.get(ChronoField.MONTH_OF_YEAR);
- *       int year = now1.get(ChronoField.YEAR);
- *       System.out.printf("  Today is %s %s %d-%s-%d%n", now1.getChrono().getId(),
- *                 dow, day, month, year);
- *
- *   // Enumerate the list of available calendars and print today for each
- *       Set&lt;Chrono&lt;?&gt;&gt; chronos = Chrono.getAvailableChronologies();
- *       for (Chrono&lt;?&gt; chrono : chronos) {
- *         ChronoLocalDate&lt;?&gt; date = chrono.dateNow();
- *         System.out.printf("   %20s: %s%n", chrono.getId(), date.toString());
- *       }
- *
- *   // Print today's date and the last day of the year for the Thai Buddhist Calendar.
- *       ChronoLocalDate&lt;ThaiBuddhistChrono&gt; first = now1
- *                 .with(ChronoField.DAY_OF_MONTH, 1)
- *                 .with(ChronoField.MONTH_OF_YEAR, 1);
- *       ChronoLocalDate&lt;ThaiBuddhistChrono&gt; last = first
- *                 .plus(1, ChronoUnit.YEARS)
- *                 .minus(1, ChronoUnit.DAYS);
- *       System.out.printf("  %s: 1st of year: %s; end of year: %s%n", last.getChrono().getId(),
- *                 first, last);
- *  </pre>
  *
  * <h3>Package specification</h3>
  * <p>

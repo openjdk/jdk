@@ -154,13 +154,4 @@ public class TCKClock_Fixed extends AbstractTCKTest {
         Clock d = Clock.fixed(INSTANT.minusNanos(1), ZoneOffset.UTC);
         assertEquals(a.hashCode() == d.hashCode(), false);
     }
-
-    //-----------------------------------------------------------------------
-    public void test_toString() {
-        // spec requires "full state" in toString()
-        Clock test = Clock.fixed(INSTANT, PARIS);
-        assertEquals(test.toString().contains("Europe/Paris"), true);
-        assertEquals(test.toString().contains("2008-06-30T09:30:10.000000500Z"), true);
-    }
-
 }

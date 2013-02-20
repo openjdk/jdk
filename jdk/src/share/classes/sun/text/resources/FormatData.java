@@ -85,19 +85,42 @@ public class FormatData extends ListResourceBundle {
     /**
      * Overrides ListResourceBundle
      */
+    @Override
     protected final Object[][] getContents() {
-        final String[] buddhistEras = new String[] { // Thai Buddhist calendar era strings
+        // Julian calendar era strings
+        final String[] julianEras = {
+            "BC",
+            "AD"
+        };
+
+        // Thai Buddhist calendar era strings
+        final String[] buddhistEras = {
             "BC",     // BC
             "B.E."    // Buddhist Era
         };
 
         // Japanese imperial calendar era abbreviations
-        final String[] japaneseEraAbbrs = new String[] {
+        final String[] japaneseEraAbbrs = {
             "",
             "M",
             "T",
             "S",
             "H",
+        };
+
+        // Japanese imperial calendar era strings
+        final String[] japaneseEras = {
+            "",
+            "Meiji",
+            "Taisho",
+            "Showa",
+            "Heisei",
+        };
+
+        // Minguo era strings
+        final String[] rocEras ={
+            "Before R.O.C.",
+            "R.O.C.",
         };
 
         return new Object[][] {
@@ -181,11 +204,15 @@ public class FormatData extends ListResourceBundle {
                 }
             },
             { "Eras",
-                new String[] { // era strings for GregorianCalendar
-                    "BC",
-                    "AD"
+                julianEras },
+            { "cldr.long.Eras",
+                new String[] {
+                    "Before Christ",
+                    "Anno Domini"
                 }
             },
+            { "cldr.short.Eras",
+                julianEras },
             { "narrow.Eras",
                 new String[] {
                     "B",
@@ -202,19 +229,16 @@ public class FormatData extends ListResourceBundle {
               buddhistEras
             },
             { "japanese.Eras",
-                new String[] { // Japanese imperial calendar era strings
-                    "",
-                    "Meiji",
-                    "Taisho",
-                    "Showa",
-                    "Heisei",
-                }
-            },
+                japaneseEras },
+            { "cldr.japanese.long.Eras",
+                japaneseEras },
+            { "cldr.japanese.short.Eras",
+                japaneseEras },
             { "japanese.short.Eras",
-              japaneseEraAbbrs
+                japaneseEraAbbrs
             },
             { "japanese.narrow.Eras",
-              japaneseEraAbbrs
+                japaneseEraAbbrs
             },
             { "japanese.FirstYear",
                 new String[] { // Japanese imperial calendar year name
@@ -848,12 +872,8 @@ public class FormatData extends ListResourceBundle {
                     "{1} {0}"                  // date-time pattern
                 }
             },
-            { "roc.Eras",
-                new String[] {
-                    "Before R.O.C.",
-                    "R.O.C.",
-                }
-            },
+            { "roc.Eras", rocEras },
+            { "roc.short.Eras", rocEras },
             { "cldr.roc.DatePatterns",
                 new String[] {
                     "EEEE, G y MMMM dd",
