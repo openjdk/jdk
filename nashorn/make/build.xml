@@ -211,6 +211,8 @@
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
     <!-- test/script/basic .js scripts load other script tests -->
     <echo message="    permission java.io.FilePermission &quot;${basedir}/test/script/-&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="    permission java.io.FilePermission &quot;user.dir&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="    permission java.util.PropertyPermission &quot;user.dir&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
     <!-- test/script/basic .js scripts can read nashorn.test.* properties -->
     <echo message="    permission java.util.PropertyPermission &quot;nashorn.test.*&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
