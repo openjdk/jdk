@@ -29,7 +29,7 @@ import java.util.List;
 import static java.nio.file.StandardOpenOption.*;
 /*
  * @test
- * @bug 6746111 8005252
+ * @bug 6746111 8005252 8008262
  * @summary tests various classfile format and attribute handling by pack200
  * @compile -XDignore.symbol.file Utils.java AttributeTests.java
  * @run main AttributeTests
@@ -67,17 +67,17 @@ public class AttributeTests {
         File testjarFile = new File(cwd, "test" + Utils.JAR_FILE_EXT);
         Utils.jar("cvf", testjarFile.getName(), javaClassName);
 
-        // pack using --repack
-        File outjarFile = new File(cwd, "out" + Utils.JAR_FILE_EXT);
-        scratch.clear();
-        scratch.add(Utils.getPack200Cmd());
-        scratch.add("--repack");
-        scratch.add("--unknown-attribute=error");
-        scratch.add(outjarFile.getName());
-        scratch.add(testjarFile.getName());
-        Utils.runExec(scratch);
+        // pack using native --repack
+        File nativejarFile = new File(cwd, "out-n" + Utils.JAR_FILE_EXT);
+        Utils.repack(testjarFile, nativejarFile, false,
+                     "--unknown-attribute=error");
+        Utils.doCompareVerify(testjarFile, nativejarFile);
 
-        Utils.doCompareVerify(testjarFile, outjarFile);
+        // pack using java --repack
+        File javajarFile = new File(cwd, "out-j" + Utils.JAR_FILE_EXT);
+        Utils.repack(testjarFile, javajarFile, true,
+                     "--unknown-attribute=error");
+        Utils.doCompareBitWise(nativejarFile, javajarFile);
     }
     /*
      * this test checks to see if we get the expected strings for output

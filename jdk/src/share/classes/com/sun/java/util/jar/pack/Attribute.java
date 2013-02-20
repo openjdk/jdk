@@ -177,7 +177,7 @@ class Attribute implements Comparable<Attribute> {
         define(sd, ATTR_CONTEXT_METHOD, "Synthetic", "");
         define(sd, ATTR_CONTEXT_METHOD, "Deprecated", "");
         define(sd, ATTR_CONTEXT_METHOD, "Exceptions", "NH[RCH]");
-        define(sd, ATTR_CONTEXT_METHOD, "MethodParameters", "NB[RUNHI]");
+        define(sd, ATTR_CONTEXT_METHOD, "MethodParameters", "NB[RUNHFH]");
         //define(sd, ATTR_CONTEXT_METHOD, "Code", "HHNI[B]NH[PHPOHPOHRCNH]NH[RUHNI[B]]");
 
         define(sd, ATTR_CONTEXT_CODE, "StackMapTable",

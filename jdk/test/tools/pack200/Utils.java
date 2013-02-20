@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,6 +313,27 @@ class Utils {
         if (!jarTool.run(jargs)) {
             throw new RuntimeException("jar command failed");
         }
+    }
+    static List<String> repack(File inFile, File outFile,
+            boolean disableNative, String... extraOpts) {
+        List<String> cmdList = new ArrayList<>();
+        cmdList.clear();
+        cmdList.add(Utils.getJavaCmd());
+        cmdList.add("-ea");
+        cmdList.add("-esa");
+        if (disableNative) {
+            cmdList.add("-Dcom.sun.java.util.jar.pack.disable.native=true");
+        }
+        cmdList.add("com.sun.java.util.jar.pack.Driver");
+        cmdList.add("--repack");
+        if (extraOpts != null) {
+           for (String opt: extraOpts) {
+               cmdList.add(opt);
+           }
+        }
+        cmdList.add(outFile.getName());
+        cmdList.add(inFile.getName());
+        return Utils.runExec(cmdList);
     }
 
     // given a jar file foo.jar will write to foo.pack
