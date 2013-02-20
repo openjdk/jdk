@@ -59,15 +59,7 @@
  */
 package tck.java.time.zone;
 
-import java.time.ZoneId;
-import java.time.zone.*;
-import test.java.time.zone.*;
-
 import static org.testng.Assert.assertEquals;
-
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 
 import tck.java.time.AbstractTCKTest;
 import java.time.DayOfWeek;
@@ -75,6 +67,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.ZoneOffset;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
 
 import org.testng.annotations.Test;

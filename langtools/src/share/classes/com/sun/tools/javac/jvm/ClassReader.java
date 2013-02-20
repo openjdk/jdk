@@ -134,6 +134,11 @@ public class ClassReader implements Completer {
      **/
     public boolean preferSource;
 
+    /**
+     * The currently selected profile.
+     */
+    public final Profile profile;
+
     /** The log to use for verbose output
      */
     final Log log;
@@ -284,15 +289,19 @@ public class ClassReader implements Completer {
         annotate = Annotate.instance(context);
         verbose        = options.isSet(VERBOSE);
         checkClassFile = options.isSet("-checkclassfile");
+
         Source source = Source.instance(context);
         allowGenerics    = source.allowGenerics();
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowDefaultMethods = source.allowDefaultMethods();
+
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
+
+        profile = Profile.instance(context);
 
         completionFailureName =
             options.isSet("failcomplete")
@@ -1370,7 +1379,18 @@ public class ClassReader implements Completer {
                 CompoundAnnotationProxy proxy = readCompoundAnnotation();
                 if (proxy.type.tsym == syms.proprietaryType.tsym)
                     sym.flags_field |= PROPRIETARY;
-                else
+                else if (proxy.type.tsym == syms.profileType.tsym) {
+                    if (profile != Profile.DEFAULT) {
+                        for (Pair<Name,Attribute> v: proxy.values) {
+                            if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
+                                Attribute.Constant c = (Attribute.Constant) v.snd;
+                                if (c.type == syms.intType && ((Integer) c.value) > profile.value) {
+                                    sym.flags_field |= NOT_IN_PROFILE;
+                                }
+                            }
+                        }
+                    }
+                } else
                     proxies.append(proxy);
             }
             annotate.normal(new AnnotationCompleter(sym, proxies.toList()));
@@ -1470,12 +1490,13 @@ public class ClassReader implements Completer {
         position.type = type;
 
         switch (type) {
-        // type cast
-        case CAST:
         // instanceof
         case INSTANCEOF:
         // new expression
         case NEW:
+        // constructor/method reference receiver
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE:
             position.offset = nextChar();
             break;
         // local variable
@@ -1524,9 +1545,12 @@ public class ClassReader implements Completer {
         case METHOD_FORMAL_PARAMETER:
             position.parameter_index = nextByte();
             break;
+        // type cast
+        case CAST:
         // method/constructor/reference type argument
         case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
         case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT:
             position.offset = nextChar();
             position.type_index = nextByte();
@@ -1534,10 +1558,6 @@ public class ClassReader implements Completer {
         // We don't need to worry about these
         case METHOD_RETURN:
         case FIELD:
-            break;
-        // lambda formal parameter
-        case LAMBDA_FORMAL_PARAMETER:
-            position.parameter_index = nextByte();
             break;
         case UNKNOWN:
             throw new AssertionError("jvm.ClassReader: UNKNOWN target type should never occur!");

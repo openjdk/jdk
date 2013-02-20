@@ -2694,6 +2694,11 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
             scale[i] = (UINT8*) malloc((maxBandValue + 1) * sizeof(UINT8));
 
             if (scale[i] == NULL) {
+                // Cleanup before throwing an out of memory exception
+                for (j = 0; j < i; j++) {
+                    free(scale[j]);
+                }
+                free(scale);
                 JNU_ThrowByName( env, "java/lang/OutOfMemoryError",
                                  "Writing JPEG Stream");
                 return JNI_FALSE;

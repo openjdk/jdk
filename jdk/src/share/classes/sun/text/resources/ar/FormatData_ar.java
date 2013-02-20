@@ -85,7 +85,12 @@ public class FormatData_ar extends ListResourceBundle {
     /**
      * Overrides ListResourceBundle
      */
+    @Override
     protected final Object[][] getContents() {
+        final String[] rocEras = {
+            "Before R.O.C.",
+            "\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0627\u0644\u0635\u064a",
+        };
         return new Object[][] {
             { "MonthNames",
                 new String[] {
@@ -211,12 +216,8 @@ public class FormatData_ar extends ListResourceBundle {
                     "d\u200f/M\u200f/y G",
                 }
             },
-            { "roc.Eras",
-                new String[] {
-                    "Before R.O.C.",
-                    "\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0627\u0644\u0635\u064a",
-                }
-            },
+            { "roc.Eras", rocEras },
+            { "roc.short.Eras", rocEras },
             { "cldr.roc.DatePatterns",
                 new String[] {
                     "EEEE\u060c d MMMM\u060c y G",

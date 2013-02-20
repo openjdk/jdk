@@ -25,6 +25,9 @@
 
 package java.sql;
 
+import java.time.Instant;
+import java.time.LocalDate;
+
 /**
  * <P>A thin wrapper around a millisecond value that allows
  * JDBC to identify this as an SQL <code>DATE</code> value.  A
@@ -113,7 +116,6 @@ public class Date extends java.util.Date {
         int firstDash;
         int secondDash;
         Date d = null;
-
         if (s == null) {
             throw new java.lang.IllegalArgumentException();
         }
@@ -255,4 +257,50 @@ public class Date extends java.util.Date {
     * compatibility.
     */
     static final long serialVersionUID = 1511598038487230103L;
+
+    /**
+     * Obtains an instance of {@code Date} from a {@link LocalDate} object
+     * with the same year, month and day of month value as the given
+     * {@code LocalDate}.
+     * <p>
+     * The provided {@code LocalDate} is interpreted as the local date
+     * in the local time zone.
+     *
+     * @param date a {@code LocalDate} to convert
+     * @return a {@code Date} object
+     * @exception NullPointerException if {@code date} is null
+     * @since 1.8
+     */
+    @SuppressWarnings("deprecation")
+    public static Date valueOf(LocalDate date) {
+        return new Date(date.getYear() - 1900, date.getMonthValue() -1,
+                        date.getDayOfMonth());
+    }
+
+    /**
+     * Converts this {@code Date} object to a {@code LocalDate}
+     * <p>
+     * The conversion creates a {@code LocalDate} that represents the same
+     * date value as this {@code Date} in local time zone
+     *
+     * @return a {@code LocalDate} object representing the same date value
+     *
+     * @since 1.8
+     */
+    @SuppressWarnings("deprecation")
+    public LocalDate toLocalDate() {
+        return LocalDate.of(getYear() + 1900, getMonth() + 1, getDate());
+    }
+
+   /**
+    * This method always throws an UnsupportedOperationException and should
+    * not be used because SQL {@code Date} values do not have a time
+    * component.
+    *
+    * @exception java.lang.UnsupportedOperationException if this method is invoked
+    */
+    @Override
+    public Instant toInstant() {
+        throw new java.lang.UnsupportedOperationException();
+    }
 }

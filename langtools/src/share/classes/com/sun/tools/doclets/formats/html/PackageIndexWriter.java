@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
@@ -122,6 +123,21 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
+    protected void addProfilesList(String profileSummary, String profilesTableSummary,
+            Content body) {
+        Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0, profilesTableSummary,
+                getTableCaption(profileSummary));
+        table.addContent(getSummaryTableHeader(profileTableHeader, "col"));
+        Content tbody = new HtmlTree(HtmlTag.TBODY);
+        addProfilesList(tbody);
+        table.addContent(tbody);
+        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
+        body.addContent(div);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     protected void addPackagesList(PackageDoc[] packages, String text,
             String tableSummary, Content body) {
         Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0, tableSummary,
@@ -132,6 +148,31 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         table.addContent(tbody);
         Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
         body.addContent(div);
+    }
+
+    /**
+     * Adds list of profiles in the index table. Generate link to each profile.
+     *
+     * @param tbody the documentation tree to which the list will be added
+     */
+    protected void addProfilesList(Content tbody) {
+        for (int i = 1; i < configuration.profiles.getProfileCount(); i++) {
+            String profileName = Profile.lookup(i).name;
+            Content profileLinkContent = getTargetProfileLink("classFrame",
+                    new StringContent(profileName), profileName);
+            Content tdProfile = HtmlTree.TD(HtmlStyle.colFirst, profileLinkContent);
+            HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
+            tdSummary.addStyle(HtmlStyle.colLast);
+            tdSummary.addContent(getSpace());
+            HtmlTree tr = HtmlTree.TR(tdProfile);
+            tr.addContent(tdSummary);
+            if (i % 2 == 0) {
+                tr.addStyle(HtmlStyle.altColor);
+            } else {
+                tr.addStyle(HtmlStyle.rowColor);
+            }
+            tbody.addContent(tr);
+        }
     }
 
     /**

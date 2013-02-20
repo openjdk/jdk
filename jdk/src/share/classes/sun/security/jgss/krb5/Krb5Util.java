@@ -243,14 +243,24 @@ public class Krb5Util {
     }
 
     /**
+     * A helper method to get a sun..KeyTab from a javax..KeyTab
+     * @param ktab the javax..KeyTab object
+     * @return the sun..KeyTab object
+     */
+    public static sun.security.krb5.internal.ktab.KeyTab
+            snapshotFromJavaxKeyTab(KeyTab ktab) {
+        return KerberosSecrets.getJavaxSecurityAuthKerberosAccess()
+                .keyTabTakeSnapshot(ktab);
+    }
+
+    /**
      * A helper method to get EncryptionKeys from a javax..KeyTab
-     * @param ktab the javax..KeyTab class
+     * @param ktab the javax..KeyTab object
      * @param cname the PrincipalName
      * @return the EKeys, never null, might be empty
      */
     public static EncryptionKey[] keysFromJavaxKeyTab(
             KeyTab ktab, PrincipalName cname) {
-        return KerberosSecrets.getJavaxSecurityAuthKerberosAccess().
-                keyTabGetEncryptionKeys(ktab, cname);
+        return snapshotFromJavaxKeyTab(ktab).readServiceKeys(cname);
     }
 }

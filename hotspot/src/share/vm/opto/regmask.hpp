@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,22 +225,22 @@ public:
   // Find the lowest-numbered register set in the mask.  Return the
   // HIGHEST register number in the set, or BAD if no sets.
   // Assert that the mask contains only bit sets.
-  OptoReg::Name find_first_set(int size) const;
+  OptoReg::Name find_first_set(const int size) const;
 
   // Clear out partial bits; leave only aligned adjacent bit sets of size.
-  void clear_to_sets(int size);
+  void clear_to_sets(const int size);
   // Smear out partial bits to aligned adjacent bit sets.
-  void smear_to_sets(int size);
+  void smear_to_sets(const int size);
   // Verify that the mask contains only aligned adjacent bit sets
   void verify_sets(int size) const { assert(is_aligned_sets(size), "mask is not aligned, adjacent sets"); }
   // Test that the mask contains only aligned adjacent bit sets
-  bool is_aligned_sets(int size) const;
+  bool is_aligned_sets(const int size) const;
 
   // mask is a set of misaligned registers
   bool is_misaligned_set(int size) const { return (int)Size()==size && !is_aligned_sets(size);}
 
   // Test for a single adjacent set
-  int is_bound_set(int size) const;
+  int is_bound_set(const int size) const;
 
   static bool is_vector(uint ireg);
   static int num_registers(uint ireg);

@@ -1309,6 +1309,9 @@ public class Type implements PrimitiveType {
         /** inference variable's inferred type (set from Infer.java) */
         public Type inst = null;
 
+        /** number of declared (upper) bounds */
+        public int declaredCount;
+
         /** inference variable's change listener */
         public UndetVarListener listener = null;
 
@@ -1318,13 +1321,11 @@ public class Type implements PrimitiveType {
         }
 
         public UndetVar(TypeVar origin, Types types) {
-            this(origin, types, true);
-        }
-
-        public UndetVar(TypeVar origin, Types types, boolean includeBounds) {
             super(UNDETVAR, origin);
             bounds = new EnumMap<InferenceBound, List<Type>>(InferenceBound.class);
-            bounds.put(InferenceBound.UPPER, includeBounds ? types.getBounds(origin) : List.<Type>nil());
+            List<Type> declaredBounds = types.getBounds(origin);
+            declaredCount = declaredBounds.length();
+            bounds.put(InferenceBound.UPPER, declaredBounds);
             bounds.put(InferenceBound.LOWER, List.<Type>nil());
             bounds.put(InferenceBound.EQ, List.<Type>nil());
         }
@@ -1340,38 +1341,89 @@ public class Type implements PrimitiveType {
         }
 
         /** get all bounds of a given kind */
-        public List<Type> getBounds(InferenceBound ib) {
-            return bounds.get(ib);
+        public List<Type> getBounds(InferenceBound... ibs) {
+            ListBuffer<Type> buf = ListBuffer.lb();
+            for (InferenceBound ib : ibs) {
+                buf.appendList(bounds.get(ib));
+            }
+            return buf.toList();
+        }
+
+        /** get the list of declared (upper) bounds */
+        public List<Type> getDeclaredBounds() {
+            ListBuffer<Type> buf = ListBuffer.lb();
+            int count = 0;
+            for (Type b : getBounds(InferenceBound.UPPER)) {
+                if (count++ == declaredCount) break;
+                buf.append(b);
+            }
+            return buf.toList();
         }
 
         /** add a bound of a given kind - this might trigger listener notification */
         public void addBound(InferenceBound ib, Type bound, Types types) {
+            Type bound2 = toTypeVarMap.apply(bound);
             List<Type> prevBounds = bounds.get(ib);
             for (Type b : prevBounds) {
-                if (types.isSameType(b, bound)) {
-                    return;
-                }
+                //check for redundancy - use strict version of isSameType on tvars
+                //(as the standard version will lead to false positives w.r.t. clones ivars)
+                if (types.isSameType(b, bound2, true)) return;
             }
-            bounds.put(ib, prevBounds.prepend(bound));
+            bounds.put(ib, prevBounds.prepend(bound2));
             notifyChange(EnumSet.of(ib));
         }
+        //where
+            Type.Mapping toTypeVarMap = new Mapping("toTypeVarMap") {
+                @Override
+                public Type apply(Type t) {
+                    if (t.hasTag(UNDETVAR)) {
+                        UndetVar uv = (UndetVar)t;
+                        return uv.qtype;
+                    } else {
+                        return t.map(this);
+                    }
+                }
+            };
 
         /** replace types in all bounds - this might trigger listener notification */
         public void substBounds(List<Type> from, List<Type> to, Types types) {
-            EnumSet<InferenceBound> changed = EnumSet.noneOf(InferenceBound.class);
-            Map<InferenceBound, List<Type>> bounds2 = new EnumMap<InferenceBound, List<Type>>(InferenceBound.class);
-            for (Map.Entry<InferenceBound, List<Type>> _entry : bounds.entrySet()) {
-                InferenceBound ib = _entry.getKey();
-                List<Type> prevBounds = _entry.getValue();
-                List<Type> newBounds = types.subst(prevBounds, from, to);
-                bounds2.put(ib, newBounds);
-                if (prevBounds != newBounds) {
-                    changed.add(ib);
+            List<Type> instVars = from.diff(to);
+            //if set of instantiated ivars is empty, there's nothing to do!
+            if (instVars.isEmpty()) return;
+            final EnumSet<InferenceBound> boundsChanged = EnumSet.noneOf(InferenceBound.class);
+            UndetVarListener prevListener = listener;
+            try {
+                //setup new listener for keeping track of changed bounds
+                listener = new UndetVarListener() {
+                    public void varChanged(UndetVar uv, Set<InferenceBound> ibs) {
+                        boundsChanged.addAll(ibs);
+                    }
+                };
+                for (Map.Entry<InferenceBound, List<Type>> _entry : bounds.entrySet()) {
+                    InferenceBound ib = _entry.getKey();
+                    List<Type> prevBounds = _entry.getValue();
+                    ListBuffer<Type> newBounds = ListBuffer.lb();
+                    ListBuffer<Type> deps = ListBuffer.lb();
+                    //step 1 - re-add bounds that are not dependent on ivars
+                    for (Type t : prevBounds) {
+                        if (!t.containsAny(instVars)) {
+                            newBounds.append(t);
+                        } else {
+                            deps.append(t);
+                        }
+                    }
+                    //step 2 - replace bounds
+                    bounds.put(ib, newBounds.toList());
+                    //step 3 - for each dependency, add new replaced bound
+                    for (Type dep : deps) {
+                        addBound(ib, types.subst(dep, from, to), types);
+                    }
                 }
-            }
-            if (!changed.isEmpty()) {
-                bounds = bounds2;
-                notifyChange(changed);
+            } finally {
+                listener = prevListener;
+                if (!boundsChanged.isEmpty()) {
+                    notifyChange(boundsChanged);
+                }
             }
         }
 
