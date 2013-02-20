@@ -1036,7 +1036,7 @@ public class ClassReader implements Completer {
                         haveParameterNameIndices = true;
                         for (int i = 0; i < numEntries; i++) {
                             int nameIndex = nextChar();
-                            int flags = nextInt();
+                            int flags = nextChar();
                             parameterNameIndices[i] = nameIndex;
                         }
                     }
