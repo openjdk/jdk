@@ -212,11 +212,11 @@ public class ClassEmitter implements Emitter {
     private void defineCommonStatics(final boolean strictMode) {
         // source - used to store the source data (text) for this script.  Shared across
         // compile units.  Set externally by the compiler.
-        field(EnumSet.of(Flag.PUBLIC, Flag.STATIC), SOURCE.tag(), Source.class);
+        field(EnumSet.of(Flag.PRIVATE, Flag.STATIC), SOURCE.tag(), Source.class);
 
         // constants - used to the constants array for this script.  Shared across
         // compile units.  Set externally by the compiler.
-        field(EnumSet.of(Flag.PUBLIC, Flag.STATIC), CONSTANTS.tag(), Object[].class);
+        field(EnumSet.of(Flag.PRIVATE, Flag.STATIC), CONSTANTS.tag(), Object[].class);
 
         // strictMode - was this script compiled in strict mode.  Set externally by the compiler.
         field(EnumSet.of(Flag.PUBLIC, Flag.STATIC, Flag.FINAL), STRICT_MODE.tag(), boolean.class, strictMode);

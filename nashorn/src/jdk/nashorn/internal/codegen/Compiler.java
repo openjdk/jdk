@@ -33,6 +33,10 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 
 import java.io.File;
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -274,10 +278,23 @@ public final class Compiler {
             }
 
             try {
-                //use reflection to write source and constants table to installed classes
-                clazz.getField(SOURCE.tag()).set(null, getSource());
-                clazz.getField(CONSTANTS.tag()).set(null, getConstantData().toArray());
-            } catch (final NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+                final Source source = getSource();
+                final Object[] constants = getConstantData().toArray();
+                // Need doPrivileged because these fields are private
+                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                    @Override
+                    public Void run() throws Exception {
+                        //use reflection to write source and constants table to installed classes
+                        final Field sourceField = clazz.getDeclaredField(SOURCE.tag());
+                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.tag());
+                        sourceField.setAccessible(true);
+                        constantsField.setAccessible(true);
+                        sourceField.set(null, source);
+                        constantsField.set(null, constants);
+                        return null;
+                    }
+                });
+            } catch (final PrivilegedActionException e) {
                 throw new RuntimeException(e);
             }
         }
