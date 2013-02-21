@@ -1702,12 +1702,17 @@ public class LambdaToMethod extends TreeTranslator {
                 return tree.sym.owner == syms.arrayClass;
             }
 
+            boolean isPrivateConstructor() {
+                return tree.sym.name == names.init &&
+                        (tree.sym.flags() & PRIVATE) != 0;
+            }
+
             /**
              * Does this reference needs a bridge (i.e. var args need to be
              * expanded or "super" is used)
              */
             final boolean needsBridge() {
-                return isSuper || needsVarArgsConversion() || isArrayOp();
+                return isSuper || needsVarArgsConversion() || isArrayOp() || isPrivateConstructor();
             }
 
             Type generatedRefSig() {
