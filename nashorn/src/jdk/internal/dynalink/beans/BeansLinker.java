@@ -159,7 +159,7 @@ public class BeansLinker implements GuardingDynamicLinker {
         return linkers.get(clazz);
     }
 
-    /*
+    /**
      * Returns true if the object is a Dynalink Java dynamic method.
      *
      * @param obj the object we want to test for being a dynamic method

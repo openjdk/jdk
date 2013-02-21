@@ -203,7 +203,7 @@ public class MethodEmitter implements Emitter {
 
     @Override
     public String toString() {
-        return "methodEmitter: " + (functionNode == null ? method : functionNode.getName()).toString();
+        return "methodEmitter: " + (functionNode == null ? method : functionNode.getName()).toString() + ' ' + stack;
     }
 
     /**

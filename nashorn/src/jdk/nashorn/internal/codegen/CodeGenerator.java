@@ -850,7 +850,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
              * Determine if function is varargs and consequently variables have to
              * be in the scope.
              */
-            final boolean varsInScope = function.varsInScope();
+            final boolean varsInScope = function.allVarsInScope();
 
             // TODO for LET we can do better: if *block* does not contain any eval/with, we don't need its vars in scope.
 
@@ -2040,7 +2040,6 @@ final class CodeGenerator extends NodeOperatorVisitor {
         }
 
         final Symbol varSymbol = varNode.getSymbol();
-
         assert varSymbol != null : "variable node " + varNode + " requires a symbol";
 
         assert method != null;
@@ -2058,7 +2057,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
             }
             final IdentNode identNode = varNode.getName();
             final Type type = identNode.getType();
-            if(varSymbol.isFastScope(getCurrentFunctionNode())) {
+            if (varSymbol.isFastScope(getCurrentFunctionNode())) {
                 storeFastScopeVar(type, varSymbol, flags);
             } else {
                 method.dynamicSet(type, identNode.getName(), flags);

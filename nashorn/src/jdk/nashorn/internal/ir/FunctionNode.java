@@ -188,25 +188,27 @@ public class FunctionNode extends Block {
     private static final int IS_LOWERED                  = 0b0000_0000_0001_0000;
     /** Has this node been split because it was too large? */
     private static final int IS_SPLIT                    = 0b0000_0000_0010_0000;
-    /** Is this function lazily compiled? */
-    private static final int IS_LAZY                     = 0b0000_0000_0100_0000;
     /** Does the function call eval? */
-    private static final int HAS_EVAL                    = 0b0000_0000_1000_0000;
+    private static final int HAS_EVAL                    = 0b0000_0000_0100_0000;
     /** Does the function contain a with block ? */
-    private static final int HAS_WITH                    = 0b0000_0001_0000_0000;
+    private static final int HAS_WITH                    = 0b0000_0000_1000_0000;
     /** Does a descendant function contain a with or eval? */
-    private static final int HAS_DESCENDANT_WITH_OR_EVAL = 0b0000_0010_0000_0000;
+    private static final int HAS_DESCENDANT_WITH_OR_EVAL = 0b0000_0001_0000_0000;
     /** Does the function define "arguments" identifier as a parameter of nested function name? */
-    private static final int DEFINES_ARGUMENTS           = 0b0000_0100_0000_0000;
+    private static final int DEFINES_ARGUMENTS           = 0b0000_0010_0000_0000;
     /** Does the function need a self symbol? */
-    private static final int NEEDS_SELF_SYMBOL           = 0b0000_1000_0000_0000;
+    private static final int NEEDS_SELF_SYMBOL           = 0b0000_0100_0000_0000;
     /** Does this function or any of its descendants use variables from an ancestor function's scope (incl. globals)? */
-    private static final int USES_ANCESTOR_SCOPE         = 0b0001_0000_0000_0000;
+    private static final int USES_ANCESTOR_SCOPE         = 0b0000_1000_0000_0000;
+    /** Is this function lazily compiled? */
+    private static final int IS_LAZY                     = 0b0001_0000_0000_0000;
+    /** Does this function have lazy, yet uncompiled children */
+    private static final int HAS_LAZY_CHILDREN           = 0b0010_0000_0000_0000;
 
     /** Does this function or any nested functions contain a with or an eval? */
     private static final int HAS_DEEP_WITH_OR_EVAL = HAS_EVAL | HAS_WITH | HAS_DESCENDANT_WITH_OR_EVAL;
     /** Does this function need to store all its variables in scope? */
-    private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_WITH_OR_EVAL | IS_SPLIT;
+    private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_WITH_OR_EVAL | IS_SPLIT | HAS_LAZY_CHILDREN;
     /** Does this function potentially need "arguments"? Note that this is not a full test, as further negative check of REDEFINES_ARGS is needed. */
     private static final int MAYBE_NEEDS_ARGUMENTS = USES_ARGUMENTS | HAS_EVAL;
     /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep with or eval. */
@@ -862,7 +864,7 @@ public class FunctionNode extends Block {
      *
      * @return true if all variables should be in scope
      */
-    public boolean varsInScope() {
+    public boolean allVarsInScope() {
         return isScript() || (flags & HAS_ALL_VARS_IN_SCOPE) != 0;
     }
 
@@ -880,6 +882,23 @@ public class FunctionNode extends Block {
      */
     public void setIsSplit() {
         this.flags |= IS_SPLIT;
+        setNeedsScope();
+    }
+
+    /**
+     * Checks if this function has yet-to-be-generated child functions
+     *
+     * @return true if there are lazy child functions
+     */
+    public boolean hasLazyChildren() {
+        return (flags & HAS_LAZY_CHILDREN) != 0;
+    }
+
+    /**
+     * Flag this function node as having yet-to-be-generated child functions
+     */
+    public void setHasLazyChildren() {
+        this.flags |= HAS_LAZY_CHILDREN;
         setNeedsScope();
     }
 

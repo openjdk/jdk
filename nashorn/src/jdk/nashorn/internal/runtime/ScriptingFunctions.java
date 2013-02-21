@@ -121,11 +121,11 @@ public final class ScriptingFunctions {
      *
      * @param self   self reference
      * @param string string to execute
-     * @param input
+     * @param input  input
      *
      * @return output string from the request
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException           if any stream access fails
+     * @throws InterruptedException  if execution is interrupted
      */
     public static Object exec(final Object self, final Object string, final Object input) throws IOException, InterruptedException {
         // Current global is need to fetch additional inputs and for additional results.

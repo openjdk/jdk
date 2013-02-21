@@ -5,6 +5,7 @@ import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import jdk.nashorn.internal.codegen.CompilationException;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.FunctionSignature;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -77,12 +78,10 @@ public final class ScriptFunctionTrampolineImpl extends ScriptFunctionImpl {
         return super.makeBoundFunction(data);
     }
 
-    private MethodHandle compile() {
+    private MethodHandle compile() throws CompilationException {
         final Compiler compiler = new Compiler(installer, functionNode);
-        if (!compiler.compile()) {
-            assert false : "compilation error in trampoline for " + functionNode.getName();
-            return null;
-        }
+
+        compiler.compile();
 
         final Class<?> clazz = compiler.install();
         /* compute function signature for lazy method. this can be done first after compilation, as only then do we know
@@ -91,7 +90,9 @@ public final class ScriptFunctionTrampolineImpl extends ScriptFunctionImpl {
         final MethodType        mt        = signature.getMethodType();
 
         MethodHandle mh = MH.findStatic(MethodHandles.publicLookup(), clazz, functionNode.getName(), mt);
-        mh = MH.bindTo(mh, this);
+        if (functionNode.needsCallee()) {
+            mh = MH.bindTo(mh, this);
+        }
 
         // now the invoker method looks like the one our superclass is expecting
         resetInvoker(mh);
@@ -100,11 +101,11 @@ public final class ScriptFunctionTrampolineImpl extends ScriptFunctionImpl {
     }
 
     @SuppressWarnings("unused")
-    private Object trampoline(final Object... args) {
-        /** Create a new compiler for the lazy node, using the same installation policy as the old one */
-
+    private Object trampoline(final Object... args) throws CompilationException {
+        Compiler.LOG.info(">>> TRAMPOLINE: Hitting trampoline for '" + functionNode.getName() + "'");
         MethodHandle mh = compile();
 
+        Compiler.LOG.info("<<< COMPILED TO: " + mh);
         // spread the array to invididual args of the correct type
         mh = MH.asSpreader(mh, Object[].class, mh.type().parameterCount());
 

@@ -97,15 +97,16 @@ import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.Timing;
 
 /**
  * Builds the IR.
- *
  */
 public class Parser extends AbstractParser {
     /** Current context. */
@@ -125,6 +126,8 @@ public class Parser extends AbstractParser {
 
     /** Namespace for function names where not explicitly given */
     private final Namespace namespace;
+
+    private static DebugLogger LOG = new DebugLogger("parser");
 
     /**
      * Constructor
@@ -176,6 +179,9 @@ public class Parser extends AbstractParser {
      * @return function node resulting from successful parse
      */
     public FunctionNode parse(final String scriptName) {
+        final long t0 = Timing.isEnabled() ? System.currentTimeMillis() : 0L;
+        LOG.info(this + " begin for '" + scriptName + "'");
+
         try {
             stream = new TokenStream();
             lexer  = new Lexer(source, stream, scripting && !context._no_syntax_extensions);
@@ -208,6 +214,14 @@ public class Parser extends AbstractParser {
             }
 
             return null;
+         } finally {
+             final String end = this + " end '" + scriptName + "'";
+             if (Timing.isEnabled()) {
+                 Timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
+                 LOG.info(end + "' in " + (System.currentTimeMillis() - t0) + " ms");
+             } else {
+                 LOG.info(end);
+             }
          }
     }
 
@@ -3064,4 +3078,8 @@ loop:
         return null;
     }
 
+    @Override
+    public String toString() {
+        return "[JavaScript Parsing]";
+    }
 }
