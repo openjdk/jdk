@@ -25,7 +25,7 @@
 @test
 @bug 8004970
 @summary Lambda serialization
-
+@run main/othervm LambdaSerialization
 */
 
 import java.io.*;
