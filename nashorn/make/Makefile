@@ -23,8 +23,6 @@
 # questions.
 #
 
-# Makefile for nashorn: wrapper around Ant build.xml file
-
 #
 # On Solaris, the standard 'make' utility will not work with these makefiles.
 #    This little rule is only understood by Solaris make, and is harmless
@@ -33,168 +31,13 @@
 #
 SUN_MAKE_TEST:sh = @echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
 
-#
-# Minimal platform defs
-# Need FullPath because we can't rely on gnumake abspath, until we use v3.81
-#
-
-SYSTEM_UNAME := $(shell uname)
-
-# Where is unwanted output to be delivered?
-# On Windows, MKS uses the special file "NUL", cygwin uses the customary unix file.
-ifeq ($(SYSTEM_UNAME), Windows_NT)
-DEV_NULL = NUL
-else
-DEV_NULL = /dev/null 
-endif
-
-ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
-USING_CYGWIN = true
-endif
-
-ifdef USING_CYGWIN
-define FullPath
-$(shell cygpath -a -s -m $1 2> $(DEV_NULL))
-endef
-else
-define FullPath
-$(shell cd $1 2> $(DEV_NULL) && pwd)
-endef
-endif
-
-#
-# Makefile args
-#
-
-ifdef QUIET
-  ANT_OPTIONS += -quiet
-endif
-
-ifdef VERBOSE
-  ANT_OPTIONS += -verbose -debug
-endif
-
-ifdef JDK_VERSION
-  ANT_OPTIONS += -Djdk.version=$(JDK_VERSION)
-endif 
-
-ifdef FULL_VERSION
-  ANT_OPTIONS += -Dfull.version='$(FULL_VERSION)' # will contain spaces
-endif 
-
-ifdef MILESTONE
-ifneq ($(MILESTONE),fcs)
-  ANT_OPTIONS += -Dmilestone=$(MILESTONE)
-else
-  ANT_OPTIONS += -Drelease=$(JDK_VERSION)
-endif
-endif
-
-ifdef BUILD_NUMBER
-  ANT_OPTIONS += -Dbuild.number=$(BUILD_NUMBER)
-else
-  ifdef JDK_BUILD_NUMBER
-    ANT_OPTIONS += -Dbuild.number=$(JDK_BUILD_NUMBER)
-  endif
-endif
-
-ifeq ($(VARIANT), DBG)
-  ANT_OPTIONS += -Djavac.debug=true
-else
-  ifeq ($(VARIANT), OPT)
-    ANT_OPTIONS += -Djavac.debug=false
-  endif
-endif
-
-ifeq ($(DEBUG_CLASSFILES), true)
-  ANT_OPTIONS += -Djavac.debug=true
-  ANT_OPTIONS += -Ddebug.classfiles=true
-endif
-
-# Note: jdk/make/common/Defs.gmk uses LANGUAGE_VERSION (-source NN)
-# and the somewhat misnamed CLASS_VERSION (-target NN)
-ifdef TARGET_CLASS_VERSION
-  ANT_OPTIONS += -Djavac.target=$(TARGET_CLASS_VERSION)
-else
-  ifdef JAVAC_TARGET_ARG 
-    ANT_OPTIONS += -Djavac.target=$(JAVAC_TARGET_ARG)
-  endif
-endif 
-
-ifdef SOURCE_LANGUAGE_VERSION
-  ANT_OPTIONS += -Djavac.source=$(SOURCE_LANGUAGE_VERSION)
-else
-  ifdef JAVAC_SOURCE_ARG 
-    ANT_OPTIONS += -Djavac.source=$(JAVAC_SOURCE_ARG)
-  endif
-endif 
-
-# To facilitate bootstrapping, much of langtools can be compiled with (just)
-# a boot JDK. However, some source files need to be compiled against 
-# new JDK API. In a bootstrap build, an import JDK may not be available,
-# so build.xml can also build against the source files in a jdk repo,
-# in which case it will automatically generate stub files for the new JDK API.
-ifdef JDK_TOPDIR
-  ANT_OPTIONS += -Dimport.jdk=$(JDK_TOPDIR)
-else 
-  ifdef ALT_JDK_TOPDIR
-    ANT_OPTIONS += -Dimport.jdk=$(ALT_JDK_TOPDIR)
-  else 
-    ifdef ALT_JDK_IMPORT_PATH
-      ANT_OPTIONS += -Dimport.jdk=$(ALT_JDK_IMPORT_PATH)
-    endif
-  endif
-endif
-
-ifdef ALT_OUTPUTDIR
-  OUTPUTDIR = $(ALT_OUTPUTDIR)
-  ANT_OPTIONS += -Dbuild.dir=$(ALT_OUTPUTDIR)/build
-  ANT_OPTIONS += -Ddist.dir=$(ALT_OUTPUTDIR)/dist
-else
-  OUTPUTDIR = ..
-endif
-#ABS_OUTPUTDIR = $(abspath $(OUTPUTDIR))
-ABS_OUTPUTDIR = $(call FullPath,$(OUTPUTDIR))
-
-ANT_TMPDIR = $(ABS_OUTPUTDIR)/build/ant-tmp
-ANT_OPTS = ANT_OPTS=-Djava.io.tmpdir='$(ANT_TMPDIR)'
-
-ifdef FINDBUGS_HOME
-  ANT_OPTIONS += -Dfindbugs.home=$(FINDBUGS_HOME)
-endif
-
-ifdef ANT_HOME
-  ANT = $(ANT_HOME)/bin/ant
-  ifneq ($(shell test -x $(ANT) && echo OK), OK)
-    $(error $(ANT) not found -- please update ANT_HOME)
-  endif
-else
-  ANT = ant
-  ifneq ($(shell test -x "`which $(ANT)`" && echo OK), OK)
-    $(error 'ant' not found -- please set ANT_HOME or put 'ant' on your PATH)
-  endif
-endif
 
 # Default target and expected 'do everything' target
-all: test
+all:
+	echo Nashorn can only be built with NEWBUILD=true
 
 # Standard make clobber target
-clobber: clean
-
-# All ant targets of interest
-ANT_TARGETS = clean externals update-externals jar javadoc shelldoc docs test test262 test262parallel octane sunspider perf alltests
-
-# Create diagnostics log (careful, ant 1.8.0 -diagnostics always does an exit 1)
-$(OUTPUTDIR)/build/ant-diagnostics.log:
-	@mkdir -p $(OUTPUTDIR)/build $(ANT_TMPDIR)
-	@$(RM) $@
-	$(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) -diagnostics > $@ ; \
-	  $(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) -version >> $@
-
-# Create a make target for each
-$(ANT_TARGETS): $(OUTPUTDIR)/build/ant-diagnostics.log
-	@ mkdir -p $(OUTPUTDIR)/build $(ANT_TMPDIR)
-	$(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) $(ANT_OPTIONS) $@
+clobber:
 
 #-------------------------------------------------------------------
 #
