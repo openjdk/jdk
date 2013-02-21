@@ -484,6 +484,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         return getIntEndPosition();
     }
 
+    public DiagnosticPosition getDiagnosticPosition() {
+        return position;
+    }
+
     /**
      * Get the line number within the source referred to by this diagnostic.
      * @return  the line number within the source referred to by this diagnostic

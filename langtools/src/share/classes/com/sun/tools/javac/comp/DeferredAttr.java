@@ -276,14 +276,27 @@ public class DeferredAttr extends JCTree.Visitor {
      * disabled during speculative type-checking.
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
-        JCTree newTree = new TreeCopier<Object>(make).copy(tree);
+        final JCTree newTree = new TreeCopier<Object>(make).copy(tree);
         Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared()));
         speculativeEnv.info.scope.owner = env.info.scope.owner;
-        final JavaFileObject currentSource = log.currentSourceFile();
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log, new Filter<JCDiagnostic>() {
-            public boolean accepts(JCDiagnostic t) {
-                return t.getDiagnosticSource().getFile().equals(currentSource);
+            public boolean accepts(final JCDiagnostic d) {
+                class PosScanner extends TreeScanner {
+                    boolean found = false;
+
+                    @Override
+                    public void scan(JCTree tree) {
+                        if (tree != null &&
+                                tree.pos() == d.getDiagnosticPosition()) {
+                            found = true;
+                        }
+                        super.scan(tree);
+                    }
+                };
+                PosScanner posScanner = new PosScanner();
+                posScanner.scan(newTree);
+                return posScanner.found;
             }
         });
         try {
