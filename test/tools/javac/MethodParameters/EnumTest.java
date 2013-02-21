@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8006582
+ * @bug 8006582 8008658
  * @summary javac should generate method parameters correctly.
  * @build Tester
  * @compile -parameters EnumTest.java
