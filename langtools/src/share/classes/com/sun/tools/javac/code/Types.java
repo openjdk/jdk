@@ -580,7 +580,17 @@ public class Types {
             for (Type t : formalInterface.getTypeArguments()) {
                 if (actualTypeargs.head.hasTag(WILDCARD)) {
                     WildcardType wt = (WildcardType)actualTypeargs.head;
-                    typeargs.append(wt.type);
+                    Type bound;
+                    switch (wt.kind) {
+                        case UNBOUND:
+                            //use declared bound if it doesn't depend on formal type-args
+                            bound = wt.bound.bound.containsAny(formalInterface.getTypeArguments()) ?
+                                    syms.objectType : wt.bound.bound;
+                            break;
+                        default:
+                            bound = wt.type;
+                    }
+                    typeargs.append(bound);
                 } else {
                     typeargs.append(actualTypeargs.head);
                 }
