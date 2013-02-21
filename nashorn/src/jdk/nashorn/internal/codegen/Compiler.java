@@ -54,6 +54,7 @@ import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.Timing;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -71,8 +72,6 @@ public final class Compiler {
     public static final String OBJECTS_PACKAGE = "jdk/nashorn/internal/objects";
 
     static final boolean LAZY_JIT = Options.getBooleanProperty("nashorn.compiler.lazy");
-
-    static final boolean TIME_COMPILATION = Options.getBooleanProperty("nashorn.compiler.time");
 
     private final Map<String, byte[]> bytecode;
 
@@ -92,7 +91,9 @@ public final class Compiler {
 
     private CodeInstaller<Context> installer;
 
-    static final DebugLogger LOG = new DebugLogger("compiler");
+    /** logger for compiler, trampolines, splits and related code generation events
+     *  that affect classes */
+    public static final DebugLogger LOG = new DebugLogger("compiler");
 
     /**
      * This array contains names that need to be reserved at the start
@@ -179,6 +180,13 @@ public final class Compiler {
             SEQUENCE_LAZY :
             SEQUENCE_NORMAL;
 
+    private static String lazyTag(final FunctionNode functionNode) {
+        if (functionNode.isLazy()) {
+            return '$' + LAZY.tag() + '$' + functionNode.getName();
+        }
+        return "";
+    }
+
     /**
      * Constructor
      *
@@ -187,6 +195,7 @@ public final class Compiler {
      * @param sequence     {@link Compiler#CompilationSequence} of {@link CompilationPhase}s to apply as this compilation
      * @param strict       should this compilation use strict mode semantics
      */
+    //TODO support an array of FunctionNodes for batch lazy compilation
     Compiler(final Context context, final CodeInstaller<Context> installer, final FunctionNode functionNode, final CompilationSequence sequence, final boolean strict) {
         this.context       = context;
         this.functionNode  = functionNode;
@@ -198,14 +207,16 @@ public final class Compiler {
         this.bytecode      = new HashMap<>();
 
         final StringBuilder sb = new StringBuilder();
-        sb.append(functionNode.uniqueName(DEFAULT_SCRIPT_NAME.tag())).
+        sb.append(functionNode.uniqueName(DEFAULT_SCRIPT_NAME.tag() + lazyTag(functionNode))).
                 append('$').
-                append(safeSourceName(functionNode.getSource())).
-                append(functionNode.isLazy() ? LAZY.tag() : "");
+                append(safeSourceName(functionNode.getSource()));
 
         this.scriptName = sb.toString();
 
-        LOG.info("Initializing compiler for scriptName = " + scriptName + ", root function: '" + functionNode.getName() + "'");
+        LOG.info("Initializing compiler for '" + functionNode.getName() + "' scriptName = " + scriptName + ", root function: '" + functionNode.getName() + "'");
+        if (functionNode.isLazy()) {
+            LOG.info(">>> This is a lazy recompilation triggered by a trampoline");
+        }
     }
 
     /**
@@ -241,22 +252,23 @@ public final class Compiler {
 
     /**
      * Execute the compilation this Compiler was created with
-     * @return true if compilation succeeds.
+     * @throws CompilationException if something goes wrong
      */
-    public boolean compile() {
+    public void compile() throws CompilationException {
         for (final String reservedName : RESERVED_NAMES) {
             functionNode.uniqueName(reservedName);
         }
 
         for (final CompilationPhase phase : sequence) {
-            LOG.info("Entering compile phase " + phase + " for function '" + functionNode.getName() + "'");
-            if (phase.isApplicable(functionNode)) {
-                if (!phase.apply(this, functionNode)) { //TODO exceptions, error logging
-                    return false;
-                }
+            phase.apply(this, functionNode);
+            final String end = phase.toString() + " done for function '" + functionNode.getName() + "'";
+            if (Timing.isEnabled()) {
+                final long duration = phase.getEndTime() - phase.getStartTime();
+                LOG.info(end + " in " + duration + " ms");
+            } else {
+                LOG.info(end);
             }
         }
-        return true;
     }
 
     /**
@@ -264,11 +276,15 @@ public final class Compiler {
      * @return root script class - if there are several compile units they will also be installed
      */
     public Class<?> install() {
+        final long t0 = Timing.isEnabled() ? System.currentTimeMillis() : 0L;
+
+        assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " has no bytecode and cannot be installed";
+
         Class<?> rootClass = null;
 
         for (final Entry<String, byte[]> entry : bytecode.entrySet()) {
             final String     className = entry.getKey();
-            LOG.info("Installing class " + className);
+            LOG.fine("Installing class " + className);
 
             final byte[]     code  = entry.getValue();
             final Class<?>   clazz = installer.install(Compiler.binaryName(className), code);
@@ -299,7 +315,13 @@ public final class Compiler {
             }
         }
 
-        LOG.info("Root class: " + rootClass);
+        LOG.info("Installed root class: " + rootClass + " and " + bytecode.size() + " compile unit classes");
+        if (Timing.isEnabled()) {
+            final long duration = System.currentTimeMillis() - t0;
+            Timing.accumulateTime("[Code Installation]", duration);
+            LOG.info("Installation time: " + duration + " ms");
+        }
+
         return rootClass;
     }
 
@@ -376,7 +398,7 @@ public final class Compiler {
     private CompileUnit addCompileUnit(final String unitClassName, final long initialWeight) {
         final CompileUnit compileUnit = initCompileUnit(unitClassName, initialWeight);
         compileUnits.add(compileUnit);
-        LOG.info("Added compile unit " + compileUnit);
+        LOG.fine("Added compile unit " + compileUnit);
         return compileUnit;
     }
 
@@ -438,24 +460,4 @@ public final class Compiler {
         assert !USE_INT_ARITH : "Integer arithmetic is not enabled";
     }
 
-    static {
-        if (TIME_COMPILATION) {
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    for (final CompilationPhase phase : CompilationPhase.values()) {
-                        final StringBuilder sb = new StringBuilder();
-                        sb.append(phase);
-                        while (sb.length() < 32) {
-                            sb.append(' ');
-                        }
-                        sb.append(CompilationPhase.getAccumulatedTime(phase));
-                        sb.append(' ');
-                        sb.append(" ms");
-                        System.err.println(sb.toString()); //Context err is gone by shutdown TODO
-                    }
-                }
-            });
-        }
-    }
 }

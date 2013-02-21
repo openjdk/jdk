@@ -92,15 +92,15 @@ final class Splitter extends NodeVisitor {
      */
     void split() {
         if (functionNode.isLazy()) {
-            LOG.info("Postponing split of '" + functionNode.getName() + "' as it's lazy");
+            LOG.fine("Postponing split of '" + functionNode.getName() + "' as it's lazy");
             return;
         }
-        LOG.info("Initiating split of '" + functionNode.getName() + "'");
+        LOG.fine("Initiating split of '" + functionNode.getName() + "'");
 
         long weight = WeighNodes.weigh(functionNode);
 
         if (weight >= SPLIT_THRESHOLD) {
-            LOG.info("Splitting '" + functionNode.getName() + "' as its weight " + weight + " exceeds split threshold " + SPLIT_THRESHOLD);
+            LOG.fine("Splitting '" + functionNode.getName() + "' as its weight " + weight + " exceeds split threshold " + SPLIT_THRESHOLD);
 
             functionNode.accept(this);
 

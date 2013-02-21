@@ -57,7 +57,7 @@ abstract class NashornLoader extends SecureClassLoader {
      * @param name name of the class to be loaded
      * @param resolve whether the class should be resolved or not
      * @return Class object
-     * @throws ClassNotFoundException
+     * @throws ClassNotFoundException if class cannot be loaded
      */
     protected final Class<?> loadClassTrusted(final String name, final boolean resolve) throws ClassNotFoundException {
         return super.loadClass(name, resolve);

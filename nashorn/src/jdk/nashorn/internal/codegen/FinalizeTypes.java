@@ -562,7 +562,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
         final FunctionNode functionNode   = block.getFunction();
         final List<Symbol> symbols        = block.getFrame().getSymbols();
-        final boolean      allVarsInScope = functionNode.varsInScope();
+        final boolean      allVarsInScope = functionNode.allVarsInScope();
         final boolean      isVarArg       = functionNode.isVarArg();
 
         for (final Symbol symbol : symbols) {

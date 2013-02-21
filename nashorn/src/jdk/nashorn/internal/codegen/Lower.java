@@ -709,7 +709,6 @@ final class Lower extends NodeOperatorVisitor {
      * @return eval location
      */
     private static String evalLocation(final IdentNode node) {
-        //final StringBuilder sb = new StringBuilder(node.getSource().getName());
         return new StringBuilder().
             append(node.getSource().getName()).
             append('#').

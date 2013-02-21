@@ -12,15 +12,21 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
+
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.ReferenceNode;
+import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.Timing;
 
 /**
  * A compilation phase is a step in the processes of turning a JavaScript FunctionNode
@@ -35,7 +41,7 @@ enum CompilationPhase {
      */
     LAZY_INITIALIZATION_PHASE(EnumSet.of(FunctionNode.CompilationState.INITIALIZED)) {
         @Override
-        boolean transform(final Compiler compiler, final FunctionNode fn) {
+        void transform(final Compiler compiler, final FunctionNode fn) {
 
             /*
              * For lazy compilation, we might be given a node previously marked as lazy
@@ -53,15 +59,48 @@ enum CompilationPhase {
             outermostFunctionNode.setIsLazy(false);
             outermostFunctionNode.setReturnType(Type.UNKNOWN);
 
+            final Set<FunctionNode> neverLazy = new HashSet<>();
+            final Set<FunctionNode> lazy = new HashSet<>();
+
             outermostFunctionNode.accept(new NodeVisitor() {
+                // self references are done with invokestatic and thus cannot have trampolines - never lazy
+                @Override
+                public Node enter(final CallNode node) {
+                    final Node callee = node.getFunction();
+                    if (callee instanceof ReferenceNode) {
+                        neverLazy.add(((ReferenceNode)callee).getReference());
+                        return null;
+                    }
+                    return node;
+                }
+
                 @Override
                 public Node enter(final FunctionNode node) {
+                    if (node == outermostFunctionNode) {
+                        return node;
+                    }
                     assert Compiler.LAZY_JIT;
-                    node.setIsLazy(node != outermostFunctionNode);
+                    lazy.add(node);
+
                     return node;
                 }
             });
-            return true;
+
+            for (final FunctionNode node : neverLazy) {
+                Compiler.LOG.fine("Marking " + node.getName() + " as non lazy, as it's a self reference");
+                node.setIsLazy(false);
+                lazy.remove(node);
+            }
+
+            for (final FunctionNode node : lazy) {
+                Compiler.LOG.fine("Marking " + node.getName() + " as lazy");
+                node.setIsLazy(true);
+                final FunctionNode parent = node.findParentFunction();
+                if (parent != null) {
+                    Compiler.LOG.fine("Marking " + parent.getName() + " as having lazy children - it needs scope for all variables");
+                    parent.setHasLazyChildren();
+                }
+            }
         }
 
         @Override
@@ -76,9 +115,8 @@ enum CompilationPhase {
      */
     CONSTANT_FOLDING_PHASE(EnumSet.of(INITIALIZED), CONSTANT_FOLDED) {
         @Override
-        boolean transform(final Compiler compiler, final FunctionNode fn) {
+        void transform(final Compiler compiler, final FunctionNode fn) {
             fn.accept(new FoldConstants());
-            return true;
         }
 
         @Override
@@ -98,9 +136,8 @@ enum CompilationPhase {
      */
     LOWERING_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED), LOWERED) {
         @Override
-        boolean transform(final Compiler compiler, final FunctionNode fn) {
+        void transform(final Compiler compiler, final FunctionNode fn) {
             fn.accept(new Lower());
-            return true;
         }
 
         @Override
@@ -115,20 +152,17 @@ enum CompilationPhase {
      */
     ATTRIBUTION_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED), ATTR) {
         @Override
-        boolean transform(final Compiler compiler, final FunctionNode fn) {
+        void transform(final Compiler compiler, final FunctionNode fn) {
             final Context context = compiler.getContext();
-            try {
-                fn.accept(new Attr(context));
-                return true;
-            } finally {
-                if (context._print_lower_ast) {
-                    context.getErr().println(new ASTWriter(fn));
-                }
 
-                if (context._print_lower_parse) {
-                    context.getErr().println(new PrintVisitor(fn));
-               }
+            fn.accept(new Attr(context));
+            if (context._print_lower_ast) {
+                context.getErr().println(new ASTWriter(fn));
             }
+
+            if (context._print_lower_parse) {
+                context.getErr().println(new PrintVisitor(fn));
+           }
         }
 
         @Override
@@ -146,7 +180,7 @@ enum CompilationPhase {
      */
     SPLITTING_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED, ATTR), SPLIT) {
         @Override
-        boolean transform(final Compiler compiler, final FunctionNode fn) {
+        void transform(final Compiler compiler, final FunctionNode fn) {
             final CompileUnit outermostCompileUnit = compiler.addCompileUnit(compiler.firstCompileUnitName());
 
             new Splitter(compiler, fn, outermostCompileUnit).split();
@@ -157,7 +191,6 @@ enum CompilationPhase {
                 assert compiler.getStrictMode();
                 compiler.setStrictMode(true);
             }
-            return true;
         }
 
         @Override
@@ -181,9 +214,8 @@ enum CompilationPhase {
      */
     TYPE_FINALIZATION_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT), FINALIZED) {
         @Override
-        boolean transform(final Compiler compiler, final FunctionNode fn) {
+        void transform(final Compiler compiler, final FunctionNode fn) {
             fn.accept(new FinalizeTypes());
-            return true;
         }
 
         @Override
@@ -199,7 +231,7 @@ enum CompilationPhase {
      */
     BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED), EMITTED) {
         @Override
-        boolean transform(final Compiler compiler, final FunctionNode fn) {
+        void transform(final Compiler compiler, final FunctionNode fn) {
             final Context context = compiler.getContext();
 
             try {
@@ -253,7 +285,7 @@ enum CompilationPhase {
                         final File dir = new File(fileName.substring(0, index));
                         try {
                             if (!dir.exists() && !dir.mkdirs()) {
-                                throw new IOException();
+                                throw new IOException(dir.toString());
                             }
                             final File file = new File(context._dest_dir, fileName);
                             try (final FileOutputStream fos = new FileOutputStream(file)) {
@@ -265,8 +297,6 @@ enum CompilationPhase {
                     }
                 }
             }
-
-            return true;
         }
 
         @Override
@@ -280,8 +310,6 @@ enum CompilationPhase {
     private long startTime;
     private long endTime;
     private boolean isFinished;
-
-    private static final long[] accumulatedTime = new long[CompilationPhase.values().length];
 
     private CompilationPhase(final EnumSet<CompilationState> pre) {
         this(pre, null);
@@ -313,7 +341,7 @@ enum CompilationPhase {
 
     protected void end(final FunctionNode functionNode) {
         endTime = System.currentTimeMillis();
-        accumulatedTime[ordinal()] += (endTime - startTime);
+        Timing.accumulateTime(toString(), endTime - startTime);
 
         if (post != null) {
             functionNode.setState(post);
@@ -334,23 +362,15 @@ enum CompilationPhase {
         return endTime;
     }
 
-    public static long getAccumulatedTime(final CompilationPhase phase) {
-        return accumulatedTime[phase.ordinal()];
-    }
+    abstract void transform(final Compiler compiler, final FunctionNode functionNode) throws CompilationException;
 
-    abstract boolean transform(final Compiler compiler, final FunctionNode functionNode);
-
-    final boolean apply(final Compiler compiler, final FunctionNode functionNode) {
-        try {
-            if (!isApplicable(functionNode)) {
-                return false;
-            }
-            begin(functionNode);
-            transform(compiler, functionNode);
-            return true;
-        } finally {
-            end(functionNode);
+    final void apply(final Compiler compiler, final FunctionNode functionNode) throws CompilationException {
+        if (!isApplicable(functionNode)) {
+            throw new CompilationException("compile phase not applicable: " + this);
         }
+        begin(functionNode);
+        transform(compiler, functionNode);
+        end(functionNode);
     }
 
 }

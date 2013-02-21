@@ -54,7 +54,7 @@ public class TernaryNode extends BinaryNode {
     private TernaryNode(final TernaryNode ternaryNode, final CopyState cs) {
         super(ternaryNode, cs);
 
-        third = cs.existingOrCopy(ternaryNode.third);
+        this.third = cs.existingOrCopy(ternaryNode.third);
     }
 
     @Override
