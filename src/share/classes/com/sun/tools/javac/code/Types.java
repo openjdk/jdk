@@ -512,7 +512,7 @@ public class Types {
                 @Override
                 public Type getType(Type origin) {
                     Type mt = memberType(origin, getSymbol());
-                    return new MethodType(mt.getParameterTypes(), mt.getReturnType(), thrown1, syms.methodClass);
+                    return createMethodTypeWithThrown(mt, thrown1);
                 }
             };
         }
