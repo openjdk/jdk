@@ -231,7 +231,7 @@ class fdStream : public outputStream {
 class rotatingFileStream : public fileStream {
  protected:
   char*  _file_name;
-  jlong  _bytes_writen;
+  jlong  _bytes_written;
   uintx  _cur_file_num;             // current logfile rotation number, from 0 to MaxGCLogFileNumbers-1
  public:
   rotatingFileStream(const char* file_name);
