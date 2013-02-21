@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,8 @@ public class LambdaToMethod extends TreeTranslator {
             MethodType type = new MethodType(List.of(syms.serializedLambdaType), syms.objectType,
                     List.<Type>nil(), syms.methodClass);
             deserMethodSym = makeSyntheticMethod(flags, names.deserializeLambda, type, kSym);
-            deserParamSym = new VarSymbol(FINAL, names.fromString("lambda"), syms.serializedLambdaType, deserMethodSym);
+            deserParamSym = new VarSymbol(FINAL, names.fromString("lambda"),
+                    syms.serializedLambdaType, deserMethodSym);
         }
 
         private void addMethod(JCTree decl) {
@@ -738,7 +739,8 @@ public class LambdaToMethod extends TreeTranslator {
                 List<Type> refPTypes = tree.sym.type.getParameterTypes();
                 int refSize = refPTypes.size();
                 int samSize = samPTypes.size();
-                int last = localContext.needsVarArgsConversion() ? refSize - 1 : refSize;   // Last parameter to copy from referenced method
+                // Last parameter to copy from referenced method
+                int last = localContext.needsVarArgsConversion() ? refSize - 1 : refSize;
 
                 List<Type> l = refPTypes;
                 // Use parameter types of the referenced method, excluding final var args
@@ -763,7 +765,8 @@ public class LambdaToMethod extends TreeTranslator {
                         null,
                         null);
                 bridgeDecl.sym = (MethodSymbol) localContext.bridgeSym;
-                bridgeDecl.type = localContext.bridgeSym.type = types.createMethodTypeWithParameters(samDesc, TreeInfo.types(params.toList()));
+                bridgeDecl.type = localContext.bridgeSym.type =
+                        types.createMethodTypeWithParameters(samDesc, TreeInfo.types(params.toList()));
 
                 //bridge method body generation - this can be either a method call or a
                 //new instance creation expression, depending on the member reference kind
@@ -803,7 +806,8 @@ public class LambdaToMethod extends TreeTranslator {
 
             //create the method call expression
             JCExpression apply = make.Apply(List.<JCExpression>nil(), select,
-                    convertArgs(tree.sym, args.toList(), tree.varargsElement)).setType(tree.sym.erasure(types).getReturnType());
+                    convertArgs(tree.sym, args.toList(), tree.varargsElement)).
+                    setType(tree.sym.erasure(types).getReturnType());
 
             apply = transTypes.coerce(apply, localContext.generatedRefSig().getReturnType());
             setVarargsIfNeeded(apply, tree.varargsElement);
@@ -817,7 +821,8 @@ public class LambdaToMethod extends TreeTranslator {
         private JCExpression bridgeExpressionNew() {
             if (tree.kind == ReferenceKind.ARRAY_CTOR) {
                 //create the array creation expression
-                JCNewArray newArr = make.NewArray(make.Type(types.elemtype(tree.getQualifierExpression().type)),
+                JCNewArray newArr = make.NewArray(
+                        make.Type(types.elemtype(tree.getQualifierExpression().type)),
                         List.of(make.Ident(params.first())),
                         null);
                 newArr.type = tree.getQualifierExpression().type;
@@ -872,7 +877,8 @@ public class LambdaToMethod extends TreeTranslator {
         Type mtype = types.erasure(tree.descriptorType);
         MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.type.tsym);
         List<Object> staticArgs = List.<Object>of(
-                new Pool.MethodHandle(ClassFile.REF_invokeInterface, types.findDescriptorSymbol(tree.type.tsym), types),
+                new Pool.MethodHandle(ClassFile.REF_invokeInterface,
+                    types.findDescriptorSymbol(tree.type.tsym), types),
                 new Pool.MethodHandle(refKind, refSym, types),
                 new MethodType(mtype.getParameterTypes(),
                         mtype.getReturnType(),
@@ -922,7 +928,8 @@ public class LambdaToMethod extends TreeTranslator {
      * Generate an indy method call with given name, type and static bootstrap
      * arguments types
      */
-    private JCExpression makeIndyCall(DiagnosticPosition pos, Type site, Name bsmName, List<Object> staticArgs, MethodType indyType, List<JCExpression> indyArgs) {
+    private JCExpression makeIndyCall(DiagnosticPosition pos, Type site, Name bsmName,
+            List<Object> staticArgs, MethodType indyType, List<JCExpression> indyArgs) {
         int prevPos = make.pos;
         try {
             make.at(pos);
@@ -936,7 +943,9 @@ public class LambdaToMethod extends TreeTranslator {
             DynamicMethodSymbol dynSym =
                     new DynamicMethodSymbol(names.lambda,
                                             syms.noSymbol,
-                                            bsm.isStatic() ? ClassFile.REF_invokeStatic : ClassFile.REF_invokeVirtual,
+                                            bsm.isStatic() ?
+                                                ClassFile.REF_invokeStatic :
+                                                ClassFile.REF_invokeVirtual,
                                             (MethodSymbol)bsm,
                                             indyType,
                                             staticArgs.toArray());
@@ -1057,26 +1066,19 @@ public class LambdaToMethod extends TreeTranslator {
         @Override
         public void visitClassDef(JCClassDecl tree) {
             List<Frame> prevStack = frameStack;
-            Map<String, Integer> prevSerializableLambdaCount = serializableLambdaCounts;
+            Map<String, Integer> prevSerializableLambdaCount =
+                    serializableLambdaCounts;
             Map<ClassSymbol, Symbol> prevClinits = clinits;
             try {
                 serializableLambdaCounts = new HashMap<String, Integer>();
                 prevClinits = new HashMap<ClassSymbol, Symbol>();
                 if (directlyEnclosingLambda() != null) {
                     tree.sym.owner = owner();
-                    LambdaTranslationContext lambdaContext = (LambdaTranslationContext) contextMap.get(directlyEnclosingLambda());
-                    Type encl = lambdaContext.enclosingType();
-                    if (encl.hasTag(NONE)) {
-                        //if the translated lambda body occurs in a static context,
-                        //any class declaration within it must be made static
-                        //@@@TODO: What about nested classes within lambda?
-                        tree.sym.flags_field |= STATIC;
-                        ((ClassType) tree.sym.type).setEnclosingType(Type.noType);
-                    } else {
-                        //if the translated lambda body is in an instance context
-                        //the enclosing type of any class declaration within it
-                        //must be updated to point to the new enclosing type (if any)
-                        ((ClassType) tree.sym.type).setEnclosingType(encl);
+                    if (tree.sym.hasOuterInstance()) {
+                        //if a class is defined within a lambda, the lambda must capture
+                        //its enclosing instance (if any)
+                        ((LambdaTranslationContext) context())
+                                .addSymbol(tree.sym.type.getEnclosingType().tsym, CAPTURED_THIS);
                     }
                 }
                 frameStack = frameStack.prepend(new Frame(tree));
@@ -1086,11 +1088,6 @@ public class LambdaToMethod extends TreeTranslator {
                 frameStack = prevStack;
                 serializableLambdaCounts = prevSerializableLambdaCount;
                 clinits = prevClinits;
-            }
-            if (!tree.sym.isStatic() && directlyEnclosingLambda() != null) {
-                // Any (non-static) class defined within a lambda is an implicit 'this' reference
-                // because its constructor will reference the enclosing class
-                ((LambdaTranslationContext) context()).addSymbol(tree.sym.type.getEnclosingType().tsym, CAPTURED_THIS);
             }
         }
 
@@ -1105,7 +1102,8 @@ public class LambdaToMethod extends TreeTranslator {
                         if (localContext.tree.getTag() == LAMBDA) {
                             JCTree block = capturedDecl(localContext.depth, tree.sym);
                             if (block == null) break;
-                            ((LambdaTranslationContext)localContext).addSymbol(tree.sym, CAPTURED_VAR);
+                            ((LambdaTranslationContext)localContext)
+                                    .addSymbol(tree.sym, CAPTURED_VAR);
                         }
                         localContext = localContext.prev;
                     }
@@ -1118,7 +1116,8 @@ public class LambdaToMethod extends TreeTranslator {
                             switch (block.getTag()) {
                                 case CLASSDEF:
                                     JCClassDecl cdecl = (JCClassDecl)block;
-                                    ((LambdaTranslationContext)localContext).addSymbol(cdecl.sym, CAPTURED_THIS);
+                                    ((LambdaTranslationContext)localContext)
+                                            .addSymbol(cdecl.sym, CAPTURED_THIS);
                                     break;
                                 default:
                                     Assert.error("bad block kind");
@@ -1165,7 +1164,8 @@ public class LambdaToMethod extends TreeTranslator {
         @Override
         public void visitNewClass(JCNewClass tree) {
             if (lambdaNewClassFilter(context(), tree)) {
-                ((LambdaTranslationContext) context()).addSymbol(tree.type.getEnclosingType().tsym, CAPTURED_THIS);
+                ((LambdaTranslationContext) context())
+                        .addSymbol(tree.type.getEnclosingType().tsym, CAPTURED_THIS);
             }
             super.visitNewClass(tree);
         }
@@ -1278,7 +1278,8 @@ public class LambdaToMethod extends TreeTranslator {
                         return ((JCMethodDecl)frameStack2.head.tree).sym;
                     case LAMBDA:
                         if (!skipLambda)
-                            return ((LambdaTranslationContext)contextMap.get(frameStack2.head.tree)).translatedSym;
+                            return ((LambdaTranslationContext)contextMap
+                                    .get(frameStack2.head.tree)).translatedSym;
                     default:
                         frameStack2 = frameStack2.tail;
                 }
@@ -1555,7 +1556,8 @@ public class LambdaToMethod extends TreeTranslator {
                         return sym;  // self represented
                     case TYPE_VAR:
                         // Just erase the type var
-                        return new VarSymbol(sym.flags(), names.fromString(name), types.erasure(sym.type), sym.owner);
+                        return new VarSymbol(sym.flags(), names.fromString(name),
+                                types.erasure(sym.type), sym.owner);
                     default:
                         return makeSyntheticVar(FINAL, name, types.erasure(sym.type), translatedSym);
                 }
@@ -1633,7 +1635,8 @@ public class LambdaToMethod extends TreeTranslator {
 
                 // If instance access isn't needed, make it static
                 // Interface methods much be public default methods, otherwise make it private
-                translatedSym.flags_field = SYNTHETIC | (needInstance? 0 : STATIC) | (inInterface? PUBLIC | DEFAULT : PRIVATE);
+                translatedSym.flags_field = SYNTHETIC | (needInstance? 0 : STATIC) |
+                        (inInterface? PUBLIC | DEFAULT : PRIVATE);
 
                 //compute synthetic params
                 ListBuffer<JCVariableDecl> params = ListBuffer.lb();
@@ -1653,12 +1656,6 @@ public class LambdaToMethod extends TreeTranslator {
                 translatedSym.type = types.createMethodTypeWithParameters(
                         generatedLambdaSig(),
                         TreeInfo.types(syntheticParams));
-            }
-
-            Type enclosingType() {
-                return owner.isStatic() ?
-                        Type.noType :
-                        owner.enclClass().type;
             }
 
             Type generatedLambdaSig() {
