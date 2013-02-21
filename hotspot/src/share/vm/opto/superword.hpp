@@ -380,7 +380,7 @@ class SuperWord : public ResourceObj {
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
   // Construct reverse postorder list of block members
-  void construct_bb();
+  bool construct_bb();
   // Initialize per node info
   void initialize_bb();
   // Insert n into block after pos
