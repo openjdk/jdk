@@ -1244,9 +1244,12 @@ public class Resolve {
                       boolean useVarargs,
                       boolean operator) {
         if (sym.kind == ERR ||
-                !sym.isInheritedIn(site.tsym, types) ||
-                (useVarargs && (sym.flags() & VARARGS) == 0)) {
+                !sym.isInheritedIn(site.tsym, types)) {
             return bestSoFar;
+        } else if (useVarargs && (sym.flags() & VARARGS) == 0) {
+            return bestSoFar.kind >= ERRONEOUS ?
+                    new BadVarargsMethod((ResolveError)bestSoFar) :
+                    bestSoFar;
         }
         Assert.check(sym.kind < AMBIGUOUS);
         try {
@@ -3519,6 +3522,31 @@ public class Resolve {
             return firstAmbiguity.kind == TYP ?
                     types.createErrorType(name, location, firstAmbiguity.type).tsym :
                     firstAmbiguity;
+        }
+    }
+
+    class BadVarargsMethod extends ResolveError {
+
+        ResolveError delegatedError;
+
+        BadVarargsMethod(ResolveError delegatedError) {
+            super(delegatedError.kind, "badVarargs");
+            this.delegatedError = delegatedError;
+        }
+
+        @Override
+        protected Symbol access(Name name, TypeSymbol location) {
+            return delegatedError.access(name, location);
+        }
+
+        @Override
+        public boolean exists() {
+            return true;
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+            return delegatedError.getDiagnostic(dkind, pos, location, site, name, argtypes, typeargtypes);
         }
     }
 
