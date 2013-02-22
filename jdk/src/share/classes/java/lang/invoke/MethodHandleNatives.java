@@ -405,6 +405,21 @@ class MethodHandleNatives {
             return defc == sun.misc.Unsafe.class;
         case "lookup":
             return defc == java.lang.invoke.MethodHandles.class;
+        case "findStatic":
+        case "findVirtual":
+        case "findConstructor":
+        case "findSpecial":
+        case "findGetter":
+        case "findSetter":
+        case "findStaticGetter":
+        case "findStaticSetter":
+        case "bind":
+        case "unreflect":
+        case "unreflectSpecial":
+        case "unreflectConstructor":
+        case "unreflectGetter":
+        case "unreflectSetter":
+            return defc == java.lang.invoke.MethodHandles.Lookup.class;
         case "invoke":
             return defc == java.lang.reflect.Method.class;
         case "get":
