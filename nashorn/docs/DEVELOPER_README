@@ -338,6 +338,15 @@ instead redirect this to a file, specify the path to the file using
 this system property.
 
 
+SYSTEM_PROPERTY: nashorn.regexp.impl=[jdk|joni]
+
+This property defines the regular expression engine to be used by
+Nashorn. The default implementation is "jdk" which is based on the
+JDK's java.util.regex package. Set this property to "joni" to install
+an implementation based on Joni, the regular expression engine used by
+the JRuby project.
+
+
 ===============
 2. The loggers.
 ===============
