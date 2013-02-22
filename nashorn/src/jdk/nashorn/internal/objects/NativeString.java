@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Pattern;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -712,7 +711,7 @@ public final class NativeString extends ScriptObject {
         if (string instanceof NativeRegExp) {
             nativeRegExp = (NativeRegExp) string;
         } else {
-            nativeRegExp = new NativeRegExp(Pattern.compile(JSType.toString(string), Pattern.LITERAL));
+            nativeRegExp = NativeRegExp.flatRegExp(JSType.toString(string));
         }
 
         if (replacement instanceof ScriptFunction) {

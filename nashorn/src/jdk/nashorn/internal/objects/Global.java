@@ -50,7 +50,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.OptionsObject;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
-import jdk.nashorn.internal.runtime.RegExpMatch;
+import jdk.nashorn.internal.runtime.regexp.RegExpResult;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -339,7 +339,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private ClassCache classCache;
 
     // Used to store the last RegExp result to support deprecated RegExp constructor properties
-    private RegExpMatch lastRegExpMatch;
+    private RegExpResult lastRegExpResult;
 
     private static final MethodHandle EVAL    = findOwnMH("eval",    Object.class, Object.class, Object.class);
     private static final MethodHandle PRINT   = findOwnMH("print",   Object.class, Object.class, Object[].class);
@@ -1709,12 +1709,12 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return MH.findStatic(MethodHandles.publicLookup(), Global.class, name, MH.type(rtype, types));
     }
 
-    RegExpMatch getLastRegExpMatch() {
-        return lastRegExpMatch;
+    RegExpResult getLastRegExpResult() {
+        return lastRegExpResult;
     }
 
-    void setLastRegExpMatch(RegExpMatch regExpMatch) {
-        this.lastRegExpMatch = regExpMatch;
+    void setLastRegExpResult(final RegExpResult regExpResult) {
+        this.lastRegExpResult = regExpResult;
     }
 
 }

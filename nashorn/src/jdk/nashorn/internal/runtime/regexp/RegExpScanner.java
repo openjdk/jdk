@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime;
+package jdk.nashorn.internal.runtime.regexp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,8 +33,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
-import jdk.nashorn.internal.parser.Lexer;
+
 import jdk.nashorn.internal.parser.Scanner;
+import jdk.nashorn.internal.runtime.BitVector;
 
 /**
  * Scan a JavaScript regexp, converting to Java regex if necessary.
@@ -47,9 +48,6 @@ final class RegExpScanner extends Scanner {
      * to get the java equivalent we need to create a Pattern token and return its toString()
      */
     private final StringBuilder sb;
-
-    /** An optional error message if one occurred during parse. */
-    private String errorMessage;
 
     /** Is this the special case of a regexp that never matches anything */
     private boolean neverMatches;
@@ -102,7 +100,6 @@ final class RegExpScanner extends Scanner {
     /**
      * This is a token - the JavaScript regexp is scanned into a token tree
      * A token has other tokens as children as well as "atoms", i.e. Strings.
-     *
      */
     private static class Token {
 
@@ -220,31 +217,24 @@ final class RegExpScanner extends Scanner {
 
         /**
          * JavaScript Token to Java regex substring framework.
-         *
          */
         private static class ToString {
             String toString(final Token token) {
-                final StringBuilder sb = new StringBuilder();
-                for (final Object child : token.getChildren()) {
-                    sb.append(child);
-                }
+                final Object[] children = token.getChildren();
 
-                //perform global substitutions that hold true for any evaluated form
-                String str = sb.toString();
-                switch (str) {
-                case "\\s":
-                    str = "[" + Lexer.getWhitespaceRegExp() + "]";
-                    break;
-                case "\\S":
-                    str = "[^" + Lexer.getWhitespaceRegExp() + "]";
-                    break;
-                case "[^]":
-                    str = "[\\s\\S]";
-                    break;
-                default:
-                    break;
+                // Allow the installed regexp factory to perform global substitutions.
+                switch (children.length) {
+                    case 0:
+                        return "";
+                    case 1:
+                        return RegExpFactory.replace(children[0].toString());
+                    default:
+                        final StringBuilder sb = new StringBuilder();
+                        for (final Object child : children) {
+                            sb.append(child);
+                        }
+                        return RegExpFactory.replace(sb.toString());
                 }
-                return str;
             }
         }
 
@@ -511,16 +501,6 @@ final class RegExpScanner extends Scanner {
      */
     private boolean neverMatches() {
         return neverMatches;
-    }
-
-    /**
-     * This is used to set better error messages that can be reused
-     * in NativeRegExp for augmenting e.g. SyntaxErrors.
-     *
-     * @return an error message or null if no extra info
-     */
-    public String getErrorMessage() {
-        return errorMessage;
     }
 
     final StringBuilder getStringBuilder() {
