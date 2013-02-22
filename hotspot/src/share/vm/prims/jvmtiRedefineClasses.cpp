@@ -154,8 +154,15 @@ void VM_RedefineClasses::doit() {
   // See jvmtiExport.hpp for detailed explanation.
   JvmtiExport::set_has_redefined_a_class();
 
-#ifdef ASSERT
-  SystemDictionary::classes_do(check_class, thread);
+// check_class() is optionally called for product bits, but is
+// always called for non-product bits.
+#ifdef PRODUCT
+  if (RC_TRACE_ENABLED(0x00004000)) {
+#endif
+    RC_TRACE_WITH_THREAD(0x00004000, thread, ("calling check_class"));
+    SystemDictionary::classes_do(check_class, thread);
+#ifdef PRODUCT
+  }
 #endif
 }
 
@@ -485,26 +492,6 @@ int VM_RedefineClasses::find_or_append_indirect_entry(constantPoolHandle scratch
 } // end find_or_append_indirect_entry()
 
 
-void VM_RedefineClasses::swap_all_method_annotations(int i, int j, instanceKlassHandle scratch_class, TRAPS) {
-  AnnotationArray* save;
-
-  Annotations* sca = scratch_class->annotations();
-  if (sca == NULL) return;
-
-  save = sca->get_method_annotations_of(i);
-  sca->set_method_annotations_of(scratch_class, i, sca->get_method_annotations_of(j), CHECK);
-  sca->set_method_annotations_of(scratch_class, j, save, CHECK);
-
-  save = sca->get_method_parameter_annotations_of(i);
-  sca->set_method_parameter_annotations_of(scratch_class, i, sca->get_method_parameter_annotations_of(j), CHECK);
-  sca->set_method_parameter_annotations_of(scratch_class, j, save, CHECK);
-
-  save = sca->get_method_default_annotations_of(i);
-  sca->set_method_default_annotations_of(scratch_class, i, sca->get_method_default_annotations_of(j), CHECK);
-  sca->set_method_default_annotations_of(scratch_class, j, save, CHECK);
-}
-
-
 jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
              instanceKlassHandle the_class,
              instanceKlassHandle scratch_class) {
@@ -686,10 +673,9 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
             idnum_owner->set_method_idnum(new_num);
           }
           k_new_method->set_method_idnum(old_num);
-          swap_all_method_annotations(old_num, new_num, scratch_class, thread);
-           if (thread->has_pending_exception()) {
-             return JVMTI_ERROR_OUT_OF_MEMORY;
-           }
+          if (thread->has_pending_exception()) {
+            return JVMTI_ERROR_OUT_OF_MEMORY;
+          }
         }
       }
       RC_TRACE(0x00008000, ("Method matched: new: %s [%d] == old: %s [%d]",
@@ -722,7 +708,6 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           idnum_owner->set_method_idnum(new_num);
         }
         k_new_method->set_method_idnum(num);
-        swap_all_method_annotations(new_num, num, scratch_class, thread);
         if (thread->has_pending_exception()) {
           return JVMTI_ERROR_OUT_OF_MEMORY;
         }
@@ -1564,9 +1549,9 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
             bcp, cp_index, new_index));
           // Rewriter::rewrite_method() uses put_native_u2() in this
           // situation because it is reusing the constant pool index
-          // location for a native index into the constantPoolCache.
+          // location for a native index into the ConstantPoolCache.
           // Since we are updating the constant pool index prior to
-          // verification and constantPoolCache initialization, we
+          // verification and ConstantPoolCache initialization, we
           // need to keep the new index in Java byte order.
           Bytes::put_Java_u2(p, new_index);
         }
@@ -1888,10 +1873,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 bool VM_RedefineClasses::rewrite_cp_refs_in_fields_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  Annotations* sca = scratch_class->annotations();
-  if (sca == NULL) return true;
-
-  Array<AnnotationArray*>* fields_annotations = sca->fields_annotations();
+  Array<AnnotationArray*>* fields_annotations = scratch_class->fields_annotations();
 
   if (fields_annotations == NULL || fields_annotations->length() == 0) {
     // no fields_annotations so nothing to do
@@ -1926,21 +1908,10 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_fields_annotations(
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  Annotations* sca = scratch_class->annotations();
-  if (sca == NULL) return true;
+  for (int i = 0; i < scratch_class->methods()->length(); i++) {
+    Method* m = scratch_class->methods()->at(i);
+    AnnotationArray* method_annotations = m->constMethod()->method_annotations();
 
-  Array<AnnotationArray*>* methods_annotations = sca->methods_annotations();
-
-  if (methods_annotations == NULL || methods_annotations->length() == 0) {
-    // no methods_annotations so nothing to do
-    return true;
-  }
-
-  RC_TRACE_WITH_THREAD(0x02000000, THREAD,
-    ("methods_annotations length=%d", methods_annotations->length()));
-
-  for (int i = 0; i < methods_annotations->length(); i++) {
-    AnnotationArray* method_annotations = methods_annotations->at(i);
     if (method_annotations == NULL || method_annotations->length() == 0) {
       // this method does not have any annotations so skip it
       continue;
@@ -1976,24 +1947,9 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_annotations(
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  Annotations* sca = scratch_class->annotations();
-  if (sca == NULL) return true;
-
-  Array<AnnotationArray*>* methods_parameter_annotations =
-    sca->methods_parameter_annotations();
-
-  if (methods_parameter_annotations == NULL
-      || methods_parameter_annotations->length() == 0) {
-    // no methods_parameter_annotations so nothing to do
-    return true;
-  }
-
-  RC_TRACE_WITH_THREAD(0x02000000, THREAD,
-    ("methods_parameter_annotations length=%d",
-    methods_parameter_annotations->length()));
-
-  for (int i = 0; i < methods_parameter_annotations->length(); i++) {
-    AnnotationArray* method_parameter_annotations = methods_parameter_annotations->at(i);
+  for (int i = 0; i < scratch_class->methods()->length(); i++) {
+    Method* m = scratch_class->methods()->at(i);
+    AnnotationArray* method_parameter_annotations = m->constMethod()->parameter_annotations();
     if (method_parameter_annotations == NULL
         || method_parameter_annotations->length() == 0) {
       // this method does not have any parameter annotations so skip it
@@ -2043,24 +1999,9 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_default_annotations(
        instanceKlassHandle scratch_class, TRAPS) {
 
-  Annotations* sca = scratch_class->annotations();
-  if (sca == NULL) return true;
-
-  Array<AnnotationArray*>* methods_default_annotations =
-    sca->methods_default_annotations();
-
-  if (methods_default_annotations == NULL
-      || methods_default_annotations->length() == 0) {
-    // no methods_default_annotations so nothing to do
-    return true;
-  }
-
-  RC_TRACE_WITH_THREAD(0x02000000, THREAD,
-    ("methods_default_annotations length=%d",
-    methods_default_annotations->length()));
-
-  for (int i = 0; i < methods_default_annotations->length(); i++) {
-    AnnotationArray* method_default_annotations = methods_default_annotations->at(i);
+  for (int i = 0; i < scratch_class->methods()->length(); i++) {
+    Method* m = scratch_class->methods()->at(i);
+    AnnotationArray* method_default_annotations = m->constMethod()->default_annotations();
     if (method_default_annotations == NULL
         || method_default_annotations->length() == 0) {
       // this method does not have any default annotations so skip it
@@ -3065,6 +3006,31 @@ void VM_RedefineClasses::compute_added_deleted_matching_methods() {
 }
 
 
+void VM_RedefineClasses::swap_annotations(instanceKlassHandle the_class,
+                                          instanceKlassHandle scratch_class) {
+  // Since there is currently no rewriting of type annotations indexes
+  // into the CP, we null out type annotations on scratch_class before
+  // we swap annotations with the_class rather than facing the
+  // possibility of shipping annotations with broken indexes to
+  // Java-land.
+  ClassLoaderData* loader_data = scratch_class->class_loader_data();
+  AnnotationArray* new_class_type_annotations = scratch_class->class_type_annotations();
+  if (new_class_type_annotations != NULL) {
+    MetadataFactory::free_array<u1>(loader_data, new_class_type_annotations);
+    scratch_class->annotations()->set_class_type_annotations(NULL);
+  }
+  Array<AnnotationArray*>* new_field_type_annotations = scratch_class->fields_type_annotations();
+  if (new_field_type_annotations != NULL) {
+    Annotations::free_contents(loader_data, new_field_type_annotations);
+    scratch_class->annotations()->set_fields_type_annotations(NULL);
+  }
+
+  // Swap annotation fields values
+  Annotations* old_annotations = the_class->annotations();
+  the_class->set_annotations(scratch_class->annotations());
+  scratch_class->set_annotations(old_annotations);
+}
+
 
 // Install the redefinition of a class:
 //    - house keeping (flushing breakpoints and caches, deoptimizing
@@ -3275,23 +3241,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     the_class->set_access_flags(flags);
   }
 
-  // Since there is currently no rewriting of type annotations indexes
-  // into the CP, we null out type annotations on scratch_class before
-  // we swap annotations with the_class rather than facing the
-  // possibility of shipping annotations with broken indexes to
-  // Java-land.
-  Annotations* new_annotations = scratch_class->annotations();
-  if (new_annotations != NULL) {
-    Annotations* new_type_annotations = new_annotations->type_annotations();
-    if (new_type_annotations != NULL) {
-      MetadataFactory::free_metadata(scratch_class->class_loader_data(), new_type_annotations);
-      new_annotations->set_type_annotations(NULL);
-    }
-  }
-  // Swap annotation fields values
-  Annotations* old_annotations = the_class->annotations();
-  the_class->set_annotations(scratch_class->annotations());
-  scratch_class->set_annotations(old_annotations);
+  swap_annotations(the_class, scratch_class);
 
   // Replace minor version number of class file
   u2 old_minor_version = the_class->minor_version();
@@ -3371,7 +3321,6 @@ void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik, TRAPS) {
   }
 }
 
-#ifndef PRODUCT
 void VM_RedefineClasses::check_class(Klass* k_oop,
                                      ClassLoaderData* initiating_loader,
                                      TRAPS) {
@@ -3379,82 +3328,110 @@ void VM_RedefineClasses::check_class(Klass* k_oop,
   if (k->oop_is_instance()) {
     HandleMark hm(THREAD);
     InstanceKlass *ik = (InstanceKlass *) k;
+    bool no_old_methods = true;  // be optimistic
+    ResourceMark rm(THREAD);
 
-    if (ik->vtable_length() > 0) {
-      ResourceMark rm(THREAD);
-      if (!ik->vtable()->check_no_old_entries()) {
-        tty->print_cr("klassVtable::check_no_old_entries failure -- OLD method found -- class: %s", ik->signature_name());
+    // a vtable should never contain old or obsolete methods
+    if (ik->vtable_length() > 0 &&
+        !ik->vtable()->check_no_old_or_obsolete_entries()) {
+      if (RC_TRACE_ENABLED(0x00004000)) {
+        RC_TRACE_WITH_THREAD(0x00004000, THREAD,
+          ("klassVtable::check_no_old_or_obsolete_entries failure"
+           " -- OLD or OBSOLETE method found -- class: %s",
+           ik->signature_name()));
         ik->vtable()->dump_vtable();
-        assert(false, "OLD method found");
       }
+      no_old_methods = false;
     }
-    if (ik->itable_length() > 0) {
-      ResourceMark rm(THREAD);
-      if (!ik->itable()->check_no_old_entries()) {
-        tty->print_cr("klassItable::check_no_old_entries failure -- OLD method found -- class: %s", ik->signature_name());
-        assert(false, "OLD method found");
+
+    // an itable should never contain old or obsolete methods
+    if (ik->itable_length() > 0 &&
+        !ik->itable()->check_no_old_or_obsolete_entries()) {
+      if (RC_TRACE_ENABLED(0x00004000)) {
+        RC_TRACE_WITH_THREAD(0x00004000, THREAD,
+          ("klassItable::check_no_old_or_obsolete_entries failure"
+           " -- OLD or OBSOLETE method found -- class: %s",
+           ik->signature_name()));
+        ik->itable()->dump_itable();
       }
+      no_old_methods = false;
     }
-    // Check that the constant pool cache has no deleted entries.
+
+    // the constant pool cache should never contain old or obsolete methods
     if (ik->constants() != NULL &&
         ik->constants()->cache() != NULL &&
-       !ik->constants()->cache()->check_no_old_entries()) {
-      tty->print_cr("klassVtable::check_no_old_entries failure -- OLD method found -- class: %s", ik->signature_name());
-      assert(false, "OLD method found");
+        !ik->constants()->cache()->check_no_old_or_obsolete_entries()) {
+      if (RC_TRACE_ENABLED(0x00004000)) {
+        RC_TRACE_WITH_THREAD(0x00004000, THREAD,
+          ("cp-cache::check_no_old_or_obsolete_entries failure"
+           " -- OLD or OBSOLETE method found -- class: %s",
+           ik->signature_name()));
+        ik->constants()->cache()->dump_cache();
+      }
+      no_old_methods = false;
+    }
+
+    if (!no_old_methods) {
+      if (RC_TRACE_ENABLED(0x00004000)) {
+        dump_methods();
+      } else {
+        tty->print_cr("INFO: use the '-XX:TraceRedefineClasses=16384' option "
+          "to see more info about the following guarantee() failure.");
+      }
+      guarantee(false, "OLD and/or OBSOLETE method(s) found");
     }
   }
 }
 
 void VM_RedefineClasses::dump_methods() {
-        int j;
-        tty->print_cr("_old_methods --");
-        for (j = 0; j < _old_methods->length(); ++j) {
-          Method* m = _old_methods->at(j);
-          tty->print("%4d  (%5d)  ", j, m->vtable_index());
-          m->access_flags().print_on(tty);
-          tty->print(" --  ");
-          m->print_name(tty);
-          tty->cr();
-        }
-        tty->print_cr("_new_methods --");
-        for (j = 0; j < _new_methods->length(); ++j) {
-          Method* m = _new_methods->at(j);
-          tty->print("%4d  (%5d)  ", j, m->vtable_index());
-          m->access_flags().print_on(tty);
-          tty->print(" --  ");
-          m->print_name(tty);
-          tty->cr();
-        }
-        tty->print_cr("_matching_(old/new)_methods --");
-        for (j = 0; j < _matching_methods_length; ++j) {
-          Method* m = _matching_old_methods[j];
-          tty->print("%4d  (%5d)  ", j, m->vtable_index());
-          m->access_flags().print_on(tty);
-          tty->print(" --  ");
-          m->print_name(tty);
-          tty->cr();
-          m = _matching_new_methods[j];
-          tty->print("      (%5d)  ", m->vtable_index());
-          m->access_flags().print_on(tty);
-          tty->cr();
-        }
-        tty->print_cr("_deleted_methods --");
-        for (j = 0; j < _deleted_methods_length; ++j) {
-          Method* m = _deleted_methods[j];
-          tty->print("%4d  (%5d)  ", j, m->vtable_index());
-          m->access_flags().print_on(tty);
-          tty->print(" --  ");
-          m->print_name(tty);
-          tty->cr();
-        }
-        tty->print_cr("_added_methods --");
-        for (j = 0; j < _added_methods_length; ++j) {
-          Method* m = _added_methods[j];
-          tty->print("%4d  (%5d)  ", j, m->vtable_index());
-          m->access_flags().print_on(tty);
-          tty->print(" --  ");
-          m->print_name(tty);
-          tty->cr();
-        }
+  int j;
+  RC_TRACE(0x00004000, ("_old_methods --"));
+  for (j = 0; j < _old_methods->length(); ++j) {
+    Method* m = _old_methods->at(j);
+    RC_TRACE_NO_CR(0x00004000, ("%4d  (%5d)  ", j, m->vtable_index()));
+    m->access_flags().print_on(tty);
+    tty->print(" --  ");
+    m->print_name(tty);
+    tty->cr();
+  }
+  RC_TRACE(0x00004000, ("_new_methods --"));
+  for (j = 0; j < _new_methods->length(); ++j) {
+    Method* m = _new_methods->at(j);
+    RC_TRACE_NO_CR(0x00004000, ("%4d  (%5d)  ", j, m->vtable_index()));
+    m->access_flags().print_on(tty);
+    tty->print(" --  ");
+    m->print_name(tty);
+    tty->cr();
+  }
+  RC_TRACE(0x00004000, ("_matching_(old/new)_methods --"));
+  for (j = 0; j < _matching_methods_length; ++j) {
+    Method* m = _matching_old_methods[j];
+    RC_TRACE_NO_CR(0x00004000, ("%4d  (%5d)  ", j, m->vtable_index()));
+    m->access_flags().print_on(tty);
+    tty->print(" --  ");
+    m->print_name(tty);
+    tty->cr();
+    m = _matching_new_methods[j];
+    RC_TRACE_NO_CR(0x00004000, ("      (%5d)  ", m->vtable_index()));
+    m->access_flags().print_on(tty);
+    tty->cr();
+  }
+  RC_TRACE(0x00004000, ("_deleted_methods --"));
+  for (j = 0; j < _deleted_methods_length; ++j) {
+    Method* m = _deleted_methods[j];
+    RC_TRACE_NO_CR(0x00004000, ("%4d  (%5d)  ", j, m->vtable_index()));
+    m->access_flags().print_on(tty);
+    tty->print(" --  ");
+    m->print_name(tty);
+    tty->cr();
+  }
+  RC_TRACE(0x00004000, ("_added_methods --"));
+  for (j = 0; j < _added_methods_length; ++j) {
+    Method* m = _added_methods[j];
+    RC_TRACE_NO_CR(0x00004000, ("%4d  (%5d)  ", j, m->vtable_index()));
+    m->access_flags().print_on(tty);
+    tty->print(" --  ");
+    m->print_name(tty);
+    tty->cr();
+  }
 }
-#endif

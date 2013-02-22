@@ -1653,7 +1653,7 @@ void LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeFu
 // really odd corner cases (+/- Infinity).  Just uncommon-trap them.
 bool LibraryCallKit::inline_exp() {
   Node* arg = round_double_node(argument(0));
-  Node* n   = _gvn.transform(new (C) ExpDNode(0, arg));
+  Node* n   = _gvn.transform(new (C) ExpDNode(C, control(), arg));
 
   finish_pow_exp(n, arg, NULL, OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
 
@@ -1688,7 +1688,7 @@ bool LibraryCallKit::inline_pow() {
 
   if (!too_many_traps(Deoptimization::Reason_intrinsic)) {
     // Short form: skip the fancy tests and just check for NaN result.
-    result = _gvn.transform(new (C) PowDNode(0, x, y));
+    result = _gvn.transform(new (C) PowDNode(C, control(), x, y));
   } else {
     // If this inlining ever returned NaN in the past, include all
     // checks + call to the runtime.
@@ -1715,7 +1715,7 @@ bool LibraryCallKit::inline_pow() {
     Node *complex_path = _gvn.transform( new (C) IfTrueNode(if1) );
 
     // Set fast path result
-    Node *fast_result = _gvn.transform( new (C) PowDNode(0, x, y) );
+    Node *fast_result = _gvn.transform( new (C) PowDNode(C, control(), x, y) );
     phi->init_req(3, fast_result);
 
     // Complex path
@@ -1775,7 +1775,7 @@ bool LibraryCallKit::inline_pow() {
     // abs(x)
     Node *absx=_gvn.transform( new (C) AbsDNode(x));
     // abs(x)^y
-    Node *absxpowy = _gvn.transform( new (C) PowDNode(0, absx, y) );
+    Node *absxpowy = _gvn.transform( new (C) PowDNode(C, control(), absx, y) );
     // -abs(x)^y
     Node *negabsxpowy = _gvn.transform(new (C) NegDNode (absxpowy));
     // (1&(long)y)==1?-DPow(abs(x), y):DPow(abs(x), y)

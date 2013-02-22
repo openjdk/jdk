@@ -235,6 +235,7 @@ public class TreeInfo {
         switch(tree.getTag()) {
             case TYPEAPPLY: return ((JCTypeApply)tree).getTypeArguments().isEmpty();
             case NEWCLASS: return isDiamond(((JCNewClass)tree).clazz);
+            case ANNOTATED_TYPE: return isDiamond(((JCAnnotatedType)tree).underlyingType);
             default: return false;
         }
     }
@@ -335,6 +336,8 @@ public class TreeInfo {
             case TYPEAPPLY:
             case TYPEARRAY:
                 return true;
+            case ANNOTATED_TYPE:
+                return isStaticSelector(((JCAnnotatedType)base).underlyingType, names);
             default:
                 return false;
         }

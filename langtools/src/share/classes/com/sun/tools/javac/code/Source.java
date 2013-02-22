@@ -221,7 +221,7 @@ public enum Source {
     public boolean allowIntersectionTypesInCast() {
         return compareTo(JDK1_8) >= 0;
     }
-    public boolean allowEarlyReturnConstraints() {
+    public boolean allowGraphInference() {
         return compareTo(JDK1_8) >= 0;
     }
     public boolean allowStructuralMostSpecific() {

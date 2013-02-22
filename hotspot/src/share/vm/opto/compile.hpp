@@ -314,6 +314,7 @@ class Compile : public Phase {
   GrowableArray<CallGenerator*>* _intrinsics;   // List of intrinsics.
   GrowableArray<Node*>* _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<Node*>* _predicate_opaqs;       // List of Opaque1 nodes for the loop predicates.
+  GrowableArray<Node*>* _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
   IdealGraphPrinter*    _printer;
@@ -397,6 +398,13 @@ class Compile : public Phase {
 
   GrowableArray<PrintInliningBuffer>* _print_inlining_list;
   int _print_inlining;
+
+  // Only keep nodes in the expensive node list that need to be optimized
+  void cleanup_expensive_nodes(PhaseIterGVN &igvn);
+  // Use for sorting expensive nodes to bring similar nodes together
+  static int cmp_expensive_nodes(Node** n1, Node** n2);
+  // Expensive nodes list already sorted?
+  bool expensive_nodes_sorted() const;
 
  public:
 
@@ -573,8 +581,10 @@ class Compile : public Phase {
 
   int           macro_count()                   { return _macro_nodes->length(); }
   int           predicate_count()               { return _predicate_opaqs->length();}
+  int           expensive_count()               { return _expensive_nodes->length(); }
   Node*         macro_node(int idx)             { return _macro_nodes->at(idx); }
   Node*         predicate_opaque1_node(int idx) { return _predicate_opaqs->at(idx);}
+  Node*         expensive_node(int idx)         { return _expensive_nodes->at(idx); }
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
   void add_macro_node(Node * n) {
@@ -592,6 +602,12 @@ class Compile : public Phase {
       _predicate_opaqs->remove(n);
     }
   }
+  void add_expensive_node(Node * n);
+  void remove_expensive_node(Node * n) {
+    if (_expensive_nodes->contains(n)) {
+      _expensive_nodes->remove(n);
+    }
+  }
   void add_predicate_opaq(Node * n) {
     assert(!_predicate_opaqs->contains(n), " duplicate entry in predicate opaque1");
     assert(_macro_nodes->contains(n), "should have already been in macro list");
@@ -603,6 +619,13 @@ class Compile : public Phase {
   bool is_predicate_opaq(Node * n) {
     return _predicate_opaqs->contains(n);
   }
+
+  // Are there candidate expensive nodes for optimization?
+  bool should_optimize_expensive_nodes(PhaseIterGVN &igvn);
+  // Check whether n1 and n2 are similar
+  static int cmp_expensive_nodes(Node* n1, Node* n2);
+  // Sort expensive nodes to locate similar expensive nodes
+  void sort_expensive_nodes();
 
   // Compilation environment.
   Arena*            comp_arena()                { return &_comp_arena; }
