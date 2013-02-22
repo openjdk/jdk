@@ -21,26 +21,33 @@
  * questions.
  */
 
-/*
- * @test DeoptimizeAllTest
- * @library /testlibrary /testlibrary/whitebox
- * @build DeoptimizeAllTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DeoptimizeAllTest
- * @author igor.ignatyev@oracle.com
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
+/**
+ * Dump a class file for a class on the class path in the current directory
  */
-public class DeoptimizeAllTest extends CompilerWhiteBoxTest {
+public class ClassFileInstaller {
+    /**
+     * @param args The names of the classes to dump
+     * @throws Exception
+     */
+    public static void main(String... args) throws Exception {
+        for (String arg : args) {
+            ClassLoader cl = ClassFileInstaller.class.getClassLoader();
 
-    public static void main(String[] args) throws Exception {
-        new DeoptimizeAllTest().runTest();
-    }
+            // Convert dotted class name to a path to a class file
+            String pathName = arg.replace('.', '/').concat(".class");
+            InputStream is = cl.getResourceAsStream(pathName);
 
-    protected void test() throws Exception {
-        // to prevent inlining #method into #compile()
-        WHITE_BOX.setDontInlineMethod(METHOD, true);
-        compile();
-        checkCompiled(METHOD);
-        WHITE_BOX.deoptimizeAll();
-        checkNotCompiled(METHOD);
+            // Create the class file's package directory
+            Path p = Paths.get(pathName);
+            Files.createDirectories(p.getParent());
+            // Create the class file
+            Files.copy(is, p, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 }

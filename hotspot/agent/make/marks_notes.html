@@ -26,14 +26,12 @@
 
     <ul>
       <li><code>java -cp classes sun.jvm.hotspot.HSDB</code>
-      <li><code>java -cp classes sun.jvm.hotspot.bugspot.Main</code>
     </ul>
 
     <h2>Feedback</h2>
     <p>
       Refactoring of package hierarchy. All user interface components should be in
-      the ui package. Perhaps: sun.jvm.hotspot.ui.hsdb.Main for the HSDB and
-      sun.jvm.hotspot.ui.bugspot.Main for BugSpot.
+      the ui package. Perhaps: sun.jvm.hotspot.ui.hsdb.Main for the HSDB.
     <p>
       The src\share\vm\agent area seems like a workspace so it should be organized like
       one. In particular, I'd like to suggest the following directory layout:<br>
@@ -47,7 +45,7 @@
     </ul>
 
     <p>
-      Seems like there is a lot of redundant functionality. Between the HSDB and BugSpot. Perhaps
+      Seems like there is a lot of redundant functionality. Perhaps
       this can be consolidated with a <code>javax.swing.Actions</code> architecture.
 
     <h2>Tasklist</h2>
@@ -55,11 +53,7 @@
     <p>
       <b>Stack memory pane</b>: 
       It's one of the more useful JVM debugging tools in the SA. However, it
-      doesn't support any interaction with the text; the Memory Panel in BugSpot
-      was written afterward (with help from Shannon) and implements proper
-      selection, scrolling, and drag-and-drop, but no annotations. I'm not sure how
-      to integrate the annotations with the JTable that's being used for the memory
-      view; if you have suggestions here please let me know.
+      doesn't support any interaction with the text.
     <p>
       <b>Integrations with the NetBeans architecture (plug in).</b> See the
       <a href="http://openide.netbeans.org">Netbeans Open APIs homepage</a>
