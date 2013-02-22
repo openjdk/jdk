@@ -31,8 +31,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -44,8 +43,10 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.BitVector;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ParserException;
-import jdk.nashorn.internal.runtime.RegExp;
-import jdk.nashorn.internal.runtime.RegExpMatch;
+import jdk.nashorn.internal.runtime.regexp.RegExp;
+import jdk.nashorn.internal.runtime.regexp.RegExpFactory;
+import jdk.nashorn.internal.runtime.regexp.RegExpResult;
+import jdk.nashorn.internal.runtime.regexp.RegExpMatcher;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -59,35 +60,15 @@ public final class NativeRegExp extends ScriptObject {
     @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public Object lastIndex;
 
-    /** Pattern string. */
-    private String input;
-
-    /** Global search flag for this regexp. */
-    private boolean global;
-
-    /** Case insensitive flag for this regexp */
-    private boolean ignoreCase;
-
-    /** Multi-line flag for this regexp */
-    private boolean multiline;
-
-    /** Java regex pattern to use for match. We compile to one of these */
-    private Pattern pattern;
-
-    private BitVector groupsInNegativeLookahead;
+    /** Compiled regexp */
+    private RegExp regexp;
 
     // Reference to global object needed to support static RegExp properties
     private Global globalObject;
 
-    /*
-    public NativeRegExp() {
-        init();
-    }*/
-
     NativeRegExp(final String input, final String flagString) {
-        RegExp regExp = null;
         try {
-            regExp = new RegExp(input, flagString);
+            this.regexp = RegExpFactory.create(input, flagString);
         } catch (final ParserException e) {
             // translate it as SyntaxError object and throw it
             e.throwAsEcmaException();
@@ -95,13 +76,6 @@ public final class NativeRegExp extends ScriptObject {
         }
 
         this.setLastIndex(0);
-        this.input = regExp.getInput();
-        this.global = regExp.isGlobal();
-        this.ignoreCase = regExp.isIgnoreCase();
-        this.multiline = regExp.isMultiline();
-        this.pattern = regExp.getPattern();
-        this.groupsInNegativeLookahead = regExp.getGroupsInNegativeLookahead();
-
         init();
     }
 
@@ -110,24 +84,8 @@ public final class NativeRegExp extends ScriptObject {
     }
 
     NativeRegExp(final NativeRegExp regExp) {
-        this.input      = regExp.getInput();
-        this.global     = regExp.getGlobal();
-        this.multiline  = regExp.getMultiline();
-        this.ignoreCase = regExp.getIgnoreCase();
         this.lastIndex  = regExp.getLastIndexObject();
-        this.pattern    = regExp.getPattern();
-        this.groupsInNegativeLookahead = regExp.getGroupsInNegativeLookahead();
-
-        init();
-    }
-
-    NativeRegExp(final Pattern pattern) {
-        this.input      = pattern.pattern();
-        this.multiline  = (pattern.flags() & Pattern.MULTILINE) != 0;
-        this.ignoreCase = (pattern.flags() & Pattern.CASE_INSENSITIVE) != 0;
-        this.lastIndex  = 0;
-        this.pattern    = pattern;
-
+        this.regexp      = regExp.getRegExp();
         init();
     }
 
@@ -232,16 +190,59 @@ public final class NativeRegExp extends ScriptObject {
         return new NativeRegExp(patternString, flagString);
     }
 
-    private String getFlagString() {
-        final StringBuilder sb = new StringBuilder();
+    /**
+     * Build a regexp that matches {@code string} as-is. All meta-characters will be escaped.
+     *
+     * @param string pattern string
+     * @return flat regexp
+     */
+    static NativeRegExp flatRegExp(String string) {
+        // escape special characters
+        StringBuilder sb = null;
+        final int length = string.length();
 
-        if (global) {
+        for (int i = 0; i < length; i++) {
+            final char c = string.charAt(i);
+            switch (c) {
+                case '^':
+                case '$':
+                case '\\':
+                case '.':
+                case '*':
+                case '+':
+                case '?':
+                case '(':
+                case ')':
+                case '[':
+                case '{':
+                case '|':
+                    if (sb == null) {
+                        sb = new StringBuilder(length * 2);
+                        sb.append(string, 0, i);
+                    }
+                    sb.append('\\');
+                    sb.append(c);
+                    break;
+                default:
+                    if (sb != null) {
+                        sb.append(c);
+                    }
+                    break;
+            }
+        }
+        return new NativeRegExp(sb == null ? string : sb.toString(), "");
+    }
+
+    private String getFlagString() {
+        final StringBuilder sb = new StringBuilder(3);
+
+        if (regexp.isGlobal()) {
             sb.append('g');
         }
-        if (ignoreCase) {
+        if (regexp.isIgnoreCase()) {
             sb.append('i');
         }
-        if (multiline) {
+        if (regexp.isMultiline()) {
             sb.append('m');
         }
 
@@ -255,7 +256,7 @@ public final class NativeRegExp extends ScriptObject {
 
     @Override
     public String toString() {
-        return "/" + input + "/" + getFlagString();
+        return "/" + regexp.getSource() + "/" + getFlagString();
     }
 
     /**
@@ -270,13 +271,8 @@ public final class NativeRegExp extends ScriptObject {
     public static Object compile(final Object self, final Object pattern, final Object flags) {
         final NativeRegExp regExp   = checkRegExp(self);
         final NativeRegExp compiled = newRegExp(pattern, flags);
-        // copy over fields to 'self'
-        regExp.setInput(compiled.getInput());
-        regExp.setGlobal(compiled.getGlobal());
-        regExp.setIgnoreCase(compiled.getIgnoreCase());
-        regExp.setMultiline(compiled.getMultiline());
-        regExp.setPattern(compiled.getPattern());
-        regExp.setGroupsInNegativeLookahead(compiled.getGroupsInNegativeLookahead());
+        // copy over regexp to 'self'
+        regExp.setRegExp(compiled.getRegExp());
 
         // Some implementations return undefined. Some return 'self'. Since return
         // value is most likely be ignored, we can play safe and return 'self'.
@@ -326,7 +322,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public static Object source(final Object self) {
-        return checkRegExp(self).input;
+        return checkRegExp(self).getRegExp().getSource();
     }
 
     /**
@@ -337,7 +333,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public static Object global(final Object self) {
-        return checkRegExp(self).global;
+        return checkRegExp(self).getRegExp().isGlobal();
     }
 
     /**
@@ -348,7 +344,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public static Object ignoreCase(final Object self) {
-        return checkRegExp(self).ignoreCase;
+        return checkRegExp(self).getRegExp().isIgnoreCase();
     }
 
     /**
@@ -359,7 +355,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(attributes = Attribute.NON_ENUMERABLE_CONSTANT)
     public static Object multiline(final Object self) {
-        return checkRegExp(self).multiline;
+        return checkRegExp(self).getRegExp().isMultiline();
     }
 
     /**
@@ -369,7 +365,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "input")
     public static Object getLastInput(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getInput();
     }
 
@@ -390,7 +386,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "lastMatch")
     public static Object getLastMatch(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(0);
     }
 
@@ -401,7 +397,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "lastParen")
     public static Object getLastParen(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getLastParen();
     }
 
@@ -412,7 +408,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "leftContext")
     public static Object getLeftContext(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getInput().substring(0, match.getIndex());
     }
 
@@ -423,7 +419,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "rightContext")
     public static Object getRightContext(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getInput().substring(match.getIndex() + match.length());
     }
 
@@ -434,7 +430,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$1")
     public static Object getGroup1(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(1);
     }
 
@@ -445,7 +441,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$2")
     public static Object getGroup2(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(2);
     }
 
@@ -456,7 +452,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$3")
     public static Object getGroup3(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(3);
     }
 
@@ -467,7 +463,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$4")
     public static Object getGroup4(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(4);
     }
 
@@ -478,7 +474,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$5")
     public static Object getGroup5(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(5);
     }
 
@@ -489,7 +485,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$6")
     public static Object getGroup6(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(6);
     }
 
@@ -500,7 +496,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$7")
     public static Object getGroup7(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(7);
     }
 
@@ -511,7 +507,7 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$8")
     public static Object getGroup8(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(8);
     }
 
@@ -522,34 +518,30 @@ public final class NativeRegExp extends ScriptObject {
      */
     @Getter(where = Where.CONSTRUCTOR, attributes = Attribute.CONSTANT, name = "$9")
     public static Object getGroup9(Object self) {
-        final RegExpMatch match = Global.instance().getLastRegExpMatch();
+        final RegExpResult match = Global.instance().getLastRegExpResult();
         return match == null ? "" : match.getGroup(9);
     }
 
-    private RegExpMatch execInner(final String string) {
-        if (this.pattern == null) {
-            return null; // never matches or similar, e.g. a[]
-        }
+    private RegExpResult execInner(final String string) {
 
-        final Matcher matcher = pattern.matcher(string);
-        final int start = this.global ? getLastIndex() : 0;
-
+        final int start = regexp.isGlobal() ? getLastIndex() : 0;
         if (start < 0 || start > string.length()) {
             setLastIndex(0);
             return null;
         }
 
-        if (!matcher.find(start)) {
+        final RegExpMatcher matcher = regexp.match(string);
+        if (matcher == null || !matcher.search(start)) {
             setLastIndex(0);
             return null;
         }
 
-        if (global) {
+        if (regexp.isGlobal()) {
             setLastIndex(matcher.end());
         }
 
-        final RegExpMatch match = new RegExpMatch(string, matcher.start(), groups(matcher));
-        globalObject.setLastRegExpMatch(match);
+        final RegExpResult match = new RegExpResult(string, matcher.start(), groups(matcher));
+        globalObject.setLastRegExpResult(match);
         return match;
     }
 
@@ -557,9 +549,11 @@ public final class NativeRegExp extends ScriptObject {
      * Convert java.util.regex.Matcher groups to JavaScript groups.
      * That is, replace null and groups that didn't match with undefined.
      */
-    private Object[] groups(final Matcher matcher) {
+    private Object[] groups(final RegExpMatcher matcher) {
         final int groupCount = matcher.groupCount();
         final Object[] groups = new Object[groupCount + 1];
+        final BitVector groupsInNegativeLookahead  = regexp.getGroupsInNegativeLookahead();
+
         for (int i = 0, lastGroupStart = matcher.start(); i <= groupCount; i++) {
             final int groupStart = matcher.start(i);
             if (lastGroupStart > groupStart
@@ -586,7 +580,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return NativeArray of matches, string or null.
      */
     public Object exec(final String string) {
-        final RegExpMatch match = execInner(string);
+        final RegExpResult match = execInner(string);
 
         if (match == null) {
             return null;
@@ -617,7 +611,12 @@ public final class NativeRegExp extends ScriptObject {
      * @return String with substitutions.
      */
     Object replace(final String string, final String replacement, final ScriptFunction function) {
-        final Matcher matcher = pattern.matcher(string);
+        final RegExpMatcher matcher = regexp.match(string);
+
+        if (matcher == null) {
+            return string;
+        }
+
         /*
          * $$ -> $
          * $& -> the matched substring
@@ -628,8 +627,8 @@ public final class NativeRegExp extends ScriptObject {
          */
         String replace = replacement;
 
-        if (!global) {
-            if (!matcher.find()) {
+        if (!regexp.isGlobal()) {
+            if (!matcher.search(0)) {
                 return string;
             }
 
@@ -642,45 +641,39 @@ public final class NativeRegExp extends ScriptObject {
             return sb.toString();
         }
 
-        int end = 0; // a.k.a. lastAppendPosition
         setLastIndex(0);
 
-        boolean found;
-        try {
-            found = matcher.find(end);
-        } catch (final IndexOutOfBoundsException e) {
-            found = false;
-        }
-
-        if (!found) {
+        if (!matcher.search(0)) {
             return string;
         }
 
+        int thisIndex = 0;
         int previousLastIndex = 0;
         final StringBuilder sb = new StringBuilder();
+
         do {
             if (function != null) {
                 replace = callReplaceValue(function, matcher, string);
             }
-            appendReplacement(matcher, string, replace, sb, end);
-            end = matcher.end();
+
+            appendReplacement(matcher, string, replace, sb, thisIndex);
 
             // ECMA 15.5.4.10 String.prototype.match(regexp)
-            final int thisIndex = end;
+            thisIndex = matcher.end();
             if (thisIndex == previousLastIndex) {
                 setLastIndex(thisIndex + 1);
                 previousLastIndex = thisIndex + 1;
             } else {
                 previousLastIndex = thisIndex;
             }
-        } while (matcher.find());
+        } while (previousLastIndex <= string.length() && matcher.search(previousLastIndex));
 
-        sb.append(string, end, string.length());
+        sb.append(string, thisIndex, string.length());
 
         return sb.toString();
     }
 
-    private void appendReplacement(final Matcher matcher, final String text, final String replacement, final StringBuilder sb, final int lastAppendPosition) {
+    private void appendReplacement(final RegExpMatcher matcher, final String text, final String replacement, final StringBuilder sb, final int lastAppendPosition) {
         // Process substitution string to replace group references with groups
         int cursor = 0;
         final StringBuilder result = new StringBuilder();
@@ -748,7 +741,7 @@ public final class NativeRegExp extends ScriptObject {
         sb.append(result);
     }
 
-    private String callReplaceValue(final ScriptFunction function, final Matcher matcher, final String string) {
+    private String callReplaceValue(final ScriptFunction function, final RegExpMatcher matcher, final String string) {
         final Object[] groups = groups(matcher);
         final Object[] args   = Arrays.copyOf(groups, groups.length + 2);
 
@@ -782,7 +775,7 @@ public final class NativeRegExp extends ScriptObject {
             return new NativeArray();
         }
 
-        RegExpMatch match;
+        RegExpResult match;
         final int inputLength = input.length();
         int lastLength = -1;
         int lastLastIndex = 0;
@@ -834,7 +827,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return Index of match.
      */
     Object search(final String string) {
-        final RegExpMatch match = execInner(string);
+        final RegExpResult match = execInner(string);
 
         if (match == null) {
             return -1;
@@ -884,52 +877,20 @@ public final class NativeRegExp extends ScriptObject {
         }
     }
 
-    private String getInput() {
-        return input;
-    }
-
-    private void setInput(final String input) {
-        this.input = input;
+    private void setGlobal(final boolean global) {
+        regexp.setGlobal(global);
     }
 
     boolean getGlobal() {
-        return global;
+        return regexp.isGlobal();
     }
 
-    private void setGlobal(final boolean global) {
-        this.global = global;
+    private RegExp getRegExp() {
+        return regexp;
     }
 
-    private boolean getIgnoreCase() {
-        return ignoreCase;
-    }
-
-    private void setIgnoreCase(final boolean ignoreCase) {
-        this.ignoreCase = ignoreCase;
-    }
-
-    private boolean getMultiline() {
-        return multiline;
-    }
-
-    private void setMultiline(final boolean multiline) {
-        this.multiline = multiline;
-    }
-
-    private Pattern getPattern() {
-        return pattern;
-    }
-
-    private void setPattern(final Pattern pattern) {
-        this.pattern = pattern;
-    }
-
-    private BitVector getGroupsInNegativeLookahead() {
-        return groupsInNegativeLookahead;
-    }
-
-    private void setGroupsInNegativeLookahead(final BitVector groupsInNegativeLookahead) {
-        this.groupsInNegativeLookahead = groupsInNegativeLookahead;
+    private void setRegExp(final RegExp regexp) {
+        this.regexp = regexp;
     }
 
 }

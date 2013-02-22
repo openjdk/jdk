@@ -23,12 +23,12 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime;
+package jdk.nashorn.internal.runtime.regexp;
 
 /**
  * Match tuple to keep track of ongoing regexp match.
  */
-public final class RegExpMatch {
+public final class RegExpResult {
     final Object[] groups;
     final int      index;
     final String   input;
@@ -40,7 +40,7 @@ public final class RegExpMatch {
      * @param index  index of match
      * @param groups groups vector
      */
-    public RegExpMatch(final String input, final int index, final Object[] groups) {
+    public RegExpResult(final String input, final int index, final Object[] groups) {
         this.input  = input;
         this.index  = index;
         this.groups = groups;

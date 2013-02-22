@@ -37,7 +37,7 @@ import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
-import jdk.nashorn.internal.runtime.RegExp;
+import jdk.nashorn.internal.runtime.regexp.RegExpFactory;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
@@ -427,7 +427,7 @@ public abstract class AbstractParser {
             if (value instanceof RegexToken) {
                 final RegexToken regex = (RegexToken)value;
                 try {
-                    RegExp.validate(regex.getExpression(), regex.getOptions());
+                    RegExpFactory.validate(regex.getExpression(), regex.getOptions());
                 } catch (final ParserException e) {
                     error(e.getMessage());
                 }
