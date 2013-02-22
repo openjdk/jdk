@@ -54,6 +54,10 @@ import org.testng.annotations.Test;
 
 /**
  * Tests for JSR-223 script engine for Nashorn.
+ *
+ * @test
+ * @build jdk.nashorn.api.scripting.Window jdk.nashorn.api.scripting.WindowEventHandler jdk.nashorn.api.scripting.ScriptEngineTest
+ * @run testng jdk.nashorn.api.scripting.ScriptEngineTest
  */
 public class ScriptEngineTest {
 
@@ -652,106 +656,6 @@ public class ScriptEngineTest {
         } catch (final Exception exp) {
             exp.printStackTrace();
             fail(exp.getMessage());
-        }
-    }
-
-    @Test
-    public void securityPackagesTest() {
-        if (System.getSecurityManager() == null) {
-            // pass vacuously
-        }
-
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-        try {
-            e.eval("var v = Packages.sun.misc.Unsafe;");
-            fail("should have thrown SecurityException");
-        } catch (final Exception exp) {
-            if (exp instanceof SecurityException) {
-                log("got " + exp + " as expected");
-            } else {
-                fail(exp.getMessage());
-            }
-        }
-    }
-
-    @Test
-    public void securityJavaTypeTest() {
-        if (System.getSecurityManager() == null) {
-            // pass vacuously
-        }
-
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-        try {
-            e.eval("var v = Java.type('sun.misc.Unsafe');");
-            fail("should have thrown SecurityException");
-        } catch (final Exception exp) {
-            if (exp instanceof SecurityException) {
-                log("got " + exp + " as expected");
-            } else {
-                fail(exp.getMessage());
-            }
-        }
-    }
-
-    @Test
-    public void securityClassForNameTest() {
-        if (System.getSecurityManager() == null) {
-            // pass vacuously
-        }
-
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-        try {
-            e.eval("var v = java.lang.Class.forName('sun.misc.Unsafe');");
-            fail("should have thrown SecurityException");
-        } catch (final Exception exp) {
-            if (exp instanceof SecurityException) {
-                log("got " + exp + " as expected");
-            } else {
-                fail(exp.getMessage());
-            }
-        }
-    }
-
-    @Test
-    public void securitySystemExit() {
-        if (System.getSecurityManager() == null) {
-            // pass vacuously
-        }
-
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-        try {
-            e.eval("java.lang.System.exit(0);");
-            fail("should have thrown SecurityException");
-        } catch (final Exception exp) {
-            if (exp instanceof SecurityException) {
-                log("got " + exp + " as expected");
-            } else {
-                fail(exp.getMessage());
-            }
-        }
-    }
-
-    @Test
-    public void securitySystemLoadLibrary() {
-        if (System.getSecurityManager() == null) {
-            // pass vacuously
-        }
-
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-        try {
-            e.eval("java.lang.System.loadLibrary('foo');");
-            fail("should have thrown SecurityException");
-        } catch (final Exception exp) {
-            if (exp instanceof SecurityException) {
-                log("got " + exp + " as expected");
-            } else {
-                fail(exp.getMessage());
-            }
         }
     }
 
