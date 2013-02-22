@@ -78,8 +78,8 @@ $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run: $(BUILD_NASGEN)
 	$(MKDIR) -p $(@D)
 	$(RM) -rf $(@D)/jdk $(@D)/netscape
 	$(CP) -R -p $(NASHORN_OUTPUTDIR)/nashorn_classes/* $(@D)/
-	$(JDK_OUTPUTDIR)/bin/java \
-		-cp $(NASHORN_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes \
+	$(FIXPATH) $(JDK_OUTPUTDIR)/bin/java \
+		-cp "$(NASHORN_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes" \
 		jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
 	for f in `$(FIND) $(@D)/jdk/nashorn/internal/objects/ -name "*.class"`; do \
 	  mv "$$f" `$(ECHO) "$$f" | $(SED) "s/\.class$$/\.clazz/"`; \
