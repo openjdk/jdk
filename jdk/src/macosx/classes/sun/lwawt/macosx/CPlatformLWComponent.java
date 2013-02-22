@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,50 +26,28 @@
 
 package sun.lwawt.macosx;
 
-import java.awt.Insets;
-
-import sun.lwawt.PlatformComponent;
 import sun.lwawt.PlatformWindow;
 
-/**
- * On OSX {@code CPlatformComponent} stores pointer to the native CAlayer which
- * can be used from JAWT.
- */
-class CPlatformComponent extends CFRetainedResource
-        implements PlatformComponent {
+class CPlatformLWComponent extends CPlatformComponent {
 
-    private volatile PlatformWindow platformWindow;
-
-    CPlatformComponent() {
-        super(0, true);
+    CPlatformLWComponent() {
+        super();
     }
 
+    @Override
     public long getPointer() {
-        return ptr;
+        return 0;
     }
 
     @Override
     public void initialize(final PlatformWindow platformWindow) {
-        this.platformWindow = platformWindow;
-        setPtr(nativeCreateComponent(platformWindow.getLayerPtr()));
     }
-
-    // TODO: visibility, z-order
 
     @Override
     public void setBounds(final int x, final int y, final int w, final int h) {
-        // translates values from the coordinate system of the top-level window
-        // to the coordinate system of the content view
-        final Insets insets = platformWindow.getPeer().getInsets();
-        nativeSetBounds(getPointer(), x - insets.left, y - insets.top, w, h);
     }
 
     @Override
     public void dispose() {
-        super.dispose();
     }
-
-    private native long nativeCreateComponent(long windowLayer);
-
-    private native void nativeSetBounds(long ptr, int x, int y, int w, int h);
 }

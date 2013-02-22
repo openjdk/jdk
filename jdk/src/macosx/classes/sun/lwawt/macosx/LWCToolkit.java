@@ -160,6 +160,8 @@ public final class LWCToolkit extends LWToolkit {
             return new CPlatformEmbeddedFrame();
         } else if (peerType == PeerType.VIEW_EMBEDDED_FRAME) {
             return new CViewPlatformEmbeddedFrame();
+        } else if (peerType == PeerType.LW_FRAME) {
+            return new CPlatformLWWindow();
         } else {
             assert (peerType == PeerType.SIMPLEWINDOW || peerType == PeerType.DIALOG || peerType == PeerType.FRAME);
             return new CPlatformWindow();
@@ -169,6 +171,11 @@ public final class LWCToolkit extends LWToolkit {
     @Override
     protected PlatformComponent createPlatformComponent() {
         return new CPlatformComponent();
+    }
+
+    @Override
+    protected PlatformComponent createLwPlatformComponent() {
+        return new CPlatformLWComponent();
     }
 
     @Override

@@ -439,7 +439,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     @Override
-    public final Graphics getGraphics() {
+    public Graphics getGraphics() {
         final Graphics g = getOnscreenGraphics();
         if (g != null) {
             synchronized (getPeerTreeLock()){
