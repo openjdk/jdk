@@ -101,9 +101,6 @@
           "to-space, we will allow regions whose survival rate is up to "   \
           "S + (1 - S)*X, where X is this parameter (as a fraction.)")      \
                                                                             \
-  develop(intx, G1InitYoungSurvRatio, 50,                                   \
-          "Expected Survival Rate for newly allocated bytes")               \
-                                                                            \
   develop(bool, G1SATBPrintStubs, false,                                    \
           "If true, print generated stubs for the SATB barrier")            \
                                                                             \

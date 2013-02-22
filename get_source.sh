@@ -26,7 +26,7 @@
 #
 
 # Get clones of all nested repositories
-sh ./common/bin/hgforest.sh clone "$@"
+sh ./common/bin/hgforest.sh clone "$@" || exit 1
 
 # Update all existing repositories to the latest sources
 sh ./common/bin/hgforest.sh pull -u

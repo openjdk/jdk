@@ -34,11 +34,11 @@ import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.jvm.Pool;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Pair;
 
 import java.io.File;
@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -85,7 +86,10 @@ import javax.tools.ToolProvider;
  *
  * @author Peter von der Ah\u00e9
  */
-@SupportedOptions({"com.sun.tools.javac.sym.Jar","com.sun.tools.javac.sym.Dest"})
+@SupportedOptions({
+    "com.sun.tools.javac.sym.Jar",
+    "com.sun.tools.javac.sym.Dest",
+    "com.sun.tools.javac.sym.Profiles"})
 @SupportedAnnotationTypes("*")
 public class CreateSymbols extends AbstractProcessor {
 
@@ -106,6 +110,7 @@ public class CreateSymbols extends AbstractProcessor {
             processingEnv.getMessager()
                 .printMessage(Diagnostic.Kind.ERROR, e.getLocalizedMessage());
         } catch (Throwable t) {
+            t.printStackTrace();
             Throwable cause = t.getCause();
             if (cause == null)
                 cause = t;
@@ -121,12 +126,17 @@ public class CreateSymbols extends AbstractProcessor {
         Set<String> documented = new HashSet<String>();
         Set<PackageSymbol> packages =
             ((JavacProcessingEnvironment)processingEnv).getSpecifiedPackages();
-        String jarName = processingEnv.getOptions().get("com.sun.tools.javac.sym.Jar");
+        Map<String,String> pOptions = processingEnv.getOptions();
+        String jarName = pOptions.get("com.sun.tools.javac.sym.Jar");
         if (jarName == null)
             throw new RuntimeException("Must use -Acom.sun.tools.javac.sym.Jar=LOCATION_OF_JAR");
-        String destName = processingEnv.getOptions().get("com.sun.tools.javac.sym.Dest");
+        String destName = pOptions.get("com.sun.tools.javac.sym.Dest");
         if (destName == null)
             throw new RuntimeException("Must use -Acom.sun.tools.javac.sym.Dest=LOCATION_OF_JAR");
+        String profileSpec=pOptions.get("com.sun.tools.javac.sym.Profiles");
+        if (profileSpec == null)
+            throw new RuntimeException("Must use -Acom.sun.tools.javac.sym.Profiles=PROFILES_SPEC");
+        Profiles profiles = Profiles.read(new File(profileSpec));
 
         for (PackageSymbol psym : packages) {
             String name = psym.getQualifiedName().toString();
@@ -166,12 +176,19 @@ public class CreateSymbols extends AbstractProcessor {
             tool.getTask(null, fm, null, options, null, null);
         com.sun.tools.javac.main.JavaCompiler compiler =
             com.sun.tools.javac.main.JavaCompiler.instance(task.getContext());
-        ClassReader reader = ClassReader.instance(task.getContext());
         ClassWriter writer = ClassWriter.instance(task.getContext());
         Symtab syms = Symtab.instance(task.getContext());
-        Attribute.Compound proprietary =
+        Names names = Names.instance(task.getContext());
+        Attribute.Compound proprietaryAnno =
             new Attribute.Compound(syms.proprietaryType,
                                    List.<Pair<Symbol.MethodSymbol,Attribute>>nil());
+        Attribute.Compound[] profileAnnos = new Attribute.Compound[profiles.getProfileCount() + 1];
+        Symbol.MethodSymbol profileValue = (MethodSymbol) syms.profileType.tsym.members().lookup(names.value).sym;
+        for (int i = 1; i < profileAnnos.length; i++) {
+            profileAnnos[i] = new Attribute.Compound(syms.profileType,
+                    List.<Pair<Symbol.MethodSymbol, Attribute>>of(
+                    new Pair<Symbol.MethodSymbol, Attribute>(profileValue, new Attribute.Constant(syms.intType, i))));
+        }
 
         Type.moreInfo = true;
         Types types = Types.instance(task.getContext());
@@ -208,8 +225,11 @@ public class CreateSymbols extends AbstractProcessor {
             }
             ClassSymbol cs = (ClassSymbol) sym;
             if (addLegacyAnnotation) {
-                cs.annotations.prepend(List.of(proprietary));
+                cs.annotations.prepend(List.of(proprietaryAnno));
             }
+            int p = profiles.getProfile(cs.fullname.toString().replace(".", "/"));
+            if (0 < p && p < profileAnnos.length)
+                cs.annotations.prepend(List.of(profileAnnos[p]));
             writeClass(pool, cs, writer);
         }
 

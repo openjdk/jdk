@@ -82,7 +82,12 @@ public class FormatData_zh_TW extends ListResourceBundle {
     /**
      * Overrides ListResourceBundle
      */
+    @Override
     protected final Object[][] getContents() {
+        final String[] rocEras = {
+            "\u6c11\u570b\u524d",
+            "\u6c11\u570b",
+        };
         return new Object[][] {
             { "Eras",
                 new String[] { // era strings
@@ -135,12 +140,8 @@ public class FormatData_zh_TW extends ListResourceBundle {
                     "Gy/M/d",
                 }
             },
-            { "roc.Eras",
-                new String[] {
-                    "\u6c11\u570b\u524d",
-                    "\u6c11\u570b",
-                }
-            },
+            { "roc.Eras", rocEras },
+            { "roc.short.Eras", rocEras },
             { "cldr.roc.DatePatterns",
                 new String[] {
                     "Gy\u5e74M\u6708d\u65e5EEEE",

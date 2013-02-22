@@ -92,7 +92,7 @@ public class XIconWindow extends XBaseWindow {
         }
 
         XIconSize[] sizeList = getIconSizes();
-        log.finest("Icon sizes: {0}", sizeList);
+        log.finest("Icon sizes: {0}", (Object[]) sizeList);
         if (sizeList == null) {
             // No icon sizes so we simply fall back to 16x16
             return new Dimension(16, 16);

@@ -158,10 +158,11 @@ public class JavacTaskImpl extends BasicJavacTask {
                 throw new IllegalStateException();
         } else {
             initContext();
+            compilerMain.log = Log.instance(context);
             compilerMain.setOptions(Options.instance(context));
             compilerMain.filenames = new LinkedHashSet<File>();
             Collection<File> filenames = compilerMain.processArgs(CommandLine.parse(args), classNames);
-            if (!filenames.isEmpty())
+            if (filenames != null && !filenames.isEmpty())
                 throw new IllegalArgumentException("Malformed arguments " + toString(filenames, " "));
             compiler = JavaCompiler.instance(context);
             compiler.keepComments = true;
