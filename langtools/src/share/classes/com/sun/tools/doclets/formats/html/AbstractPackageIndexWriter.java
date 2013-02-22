@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,20 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
             String tableSummary, Content body) {
         if (packages.length > 0) {
             Arrays.sort(packages);
-            addAllClassesLink(body);
+            HtmlTree div = new HtmlTree(HtmlTag.DIV);
+            div.addStyle(HtmlStyle.indexHeader);
+            addAllClassesLink(div);
+            if (configuration.showProfiles) {
+                addAllProfilesLink(div);
+            }
+            body.addContent(div);
+            if (configuration.showProfiles) {
+                String profileSummary = configuration.getText("doclet.Profiles");
+                String profilesTableSummary = configuration.getText("doclet.Member_Table_Summary",
+                configuration.getText("doclet.Profile_Summary"),
+                configuration.getText("doclet.profiles"));
+                addProfilesList(profileSummary, profilesTableSummary, body);
+            }
             addPackagesList(packages, text, tableSummary, body);
         }
     }
@@ -182,10 +195,29 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Do nothing. This will be overridden in PackageIndexFrameWriter.
+     * Do nothing. This will be overridden.
      *
-     * @param body the document tree to which the all classes link will be added
+     * @param div the document tree to which the all classes link will be added
      */
-    protected void addAllClassesLink(Content body) {
+    protected void addAllClassesLink(Content div) {
+    }
+
+    /**
+     * Do nothing. This will be overridden.
+     *
+     * @param div the document tree to which the all profiles link will be added
+     */
+    protected void addAllProfilesLink(Content div) {
+    }
+
+    /**
+     * Do nothing. This will be overridden.
+     *
+     * @param profileSummary the profile summary heading
+     * @param profilesTableSummary the profiles table summary information
+     * @param body the content tree to which the profiles list will be added
+     */
+    protected void addProfilesList(String profileSummary, String profilesTableSummary,
+            Content body) {
     }
 }

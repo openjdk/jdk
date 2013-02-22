@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug     6278587
+ * @bug     6278587 8007464
  * @summary Inference broken for subtypes of subtypes of F-bounded types
  * @author  Peter von der Ah\u00e9
- * @compile/fail T6278587Neg.java
+ * @compile/fail -source 7 T6278587Neg.java
+ * @compile T6278587Neg.java
  */
 
 public abstract class T6278587Neg {

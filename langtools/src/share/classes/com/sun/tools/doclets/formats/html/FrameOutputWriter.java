@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     public FrameOutputWriter(ConfigurationImpl configuration,
                              DocPath filename) throws IOException {
         super(configuration, filename);
-    noOfPackages = configuration.packages.length;
+        noOfPackages = configuration.packages.length;
     }
 
     /**
@@ -135,7 +135,13 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     protected Content getFrameDetails() {
         HtmlTree frameset = HtmlTree.FRAMESET("20%,80%", null, "Documentation frame",
                 "top.loadFrames()");
-        if (noOfPackages <= 1) {
+        if (configuration.showProfiles) {
+            HtmlTree leftFrameset = HtmlTree.FRAMESET(null, "30%,70%", "Left frames",
+                "top.loadFrames()");
+            addAllProfilesFrameTag(leftFrameset);
+            addAllClassesFrameTag(leftFrameset);
+            frameset.addContent(leftFrameset);
+        } else if (noOfPackages <= 1) {
             addAllClassesFrameTag(frameset);
         } else if (noOfPackages > 1) {
             HtmlTree leftFrameset = HtmlTree.FRAMESET(null, "30%,70%", "Left frames",
@@ -147,6 +153,17 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         addClassFrameTag(frameset);
         addFrameWarning(frameset);
         return frameset;
+    }
+
+    /**
+     * Add the FRAME tag for the frame that lists all profiles.
+     *
+     * @param contentTree the content tree to which the information will be added
+     */
+    private void addAllProfilesFrameTag(Content contentTree) {
+        HtmlTree frame = HtmlTree.FRAME(DocPaths.PROFILE_OVERVIEW_FRAME.getPath(),
+                "profileListFrame", configuration.getText("doclet.All_Profiles"));
+        contentTree.addContent(frame);
     }
 
     /**

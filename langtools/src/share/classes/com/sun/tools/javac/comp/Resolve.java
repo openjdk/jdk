@@ -35,7 +35,7 @@ import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
-import com.sun.tools.javac.comp.Infer.InferenceContext.FreeTypeListener;
+import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
@@ -564,7 +564,7 @@ public class Resolve {
                                     methodCheck,
                                     warn);
 
-        methodCheck.argumentsAcceptable(env, currentResolutionContext.deferredAttrContext(m, infer.emptyContext),
+        methodCheck.argumentsAcceptable(env, currentResolutionContext.deferredAttrContext(m, infer.emptyContext, resultInfo, warn),
                                 argtypes, mt.getParameterTypes(), warn);
         return mt;
     }
@@ -741,7 +741,7 @@ public class Resolve {
                 inferenceContext.addFreeTypeListener(List.of(t), new FreeTypeListener() {
                     @Override
                     public void typesInferred(InferenceContext inferenceContext) {
-                        varargsAccessible(env, inferenceContext.asInstType(t, types), inferenceContext);
+                        varargsAccessible(env, inferenceContext.asInstType(t), inferenceContext);
                     }
                 });
             } else {
@@ -785,8 +785,8 @@ public class Resolve {
 
         public boolean compatible(Type found, Type req, Warner warn) {
             return strict ?
-                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asFree(req, types), warn) :
-                    types.isConvertible(found, deferredAttrContext.inferenceContext.asFree(req, types), warn);
+                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asFree(req), warn) :
+                    types.isConvertible(found, deferredAttrContext.inferenceContext.asFree(req), warn);
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
@@ -3589,8 +3589,8 @@ public class Resolve {
             candidates = candidates.append(c);
         }
 
-        DeferredAttrContext deferredAttrContext(Symbol sym, InferenceContext inferenceContext) {
-            return deferredAttr.new DeferredAttrContext(attrMode, sym, step, inferenceContext);
+        DeferredAttrContext deferredAttrContext(Symbol sym, InferenceContext inferenceContext, ResultInfo pendingResult, Warner warn) {
+            return deferredAttr.new DeferredAttrContext(attrMode, sym, step, inferenceContext, pendingResult != null ? pendingResult.checkContext.deferredAttrContext() : deferredAttr.emptyDeferredAttrContext, warn);
         }
 
         /**

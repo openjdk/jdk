@@ -40,6 +40,7 @@ import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Log;
@@ -212,6 +213,18 @@ public enum Option {
             Target target = Target.lookup(operand);
             if (target == null) {
                 helper.error("err.invalid.target", operand);
+                return true;
+            }
+            return super.process(helper, option, operand);
+        }
+    },
+
+    PROFILE("-profile", "opt.arg.profile", "opt.profile", STANDARD, BASIC) {
+        @Override
+        public boolean process(OptionHelper helper, String option, String operand) {
+            Profile profile = Profile.lookup(operand);
+            if (profile == null) {
+                helper.error("err.invalid.profile", operand);
                 return true;
             }
             return super.process(helper, option, operand);
