@@ -278,13 +278,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final PropertyDescriptor desc;
         if (isDataDescriptor()) {
             if (has(SET) || has(GET)) {
-                typeError((ScriptObject)global, "inconsistent.property.descriptor");
+                throw typeError((ScriptObject)global, "inconsistent.property.descriptor");
             }
 
             desc = global.newDataDescriptor(UNDEFINED, false, false, false);
         } else if (isAccessorDescriptor()) {
             if (has(VALUE) || has(WRITABLE)) {
-                typeError((ScriptObject)global, "inconsistent.property.descriptor");
+                throw typeError((ScriptObject)global, "inconsistent.property.descriptor");
             }
 
             desc = global.newAccessorDescriptor(UNDEFINED, UNDEFINED, false, false);
@@ -308,8 +308,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return ((ScriptObject)obj).toPropertyDescriptor();
         }
 
-        typeError(global, "not.an.object", ScriptRuntime.safeToString(obj));
-        return null;
+        throw typeError(global, "not.an.object", ScriptRuntime.safeToString(obj));
     }
 
     /**
@@ -401,7 +400,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
             // new property added to non-extensible object
             if (reject) {
-                typeError(global, "object.non.extensible", name, ScriptRuntime.safeToString(this));
+                throw typeError(global, "object.non.extensible", name, ScriptRuntime.safeToString(this));
             }
             return false;
         }
@@ -424,7 +423,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (newDesc.has(CONFIGURABLE) && newDesc.isConfigurable()) {
                 // not configurable can not be made configurable
                 if (reject) {
-                    typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
+                    throw typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
                 }
                 return false;
             }
@@ -433,7 +432,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 currentDesc.isEnumerable() != newDesc.isEnumerable()) {
                 // cannot make non-enumerable as enumerable or vice-versa
                 if (reject) {
-                    typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
+                    throw typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
                 }
                 return false;
             }
@@ -448,7 +447,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 if (newDesc.has(WRITABLE) && newDesc.isWritable() ||
                     newDesc.has(VALUE) && ! ScriptRuntime.sameValue(currentDesc.getValue(), newDesc.getValue())) {
                     if (reject) {
-                        typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
+                        throw typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
                     }
                     return false;
                 }
@@ -477,7 +476,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 if (newDesc.has(PropertyDescriptor.GET) && ! ScriptRuntime.sameValue(currentDesc.getGetter(), newDesc.getGetter()) ||
                     newDesc.has(PropertyDescriptor.SET) && ! ScriptRuntime.sameValue(currentDesc.getSetter(), newDesc.getSetter())) {
                     if (reject) {
-                        typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
+                        throw typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
                     }
                     return false;
                 }
@@ -492,7 +491,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (! currentDesc.isConfigurable()) {
                 // not configurable can not be made configurable
                 if (reject) {
-                    typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
+                    throw typeError(global, "cant.redefine.property", name, ScriptRuntime.safeToString(this));
                 }
                 return false;
             }
@@ -1150,7 +1149,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (newProtoObject instanceof ScriptObject) {
                 setProto((ScriptObject)newProtoObject);
             } else {
-                typeError(global, "cant.set.proto.to.non.object", ScriptRuntime.safeToString(this), ScriptRuntime.safeToString(newProto));
+                throw typeError(global, "cant.set.proto.to.non.object", ScriptRuntime.safeToString(this), ScriptRuntime.safeToString(newProto));
             }
         }
     }
@@ -1638,8 +1637,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private GuardedInvocation notAFunction() {
-        typeError("not.a.function", ScriptRuntime.safeToString(this));
-        return null;
+        throw typeError("not.a.function", ScriptRuntime.safeToString(this));
     }
 
     /**
@@ -1815,7 +1813,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, String strictErrorMessage, boolean canBeFastScope) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         if (NashornCallSiteDescriptor.isStrict(desc)) {
-               typeError(strictErrorMessage, name, ScriptRuntime.safeToString((this)));
+               throw typeError(strictErrorMessage, name, ScriptRuntime.safeToString((this)));
            }
            assert canBeFastScope || !NashornCallSiteDescriptor.isFastScope(desc);
            final PropertyMap myMap = getMap();
@@ -1842,8 +1840,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     private boolean trySetEmbedOrSpill(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final Object value) {
         final boolean isStrict = NashornCallSiteDescriptor.isStrict(desc);
         if (!isExtensible() && isStrict) {
-            typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(this));
-            throw new AssertionError(); // never reached
+            throw typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(this));
         } else if (compareAndSetMap(oldMap, newMap)) {
             return true;
         } else {
@@ -1859,7 +1856,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (!obj.isExtensible()) {
             if (isStrict) {
-                typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
+                throw typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
             }
         } else if (obj.compareAndSetMap(oldMap, newMap)) {
             obj.spill = new Object[SPILL_RATE];
@@ -1876,7 +1873,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (!obj.isExtensible()) {
             if (isStrict) {
-                typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
+                throw typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
             }
         } else if (obj.compareAndSetMap(oldMap, newMap)) {
             final int oldLength = obj.spill.length;
@@ -1968,7 +1965,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         if (scopeAccess) {
-            referenceError("not.defined", name);
+            throw referenceError("not.defined", name);
         }
 
         return createEmptyGetter(desc, name);
@@ -2569,7 +2566,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (longIndex >= oldLength) {
             if (!isExtensible()) {
                 if (strict) {
-                    typeError("object.non.extensible", JSType.toString(index), ScriptRuntime.safeToString(this));
+                    throw typeError("object.non.extensible", JSType.toString(index), ScriptRuntime.safeToString(this));
                 }
                 return;
             }
@@ -2618,7 +2615,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         if (f != null) {
             if (!f.getProperty().isWritable()) {
                 if (strict) {
-                    typeError("property.not.writable", key, ScriptRuntime.safeToString(this));
+                    throw typeError("property.not.writable", key, ScriptRuntime.safeToString(this));
                 }
 
                 return;
@@ -2634,7 +2631,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         } else if (!isExtensible()) {
             if (strict) {
-                typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
+                throw typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
             }
         } else {
             spill(key, value);
@@ -3121,7 +3118,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (!find.getProperty().isConfigurable()) {
             if (strict) {
-                typeError("cant.delete.property", propName, ScriptRuntime.safeToString(this));
+                throw typeError("cant.delete.property", propName, ScriptRuntime.safeToString(this));
             }
             return false;
         }
@@ -3291,7 +3288,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 throw new RuntimeException(t);
             }
         }  else if (name != null) {
-            typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
+            throw typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
         }
     }
 

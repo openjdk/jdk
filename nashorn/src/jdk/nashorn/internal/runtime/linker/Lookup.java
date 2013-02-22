@@ -111,8 +111,7 @@ public final class Lookup {
      * @return undefined (but throws error before return point)
      */
     public static Object typeErrorThrowerGetter(final Object self) {
-        typeError("strict.getter.setter.poison", ScriptRuntime.safeToString(self));
-        return UNDEFINED;
+        throw typeError("strict.getter.setter.poison", ScriptRuntime.safeToString(self));
     }
 
     /**
@@ -122,7 +121,7 @@ public final class Lookup {
      * @param value (ignored)
      */
     public static void typeErrorThrowerSetter(final Object self, final Object value) {
-        typeError("strict.getter.setter.poison", ScriptRuntime.safeToString(self));
+        throw typeError("strict.getter.setter.poison", ScriptRuntime.safeToString(self));
     }
 
     /**

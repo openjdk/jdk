@@ -185,8 +185,7 @@ public final class NativeNumber extends ScriptObject {
     public static Object toFixed(final Object self, final Object fractionDigits) {
         final int f = JSType.toInteger(fractionDigits);
         if (f < 0 || f > 20) {
-            rangeError("invalid.fraction.digits", "toFixed");
-            return UNDEFINED;
+            throw rangeError("invalid.fraction.digits", "toFixed");
         }
 
         final double x = getNumberValue(self);
@@ -227,8 +226,7 @@ public final class NativeNumber extends ScriptObject {
         }
 
         if (fractionDigits != UNDEFINED && (f < 0 || f > 20)) {
-            rangeError("invalid.fraction.digits", "toExponential");
-            return UNDEFINED;
+            throw rangeError("invalid.fraction.digits", "toExponential");
         }
 
         final String res = String.format(Locale.US, "%1." + f + "e", x);
@@ -258,8 +256,7 @@ public final class NativeNumber extends ScriptObject {
         }
 
         if (p < 1 || p > 21) {
-            rangeError("invalid.precision");
-            return UNDEFINED;
+            throw rangeError("invalid.precision");
         }
 
         // workaround for http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6469160
@@ -283,7 +280,7 @@ public final class NativeNumber extends ScriptObject {
             final int intRadix = JSType.toInteger(radix);
             if (intRadix != 10) {
                 if (intRadix < 2 || intRadix > 36) {
-                    rangeError("invalid.radix");
+                    throw rangeError("invalid.radix");
                 }
                 return JSType.toString(getNumberValue(self), intRadix);
             }
@@ -338,8 +335,7 @@ public final class NativeNumber extends ScriptObject {
         } else if (self != null && self == Global.instance().getNumberPrototype()) {
             return 0.0;
         } else {
-            typeError("not.a.number", ScriptRuntime.safeToString(self));
-            return Double.NaN;
+            throw typeError("not.a.number", ScriptRuntime.safeToString(self));
         }
     }
 

@@ -33,7 +33,6 @@ import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.CompilerConstants.FieldAccess;
-import jdk.nashorn.internal.scripts.JS$;
 
 /**
  * Exception used to implement ECMAScript "throw" from scripts. The actual thrown
@@ -54,13 +53,6 @@ public final class ECMAException extends NashornException {
 
     private static final String EXCEPTION_PROPERTY = "nashornException";
 
-    /** We assume that compiler generates script classes into the known package. */
-    private static final String scriptPackage;
-    static {
-        String name = JS$.class.getName();
-        scriptPackage = name.substring(0, name.lastIndexOf('.'));
-    }
-
     /** Object thrown. */
     public final Object thrown;
 
@@ -74,10 +66,7 @@ public final class ECMAException extends NashornException {
      * @param column    column number of throw
      */
     public ECMAException(final Object thrown, final String fileName, final int line, final int column) {
-        super(ScriptRuntime.safeToString(thrown), asThrowable(thrown));
-        setFileName(fileName);
-        setLineNumber(line);
-        setColumnNumber(column);
+        super(ScriptRuntime.safeToString(thrown), asThrowable(thrown), fileName, line, column);
         this.thrown = thrown;
         setExceptionToThrown();
     }
@@ -93,8 +82,6 @@ public final class ECMAException extends NashornException {
         super(ScriptRuntime.safeToString(thrown), cause);
         this.thrown = thrown;
         setExceptionToThrown();
-        // location is not directly available, get it from stack trace
-        setLocationFromStack();
     }
 
     /**
@@ -140,29 +127,6 @@ public final class ECMAException extends NashornException {
      */
     public static Object getException(final ScriptObject errObj) {
         return errObj.get(ECMAException.EXCEPTION_PROPERTY);
-    }
-
-    /**
-     * Check if a stack trace element is in JavaScript
-     *
-     * @param frame frame
-     *
-     * @return true if frame is in the script
-     */
-    public static boolean isScriptFrame(final StackTraceElement frame) {
-        final String className = frame.getClassName();
-
-        // Look for script package in class name (into which compiler puts generated code)
-        if (className.startsWith(scriptPackage)) {
-            final String source = frame.getFileName();
-            /*
-             * Make sure that it is not some Java code that Nashorn has in that package!
-             * also, we don't want to report JavaScript code that lives in script engine implementation
-             * We want to report only user's own scripts and not any of our own scripts like "engine.js"
-             */
-            return source != null && !source.endsWith(".java") && !source.contains(ENGINE_SCRIPT_SOURCE_NAME);
-        }
-        return false;
     }
 
     /**
@@ -292,25 +256,6 @@ public final class ECMAException extends NashornException {
             final ScriptObject sobj = (ScriptObject)thrown;
             if (!sobj.has(EXCEPTION_PROPERTY)) {
                 sobj.addOwnProperty(EXCEPTION_PROPERTY, Property.NOT_ENUMERABLE, this);
-            }
-        }
-    }
-
-    private void setLocationFromStack() {
-        // This is not so pretty - but it gets the job done. Note that the stack
-        // trace has been already filled by "fillInStackTrace" call from Throwable
-        // constructor and so we don't pay additional cost for it.
-
-        // Find the first JavaScript frame by walking and set file, line from it
-        // Usually, we should be able to find it in just few frames depth.
-        for (final StackTraceElement ste : getStackTrace()) {
-            if (isScriptFrame(ste)) {
-                // Whatever here is compiled from JavaScript code
-                setFileName(ste.getFileName());
-                setLineNumber(ste.getLineNumber());
-                // Hard luck - no column number info
-                setColumnNumber(-1);
-                break;
             }
         }
     }

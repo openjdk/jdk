@@ -426,9 +426,9 @@ public final class ScriptRuntime {
     public static ScriptObject openWith(final ScriptObject scope, final Object expression) {
         final ScriptObject global = Context.getGlobalTrusted();
         if (expression == UNDEFINED) {
-            typeError(global, "cant.apply.with.to.undefined");
+            throw typeError(global, "cant.apply.with.to.undefined");
         } else if (expression == null) {
-            typeError(global, "cant.apply.with.to.null");
+            throw typeError(global, "cant.apply.with.to.null");
         }
 
         final ScriptObject withObject = new WithObject(scope, JSType.toScriptObject(global, expression));
@@ -527,7 +527,7 @@ public final class ScriptRuntime {
             } else if (object instanceof Undefined) {
                 obj = ((Undefined)obj).get(property);
             } else if (object == null) {
-                typeError("cant.get.property", safeToString(property), "null");
+                throw typeError("cant.get.property", safeToString(property), "null");
             } else if (JSType.isPrimitive(obj)) {
                 obj = ((ScriptObject)JSType.toScriptObject(obj)).get(property);
             } else {
@@ -565,8 +565,7 @@ public final class ScriptRuntime {
      * @return undefined
      */
     public static Object REFERENCE_ERROR(final Object lhs, final Object rhs, final Object msg) {
-        referenceError("cant.be.used.as.lhs", Objects.toString(msg));
-        return UNDEFINED;
+        throw referenceError("cant.be.used.as.lhs", Objects.toString(msg));
     }
 
     /**
@@ -588,7 +587,7 @@ public final class ScriptRuntime {
         }
 
         if (obj == null) {
-            typeError("cant.delete.property", safeToString(property), "null");
+            throw typeError("cant.delete.property", safeToString(property), "null");
         }
 
         if (JSType.isPrimitive(obj)) {
@@ -612,7 +611,7 @@ public final class ScriptRuntime {
      */
     public static boolean FAIL_DELETE(final Object property, final Object strict) {
         if (Boolean.TRUE.equals(strict)) {
-            syntaxError("strict.cant.delete", safeToString(property));
+            throw syntaxError("strict.cant.delete", safeToString(property));
         }
         return false;
     }
@@ -789,9 +788,7 @@ public final class ScriptRuntime {
             return false;
         }
 
-        typeError("in.with.non.object", rvalType.toString().toLowerCase());
-
-        return false;
+        throw typeError("in.with.non.object", rvalType.toString().toLowerCase());
     }
 
     /**
@@ -814,9 +811,7 @@ public final class ScriptRuntime {
             return ((StaticClass)clazz).getRepresentedClass().isInstance(obj);
         }
 
-        typeError("instanceof.on.non.object");
-
-        return false;
+        throw typeError("instanceof.on.non.object");
     }
 
     /**

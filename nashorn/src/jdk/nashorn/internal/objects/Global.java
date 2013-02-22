@@ -485,7 +485,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
                         return value;
                     }
                 }
-                typeError(this, "cannot.get.default.string");
+                throw typeError(this, "cannot.get.default.string");
             }
 
             if (hint == Number.class) {
@@ -505,7 +505,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
                     }
                 }
 
-                typeError(this, "cannot.get.default.number");
+                throw typeError(this, "cannot.get.default.number");
             }
         } catch (final RuntimeException | Error e) {
             throw e;
@@ -1177,7 +1177,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public static Object toObject(final Object obj) {
         if (obj == null || obj == UNDEFINED) {
-            typeError("not.an.object", ScriptRuntime.safeToString(obj));
+            throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
 
         if (obj instanceof ScriptObject) {
@@ -1294,7 +1294,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public static void checkObject(final Object obj) {
         if (!(obj instanceof ScriptObject)) {
-            typeError("not.an.object", ScriptRuntime.safeToString(obj));
+            throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
     }
 
@@ -1306,7 +1306,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public static void checkObjectCoercible(final Object obj) {
         if (obj == null || obj == UNDEFINED) {
-            typeError("not.an.object", ScriptRuntime.safeToString(obj));
+            throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
     }
 

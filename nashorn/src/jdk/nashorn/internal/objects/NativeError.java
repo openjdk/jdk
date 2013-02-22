@@ -38,6 +38,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -246,7 +247,7 @@ public final class NativeError extends ScriptObject {
             final StackTraceElement[] frames = ((Throwable)exception).getStackTrace();
             final List<StackTraceElement> filtered = new ArrayList<>();
             for (final StackTraceElement st : frames) {
-                if (ECMAException.isScriptFrame(st)) {
+                if (ECMAErrors.isScriptFrame(st)) {
                     filtered.add(st);
                 }
             }

@@ -40,6 +40,11 @@ public final class URLReader extends Reader {
     // lazily initialized underlying reader for URL
     private Reader reader;
 
+    /**
+     * Constructor
+     *
+     * @param url URL for this URLReader
+     */
     public URLReader(final URL url) {
         this.url = url;
     }

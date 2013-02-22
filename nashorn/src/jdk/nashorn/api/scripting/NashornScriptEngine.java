@@ -122,9 +122,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             if (reader instanceof URLReader) {
                 final URL url = ((URLReader)reader).getURL();
                 return evalImpl(compileImpl(new Source(url.toString(), url), ctxt), ctxt);
-            } else {
-                return evalImpl(Source.readFully(reader), ctxt);
             }
+            return evalImpl(Source.readFully(reader), ctxt);
         } catch (final IOException e) {
             throw new ScriptException(e);
         }
@@ -240,7 +239,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
         if (self == UNDEFINED) {
             // scope access and so throw ReferenceError
-            referenceError(ctxtGlobal, "not.defined", name);
+            throw referenceError(ctxtGlobal, "not.defined", name);
         }
 
         return UNDEFINED;

@@ -25,100 +25,115 @@
 
 package jdk.nashorn.api.scripting;
 
+import jdk.nashorn.internal.runtime.ECMAErrors;
+
 /**
- * This is base exception for all Nashorn exceptions. These originate from user's
- * ECMAScript code. Example: script parse errors, exceptions thrown from scripts.
- * Note that ScriptEngine methods like "eval", "invokeMethod", "invokeFunction"
- * will wrap this as ScriptException and throw it. But, there are cases where user
- * may need to access this exception (or implementation defined subtype of this).
- * For example, if java interface is implemented by a script object or Java access
- * to script object properties via java.util.Map interface. In these cases, user
- * code will get an instance of this or implementation defined subclass.
+ * This is base exception for all Nashorn exceptions. These originate from
+ * user's ECMAScript code. Example: script parse errors, exceptions thrown from
+ * scripts. Note that ScriptEngine methods like "eval", "invokeMethod",
+ * "invokeFunction" will wrap this as ScriptException and throw it. But, there
+ * are cases where user may need to access this exception (or implementation
+ * defined subtype of this). For example, if java interface is implemented by a
+ * script object or Java access to script object properties via java.util.Map
+ * interface. In these cases, user code will get an instance of this or
+ * implementation defined subclass.
  */
 @SuppressWarnings("serial")
-public class NashornException extends RuntimeException {
+public abstract class NashornException extends RuntimeException {
     // script file name
-    private String      fileName;
+    private final String fileName;
     // script line number
-    private int         line;
+    private final int line;
     // script column number
-    private int         column;
+    private final int column;
 
     /** script source name used for "engine.js" */
-    protected static final String ENGINE_SCRIPT_SOURCE_NAME = "nashorn:engine/resources/engine.js";
+    public static final String ENGINE_SCRIPT_SOURCE_NAME = "nashorn:engine/resources/engine.js";
 
     /**
      * Constructor
      *
-     * @param msg exception message
+     * @param msg       exception message
+     * @param fileName  file name
+     * @param line      line number
+     * @param column    column number
      */
-    protected NashornException(final String msg) {
-        super(msg);
+    protected NashornException(final String msg, final String fileName, final int line, final int column) {
+        this(msg, null, fileName, line, column);
     }
 
     /**
      * Constructor
-     * @param msg   exception message
-     * @param cause exception cause
+     *
+     * @param msg       exception message
+     * @param cause     exception cause
+     * @param fileName  file name
+     * @param line      line number
+     * @param column    column number
+     */
+    protected NashornException(final String msg, final Throwable cause, final String fileName, final int line, final int column) {
+        super(msg, cause == null ? null : cause);
+        this.fileName = fileName;
+        this.line = line;
+        this.column = column;
+    }
+
+    /**
+     * Constructor
+     *
+     * @param msg       exception message
+     * @param cause     exception cause
      */
     protected NashornException(final String msg, final Throwable cause) {
-        super(msg, cause);
+        super(msg, cause == null ? null : cause);
+        // This is not so pretty - but it gets the job done. Note that the stack
+        // trace has been already filled by "fillInStackTrace" call from
+        // Throwable
+        // constructor and so we don't pay additional cost for it.
+
+        // Hard luck - no column number info
+        this.column = -1;
+
+        // Find the first JavaScript frame by walking and set file, line from it
+        // Usually, we should be able to find it in just few frames depth.
+        for (final StackTraceElement ste : getStackTrace()) {
+            if (ECMAErrors.isScriptFrame(ste)) {
+                // Whatever here is compiled from JavaScript code
+                this.fileName = ste.getFileName();
+                this.line = ste.getLineNumber();
+                return;
+            }
+        }
+
+        this.fileName = null;
+        this.line = 0;
     }
 
     /**
-     * Constructor
+     * Get the source file name for this {@code NashornException}
      *
-     * @param cause exception cause
+     * @return the file name
      */
-    protected NashornException(final Throwable cause) {
-        super(cause);
+    public final String getFileName() {
+        return fileName;
     }
-
-     /**
-      * Get the source file name for this {@code NashornException}
-      * @return the file name
-      */
-     public final String getFileName() {
-         return fileName;
-     }
-
-    /**
-     * Set the source file name for this {@code NashornException}
-     * @param fileName file name
-     */
-    protected final void setFileName(final String fileName) {
-         this.fileName = fileName;
-     }
 
     /**
      * Get the line number for this {@code NashornException}
+     *
      * @return the line number
      */
-     public final int getLineNumber() {
-         return line;
-     }
-
-    /**
-     * Set the line number for this {@code NashornException}
-     * @param line line number
-     */
-    protected final void setLineNumber(final int line) {
-         this.line = line;
-     }
+    public final int getLineNumber() {
+        return line;
+    }
 
     /**
      * Get the column for this {@code NashornException}
+     *
      * @return the column
      */
     public final int getColumnNumber() {
         return column;
     }
 
-   /**
-    * Set the column number for this {@code NashornException}
-    * @param column the column
-    */
-    public final void setColumnNumber(final int column) {
-        this.column = column;
-    }
 }

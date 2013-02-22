@@ -287,9 +287,7 @@ public final class NativeJava {
             return new NativeArray(copyArray((boolean[])objArray));
         }
 
-        typeError("cant.convert.to.javascript.array", objArray.getClass().getName());
-
-        throw new AssertionError();
+        throw typeError("cant.convert.to.javascript.array", objArray.getClass().getName());
     }
 
     private static int[] copyArray(final byte[] in) {
@@ -384,8 +382,7 @@ public final class NativeJava {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object extend(final Object self, final Object... types) {
         if(types == null || types.length == 0) {
-            typeError("extend.expects.at.least.one.argument");
-            throw new AssertionError(); //circumvent warning for types == null below
+            throw typeError("extend.expects.at.least.one.argument");
         }
         final Class<?>[] stypes = new Class<?>[types.length];
         try {
@@ -393,7 +390,7 @@ public final class NativeJava {
                 stypes[i] = ((StaticClass)types[i]).getRepresentedClass();
             }
         } catch(final ClassCastException e) {
-            typeError("extend.expects.java.types");
+            throw typeError("extend.expects.java.types");
         }
         return JavaAdapterFactory.getAdapterClassFor(stypes);
     }

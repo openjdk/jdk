@@ -45,6 +45,7 @@ import static jdk.nashorn.internal.parser.TokenType.XML;
 
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
+import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.Source;
@@ -1598,7 +1599,7 @@ public class Lexer extends Scanner {
         final int  lineNum   = source.getLine(pos);
         final int  columnNum = source.getColumn(pos);
         final String formatted = ErrorManager.format(message, source, lineNum, columnNum, token);
-        throw new ParserException(formatted, source, lineNum, columnNum, token);
+        throw new ParserException(JSErrorType.SYNTAX_ERROR, formatted, source, lineNum, columnNum, token);
     }
 
     /**

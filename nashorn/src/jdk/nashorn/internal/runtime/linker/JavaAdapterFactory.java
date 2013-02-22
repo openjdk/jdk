@@ -705,8 +705,7 @@ public final class JavaAdapterFactory {
      */
     public static MethodHandle getHandle(final Object obj, final String name, final MethodType type, final boolean varArg) {
         if (! (obj instanceof ScriptObject)) {
-            typeError("not.an.object", ScriptRuntime.safeToString(obj));
-            throw new AssertionError();
+            throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
 
         final ScriptObject sobj = (ScriptObject)obj;
@@ -721,8 +720,7 @@ public final class JavaAdapterFactory {
         } else if(fnObj == null || fnObj instanceof Undefined) {
             return null;
         } else {
-            typeError("not.a.function", name);
-            throw new AssertionError();
+            throw typeError("not.a.function", name);
         }
     }
 
@@ -1093,7 +1091,7 @@ public final class JavaAdapterFactory {
 
         void typeError() {
             assert adaptationOutcome != AdaptationOutcome.SUCCESS;
-            ECMAErrors.typeError("extend." + adaptationOutcome, classList);
+            throw ECMAErrors.typeError("extend." + adaptationOutcome, classList);
         }
     }
 
@@ -1236,8 +1234,7 @@ public final class JavaAdapterFactory {
         while(it.hasNext()) {
             b.append(", ").append(it.next().clazz.getCanonicalName());
         }
-        typeError("extend.ambiguous.defining.class", b.toString());
-        throw new AssertionError(); // never reached
+        throw typeError("extend.ambiguous.defining.class", b.toString());
     }
 
     /**

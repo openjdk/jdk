@@ -224,7 +224,7 @@ public final class NativeRegExp extends ScriptObject {
                 if (!flagsDefined) {
                     return (NativeRegExp)regexp; // 15.10.3.1 - undefined flags and regexp as
                 }
-                typeError("regex.cant.supply.flags");
+                throw typeError("regex.cant.supply.flags");
             }
             patternString = JSType.toString(regexp);
         }
@@ -880,8 +880,7 @@ public final class NativeRegExp extends ScriptObject {
         } else if (self != null && self == Global.instance().getRegExpPrototype()) {
             return Global.instance().DEFAULT_REGEXP;
         } else {
-            typeError("not.a.regexp", ScriptRuntime.safeToString(self));
-            return null;
+            throw typeError("not.a.regexp", ScriptRuntime.safeToString(self));
         }
     }
 

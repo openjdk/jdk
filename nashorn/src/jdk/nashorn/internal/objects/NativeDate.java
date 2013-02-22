@@ -867,14 +867,12 @@ public final class NativeDate extends ScriptObject {
             if (func instanceof ScriptFunction) {
                 return TO_ISO_STRING.getInvoker().invokeExact(func, sobj, key);
             }
-            typeError("not.a.function", ScriptRuntime.safeToString(func));
+            throw typeError("not.a.function", ScriptRuntime.safeToString(func));
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
-
-        return null;
     }
 
     // -- Internals below this point
@@ -1006,9 +1004,7 @@ public final class NativeDate extends ScriptObject {
             return sb.toString();
         }
 
-        rangeError("invalid.date");
-
-        return INVALID_DATE;
+        throw rangeError("invalid.date");
     }
 
     private static String toISOStringImpl(final Object self) {
@@ -1035,9 +1031,7 @@ public final class NativeDate extends ScriptObject {
             return sb.toString();
         }
 
-        rangeError("invalid.date");
-
-        return INVALID_DATE;
+        throw rangeError("invalid.date");
     }
 
     // ECMA 15.9.1.2 Day (t)
@@ -1268,8 +1262,7 @@ public final class NativeDate extends ScriptObject {
         } else if (self != null && self == Global.instance().getDatePrototype()) {
             return Global.instance().DEFAULT_DATE;
         } else {
-            typeError("not.a.date", ScriptRuntime.safeToString(self));
-            return null;
+            throw typeError("not.a.date", ScriptRuntime.safeToString(self));
         }
     }
 

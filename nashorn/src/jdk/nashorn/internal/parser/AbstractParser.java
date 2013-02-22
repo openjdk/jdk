@@ -214,9 +214,7 @@ public abstract class AbstractParser {
         final int lineNum   = source.getLine(position);
         final int columnNum = source.getColumn(position);
         final String formatted = ErrorManager.format(message, source, lineNum, columnNum, errorToken);
-        final ParserException exp = new ParserException(formatted, source, lineNum, columnNum, errorToken);
-        exp.setErrorType(errorType);
-        throw exp;
+        throw new ParserException(errorType, formatted, source, lineNum, columnNum, errorToken);
     }
 
     /**
@@ -239,9 +237,7 @@ public abstract class AbstractParser {
         final int position = Token.descPosition(token);
         final int column = position - linePosition;
         final String formatted = ErrorManager.format(message, source, line, column, token);
-        final ParserException exp = new ParserException(formatted, source, line, column, token);
-        exp.setErrorType(errorType);
-        throw exp;
+        throw new ParserException(errorType, formatted, source, line, column, token);
     }
 
     /**

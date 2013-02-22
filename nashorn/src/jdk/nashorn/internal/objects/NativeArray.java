@@ -181,7 +181,7 @@ public final class NativeArray extends ScriptObject {
             // Step 3g
             if (!oldLenDesc.isWritable()) {
                 if (reject) {
-                    typeError("property.not.writable", "length", ScriptRuntime.safeToString(this));
+                    throw typeError("property.not.writable", "length", ScriptRuntime.safeToString(this));
                 }
                 return false;
             }
@@ -210,7 +210,7 @@ public final class NativeArray extends ScriptObject {
                     }
                     super.defineOwnProperty("length", newLenDesc, false);
                     if (reject) {
-                        typeError("property.not.writable", "length", ScriptRuntime.safeToString(this));
+                        throw typeError("property.not.writable", "length", ScriptRuntime.safeToString(this));
                     }
                     return false;
                 }
@@ -235,7 +235,7 @@ public final class NativeArray extends ScriptObject {
             // setting an element beyond current length, but 'length' is not writable
             if (longIndex >= oldLen && !oldLenDesc.isWritable()) {
                 if (reject) {
-                    typeError("property.not.writable", Long.toString(longIndex), ScriptRuntime.safeToString(this));
+                    throw typeError("property.not.writable", Long.toString(longIndex), ScriptRuntime.safeToString(this));
                 }
                 return false;
             }
@@ -247,7 +247,7 @@ public final class NativeArray extends ScriptObject {
             // Step 4d
             if (!succeeded) {
                 if (reject) {
-                    typeError("cant.redefine.property", key, ScriptRuntime.safeToString(this));
+                    throw typeError("cant.redefine.property", key, ScriptRuntime.safeToString(this));
                 }
                 return false;
             }
@@ -324,7 +324,7 @@ public final class NativeArray extends ScriptObject {
             }
         }
         if (reject) {
-            rangeError("inappropriate.array.length", ScriptRuntime.safeToString(length));
+            throw rangeError("inappropriate.array.length", ScriptRuntime.safeToString(length));
         }
         return -1;
     }
@@ -380,7 +380,7 @@ public final class NativeArray extends ScriptObject {
                         if (toLocaleString instanceof ScriptFunction) {
                             sb.append((String)TO_LOCALE_STRING.getInvoker().invokeExact(toLocaleString, sobj));
                         } else {
-                            typeError("not.a.function", "toLocaleString");
+                            throw typeError("not.a.function", "toLocaleString");
                         }
                     }
                 } catch (final Error|RuntimeException t) {
@@ -433,7 +433,7 @@ public final class NativeArray extends ScriptObject {
                  */
                 final double numberLength = ((Number) len).doubleValue();
                 if (length != numberLength) {
-                    rangeError("inappropriate.array.length", JSType.toString(numberLength));
+                    throw rangeError("inappropriate.array.length", JSType.toString(numberLength));
                 }
 
                 return new NativeArray(length);
@@ -623,8 +623,7 @@ public final class NativeArray extends ScriptObject {
 
             return element;
         } catch (final ClassCastException | NullPointerException e) {
-            typeError("not.an.object", ScriptRuntime.safeToString(self));
-            return ScriptRuntime.UNDEFINED;
+            throw typeError("not.an.object", ScriptRuntime.safeToString(self));
         }
     }
 
@@ -659,8 +658,7 @@ public final class NativeArray extends ScriptObject {
 
             return len;
         } catch (final ClassCastException | NullPointerException e) {
-            typeError("not.an.object", ScriptRuntime.safeToString(self));
-            return ScriptRuntime.UNDEFINED;
+            throw typeError("not.an.object", ScriptRuntime.safeToString(self));
         }
     }
 
@@ -698,8 +696,7 @@ public final class NativeArray extends ScriptObject {
             }
             return sobj;
         } catch (final ClassCastException | NullPointerException e) {
-            typeError("not.an.object", ScriptRuntime.safeToString(self));
-            return ScriptRuntime.UNDEFINED;
+            throw typeError("not.an.object", ScriptRuntime.safeToString(self));
         }
     }
 
@@ -864,8 +861,7 @@ public final class NativeArray extends ScriptObject {
 
             return sobj;
         } catch (final ClassCastException | NullPointerException e) {
-            typeError("not.an.object", ScriptRuntime.safeToString(self));
-            return ScriptRuntime.UNDEFINED;
+            throw typeError("not.an.object", ScriptRuntime.safeToString(self));
         }
     }
 
@@ -1079,7 +1075,7 @@ public final class NativeArray extends ScriptObject {
                 }
             }
         } catch (final ClassCastException | NullPointerException e) {
-            typeError("not.an.object", ScriptRuntime.safeToString(self));
+            throw typeError("not.an.object", ScriptRuntime.safeToString(self));
         }
 
         return -1;
@@ -1201,14 +1197,14 @@ public final class NativeArray extends ScriptObject {
         Object initialValue = initialValuePresent ? args[1] : ScriptRuntime.UNDEFINED;
 
         if (callbackfn == ScriptRuntime.UNDEFINED) {
-            typeError("not.a.function", "undefined");
+            throw typeError("not.a.function", "undefined");
         }
 
         if (!initialValuePresent) {
             if (iter.hasNext()) {
                 initialValue = iter.next();
             } else {
-                typeError("array.reduce.invalid.init");
+                throw typeError("array.reduce.invalid.init");
             }
         }
 

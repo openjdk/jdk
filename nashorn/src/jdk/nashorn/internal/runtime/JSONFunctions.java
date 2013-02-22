@@ -79,8 +79,7 @@ public final class JSONFunctions {
         try {
             node = parser.parse();
         } catch (final ParserException e) {
-            ECMAErrors.syntaxError(e, "invalid.json", e.getMessage());
-            return ScriptRuntime.UNDEFINED;
+            throw ECMAErrors.syntaxError(e, "invalid.json", e.getMessage());
         }
 
         final ScriptObject global = Context.getGlobalTrusted();

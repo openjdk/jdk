@@ -331,8 +331,7 @@ public final class NativeObject {
                 throw new RuntimeException(t);
             }
 
-            typeError("not.a.function", "toString");
-            throw new AssertionError(); // never reached
+            throw typeError("not.a.function", "toString");
         }
 
         return ScriptRuntime.builtinObjectToString(self);
