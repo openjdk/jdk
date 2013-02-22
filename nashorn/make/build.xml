@@ -24,8 +24,13 @@
 <project name="nashorn" default="all" basedir="..">
   <import file="build-nasgen.xml"/>
   <import file="build-benchmark.xml"/>
+  <import file="code_coverage.xml"/>
 
-  <target name="init">
+
+  <target name="init-conditions">
+    <!-- loading locally defined resources and properties. NB they owerwrite default ones defined later -->
+    <property file="${user.home}/.nashorn.project.local.properties"/>
+
     <loadproperties srcFile="make/project.properties"/>
     <path id="nashorn.ext.path">
       <pathelement location="${dist.dir}"/>
@@ -41,6 +46,22 @@
     <available property="asm.available" classname="jdk.internal.org.objectweb.asm.Type"/>
     <!-- check if testng.jar is avaiable -->
     <available property="testng.available" file="${file.reference.testng.jar}"/>
+
+	<!-- enable/disable make code coverage -->
+	<condition property="cc.enabled">
+		<istrue value="${make.code.coverage}" />
+	</condition>
+  </target>
+
+  <target name="init" depends="init-conditions, init-cc">
+
+	<!-- extends jvm args -->
+	<property name="run.test.jvmargs">${run.test.jvmargs.main}  ${run.test.cc.jvmargs}</property>
+	<property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main}  ${run.test.cc.jvmargs}" />
+
+    <echo message="run.test.jvmargs=${run.test.jvmargs}"/>
+    <echo message="run.test.jvmargs.octane=${run.test.jvmargs.octane}"/>
+
   </target>
 
   <target name="prepare" depends="init">
@@ -52,7 +73,7 @@
     <mkdir dir="${dist.javadoc.dir}"/>
   </target>
 
-  <target name="clean" depends="init, clean-nasgen">
+  <target name="clean" depends="init, clean-nasgen, init-cc-cleanup">
     <delete includeemptydirs="true">
       <fileset dir="${build.dir}" erroronmissingdir="false"/>
     </delete>
