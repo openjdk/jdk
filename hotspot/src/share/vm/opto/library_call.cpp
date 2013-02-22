@@ -1481,10 +1481,10 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   Node* arg = round_double_node(argument(0));
   Node* n;
   switch (id) {
-  case vmIntrinsics::_dabs:   n = new (C) AbsDNode(    arg);  break;
-  case vmIntrinsics::_dsqrt:  n = new (C) SqrtDNode(0, arg);  break;
-  case vmIntrinsics::_dlog:   n = new (C) LogDNode(    arg);  break;
-  case vmIntrinsics::_dlog10: n = new (C) Log10DNode(  arg);  break;
+  case vmIntrinsics::_dabs:   n = new (C) AbsDNode(                arg);  break;
+  case vmIntrinsics::_dsqrt:  n = new (C) SqrtDNode(C, control(),  arg);  break;
+  case vmIntrinsics::_dlog:   n = new (C) LogDNode(C, control(),   arg);  break;
+  case vmIntrinsics::_dlog10: n = new (C) Log10DNode(C, control(), arg);  break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -1499,9 +1499,9 @@ bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
   Node* n = NULL;
 
   switch (id) {
-  case vmIntrinsics::_dsin:  n = new (C) SinDNode(arg);  break;
-  case vmIntrinsics::_dcos:  n = new (C) CosDNode(arg);  break;
-  case vmIntrinsics::_dtan:  n = new (C) TanDNode(arg);  break;
+  case vmIntrinsics::_dsin:  n = new (C) SinDNode(C, control(), arg);  break;
+  case vmIntrinsics::_dcos:  n = new (C) CosDNode(C, control(), arg);  break;
+  case vmIntrinsics::_dtan:  n = new (C) TanDNode(C, control(), arg);  break;
   default:  fatal_unexpected_iid(id);  break;
   }
   n = _gvn.transform(n);
