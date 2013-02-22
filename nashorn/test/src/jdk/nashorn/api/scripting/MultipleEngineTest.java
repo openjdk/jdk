@@ -33,6 +33,9 @@ import org.testng.annotations.Test;
 /**
  * Test that we can create multiple, independent script engines and use those
  * independently.
+ *
+ * @test
+ * @run testng jdk.nashorn.api.scripting.MultipleEngineTest
  */
 
 public class MultipleEngineTest {
