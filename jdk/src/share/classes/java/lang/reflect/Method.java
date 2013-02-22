@@ -165,6 +165,10 @@ public final class Method extends Executable {
     byte[] getAnnotationBytes() {
         return annotations;
     }
+    @Override
+    byte[] getTypeAnnotationBytes() {
+        return typeAnnotations;
+    }
 
     /**
      * {@inheritDoc}
@@ -619,6 +623,14 @@ public final class Method extends Executable {
     @Override
     public Annotation[][] getParameterAnnotations() {
         return sharedGetParameterAnnotations(parameterTypes, parameterAnnotations);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.8
+     */
+    public AnnotatedType getAnnotatedReturnType() {
+        return getAnnotatedReturnType0(getGenericReturnType());
     }
 
     @Override

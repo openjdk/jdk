@@ -1,6 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @summary uncatched sam conversion failure exception lead to javac crash
+ * @bug 8005244
+ * @summary Implement overload resolution as per latest spec EDR
+ *          uncatched sam conversion failure exception lead to javac crash
  * @compile/fail/ref=TargetType52.out -XDrawDiagnostics TargetType52.java
  */
 class TargetType52 {

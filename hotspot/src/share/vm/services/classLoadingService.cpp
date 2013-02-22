@@ -31,6 +31,7 @@
 #include "services/classLoadingService.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/macros.hpp"
 
 #ifdef DTRACE_ENABLED
 

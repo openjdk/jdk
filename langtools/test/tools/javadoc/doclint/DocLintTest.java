@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004834
+ * @bug 8004834 8007610
  * @summary Add doclint support into javadoc
  */
 
@@ -156,6 +156,10 @@ public class DocLintTest {
         test(Arrays.asList(rawDiags, "-Xdoclint:syntax"),
                 Main.Result.OK,
                 EnumSet.of(Message.DL_WRN12));
+
+        test(Arrays.asList(rawDiags, "-private"),
+                Main.Result.ERROR,
+                EnumSet.of(Message.DL_ERR6, Message.DL_ERR9, Message.DL_WRN12));
 
         test(Arrays.asList(rawDiags, "-Xdoclint:syntax", "-private"),
                 Main.Result.ERROR,

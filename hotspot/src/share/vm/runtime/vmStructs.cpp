@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@
 #include "utilities/array.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/macros.hpp"
 #ifdef TARGET_ARCH_x86
 # include "vmStructs_x86.hpp"
 #endif
@@ -146,7 +147,7 @@
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "vmStructs_bsd_zero.hpp"
 #endif
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
@@ -161,7 +162,7 @@
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "gc_implementation/parallelScavenge/vmStructs_parallelgc.hpp"
 #include "gc_implementation/g1/vmStructs_g1.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER2
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -365,11 +366,10 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   volatile_nonstatic_field(Method,      _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(Method,      _from_interpreted_entry,                       address)                               \
   volatile_nonstatic_field(ConstMethod, _fingerprint,                                  uint64_t)                              \
-  nonstatic_field(ConstMethod,          _constants,                                    ConstantPool*)                  \
+  nonstatic_field(ConstMethod,          _constants,                                    ConstantPool*)                         \
   nonstatic_field(ConstMethod,          _stackmap_data,                                Array<u1>*)                            \
   nonstatic_field(ConstMethod,          _constMethod_size,                             int)                                   \
-  nonstatic_field(ConstMethod,          _interpreter_kind,                             jbyte)                                 \
-  nonstatic_field(ConstMethod,          _flags,                                        jbyte)                                 \
+  nonstatic_field(ConstMethod,          _flags,                                        u2)                                    \
   nonstatic_field(ConstMethod,          _code_size,                                    u2)                                    \
   nonstatic_field(ConstMethod,          _name_index,                                   u2)                                    \
   nonstatic_field(ConstMethod,          _signature_index,                              u2)                                    \
@@ -1161,6 +1161,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   static_field(Abstract_VM_Version,            _vm_major_version,                             int)                                   \
   static_field(Abstract_VM_Version,            _vm_minor_version,                             int)                                   \
   static_field(Abstract_VM_Version,            _vm_build_number,                              int)                                   \
+  static_field(Abstract_VM_Version,            _reserve_for_allocation_prefetch,              int)                                   \
                                                                                                                                      \
   static_field(JDK_Version,                    _current,                                      JDK_Version)                           \
   nonstatic_field(JDK_Version,                 _partially_initialized,                        bool)                                  \
@@ -2087,8 +2088,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(FreeBlockDictionary<Metablock>*)                  \
   declare_toplevel_type(FreeList<Metablock>*)                             \
   declare_toplevel_type(FreeList<Metablock>)                              \
-  declare_toplevel_type(MetablockTreeDictionary*)                         \
-           declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
+  declare_type(MetablockTreeDictionary, FreeBlockDictionary<Metablock>)
 
 
 //--------------------------------------------------------------------------------
@@ -2260,14 +2260,18 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(Klass::_lh_array_tag_obj_value)                        \
                                                                           \
   /********************************/                                      \
-  /* ConstMethod anon-enum */                                      \
+  /* ConstMethod anon-enum */                                             \
   /********************************/                                      \
                                                                           \
-  declare_constant(ConstMethod::_has_linenumber_table)             \
-  declare_constant(ConstMethod::_has_checked_exceptions)           \
-  declare_constant(ConstMethod::_has_localvariable_table)          \
-  declare_constant(ConstMethod::_has_exception_table)              \
-  declare_constant(ConstMethod::_has_generic_signature)            \
+  declare_constant(ConstMethod::_has_linenumber_table)                    \
+  declare_constant(ConstMethod::_has_checked_exceptions)                  \
+  declare_constant(ConstMethod::_has_localvariable_table)                 \
+  declare_constant(ConstMethod::_has_exception_table)                     \
+  declare_constant(ConstMethod::_has_generic_signature)                   \
+  declare_constant(ConstMethod::_has_method_annotations)                  \
+  declare_constant(ConstMethod::_has_parameter_annotations)               \
+  declare_constant(ConstMethod::_has_default_annotations)                 \
+  declare_constant(ConstMethod::_has_type_annotations)                    \
                                                                           \
   /*************************************/                                 \
   /* InstanceKlass enum                */                                 \
@@ -2786,7 +2790,7 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
              GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
              GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   VM_STRUCTS_PARALLELGC(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                         GENERATE_STATIC_VM_STRUCT_ENTRY)
 
@@ -2796,7 +2800,7 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
 
   VM_STRUCTS_G1(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_STATIC_VM_STRUCT_ENTRY)
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   VM_STRUCTS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_STATIC_VM_STRUCT_ENTRY,
@@ -2830,7 +2834,7 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
            GENERATE_C2_VM_TYPE_ENTRY,
            GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   VM_TYPES_PARALLELGC(GENERATE_VM_TYPE_ENTRY,
                       GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
 
@@ -2841,7 +2845,7 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
 
   VM_TYPES_G1(GENERATE_VM_TYPE_ENTRY,
               GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   VM_TYPES_CPU(GENERATE_VM_TYPE_ENTRY,
                GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
@@ -2872,11 +2876,11 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
                    GENERATE_C2_VM_INT_CONSTANT_ENTRY,
                    GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   VM_INT_CONSTANTS_CMS(GENERATE_VM_INT_CONSTANT_ENTRY)
 
   VM_INT_CONSTANTS_PARNEW(GENERATE_VM_INT_CONSTANT_ENTRY)
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   VM_INT_CONSTANTS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
                        GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
@@ -2930,7 +2934,7 @@ VMStructs::init() {
              CHECK_NO_OP,
              CHECK_NO_OP);
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   VM_STRUCTS_PARALLELGC(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
              CHECK_STATIC_VM_STRUCT_ENTRY);
 
@@ -2940,7 +2944,7 @@ VMStructs::init() {
 
   VM_STRUCTS_G1(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
                 CHECK_STATIC_VM_STRUCT_ENTRY);
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   VM_STRUCTS_CPU(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
                  CHECK_STATIC_VM_STRUCT_ENTRY,
@@ -2969,7 +2973,7 @@ VMStructs::init() {
            CHECK_C2_VM_TYPE_ENTRY,
            CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY);
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   VM_TYPES_PARALLELGC(CHECK_VM_TYPE_ENTRY,
                       CHECK_SINGLE_ARG_VM_TYPE_NO_OP);
 
@@ -2980,7 +2984,7 @@ VMStructs::init() {
 
   VM_TYPES_G1(CHECK_VM_TYPE_ENTRY,
               CHECK_SINGLE_ARG_VM_TYPE_NO_OP);
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   VM_TYPES_CPU(CHECK_VM_TYPE_ENTRY,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
@@ -3035,7 +3039,7 @@ VMStructs::init() {
                         ENSURE_C2_FIELD_TYPE_PRESENT,
                         CHECK_NO_OP,
                         CHECK_NO_OP));
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   debug_only(VM_STRUCTS_PARALLELGC(ENSURE_FIELD_TYPE_PRESENT,
                                    ENSURE_FIELD_TYPE_PRESENT));
   debug_only(VM_STRUCTS_CMS(ENSURE_FIELD_TYPE_PRESENT,
@@ -3043,7 +3047,7 @@ VMStructs::init() {
                             ENSURE_FIELD_TYPE_PRESENT));
   debug_only(VM_STRUCTS_G1(ENSURE_FIELD_TYPE_PRESENT,
                            ENSURE_FIELD_TYPE_PRESENT));
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
   debug_only(VM_STRUCTS_CPU(ENSURE_FIELD_TYPE_PRESENT,
                             ENSURE_FIELD_TYPE_PRESENT,
                             CHECK_NO_OP,

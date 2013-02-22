@@ -493,6 +493,8 @@ Node *Node::clone() const {
   }
   if (is_macro())
     compile->add_macro_node(n);
+  if (is_expensive())
+    compile->add_expensive_node(n);
 
   n->set_idx(compile->next_unique()); // Get new unique index as well
   debug_only( n->verify_construction() );
@@ -616,6 +618,9 @@ void Node::destruct() {
   if (is_macro()) {
     compile->remove_macro_node(this);
   }
+  if (is_expensive()) {
+    compile->remove_expensive_node(this);
+  }
 #ifdef ASSERT
   // We will not actually delete the storage, but we'll make the node unusable.
   *(address*)this = badAddress;  // smash the C++ vtbl, probably
@@ -688,6 +693,13 @@ bool Node::is_dead() const {
   return true;
 }
 #endif
+
+
+//------------------------------is_unreachable---------------------------------
+bool Node::is_unreachable(PhaseIterGVN &igvn) const {
+  assert(!is_Mach(), "doesn't work with MachNodes");
+  return outcnt() == 0 || igvn.type(this) == Type::TOP || in(0)->is_top();
+}
 
 //------------------------------add_req----------------------------------------
 // Add a new required input at the end
@@ -1245,6 +1257,9 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       igvn->set_type(dead, Type::TOP);
       if (dead->is_macro()) {
         igvn->C->remove_macro_node(dead);
+      }
+      if (dead->is_expensive()) {
+        igvn->C->remove_expensive_node(dead);
       }
       // Kill all inputs to the dead guy
       for (uint i=0; i < dead->req(); i++) {

@@ -46,14 +46,11 @@ HOTSPOT_DOCS_IMPORT_PATH=$(HOTSPOT_OUTPUTDIR)/docs
 
 BUILD_NUMBER=$(JDK_BUILD_NUMBER)
 
-BOOT_JAVA_CMD=$(JAVA)
-
-JAVADOC_JAR = $(LANGTOOLS_DIST)/bootstrap/lib/javadoc.jar
-JAVADOC_CMD = $(BOOT_JAVA_CMD) \
+JAVADOC_CMD = $(JAVA) \
               -Xmx1024m \
 	      -Djava.awt.headless=true \
-              "-Xbootclasspath/p:$(JAVADOC_JAR)" \
-              -jar $(JAVADOC_JAR) -bootclasspath $(JDK_OUTPUTDIR)/classes
+	      $(NEW_JAVADOC) \
+	      -bootclasspath $(JDK_OUTPUTDIR)/classes
 
 # Copyright year for beginning of Java and some of the apis
 #   (Needed when creating the javadocs)
@@ -270,6 +267,7 @@ COMMON_JAVADOCFLAGS =					\
                 -use					\
                 -keywords				\
 		-Xdoclint:none				\
+                -Xprofilespath $(JDK_TOPDIR)/makefiles/profile-rtjar-includes.txt \
 		$(ADDITIONAL_JAVADOCFLAGS)
 
 ifdef OPENJDK

@@ -59,10 +59,9 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import static org.testng.Assert.assertEquals;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 
 import org.testng.annotations.Test;
@@ -76,52 +75,52 @@ public class TestPadPrinterDecorator extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     public void test_print_emptyCalendrical() throws Exception {
         builder.padNext(3, '-').appendLiteral('Z');
-        getFormatter().printTo(EMPTY_DTA, buf);
+        getFormatter().formatTo(EMPTY_DTA, buf);
         assertEquals(buf.toString(), "--Z");
     }
 
     public void test_print_fullDateTime() throws Exception {
         builder.padNext(3, '-').appendLiteral('Z');
-        getFormatter().printTo(LocalDate.of(2008, 12, 3), buf);
+        getFormatter().formatTo(LocalDate.of(2008, 12, 3), buf);
         assertEquals(buf.toString(), "--Z");
     }
 
     public void test_print_append() throws Exception {
         buf.append("EXISTING");
         builder.padNext(3, '-').appendLiteral('Z');
-        getFormatter().printTo(EMPTY_DTA, buf);
+        getFormatter().formatTo(EMPTY_DTA, buf);
         assertEquals(buf.toString(), "EXISTING--Z");
     }
 
     //-----------------------------------------------------------------------
     public void test_print_noPadRequiredSingle() throws Exception {
         builder.padNext(1, '-').appendLiteral('Z');
-        getFormatter().printTo(EMPTY_DTA, buf);
+        getFormatter().formatTo(EMPTY_DTA, buf);
         assertEquals(buf.toString(), "Z");
     }
 
     public void test_print_padRequiredSingle() throws Exception {
         builder.padNext(5, '-').appendLiteral('Z');
-        getFormatter().printTo(EMPTY_DTA, buf);
+        getFormatter().formatTo(EMPTY_DTA, buf);
         assertEquals(buf.toString(), "----Z");
     }
 
     public void test_print_noPadRequiredMultiple() throws Exception {
         builder.padNext(4, '-').appendLiteral("WXYZ");
-        getFormatter().printTo(EMPTY_DTA, buf);
+        getFormatter().formatTo(EMPTY_DTA, buf);
         assertEquals(buf.toString(), "WXYZ");
     }
 
     public void test_print_padRequiredMultiple() throws Exception {
         builder.padNext(5, '-').appendLiteral("WXYZ");
-        getFormatter().printTo(EMPTY_DTA, buf);
+        getFormatter().formatTo(EMPTY_DTA, buf);
         assertEquals(buf.toString(), "-WXYZ");
     }
 
-    @Test(expectedExceptions=DateTimePrintException.class)
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_print_overPad() throws Exception {
         builder.padNext(3, '-').appendLiteral("WXYZ");
-        getFormatter().printTo(EMPTY_DTA, buf);
+        getFormatter().formatTo(EMPTY_DTA, buf);
     }
 
     //-----------------------------------------------------------------------

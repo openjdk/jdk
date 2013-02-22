@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ endif
 MAKE_ARGS += RM="$(RM)"
 MAKE_ARGS += ZIPEXE=$(ZIPEXE)
 
-# On 32 bit windows we build server, client and kernel, on 64 bit just server.
+# On 32 bit windows we build server and client, on 64 bit just server.
 ifeq ($(JVM_VARIANTS),)
   ifeq ($(ARCH_DATA_MODEL), 32)
     JVM_VARIANTS:=client,server
@@ -250,7 +250,6 @@ endif
 
 EXPORT_SERVER_DIR = $(EXPORT_JRE_BIN_DIR)/server
 EXPORT_CLIENT_DIR = $(EXPORT_JRE_BIN_DIR)/client
-EXPORT_KERNEL_DIR = $(EXPORT_JRE_BIN_DIR)/kernel
 
 ifeq ($(JVM_VARIANT_SERVER),true)
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
@@ -274,18 +273,6 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
     else
       EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.pdb
       EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.map
-    endif
-  endif
-endif
-ifeq ($(JVM_VARIANT_KERNEL),true)
-  EXPORT_LIST += $(EXPORT_KERNEL_DIR)/Xusage.txt
-  EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.$(LIBRARY_SUFFIX)
-  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-    ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.diz
-    else
-      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.pdb
-      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.map
     endif
   endif
 endif

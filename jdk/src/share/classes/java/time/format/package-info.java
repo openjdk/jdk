@@ -68,7 +68,7 @@
  * Printing and parsing is based around the
  * {@link java.time.format.DateTimeFormatter DateTimeFormatter} class.
  * Instances are generally obtained from
- * {@link java.time.format.DateTimeFormatters DateTimeFormatters}, however
+ * {@link java.time.format.DateTimeFormatter DateTimeFormatter}, however
  * {@link java.time.format.DateTimeFormatterBuilder DateTimeFormatterBuilder}
  * can be used if more power is needed.
  * </p>

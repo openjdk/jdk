@@ -400,12 +400,14 @@ public class AttributeWriter extends BasicWriter
         println(header);
         for (MethodParameters_attribute.Entry entry :
                  attr.method_parameter_table) {
+            String namestr =
+                entry.name_index != 0 ?
+                constantWriter.stringValue(entry.name_index) : "<no name>";
             String flagstr =
-                (0 != (entry.flags & ACC_FINAL) ? " final" : "") +
-                (0 != (entry.flags & ACC_SYNTHETIC) ? " synthetic" : "");
-            println(String.format(format,
-                                  constantWriter.stringValue(entry.name_index),
-                                  flagstr));
+                (0 != (entry.flags & ACC_FINAL) ? "final " : "") +
+                (0 != (entry.flags & ACC_MANDATED) ? "mandated " : "") +
+                (0 != (entry.flags & ACC_SYNTHETIC) ? "synthetic" : "");
+            println(String.format(format, namestr, flagstr));
         }
         indent(-1);
         return null;

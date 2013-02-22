@@ -1064,11 +1064,11 @@ bool VirtualSpaceList::contains(const void *ptr) {
 //
 // After the GC the compute_new_size() for MetaspaceGC is called to
 // resize the capacity of the metaspaces.  The current implementation
-// is based on the flags MinHeapFreeRatio and MaxHeapFreeRatio used
+// is based on the flags MinMetaspaceFreeRatio and MaxHeapFreeRatio used
 // to resize the Java heap by some GC's.  New flags can be implemented
 // if really needed.  MinHeapFreeRatio is used to calculate how much
 // free space is desirable in the metaspace capacity to decide how much
-// to increase the HWM.  MaxHeapFreeRatio is used to decide how much
+// to increase the HWM.  MaxMetaspaceFreeRatio is used to decide how much
 // free space is desirable in the metaspace capacity before decreasing
 // the HWM.
 
@@ -1166,7 +1166,7 @@ void MetaspaceGC::compute_new_size() {
   size_t capacity_until_GC = vsl->capacity_bytes_sum();
   size_t free_after_gc = capacity_until_GC - used_after_gc;
 
-  const double minimum_free_percentage = MinHeapFreeRatio / 100.0;
+  const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;
   const double maximum_used_percentage = 1.0 - minimum_free_percentage;
 
   const double min_tmp = used_after_gc / maximum_used_percentage;
@@ -1232,8 +1232,8 @@ void MetaspaceGC::compute_new_size() {
     max_shrink_words));
 
   // Should shrinking be considered?
-  if (MaxHeapFreeRatio < 100) {
-    const double maximum_free_percentage = MaxHeapFreeRatio / 100.0;
+  if (MaxMetaspaceFreeRatio < 100) {
+    const double maximum_free_percentage = MaxMetaspaceFreeRatio / 100.0;
     const double minimum_used_percentage = 1.0 - maximum_free_percentage;
     const double max_tmp = used_after_gc / minimum_used_percentage;
     size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));
@@ -1737,10 +1737,10 @@ void SpaceManager::get_initial_chunk_sizes(Metaspace::MetaspaceType type,
     *class_chunk_word_size = ClassSmallChunk;
     break;
   }
-  assert(chunk_word_size != 0 && class_chunk_word_size != 0,
+  assert(*chunk_word_size != 0 && *class_chunk_word_size != 0,
     err_msg("Initial chunks sizes bad: data  " SIZE_FORMAT
             " class " SIZE_FORMAT,
-            chunk_word_size, class_chunk_word_size));
+            *chunk_word_size, *class_chunk_word_size));
 }
 
 size_t SpaceManager::sum_free_in_chunks_in_use() const {
@@ -2040,7 +2040,7 @@ SpaceManager::~SpaceManager() {
            align_size_up(humongous_chunks->word_size(),
                              HumongousChunkGranularity),
            err_msg("Humongous chunk size is wrong: word size " SIZE_FORMAT
-                   " granularity " SIZE_FORMAT,
+                   " granularity %d",
                    humongous_chunks->word_size(), HumongousChunkGranularity));
     Metachunk* next_humongous_chunks = humongous_chunks->next();
     chunk_manager->humongous_dictionary()->return_chunk(humongous_chunks);
@@ -2264,7 +2264,8 @@ void SpaceManager::verify_allocation_total() {
   }
   MutexLockerEx cl(lock(), Mutex::_no_safepoint_check_flag);
   assert(allocation_total() == sum_used_in_chunks_in_use(),
-    err_msg("allocation total is not consistent %d vs %d",
+    err_msg("allocation total is not consistent " SIZE_FORMAT
+            " vs " SIZE_FORMAT,
             allocation_total(), sum_used_in_chunks_in_use()));
 }
 
@@ -2578,7 +2579,8 @@ void Metaspace::global_initialize() {
 // argument passed in is at the top of the compressed space
 void Metaspace::initialize_class_space(ReservedSpace rs) {
   // The reserved space size may be bigger because of alignment, esp with UseLargePages
-  assert(rs.size() >= ClassMetaspaceSize, err_msg("%d != %d", rs.size(), ClassMetaspaceSize));
+  assert(rs.size() >= ClassMetaspaceSize,
+         err_msg(SIZE_FORMAT " != " UINTX_FORMAT, rs.size(), ClassMetaspaceSize));
   _class_space_list = new VirtualSpaceList(rs);
 }
 

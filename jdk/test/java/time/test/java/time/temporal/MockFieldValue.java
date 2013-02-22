@@ -90,7 +90,7 @@ public final class MockFieldValue implements TemporalAccessor {
             }
             throw new DateTimeException("Unsupported field: " + field.getName());
         }
-        return field.doRange(this);
+        return field.rangeRefinedBy(this);
     }
 
     @Override

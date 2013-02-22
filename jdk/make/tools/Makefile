@@ -48,7 +48,6 @@ SUBDIRS =                   \
   hasher_classes            \
   jarreorder                \
   jarsplit                  \
-  javazic                   \
   jdwpgen                   \
   makeclasslist             \
   strip_properties          \

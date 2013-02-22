@@ -50,7 +50,6 @@ import java.text.NumberFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -58,12 +57,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.Queries;
-import java.time.temporal.OffsetDate;
-import java.time.temporal.OffsetDateTime;
-import java.time.temporal.OffsetTime;
-import java.time.temporal.ChronoZonedDateTime;
-import java.time.format.TextStyle;
-import java.time.zone.ZoneRules;
 
 import sun.misc.DoubleConsts;
 import sun.misc.FormattedFloatingDecimal;
@@ -351,7 +344,9 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top">{@code 'a'}, {@code 'A'}
  *     <td valign="top"> floating point
  *     <td> The result is formatted as a hexadecimal floating-point number with
- *     a significand and an exponent
+ *     a significand and an exponent. This conversion is <b>not</b> supported
+ *     for the {@code BigDecimal} type despite the latter's being in the
+ *     <i>floating point</i> argument category.
  *
  * <tr><td valign="top">{@code 't'}, {@code 'T'}
  *     <td valign="top"> date/time

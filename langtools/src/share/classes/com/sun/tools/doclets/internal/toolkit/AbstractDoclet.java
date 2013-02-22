@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package com.sun.tools.doclets.internal.toolkit;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import java.io.File;
-import java.util.StringTokenizer;
 
 /**
  * An abstract implementation of a Doclet.
@@ -128,6 +126,7 @@ public abstract class AbstractDoclet {
 
         PackageListWriter.generate(configuration);
         generatePackageFiles(classtree);
+        generateProfileFiles();
 
         generateOtherFiles(root, classtree);
         configuration.tagletManager.printReport();
@@ -146,6 +145,12 @@ public abstract class AbstractDoclet {
         AbstractBuilder serializedFormBuilder = builderFactory.getSerializedFormBuilder();
         serializedFormBuilder.build();
     }
+
+    /**
+     * Generate the profile documentation.
+     *
+     */
+    protected abstract void generateProfileFiles() throws Exception;
 
     /**
      * Generate the package documentation.

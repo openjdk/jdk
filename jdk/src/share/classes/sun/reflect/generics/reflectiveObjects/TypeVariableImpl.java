@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
 
 package sun.reflect.generics.reflectiveObjects;
 
-import java.lang.annotation.Annotation;
+import java.lang.annotation.*;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
-
+import sun.reflect.annotation.AnnotationSupport;
+import sun.reflect.annotation.TypeAnnotationParser;
+import sun.reflect.annotation.AnnotationType;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.tree.FieldTypeSignature;
 import sun.reflect.generics.visitor.Reifier;
@@ -182,45 +187,72 @@ public class TypeVariableImpl<D extends GenericDeclaration>
         return genericDeclaration.hashCode() ^ name.hashCode();
     }
 
-    // Currently vacuous implementations of AnnotatedElement methods.
-    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
-        Objects.requireNonNull(annotationClass);
-        return false;
-    }
-
+    // Implementations of AnnotatedElement methods.
+    @SuppressWarnings("unchecked")
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-        return null;
+        // T is an Annotation type, the return value of get will be an annotation
+        return (T)mapAnnotations(getAnnotations()).get(annotationClass);
     }
 
     public <T extends Annotation> T getDeclaredAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-        return null;
+        return getAnnotation(annotationClass);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Annotation> T[] getAnnotations(Class<T> annotationClass) {
+    @Override
+    public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-        // safe because annotationClass is the class for T
-        return (T[])Array.newInstance(annotationClass, 0);
+        return AnnotationSupport.getMultipleAnnotations(mapAnnotations(getAnnotations()), annotationClass);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Annotation> T[] getDeclaredAnnotations(Class<T> annotationClass) {
+    @Override
+    public <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-        // safe because annotationClass is the class for T
-        return (T[])Array.newInstance(annotationClass, 0);
+        return getAnnotationsByType(annotationClass);
     }
 
     public Annotation[] getAnnotations() {
-        // Since zero-length, don't need defensive clone
-        return EMPTY_ANNOTATION_ARRAY;
+        int myIndex = typeVarIndex();
+        if (myIndex < 0)
+            throw new AssertionError("Index must be non-negative.");
+        return TypeAnnotationParser.parseTypeVariableAnnotations(getGenericDeclaration(), myIndex);
     }
 
     public Annotation[] getDeclaredAnnotations() {
-        // Since zero-length, don't need defensive clone
-        return EMPTY_ANNOTATION_ARRAY;
+        return getAnnotations();
+    }
+
+    public AnnotatedType[] getAnnotatedBounds() {
+        return TypeAnnotationParser.parseAnnotatedBounds(getBounds(),
+                                                         getGenericDeclaration(),
+                                                         typeVarIndex());
     }
 
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
+
+    // Helpers for annotation methods
+    private int typeVarIndex() {
+        TypeVariable<?>[] tVars = getGenericDeclaration().getTypeParameters();
+        int i = -1;
+        for (TypeVariable<?> v : tVars) {
+            i++;
+            if (equals(v))
+                return i;
+        }
+        return -1;
+    }
+
+    private static Map<Class<? extends Annotation>, Annotation> mapAnnotations(Annotation[] annos) {
+        Map<Class<? extends Annotation>, Annotation> result =
+            new LinkedHashMap<>();
+        for (Annotation a : annos) {
+            Class<? extends Annotation> klass = a.annotationType();
+            AnnotationType type = AnnotationType.getInstance(klass);
+            if (type.retention() == RetentionPolicy.RUNTIME)
+                if (result.put(klass, a) != null)
+                    throw new AnnotationFormatError("Duplicate annotation for class: "+klass+": " + a);
+        }
+        return result;
+    }
 }

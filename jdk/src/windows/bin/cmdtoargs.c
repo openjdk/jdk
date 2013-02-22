@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,11 @@ static char* next_arg(char* cmdline, char* arg, jboolean* wildcard) {
 
         case ' ':
         case '\t':
+            if (prev == '\\') {
+                for (i = 0 ; i < slashes; i++) {
+                   *dest++ = prev;
+                }
+            }
             if (quotes % 2 == 1) {
                 *dest++ = ch;
             } else {
@@ -589,6 +594,12 @@ int main(int argc, char* argv[]) {
     v = new Vector(argv[0], "../../");
     v->add("../../", FALSE);
     // v->disable();
+    vectors[i++] = v;
+
+    v= new Vector(argv[0], "a b\\\\ d");
+    v->add("a", FALSE);
+    v->add("b\\\\", FALSE);
+    v->add("d", FALSE);
     vectors[i++] = v;
 
     dotest(vectors);

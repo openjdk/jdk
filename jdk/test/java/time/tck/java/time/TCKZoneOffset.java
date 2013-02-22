@@ -67,10 +67,6 @@ import static org.testng.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
@@ -81,11 +77,15 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
-import java.time.temporal.OffsetDate;
 import java.time.temporal.Queries;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
@@ -480,7 +480,6 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test(groups={"tck"})
     public void test_factory_CalendricalObject() {
-        assertEquals(ZoneOffset.from(OffsetDate.of(LocalDate.of(2012, 5, 2), ZoneOffset.ofHours(6))), ZoneOffset.ofHours(6));
         assertEquals(ZoneOffset.from(ZonedDateTime.of(LocalDateTime.of(LocalDate.of(2007, 7, 15),
                 LocalTime.of(17, 30)), ZoneOffset.ofHours(2))), ZoneOffset.ofHours(2));
     }
@@ -560,44 +559,32 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // query(TemporalQuery)
     //-----------------------------------------------------------------------
-    @Test
-    public void test_query_chrono() {
-        ZoneOffset test = ZoneOffset.ofHoursMinutes(1, 30);
-        assertEquals(test.query(Queries.chrono()), null);
-        assertEquals(Queries.chrono().queryFrom(test), null);
+    @DataProvider(name="query")
+    Object[][] data_query() {
+        return new Object[][] {
+                {ZoneOffset.UTC, Queries.chronology(), null},
+                {ZoneOffset.UTC, Queries.zoneId(), null},
+                {ZoneOffset.UTC, Queries.precision(), null},
+                {ZoneOffset.UTC, Queries.zone(), ZoneOffset.UTC},
+                {ZoneOffset.UTC, Queries.offset(), ZoneOffset.UTC},
+                {ZoneOffset.UTC, Queries.localDate(), null},
+                {ZoneOffset.UTC, Queries.localTime(), null},
+        };
     }
 
-    @Test
-    public void test_query_zoneId() {
-        ZoneOffset test = ZoneOffset.ofHoursMinutes(1, 30);
-        assertEquals(test.query(Queries.zoneId()), null);
-        assertEquals(Queries.zoneId().queryFrom(test), null);
+    @Test(dataProvider="query")
+    public <T> void test_query(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(temporal.query(query), expected);
     }
 
-    @Test
-    public void test_query_precision() {
-        ZoneOffset test = ZoneOffset.ofHoursMinutes(1, 30);
-        assertEquals(test.query(Queries.precision()), null);
-        assertEquals(Queries.precision().queryFrom(test), null);
-    }
-
-    @Test
-    public void test_query_offset() {
-        ZoneOffset test = ZoneOffset.ofHoursMinutes(1, 30);
-        assertEquals(test.query(Queries.offset()), test);
-        assertEquals(Queries.offset().queryFrom(test), test);
-    }
-
-    @Test
-    public void test_query_zone() {
-        ZoneOffset test = ZoneOffset.ofHoursMinutes(1, 30);
-        assertEquals(test.query(Queries.zone()), test);
-        assertEquals(Queries.zone().queryFrom(test), test);
+    @Test(dataProvider="query")
+    public <T> void test_queryFrom(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(query.queryFrom(temporal), expected);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_query_null() {
-        ZoneOffset.ofHoursMinutes(1, 30).query(null);
+        ZoneOffset.UTC.query(null);
     }
 
     //-----------------------------------------------------------------------
