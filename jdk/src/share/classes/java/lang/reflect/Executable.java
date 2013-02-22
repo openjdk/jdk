@@ -278,6 +278,10 @@ public abstract class Executable extends AccessibleObject
      * this object.  Returns an array of length 0 if the executable
      * has no parameters.
      *
+     * The parameters of the underlying executable do not necessarily
+     * have unique names, or names that are legal identifiers in the
+     * Java programming language (JLS 3.8).
+     *
      * @return an array of {@code Parameter} objects representing all
      * the parameters to the executable this object represents
      */
@@ -445,7 +449,8 @@ public abstract class Executable extends AccessibleObject
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
-    public <T extends Annotation> T[] getAnnotations(Class<T> annotationClass) {
+    @Override
+    public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
         return AnnotationSupport.getMultipleAnnotations(declaredAnnotations(), annotationClass);

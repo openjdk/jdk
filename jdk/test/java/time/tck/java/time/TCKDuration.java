@@ -69,6 +69,7 @@ import static java.time.temporal.ChronoUnit.NANOS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.time.temporal.ChronoUnit.WEEKS;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.io.ByteArrayInputStream;
@@ -76,12 +77,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.List;
+import java.util.Locale;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -436,8 +442,8 @@ public class TCKDuration extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // between()
     //-----------------------------------------------------------------------
-    @DataProvider(name="DurationBetween")
-    Object[][] provider_factory_between_Instant_Instant() {
+    @DataProvider(name="durationBetweenInstant")
+    Object[][] data_durationBetweenInstant() {
         return new Object[][] {
             {0, 0, 0, 0, 0, 0},
             {3, 0, 7, 0, 4, 0},
@@ -447,8 +453,8 @@ public class TCKDuration extends AbstractTCKTest {
         };
     }
 
-    @Test(dataProvider="DurationBetween", groups={"tck"})
-    public void factory_between_Instant_Instant(long secs1, int nanos1, long secs2, int nanos2, long expectedSeconds, int expectedNanoOfSecond) {
+    @Test(dataProvider="durationBetweenInstant")
+    public void factory_between_TemporalTemporal_Instant(long secs1, int nanos1, long secs2, int nanos2, long expectedSeconds, int expectedNanoOfSecond) {
         Instant start = Instant.ofEpochSecond(secs1, nanos1);
         Instant end = Instant.ofEpochSecond(secs2, nanos2);
         Duration t = Duration.between(start, end);
@@ -456,14 +462,36 @@ public class TCKDuration extends AbstractTCKTest {
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
-    public void factory_between_Instant_Instant_startNull() {
+    @DataProvider(name="durationBetweenLocalTime")
+    Object[][] data_durationBetweenLocalTime() {
+        return new Object[][] {
+                {LocalTime.of(11, 0, 30), LocalTime.of(11, 0, 45), 15L, 0},
+                {LocalTime.of(11, 0, 30), LocalTime.of(11, 0, 25), -5L, 0},
+        };
+    }
+
+    @Test(dataProvider="durationBetweenLocalTime")
+    public void factory_between_TemporalTemporal_LT(LocalTime start, LocalTime end, long expectedSeconds, int expectedNanoOfSecond) {
+        Duration t = Duration.between(start, end);
+        assertEquals(t.getSeconds(), expectedSeconds);
+        assertEquals(t.getNano(), expectedNanoOfSecond);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void factory_between_TemporalTemporal_mixedTypes() {
+        Instant start = Instant.ofEpochSecond(1);
+        ZonedDateTime end = Instant.ofEpochSecond(4).atZone(ZoneOffset.UTC);
+        Duration.between(start, end);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void factory_between__TemporalTemporal_startNull() {
         Instant end = Instant.ofEpochSecond(1);
         Duration.between(null, end);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
-    public void factory_between_Instant_Instant_endNull() {
+    @Test(expectedExceptions=NullPointerException.class)
+    public void factory_between__TemporalTemporal_endNull() {
         Instant start = Instant.ofEpochSecond(1);
         Duration.between(start, null);
     }
@@ -471,140 +499,257 @@ public class TCKDuration extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // parse(String)
     //-----------------------------------------------------------------------
-    @DataProvider(name="Parse")
-    Object[][] provider_factory_parse() {
+    @DataProvider(name="parseSuccess")
+    Object[][] data_parseSuccess() {
         return new Object[][] {
-            {"PT0S", 0, 0},
-            {"pT0S", 0, 0},
-            {"Pt0S", 0, 0},
-            {"PT0s", 0, 0},
+                {"PT0S", 0, 0},
+                {"PT1S", 1, 0},
+                {"PT12S", 12, 0},
+                {"PT123456789S", 123456789, 0},
+                {"PT" + Long.MAX_VALUE + "S", Long.MAX_VALUE, 0},
 
-            {"PT1S", 1, 0},
-            {"PT12S", 12, 0},
-            {"PT123456789S", 123456789, 0},
-            {"PT" + Long.MAX_VALUE + "S", Long.MAX_VALUE, 0},
+                {"PT+1S", 1, 0},
+                {"PT+12S", 12, 0},
+                {"PT+123456789S", 123456789, 0},
+                {"PT+" + Long.MAX_VALUE + "S", Long.MAX_VALUE, 0},
 
-            {"PT-1S", -1, 0},
-            {"PT-12S", -12, 0},
-            {"PT-123456789S", -123456789, 0},
-            {"PT" + Long.MIN_VALUE + "S", Long.MIN_VALUE, 0},
+                {"PT-1S", -1, 0},
+                {"PT-12S", -12, 0},
+                {"PT-123456789S", -123456789, 0},
+                {"PT" + Long.MIN_VALUE + "S", Long.MIN_VALUE, 0},
 
-            {"PT1.1S", 1, 100000000},
-            {"PT1.12S", 1, 120000000},
-            {"PT1.123S", 1, 123000000},
-            {"PT1.1234S", 1, 123400000},
-            {"PT1.12345S", 1, 123450000},
-            {"PT1.123456S", 1, 123456000},
-            {"PT1.1234567S", 1, 123456700},
-            {"PT1.12345678S", 1, 123456780},
-            {"PT1.123456789S", 1, 123456789},
+                {"PT1.1S", 1, 100000000},
+                {"PT1.12S", 1, 120000000},
+                {"PT1.123S", 1, 123000000},
+                {"PT1.1234S", 1, 123400000},
+                {"PT1.12345S", 1, 123450000},
+                {"PT1.123456S", 1, 123456000},
+                {"PT1.1234567S", 1, 123456700},
+                {"PT1.12345678S", 1, 123456780},
+                {"PT1.123456789S", 1, 123456789},
 
-            {"PT-1.1S", -2, 1000000000 - 100000000},
-            {"PT-1.12S", -2, 1000000000 - 120000000},
-            {"PT-1.123S", -2, 1000000000 - 123000000},
-            {"PT-1.1234S", -2, 1000000000 - 123400000},
-            {"PT-1.12345S", -2, 1000000000 - 123450000},
-            {"PT-1.123456S", -2, 1000000000 - 123456000},
-            {"PT-1.1234567S", -2, 1000000000 - 123456700},
-            {"PT-1.12345678S", -2, 1000000000 - 123456780},
-            {"PT-1.123456789S", -2, 1000000000 - 123456789},
+                {"PT-1.1S", -2, 1000000000 - 100000000},
+                {"PT-1.12S", -2, 1000000000 - 120000000},
+                {"PT-1.123S", -2, 1000000000 - 123000000},
+                {"PT-1.1234S", -2, 1000000000 - 123400000},
+                {"PT-1.12345S", -2, 1000000000 - 123450000},
+                {"PT-1.123456S", -2, 1000000000 - 123456000},
+                {"PT-1.1234567S", -2, 1000000000 - 123456700},
+                {"PT-1.12345678S", -2, 1000000000 - 123456780},
+                {"PT-1.123456789S", -2, 1000000000 - 123456789},
 
-            {"PT" + Long.MAX_VALUE + ".123456789S", Long.MAX_VALUE, 123456789},
-            {"PT" + Long.MIN_VALUE + ".000000000S", Long.MIN_VALUE, 0},
+                {"PT" + Long.MAX_VALUE + ".123456789S", Long.MAX_VALUE, 123456789},
+                {"PT" + Long.MIN_VALUE + ".000000000S", Long.MIN_VALUE, 0},
+
+                {"PT01S", 1, 0},
+                {"PT001S", 1, 0},
+                {"PT000S", 0, 0},
+                {"PT+01S", 1, 0},
+                {"PT-01S", -1, 0},
+
+                {"PT1.S", 1, 0},
+                {"PT+1.S", 1, 0},
+                {"PT-1.S", -1, 0},
+
+                {"P0D", 0, 0},
+                {"P0DT0H", 0, 0},
+                {"P0DT0M", 0, 0},
+                {"P0DT0S", 0, 0},
+                {"P0DT0H0S", 0, 0},
+                {"P0DT0M0S", 0, 0},
+                {"P0DT0H0M0S", 0, 0},
+
+                {"P1D", 86400, 0},
+                {"P1DT0H", 86400, 0},
+                {"P1DT0M", 86400, 0},
+                {"P1DT0S", 86400, 0},
+                {"P1DT0H0S", 86400, 0},
+                {"P1DT0M0S", 86400, 0},
+                {"P1DT0H0M0S", 86400, 0},
+
+                {"P3D", 86400 * 3, 0},
+                {"P3DT2H", 86400 * 3 + 3600 * 2, 0},
+                {"P3DT2M", 86400 * 3 + 60 * 2, 0},
+                {"P3DT2S", 86400 * 3 + 2, 0},
+                {"P3DT2H1S", 86400 * 3 + 3600 * 2 + 1, 0},
+                {"P3DT2M1S", 86400 * 3 + 60 * 2 + 1, 0},
+                {"P3DT2H1M1S", 86400 * 3 + 3600 * 2 + 60 + 1, 0},
+
+                {"P-3D", -86400 * 3, 0},
+                {"P-3DT2H", -86400 * 3 + 3600 * 2, 0},
+                {"P-3DT2M", -86400 * 3 + 60 * 2, 0},
+                {"P-3DT2S", -86400 * 3 + 2, 0},
+                {"P-3DT2H1S", -86400 * 3 + 3600 * 2 + 1, 0},
+                {"P-3DT2M1S", -86400 * 3 + 60 * 2 + 1, 0},
+                {"P-3DT2H1M1S", -86400 * 3 + 3600 * 2 + 60 + 1, 0},
+
+                {"P-3DT-2H", -86400 * 3 - 3600 * 2, 0},
+                {"P-3DT-2M", -86400 * 3 - 60 * 2, 0},
+                {"P-3DT-2S", -86400 * 3 - 2, 0},
+                {"P-3DT-2H1S", -86400 * 3 - 3600 * 2 + 1, 0},
+                {"P-3DT-2M1S", -86400 * 3 - 60 * 2 + 1, 0},
+                {"P-3DT-2H1M1S", -86400 * 3 - 3600 * 2 + 60 + 1, 0},
+
+                {"PT0H", 0, 0},
+                {"PT0H0M", 0, 0},
+                {"PT0H0S", 0, 0},
+                {"PT0H0M0S", 0, 0},
+
+                {"PT1H", 3600, 0},
+                {"PT3H", 3600 * 3, 0},
+                {"PT-1H", -3600, 0},
+                {"PT-3H", -3600 * 3, 0},
+
+                {"PT2H5M", 3600 * 2 + 60 * 5, 0},
+                {"PT2H5S", 3600 * 2 + 5, 0},
+                {"PT2H5M8S", 3600 * 2 + 60 * 5 + 8, 0},
+                {"PT-2H5M", -3600 * 2 + 60 * 5, 0},
+                {"PT-2H5S", -3600 * 2 + 5, 0},
+                {"PT-2H5M8S", -3600 * 2 + 60 * 5 + 8, 0},
+                {"PT-2H-5M", -3600 * 2 - 60 * 5, 0},
+                {"PT-2H-5S", -3600 * 2 - 5, 0},
+                {"PT-2H-5M8S", -3600 * 2 - 60 * 5 + 8, 0},
+                {"PT-2H-5M-8S", -3600 * 2 - 60 * 5 - 8, 0},
+
+                {"PT0M", 0, 0},
+                {"PT1M", 60, 0},
+                {"PT3M", 60 * 3, 0},
+                {"PT-1M", -60, 0},
+                {"PT-3M", -60 * 3, 0},
+                {"P0DT3M", 60 * 3, 0},
+                {"P0DT-3M", -60 * 3, 0},
         };
     }
 
-    @Test(dataProvider="Parse", groups={"tck"})
+    @Test(dataProvider="parseSuccess")
     public void factory_parse(String text, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.parse(text);
-        assertEquals(t.getSeconds(), expectedSeconds);
-        assertEquals(t.getNano(), expectedNanoOfSecond);
+        Duration test = Duration.parse(text);
+        assertEquals(test.getSeconds(), expectedSeconds);
+        assertEquals(test.getNano(), expectedNanoOfSecond);
     }
 
-    @Test(dataProvider="Parse", groups={"tck"})
+    @Test(dataProvider="parseSuccess")
+    public void factory_parse_plus(String text, long expectedSeconds, int expectedNanoOfSecond) {
+        Duration test = Duration.parse("+" + text);
+        assertEquals(test.getSeconds(), expectedSeconds);
+        assertEquals(test.getNano(), expectedNanoOfSecond);
+    }
+
+    @Test(dataProvider="parseSuccess")
+    public void factory_parse_minus(String text, long expectedSeconds, int expectedNanoOfSecond) {
+        Duration test;
+        try {
+            test = Duration.parse("-" + text);
+        } catch (DateTimeParseException ex) {
+            assertEquals(expectedSeconds == Long.MIN_VALUE, true);
+            return;
+        }
+        // not inside try/catch or it breaks test
+        assertEquals(test, Duration.ofSeconds(expectedSeconds, expectedNanoOfSecond).negated());
+    }
+
+    @Test(dataProvider="parseSuccess")
     public void factory_parse_comma(String text, long expectedSeconds, int expectedNanoOfSecond) {
         text = text.replace('.', ',');
-        Duration t = Duration.parse(text);
-        assertEquals(t.getSeconds(), expectedSeconds);
-        assertEquals(t.getNano(), expectedNanoOfSecond);
+        Duration test = Duration.parse(text);
+        assertEquals(test.getSeconds(), expectedSeconds);
+        assertEquals(test.getNano(), expectedNanoOfSecond);
     }
 
-    @DataProvider(name="ParseFailures")
-    Object[][] provider_factory_parseFailures() {
+    @Test(dataProvider="parseSuccess")
+    public void factory_parse_lowerCase(String text, long expectedSeconds, int expectedNanoOfSecond) {
+        Duration test = Duration.parse(text.toLowerCase(Locale.ENGLISH));
+        assertEquals(test.getSeconds(), expectedSeconds);
+        assertEquals(test.getNano(), expectedNanoOfSecond);
+    }
+
+    @DataProvider(name="parseFailure")
+    Object[][] data_parseFailure() {
         return new Object[][] {
-            {""},
-            {"PTS"},
-            {"AT0S"},
-            {"PA0S"},
-            {"PT0A"},
+                {""},
+                {"ABCDEF"},
+                {" PT0S"},
+                {"PT0S "},
 
-            {"PT+S"},
-            {"PT-S"},
-            {"PT.S"},
-            {"PTAS"},
+                {"PTS"},
+                {"AT0S"},
+                {"PA0S"},
+                {"PT0A"},
 
-            {"PT+0S"},
-            {"PT+00S"},
-            {"PT+000S"},
-            {"PT-0S"},
-            {"PT-00S"},
-            {"PT-000S"},
-            {"PT+1S"},
-            {"PT-.S"},
-            {"PT+.S"},
+                {"P0Y"},
+                {"P1Y"},
+                {"P-2Y"},
+                {"P0M"},
+                {"P1M"},
+                {"P-2M"},
+                {"P3Y2D"},
+                {"P3M2D"},
+                {"P3W"},
+                {"P-3W"},
+                {"P2YT30S"},
+                {"P2MT30S"},
 
-            {"PT1ABC2S"},
-            {"PT1.1ABC2S"},
+                {"P1DT"},
 
-            {"PT123456789123456789123456789S"},
-            {"PT0.1234567891S"},
-            {"PT1.S"},
-            {"PT.1S"},
+                {"PT+S"},
+                {"PT-S"},
+                {"PT.S"},
+                {"PTAS"},
 
-            {"PT2.-3"},
-            {"PT-2.-3"},
-            {"PT2.+3"},
-            {"PT-2.+3"},
+                {"PT-.S"},
+                {"PT+.S"},
+
+                {"PT1ABC2S"},
+                {"PT1.1ABC2S"},
+
+                {"PT123456789123456789123456789S"},
+                {"PT0.1234567891S"},
+
+                {"PT2.-3"},
+                {"PT-2.-3"},
+                {"PT2.+3"},
+                {"PT-2.+3"},
         };
     }
 
-    @Test(dataProvider="ParseFailures", expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(dataProvider="parseFailure", expectedExceptions=DateTimeParseException.class)
     public void factory_parseFailures(String text) {
         Duration.parse(text);
     }
 
-    @Test(dataProvider="ParseFailures", expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(dataProvider="parseFailure", expectedExceptions=DateTimeParseException.class)
     public void factory_parseFailures_comma(String text) {
         text = text.replace('.', ',');
         Duration.parse(text);
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeParseException.class)
     public void factory_parse_tooBig() {
         Duration.parse("PT" + Long.MAX_VALUE + "1S");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeParseException.class)
     public void factory_parse_tooBig_decimal() {
         Duration.parse("PT" + Long.MAX_VALUE + "1.1S");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeParseException.class)
     public void factory_parse_tooSmall() {
         Duration.parse("PT" + Long.MIN_VALUE + "1S");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeParseException.class)
     public void factory_parse_tooSmall_decimal() {
         Duration.parse("PT" + Long.MIN_VALUE + ".1S");
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_nullText() {
-        Duration.parse((String) null);
+        Duration.parse(null);
     }
 
-    @Test(groups={"tck"})
+    //-----------------------------------------------------------------------
+    @Test
     public void test_deserialization() throws Exception {
         Duration orginal = Duration.ofSeconds(2);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -620,7 +765,7 @@ public class TCKDuration extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // isZero(), isPositive(), isPositiveOrZero(), isNegative(), isNegativeOrZero()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_isZero() {
         assertEquals(Duration.ofNanos(0).isZero(), true);
         assertEquals(Duration.ofSeconds(0).isZero(), true);
@@ -632,19 +777,7 @@ public class TCKDuration extends AbstractTCKTest {
         assertEquals(Duration.ofSeconds(-1, -1).isZero(), false);
     }
 
-    @Test(groups={"tck"})
-    public void test_isPositive() {
-        assertEquals(Duration.ofNanos(0).isPositive(), false);
-        assertEquals(Duration.ofSeconds(0).isPositive(), false);
-        assertEquals(Duration.ofNanos(1).isPositive(), true);
-        assertEquals(Duration.ofSeconds(1).isPositive(), true);
-        assertEquals(Duration.ofSeconds(1, 1).isPositive(), true);
-        assertEquals(Duration.ofNanos(-1).isPositive(), false);
-        assertEquals(Duration.ofSeconds(-1).isPositive(), false);
-        assertEquals(Duration.ofSeconds(-1, -1).isPositive(), false);
-    }
-
-    @Test(groups={"tck"})
+    @Test
     public void test_isNegative() {
         assertEquals(Duration.ofNanos(0).isNegative(), false);
         assertEquals(Duration.ofSeconds(0).isNegative(), false);
@@ -1989,18 +2122,12 @@ public class TCKDuration extends AbstractTCKTest {
                 Duration b = durations[j];
                 if (i < j) {
                     assertEquals(a.compareTo(b)< 0, true, a + " <=> " + b);
-                    assertEquals(a.isLessThan(b), true, a + " <=> " + b);
-                    assertEquals(a.isGreaterThan(b), false, a + " <=> " + b);
                     assertEquals(a.equals(b), false, a + " <=> " + b);
                 } else if (i > j) {
                     assertEquals(a.compareTo(b) > 0, true, a + " <=> " + b);
-                    assertEquals(a.isLessThan(b), false, a + " <=> " + b);
-                    assertEquals(a.isGreaterThan(b), true, a + " <=> " + b);
                     assertEquals(a.equals(b), false, a + " <=> " + b);
                 } else {
                     assertEquals(a.compareTo(b), 0, a + " <=> " + b);
-                    assertEquals(a.isLessThan(b), false, a + " <=> " + b);
-                    assertEquals(a.isGreaterThan(b), false, a + " <=> " + b);
                     assertEquals(a.equals(b), true, a + " <=> " + b);
                 }
             }
@@ -2011,18 +2138,6 @@ public class TCKDuration extends AbstractTCKTest {
     public void test_compareTo_ObjectNull() {
         Duration a = Duration.ofSeconds(0L, 0);
         a.compareTo(null);
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
-    public void test_isLessThan_ObjectNull() {
-        Duration a = Duration.ofSeconds(0L, 0);
-        a.isLessThan(null);
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
-    public void test_isGreaterThan_ObjectNull() {
-        Duration a = Duration.ofSeconds(0L, 0);
-        a.isGreaterThan(null);
     }
 
     @Test(expectedExceptions=ClassCastException.class, groups={"tck"})
@@ -2096,7 +2211,7 @@ public class TCKDuration extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @DataProvider(name="ToString")
+    @DataProvider(name="toString")
     Object[][] provider_toString() {
         return new Object[][] {
             {0, 0, "PT0S"},
@@ -2118,18 +2233,72 @@ public class TCKDuration extends AbstractTCKTest {
             {0, 123456780, "PT0.12345678S"},
             {0, 123456789, "PT0.123456789S"},
             {1, 0, "PT1S"},
+            {59, 0, "PT59S"},
+            {60, 0, "PT1M"},
+            {61, 0, "PT1M1S"},
+            {3599, 0, "PT59M59S"},
+            {3600, 0, "PT1H"},
+            {3601, 0, "PT1H1S"},
+            {3661, 0, "PT1H1M1S"},
+            {86399, 0, "PT23H59M59S"},
+            {86400, 0, "PT24H"},
+            {59, 0, "PT59S"},
+            {59, 0, "PT59S"},
             {-1, 0, "PT-1S"},
             {-1, 1000, "PT-0.999999S"},
             {-1, 900000000, "PT-0.1S"},
-            {Long.MAX_VALUE, 0, "PT9223372036854775807S"},
-            {Long.MIN_VALUE, 0, "PT-9223372036854775808S"},
+            {Long.MAX_VALUE, 0, "PT" + (Long.MAX_VALUE / 3600) + "H" +
+                    ((Long.MAX_VALUE % 3600) / 60) + "M" + (Long.MAX_VALUE % 60) + "S"},
+            {Long.MIN_VALUE, 0, "PT" + (Long.MIN_VALUE / 3600) + "H" +
+                    ((Long.MIN_VALUE % 3600) / 60) + "M" + (Long.MIN_VALUE % 60) + "S"},
         };
     }
 
-    @Test(dataProvider="ToString", groups={"tck"})
+    @Test(dataProvider="toString")
     public void test_toString(long seconds, int nanos, String expected) {
         Duration t = Duration.ofSeconds(seconds, nanos);
         assertEquals(t.toString(), expected);
     }
 
+    //-----------------------------------------------------------------------
+    @Test(groups="{tck}")
+    public void test_duration_getUnits() {
+        Duration duration = Duration.ofSeconds(5000, 1000);
+        List<TemporalUnit> units = duration.getUnits();
+        assertEquals(units.size(), 2, "Period.getUnits length");
+        assertTrue(units.contains(ChronoUnit.SECONDS), "Period.getUnits contains ChronoUnit.SECONDS");
+        assertTrue(units.contains(ChronoUnit.NANOS), "contains ChronoUnit.NANOS");
+    }
+
+    @Test()
+    public void test_getUnit() {
+        Duration test = Duration.ofSeconds(2000, 1000);
+        long seconds = test.get(ChronoUnit.SECONDS);
+        assertEquals(seconds, 2000, "duration.get(SECONDS)");
+        long nanos = test.get(ChronoUnit.NANOS);
+        assertEquals(nanos, 1000, "duration.get(NANOS)");
+    }
+
+    @DataProvider(name="BadTemporalUnit")
+    Object[][] provider_factory_of_badTemporalUnit() {
+        return new Object[][] {
+            {0, MICROS},
+            {0, MILLIS},
+            {0, MINUTES},
+            {0, HOURS},
+            {0, HALF_DAYS},
+            {0, DAYS},
+            {0, ChronoUnit.MONTHS},
+            {0, ChronoUnit.YEARS},
+            {0, ChronoUnit.DECADES},
+            {0, ChronoUnit.CENTURIES},
+            {0, ChronoUnit.MILLENNIA},
+        };
+    }
+
+    @Test(dataProvider="BadTemporalUnit", expectedExceptions=DateTimeException.class)
+    public void test_bad_getUnit(long amount, TemporalUnit unit) {
+        Duration t = Duration.of(amount, unit);
+        long actual = t.get(unit);
+    }
 }

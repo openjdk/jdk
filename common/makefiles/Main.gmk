@@ -129,7 +129,9 @@ demos-only: start-make
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk demos)
 	@$(call TargetExit)
 
-images: source-tips demos images-only
+# Note: This double-colon rule is intentional, to support
+# custom make file integration.
+images:: source-tips demos images-only
 images-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk images)
@@ -140,6 +142,17 @@ overlay-images-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk overlay-images)
 	@$(call TargetExit)
+
+profiles: profiles-oscheck source-tips jdk hotspot profiles-only
+profiles-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk profiles)
+	@$(call TargetExit)
+
+profiles-oscheck:
+ifneq ($(OPENJDK_TARGET_OS), linux)
+	@echo "Error: The Java SE 8 Compact Profiles are only implemented for Linux at this time" && exit 1
+endif
 
 install: images install-only
 install-only: start-make
@@ -224,5 +237,6 @@ clean-docs:
 .PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only images-only overlay-images-only install-only
 .PHONY: all test clean dist-clean bootcycle-images start-make
 .PHONY: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-images clean-overlay-images clean-bootcycle-build
+.PHONY: profiles profiles-only profiles-oscheck
 
 FRC: # Force target

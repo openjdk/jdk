@@ -463,6 +463,13 @@ public final class Util {
         return -1;
     }
 
+    //Cleans all the references
+    public static void cleanUp() {
+        apListener = null;
+        fgListener = null;
+        wgfListener = null;
+    }
+
 
     ////////////////////////////
     // Some stuff to test focus.

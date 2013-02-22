@@ -1,2 +1,2 @@
-TargetType14.java:20:29: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.lower.bounds: java.lang.Integer, java.lang.String)
+TargetType14.java:20:29: compiler.err.prob.found.req: (compiler.misc.incompatible.eq.lower.bounds: X, java.lang.Integer, java.lang.String)
 1 error

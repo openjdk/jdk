@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 // key: compiler.misc.where.fresh.typevar
 // key: compiler.misc.where.description.typevar
 // key: compiler.err.prob.found.req
-// key: compiler.misc.inferred.do.not.conform.to.upper.bounds
+// key: compiler.misc.inconvertible.types
 // options: -XDdiags=where,simpleNames
 // run: simple
 
@@ -33,5 +33,5 @@ import java.util.*;
 class WhereFreshTvar {
     <T extends List<T>> T m() {}
 
-    { List<String> ls = m(); }
+    { Object o = (List<String>)m(); }
 }

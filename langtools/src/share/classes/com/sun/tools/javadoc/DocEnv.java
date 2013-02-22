@@ -801,7 +801,9 @@ public class DocEnv {
             doclintOpts.add(opt == null ? DocLint.XMSGS_OPTION : DocLint.XMSGS_CUSTOM_PREFIX + opt);
         }
 
-        if (doclintOpts.size() == 1
+        if (doclintOpts.isEmpty()) {
+            doclintOpts.add(DocLint.XMSGS_OPTION);
+        } else if (doclintOpts.size() == 1
                 && doclintOpts.get(0).equals(DocLint.XMSGS_CUSTOM_PREFIX + "none")) {
             return;
         }

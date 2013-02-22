@@ -62,23 +62,23 @@ package tck.java.time;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.testng.Assert.assertEquals;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.chrono.IsoChronology;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.ISOChrono;
 import java.time.temporal.JulianFields;
 import java.time.temporal.Queries;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -167,34 +167,27 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // query(TemporalQuery)
     //-----------------------------------------------------------------------
-    @Test
-    public void test_query_chrono() {
-        assertEquals(Month.JUNE.query(Queries.chrono()), ISOChrono.INSTANCE);
-        assertEquals(Queries.chrono().queryFrom(Month.JUNE), ISOChrono.INSTANCE);
+    @DataProvider(name="query")
+    Object[][] data_query() {
+        return new Object[][] {
+                {Month.JUNE, Queries.chronology(), IsoChronology.INSTANCE},
+                {Month.JUNE, Queries.zoneId(), null},
+                {Month.JUNE, Queries.precision(), ChronoUnit.MONTHS},
+                {Month.JUNE, Queries.zone(), null},
+                {Month.JUNE, Queries.offset(), null},
+                {Month.JUNE, Queries.localDate(), null},
+                {Month.JUNE, Queries.localTime(), null},
+        };
     }
 
-    @Test
-    public void test_query_zoneId() {
-        assertEquals(Month.JUNE.query(Queries.zoneId()), null);
-        assertEquals(Queries.zoneId().queryFrom(Month.JUNE), null);
+    @Test(dataProvider="query")
+    public <T> void test_query(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(temporal.query(query), expected);
     }
 
-    @Test
-    public void test_query_precision() {
-        assertEquals(Month.JUNE.query(Queries.precision()), ChronoUnit.MONTHS);
-        assertEquals(Queries.precision().queryFrom(Month.JUNE), ChronoUnit.MONTHS);
-    }
-
-    @Test
-    public void test_query_offset() {
-        assertEquals(Month.JUNE.query(Queries.offset()), null);
-        assertEquals(Queries.offset().queryFrom(Month.JUNE), null);
-    }
-
-    @Test
-    public void test_query_zone() {
-        assertEquals(Month.JUNE.query(Queries.zone()), null);
-        assertEquals(Queries.zone().queryFrom(Month.JUNE), null);
+    @Test(dataProvider="query")
+    public <T> void test_queryFrom(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(query.queryFrom(temporal), expected);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
@@ -207,17 +200,17 @@ public class TCKMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test(groups={"tck"})
     public void test_getText() {
-        assertEquals(Month.JANUARY.getText(TextStyle.SHORT, Locale.US), "Jan");
+        assertEquals(Month.JANUARY.getDisplayName(TextStyle.SHORT, Locale.US), "Jan");
     }
 
     @Test(expectedExceptions = NullPointerException.class, groups={"tck"})
     public void test_getText_nullStyle() {
-        Month.JANUARY.getText(null, Locale.US);
+        Month.JANUARY.getDisplayName(null, Locale.US);
     }
 
     @Test(expectedExceptions = NullPointerException.class, groups={"tck"})
     public void test_getText_nullLocale() {
-        Month.JANUARY.getText(TextStyle.FULL, null);
+        Month.JANUARY.getDisplayName(TextStyle.FULL, null);
     }
 
     //-----------------------------------------------------------------------
