@@ -44,7 +44,7 @@ import com.apple.laf.*;
 import com.apple.laf.ClientPropertyApplicator.Property;
 import com.sun.awt.AWTUtilities;
 
-public final class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
+public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
     private native long nativeCreateNSWindow(long nsViewPtr, long styleBits, double x, double y, double w, double h);
     private static native void nativeSetNSWindowStyleBits(long nsWindowPtr, int mask, int data);
     private static native void nativeSetNSWindowMenuBar(long nsWindowPtr, long menuBarPtr);
@@ -218,11 +218,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
      */
     @Override // PlatformWindow
     public void initialize(Window _target, LWWindowPeer _peer, PlatformWindow _owner) {
-        this.peer = _peer;
-        this.target = _target;
-        if (_owner instanceof CPlatformWindow) {
-            this.owner = (CPlatformWindow)_owner;
-        }
+        initializeBase(_target, _peer, _owner, new CPlatformView());
 
         final int styleBits = getInitialStyleBits();
 
@@ -231,7 +227,6 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         String warningString = target.getWarningString();
 
         responder = new CPlatformResponder(peer, false);
-        contentView = new CPlatformView();
         contentView.initialize(peer, responder);
 
         final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(), styleBits, 0, 0, 0, 0);
@@ -251,6 +246,15 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         }
 
         validateSurface();
+    }
+
+    protected void initializeBase(Window target, LWWindowPeer peer, PlatformWindow owner, CPlatformView view) {
+        this.peer = peer;
+        this.target = target;
+        if (owner instanceof CPlatformWindow) {
+            this.owner = (CPlatformWindow)owner;
+        }
+        this.contentView = view;
     }
 
     private int getInitialStyleBits() {
