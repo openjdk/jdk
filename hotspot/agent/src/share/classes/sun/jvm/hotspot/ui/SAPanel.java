@@ -50,7 +50,7 @@ import com.sun.java.swing.action.*;
 /**
  * This base class encapsulates many of the events that are fired from
  * the various panels in this directory so they can easily be plugged
- * in to different containing frameworks (HSDB, BugSpot).
+ * in to different containing frameworks (HSDB).
  */
 public class SAPanel extends JPanel {
     protected List listeners = new ArrayList();
