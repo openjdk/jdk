@@ -572,20 +572,24 @@ public class Types {
     }
 
     public Type removeWildcards(Type site) {
-        if (capture(site) != site) {
+        Type capturedSite = capture(site);
+        if (capturedSite != site) {
             Type formalInterface = site.tsym.type;
             ListBuffer<Type> typeargs = ListBuffer.lb();
             List<Type> actualTypeargs = site.getTypeArguments();
+            List<Type> capturedTypeargs = capturedSite.getTypeArguments();
             //simply replace the wildcards with its bound
             for (Type t : formalInterface.getTypeArguments()) {
                 if (actualTypeargs.head.hasTag(WILDCARD)) {
                     WildcardType wt = (WildcardType)actualTypeargs.head;
                     Type bound;
                     switch (wt.kind) {
+                        case EXTENDS:
                         case UNBOUND:
+                            CapturedType capVar = (CapturedType)capturedTypeargs.head;
                             //use declared bound if it doesn't depend on formal type-args
-                            bound = wt.bound.bound.containsAny(formalInterface.getTypeArguments()) ?
-                                    syms.objectType : wt.bound.bound;
+                            bound = capVar.bound.containsAny(capturedSite.getTypeArguments()) ?
+                                    syms.objectType : capVar.bound;
                             break;
                         default:
                             bound = wt.type;
@@ -595,6 +599,7 @@ public class Types {
                     typeargs.append(actualTypeargs.head);
                 }
                 actualTypeargs = actualTypeargs.tail;
+                capturedTypeargs = capturedTypeargs.tail;
             }
             return subst(formalInterface, formalInterface.getTypeArguments(), typeargs.toList());
         } else {
