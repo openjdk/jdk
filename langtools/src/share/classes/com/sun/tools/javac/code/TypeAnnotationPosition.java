@@ -126,7 +126,8 @@ public class TypeAnnotationPosition {
     // Tree position.
     public int pos = -1;
 
-    // For typecasts, type tests, new (and locals, as start_pc).
+    // For type casts, type tests, new, locals (as start_pc),
+    // and method and constructor reference type arguments.
     public boolean isValidOffset = false;
     public int offset = -1;
 
@@ -156,12 +157,13 @@ public class TypeAnnotationPosition {
         sb.append(type);
 
         switch (type) {
-        // type cast
-        case CAST:
         // instanceof
         case INSTANCEOF:
         // new expression
         case NEW:
+        // constructor/method reference receiver
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE:
             sb.append(", offset = ");
             sb.append(offset);
             break;
@@ -223,9 +225,12 @@ public class TypeAnnotationPosition {
             sb.append(", param_index = ");
             sb.append(parameter_index);
             break;
+        // type cast
+        case CAST:
         // method/constructor/reference type argument
         case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
         case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT:
             sb.append(", offset = ");
             sb.append(offset);
@@ -235,12 +240,6 @@ public class TypeAnnotationPosition {
         // We don't need to worry about these
         case METHOD_RETURN:
         case FIELD:
-            break;
-        // lambda formal parameter
-        case LAMBDA_FORMAL_PARAMETER:
-            // TODO: also needs an offset?
-            sb.append(", param_index = ");
-            sb.append(parameter_index);
             break;
         case UNKNOWN:
             sb.append(", position UNKNOWN!");

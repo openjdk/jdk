@@ -93,6 +93,28 @@ public class MethodParameters {
     }
 
     @TADescriptions({
+        @TADescription(annotation = "TA", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1),
+        @TADescription(annotation = "TB", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1)
+    })
+    public String methodParamAsArray2() {
+        return "void test(Object b, @TA @TB String [] a) { }";
+    }
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1),
+        @TADescription(annotation = "TB", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1),
+        @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER,
+                genericLocation = { 0, 0 }, paramIndex = 1)
+    })
+    public String methodParamAsArray3() {
+        return "void test(Object b, @TA @TB @TC String [] a) { }";
+    }
+
+    @TADescriptions({
         @TADescription(annotation = "TA", type = METHOD_FORMAL_PARAMETER, paramIndex = 1),
         @TADescription(annotation = "TB", type = METHOD_FORMAL_PARAMETER,
                 genericLocation = { 0, 0 }, paramIndex = 1),

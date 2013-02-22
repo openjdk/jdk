@@ -574,6 +574,13 @@ public abstract class Pack200 {
          * Registers a listener for PropertyChange events on the properties map.
          * This is typically used by applications to update a progress bar.
          *
+         * <p> The default implementation of this method does nothing and has
+         * no side-effects.</p>
+         *
+         * <p><b>WARNING:</b> This method is omitted from the interface
+         * declaration in all subset Profiles of Java SE that do not include
+         * the {@code java.beans} package. </p>
+
          * @see #properties
          * @see #PROGRESS
          * @param listener  An object to be invoked when a property is changed.
@@ -586,11 +593,19 @@ public abstract class Pack200 {
          *             property instead.
          */
         @Deprecated
-        void addPropertyChangeListener(PropertyChangeListener listener) ;
+        default void addPropertyChangeListener(PropertyChangeListener listener) {
+        }
 
         /**
          * Remove a listener for PropertyChange events, added by
          * the {@link #addPropertyChangeListener}.
+         *
+         * <p> The default implementation of this method does nothing and has
+         * no side-effects.</p>
+         *
+         * <p><b>WARNING:</b> This method is omitted from the interface
+         * declaration in all subset Profiles of Java SE that do not include
+         * the {@code java.beans} package. </p>
          *
          * @see #addPropertyChangeListener
          * @param listener  The PropertyChange listener to be removed.
@@ -600,8 +615,8 @@ public abstract class Pack200 {
          *             release.
          */
         @Deprecated
-        void removePropertyChangeListener(PropertyChangeListener listener);
-
+        default void removePropertyChangeListener(PropertyChangeListener listener) {
+        }
     }
 
     /**
@@ -718,6 +733,13 @@ public abstract class Pack200 {
          * Registers a listener for PropertyChange events on the properties map.
          * This is typically used by applications to update a progress bar.
          *
+         * <p> The default implementation of this method does nothing and has
+         * no side-effects.</p>
+         *
+         * <p><b>WARNING:</b> This method is omitted from the interface
+         * declaration in all subset Profiles of Java SE that do not include
+         * the {@code java.beans} package. </p>
+         *
          * @see #properties
          * @see #PROGRESS
          * @param listener  An object to be invoked when a property is changed.
@@ -730,11 +752,19 @@ public abstract class Pack200 {
          *             PROGRESS} property instead.
          */
         @Deprecated
-        void addPropertyChangeListener(PropertyChangeListener listener) ;
+        default void addPropertyChangeListener(PropertyChangeListener listener) {
+        }
 
         /**
          * Remove a listener for PropertyChange events, added by
          * the {@link #addPropertyChangeListener}.
+         *
+         * <p> The default implementation of this method does nothing and has
+         * no side-effects.</p>
+         *
+         * <p><b>WARNING:</b> This method is omitted from the interface
+         * declaration in all subset Profiles of Java SE that do not include
+         * the {@code java.beans} package. </p>
          *
          * @see #addPropertyChangeListener
          * @param listener  The PropertyChange listener to be removed.
@@ -744,7 +774,8 @@ public abstract class Pack200 {
          *             release.
          */
         @Deprecated
-        void removePropertyChangeListener(PropertyChangeListener listener);
+        default void removePropertyChangeListener(PropertyChangeListener listener) {
+        }
     }
 
     // Private stuff....

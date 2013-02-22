@@ -88,9 +88,9 @@ Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   assert( !n->is_Phi() && !n->is_CFG(), "this code only handles data nodes" );
   uint i;
   Node *early;
-  if( n->in(0) ) {
+  if (n->in(0) && !n->is_expensive()) {
     early = n->in(0);
-    if( !early->is_CFG() ) // Might be a non-CFG multi-def
+    if (!early->is_CFG()) // Might be a non-CFG multi-def
       early = get_ctrl(early);        // So treat input as a straight data input
     i = 1;
   } else {
@@ -99,28 +99,28 @@ Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   }
   uint e_d = dom_depth(early);
   assert( early, "" );
-  for( ; i < n->req(); i++ ) {
+  for (; i < n->req(); i++) {
     Node *cin = get_ctrl(n->in(i));
     assert( cin, "" );
     // Keep deepest dominator depth
     uint c_d = dom_depth(cin);
-    if( c_d > e_d ) {           // Deeper guy?
+    if (c_d > e_d) {           // Deeper guy?
       early = cin;              // Keep deepest found so far
       e_d = c_d;
-    } else if( c_d == e_d &&    // Same depth?
-               early != cin ) { // If not equal, must use slower algorithm
+    } else if (c_d == e_d &&    // Same depth?
+               early != cin) { // If not equal, must use slower algorithm
       // If same depth but not equal, one _must_ dominate the other
       // and we want the deeper (i.e., dominated) guy.
       Node *n1 = early;
       Node *n2 = cin;
-      while( 1 ) {
+      while (1) {
         n1 = idom(n1);          // Walk up until break cycle
         n2 = idom(n2);
-        if( n1 == cin ||        // Walked early up to cin
-            dom_depth(n2) < c_d )
+        if (n1 == cin ||        // Walked early up to cin
+            dom_depth(n2) < c_d)
           break;                // early is deeper; keep him
-        if( n2 == early ||      // Walked cin up to early
-            dom_depth(n1) < c_d ) {
+        if (n2 == early ||      // Walked cin up to early
+            dom_depth(n1) < c_d) {
           early = cin;          // cin is deeper; keep him
           break;
         }
@@ -132,8 +132,107 @@ Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   // Return earliest legal location
   assert(early == find_non_split_ctrl(early), "unexpected early control");
 
+  if (n->is_expensive()) {
+    assert(n->in(0), "should have control input");
+    early = get_early_ctrl_for_expensive(n, early);
+  }
+
   return early;
 }
+
+//------------------------------get_early_ctrl_for_expensive---------------------------------
+// Move node up the dominator tree as high as legal while still beneficial
+Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
+  assert(n->in(0) && n->is_expensive(), "expensive node with control input here");
+  assert(OptimizeExpensiveOps, "optimization off?");
+
+  Node* ctl = n->in(0);
+  assert(ctl->is_CFG(), "expensive input 0 must be cfg");
+  uint min_dom_depth = dom_depth(earliest);
+#ifdef ASSERT
+  if (!is_dominator(ctl, earliest) && !is_dominator(earliest, ctl)) {
+    dump_bad_graph("Bad graph detected in get_early_ctrl_for_expensive", n, earliest, ctl);
+    assert(false, "Bad graph detected in get_early_ctrl_for_expensive");
+  }
+#endif
+  if (dom_depth(ctl) < min_dom_depth) {
+    return earliest;
+  }
+
+  while (1) {
+    Node *next = ctl;
+    // Moving the node out of a loop on the projection of a If
+    // confuses loop predication. So once we hit a Loop in a If branch
+    // that doesn't branch to an UNC, we stop. The code that process
+    // expensive nodes will notice the loop and skip over it to try to
+    // move the node further up.
+    if (ctl->is_CountedLoop() && ctl->in(1) != NULL && ctl->in(1)->in(0) != NULL && ctl->in(1)->in(0)->is_If()) {
+      if (!is_uncommon_trap_if_pattern(ctl->in(1)->as_Proj(), Deoptimization::Reason_none)) {
+        break;
+      }
+      next = idom(ctl->in(1)->in(0));
+    } else if (ctl->is_Proj()) {
+      // We only move it up along a projection if the projection is
+      // the single control projection for its parent: same code path,
+      // if it's a If with UNC or fallthrough of a call.
+      Node* parent_ctl = ctl->in(0);
+      if (parent_ctl == NULL) {
+        break;
+      } else if (parent_ctl->is_CountedLoopEnd() && parent_ctl->as_CountedLoopEnd()->loopnode() != NULL) {
+        next = parent_ctl->as_CountedLoopEnd()->loopnode()->init_control();
+      } else if (parent_ctl->is_If()) {
+        if (!is_uncommon_trap_if_pattern(ctl->as_Proj(), Deoptimization::Reason_none)) {
+          break;
+        }
+        assert(idom(ctl) == parent_ctl, "strange");
+        next = idom(parent_ctl);
+      } else if (ctl->is_CatchProj()) {
+        if (ctl->as_Proj()->_con != CatchProjNode::fall_through_index) {
+          break;
+        }
+        assert(parent_ctl->in(0)->in(0)->is_Call(), "strange graph");
+        next = parent_ctl->in(0)->in(0)->in(0);
+      } else {
+        // Check if parent control has a single projection (this
+        // control is the only possible successor of the parent
+        // control). If so, we can try to move the node above the
+        // parent control.
+        int nb_ctl_proj = 0;
+        for (DUIterator_Fast imax, i = parent_ctl->fast_outs(imax); i < imax; i++) {
+          Node *p = parent_ctl->fast_out(i);
+          if (p->is_Proj() && p->is_CFG()) {
+            nb_ctl_proj++;
+            if (nb_ctl_proj > 1) {
+              break;
+            }
+          }
+        }
+
+        if (nb_ctl_proj > 1) {
+          break;
+        }
+        assert(parent_ctl->is_Start() || parent_ctl->is_MemBar() || parent_ctl->is_Call(), "unexpected node");
+        assert(idom(ctl) == parent_ctl, "strange");
+        next = idom(parent_ctl);
+      }
+    } else {
+      next = idom(ctl);
+    }
+    if (next->is_Root() || next->is_Start() || dom_depth(next) < min_dom_depth) {
+      break;
+    }
+    ctl = next;
+  }
+
+  if (ctl != n->in(0)) {
+    _igvn.hash_delete(n);
+    n->set_req(0, ctl);
+    _igvn.hash_insert(n);
+  }
+
+  return ctl;
+}
+
 
 //------------------------------set_early_ctrl---------------------------------
 // Set earliest legal control
@@ -1892,6 +1991,98 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
   }
 }
 
+//------------------------process_expensive_nodes-----------------------------
+// Expensive nodes have their control input set to prevent the GVN
+// from commoning them and as a result forcing the resulting node to
+// be in a more frequent path. Use CFG information here, to change the
+// control inputs so that some expensive nodes can be commoned while
+// not executed more frequently.
+bool PhaseIdealLoop::process_expensive_nodes() {
+  assert(OptimizeExpensiveOps, "optimization off?");
+
+  // Sort nodes to bring similar nodes together
+  C->sort_expensive_nodes();
+
+  bool progress = false;
+
+  for (int i = 0; i < C->expensive_count(); ) {
+    Node* n = C->expensive_node(i);
+    int start = i;
+    // Find nodes similar to n
+    i++;
+    for (; i < C->expensive_count() && Compile::cmp_expensive_nodes(n, C->expensive_node(i)) == 0; i++);
+    int end = i;
+    // And compare them two by two
+    for (int j = start; j < end; j++) {
+      Node* n1 = C->expensive_node(j);
+      if (is_node_unreachable(n1)) {
+        continue;
+      }
+      for (int k = j+1; k < end; k++) {
+        Node* n2 = C->expensive_node(k);
+        if (is_node_unreachable(n2)) {
+          continue;
+        }
+
+        assert(n1 != n2, "should be pair of nodes");
+
+        Node* c1 = n1->in(0);
+        Node* c2 = n2->in(0);
+
+        Node* parent_c1 = c1;
+        Node* parent_c2 = c2;
+
+        // The call to get_early_ctrl_for_expensive() moves the
+        // expensive nodes up but stops at loops that are in a if
+        // branch. See whether we can exit the loop and move above the
+        // If.
+        if (c1->is_Loop()) {
+          parent_c1 = c1->in(1);
+        }
+        if (c2->is_Loop()) {
+          parent_c2 = c2->in(1);
+        }
+
+        if (parent_c1 == parent_c2) {
+          _igvn._worklist.push(n1);
+          _igvn._worklist.push(n2);
+          continue;
+        }
+
+        // Look for identical expensive node up the dominator chain.
+        if (is_dominator(c1, c2)) {
+          c2 = c1;
+        } else if (is_dominator(c2, c1)) {
+          c1 = c2;
+        } else if (parent_c1->is_Proj() && parent_c1->in(0)->is_If() &&
+                   parent_c2->is_Proj() && parent_c1->in(0) == parent_c2->in(0)) {
+          // Both branches have the same expensive node so move it up
+          // before the if.
+          c1 = c2 = idom(parent_c1->in(0));
+        }
+        // Do the actual moves
+        if (n1->in(0) != c1) {
+          _igvn.hash_delete(n1);
+          n1->set_req(0, c1);
+          _igvn.hash_insert(n1);
+          _igvn._worklist.push(n1);
+          progress = true;
+        }
+        if (n2->in(0) != c2) {
+          _igvn.hash_delete(n2);
+          n2->set_req(0, c2);
+          _igvn.hash_insert(n2);
+          _igvn._worklist.push(n2);
+          progress = true;
+        }
+      }
+    }
+  }
+
+  return progress;
+}
+
+
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
@@ -1960,7 +2151,9 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   }
 
   // Nothing to do, so get out
-  if( !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only ) {
+  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only;
+  bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
+  if (stop_early && !do_expensive_nodes) {
     _igvn.optimize();           // Cleanup NeverBranches
     return;
   }
@@ -2058,6 +2251,21 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
     return;
   }
 
+  if (stop_early) {
+    assert(do_expensive_nodes, "why are we here?");
+    if (process_expensive_nodes()) {
+      // If we made some progress when processing expensive nodes then
+      // the IGVN may modify the graph in a way that will allow us to
+      // make some more progress: we need to try processing expensive
+      // nodes again.
+      C->set_major_progress();
+    }
+
+    _igvn.optimize();
+
+    return;
+  }
+
   // Some parser-inserted loop predicates could never be used by loop
   // predication or they were moved away from loop during some optimizations.
   // For example, peeling. Eliminate them before next loop optimizations.
@@ -2118,6 +2326,10 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
     visited.Clear();
     split_if_with_blocks( visited, nstack );
     NOT_PRODUCT( if( VerifyLoopOptimizations ) verify(); );
+  }
+
+  if (!C->major_progress() && do_expensive_nodes && process_expensive_nodes()) {
+    C->set_major_progress();
   }
 
   // Perform loop predication before iteration splitting
@@ -3299,7 +3511,7 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
 #ifdef ASSERT
     if (legal->is_Start() && !early->is_Root()) {
       // Bad graph. Print idom path and fail.
-      dump_bad_graph(n, early, LCA);
+      dump_bad_graph("Bad graph detected in build_loop_late", n, early, LCA);
       assert(false, "Bad graph detected in build_loop_late");
     }
 #endif
@@ -3350,8 +3562,8 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
 }
 
 #ifdef ASSERT
-void PhaseIdealLoop::dump_bad_graph(Node* n, Node* early, Node* LCA) {
-  tty->print_cr( "Bad graph detected in build_loop_late");
+void PhaseIdealLoop::dump_bad_graph(const char* msg, Node* n, Node* early, Node* LCA) {
+  tty->print_cr(msg);
   tty->print("n: "); n->dump();
   tty->print("early(n): "); early->dump();
   if (n->in(0) != NULL  && !n->in(0)->is_top() &&

@@ -217,6 +217,14 @@ public abstract class Symbol implements Element {
         return (flags() & INTERFACE) != 0;
     }
 
+    public boolean isPrivate() {
+        return (flags_field & Flags.AccessFlags) == PRIVATE;
+    }
+
+    public boolean isEnum() {
+        return (flags() & ENUM) != 0;
+    }
+
     /** Is this symbol declared (directly or indirectly) local
      *  to a method or variable initializer?
      *  Also includes fields of inner classes which are in
@@ -479,7 +487,7 @@ public abstract class Symbol implements Element {
     }
 
     // This method is part of the javax.lang.model API, do not use this in javac code.
-    public <A extends java.lang.annotation.Annotation> A[] getAnnotations(Class<A> annoType) {
+    public <A extends java.lang.annotation.Annotation> A[] getAnnotationsByType(Class<A> annoType) {
         return JavacElements.getAnnotations(this, annoType);
     }
 
@@ -1081,6 +1089,9 @@ public abstract class Symbol implements Element {
 
         /** The code of the method. */
         public Code code = null;
+
+        /** The extra (synthetic/mandated) parameters of the method. */
+        public List<VarSymbol> extraParams = List.nil();
 
         /** The parameters of the method. */
         public List<VarSymbol> params = null;

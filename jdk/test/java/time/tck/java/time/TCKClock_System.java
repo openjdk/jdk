@@ -197,11 +197,4 @@ public class TCKClock_System extends AbstractTCKTest {
         assertEquals(a.hashCode() == c.hashCode(), false);
     }
 
-    //-----------------------------------------------------------------------
-    public void test_toString() {
-        // spec requires "full state" in toString()
-        Clock test = Clock.system(PARIS);
-        assertEquals(test.toString().contains("Europe/Paris"), true);
-    }
-
 }

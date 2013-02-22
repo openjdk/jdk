@@ -61,68 +61,89 @@
  */
 package java.time;
 
-import static java.time.LocalTime.NANOS_PER_DAY;
-import static java.time.LocalTime.NANOS_PER_HOUR;
-import static java.time.LocalTime.NANOS_PER_MINUTE;
-import static java.time.LocalTime.NANOS_PER_SECOND;
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.EPOCH_MONTH;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.NANO_OF_DAY;
-import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.MONTHS;
-import static java.time.temporal.ChronoUnit.NANOS;
 import static java.time.temporal.ChronoUnit.YEARS;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.Chrono;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalAdder;
-import java.time.temporal.TemporalSubtractor;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.ValueRange;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * A period of time, measured using the most common units, such as '3 Months, 4 Days and 7 Hours'.
+ * A date-based amount of time, such as '2 years, 3 months and 4 days'.
  * <p>
- * A {@code Period} represents an amount of time measured in terms of the most commonly used units:
- * <p><ul>
- * <li>{@link ChronoUnit#YEARS YEARS}</li>
- * <li>{@link ChronoUnit#MONTHS MONTHS}</li>
- * <li>{@link ChronoUnit#DAYS DAYS}</li>
- * <li>time units with an {@linkplain TemporalUnit#isDurationEstimated() exact duration}</li>
- * </ul><p>
- * The period may be used with any calendar system with the exception is methods with an "ISO" suffix.
- * The meaning of a "year" or a "month" is only applied when the object is added to a date.
+ * This class models a quantity or amount of time in terms of years, months and days.
+ * See {@link Duration} for the time-based equivalent to this class.
+ * <p>
+ * Durations and period differ in their treatment of daylight savings time
+ * when added to {@link ZonedDateTime}. A {@code Duration} will add an exact
+ * number of seconds, thus a duration of one day is always exactly 24 hours.
+ * By contrast, a {@code Period} will add a conceptual day, trying to maintain
+ * the local time.
+ * <p>
+ * For example, consider adding a period of one day and a duration of one day to
+ * 18:00 on the evening before a daylight savings gap. The {@code Period} will add
+ * the conceptual day and result in a {@code ZonedDateTime} at 18:00 the following day.
+ * By contrast, the {@code Duration} will add exactly 24 hours, resulting in a
+ * {@code ZonedDateTime} at 19:00 the following day (assuming a one hour DST gap).
+ * <p>
+ * The supported units of a period are {@link ChronoUnit#YEARS YEARS},
+ * {@link ChronoUnit#MONTHS MONTHS} and {@link ChronoUnit#DAYS DAYS}.
+ * All three fields are always present, but may be set to zero.
+ * <p>
+ * The period may be used with any calendar system.
+ * The meaning of a "year" or "month" is only applied when the object is added to a date.
  * <p>
  * The period is modeled as a directed amount of time, meaning that individual parts of the
  * period may be negative.
+ * <p>
+ * The months and years fields may be {@linkplain #normalized() normalized}.
+ * The normalization assumes a 12 month year, so is not appropriate for all calendar systems.
  *
  * <h3>Specification for implementors</h3>
  * This class is immutable and thread-safe.
- * The maximum number of hours that can be stored is about 2.5 million, limited by storing
- * a single {@code long} nanoseconds for all time units internally.
  *
  * @since 1.8
  */
 public final class Period
-        implements TemporalAdder, TemporalSubtractor, Serializable {
-    // maximum hours is 2,562,047
+        implements TemporalAmount, Serializable {
 
     /**
      * A constant for a period of zero.
      */
-    public static final Period ZERO = new Period(0, 0, 0, 0);
+    public static final Period ZERO = new Period(0, 0, 0);
     /**
      * Serialization version.
      */
-    private static final long serialVersionUID = -8290556941213247973L;
+    private static final long serialVersionUID = -3587258372562876L;
+    /**
+     * The pattern for parsing.
+     */
+    private final static Pattern PATTERN =
+            Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)D)?", Pattern.CASE_INSENSITIVE);
+    /**
+     * The set of supported units.
+     */
+    private final static List<TemporalUnit> SUPPORTED_UNITS =
+            Collections.unmodifiableList(Arrays.<TemporalUnit>asList(YEARS, MONTHS, DAYS));
 
     /**
      * The number of years.
@@ -136,209 +157,60 @@ public final class Period
      * The number of days.
      */
     private final int days;
-    /**
-     * The number of nanoseconds.
-     */
-    private final long nanos;
 
     //-----------------------------------------------------------------------
     /**
-     * Obtains a {@code Period} from date-based and time-based fields.
+     * Obtains a {@code Period} representing a number of years.
      * <p>
-     * This creates an instance based on years, months, days, hours, minutes and seconds.
-     * Within a period, the time fields are always normalized.
+     * The resulting period will have the specified years.
+     * The months and days units will be zero.
      *
-     * @param years  the amount of years, may be negative
-     * @param months  the amount of months, may be negative
-     * @param days  the amount of days, may be negative
-     * @param hours  the amount of hours, may be negative
-     * @param minutes  the amount of minutes, may be negative
-     * @param seconds  the amount of seconds, may be negative
-     * @return the period, not null
+     * @param years  the number of years, positive or negative
+     * @return the period of years, not null
      */
-    public static Period of(int years, int months, int days, int hours, int minutes, int seconds) {
-        return of(years, months, days, hours, minutes, seconds, 0);
+    public static Period ofYears(int years) {
+        return create(years, 0, 0);
     }
 
     /**
-     * Obtains a {@code Period} from date-based and time-based fields.
+     * Obtains a {@code Period} representing a number of months.
      * <p>
-     * This creates an instance based on years, months, days, hours, minutes, seconds and nanoseconds.
-     * Within a period, the time fields are always normalized.
+     * The resulting period will have the specified months.
+     * The years and days units will be zero.
      *
-     * @param years  the amount of years, may be negative
-     * @param months  the amount of months, may be negative
-     * @param days  the amount of days, may be negative
-     * @param hours  the amount of hours, may be negative
-     * @param minutes  the amount of minutes, may be negative
-     * @param seconds  the amount of seconds, may be negative
-     * @param nanos  the amount of nanos, may be negative
-     * @return the period, not null
+     * @param months  the number of months, positive or negative
+     * @return the period of months, not null
      */
-    public static Period of(int years, int months, int days, int hours, int minutes, int seconds, long nanos) {
-        if ((years | months | days | hours | minutes | seconds | nanos) == 0) {
-            return ZERO;
-        }
-        long totSecs = Math.addExact(hours * 3600L, minutes * 60L) + seconds;
-        long totNanos = Math.addExact(Math.multiplyExact(totSecs, 1_000_000_000L), nanos);
-        return create(years, months, days, totNanos);
+    public static Period ofMonths(int months) {
+        return create(0, months, 0);
+    }
+
+    /**
+     * Obtains a {@code Period} representing a number of days.
+     * <p>
+     * The resulting period will have the specified days.
+     * The years and months units will be zero.
+     *
+     * @param days  the number of days, positive or negative
+     * @return the period of days, not null
+     */
+    public static Period ofDays(int days) {
+        return create(0, 0, days);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Obtains a {@code Period} from date-based fields.
+     * Obtains a {@code Period} representing a number of years, months and days.
      * <p>
      * This creates an instance based on years, months and days.
      *
      * @param years  the amount of years, may be negative
      * @param months  the amount of months, may be negative
      * @param days  the amount of days, may be negative
-     * @return the period, not null
+     * @return the period of years, months and days, not null
      */
-    public static Period ofDate(int years, int months, int days) {
-        return of(years, months, days, 0, 0, 0, 0);
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Obtains a {@code Period} from time-based fields.
-     * <p>
-     * This creates an instance based on hours, minutes and seconds.
-     * Within a period, the time fields are always normalized.
-     *
-     * @param hours  the amount of hours, may be negative
-     * @param minutes  the amount of minutes, may be negative
-     * @param seconds  the amount of seconds, may be negative
-     * @return the period, not null
-     */
-    public static Period ofTime(int hours, int minutes, int seconds) {
-        return of(0, 0, 0, hours, minutes, seconds, 0);
-    }
-
-    /**
-     * Obtains a {@code Period} from time-based fields.
-     * <p>
-     * This creates an instance based on hours, minutes, seconds and nanoseconds.
-     * Within a period, the time fields are always normalized.
-     *
-     * @param hours  the amount of hours, may be negative
-     * @param minutes  the amount of minutes, may be negative
-     * @param seconds  the amount of seconds, may be negative
-     * @param nanos  the amount of nanos, may be negative
-     * @return the period, not null
-     */
-    public static Period ofTime(int hours, int minutes, int seconds, long nanos) {
-        return of(0, 0, 0, hours, minutes, seconds, nanos);
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Obtains an instance of {@code Period} from a period in the specified unit.
-     * <p>
-     * The parameters represent the two parts of a phrase like '6 Days'. For example:
-     * <pre>
-     *  Period.of(3, SECONDS);
-     *  Period.of(5, YEARS);
-     * </pre>
-     * The specified unit must be one of the supported units from {@link ChronoUnit},
-     * {@code YEARS}, {@code MONTHS} or {@code DAYS} or be a time unit with an
-     * {@linkplain TemporalUnit#isDurationEstimated() exact duration}.
-     * Other units throw an exception.
-     *
-     * @param amount  the amount of the period, measured in terms of the unit, positive or negative
-     * @param unit  the unit that the period is measured in, must have an exact duration, not null
-     * @return the period, not null
-     * @throws DateTimeException if the period unit is invalid
-     * @throws ArithmeticException if a numeric overflow occurs
-     */
-    public static Period of(long amount, TemporalUnit unit) {
-        return ZERO.plus(amount, unit);
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Obtains a {@code Period} from a {@code Duration}.
-     * <p>
-     * This converts the duration to a period.
-     * Within a period, the time fields are always normalized.
-     * The years, months and days fields will be zero.
-     * <p>
-     * To populate the days field, call {@link #normalizedHoursToDays()} on the created period.
-     *
-     * @param duration  the duration to convert, not null
-     * @return the period, not null
-     * @throws ArithmeticException if numeric overflow occurs
-     */
-    public static Period of(Duration duration) {
-        Objects.requireNonNull(duration, "duration");
-        if (duration.isZero()) {
-            return ZERO;
-        }
-        return new Period(0, 0, 0, duration.toNanos());
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Returns a {@code Period} consisting of the number of years, months, days,
-     * hours, minutes, seconds, and nanoseconds between two {@code TemporalAccessor} instances.
-     * <p>
-     * The start date is included, but the end date is not. Only whole years count.
-     * For example, from {@code 2010-01-15} to {@code 2011-03-18} is one year, two months and three days.
-     * <p>
-     * This method examines the {@link ChronoField fields} {@code YEAR}, {@code MONTH_OF_YEAR},
-     * {@code DAY_OF_MONTH} and {@code NANO_OF_DAY}
-     * The difference between each of the fields is calculated independently from the others.
-     * At least one of the four fields must be present.
-     * <p>
-     * The four units are typically retained without normalization.
-     * However, years and months are normalized if the range of months is fixed, as it is with ISO.
-     * <p>
-     * The result of this method can be a negative period if the end is before the start.
-     * The negative sign can be different in each of the four major units.
-     *
-     * @param start  the start date, inclusive, not null
-     * @param end  the end date, exclusive, not null
-     * @return the period between the date-times, not null
-     * @throws DateTimeException if the two date-times do have similar available fields
-     * @throws ArithmeticException if numeric overflow occurs
-     */
-    public static Period between(TemporalAccessor start, TemporalAccessor end) {
-        if (Chrono.from(start).equals(Chrono.from(end)) == false) {
-            throw new DateTimeException("Unable to calculate period as date-times have different chronologies");
-        }
-        int years = 0;
-        int months = 0;
-        int days = 0;
-        long nanos = 0;
-        boolean valid = false;
-        if (start.isSupported(YEAR)) {
-            years = Math.toIntExact(Math.subtractExact(end.getLong(YEAR), start.getLong(YEAR)));
-            valid = true;
-        }
-        if (start.isSupported(MONTH_OF_YEAR)) {
-            months = Math.toIntExact(Math.subtractExact(end.getLong(MONTH_OF_YEAR), start.getLong(MONTH_OF_YEAR)));
-            ValueRange startRange = Chrono.from(start).range(MONTH_OF_YEAR);
-            ValueRange endRange = Chrono.from(end).range(MONTH_OF_YEAR);
-            if (startRange.isFixed() && startRange.isIntValue() && startRange.equals(endRange)) {
-                int monthCount = (int) (startRange.getMaximum() - startRange.getMinimum() + 1);
-                long totMonths = ((long) months) + years * monthCount;
-                months = (int) (totMonths % monthCount);
-                years = Math.toIntExact(totMonths / monthCount);
-            }
-            valid = true;
-        }
-        if (start.isSupported(DAY_OF_MONTH)) {
-            days = Math.toIntExact(Math.subtractExact(end.getLong(DAY_OF_MONTH), start.getLong(DAY_OF_MONTH)));
-            valid = true;
-        }
-        if (start.isSupported(NANO_OF_DAY)) {
-            nanos = Math.subtractExact(end.getLong(NANO_OF_DAY), start.getLong(NANO_OF_DAY));
-            valid = true;
-        }
-        if (valid == false) {
-            throw new DateTimeException("Unable to calculate period as date-times do not have any valid fields");
-        }
-        return create(years, months, days, nanos);
+    public static Period of(int years, int months, int days) {
+        return create(years, months, days);
     }
 
     //-----------------------------------------------------------------------
@@ -358,74 +230,70 @@ public final class Period
      *
      * @param startDate  the start date, inclusive, not null
      * @param endDate  the end date, exclusive, not null
-     * @return the period between the dates, not null
-     * @throws ArithmeticException if numeric overflow occurs
+     * @return the period between this date and the end date, not null
+     * @see ChronoLocalDate#periodUntil(ChronoLocalDate)
      */
-    public static Period betweenISO(LocalDate startDate, LocalDate endDate) {
-        long startMonth = startDate.getLong(EPOCH_MONTH);
-        long endMonth = endDate.getLong(EPOCH_MONTH);
-        long totalMonths = endMonth - startMonth;  // safe
-        int days = endDate.getDayOfMonth() - startDate.getDayOfMonth();
-        if (totalMonths > 0 && days < 0) {
-            totalMonths--;
-            LocalDate calcDate = startDate.plusMonths(totalMonths);
-            days = (int) (endDate.toEpochDay() - calcDate.toEpochDay());  // safe
-        } else if (totalMonths < 0 && days > 0) {
-            totalMonths++;
-            days -= endDate.lengthOfMonth();
-        }
-        long years = totalMonths / 12;  // safe
-        int months = (int) (totalMonths % 12);  // safe
-        return ofDate(Math.toIntExact(years), months, days);
+    public static Period between(LocalDate startDate, LocalDate endDate) {
+        return startDate.periodUntil(endDate);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Obtains a {@code Period} consisting of the number of hours, minutes,
-     * seconds and nanoseconds between two times.
-     * <p>
-     * The start time is included, but the end time is not.
-     * The period is calculated from the difference between the nano-of-day values
-     * of the two times. For example, from {@code 13:45:00} to {@code 14:50:30.123456789}
-     * is {@code P1H5M30.123456789S}.
-     * <p>
-     * The result of this method can be a negative period if the end is before the start.
-     *
-     * @param startTime  the start time, inclusive, not null
-     * @param endTime  the end time, exclusive, not null
-     * @return the period between the times, not null
-     * @throws ArithmeticException if numeric overflow occurs
-     */
-    public static Period betweenISO(LocalTime startTime, LocalTime endTime) {
-        return create(0, 0, 0, endTime.toNanoOfDay() - startTime.toNanoOfDay());
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Obtains a {@code Period} from a text string such as {@code PnYnMnDTnHnMn.nS}.
+     * Obtains a {@code Period} from a text string such as {@code PnYnMnD}.
      * <p>
      * This will parse the string produced by {@code toString()} which is
-     * a subset of the ISO-8601 period format {@code PnYnMnDTnHnMn.nS}.
+     * based on the ISO-8601 period format {@code PnYnMnD}.
      * <p>
-     * The string consists of a series of numbers with a suffix identifying their meaning.
-     * The values, and suffixes, must be in the sequence year, month, day, hour, minute, second.
-     * Any of the number/suffix pairs may be omitted providing at least one is present.
-     * If the period is zero, the value is normally represented as {@code PT0S}.
-     * The numbers must consist of ASCII digits.
-     * Any of the numbers may be negative. Negative zero is not accepted.
-     * The number of nanoseconds is expressed as an optional fraction of the seconds.
-     * There must be at least one digit before any decimal point.
-     * There must be between 1 and 9 inclusive digits after any decimal point.
-     * The letters will all be accepted in upper or lower case.
-     * The decimal point may be either a dot or a comma.
+     * The string starts with an optional sign, denoted by the ASCII negative
+     * or positive symbol. If negative, the whole period is negated.
+     * The ASCII letter "P" is next in upper or lower case.
+     * There are then three sections, each consisting of a number and a suffix.
+     * At least one of the three sections must be present.
+     * The sections have suffixes in ASCII of "Y", "M" and "D" for
+     * years, months and days, accepted in upper or lower case.
+     * The suffixes must occur in order.
+     * The number part of each section must consist of ASCII digits.
+     * The number may be prefixed by the ASCII negative or positive symbol.
+     * The number must parse to an {@code int}.
+     * <p>
+     * The leading plus/minus sign, and negative values for other units are
+     * not part of the ISO-8601 standard.
      *
      * @param text  the text to parse, not null
      * @return the parsed period, not null
      * @throws DateTimeParseException if the text cannot be parsed to a period
      */
-    public static Period parse(final CharSequence text) {
+    public static Period parse(CharSequence text) {
         Objects.requireNonNull(text, "text");
-        return new PeriodParser(text).parse();
+        Matcher matcher = PATTERN.matcher(text);
+        if (matcher.matches()) {
+            int negate = ("-".equals(matcher.group(1)) ? -1 : 1);
+            String yearMatch = matcher.group(2);
+            String monthMatch = matcher.group(3);
+            String dayMatch = matcher.group(4);
+            if (yearMatch != null || monthMatch != null || dayMatch != null) {
+                try {
+                    return create(parseNumber(text, yearMatch, negate),
+                            parseNumber(text, monthMatch, negate),
+                            parseNumber(text, dayMatch, negate));
+                } catch (NumberFormatException ex) {
+                    throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Period", text, 0).initCause(ex);
+                }
+            }
+        }
+        throw new DateTimeParseException("Text cannot be parsed to a Period", text, 0);
+    }
+
+    private static int parseNumber(CharSequence text, String str, int negate) {
+        if (str == null) {
+            return 0;
+        }
+        int val = Integer.parseInt(str);
+        try {
+            return Math.multiplyExact(val, negate);
+        } catch (ArithmeticException ex) {
+            throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Period", text, 0).initCause(ex);
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -435,13 +303,12 @@ public final class Period
      * @param years  the amount
      * @param months  the amount
      * @param days  the amount
-     * @param nanos  the amount
      */
-    private static Period create(int years, int months, int days, long nanos) {
-        if ((years | months | days | nanos) == 0) {
+    private static Period create(int years, int months, int days) {
+        if ((years | months | days) == 0) {
             return ZERO;
         }
-        return new Period(years, months, days, nanos);
+        return new Period(years, months, days);
     }
 
     /**
@@ -450,30 +317,61 @@ public final class Period
      * @param years  the amount
      * @param months  the amount
      * @param days  the amount
-     * @param nanos  the amount
      */
-    private Period(int years, int months, int days, long nanos) {
+    private Period(int years, int months, int days) {
         this.years = years;
         this.months = months;
         this.days = days;
-        this.nanos = nanos;
-    }
-
-    /**
-     * Resolves singletons.
-     *
-     * @return the resolved instance
-     */
-    private Object readResolve() {
-        if ((years | months | days | nanos) == 0) {
-            return ZERO;
-        }
-        return this;
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Checks if this period is zero-length.
+     * Gets the value of the requested unit.
+     * <p>
+     * This returns a value for each of the three supported units,
+     * {@link ChronoUnit#YEARS YEARS}, {@link ChronoUnit#MONTHS MONTHS} and
+     * {@link ChronoUnit#DAYS DAYS}.
+     * All other units throw an exception.
+     *
+     * @param unit the {@code TemporalUnit} for which to return the value
+     * @return the long value of the unit
+     * @throws DateTimeException if the unit is not supported
+     */
+    @Override
+    public long get(TemporalUnit unit) {
+        if (unit == ChronoUnit.YEARS) {
+            return getYears();
+        } else if (unit == ChronoUnit.MONTHS) {
+            return getMonths();
+        } else if (unit == ChronoUnit.DAYS) {
+            return getDays();
+        } else {
+            throw new DateTimeException("Unsupported unit: " + unit.getName());
+        }
+    }
+
+    /**
+     * Gets the set of units supported by this period.
+     * <p>
+     * The supported units are {@link ChronoUnit#YEARS YEARS},
+     * {@link ChronoUnit#MONTHS MONTHS} and {@link ChronoUnit#DAYS DAYS}.
+     * They are returned in the order years, months, days.
+     * <p>
+     * This set can be used in conjunction with {@link #get(TemporalUnit)}
+     * to access the entire state of the period.
+     *
+     * @return a list containing the years, months and days units, not null
+     */
+    @Override
+    public List<TemporalUnit> getUnits() {
+        return SUPPORTED_UNITS;
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Checks if all three units of this period are zero.
+     * <p>
+     * A zero period has the value zero for the years, months and days units.
      *
      * @return true if this period is zero-length
      */
@@ -482,22 +380,27 @@ public final class Period
     }
 
     /**
-     * Checks if this period is fully positive, excluding zero.
+     * Checks if any of the three units of this period are negative.
      * <p>
-     * This checks whether all the amounts in the period are positive,
-     * defined as greater than zero.
+     * This checks whether the years, months or days units are less than zero.
      *
-     * @return true if this period is fully positive excluding zero
+     * @return true if any unit of this period is negative
      */
-    public boolean isPositive() {
-        return ((years | months | days | nanos) > 0);
+    public boolean isNegative() {
+        return years < 0 || months < 0 || days < 0;
     }
 
     //-----------------------------------------------------------------------
     /**
      * Gets the amount of years of this period.
+     * <p>
+     * This returns the years unit.
+     * <p>
+     * The months unit is not normalized with the years unit.
+     * This means that a period of "15 months" is different to a period
+     * of "1 year and 3 months".
      *
-     * @return the amount of years of this period
+     * @return the amount of years of this period, may be negative
      */
     public int getYears() {
         return years;
@@ -505,8 +408,14 @@ public final class Period
 
     /**
      * Gets the amount of months of this period.
+     * <p>
+     * This returns the months unit.
+     * <p>
+     * The months unit is not normalized with the years unit.
+     * This means that a period of "15 months" is different to a period
+     * of "1 year and 3 months".
      *
-     * @return the amount of months of this period
+     * @return the amount of months of this period, may be negative
      */
     public int getMonths() {
         return months;
@@ -514,141 +423,76 @@ public final class Period
 
     /**
      * Gets the amount of days of this period.
+     * <p>
+     * This returns the days unit.
      *
-     * @return the amount of days of this period
+     * @return the amount of days of this period, may be negative
      */
     public int getDays() {
         return days;
-    }
-
-    /**
-     * Gets the amount of hours of this period.
-     * <p>
-     * Within a period, the time fields are always normalized.
-     *
-     * @return the amount of hours of this period
-     */
-    public int getHours() {
-        return (int) (nanos / NANOS_PER_HOUR);
-    }
-
-    /**
-     * Gets the amount of minutes within an hour of this period.
-     * <p>
-     * Within a period, the time fields are always normalized.
-     *
-     * @return the amount of minutes within an hour of this period
-     */
-    public int getMinutes() {
-        return (int) ((nanos / NANOS_PER_MINUTE) % 60);
-    }
-
-    /**
-     * Gets the amount of seconds within a minute of this period.
-     * <p>
-     * Within a period, the time fields are always normalized.
-     *
-     * @return the amount of seconds within a minute of this period
-     */
-    public int getSeconds() {
-        return (int) ((nanos / NANOS_PER_SECOND) % 60);
-    }
-
-    /**
-     * Gets the amount of nanoseconds within a second of this period.
-     * <p>
-     * Within a period, the time fields are always normalized.
-     *
-     * @return the amount of nanoseconds within a second of this period
-     */
-    public int getNanos() {
-        return (int) (nanos % NANOS_PER_SECOND);  // safe from overflow
-    }
-
-    /**
-     * Gets the total amount of the time units of this period, measured in nanoseconds.
-     * <p>
-     * Within a period, the time fields are always normalized.
-     *
-     * @return the total amount of time unit nanoseconds of this period
-     */
-    public long getTimeNanos() {
-        return nanos;
     }
 
     //-----------------------------------------------------------------------
     /**
      * Returns a copy of this period with the specified amount of years.
      * <p>
-     * This method will only affect the years field.
-     * All other units are unaffected.
+     * This sets the amount of the years unit in a copy of this period.
+     * The months and days units are unaffected.
+     * <p>
+     * The months unit is not normalized with the years unit.
+     * This means that a period of "15 months" is different to a period
+     * of "1 year and 3 months".
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param years  the years to represent
+     * @param years  the years to represent, may be negative
      * @return a {@code Period} based on this period with the requested years, not null
      */
     public Period withYears(int years) {
         if (years == this.years) {
             return this;
         }
-        return create(years, months, days, nanos);
+        return create(years, months, days);
     }
 
     /**
      * Returns a copy of this period with the specified amount of months.
      * <p>
-     * This method will only affect the months field.
-     * All other units are unaffected.
+     * This sets the amount of the months unit in a copy of this period.
+     * The years and days units are unaffected.
+     * <p>
+     * The months unit is not normalized with the years unit.
+     * This means that a period of "15 months" is different to a period
+     * of "1 year and 3 months".
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param months  the months to represent
+     * @param months  the months to represent, may be negative
      * @return a {@code Period} based on this period with the requested months, not null
      */
     public Period withMonths(int months) {
         if (months == this.months) {
             return this;
         }
-        return create(years, months, days, nanos);
+        return create(years, months, days);
     }
 
     /**
      * Returns a copy of this period with the specified amount of days.
      * <p>
-     * This method will only affect the days field.
-     * All other units are unaffected.
+     * This sets the amount of the days unit in a copy of this period.
+     * The years and months units are unaffected.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param days  the days to represent
+     * @param days  the days to represent, may be negative
      * @return a {@code Period} based on this period with the requested days, not null
      */
     public Period withDays(int days) {
         if (days == this.days) {
             return this;
         }
-        return create(years, months, days, nanos);
-    }
-
-    /**
-     * Returns a copy of this period with the specified total amount of time units
-     * expressed in nanoseconds.
-     * <p>
-     * Within a period, the time fields are always normalized.
-     * This method will affect all the time units - hours, minutes, seconds and nanos.
-     * The date units are unaffected.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
-     *
-     * @param nanos  the nanoseconds to represent
-     * @return a {@code Period} based on this period with the requested nanoseconds, not null
-     */
-    public Period withTimeNanos(long nanos) {
-        if (nanos == this.nanos) {
-            return this;
-        }
-        return create(years, months, days, nanos);
+        return create(years, months, days);
     }
 
     //-----------------------------------------------------------------------
@@ -658,89 +502,80 @@ public final class Period
      * This operates separately on the years, months, days and the normalized time.
      * There is no further normalization beyond the normalized time.
      * <p>
+     * For example, "1 year, 6 months and 3 days" plus "2 years, 2 months and 2 days"
+     * returns "3 years, 8 months and 5 days".
+     * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param other  the period to add, not null
+     * @param amountToAdd  the period to add, not null
      * @return a {@code Period} based on this period with the requested period added, not null
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Period plus(Period other) {
+    public Period plus(Period amountToAdd) {
         return create(
-                Math.addExact(years, other.years),
-                Math.addExact(months, other.months),
-                Math.addExact(days, other.days),
-                Math.addExact(nanos, other.nanos));
+                Math.addExact(years, amountToAdd.years),
+                Math.addExact(months, amountToAdd.months),
+                Math.addExact(days, amountToAdd.days));
     }
 
     /**
-     * Returns a copy of this period with the specified period added.
+     * Returns a copy of this period with the specified years added.
      * <p>
-     * The specified unit must be one of the supported units from {@link ChronoUnit},
-     * {@code YEARS}, {@code MONTHS} or {@code DAYS} or be a time unit with an
-     * {@linkplain TemporalUnit#isDurationEstimated() exact duration}.
-     * Other units throw an exception.
+     * This adds the amount to the years unit in a copy of this period.
+     * The months and days units are unaffected.
+     * For example, "1 year, 6 months and 3 days" plus 2 years returns "3 years, 6 months and 3 days".
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param amount  the amount to add, positive or negative
-     * @param unit  the unit that the amount is expressed in, not null
-     * @return a {@code Period} based on this period with the requested amount added, not null
+     * @param yearsToAdd  the years to add, positive or negative
+     * @return a {@code Period} based on this period with the specified years added, not null
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Period plus(long amount, TemporalUnit unit) {
-        Objects.requireNonNull(unit, "unit");
-        if (unit instanceof ChronoUnit) {
-            if (unit == YEARS || unit == MONTHS || unit == DAYS || unit.isDurationEstimated() == false) {
-                if (amount == 0) {
-                    return this;
-                }
-                switch((ChronoUnit) unit) {
-                    case NANOS: return plusNanos(amount);
-                    case MICROS: return plusNanos(Math.multiplyExact(amount, 1000L));
-                    case MILLIS: return plusNanos(Math.multiplyExact(amount, 1000_000L));
-                    case SECONDS: return plusSeconds(amount);
-                    case MINUTES: return plusMinutes(amount);
-                    case HOURS: return plusHours(amount);
-                    case HALF_DAYS: return plusNanos(Math.multiplyExact(amount, 12 * NANOS_PER_HOUR));
-                    case DAYS: return plusDays(amount);
-                    case MONTHS: return plusMonths(amount);
-                    case YEARS: return plusYears(amount);
-                    default: throw new DateTimeException("Unsupported unit: " + unit.getName());
-                }
-            }
+    public Period plusYears(long yearsToAdd) {
+        if (yearsToAdd == 0) {
+            return this;
         }
-        if (unit.isDurationEstimated()) {
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+        return create(Math.toIntExact(Math.addExact(years, yearsToAdd)), months, days);
+    }
+
+    /**
+     * Returns a copy of this period with the specified months added.
+     * <p>
+     * This adds the amount to the months unit in a copy of this period.
+     * The years and days units are unaffected.
+     * For example, "1 year, 6 months and 3 days" plus 2 months returns "1 year, 8 months and 3 days".
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param monthsToAdd  the months to add, positive or negative
+     * @return a {@code Period} based on this period with the specified months added, not null
+     * @throws ArithmeticException if numeric overflow occurs
+     */
+    public Period plusMonths(long monthsToAdd) {
+        if (monthsToAdd == 0) {
+            return this;
         }
-        return plusNanos(Duration.of(amount, unit).toNanos());
+        return create(years, Math.toIntExact(Math.addExact(months, monthsToAdd)), days);
     }
 
-    public Period plusYears(long amount) {
-        return create(Math.toIntExact(Math.addExact(years, amount)), months, days, nanos);
-    }
-
-    public Period plusMonths(long amount) {
-        return create(years, Math.toIntExact(Math.addExact(months, amount)), days, nanos);
-    }
-
-    public Period plusDays(long amount) {
-        return create(years, months, Math.toIntExact(Math.addExact(days, amount)), nanos);
-    }
-
-    public Period plusHours(long amount) {
-        return plusNanos(Math.multiplyExact(amount, NANOS_PER_HOUR));
-    }
-
-    public Period plusMinutes(long amount) {
-        return plusNanos(Math.multiplyExact(amount, NANOS_PER_MINUTE));
-    }
-
-    public Period plusSeconds(long amount) {
-        return plusNanos(Math.multiplyExact(amount, NANOS_PER_SECOND));
-    }
-
-    public Period plusNanos(long amount) {
-        return create(years, months, days, Math.addExact(nanos,  amount));
+    /**
+     * Returns a copy of this period with the specified days added.
+     * <p>
+     * This adds the amount to the days unit in a copy of this period.
+     * The years and months units are unaffected.
+     * For example, "1 year, 6 months and 3 days" plus 2 days returns "1 year, 6 months and 5 days".
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param daysToAdd  the days to add, positive or negative
+     * @return a {@code Period} based on this period with the specified days added, not null
+     * @throws ArithmeticException if numeric overflow occurs
+     */
+    public Period plusDays(long daysToAdd) {
+        if (daysToAdd == 0) {
+            return this;
+        }
+        return create(years, months, Math.toIntExact(Math.addExact(days, daysToAdd)));
     }
 
     //-----------------------------------------------------------------------
@@ -750,65 +585,71 @@ public final class Period
      * This operates separately on the years, months, days and the normalized time.
      * There is no further normalization beyond the normalized time.
      * <p>
+     * For example, "1 year, 6 months and 3 days" minus "2 years, 2 months and 2 days"
+     * returns "-1 years, 4 months and 1 day".
+     * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param other  the period to subtract, not null
+     * @param amountToSubtract  the period to subtract, not null
      * @return a {@code Period} based on this period with the requested period subtracted, not null
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Period minus(Period other) {
+    public Period minus(Period amountToSubtract) {
         return create(
-                Math.subtractExact(years, other.years),
-                Math.subtractExact(months, other.months),
-                Math.subtractExact(days, other.days),
-                Math.subtractExact(nanos, other.nanos));
+                Math.subtractExact(years, amountToSubtract.years),
+                Math.subtractExact(months, amountToSubtract.months),
+                Math.subtractExact(days, amountToSubtract.days));
     }
 
     /**
-     * Returns a copy of this period with the specified period subtracted.
+     * Returns a copy of this period with the specified years subtracted.
      * <p>
-     * The specified unit must be one of the supported units from {@link ChronoUnit},
-     * {@code YEARS}, {@code MONTHS} or {@code DAYS} or be a time unit with an
-     * {@linkplain TemporalUnit#isDurationEstimated() exact duration}.
-     * Other units throw an exception.
+     * This subtracts the amount from the years unit in a copy of this period.
+     * The months and days units are unaffected.
+     * For example, "1 year, 6 months and 3 days" minus 2 years returns "-1 years, 6 months and 3 days".
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param amount  the amount to subtract, positive or negative
-     * @param unit  the unit that the amount is expressed in, not null
-     * @return a {@code Period} based on this period with the requested amount subtracted, not null
+     * @param yearsToSubtract  the years to subtract, positive or negative
+     * @return a {@code Period} based on this period with the specified years subtracted, not null
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Period minus(long amount, TemporalUnit unit) {
-        return (amount == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amount, unit));
+    public Period minusYears(long yearsToSubtract) {
+        return (yearsToSubtract == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-yearsToSubtract));
     }
 
-    public Period minusYears(long amount) {
-        return (amount == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-amount));
+    /**
+     * Returns a copy of this period with the specified months subtracted.
+     * <p>
+     * This subtracts the amount from the months unit in a copy of this period.
+     * The years and days units are unaffected.
+     * For example, "1 year, 6 months and 3 days" minus 2 months returns "1 year, 4 months and 3 days".
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param monthsToSubtract  the years to subtract, positive or negative
+     * @return a {@code Period} based on this period with the specified months subtracted, not null
+     * @throws ArithmeticException if numeric overflow occurs
+     */
+    public Period minusMonths(long monthsToSubtract) {
+        return (monthsToSubtract == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1) : plusMonths(-monthsToSubtract));
     }
 
-    public Period minusMonths(long amount) {
-        return (amount == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1) : plusMonths(-amount));
-    }
-
-    public Period minusDays(long amount) {
-        return (amount == Long.MIN_VALUE ? plusDays(Long.MAX_VALUE).plusDays(1) : plusDays(-amount));
-    }
-
-    public Period minusHours(long amount) {
-        return (amount == Long.MIN_VALUE ? plusHours(Long.MAX_VALUE).plusHours(1) : plusHours(-amount));
-    }
-
-    public Period minusMinutes(long amount) {
-        return (amount == Long.MIN_VALUE ? plusMinutes(Long.MAX_VALUE).plusMinutes(1) : plusMinutes(-amount));
-    }
-
-    public Period minusSeconds(long amount) {
-        return (amount == Long.MIN_VALUE ? plusSeconds(Long.MAX_VALUE).plusSeconds(1) : plusSeconds(-amount));
-    }
-
-    public Period minusNanos(long amount) {
-        return (amount == Long.MIN_VALUE ? plusNanos(Long.MAX_VALUE).plusNanos(1) : plusNanos(-amount));
+    /**
+     * Returns a copy of this period with the specified days subtracted.
+     * <p>
+     * This subtracts the amount from the days unit in a copy of this period.
+     * The years and months units are unaffected.
+     * For example, "1 year, 6 months and 3 days" minus 2 days returns "1 year, 6 months and 1 day".
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param daysToSubtract  the months to subtract, positive or negative
+     * @return a {@code Period} based on this period with the specified days subtracted, not null
+     * @throws ArithmeticException if numeric overflow occurs
+     */
+    public Period minusDays(long daysToSubtract) {
+        return (daysToSubtract == Long.MIN_VALUE ? plusDays(Long.MAX_VALUE).plusDays(1) : plusDays(-daysToSubtract));
     }
 
     //-----------------------------------------------------------------------
@@ -816,8 +657,11 @@ public final class Period
      * Returns a new instance with each element in this period multiplied
      * by the specified scalar.
      * <p>
-     * This simply multiplies each field, years, months, days and normalized time,
-     * by the scalar. No normalization is performed.
+     * This returns a period with each of the years, months and days units
+     * individually multiplied.
+     * For example, a period of "2 years, -3 months and 4 days" multiplied by
+     * 3 will return "6 years, -9 months and 12 days".
+     * No normalization is performed.
      *
      * @param scalar  the scalar to multiply by, not null
      * @return a {@code Period} based on this period with the amounts multiplied by the scalar, not null
@@ -830,15 +674,21 @@ public final class Period
         return create(
                 Math.multiplyExact(years, scalar),
                 Math.multiplyExact(months, scalar),
-                Math.multiplyExact(days, scalar),
-                Math.multiplyExact(nanos, scalar));
+                Math.multiplyExact(days, scalar));
     }
 
     /**
      * Returns a new instance with each amount in this period negated.
+     * <p>
+     * This returns a period with each of the years, months and days units
+     * individually negated.
+     * For example, a period of "2 years, -3 months and 4 days" will be
+     * negated to "-2 years, 3 months and -4 days".
+     * No normalization is performed.
      *
      * @return a {@code Period} based on this period with the amounts negated, not null
-     * @throws ArithmeticException if numeric overflow occurs
+     * @throws ArithmeticException if numeric overflow occurs, which only happens if
+     *  one of the units has the value {@code Long.MIN_VALUE}
      */
     public Period negated() {
         return multipliedBy(-1);
@@ -846,104 +696,49 @@ public final class Period
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this period with the days and hours normalized using a 24 hour day.
+     * Returns a copy of this period with the years and months normalized
+     * using a 12 month year.
      * <p>
-     * This normalizes the days and hours units, leaving years and months unchanged.
-     * The hours unit is adjusted to have an absolute value less than 23,
-     * with the days unit being adjusted to compensate.
-     * For example, a period of {@code P1DT27H} will be normalized to {@code P2DT3H}.
-     * <p>
-     * The sign of the days and hours units will be the same after normalization.
-     * For example, a period of {@code P1DT-51H} will be normalized to {@code P-1DT-3H}.
-     * Since all time units are always normalized, if the hours units changes sign then
-     * other time units will also be affected.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
-     *
-     * @return a {@code Period} based on this period with excess hours normalized to days, not null
-     * @throws ArithmeticException if numeric overflow occurs
-     */
-    public Period normalizedHoursToDays() {
-        // logic uses if statements to normalize signs to avoid unnecessary overflows
-        long totalDays = (nanos / NANOS_PER_DAY) + days;  // no overflow
-        long splitNanos = nanos % NANOS_PER_DAY;
-        if (totalDays > 0 && splitNanos < 0) {
-            splitNanos += NANOS_PER_DAY;
-            totalDays--;
-        } else if (totalDays < 0 && splitNanos > 0) {
-            splitNanos -= NANOS_PER_DAY;
-            totalDays++;
-        }
-        if (totalDays == days && splitNanos == nanos) {
-            return this;
-        }
-        return create(years, months, Math.toIntExact(totalDays), splitNanos);
-    }
-
-    /**
-     * Returns a copy of this period with any days converted to hours using a 24 hour day.
-     * <p>
-     * The days unit is reduced to zero, with the hours unit increased by 24 times the
-     * days unit to compensate. Other units are unaffected.
-     * For example, a period of {@code P2DT4H} will be normalized to {@code PT52H}.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
-     *
-     * @return a {@code Period} based on this period with days normalized to hours, not null
-     * @throws ArithmeticException if numeric overflow occurs
-     */
-    public Period normalizedDaysToHours() {
-        if (days == 0) {
-            return this;
-        }
-        return create(years, months, 0, Math.addExact(Math.multiplyExact(days, NANOS_PER_DAY), nanos));
-    }
-
-    /**
-     * Returns a copy of this period with the years and months normalized using a 12 month year.
-     * <p>
-     * This normalizes the years and months units, leaving other units unchanged.
+     * This normalizes the years and months units, leaving the days unit unchanged.
      * The months unit is adjusted to have an absolute value less than 11,
-     * with the years unit being adjusted to compensate.
-     * For example, a period of {@code P1Y15M} will be normalized to {@code P2Y3M}.
+     * with the years unit being adjusted to compensate. For example, a period of
+     * "1 Year and 15 months" will be normalized to "2 years and 3 months".
      * <p>
      * The sign of the years and months units will be the same after normalization.
-     * For example, a period of {@code P1Y-25M} will be normalized to {@code P-1Y-1M}.
+     * For example, a period of "1 year and -25 months" will be normalized to
+     * "-1 year and -1 month".
      * <p>
-     * This normalization uses a 12 month year it is not valid for all calendar systems.
+     * This normalization uses a 12 month year which is not valid for all calendar systems.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @return a {@code Period} based on this period with years and months normalized, not null
+     * @return a {@code Period} based on this period with excess months normalized to years, not null
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Period normalizedMonthsISO() {
-        long totalMonths = years * 12L + months;  // no overflow
+    public Period normalized() {
+        long totalMonths = toTotalMonths();
         long splitYears = totalMonths / 12;
         int splitMonths = (int) (totalMonths % 12);  // no overflow
         if (splitYears == years && splitMonths == months) {
             return this;
         }
-        return create(Math.toIntExact(splitYears), splitMonths, days, nanos);
+        return create(Math.toIntExact(splitYears), splitMonths, days);
     }
 
-    //-------------------------------------------------------------------------
     /**
-     * Converts this period to one that only has date units.
+     * Gets the total number of months in this period using a 12 month year.
      * <p>
-     * The resulting period will have the same years, months and days as this period
-     * but the time units will all be zero. No normalization occurs in the calculation.
-     * For example, a period of {@code P1Y3MT12H} will be converted to {@code P1Y3M}.
+     * This returns the total number of months in the period by multiplying the
+     * number of years by 12 and adding the number of months.
+     * <p>
+     * This uses a 12 month year which is not valid for all calendar systems.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @return a {@code Period} based on this period with the time units set to zero, not null
+     * @return the total number of months in the period, may be negative
      */
-    public Period toDateOnly() {
-        if (nanos == 0) {
-            return this;
-        }
-        return create(years, months, days, 0);
+    public long toTotalMonths() {
+        return years * 12L + months;  // no overflow
     }
 
     //-------------------------------------------------------------------------
@@ -954,14 +749,14 @@ public final class Period
      * with this period added.
      * <p>
      * In most cases, it is clearer to reverse the calling pattern by using
-     * {@link Temporal#plus(TemporalAdder)}.
+     * {@link Temporal#plus(TemporalAmount)}.
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
      *   dateTime = thisPeriod.addTo(dateTime);
      *   dateTime = dateTime.plus(thisPeriod);
      * </pre>
      * <p>
-     * The calculation will add the years, then months, then days, then nanos.
+     * The calculation will add the years, then months, then days.
      * Only non-zero amounts will be added.
      * If the date-time has a calendar system with a fixed number of months in a
      * year, then the years and months will be combined before being added.
@@ -977,10 +772,9 @@ public final class Period
     public Temporal addTo(Temporal temporal) {
         Objects.requireNonNull(temporal, "temporal");
         if ((years | months) != 0) {
-            ValueRange startRange = Chrono.from(temporal).range(MONTH_OF_YEAR);
-            if (startRange.isFixed() && startRange.isIntValue()) {
-                long monthCount = startRange.getMaximum() - startRange.getMinimum() + 1;
-                temporal = temporal.plus(years * monthCount + months, MONTHS);
+            long monthRange = monthRange(temporal);
+            if (monthRange >= 0) {
+                temporal = temporal.plus(years * monthRange + months, MONTHS);
             } else {
                 if (years != 0) {
                     temporal = temporal.plus(years, YEARS);
@@ -993,9 +787,6 @@ public final class Period
         if (days != 0) {
             temporal = temporal.plus(days, DAYS);
         }
-        if (nanos != 0) {
-            temporal = temporal.plus(nanos, NANOS);
-        }
         return temporal;
     }
 
@@ -1006,14 +797,14 @@ public final class Period
      * with this period subtracted.
      * <p>
      * In most cases, it is clearer to reverse the calling pattern by using
-     * {@link Temporal#minus(TemporalSubtractor)}.
+     * {@link Temporal#minus(TemporalAmount)}.
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
      *   dateTime = thisPeriod.subtractFrom(dateTime);
      *   dateTime = dateTime.minus(thisPeriod);
      * </pre>
      * <p>
-     * The calculation will subtract the years, then months, then days, then nanos.
+     * The calculation will subtract the years, then months, then days.
      * Only non-zero amounts will be subtracted.
      * If the date-time has a calendar system with a fixed number of months in a
      * year, then the years and months will be combined before being subtracted.
@@ -1029,10 +820,9 @@ public final class Period
     public Temporal subtractFrom(Temporal temporal) {
         Objects.requireNonNull(temporal, "temporal");
         if ((years | months) != 0) {
-            ValueRange startRange = Chrono.from(temporal).range(MONTH_OF_YEAR);
-            if (startRange.isFixed() && startRange.isIntValue()) {
-                long monthCount = startRange.getMaximum() - startRange.getMinimum() + 1;
-                temporal = temporal.minus(years * monthCount + months, MONTHS);
+            long monthRange = monthRange(temporal);
+            if (monthRange >= 0) {
+                temporal = temporal.minus(years * monthRange + months, MONTHS);
             } else {
                 if (years != 0) {
                     temporal = temporal.minus(years, YEARS);
@@ -1045,48 +835,21 @@ public final class Period
         if (days != 0) {
             temporal = temporal.minus(days, DAYS);
         }
-        if (nanos != 0) {
-            temporal = temporal.minus(nanos, NANOS);
-        }
         return temporal;
     }
 
-    //-----------------------------------------------------------------------
     /**
-     * Converts this period to one that only has time units.
-     * <p>
-     * The resulting period will have the same time units as this period
-     * but the date units will all be zero. No normalization occurs in the calculation.
-     * For example, a period of {@code P1Y3MT12H} will be converted to {@code PT12H}.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
+     * Calculates the range of months based on the temporal.
      *
-     * @return a {@code Period} based on this period with the date units set to zero, not null
+     * @param temporal  the temporal, not null
+     * @return the month range, negative if not fixed range
      */
-    public Period toTimeOnly() {
-        if ((years | months | days) == 0) {
-            return this;
+    private long monthRange(Temporal temporal) {
+        ValueRange startRange = Chronology.from(temporal).range(MONTH_OF_YEAR);
+        if (startRange.isFixed() && startRange.isIntValue()) {
+            return startRange.getMaximum() - startRange.getMinimum() + 1;
         }
-        return create(0, 0, 0, nanos);
-    }
-
-    //-------------------------------------------------------------------------
-    /**
-     * Calculates the duration of this period.
-     * <p>
-     * The calculation uses the hours, minutes, seconds and nanoseconds fields.
-     * If years, months or days are present an exception is thrown.
-     * See {@link #toTimeOnly()} for a way to remove the date units and
-     * {@link #normalizedDaysToHours()} for a way to convert days to hours.
-     *
-     * @return a {@code Duration} equivalent to this period, not null
-     * @throws DateTimeException if the period cannot be converted as it contains years, months or days
-     */
-    public Duration toDuration() {
-        if ((years | months | days) != 0) {
-            throw new DateTimeException("Unable to convert period to duration as years/months/days are present: " + this);
-        }
-        return Duration.ofNanos(nanos);
+        return -1;
     }
 
     //-----------------------------------------------------------------------
@@ -1094,7 +857,9 @@ public final class Period
      * Checks if this period is equal to another period.
      * <p>
      * The comparison is based on the amounts held in the period.
-     * To be equal, the years, months, days and normalized time fields must be equal.
+     * To be equal, the years, months and days units must be individually equal.
+     * Note that this means that a period of "15 Months" is not equal to a period
+     * of "1 Year and 3 Months".
      *
      * @param obj  the object to check, null returns false
      * @return true if this is equal to the other period
@@ -1106,8 +871,9 @@ public final class Period
         }
         if (obj instanceof Period) {
             Period other = (Period) obj;
-            return years == other.years && months == other.months &&
-                    days == other.days && nanos == other.nanos;
+            return years == other.years &&
+                    months == other.months &&
+                    days == other.days;
         }
         return false;
     }
@@ -1119,25 +885,22 @@ public final class Period
      */
     @Override
     public int hashCode() {
-        // ordered such that overflow from one field doesn't immediately affect the next field
-        return ((years << 27) | (years >>> 5)) ^
-                ((days << 21) | (days >>> 11)) ^
-                ((months << 17) | (months >>> 15)) ^
-                ((int) (nanos ^ (nanos >>> 32)));
+        return years + Integer.rotateLeft(months, 8) + Integer.rotateLeft(days, 16);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Outputs this period as a {@code String}, such as {@code P6Y3M1DT12H}.
+     * Outputs this period as a {@code String}, such as {@code P6Y3M1D}.
      * <p>
      * The output will be in the ISO-8601 period format.
+     * A zero period will be represented as zero days, 'P0D'.
      *
      * @return a string representation of this period, not null
      */
     @Override
     public String toString() {
         if (this == ZERO) {
-            return "PT0S";
+            return "P0D";
         } else {
             StringBuilder buf = new StringBuilder();
             buf.append('P');
@@ -1150,38 +913,47 @@ public final class Period
             if (days != 0) {
                 buf.append(days).append('D');
             }
-            if (nanos != 0) {
-                buf.append('T');
-                if (getHours() != 0) {
-                    buf.append(getHours()).append('H');
-                }
-                if (getMinutes() != 0) {
-                    buf.append(getMinutes()).append('M');
-                }
-                int secondPart = getSeconds();
-                int nanoPart = getNanos();
-                int secsNanosOr = secondPart | nanoPart;
-                if (secsNanosOr != 0) {  // if either non-zero
-                    if ((secsNanosOr & Integer.MIN_VALUE) != 0) {  // if either less than zero
-                        buf.append('-');
-                        secondPart = Math.abs(secondPart);
-                        nanoPart = Math.abs(nanoPart);
-                    }
-                    buf.append(secondPart);
-                    if (nanoPart != 0) {
-                        int dotPos = buf.length();
-                        nanoPart += 1000_000_000;
-                        while (nanoPart % 10 == 0) {
-                            nanoPart /= 10;
-                        }
-                        buf.append(nanoPart);
-                        buf.setCharAt(dotPos, '.');
-                    }
-                    buf.append('S');
-                }
-            }
             return buf.toString();
         }
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Writes the object using a
+     * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * <pre>
+     *  out.writeByte(14);  // identifies this as a Period
+     *  out.writeInt(years);
+     *  out.writeInt(months);
+     *  out.writeInt(seconds);
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
+    private Object writeReplace() {
+        return new Ser(Ser.PERIOD_TYPE, this);
+    }
+
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws java.io.InvalidObjectException always
+     */
+    private Object readResolve() throws ObjectStreamException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    void writeExternal(DataOutput out) throws IOException {
+        out.writeInt(years);
+        out.writeInt(months);
+        out.writeInt(days);
+    }
+
+    static Period readExternal(DataInput in) throws IOException {
+        int years = in.readInt();
+        int months = in.readInt();
+        int days = in.readInt();
+        return Period.of(years, months, days);
     }
 
 }

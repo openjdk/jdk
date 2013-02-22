@@ -49,38 +49,15 @@ class Annotations: public MetaspaceObj {
   // Annotation objects (byte arrays) for fields, or null if no annotations.
   // Indices correspond to entries (not indices) in fields array.
   Array<AnnotationArray*>*     _fields_annotations;
-  // Annotation objects (byte arrays) for methods, or null if no annotations.
-  // Index is the idnum, which is initially the same as the methods array index.
-  Array<AnnotationArray*>*     _methods_annotations;
-  // Annotation objects (byte arrays) for methods' parameters, or null if no
-  // such annotations.
-  // Index is the idnum, which is initially the same as the methods array index.
-  Array<AnnotationArray*>*     _methods_parameter_annotations;
-  // Annotation objects (byte arrays) for methods' default values, or null if no
-  // such annotations.
-  // Index is the idnum, which is initially the same as the methods array index.
-  Array<AnnotationArray*>*     _methods_default_annotations;
   // Type annotations for this class, or null if none.
-  Annotations*                 _type_annotations;
-
-  // Constructor where some some values are known to not be null
-  Annotations(Array<AnnotationArray*>* fa, Array<AnnotationArray*>* ma,
-              Array<AnnotationArray*>* mpa, Array<AnnotationArray*>* mda) :
-                 _class_annotations(NULL),
-                 _fields_annotations(fa),
-                 _methods_annotations(ma),
-                 _methods_parameter_annotations(mpa),
-                 _methods_default_annotations(mda),
-                 _type_annotations(NULL) {}
+  AnnotationArray*             _class_type_annotations;
+  Array<AnnotationArray*>*     _fields_type_annotations;
 
  public:
   // Allocate instance of this class
   static Annotations* allocate(ClassLoaderData* loader_data, TRAPS);
-  static Annotations* allocate(ClassLoaderData* loader_data,
-                               Array<AnnotationArray*>* fa,
-                               Array<AnnotationArray*>* ma,
-                               Array<AnnotationArray*>* mpa,
-                               Array<AnnotationArray*>* mda, TRAPS);
+
+  static void free_contents(ClassLoaderData* loader_data, Array<AnnotationArray*>* p);
   void deallocate_contents(ClassLoaderData* loader_data);
   DEBUG_ONLY(bool on_stack() { return false; })  // for template
 
@@ -93,61 +70,24 @@ class Annotations: public MetaspaceObj {
   // Constructor to initialize to null
   Annotations() : _class_annotations(NULL),
                   _fields_annotations(NULL),
-                  _methods_annotations(NULL),
-                  _methods_parameter_annotations(NULL),
-                  _methods_default_annotations(NULL),
-                  _type_annotations(NULL) {}
+                  _class_type_annotations(NULL),
+                  _fields_type_annotations(NULL) {}
 
   AnnotationArray* class_annotations() const                       { return _class_annotations; }
   Array<AnnotationArray*>* fields_annotations() const              { return _fields_annotations; }
-  Array<AnnotationArray*>* methods_annotations() const             { return _methods_annotations; }
-  Array<AnnotationArray*>* methods_parameter_annotations() const   { return _methods_parameter_annotations; }
-  Array<AnnotationArray*>* methods_default_annotations() const     { return _methods_default_annotations; }
-  Annotations* type_annotations() const                            { return _type_annotations; }
+  AnnotationArray* class_type_annotations() const                  { return _class_type_annotations; }
+  Array<AnnotationArray*>* fields_type_annotations() const         { return _fields_type_annotations; }
 
   void set_class_annotations(AnnotationArray* md)                     { _class_annotations = md; }
   void set_fields_annotations(Array<AnnotationArray*>* md)            { _fields_annotations = md; }
-  void set_methods_annotations(Array<AnnotationArray*>* md)           { _methods_annotations = md; }
-  void set_methods_parameter_annotations(Array<AnnotationArray*>* md) { _methods_parameter_annotations = md; }
-  void set_methods_default_annotations(Array<AnnotationArray*>* md)   { _methods_default_annotations = md; }
-  void set_type_annotations(Annotations* annos)                       { _type_annotations = annos; }
-
-  // Redefine classes support
-  AnnotationArray* get_method_annotations_of(int idnum)
-                                                { return get_method_annotations_from(idnum, _methods_annotations); }
-
-  AnnotationArray* get_method_parameter_annotations_of(int idnum)
-                                                { return get_method_annotations_from(idnum, _methods_parameter_annotations); }
-  AnnotationArray* get_method_default_annotations_of(int idnum)
-                                                { return get_method_annotations_from(idnum, _methods_default_annotations); }
-
-
-  void set_method_annotations_of(instanceKlassHandle ik,
-                                 int idnum, AnnotationArray* anno, TRAPS) {
-    set_methods_annotations_of(ik, idnum, anno, &_methods_annotations, THREAD);
-  }
-
-  void set_method_parameter_annotations_of(instanceKlassHandle ik,
-                                 int idnum, AnnotationArray* anno, TRAPS) {
-    set_methods_annotations_of(ik, idnum, anno, &_methods_parameter_annotations, THREAD);
-  }
-
-  void set_method_default_annotations_of(instanceKlassHandle ik,
-                                 int idnum, AnnotationArray* anno, TRAPS) {
-    set_methods_annotations_of(ik, idnum, anno, &_methods_default_annotations, THREAD);
-  }
+  void set_class_type_annotations(AnnotationArray* cta)               { _class_type_annotations = cta; }
+  void set_fields_type_annotations(Array<AnnotationArray*>* fta)      { _fields_type_annotations = fta; }
 
   // Turn metadata annotations into a Java heap object (oop)
   static typeArrayOop make_java_array(AnnotationArray* annotations, TRAPS);
 
-  inline AnnotationArray* get_method_annotations_from(int idnum, Array<AnnotationArray*>* annos);
-  void set_annotations(Array<AnnotationArray*>* md, Array<AnnotationArray*>** md_p)  { *md_p = md; }
-
   bool is_klass() const { return false; }
  private:
-  void set_methods_annotations_of(instanceKlassHandle ik,
-                                  int idnum, AnnotationArray* anno,
-                                  Array<AnnotationArray*>** md_p, TRAPS);
   static julong count_bytes(Array<AnnotationArray*>* p);
  public:
   const char* internal_name() const { return "{constant pool}"; }
@@ -156,13 +96,4 @@ class Annotations: public MetaspaceObj {
 #endif
   void print_value_on(outputStream* st) const;
 };
-
-
-// For method with idnum get the method's Annotations
-inline AnnotationArray* Annotations::get_method_annotations_from(int idnum, Array<AnnotationArray*>* annos) {
-  if (annos == NULL || annos->length() <= idnum) {
-    return NULL;
-  }
-  return annos->at(idnum);
-}
 #endif // SHARE_VM_OOPS_ANNOTATIONS_HPP
