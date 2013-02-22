@@ -311,6 +311,11 @@ $(eval $(call SetupLauncher,jps,\
 $(eval $(call SetupLauncher,jrunscript,\
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.script.shell.Main"$(COMMA) }'))
 
+$(eval $(call SetupLauncher,jjs,\
+    -DJAVA_ARGS='{ "-J-XX:-TieredCompilation"$(COMMA) \
+                   "-J-Xms2G"$(COMMA) "-J-Xmx2G"$(COMMA) \
+                   "jdk.nashorn.tools.Shell"$(COMMA) }'))
+
 $(eval $(call SetupLauncher,jsadebugd,\
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.jvm.hotspot.jdi.SADebugServer"$(COMMA) }' \
     -DAPP_CLASSPATH='{ "/lib/tools.jar"$(COMMA) "/lib/sa-jdi.jar"$(COMMA) "/classes" }' \
