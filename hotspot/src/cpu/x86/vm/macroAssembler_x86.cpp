@@ -37,11 +37,12 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -3207,7 +3208,7 @@ void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src
 
 
 //////////////////////////////////////////////////////////////////////////////////
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
 void MacroAssembler::g1_write_barrier_pre(Register obj,
                                           Register pre_val,
@@ -3417,7 +3418,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   bind(done);
 }
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 //////////////////////////////////////////////////////////////////////////////////
 
 
@@ -5690,7 +5691,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   Address::ScaleFactor scale = Address::times_2;
   int stride = 8;
 
-  if (UseAVX >= 2) {
+  if (UseAVX >= 2 && UseSSE42Intrinsics) {
     Label COMPARE_WIDE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_WIDE_TAIL, COMPARE_SMALL_STR;
     Label COMPARE_WIDE_VECTORS_LOOP, COMPARE_16_CHARS, COMPARE_INDEX_CHAR;
     Label COMPARE_TAIL_LONG;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/debugInfoRec.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
@@ -33,6 +34,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/generation.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/constMethod.hpp"
@@ -41,7 +43,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/arguments.hpp"
@@ -60,24 +61,14 @@
 Method* Method::allocate(ClassLoaderData* loader_data,
                          int byte_code_size,
                          AccessFlags access_flags,
-                         int compressed_line_number_size,
-                         int localvariable_table_length,
-                         int exception_table_length,
-                         int checked_exceptions_length,
-                         int method_parameters_length,
-                         u2  generic_signature_index,
+                         InlineTableSizes* sizes,
                          ConstMethod::MethodType method_type,
                          TRAPS) {
   assert(!access_flags.is_native() || byte_code_size == 0,
          "native methods should not contain byte codes");
   ConstMethod* cm = ConstMethod::allocate(loader_data,
                                           byte_code_size,
-                                          compressed_line_number_size,
-                                          localvariable_table_length,
-                                          exception_table_length,
-                                          checked_exceptions_length,
-                                          method_parameters_length,
-                                          generic_signature_index,
+                                          sizes,
                                           method_type,
                                           CHECK_NULL);
 
@@ -316,14 +307,6 @@ Symbol* Method::klass_name() const {
 }
 
 
-void Method::set_interpreter_kind() {
-  int kind = Interpreter::method_kind(this);
-  assert(kind != Interpreter::invalid,
-         "interpreter entry must be valid");
-  set_interpreter_kind(kind);
-}
-
-
 // Attempt to return method oop to original state.  Clear any pointers
 // (to objects outside the shared spaces).  We won't be able to predict
 // where they should point in a new JVM.  Further initialize some
@@ -331,7 +314,6 @@ void Method::set_interpreter_kind() {
 
 void Method::remove_unshareable_info() {
   unlink_method();
-  set_interpreter_kind();
 }
 
 
@@ -699,7 +681,7 @@ void Method::set_signature_handler(address handler) {
 }
 
 
-void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report) {
+void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason) {
   if (PrintCompilation && report) {
     ttyLocker ttyl;
     tty->print("made not %scompilable on ", is_osr ? "OSR " : "");
@@ -713,14 +695,21 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report)
     }
     this->print_short_name(tty);
     int size = this->code_size();
-    if (size > 0)
+    if (size > 0) {
       tty->print(" (%d bytes)", size);
+    }
+    if (reason != NULL) {
+      tty->print("   %s", reason);
+    }
     tty->cr();
   }
   if ((TraceDeoptimization || LogCompilation) && (xtty != NULL)) {
     ttyLocker ttyl;
     xtty->begin_elem("make_not_%scompilable thread='" UINTX_FORMAT "'",
                      is_osr ? "osr_" : "", os::current_thread_id());
+    if (reason != NULL) {
+      xtty->print(" reason=\'%s\'", reason);
+    }
     xtty->method(this);
     xtty->stamp();
     xtty->end_elem();
@@ -742,8 +731,8 @@ bool Method::is_not_compilable(int comp_level) const {
 }
 
 // call this when compiler finds that this method is not compilable
-void Method::set_not_compilable(int comp_level, bool report) {
-  print_made_not_compilable(comp_level, /*is_osr*/ false, report);
+void Method::set_not_compilable(int comp_level, bool report, const char* reason) {
+  print_made_not_compilable(comp_level, /*is_osr*/ false, report, reason);
   if (comp_level == CompLevel_all) {
     set_not_c1_compilable();
     set_not_c2_compilable();
@@ -768,8 +757,8 @@ bool Method::is_not_osr_compilable(int comp_level) const {
   return false;
 }
 
-void Method::set_not_osr_compilable(int comp_level, bool report) {
-  print_made_not_compilable(comp_level, /*is_osr*/ true, report);
+void Method::set_not_osr_compilable(int comp_level, bool report, const char* reason) {
+  print_made_not_compilable(comp_level, /*is_osr*/ true, report, reason);
   if (comp_level == CompLevel_all) {
     set_not_c1_osr_compilable();
     set_not_c2_osr_compilable();
@@ -1027,7 +1016,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   cp->set_pool_holder(InstanceKlass::cast(holder()));
   cp->symbol_at_put(_imcp_invoke_name,       name);
   cp->symbol_at_put(_imcp_invoke_signature,  signature);
-  cp->set_preresolution();
+  cp->set_has_preresolution();
 
   // decide on access bits:  public or not?
   int flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
@@ -1037,9 +1026,9 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 
   methodHandle m;
   {
+    InlineTableSizes sizes;
     Method* m_oop = Method::allocate(loader_data, 0,
-                                     accessFlags_from(flags_bits),
-                                     0, 0, 0, 0, 0, 0,
+                                     accessFlags_from(flags_bits), &sizes,
                                      ConstMethod::NORMAL, CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
@@ -1088,22 +1077,35 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   assert(!m->is_native(), "cannot rewrite native methods");
   // Allocate new Method*
   AccessFlags flags = m->access_flags();
-  u2  generic_signature_index = m->generic_signature_index();
-  int checked_exceptions_len = m->checked_exceptions_length();
-  int localvariable_len = m->localvariable_table_length();
-  int exception_table_len = m->exception_table_length();
-  int method_parameters_len = m->method_parameters_length();
+
+  ConstMethod* cm = m->constMethod();
+  int checked_exceptions_len = cm->checked_exceptions_length();
+  int localvariable_len = cm->localvariable_table_length();
+  int exception_table_len = cm->exception_table_length();
+  int method_parameters_len = cm->method_parameters_length();
+  int method_annotations_len = cm->method_annotations_length();
+  int parameter_annotations_len = cm->parameter_annotations_length();
+  int type_annotations_len = cm->type_annotations_length();
+  int default_annotations_len = cm->default_annotations_length();
+
+  InlineTableSizes sizes(
+      localvariable_len,
+      new_compressed_linenumber_size,
+      exception_table_len,
+      checked_exceptions_len,
+      method_parameters_len,
+      cm->generic_signature_index(),
+      method_annotations_len,
+      parameter_annotations_len,
+      type_annotations_len,
+      default_annotations_len,
+      0);
 
   ClassLoaderData* loader_data = m->method_holder()->class_loader_data();
   Method* newm_oop = Method::allocate(loader_data,
                                       new_code_length,
                                       flags,
-                                      new_compressed_linenumber_size,
-                                      localvariable_len,
-                                      exception_table_len,
-                                      checked_exceptions_len,
-                                      method_parameters_len,
-                                      generic_signature_index,
+                                      &sizes,
                                       m->method_type(),
                                       CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
@@ -1303,29 +1305,6 @@ void Method::print_short_name(outputStream* st) {
     MethodHandles::print_as_basic_type_signature_on(st, signature(), true);
 }
 
-// This is only done during class loading, so it is OK to assume method_idnum matches the methods() array
-static void reorder_based_on_method_index(Array<Method*>* methods,
-                                          Array<AnnotationArray*>* annotations,
-                                          GrowableArray<AnnotationArray*>* temp_array) {
-  if (annotations == NULL) {
-    return;
-  }
-
-  int length = methods->length();
-  int i;
-  // Copy to temp array
-  temp_array->clear();
-  for (i = 0; i < length; i++) {
-    temp_array->append(annotations->at(i));
-  }
-
-  // Copy back using old method indices
-  for (i = 0; i < length; i++) {
-    Method* m = methods->at(i);
-    annotations->at_put(i, temp_array->at(m->method_idnum()));
-  }
-}
-
 // Comparer for sorting an object array containing
 // Method*s.
 static int method_comparator(Method* a, Method* b) {
@@ -1333,48 +1312,13 @@ static int method_comparator(Method* a, Method* b) {
 }
 
 // This is only done during class loading, so it is OK to assume method_idnum matches the methods() array
-void Method::sort_methods(Array<Method*>* methods,
-                                 Array<AnnotationArray*>* methods_annotations,
-                                 Array<AnnotationArray*>* methods_parameter_annotations,
-                                 Array<AnnotationArray*>* methods_default_annotations,
-                                 Array<AnnotationArray*>* methods_type_annotations,
-                                 bool idempotent) {
+void Method::sort_methods(Array<Method*>* methods, bool idempotent) {
   int length = methods->length();
   if (length > 1) {
-    bool do_annotations = false;
-    if (methods_annotations != NULL ||
-        methods_parameter_annotations != NULL ||
-        methods_default_annotations != NULL ||
-        methods_type_annotations != NULL) {
-      do_annotations = true;
-    }
-    if (do_annotations) {
-      // Remember current method ordering so we can reorder annotations
-      for (int i = 0; i < length; i++) {
-        Method* m = methods->at(i);
-        m->set_method_idnum(i);
-      }
-    }
     {
       No_Safepoint_Verifier nsv;
       QuickSort::sort<Method*>(methods->data(), length, method_comparator, idempotent);
     }
-
-    // Sort annotations if necessary
-    assert(methods_annotations == NULL           || methods_annotations->length() == methods->length(), "");
-    assert(methods_parameter_annotations == NULL || methods_parameter_annotations->length() == methods->length(), "");
-    assert(methods_default_annotations == NULL   || methods_default_annotations->length() == methods->length(), "");
-    assert(methods_type_annotations == NULL   || methods_type_annotations->length() == methods->length(), "");
-    if (do_annotations) {
-      ResourceMark rm;
-      // Allocate temporary storage
-      GrowableArray<AnnotationArray*>* temp_array = new GrowableArray<AnnotationArray*>(length);
-      reorder_based_on_method_index(methods, methods_annotations, temp_array);
-      reorder_based_on_method_index(methods, methods_parameter_annotations, temp_array);
-      reorder_based_on_method_index(methods, methods_default_annotations, temp_array);
-      reorder_based_on_method_index(methods, methods_type_annotations, temp_array);
-    }
-
     // Reset method ordering
     for (int i = 0; i < length; i++) {
       Method* m = methods->at(i);
@@ -1385,9 +1329,9 @@ void Method::sort_methods(Array<Method*>* methods,
 
 
 //-----------------------------------------------------------------------------------
-// Non-product code
+// Non-product code unless JVM/TI needs it
 
-#ifndef PRODUCT
+#if !defined(PRODUCT) || INCLUDE_JVMTI
 class SignatureTypePrinter : public SignatureTypeNames {
  private:
   outputStream* _st;
@@ -1422,8 +1366,13 @@ void Method::print_name(outputStream* st) {
   sig.print_parameters();
   st->print(")");
 }
+#endif // !PRODUCT || INCLUDE_JVMTI
 
 
+//-----------------------------------------------------------------------------------
+// Non-product code
+
+#ifndef PRODUCT
 void Method::print_codes_on(outputStream* st) const {
   print_codes_on(0, code_size(), st);
 }
@@ -1954,6 +1903,22 @@ void Method::print_value_on(outputStream* st) const {
   if (WizardMode && code() != NULL) st->print(" ((nmethod*)%p)", code());
 }
 
+#if INCLUDE_SERVICES
+// Size Statistics
+void Method::collect_statistics(KlassSizeStats *sz) const {
+  int mysize = sz->count(this);
+  sz->_method_bytes += mysize;
+  sz->_method_all_bytes += mysize;
+  sz->_rw_bytes += mysize;
+
+  if (constMethod()) {
+    constMethod()->collect_statistics(sz);
+  }
+  if (method_data()) {
+    method_data()->collect_statistics(sz);
+  }
+}
+#endif // INCLUDE_SERVICES
 
 // Verification
 

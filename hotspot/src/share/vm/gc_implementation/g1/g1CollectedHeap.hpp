@@ -37,6 +37,7 @@
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/sharedHeap.hpp"
+#include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
 // It uses the "Garbage First" heap organization and algorithm, which
@@ -877,10 +878,9 @@ protected:
   // forwarding pointers to themselves.  Reset them.
   void remove_self_forwarding_pointers();
 
-  // When one is non-null, so is the other.  Together, they each pair is
-  // an object with a preserved mark, and its mark value.
-  GrowableArray<oop>*     _objs_with_preserved_marks;
-  GrowableArray<markOop>* _preserved_marks_of_objs;
+  // Together, these store an object with a preserved mark, and its mark value.
+  Stack<oop, mtGC>     _objs_with_preserved_marks;
+  Stack<markOop, mtGC> _preserved_marks_of_objs;
 
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.

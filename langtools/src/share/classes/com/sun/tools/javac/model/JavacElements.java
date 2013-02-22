@@ -760,6 +760,16 @@ public class JavacElements implements Elements {
         return names.fromString(cs.toString());
     }
 
+    @Override
+    public boolean isFunctionalInterface(TypeElement element) {
+        if (element.getKind() != ElementKind.INTERFACE)
+            return false;
+        else {
+            TypeSymbol tsym = cast(TypeSymbol.class, element);
+            return types.isFunctionalInterface(tsym);
+        }
+    }
+
     /**
      * Returns the tree node and compilation unit corresponding to this
      * element, or null if they can't be found.

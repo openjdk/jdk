@@ -113,7 +113,7 @@ final class ZoneRegion extends ZoneId implements Serializable {
      * if the time-zone has available rules.
      * <p>
      * This method parses the ID and applies any appropriate normalization.
-     * It does not validate the ID against the known set of IDsfor which rules are available.
+     * It does not validate the ID against the known set of IDs for which rules are available.
      * <p>
      * This method is intended for advanced use cases.
      * For example, consider a system that always retrieves time-zone rules from a remote server.
@@ -135,18 +135,20 @@ final class ZoneRegion extends ZoneId implements Serializable {
      * @param checkAvailable  whether to check if the zone ID is available
      * @return the zone ID, not null
      * @throws DateTimeException if the ID format is invalid
-     * @throws DateTimeException if checking availability and the ID cannot be found
+     * @throws ZoneRulesException if checking availability and the ID cannot be found
      */
     static ZoneRegion ofId(String zoneId, boolean checkAvailable) {
         Objects.requireNonNull(zoneId, "zoneId");
-        if (zoneId.length() < 2 || zoneId.startsWith("UTC") ||
-                zoneId.startsWith("GMT") || (PATTERN.matcher(zoneId).matches() == false)) {
-            throw new DateTimeException("ZoneId format is not a valid region format");
+        if (zoneId.length() < 2 ||
+                zoneId.startsWith("UT") ||  // includes UTC
+                zoneId.startsWith("GMT") ||
+                (PATTERN.matcher(zoneId).matches() == false)) {
+            throw new DateTimeException("Invalid ID for region-based ZoneId, invalid format: " + zoneId);
         }
         ZoneRules rules = null;
         try {
             // always attempt load for better behavior after deserialization
-            rules = ZoneRulesProvider.getRules(zoneId);
+            rules = ZoneRulesProvider.getRules(zoneId, true);
         } catch (ZoneRulesException ex) {
             if (checkAvailable) {
                 throw ex;
@@ -176,8 +178,8 @@ final class ZoneRegion extends ZoneId implements Serializable {
     @Override
     public ZoneRules getRules() {
         // additional query for group provider when null allows for possibility
-        // that the provider was added after the ZoneId was created
-        return (rules != null ? rules : ZoneRulesProvider.getRules(id));
+        // that the provider was updated after the ZoneId was created
+        return (rules != null ? rules : ZoneRulesProvider.getRules(id, false));
     }
 
     //-----------------------------------------------------------------------

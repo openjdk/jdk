@@ -36,11 +36,12 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -2269,10 +2270,11 @@ void Assembler::vpackuswb(XMMRegister dst, XMMRegister nds, XMMRegister src, boo
 }
 
 void Assembler::vpermq(XMMRegister dst, XMMRegister src, int imm8, bool vector256) {
-    int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, true, vector256);
-    emit_int8(0x00);
-    emit_int8(0xC0 | encode);
-    emit_int8(imm8);
+  assert(VM_Version::supports_avx2(), "");
+  int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, true, vector256);
+  emit_int8(0x00);
+  emit_int8(0xC0 | encode);
+  emit_int8(imm8);
 }
 
 void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {

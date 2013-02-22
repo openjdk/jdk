@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,11 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/top.hpp"
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1_globals.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif
@@ -68,7 +69,10 @@ bool Flag::is_unlocker() const {
 }
 
 bool Flag::is_unlocked() const {
-  if (strcmp(kind, "{diagnostic}") == 0) {
+  if (strcmp(kind, "{diagnostic}") == 0 ||
+      strcmp(kind, "{C2 diagnostic}") == 0 ||
+      strcmp(kind, "{ARCH diagnostic}") == 0 ||
+      strcmp(kind, "{Shark diagnostic}") == 0) {
     if (strcmp(name, "EnableInvokeDynamic") == 0 && UnlockExperimentalVMOptions && !UnlockDiagnosticVMOptions) {
       // transitional logic to allow tests to run until they are changed
       static int warned;
@@ -77,7 +81,9 @@ bool Flag::is_unlocked() const {
     }
     return UnlockDiagnosticVMOptions;
   } else if (strcmp(kind, "{experimental}") == 0 ||
-             strcmp(kind, "{C2 experimental}") == 0) {
+             strcmp(kind, "{C2 experimental}") == 0 ||
+             strcmp(kind, "{ARCH experimental}") == 0 ||
+             strcmp(kind, "{Shark experimental}") == 0) {
     return UnlockExperimentalVMOptions;
   } else {
     return is_unlocked_ext();
@@ -256,9 +262,9 @@ void Flag::print_as_flag(outputStream* st) {
 static Flag flagTable[] = {
  RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_EXPERIMENTAL_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT, RUNTIME_LP64_PRODUCT_FLAG_STRUCT)
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT)
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
  G1_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_EXPERIMENTAL_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT)
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
  C1_FLAGS(C1_DEVELOP_FLAG_STRUCT, C1_PD_DEVELOP_FLAG_STRUCT, C1_PRODUCT_FLAG_STRUCT, C1_PD_PRODUCT_FLAG_STRUCT, C1_NOTPRODUCT_FLAG_STRUCT)
 #endif

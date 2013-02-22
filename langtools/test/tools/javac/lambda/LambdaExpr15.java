@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @ignore investigate as to whether code generation fails
  * @bug 8003280
  * @summary Add lambda tests
  *  check that nested inner class in statement lambdas don't get corrupted return statements

@@ -1164,7 +1164,7 @@ public class JavacParser implements Parser {
             } else return illegal();
             break;
         case MONKEYS_AT:
-            // Only annotated cast types are valid
+            // Only annotated cast types and method references are valid
             List<JCAnnotation> typeAnnos = typeAnnotationsOpt();
             if (typeAnnos.isEmpty()) {
                 // else there would be no '@'
@@ -1175,17 +1175,27 @@ public class JavacParser implements Parser {
 
             if ((mode & TYPE) == 0) {
                 // Type annotations on class literals no longer legal
-                if (!expr.hasTag(Tag.SELECT)) {
+                switch (expr.getTag()) {
+                case REFERENCE: {
+                    JCMemberReference mref = (JCMemberReference) expr;
+                    mref.expr = toP(F.at(pos).AnnotatedType(typeAnnos, mref.expr));
+                    t = mref;
+                    break;
+                }
+                case SELECT: {
+                    JCFieldAccess sel = (JCFieldAccess) expr;
+
+                    if (sel.name != names._class) {
+                        return illegal();
+                    } else {
+                        log.error(token.pos, "no.annotations.on.dot.class");
+                        return expr;
+                    }
+                }
+                default:
                     return illegal(typeAnnos.head.pos);
                 }
-                JCFieldAccess sel = (JCFieldAccess)expr;
 
-                if (sel.name != names._class) {
-                    return illegal();
-                } else {
-                    log.error(token.pos, "no.annotations.on.dot.class");
-                    return expr;
-                }
             } else {
                 // Type annotations targeting a cast
                 t = insertAnnotationsToMostInner(expr, typeAnnos, false);
@@ -1457,18 +1467,40 @@ public class JavacParser implements Parser {
     /**
      * If we see an identifier followed by a '&lt;' it could be an unbound
      * method reference or a binary expression. To disambiguate, look for a
-     * matching '&gt;' and see if the subsequent terminal is either '.' or '#'.
+     * matching '&gt;' and see if the subsequent terminal is either '.' or '::'.
      */
     @SuppressWarnings("fallthrough")
     boolean isUnboundMemberRef() {
         int pos = 0, depth = 0;
-        for (Token t = S.token(pos) ; ; t = S.token(++pos)) {
+        outer: for (Token t = S.token(pos) ; ; t = S.token(++pos)) {
             switch (t.kind) {
                 case IDENTIFIER: case UNDERSCORE: case QUES: case EXTENDS: case SUPER:
                 case DOT: case RBRACKET: case LBRACKET: case COMMA:
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR:
+                case MONKEYS_AT:
                     break;
+
+                case LPAREN:
+                    // skip annotation values
+                    int nesting = 0;
+                    for (; ; pos++) {
+                        TokenKind tk2 = S.token(pos).kind;
+                        switch (tk2) {
+                            case EOF:
+                                return false;
+                            case LPAREN:
+                                nesting++;
+                                break;
+                            case RPAREN:
+                                nesting--;
+                                if (nesting == 0) {
+                                    continue outer;
+                                }
+                                break;
+                        }
+                    }
+
                 case LT:
                     depth++; break;
                 case GTGTGT:
@@ -1494,7 +1526,7 @@ public class JavacParser implements Parser {
     /**
      * If we see an identifier followed by a '&lt;' it could be an unbound
      * method reference or a binary expression. To disambiguate, look for a
-     * matching '&gt;' and see if the subsequent terminal is either '.' or '#'.
+     * matching '&gt;' and see if the subsequent terminal is either '.' or '::'.
      */
     @SuppressWarnings("fallthrough")
     ParensResult analyzeParens() {
@@ -3022,7 +3054,7 @@ public class JavacParser implements Parser {
         boolean checkForImports = true;
         boolean firstTypeDecl = true;
         while (token.kind != EOF) {
-            if (token.pos <= endPosTable.errorEndPos) {
+            if (token.pos > 0 && token.pos <= endPosTable.errorEndPos) {
                 // error recovery
                 skip(checkForImports, false, false, false);
                 if (token.kind == EOF)

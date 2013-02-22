@@ -86,12 +86,13 @@ public class TypeAnnotation {
         position.type = type;
 
         switch (type) {
-        // type cast
-        case CAST:
         // instanceof
         case INSTANCEOF:
         // new expression
         case NEW:
+        // constructor/method reference receiver
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE:
             position.offset = cr.readUnsignedShort();
             break;
         // local variable
@@ -142,9 +143,12 @@ public class TypeAnnotation {
         case METHOD_FORMAL_PARAMETER:
             position.parameter_index = cr.readUnsignedByte();
             break;
+        // type cast
+        case CAST:
         // method/constructor/reference type argument
         case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
         case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT:
             position.offset = cr.readUnsignedShort();
             position.type_index = cr.readUnsignedByte();
@@ -152,10 +156,6 @@ public class TypeAnnotation {
         // We don't need to worry about these
         case METHOD_RETURN:
         case FIELD:
-            break;
-        // lambda formal parameter
-        case LAMBDA_FORMAL_PARAMETER:
-            position.parameter_index = cr.readUnsignedByte();
             break;
         case UNKNOWN:
             throw new AssertionError("TypeAnnotation: UNKNOWN target type should never occur!");
@@ -177,13 +177,14 @@ public class TypeAnnotation {
         int n = 0;
         n += 1; // TargetType tag is a byte
         switch (pos.type) {
-        // type cast
-        case CAST:
         // instanceof
         case INSTANCEOF:
         // new expression
         case NEW:
-            n += 2;
+        // constructor/method reference receiver
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE:
+            n += 2; // offset
             break;
         // local variable
         case LOCAL_VARIABLE:
@@ -192,7 +193,7 @@ public class TypeAnnotation {
             n += 2; // table_length;
             int table_length = pos.lvarOffset.length;
             n += 2 * table_length; // offset
-            n += 2 * table_length; // length;
+            n += 2 * table_length; // length
             n += 2 * table_length; // index
             break;
         // exception parameter
@@ -206,7 +207,7 @@ public class TypeAnnotation {
         // type parameter
         case CLASS_TYPE_PARAMETER:
         case METHOD_TYPE_PARAMETER:
-            n += 1; // parameter_index;
+            n += 1; // parameter_index
             break;
         // type parameter bound
         case CLASS_TYPE_PARAMETER_BOUND:
@@ -226,9 +227,12 @@ public class TypeAnnotation {
         case METHOD_FORMAL_PARAMETER:
             n += 1; // parameter_index
             break;
+        // type cast
+        case CAST:
         // method/constructor/reference type argument
         case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
         case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT:
             n += 2; // offset
             n += 1; // type index
@@ -236,10 +240,6 @@ public class TypeAnnotation {
         // We don't need to worry about these
         case METHOD_RETURN:
         case FIELD:
-            break;
-        // lambda formal parameter
-        case LAMBDA_FORMAL_PARAMETER:
-            n += 1; // parameter_index
             break;
         case UNKNOWN:
             throw new AssertionError("TypeAnnotation: UNKNOWN target type should never occur!");
@@ -377,12 +377,13 @@ public class TypeAnnotation {
             sb.append(type);
 
             switch (type) {
-            // type cast
-            case CAST:
             // instanceof
             case INSTANCEOF:
             // new expression
             case NEW:
+            // constructor/method reference receiver
+            case CONSTRUCTOR_REFERENCE:
+            case METHOD_REFERENCE:
                 sb.append(", offset = ");
                 sb.append(offset);
                 break;
@@ -444,9 +445,12 @@ public class TypeAnnotation {
                 sb.append(", param_index = ");
                 sb.append(parameter_index);
                 break;
+            // type cast
+            case CAST:
             // method/constructor/reference type argument
             case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
             case METHOD_INVOCATION_TYPE_ARGUMENT:
+            case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
             case METHOD_REFERENCE_TYPE_ARGUMENT:
                 sb.append(", offset = ");
                 sb.append(offset);
@@ -456,12 +460,6 @@ public class TypeAnnotation {
             // We don't need to worry about these
             case METHOD_RETURN:
             case FIELD:
-                break;
-            // lambda formal parameter
-            case LAMBDA_FORMAL_PARAMETER:
-                // TODO: also needs an offset?
-                sb.append(", param_index = ");
-                sb.append(parameter_index);
                 break;
             case UNKNOWN:
                 sb.append(", position UNKNOWN!");
@@ -564,34 +562,37 @@ public class TypeAnnotation {
         /** For annotations on an exception parameter. */
         EXCEPTION_PARAMETER(0x42, true),
 
-        /** For annotations on a typecast. */
-        CAST(0x43, true),
-
         /** For annotations on a type test. */
-        INSTANCEOF(0x44, true),
+        INSTANCEOF(0x43, true),
 
         /** For annotations on an object creation expression. */
-        NEW(0x45, true),
+        NEW(0x44, true),
+
+        /** For annotations on a constructor reference receiver. */
+        CONSTRUCTOR_REFERENCE(0x45, true),
+
+        /** For annotations on a method reference receiver. */
+        METHOD_REFERENCE(0x46, true),
+
+        /** For annotations on a typecast. */
+        CAST(0x47, true),
 
         /** For annotations on a type argument of an object creation expression. */
-        CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(0x46, true),
+        CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(0x48, true),
 
         /** For annotations on a type argument of a method call. */
-        METHOD_INVOCATION_TYPE_ARGUMENT(0x47, true),
+        METHOD_INVOCATION_TYPE_ARGUMENT(0x49, true),
 
-        /** For annotations on a lambda parameter type. */
-        LAMBDA_FORMAL_PARAMETER(0x48, true),
-
-        /** For annotations on a method reference. */
-        METHOD_REFERENCE(0x49, true),
+        /** For annotations on a type argument of a constructor reference. */
+        CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT(0x4A, true),
 
         /** For annotations on a type argument of a method reference. */
-        METHOD_REFERENCE_TYPE_ARGUMENT(0x50, true),
+        METHOD_REFERENCE_TYPE_ARGUMENT(0x4B, true),
 
         /** For annotations with an unknown target. */
         UNKNOWN(0xFF);
 
-        private static final int MAXIMUM_TARGET_TYPE_VALUE = 0x50;
+        private static final int MAXIMUM_TARGET_TYPE_VALUE = 0x4B;
 
         private final int targetTypeValue;
         private final boolean isLocal;

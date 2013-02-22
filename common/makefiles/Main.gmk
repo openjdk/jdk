@@ -75,7 +75,14 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
   all: overlay-images
 endif
 
-start-make:
+# Setup a rule for SPEC file that fails if executed. This check makes sure the configuration
+# is up to date after changes to configure
+$(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
+	@$(ECHO) ERROR: $(SPEC) is not up to date
+	@$(ECHO) Please rerun configure!
+	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
+
+start-make: $(SPEC)
 	@$(call AtMakeStart)
 
 langtools: langtools-only
@@ -128,7 +135,9 @@ demos-only: start-make
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk demos)
 	@$(call TargetExit)
 
-images: source-tips demos nashorn images-only
+# Note: This double-colon rule is intentional, to support
+# custom make file integration.
+images:: source-tips demos images-only
 images-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk images)
@@ -139,6 +148,17 @@ overlay-images-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk overlay-images)
 	@$(call TargetExit)
+
+profiles: profiles-oscheck source-tips jdk hotspot profiles-only
+profiles-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk profiles)
+	@$(call TargetExit)
+
+profiles-oscheck:
+ifneq ($(OPENJDK_TARGET_OS), linux)
+	@echo "Error: The Java SE 8 Compact Profiles are only implemented for Linux at this time" && exit 1
+endif
 
 install: images install-only
 install-only: start-make
@@ -166,7 +186,7 @@ bootcycle-images:
 
 test: start-make
 	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) MAKEFLAGS= -j1 PRODUCT_HOME=$(OUTPUT_ROOT)/jdk JPRT_JAVA_HOME=$(OUTPUT_ROOT)/jdk ALT_OUTPUTDIR=$(OUTPUT_ROOT) $(TEST)) || true
+	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 -k MAKEFLAGS= PRODUCT_HOME=$(OUTPUT_ROOT)/jdk JPRT_JAVA_HOME=$(OUTPUT_ROOT)/jdk ALT_OUTPUTDIR=$(OUTPUT_ROOT) $(TEST)) || true
 	@$(call TargetExit)
 
 # Stores the tips for each repository. This file is be used when constructing the jdk image and can be
@@ -225,5 +245,6 @@ clean-docs:
 .PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only images-only overlay-images-only install-only
 .PHONY: all test clean dist-clean bootcycle-images start-make
 .PHONY: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-nashorn clean-images clean-overlay-images clean-bootcycle-build
+.PHONY: profiles profiles-only profiles-oscheck
 
 FRC: # Force target

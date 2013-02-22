@@ -285,6 +285,9 @@ X_CFLAGS:=@X_CFLAGS@
 X_LIBS:=@X_LIBS@
 OPENWIN_HOME:=@OPENWIN_HOME@
 
+# The lowest required version of macosx to enforce compatiblity for
+MACOSX_REQUIRED_VERSION=@MACOSX_REQUIRED_VERSION@
+
 # There are two types: CC or CL
 # CC is gcc and others behaving reasonably similar.
 # CL is cl.exe only.
@@ -436,6 +439,12 @@ RMIC=@FIXPATH@ $(BOOT_JDK)/bin/rmic
 NATIVE2ASCII=@FIXPATH@ $(BOOT_JDK)/bin/native2ascii
 
 JARSIGNER=@FIXPATH@ $(BOOT_JDK)/bin/jarsigner
+
+# You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
+BOOTSTRAP_JAVAC_JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
+BOOTSTRAP_JAVAC_ARGS:="-Xbootclasspath/p:$(BOOTSTRAP_JAVAC_JAR)" -cp $(BOOTSTRAP_JAVAC_JAR)
+NEW_JAVAC   = $(BOOTSTRAP_JAVAC_ARGS) com.sun.tools.javac.Main
+NEW_JAVADOC = $(BOOTSTRAP_JAVAC_ARGS) com.sun.tools.javadoc.Main
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple

@@ -51,10 +51,11 @@
 #include "services/memoryService.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/workgroup.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 GenCollectedHeap* GenCollectedHeap::_gch;
 NOT_PRODUCT(size_t GenCollectedHeap::_skip_header_HeapWords = 0;)
@@ -141,14 +142,14 @@ jint GenCollectedHeap::initialize() {
   }
   clear_incremental_collection_failed();
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // If we are running CMS, create the collector responsible
   // for collecting the CMS generations.
   if (collector_policy()->is_concurrent_mark_sweep_policy()) {
     bool success = create_cms_collector();
     if (!success) return JNI_ENOMEM;
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   return JNI_OK;
 }
@@ -686,12 +687,12 @@ size_t GenCollectedHeap::unsafe_max_alloc() {
 
 void GenCollectedHeap::collect(GCCause::Cause cause) {
   if (should_do_concurrent_full_gc(cause)) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     // mostly concurrent full collection
     collect_mostly_concurrent(cause);
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
     ShouldNotReachHere();
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
   } else {
 #ifdef ASSERT
     if (cause == GCCause::_scavenge_alot) {
@@ -736,7 +737,7 @@ void GenCollectedHeap::collect_locked(GCCause::Cause cause, int max_level) {
   }
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 bool GenCollectedHeap::create_cms_collector() {
 
   assert(((_gens[1]->kind() == Generation::ConcurrentMarkSweep) ||
@@ -772,7 +773,7 @@ void GenCollectedHeap::collect_mostly_concurrent(GCCause::Cause cause) {
     VMThread::execute(&op);
   }
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
    do_full_collection(clear_all_soft_refs, _n_gens - 1);
@@ -1116,22 +1117,22 @@ void GenCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   if (workers() != NULL) {
     workers()->threads_do(tc);
   }
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   if (UseConcMarkSweepGC) {
     ConcurrentMarkSweepThread::threads_do(tc);
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 }
 
 void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   if (UseParNewGC) {
     workers()->print_worker_threads_on(st);
   }
   if (UseConcMarkSweepGC) {
     ConcurrentMarkSweepThread::print_all_on(st);
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 }
 
 void GenCollectedHeap::print_tracing_info() const {
