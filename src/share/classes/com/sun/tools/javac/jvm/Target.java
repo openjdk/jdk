@@ -31,7 +31,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.util.*;
 
-import static com.sun.tools.javac.main.Option.*;
+import static com.sun.tools.javac.main.Option.TARGET;
 
 /** The classfile version target.
  *
