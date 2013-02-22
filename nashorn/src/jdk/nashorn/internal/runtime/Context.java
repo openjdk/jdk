@@ -37,6 +37,7 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.CodeSigner;
@@ -639,7 +640,13 @@ public final class Context {
                                 }
                             });
                 } else {
-                    final URL url = file.toURI().toURL();
+                    URL url = null;
+                    try {
+                        //check for malformed url. if malformed, it may still be a valid file
+                        url = new URL(srcStr);
+                    } catch (final MalformedURLException e) {
+                        url = file.toURI().toURL();
+                    }
                     source = new Source(url.toString(), url);
                 }
             } else if (file.isFile()) {
