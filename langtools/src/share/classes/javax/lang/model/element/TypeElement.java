@@ -111,7 +111,6 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      */
     Name getQualifiedName();
 
-
     /**
      * Returns the simple name of this type element.
      *
@@ -151,7 +150,6 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * if there are none
      */
     List<? extends TypeParameterElement> getTypeParameters();
-
 
     /**
      * Returns the package of a top-level type and returns the

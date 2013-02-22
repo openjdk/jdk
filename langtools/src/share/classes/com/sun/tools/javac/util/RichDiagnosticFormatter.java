@@ -24,6 +24,7 @@
  */
 package com.sun.tools.javac.util;
 
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -96,7 +97,7 @@ public class RichDiagnosticFormatter extends
         this.diags = JCDiagnostic.Factory.instance(context);
         this.types = Types.instance(context);
         this.messages = JavacMessages.instance(context);
-        whereClauses = new LinkedHashMap<WhereClauseKind, Map<Type, JCDiagnostic>>();
+        whereClauses = new EnumMap<WhereClauseKind, Map<Type, JCDiagnostic>>(WhereClauseKind.class);
         configuration = new RichConfiguration(Options.instance(context), formatter);
         for (WhereClauseKind kind : WhereClauseKind.values())
             whereClauses.put(kind, new LinkedHashMap<Type, JCDiagnostic>());

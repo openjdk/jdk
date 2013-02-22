@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.lang.annotation.*;
+
 /*
  * @test
  * @bug 6843077 8006775
@@ -29,7 +31,8 @@
  * @compile/fail VoidGenericMethod.java
  */
 class VoidGenericMethod {
-  public <T> @A void method() { }
+  public @A <T> void method() { }
 }
 
+@Target(ElementType.TYPE_USE)
 @interface A { }

@@ -23,24 +23,29 @@
 # questions.
 #
 
+include ProfileNames.gmk
+
 ##########################################################################################
 # Install the launcher name, release version string, full version
 # string and the runtime name into the Version.java file.
 # To be printed by java -version
 
-$(JDK_OUTPUTDIR)/gensrc/sun/misc/Version.java: \
-	$(JDK_TOPDIR)/src/share/classes/sun/misc/Version.java.template
+$(JDK_OUTPUTDIR)/gensrc/sun/misc/Version.java \
+$(PROFILE_VERSION_JAVA_TARGETS): \
+		$(JDK_TOPDIR)/src/share/classes/sun/misc/Version.java.template
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
-	$(ECHO) $(LOG_INFO) Generating sun/misc/Version.java
+	$(ECHO) Generating sun/misc/Version.java $(call profile_version_name, $@)
 	$(SED) -e 's/@@launcher_name@@/$(LAUNCHER_NAME)/g' \
 	       -e 's/@@java_version@@/$(RELEASE)/g' \
 	       -e 's/@@java_runtime_version@@/$(FULL_VERSION)/g' \
 	       -e 's/@@java_runtime_name@@/$(RUNTIME_NAME)/g' \
+	       -e 's/@@java_profile_name@@/$(call profile_version_name, $@)/g' \
             $< > $@.tmp
 	$(MV) $@.tmp $@
 
-GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/misc/Version.java
+GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/misc/Version.java \
+    $(PROFILE_VERSION_JAVA_TARGETS)
 
 ##########################################################################################
 # Version file for jconsole

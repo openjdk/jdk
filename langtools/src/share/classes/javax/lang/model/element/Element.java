@@ -149,12 +149,15 @@ public interface Element {
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     /**
-     * Returns an array of all of this element's annotation for the
-     * specified type if such annotations are present, else an empty
-     * array.  The annotation may be either inherited or directly
-     * present on this element. This method will look through a container
-     * annotation (if present) if the supplied annotation type is
-     * repeatable.
+     * Returns annotations that are <em>present</em> on this element.
+     *
+     * If there are no annotations <em>present</em> on this element, the return
+     * value is an array of length 0.
+     *
+     * The difference between this method and {@link #getAnnotation(Class)}
+     * is that this method detects if its argument is a <em>repeatable
+     * annotation type</em> (JLS 9.6), and if so, attempts to find one or more
+     * annotations of that type by "looking through" a container annotation.
      *
      * <p> The annotations returned by this method could contain an element
      * whose value is of type {@code Class}.
@@ -189,14 +192,14 @@ public interface Element {
      *
      * @see #getAnnotationMirrors()
      * @see #getAnnotation(java.lang.Class)
-     * @see java.lang.reflect.AnnotatedElement#getAnnotations
+     * @see java.lang.reflect.AnnotatedElement#getAnnotationsByType
      * @see EnumConstantNotPresentException
      * @see AnnotationTypeMismatchException
      * @see IncompleteAnnotationException
      * @see MirroredTypeException
      * @see MirroredTypesException
      */
-    <A extends Annotation> A[] getAnnotations(Class<A> annotationType);
+    <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);
 
     /**
      * Returns the modifiers of this element, excluding annotations.
