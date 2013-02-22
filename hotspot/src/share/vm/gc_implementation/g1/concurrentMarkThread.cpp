@@ -117,7 +117,7 @@ void ConcurrentMarkThread::run() {
         if (G1Log::fine()) {
           gclog_or_tty->date_stamp(PrintGCDateStamps);
           gclog_or_tty->stamp(PrintGCTimeStamps);
-          gclog_or_tty->print_cr("[GC concurrent-root-region-scan-end, %1.7lf]",
+          gclog_or_tty->print_cr("[GC concurrent-root-region-scan-end, %1.7lf secs]",
                                  scan_end - scan_start);
         }
       }
@@ -150,7 +150,7 @@ void ConcurrentMarkThread::run() {
           if (G1Log::fine()) {
             gclog_or_tty->date_stamp(PrintGCDateStamps);
             gclog_or_tty->stamp(PrintGCTimeStamps);
-            gclog_or_tty->print_cr("[GC concurrent-mark-end, %1.7lf sec]",
+            gclog_or_tty->print_cr("[GC concurrent-mark-end, %1.7lf secs]",
                                       mark_end_sec - mark_start_sec);
           }
 
@@ -234,7 +234,7 @@ void ConcurrentMarkThread::run() {
         if (G1Log::fine()) {
           gclog_or_tty->date_stamp(PrintGCDateStamps);
           gclog_or_tty->stamp(PrintGCTimeStamps);
-          gclog_or_tty->print_cr("[GC concurrent-cleanup-end, %1.7lf]",
+          gclog_or_tty->print_cr("[GC concurrent-cleanup-end, %1.7lf secs]",
                                  cleanup_end_sec - cleanup_start_sec);
         }
       }
