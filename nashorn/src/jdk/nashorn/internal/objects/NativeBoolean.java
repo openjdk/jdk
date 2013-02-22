@@ -145,8 +145,7 @@ public final class NativeBoolean extends ScriptObject {
         } else if (self != null && self == Global.instance().getBooleanPrototype()) {
             return false;
         } else {
-            typeError("not.a.boolean", ScriptRuntime.safeToString(self));
-            return false;
+            throw typeError("not.a.boolean", ScriptRuntime.safeToString(self));
         }
     }
 

@@ -109,7 +109,7 @@ public class JavaArgumentConverters {
                 return Character.valueOf((char) ival);
             }
 
-            typeError("cant.convert.number.to.char");
+            throw typeError("cant.convert.number.to.char");
         }
 
         final String s = toString(o);
@@ -118,7 +118,7 @@ public class JavaArgumentConverters {
         }
 
         if (s.length() != 1) {
-            typeError("cant.convert.string.to.char");
+            throw typeError("cant.convert.string.to.char");
         }
 
         return s.charAt(0);

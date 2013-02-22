@@ -135,7 +135,7 @@ public abstract class ScriptFunction extends ScriptObject {
     public boolean isInstance(final ScriptObject instance) {
         final Object basePrototype = getTargetFunction().getPrototype();
         if (!(basePrototype instanceof ScriptObject)) {
-            typeError("prototype.not.an.object", ScriptRuntime.safeToString(getTargetFunction()), ScriptRuntime.safeToString(basePrototype));
+            throw typeError("prototype.not.an.object", ScriptRuntime.safeToString(getTargetFunction()), ScriptRuntime.safeToString(basePrototype));
         }
 
         for (ScriptObject proto = instance.getProto(); proto != null; proto = proto.getProto()) {

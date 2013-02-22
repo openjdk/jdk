@@ -109,8 +109,7 @@ public final class ScriptingFunctions {
         }
 
         if (f == null || !f.isFile()) {
-            typeError("not.a.file", ScriptRuntime.safeToString(file));
-            return UNDEFINED;
+            throw typeError("not.a.file", ScriptRuntime.safeToString(file));
         }
 
         return new String(Source.readFully(f));

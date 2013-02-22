@@ -139,7 +139,7 @@ final class SetMethodCreator {
         // In strict mode, assignment can not create a new variable.
         // See also ECMA Annex C item 4. ReferenceError is thrown.
         if (NashornCallSiteDescriptor.isScope(desc) && NashornCallSiteDescriptor.isStrict(desc)) {
-            referenceError("not.defined", getName());
+            throw referenceError("not.defined", getName());
         }
     }
 

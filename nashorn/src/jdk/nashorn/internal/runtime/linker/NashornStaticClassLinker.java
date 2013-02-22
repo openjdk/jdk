@@ -93,7 +93,7 @@ class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
 
     private static GuardedInvocation checkNullConstructor(final GuardedInvocation ctorInvocation, final Class<?> receiverClass) {
         if(ctorInvocation == null) {
-            ECMAErrors.typeError("no.constructor.matches.args", receiverClass.getName());
+            throw ECMAErrors.typeError("no.constructor.matches.args", receiverClass.getName());
         }
         return ctorInvocation;
     }

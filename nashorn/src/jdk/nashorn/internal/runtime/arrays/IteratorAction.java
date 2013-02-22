@@ -97,8 +97,7 @@ public abstract class IteratorAction<T> {
      */
     public final T apply() {
         if (!(callbackfn instanceof ScriptFunction)) {
-            typeError("not.a.function", ScriptRuntime.safeToString(callbackfn));
-            return result;
+            throw typeError("not.a.function", ScriptRuntime.safeToString(callbackfn));
         }
         final ScriptFunction func = ((ScriptFunction)callbackfn);
         // for non-strict callback, need to translate undefined thisArg to be global object

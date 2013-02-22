@@ -60,8 +60,7 @@ public final class NativeFunction {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toString(final Object self) {
         if (!(self instanceof ScriptFunction)) {
-            typeError("not.a.function", ScriptRuntime.safeToString(self));
-            return UNDEFINED;
+            throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
         return ((ScriptFunction)self).toSource();
     }
@@ -77,8 +76,7 @@ public final class NativeFunction {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object apply(final Object self, final Object thiz, final Object array) {
         if (!(self instanceof ScriptFunction)) {
-            typeError("not.a.function", ScriptRuntime.safeToString(self));
-            return UNDEFINED;
+            throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
 
         Object[] args = null;
@@ -91,12 +89,12 @@ public final class NativeFunction {
             final Object       len  = sobj.getLength();
 
             if (len == UNDEFINED || len == null) {
-                typeError("function.apply.expects.array");
+                throw typeError("function.apply.expects.array");
             }
 
             final int n = (int)JSType.toUint32(len);
             if (n != JSType.toNumber(len)) {
-                typeError("function.apply.expects.array");
+                throw typeError("function.apply.expects.array");
             }
 
             args = new Object[(int)JSType.toUint32(len)];
@@ -111,7 +109,7 @@ public final class NativeFunction {
         } else if (array == null || array == UNDEFINED) {
             args = ScriptRuntime.EMPTY_ARRAY;
         } else {
-            typeError("function.apply.expects.array");
+            throw typeError("function.apply.expects.array");
         }
 
         return ScriptRuntime.apply((ScriptFunction)self, thiz, args);
@@ -127,8 +125,7 @@ public final class NativeFunction {
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static Object call(final Object self, final Object... args) {
         if (!(self instanceof ScriptFunction)) {
-            typeError("not.a.function", ScriptRuntime.safeToString(self));
-            return UNDEFINED;
+            throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
 
         Object thiz = (args.length == 0) ? UNDEFINED : args[0];
@@ -154,8 +151,7 @@ public final class NativeFunction {
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static Object bind(final Object self, final Object... args) {
         if (!(self instanceof ScriptFunction)) {
-            typeError("not.a.function", ScriptRuntime.safeToString(self));
-            return UNDEFINED;
+            throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
 
         final Object thiz = (args.length == 0) ? UNDEFINED : args[0];
@@ -180,8 +176,7 @@ public final class NativeFunction {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toSource(final Object self) {
         if (!(self instanceof ScriptFunction)) {
-            typeError("not.a.function", ScriptRuntime.safeToString(self));
-            return UNDEFINED;
+            throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         }
         return ((ScriptFunction)self).toSource();
     }

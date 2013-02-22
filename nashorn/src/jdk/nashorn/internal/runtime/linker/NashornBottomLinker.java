@@ -80,22 +80,17 @@ class NashornBottomLinker implements GuardingDynamicLinker {
         switch (operator) {
         case "new":
             if(BeansLinker.isDynamicMethod(self)) {
-                typeError("method.not.constructor", ScriptRuntime.safeToString(self));
-            } else {
-                typeError("not.a.function", ScriptRuntime.safeToString(self));
+                throw typeError("method.not.constructor", ScriptRuntime.safeToString(self));
             }
-            break;
+            throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         case "call":
             if(BeansLinker.isDynamicMethod(self)) {
-                typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
-            } else {
-                typeError("not.a.function", ScriptRuntime.safeToString(self));
+                throw typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
             }
-            break;
+            throw typeError("not.a.function", ScriptRuntime.safeToString(self));
         case "callMethod":
         case "getMethod":
-            typeError("no.such.function", getArgument(linkRequest), ScriptRuntime.safeToString(self));
-            break;
+            throw typeError("no.such.function", getArgument(linkRequest), ScriptRuntime.safeToString(self));
         case "getProp":
         case "getElem":
             if (desc.getOperand() != null) {
@@ -130,20 +125,16 @@ class NashornBottomLinker implements GuardingDynamicLinker {
         switch (operator) {
         case "new":
         case "call":
-            typeError("not.a.function", "null");
-            break;
+            throw typeError("not.a.function", "null");
         case "callMethod":
         case "getMethod":
-            typeError("no.such.function", getArgument(linkRequest), "null");
-            break;
+            throw typeError("no.such.function", getArgument(linkRequest), "null");
         case "getProp":
         case "getElem":
-            typeError("cant.get.property", getArgument(linkRequest), "null");
-            break;
+            throw typeError("cant.get.property", getArgument(linkRequest), "null");
         case "setProp":
         case "setElem":
-            typeError("cant.set.property", getArgument(linkRequest), "null");
-            break;
+            throw typeError("cant.set.property", getArgument(linkRequest), "null");
         default:
             break;
         }

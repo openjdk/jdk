@@ -93,8 +93,7 @@ public final class URIUtils {
             try {
                 sb.append(toHexEscape(V));
             } catch (final Exception e) {
-                uriError( e, "bad.uri", string, Integer.toString(k));
-                return null;
+                throw uriError(e, "bad.uri", string, Integer.toString(k));
             }
         }
 
@@ -179,8 +178,7 @@ public final class URIUtils {
                 try {
                     V = ucs4Char(bbuf);
                 } catch (final Exception e) {
-                    uriError(e, "bad.uri", string, Integer.toString(k));
-                    return null;
+                    throw uriError(e, "bad.uri", string, Integer.toString(k));
                 }
                 if (V < 0x10000) {
                     C = (char) V;
@@ -269,8 +267,7 @@ public final class URIUtils {
     }
 
     private static String error(final String string, final int index) {
-        uriError("bad.uri", string, Integer.toString(index));
-        return null;
+        throw uriError("bad.uri", string, Integer.toString(index));
     }
 
     // 'uriEscaped' except for alphanumeric chars

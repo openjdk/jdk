@@ -157,7 +157,7 @@ public final class AccessorPropertyDescriptor extends ScriptObject implements Pr
             if (getter == UNDEFINED || getter instanceof ScriptFunction) {
                 this.get = getter;
             } else {
-                typeError("not.a.function", ScriptRuntime.safeToString(getter));
+                throw typeError("not.a.function", ScriptRuntime.safeToString(getter));
             }
         } else {
             delete(GET, strict);
@@ -168,7 +168,7 @@ public final class AccessorPropertyDescriptor extends ScriptObject implements Pr
             if (setter == UNDEFINED || setter instanceof ScriptFunction) {
                 this.set = setter;
             } else {
-                typeError("not.a.function", ScriptRuntime.safeToString(setter));
+                throw typeError("not.a.function", ScriptRuntime.safeToString(setter));
             }
         } else {
             delete(SET, strict);

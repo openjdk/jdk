@@ -34,11 +34,11 @@ import jdk.nashorn.internal.parser.Token;
 @SuppressWarnings("serial")
 public final class ParserException extends NashornException {
     // Source from which this ParserException originated
-    private Source source;
+    private final Source source;
     // token responsible for this exception
-    private long token;
+    private final long token;
     // if this is traslated as ECMA error, which type should be used?
-    private JSErrorType errorType;
+    private final JSErrorType errorType;
 
     /**
      * Constructor
@@ -46,29 +46,25 @@ public final class ParserException extends NashornException {
      * @param msg exception message for this parser error.
      */
     public ParserException(final String msg) {
-        this(msg, null, -1, -1, -1);
+        this(JSErrorType.SYNTAX_ERROR, msg, null, -1, -1, -1);
     }
 
     /**
      * Constructor
      *
-     * @param msg      exception message
-     * @param source   source from which this exception originates
-     * @param line     line number of exception
-     * @param column   column number of exception
-     * @param token    token from which this exception originates
+     * @param errorType error type
+     * @param msg       exception message
+     * @param source    source from which this exception originates
+     * @param line      line number of exception
+     * @param column    column number of exception
+     * @param token     token from which this exception originates
      *
      */
-    public ParserException(final String msg, final Source source, final int line, final int column, final long token) {
-        super(msg);
-        setSource(source);
-        if (source != null) {
-            setFileName(source.getName());
-        }
-        setLineNumber(line);
-        setColumnNumber(column);
-        setToken(token);
-        setErrorType(JSErrorType.SYNTAX_ERROR);
+    public ParserException(final JSErrorType errorType, final String msg, final Source source, final int line, final int column, final long token) {
+        super(msg, source != null ? source.getName() : null, line, column);
+        this.source = source;
+        this.token = token;
+        this.errorType = errorType;
     }
 
     /**
@@ -80,27 +76,11 @@ public final class ParserException extends NashornException {
     }
 
     /**
-     * Set the {@code Source} of this {@code ParserException}
-     * @param source script source
-     */
-    public void setSource(Source source) {
-        this.source = source;
-    }
-
-    /**
      * Get the token responsible for this {@code ParserException}
      * @return token
      */
     public long getToken() {
         return token;
-    }
-
-    /**
-     * Set the errand token of this {@code ParserException}
-     * @param token token responsible for this ParserException
-     */
-    public void setToken(final long token) {
-        this.token = token;
     }
 
     /**
@@ -120,18 +100,10 @@ public final class ParserException extends NashornException {
     }
 
     /**
-     * Set the {@code JSErrorType} of this {@code ParserException}
-     * @param errorType error type
-     */
-    public void setErrorType(final JSErrorType errorType) {
-        this.errorType = errorType;
-    }
-
-    /**
      * Throw this {@code ParserException} as one of the 7 native JavaScript errors
      */
     public void throwAsEcmaException() {
-        ECMAErrors.throwAsEcmaException(this);
+        throw ECMAErrors.asEcmaException(this);
     }
 
     /**
@@ -139,7 +111,7 @@ public final class ParserException extends NashornException {
      * @param global global scope object
      */
     public void throwAsEcmaException(final ScriptObject global) {
-        ECMAErrors.throwAsEcmaException(global, this);
+        throw ECMAErrors.asEcmaException(global, this);
     }
 }
 

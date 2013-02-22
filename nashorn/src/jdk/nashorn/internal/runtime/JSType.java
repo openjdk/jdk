@@ -248,7 +248,7 @@ public enum JSType {
         final Object       result = sobj.getDefaultValue(hint);
 
         if (!isPrimitive(result)) {
-            typeError("bad.default.value", result.toString());
+            throw typeError("bad.default.value", result.toString());
         }
 
         return result;
@@ -823,7 +823,7 @@ public enum JSType {
      */
     public static Object toScriptObject(final ScriptObject global, final Object obj) {
         if (nullOrUndefined(obj)) {
-            typeError(global, "not.an.object", ScriptRuntime.safeToString(obj));
+            throw typeError(global, "not.an.object", ScriptRuntime.safeToString(obj));
         }
 
         if (obj instanceof ScriptObject) {

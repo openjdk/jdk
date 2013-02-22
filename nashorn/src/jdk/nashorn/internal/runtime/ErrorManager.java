@@ -79,7 +79,7 @@ public class ErrorManager {
         }
 
         if (limit != 0 && count > limit) {
-            rangeError("too.many.errors", Integer.toString(limit));
+            throw rangeError("too.many.errors", Integer.toString(limit));
         }
     }
 

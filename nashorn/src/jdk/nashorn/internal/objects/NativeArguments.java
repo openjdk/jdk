@@ -485,7 +485,7 @@ public final class NativeArguments extends ScriptObject {
             final boolean allowed = super.defineOwnProperty(key, propertyDesc, false);
             if (!allowed) {
                 if (reject) {
-                    typeError("cant.redefine.property",  key, ScriptRuntime.safeToString(this));
+                    throw typeError("cant.redefine.property",  key, ScriptRuntime.safeToString(this));
                 }
                 return false;
             }

@@ -290,7 +290,7 @@ public final class ScriptFunctionData {
 
     MethodHandle getBestConstructor(MethodType descType) {
         if (!isConstructor()) {
-            typeError("not.a.constructor", toSource());
+            throw typeError("not.a.constructor", toSource());
         }
         return SpecializedMethodChooser.candidateWithLowestWeight(descType, getConstructor(), getConstructSpecializations());
     }
