@@ -134,6 +134,11 @@ public class ClassReader implements Completer {
      **/
     public boolean preferSource;
 
+    /**
+     * The currently selected profile.
+     */
+    public final Profile profile;
+
     /** The log to use for verbose output
      */
     final Log log;
@@ -284,15 +289,19 @@ public class ClassReader implements Completer {
         annotate = Annotate.instance(context);
         verbose        = options.isSet(VERBOSE);
         checkClassFile = options.isSet("-checkclassfile");
+
         Source source = Source.instance(context);
         allowGenerics    = source.allowGenerics();
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowDefaultMethods = source.allowDefaultMethods();
+
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
+
+        profile = Profile.instance(context);
 
         completionFailureName =
             options.isSet("failcomplete")
@@ -1372,7 +1381,18 @@ public class ClassReader implements Completer {
                 CompoundAnnotationProxy proxy = readCompoundAnnotation();
                 if (proxy.type.tsym == syms.proprietaryType.tsym)
                     sym.flags_field |= PROPRIETARY;
-                else
+                else if (proxy.type.tsym == syms.profileType.tsym) {
+                    if (profile != Profile.DEFAULT) {
+                        for (Pair<Name,Attribute> v: proxy.values) {
+                            if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
+                                Attribute.Constant c = (Attribute.Constant) v.snd;
+                                if (c.type == syms.intType && ((Integer) c.value) > profile.value) {
+                                    sym.flags_field |= NOT_IN_PROFILE;
+                                }
+                            }
+                        }
+                    }
+                } else
                     proxies.append(proxy);
             }
             annotate.normal(new AnnotationCompleter(sym, proxies.toList()));

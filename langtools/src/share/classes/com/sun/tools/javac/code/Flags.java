@@ -269,6 +269,11 @@ public class Flags {
     public static final long AUXILIARY = 1L<<44;
 
     /**
+     * Flag that marks that a symbol is not available in the current profile
+     */
+    public static final long NOT_IN_PROFILE = 1L<<45;
+
+    /**
      * Flag that indicates that an override error has been detected by Check.
      */
     public static final long BAD_OVERRIDE = 1L<<45;

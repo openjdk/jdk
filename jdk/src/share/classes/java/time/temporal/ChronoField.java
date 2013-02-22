@@ -72,8 +72,10 @@ import static java.time.temporal.ChronoUnit.YEARS;
 
 import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.Year;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeBuilder;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
 
 /**
  * A standard set of fields.
@@ -521,6 +523,23 @@ public enum ChronoField implements TemporalField {
         return rangeUnit;
     }
 
+    /**
+     * Gets the range of valid values for the field.
+     * <p>
+     * All fields can be expressed as a {@code long} integer.
+     * This method returns an object that describes the valid range for that value.
+     * <p>
+     * This method returns the range of the field in the ISO-8601 calendar system.
+     * This range may be incorrect for other calendar systems.
+     * Use {@link Chronology#range(ChronoField)} to access the correct range
+     * for a different calendar system.
+     * <p>
+     * Note that the result only describes the minimum and maximum valid values
+     * and it is important not to read too much into them. For example, there
+     * could be values within the range that are invalid for the field.
+     *
+     * @return the range of valid values for the field, not null
+     */
     @Override
     public ValueRange range() {
         return range;
@@ -551,6 +570,11 @@ public enum ChronoField implements TemporalField {
      * <p>
      * This validates that the value is within the outer range of valid values
      * returned by {@link #range()}.
+     * <p>
+     * This method checks against the range of the field in the ISO-8601 calendar system.
+     * This range may be incorrect for other calendar systems.
+     * Use {@link Chronology#range(ChronoField)} to access the correct range
+     * for a different calendar system.
      *
      * @param value  the value to check
      * @return the value that was passed in
@@ -565,6 +589,11 @@ public enum ChronoField implements TemporalField {
      * This validates that the value is within the outer range of valid values
      * returned by {@link #range()}.
      * It also checks that all valid values are within the bounds of an {@code int}.
+     * <p>
+     * This method checks against the range of the field in the ISO-8601 calendar system.
+     * This range may be incorrect for other calendar systems.
+     * Use {@link Chronology#range(ChronoField)} to access the correct range
+     * for a different calendar system.
      *
      * @param value  the value to check
      * @return the value that was passed in
@@ -575,30 +604,24 @@ public enum ChronoField implements TemporalField {
 
     //-----------------------------------------------------------------------
     @Override
-    public boolean doIsSupported(TemporalAccessor temporal) {
+    public boolean isSupportedBy(TemporalAccessor temporal) {
         return temporal.isSupported(this);
     }
 
     @Override
-    public ValueRange doRange(TemporalAccessor temporal) {
+    public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
         return temporal.range(this);
     }
 
     @Override
-    public long doGet(TemporalAccessor temporal) {
+    public long getFrom(TemporalAccessor temporal) {
         return temporal.getLong(this);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <R extends Temporal> R doWith(R temporal, long newValue) {
+    public <R extends Temporal> R adjustInto(R temporal, long newValue) {
         return (R) temporal.with(this, newValue);
-    }
-
-    //-----------------------------------------------------------------------
-    @Override
-    public boolean resolve(DateTimeBuilder builder, long value) {
-        return false;  // resolve implemented in builder
     }
 
     //-----------------------------------------------------------------------

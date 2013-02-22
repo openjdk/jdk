@@ -86,19 +86,22 @@
 // | generic signature index (u2)                         |
 // |  (indexed from start of constMethodOop)              |
 // |------------------------------------------------------|
+// | annotations arrays - method, parameter, type, default|
+// | pointer to Array<u1> if annotation is present        |
+// |------------------------------------------------------|
 //
 // IMPORTANT: If anything gets added here, there need to be changes to
 // ensure that ServicabilityAgent doesn't get broken as a result!
 
 
-// Utitily class decribing elements in checked exceptions table inlined in Method*.
+// Utility class describing elements in checked exceptions table inlined in Method*.
 class CheckedExceptionElement VALUE_OBJ_CLASS_SPEC {
  public:
   u2 class_cp_index;
 };
 
 
-// Utitily class decribing elements in local variable table inlined in Method*.
+// Utility class describing elements in local variable table inlined in Method*.
 class LocalVariableTableElement VALUE_OBJ_CLASS_SPEC {
  public:
   u2 start_bci;
@@ -109,7 +112,7 @@ class LocalVariableTableElement VALUE_OBJ_CLASS_SPEC {
   u2 slot;
 };
 
-// Utitily class describing elements in exception table
+// Utility class describing elements in exception table
 class ExceptionTableElement VALUE_OBJ_CLASS_SPEC {
  public:
   u2 start_pc;
@@ -127,6 +130,51 @@ class MethodParametersElement VALUE_OBJ_CLASS_SPEC {
 
 class KlassSizeStats;
 
+// Class to collect the sizes of ConstMethod inline tables
+#define INLINE_TABLES_DO(do_element)            \
+  do_element(localvariable_table_length)        \
+  do_element(compressed_linenumber_size)        \
+  do_element(exception_table_length)            \
+  do_element(checked_exceptions_length)         \
+  do_element(method_parameters_length)          \
+  do_element(generic_signature_index)           \
+  do_element(method_annotations_length)         \
+  do_element(parameter_annotations_length)      \
+  do_element(type_annotations_length)           \
+  do_element(default_annotations_length)
+
+#define INLINE_TABLE_DECLARE(sym)    int _##sym;
+#define INLINE_TABLE_PARAM(sym)      int sym,
+#define INLINE_TABLE_INIT(sym)       _##sym(sym),
+#define INLINE_TABLE_NULL(sym)       _##sym(0),
+#define INLINE_TABLE_ACCESSOR(sym)   int sym() const { return _##sym; }
+
+class InlineTableSizes : StackObj {
+  // declarations
+  INLINE_TABLES_DO(INLINE_TABLE_DECLARE)
+  int _end;
+ public:
+  InlineTableSizes(
+      INLINE_TABLES_DO(INLINE_TABLE_PARAM)
+      int end) :
+      INLINE_TABLES_DO(INLINE_TABLE_INIT)
+      _end(end) {}
+
+  // Default constructor for no inlined tables
+  InlineTableSizes() :
+      INLINE_TABLES_DO(INLINE_TABLE_NULL)
+      _end(0) {}
+
+  // Accessors
+  INLINE_TABLES_DO(INLINE_TABLE_ACCESSOR)
+};
+#undef INLINE_TABLE_ACCESSOR
+#undef INLINE_TABLE_NULL
+#undef INLINE_TABLE_INIT
+#undef INLINE_TABLE_PARAM
+#undef INLINE_TABLE_DECLARE
+
+
 class ConstMethod : public MetaspaceObj {
   friend class VMStructs;
 
@@ -135,13 +183,17 @@ public:
 
 private:
   enum {
-    _has_linenumber_table = 1,
-    _has_checked_exceptions = 2,
-    _has_localvariable_table = 4,
-    _has_exception_table = 8,
-    _has_generic_signature = 16,
-    _has_method_parameters = 32,
-    _is_overpass = 64
+    _has_linenumber_table = 0x0001,
+    _has_checked_exceptions = 0x0002,
+    _has_localvariable_table = 0x0004,
+    _has_exception_table = 0x0008,
+    _has_generic_signature = 0x0010,
+    _has_method_parameters = 0x0020,
+    _is_overpass = 0x0040,
+    _has_method_annotations = 0x0080,
+    _has_parameter_annotations = 0x0100,
+    _has_type_annotations = 0x0200,
+    _has_default_annotations = 0x0400
   };
 
   // Bit vector of signature
@@ -158,8 +210,7 @@ private:
   Array<u1>*        _stackmap_data;
 
   int               _constMethod_size;
-  jbyte             _interpreter_kind;
-  jbyte             _flags;
+  u2                _flags;
 
   // Size of Java bytecodes allocated immediately after Method*.
   u2                _code_size;
@@ -174,36 +225,21 @@ private:
 
   // Constructor
   ConstMethod(int byte_code_size,
-              int compressed_line_number_size,
-              int localvariable_table_length,
-              int exception_table_length,
-              int checked_exceptions_length,
-              int method_parameters_length,
-              u2  generic_signature_index,
+              InlineTableSizes* sizes,
               MethodType is_overpass,
               int size);
 public:
 
   static ConstMethod* allocate(ClassLoaderData* loader_data,
                                int byte_code_size,
-                               int compressed_line_number_size,
-                               int localvariable_table_length,
-                               int exception_table_length,
-                               int checked_exceptions_length,
-                               int method_parameters_length,
-                               u2  generic_signature_index,
+                               InlineTableSizes* sizes,
                                MethodType mt,
                                TRAPS);
 
   bool is_constMethod() const { return true; }
 
   // Inlined tables
-  void set_inlined_tables_length(u2  generic_signature_index,
-                                 int checked_exceptions_len,
-                                 int compressed_line_number_size,
-                                 int localvariable_table_len,
-                                 int exception_table_len,
-                                 int method_parameters_length);
+  void set_inlined_tables_length(InlineTableSizes* sizes);
 
   bool has_generic_signature() const
     { return (_flags & _has_generic_signature) != 0; }
@@ -234,10 +270,6 @@ public:
       _flags |= _is_overpass;
     }
   }
-
-
-  void set_interpreter_kind(int kind)      { _interpreter_kind = kind; }
-  int  interpreter_kind(void) const        { return _interpreter_kind; }
 
   // constant pool
   ConstantPool* constants() const        { return _constants; }
@@ -307,12 +339,7 @@ public:
   }
 
   // Size needed
-  static int size(int code_size, int compressed_line_number_size,
-                  int local_variable_table_length,
-                  int exception_table_length,
-                  int checked_exceptions_length,
-                  int method_parameters_length,
-                  u2  generic_signature_index);
+  static int size(int code_size, InlineTableSizes* sizes);
 
   int size() const                    { return _constMethod_size;}
   void set_constMethod_size(int size)     { _constMethod_size = size; }
@@ -353,6 +380,65 @@ public:
   // method parameters table
   int method_parameters_length() const;
   MethodParametersElement* method_parameters_start() const;
+
+  // method annotations
+  bool has_method_annotations() const
+    { return (_flags & _has_method_annotations) != 0; }
+
+  bool has_parameter_annotations() const
+    { return (_flags & _has_parameter_annotations) != 0; }
+
+  bool has_type_annotations() const
+    { return (_flags & _has_type_annotations) != 0; }
+
+  bool has_default_annotations() const
+    { return (_flags & _has_default_annotations) != 0; }
+
+
+  AnnotationArray** method_annotations_addr() const;
+  AnnotationArray* method_annotations() const  {
+    return has_method_annotations() ? *(method_annotations_addr()) : NULL;
+  }
+  void set_method_annotations(AnnotationArray* anno) {
+    *(method_annotations_addr()) = anno;
+  }
+
+  AnnotationArray** parameter_annotations_addr() const;
+  AnnotationArray* parameter_annotations() const {
+    return has_parameter_annotations() ? *(parameter_annotations_addr()) : NULL;
+  }
+  void set_parameter_annotations(AnnotationArray* anno) {
+    *(parameter_annotations_addr()) = anno;
+  }
+
+  AnnotationArray** type_annotations_addr() const;
+  AnnotationArray* type_annotations() const {
+    return has_type_annotations() ? *(type_annotations_addr()) : NULL;
+  }
+  void set_type_annotations(AnnotationArray* anno) {
+    *(type_annotations_addr()) = anno;
+  }
+
+  AnnotationArray** default_annotations_addr() const;
+  AnnotationArray* default_annotations() const {
+    return has_default_annotations() ? *(default_annotations_addr()) : NULL;
+  }
+  void set_default_annotations(AnnotationArray* anno) {
+    *(default_annotations_addr()) = anno;
+  }
+
+  int method_annotations_length() const {
+    return has_method_annotations() ? method_annotations()->length() : 0;
+  }
+  int parameter_annotations_length() const {
+    return has_parameter_annotations() ? parameter_annotations()->length() : 0;
+  }
+  int type_annotations_length() const {
+    return has_type_annotations() ? type_annotations()->length() : 0;
+  }
+  int default_annotations_length() const {
+    return has_default_annotations() ? default_annotations()->length() : 0;
+  }
 
   // byte codes
   void    set_code(address code) {
@@ -409,11 +495,10 @@ private:
 
   // First byte after ConstMethod*
   address constMethod_end() const
-                          { return (address)((oop*)this + _constMethod_size); }
+                          { return (address)((intptr_t*)this + _constMethod_size); }
 
   // Last short in ConstMethod*
-  u2* last_u2_element() const
-                                         { return (u2*)constMethod_end() - 1; }
+  u2* last_u2_element() const;
 
  public:
   // Printing

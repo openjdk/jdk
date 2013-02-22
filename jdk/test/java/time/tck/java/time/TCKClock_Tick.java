@@ -248,13 +248,4 @@ public class TCKClock_Tick extends AbstractTCKTest {
         Clock d = Clock.tick(Clock.system(PARIS), Duration.ofMillis(499));
         assertEquals(a.hashCode() == d.hashCode(), false);
     }
-
-    //-----------------------------------------------------------------------
-    public void test_toString() {
-        // spec requires "full state" in toString()
-        Clock test = Clock.tick(Clock.system(PARIS), AMOUNT);
-        assertEquals(test.toString().contains("Europe/Paris"), true);
-        assertEquals(test.toString().contains("PT2S"), true);
-    }
-
 }
