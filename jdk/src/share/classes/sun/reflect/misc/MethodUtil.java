@@ -252,6 +252,12 @@ public final class MethodUtil extends SecureClassLoader {
     public static Object invoke(Method m, Object obj, Object[] params)
         throws InvocationTargetException, IllegalAccessException {
         if (m.getDeclaringClass().equals(AccessController.class) ||
+           (m.getDeclaringClass().equals(java.lang.invoke.MethodHandles.class)
+            && m.getName().equals("lookup")) ||
+           (m.getDeclaringClass().equals(java.lang.invoke.MethodHandles.Lookup.class)
+            && (m.getName().startsWith("find") ||
+                m.getName().startsWith("bind") ||
+                m.getName().startsWith("unreflect"))) ||
             m.getDeclaringClass().equals(Method.class))
             throw new InvocationTargetException(
                 new UnsupportedOperationException("invocation not supported"));
