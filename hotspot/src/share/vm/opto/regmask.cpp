@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,8 @@ int RegMask::is_bound_pair() const {
       } else {                  // Else its a split-pair case
         if( bit != _A[i] ) return false; // Found many bits, so fail
         i++;                    // Skip iteration forward
-        if( _A[i] != 1 ) return false; // Require 1 lo bit in next word
+        if( i >= RM_SIZE || _A[i] != 1 )
+          return false; // Require 1 lo bit in next word
       }
     }
   }
@@ -254,7 +255,7 @@ static int low_bits[3] = { 0x55555555, 0x11111111, 0x01010101 };
 // Find the lowest-numbered register set in the mask.  Return the
 // HIGHEST register number in the set, or BAD if no sets.
 // Works also for size 1.
-OptoReg::Name RegMask::find_first_set(int size) const {
+OptoReg::Name RegMask::find_first_set(const int size) const {
   verify_sets(size);
   for (int i = 0; i < RM_SIZE; i++) {
     if (_A[i]) {                // Found some bits
@@ -268,7 +269,7 @@ OptoReg::Name RegMask::find_first_set(int size) const {
 
 //------------------------------clear_to_sets----------------------------------
 // Clear out partial bits; leave only aligned adjacent bit pairs
-void RegMask::clear_to_sets(int size) {
+void RegMask::clear_to_sets(const int size) {
   if (size == 1) return;
   assert(2 <= size && size <= 8, "update low bits table");
   assert(is_power_of_2(size), "sanity");
@@ -293,7 +294,7 @@ void RegMask::clear_to_sets(int size) {
 
 //------------------------------smear_to_sets----------------------------------
 // Smear out partial bits to aligned adjacent bit sets
-void RegMask::smear_to_sets(int size) {
+void RegMask::smear_to_sets(const int size) {
   if (size == 1) return;
   assert(2 <= size && size <= 8, "update low bits table");
   assert(is_power_of_2(size), "sanity");
@@ -318,7 +319,7 @@ void RegMask::smear_to_sets(int size) {
 }
 
 //------------------------------is_aligned_set--------------------------------
-bool RegMask::is_aligned_sets(int size) const {
+bool RegMask::is_aligned_sets(const int size) const {
   if (size == 1) return true;
   assert(2 <= size && size <= 8, "update low bits table");
   assert(is_power_of_2(size), "sanity");
@@ -344,7 +345,7 @@ bool RegMask::is_aligned_sets(int size) const {
 //------------------------------is_bound_set-----------------------------------
 // Return TRUE if the mask contains one adjacent set of bits and no other bits.
 // Works also for size 1.
-int RegMask::is_bound_set(int size) const {
+int RegMask::is_bound_set(const int size) const {
   if( is_AllStack() ) return false;
   assert(1 <= size && size <= 8, "update low bits table");
   int bit = -1;                 // Set to hold the one bit allowed
@@ -352,7 +353,7 @@ int RegMask::is_bound_set(int size) const {
     if (_A[i] ) {               // Found some bits
       if (bit != -1)
        return false;            // Already had bits, so fail
-      bit = _A[i] & -_A[i];     // Extract 1 bit from mask
+      bit = _A[i] & -_A[i];     // Extract low bit from mask
       int hi_bit = bit << (size-1); // high bit
       if (hi_bit != 0) {        // Bit set stays in same word?
         int set = hi_bit + ((hi_bit-1) & ~(bit-1));
@@ -362,12 +363,12 @@ int RegMask::is_bound_set(int size) const {
         if (((-1) & ~(bit-1)) != _A[i])
           return false;         // Found many bits, so fail
         i++;                    // Skip iteration forward and check high part
-        assert(size <= 8, "update next code");
         // The lower 24 bits should be 0 since it is split case and size <= 8.
         int set = bit>>24;
         set = set & -set; // Remove sign extension.
         set = (((set << size) - 1) >> 8);
-        if (_A[i] != set) return false; // Require 1 lo bit in next word
+        if (i >= RM_SIZE || _A[i] != set)
+          return false; // Require expected low bits in next word
       }
     }
   }

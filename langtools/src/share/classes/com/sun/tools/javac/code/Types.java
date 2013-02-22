@@ -976,9 +976,12 @@ public class Types {
      * lists are of different length, return false.
      */
     public boolean isSameTypes(List<Type> ts, List<Type> ss) {
+        return isSameTypes(ts, ss, false);
+    }
+    public boolean isSameTypes(List<Type> ts, List<Type> ss, boolean strict) {
         while (ts.tail != null && ss.tail != null
                /*inlined: ts.nonEmpty() && ss.nonEmpty()*/ &&
-               isSameType(ts.head, ss.head)) {
+               isSameType(ts.head, ss.head, strict)) {
             ts = ts.tail;
             ss = ss.tail;
         }
@@ -990,10 +993,15 @@ public class Types {
      * Is t the same type as s?
      */
     public boolean isSameType(Type t, Type s) {
-        return isSameType.visit(t, s);
+        return isSameType(t, s, false);
+    }
+    public boolean isSameType(Type t, Type s, boolean strict) {
+        return strict ?
+                isSameTypeStrict.visit(t, s) :
+                isSameTypeLoose.visit(t, s);
     }
     // where
-        private TypeRelation isSameType = new TypeRelation() {
+        abstract class SameTypeVisitor extends TypeRelation {
 
             public Boolean visitType(Type t, Type s) {
                 if (t == s)
@@ -1010,8 +1018,7 @@ public class Types {
                     if (s.tag == TYPEVAR) {
                         //type-substitution does not preserve type-var types
                         //check that type var symbols and bounds are indeed the same
-                        return t.tsym == s.tsym &&
-                                visit(t.getUpperBound(), s.getUpperBound());
+                        return sameTypeVars((TypeVar)t, (TypeVar)s);
                     }
                     else {
                         //special case for s == ? super X, where upper(s) = u
@@ -1025,6 +1032,8 @@ public class Types {
                     throw new AssertionError("isSameType " + t.tag);
                 }
             }
+
+            abstract boolean sameTypeVars(TypeVar tv1, TypeVar tv2);
 
             @Override
             public Boolean visitWildcardType(WildcardType t, Type s) {
@@ -1060,8 +1069,10 @@ public class Types {
                 }
                 return t.tsym == s.tsym
                     && visit(t.getEnclosingType(), s.getEnclosingType())
-                    && containsTypeEquivalent(t.getTypeArguments(), s.getTypeArguments());
+                    && containsTypes(t.getTypeArguments(), s.getTypeArguments());
             }
+
+            abstract protected boolean containsTypes(List<Type> ts1, List<Type> ts2);
 
             @Override
             public Boolean visitArrayType(ArrayType t, Type s) {
@@ -1114,6 +1125,36 @@ public class Types {
             @Override
             public Boolean visitErrorType(ErrorType t, Type s) {
                 return true;
+            }
+        }
+
+        /**
+         * Standard type-equality relation - type variables are considered
+         * equals if they share the same type symbol.
+         */
+        TypeRelation isSameTypeLoose = new SameTypeVisitor() {
+            @Override
+            boolean sameTypeVars(TypeVar tv1, TypeVar tv2) {
+                return tv1.tsym == tv2.tsym && visit(tv1.getUpperBound(), tv2.getUpperBound());
+            }
+            @Override
+            protected boolean containsTypes(List<Type> ts1, List<Type> ts2) {
+                return containsTypeEquivalent(ts1, ts2);
+            }
+        };
+
+        /**
+         * Strict type-equality relation - type variables are considered
+         * equals if they share the same object identity.
+         */
+        TypeRelation isSameTypeStrict = new SameTypeVisitor() {
+            @Override
+            boolean sameTypeVars(TypeVar tv1, TypeVar tv2) {
+                return tv1 == tv2;
+            }
+            @Override
+            protected boolean containsTypes(List<Type> ts1, List<Type> ts2) {
+                return isSameTypes(ts1, ts2, true);
             }
         };
     // </editor-fold>
@@ -2027,7 +2068,15 @@ public class Types {
 
             @Override
             public Type visitAnnotatedType(AnnotatedType t, Boolean recurse) {
-                return new AnnotatedType(t.typeAnnotations, erasure(t.underlyingType, recurse));
+                Type erased = erasure(t.underlyingType, recurse);
+                if (erased.getKind() == TypeKind.ANNOTATED) {
+                    // This can only happen when the underlying type is a
+                    // type variable and the upper bound of it is annotated.
+                    // The annotation on the type variable overrides the one
+                    // on the bound.
+                    erased = ((AnnotatedType)erased).underlyingType;
+                }
+                return new AnnotatedType(t.typeAnnotations, erased);
             }
         };
 

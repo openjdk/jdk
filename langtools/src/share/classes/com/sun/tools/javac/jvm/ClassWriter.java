@@ -728,14 +728,24 @@ public class ClassWriter extends ClassFile {
      * Write method parameter names attribute.
      */
     int writeMethodParametersAttr(MethodSymbol m) {
-        if (m.params != null && 0 != m.params.length()) {
-            int attrIndex = writeAttr(names.MethodParameters);
-            databuf.appendByte(m.params.length());
+        MethodType ty = m.externalType(types).asMethodType();
+        final int allparams = ty.argtypes.size();
+        if (m.params != null && allparams != 0) {
+            final int attrIndex = writeAttr(names.MethodParameters);
+            databuf.appendByte(allparams);
+            // Write extra parameters first
+            for (VarSymbol s : m.extraParams) {
+                final int flags =
+                    ((int) s.flags() & (FINAL | SYNTHETIC | MANDATED)) |
+                    ((int) m.flags() & SYNTHETIC);
+                databuf.appendChar(pool.put(s.name));
+                databuf.appendInt(flags);
+            }
+            // Now write the real parameters
             for (VarSymbol s : m.params) {
-                // TODO: expand to cover synthesized, once we figure out
-                // how to represent that.
-                final int flags = (int) s.flags() & (FINAL | SYNTHETIC);
-                // output parameter info
+                final int flags =
+                    ((int) s.flags() & (FINAL | SYNTHETIC | MANDATED)) |
+                    ((int) m.flags() & SYNTHETIC);
                 databuf.appendChar(pool.put(s.name));
                 databuf.appendInt(flags);
             }
@@ -992,12 +1002,13 @@ public class ClassWriter extends ClassFile {
     void writePosition(TypeAnnotationPosition p) {
         databuf.appendByte(p.type.targetTypeValue()); // TargetType tag is a byte
         switch (p.type) {
-        // type cast
-        case CAST:
         // instanceof
         case INSTANCEOF:
         // new expression
         case NEW:
+        // constructor/method reference receiver
+        case CONSTRUCTOR_REFERENCE:
+        case METHOD_REFERENCE:
             databuf.appendChar(p.offset);
             break;
         // local variable
@@ -1042,9 +1053,12 @@ public class ClassWriter extends ClassFile {
         case METHOD_FORMAL_PARAMETER:
             databuf.appendByte(p.parameter_index);
             break;
+        // type cast
+        case CAST:
         // method/constructor/reference type argument
         case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT:
         case METHOD_INVOCATION_TYPE_ARGUMENT:
+        case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT:
         case METHOD_REFERENCE_TYPE_ARGUMENT:
             databuf.appendChar(p.offset);
             databuf.appendByte(p.type_index);
@@ -1052,10 +1066,6 @@ public class ClassWriter extends ClassFile {
         // We don't need to worry about these
         case METHOD_RETURN:
         case FIELD:
-            break;
-        // lambda formal parameter
-        case LAMBDA_FORMAL_PARAMETER:
-            databuf.appendByte(p.parameter_index);
             break;
         case UNKNOWN:
             throw new AssertionError("jvm.ClassWriter: UNKNOWN target type should never occur!");

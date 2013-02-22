@@ -274,8 +274,8 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
 // end of a collection, we let CMSTriggerRatio of the (purported) free
 // space be allocated before initiating a new collection cycle.
 //
-void ConcurrentMarkSweepGeneration::init_initiating_occupancy(intx io, intx tr) {
-  assert(io <= 100 && tr >= 0 && tr <= 100, "Check the arguments");
+void ConcurrentMarkSweepGeneration::init_initiating_occupancy(intx io, uintx tr) {
+  assert(io <= 100 && tr <= 100, "Check the arguments");
   if (io >= 0) {
     _initiating_occupancy = (double)io / 100.0;
   } else {

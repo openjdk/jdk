@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,13 +145,26 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * Adds "All Classes" link for the top of the left-hand frame page to the
      * documentation tree.
      *
-     * @param body the Content object to which the all classes link should be added
+     * @param div the Content object to which the all classes link should be added
      */
-    protected void addAllClassesLink(Content body) {
+    protected void addAllClassesLink(Content div) {
         Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
                 allclassesLabel, "", "packageFrame");
-        Content div = HtmlTree.DIV(HtmlStyle.indexHeader, linkContent);
-        body.addContent(div);
+        Content span = HtmlTree.SPAN(linkContent);
+        div.addContent(span);
+    }
+
+    /**
+     * Adds "All Profiles" link for the top of the left-hand frame page to the
+     * documentation tree.
+     *
+     * @param div the Content object to which the all profiles link should be added
+     */
+    protected void addAllProfilesLink(Content div) {
+        Content linkContent = getHyperLink(DocPaths.PROFILE_OVERVIEW_FRAME,
+                allprofilesLabel, "", "profileListFrame");
+        Content span = HtmlTree.SPAN(linkContent);
+        div.addContent(span);
     }
 
     /**
