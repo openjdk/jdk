@@ -1119,6 +1119,14 @@ endif
 
 ##########################################################################################
 
+# Import nashorn.jar from nashorn dist dir.
+$(IMAGES_OUTPUTDIR)/lib/ext/nashorn.jar: $(NASHORN_DIST)/nashorn.jar
+	$(install-file)
+
+JARS += $(IMAGES_OUTPUTDIR)/lib/ext/nashorn.jar
+
+##########################################################################################
+
 -include $(CUSTOM_MAKE_DIR)/CreateJars.gmk
 
 ##########################################################################################
