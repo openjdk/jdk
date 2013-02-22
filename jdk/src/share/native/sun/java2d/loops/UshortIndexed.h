@@ -170,7 +170,10 @@ typedef jushort UshortIndexedBmDataType;
     jint PREFIX ## rgb;
 
 #define InitUshortIndexedAlphaLoadData(PREFIX, pRasInfo) \
-    PREFIX ## Lut = (pRasInfo)->lutBase
+    do { \
+        PREFIX ## Lut = (pRasInfo)->lutBase; \
+        PREFIX ## rgb = 0; \
+    } while (0)
 
 #define LoadAlphaFromUshortIndexedFor4ByteArgb(pRas, PREFIX, COMP_PREFIX) \
     do { \
