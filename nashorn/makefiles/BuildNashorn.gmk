@@ -30,10 +30,6 @@ default: all
 include MakeBase.gmk
 include JavaCompilation.gmk
 
-# TODO: build-infra, move this to SPEC
-JAVAC_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" \
-		-jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
-
 JDK_CLASSES := $(JDK_OUTPUTDIR)/classes
 
 NASHORN_JAR := $(NASHORN_DIST)/nashorn.jar
@@ -47,23 +43,23 @@ ifdef MILESTONE
 endif
 
 # Need to use source and target 7 for nasgen to work.
-$(eval $(call SetupJavaCompiler,COMPILER_SETUP,\
+$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
     JVM:=$(JAVA),\
-    JAVAC:=$(JAVAC_JARS),\
+    JAVAC:=$(NEW_JAVAC),\
     FLAGS:=-g -source 7 -target 7 -bootclasspath $(JDK_CLASSES),\
     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
 # Build nashorn into intermediate directory
 $(eval $(call SetupJavaCompilation,BUILD_NASHORN,\
-    SETUP:=COMPILER_SETUP,\
+    SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
     SRC:=$(NASHORN_TOPDIR)/src,\
     COPY:=.properties .js,\
     BIN:=$(NASHORN_OUTPUTDIR)/nashorn_classes))
 
 # Build nasgen
 $(eval $(call SetupJavaCompilation,BUILD_NASGEN,\
-    SETUP:=COMPILER_SETUP,\
+    SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
     SRC:=$(NASHORN_TOPDIR)/buildtools/nasgen/src,\
     BIN:=$(NASHORN_OUTPUTDIR)/nasgen_classes,\
     ADD_JAVAC_FLAGS:=-cp $(NASHORN_OUTPUTDIR)/nashorn_classes))
