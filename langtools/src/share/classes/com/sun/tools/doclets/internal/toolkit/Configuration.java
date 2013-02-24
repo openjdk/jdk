@@ -29,6 +29,8 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.javac.sym.Profiles;
+import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
@@ -188,6 +190,17 @@ public abstract class Configuration {
     public String sourcepath = "";
 
     /**
+     * Argument for command line option "-Xprofilespath".
+     */
+    public String profilespath = "";
+
+    /**
+     * Generate profiles documentation if profilespath is set and valid profiles
+     * are present.
+     */
+    public boolean showProfiles = false;
+
+    /**
      * Don't generate deprecated API information at all, if -nodeprecated
      * option is used. <code>nodepracted</code> is set to true if
      * -nodeprecated option is used. Default is generate deprected API
@@ -245,6 +258,16 @@ public abstract class Configuration {
      * @return the doclet specific MessageRetriever.
      */
     public abstract MessageRetriever getDocletSpecificMsg();
+
+    /**
+     * A profiles object used to access profiles across various pages.
+     */
+    public Profiles profiles;
+
+    /**
+     * An map of the profiles to packages.
+     */
+    public Map<String,PackageDoc[]> profilePackages;
 
     /**
      * An array of the packages specified on the command-line merged
@@ -315,7 +338,8 @@ public abstract class Configuration {
                    option.equals("-sourcepath") ||
                    option.equals("-tag") ||
                    option.equals("-taglet") ||
-                   option.equals("-tagletpath")) {
+                   option.equals("-tagletpath") ||
+                   option.equals("-xprofilespath")) {
             return 2;
         } else if (option.equals("-group") ||
                    option.equals("-linkoffline")) {
@@ -333,6 +357,38 @@ public abstract class Configuration {
      */
     public abstract boolean validOptions(String options[][],
         DocErrorReporter reporter);
+
+    private void initProfiles() throws IOException {
+        profiles = Profiles.read(new File(profilespath));
+        // Generate profiles documentation only is profilespath is set and if
+        // profiles is not null and profiles count is 1 or more.
+        showProfiles = (!profilespath.isEmpty() && profiles != null &&
+                profiles.getProfileCount() > 0);
+    }
+
+    private void initProfilePackages() throws IOException {
+        profilePackages = new HashMap<String,PackageDoc[]>();
+        ArrayList<PackageDoc> results;
+        Map<String,PackageDoc> packageIndex = new HashMap<String,PackageDoc>();
+        for (int i = 0; i < packages.length; i++) {
+            PackageDoc pkg = packages[i];
+            packageIndex.put(pkg.name(), pkg);
+        }
+        for (int i = 1; i < profiles.getProfileCount(); i++) {
+            Set<String> profPkgs = profiles.getPackages(i);
+            results = new ArrayList<PackageDoc>();
+            for (String packageName : profPkgs) {
+                packageName = packageName.replace("/", ".");
+                PackageDoc profPkg = packageIndex.get(packageName);
+                if (profPkg != null) {
+                    results.add(profPkg);
+                }
+            }
+            Collections.sort(results);
+            PackageDoc[] profilePkgs = results.toArray(new PackageDoc[]{});
+            profilePackages.put(Profile.lookup(i).name, profilePkgs);
+        }
+    }
 
     private void initPackageArray() {
         Set<PackageDoc> set = new HashSet<PackageDoc>(Arrays.asList(root.specifiedPackages()));
@@ -404,6 +460,8 @@ public abstract class Configuration {
                 customTagStrs.add(os);
             } else if (opt.equals("-tagletpath")) {
                 tagletpath = os[1];
+            }  else if (opt.equals("-xprofilespath")) {
+                profilespath = os[1];
             } else if (opt.equals("-keywords")) {
                 keywords = true;
             } else if (opt.equals("-serialwarn")) {
@@ -439,6 +497,14 @@ public abstract class Configuration {
     public void setOptions() {
         initPackageArray();
         setOptions(root.options());
+        if (!profilespath.isEmpty()) {
+            try {
+                initProfiles();
+                initProfilePackages();
+            } catch (Exception e) {
+                throw new DocletAbortException();
+            }
+        }
         setSpecificDocletOptions(root.options());
     }
 

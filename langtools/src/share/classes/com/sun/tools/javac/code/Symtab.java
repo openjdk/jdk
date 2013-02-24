@@ -156,6 +156,7 @@ public class Symtab {
     public final Type deprecatedType;
     public final Type suppressWarningsType;
     public final Type inheritedType;
+    public final Type profileType;
     public final Type proprietaryType;
     public final Type systemType;
     public final Type autoCloseableType;
@@ -360,6 +361,22 @@ public class Symtab {
 
     }
 
+    // Enter a synthetic class that is used to mark classes in ct.sym.
+    // This class does not have a class file.
+    private Type enterSyntheticAnnotation(String name) {
+        ClassType type = (ClassType)enterClass(name);
+        ClassSymbol sym = (ClassSymbol)type.tsym;
+        sym.completer = null;
+        sym.flags_field = PUBLIC|ACYCLIC|ANNOTATION|INTERFACE;
+        sym.erasure_field = type;
+        sym.members_field = new Scope(sym);
+        type.typarams_field = List.nil();
+        type.allparams_field = List.nil();
+        type.supertype_field = annotationType;
+        type.interfaces_field = List.nil();
+        return type;
+    }
+
     /** Constructor; enters all predefined identifiers and operators
      *  into symbol table.
      */
@@ -521,17 +538,13 @@ public class Symtab {
         // Enter a synthetic class that is used to mark internal
         // proprietary classes in ct.sym.  This class does not have a
         // class file.
-        ClassType proprietaryType = (ClassType)enterClass("sun.Proprietary+Annotation");
-        this.proprietaryType = proprietaryType;
-        ClassSymbol proprietarySymbol = (ClassSymbol)proprietaryType.tsym;
-        proprietarySymbol.completer = null;
-        proprietarySymbol.flags_field = PUBLIC|ACYCLIC|ANNOTATION|INTERFACE;
-        proprietarySymbol.erasure_field = proprietaryType;
-        proprietarySymbol.members_field = new Scope(proprietarySymbol);
-        proprietaryType.typarams_field = List.nil();
-        proprietaryType.allparams_field = List.nil();
-        proprietaryType.supertype_field = annotationType;
-        proprietaryType.interfaces_field = List.nil();
+        proprietaryType = enterSyntheticAnnotation("sun.Proprietary+Annotation");
+
+        // Enter a synthetic class that is used to provide profile info for
+        // classes in ct.sym.  This class does not have a class file.
+        profileType = enterSyntheticAnnotation("jdk.Profile+Annotation");
+        MethodSymbol m = new MethodSymbol(PUBLIC | ABSTRACT, names.value, intType, profileType.tsym);
+        profileType.tsym.members().enter(m);
 
         // Enter a class for arrays.
         // The class implements java.lang.Cloneable and java.io.Serializable.
