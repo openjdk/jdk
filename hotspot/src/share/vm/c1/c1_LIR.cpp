@@ -814,7 +814,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
       // only visit register parameters
       int n = opJavaCall->_arguments->length();
-      for (int i = 0; i < n; i++) {
+      for (int i = opJavaCall->_receiver->is_valid() ? 1 : 0; i < n; i++) {
         if (!opJavaCall->_arguments->at(i)->is_pointer()) {
           do_input(*opJavaCall->_arguments->adr_at(i));
         }

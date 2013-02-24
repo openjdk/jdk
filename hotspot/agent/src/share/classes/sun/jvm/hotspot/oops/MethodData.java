@@ -184,7 +184,6 @@ public class MethodData extends Metadata {
       if (trapReasonName[index] == null) {
         throw new InternalError("missing reason for " + index);
       }
-      System.out.println(trapReasonName[index]);
     }
   }
 

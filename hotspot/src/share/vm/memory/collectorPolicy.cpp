@@ -168,11 +168,11 @@ size_t GenCollectorPolicy::bound_minus_alignment(size_t desired_size,
 void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
                                                 size_t init_promo_size,
                                                 size_t init_survivor_size) {
-  const double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
+  const double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
   _size_policy = new AdaptiveSizePolicy(init_eden_size,
                                         init_promo_size,
                                         init_survivor_size,
-                                        max_gc_minor_pause_sec,
+                                        max_gc_pause_sec,
                                         GCTimeRatio);
 }
 

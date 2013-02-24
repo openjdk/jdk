@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 6850611
  * @summary int / long arithmetic seems to be broken in 1.6.0_14 HotSpot Server VM (Win XP)
  *
- * @run main Test6850611
+ * @run main/timeout=480 Test6850611
  */
 
 public class Test6850611 {
