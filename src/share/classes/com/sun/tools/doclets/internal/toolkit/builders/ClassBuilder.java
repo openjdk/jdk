@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,6 +378,17 @@ public class ClassBuilder extends AbstractBuilder {
             Content memberDetailsTree) throws Exception {
         configuration.getBuilderFactory().
                 getFieldBuilder(writer).buildChildren(node, memberDetailsTree);
+    }
+
+    /**
+     * Build the property documentation.
+     *
+     * @param elements the XML elements that specify how a field is documented.
+     */
+    public void buildPropertyDetails(XMLNode node,
+            Content memberDetailsTree) throws Exception {
+        configuration.getBuilderFactory().
+                getPropertyBuilder(writer).buildChildren(node, memberDetailsTree);
     }
 
     /**

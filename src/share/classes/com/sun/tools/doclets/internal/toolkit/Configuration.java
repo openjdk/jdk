@@ -176,6 +176,12 @@ public abstract class Configuration {
     public boolean showauthor = false;
 
     /**
+     * Generate documentation for JavaFX getters and setters automatically
+     * by copying it from the appropriate property definition.
+     */
+    public boolean javafx = false;
+
+    /**
      * Generate version specific information for the all the classes
      * if @version tag is used in the doc comment and if -version option is
      * used. <code>showversion</code> is set to true if -version option is
@@ -317,6 +323,7 @@ public abstract class Configuration {
         option = option.toLowerCase();
         if (option.equals("-author") ||
             option.equals("-docfilessubdirs") ||
+            option.equals("-javafx") ||
             option.equals("-keywords") ||
             option.equals("-linksource") ||
             option.equals("-nocomment") ||
@@ -422,6 +429,8 @@ public abstract class Configuration {
                 encoding = os[1];
             } else if (opt.equals("-author")) {
                 showauthor = true;
+            } else  if (opt.equals("-javafx")) {
+                javafx = true;
             } else if (opt.equals("-nosince")) {
                 nosince = true;
             } else if (opt.equals("-version")) {
@@ -517,7 +526,7 @@ public abstract class Configuration {
      */
     private void initTagletManager(Set<String[]> customTagStrs) {
         tagletManager = tagletManager == null ?
-            new TagletManager(nosince, showversion, showauthor, message) :
+            new TagletManager(nosince, showversion, showauthor, javafx, message) :
             tagletManager;
         String[] args;
         for (Iterator<String[]> it = customTagStrs.iterator(); it.hasNext(); ) {
