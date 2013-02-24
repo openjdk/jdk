@@ -49,6 +49,7 @@ import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
@@ -76,7 +77,7 @@ public class Main {
 
     /** The log to use for diagnostic output.
      */
-    Log log;
+    public Log log;
 
     /**
      * If true, certain errors will cause an exception, such as command line
@@ -165,6 +166,7 @@ public class Main {
         this.ownName = name;
         this.out = out;
     }
+
     /** A table of all options that's passed to the JavaCompiler constructor.  */
     private Options options = null;
 
@@ -304,6 +306,15 @@ public class Main {
                     target = Target.JDK1_4;
                     options.put("-target", target.name);
                 }
+            }
+        }
+
+        String profileString = options.get(PROFILE);
+        if (profileString != null) {
+            Profile profile = Profile.lookup(profileString);
+            if (!profile.isValid(target)) {
+                warning("warn.profile.target.conflict", profileString, target.name);
+                return null;
             }
         }
 

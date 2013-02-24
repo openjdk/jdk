@@ -36,16 +36,8 @@ Annotations* Annotations::allocate(ClassLoaderData* loader_data, TRAPS) {
   return new (loader_data, size(), true, THREAD) Annotations();
 }
 
-Annotations* Annotations::allocate(ClassLoaderData* loader_data,
-                                   Array<AnnotationArray*>* fa,
-                                   Array<AnnotationArray*>* ma,
-                                   Array<AnnotationArray*>* mpa,
-                                   Array<AnnotationArray*>* mda, TRAPS) {
-  return new (loader_data, size(), true, THREAD) Annotations(fa, ma, mpa, mda);
-}
-
 // helper
-static void free_contents(ClassLoaderData* loader_data, Array<AnnotationArray*>* p) {
+void Annotations::free_contents(ClassLoaderData* loader_data, Array<AnnotationArray*>* p) {
   if (p != NULL) {
     for (int i = 0; i < p->length(); i++) {
       MetadataFactory::free_array<u1>(loader_data, p->at(i));
@@ -59,44 +51,16 @@ void Annotations::deallocate_contents(ClassLoaderData* loader_data) {
     MetadataFactory::free_array<u1>(loader_data, class_annotations());
   }
   free_contents(loader_data, fields_annotations());
-  free_contents(loader_data, methods_annotations());
-  free_contents(loader_data, methods_parameter_annotations());
-  free_contents(loader_data, methods_default_annotations());
 
-  // Recursively deallocate optional Annotations linked through this one
-  MetadataFactory::free_metadata(loader_data, type_annotations());
+  if (class_type_annotations() != NULL) {
+    MetadataFactory::free_array<u1>(loader_data, class_type_annotations());
+  }
+  free_contents(loader_data, fields_type_annotations());
 }
-
-// Set the annotation at 'idnum' to 'anno'.
-// We don't want to create or extend the array if 'anno' is NULL, since that is the
-// default value.  However, if the array exists and is long enough, we must set NULL values.
-void Annotations::set_methods_annotations_of(instanceKlassHandle ik,
-                                             int idnum, AnnotationArray* anno,
-                                             Array<AnnotationArray*>** md_p,
-                                             TRAPS) {
-  Array<AnnotationArray*>* md = *md_p;
-  if (md != NULL && md->length() > idnum) {
-    md->at_put(idnum, anno);
-  } else if (anno != NULL) {
-    // create the array
-    int length = MAX2(idnum+1, (int)ik->idnum_allocated_count());
-    md = MetadataFactory::new_array<AnnotationArray*>(ik->class_loader_data(), length, CHECK);
-    if (*md_p != NULL) {
-      // copy the existing entries
-      for (int index = 0; index < (*md_p)->length(); index++) {
-        md->at_put(index, (*md_p)->at(index));
-      }
-    }
-    set_annotations(md, md_p);
-    md->at_put(idnum, anno);
-  } // if no array and idnum isn't included there is nothing to do
-}
-
-// Keep created annotations in a global growable array (should be hashtable)
-// need to add, search, delete when class is unloaded.
-// Does it need a lock?  yes.  This sucks.
 
 // Copy annotations to JVM call or reflection to the java heap.
+// The alternative to creating this array and adding to Java heap pressure
+// is to have a hashtable of the already created typeArrayOops
 typeArrayOop Annotations::make_java_array(AnnotationArray* annotations, TRAPS) {
   if (annotations != NULL) {
     int length = annotations->length();
@@ -132,28 +96,15 @@ julong Annotations::count_bytes(Array<AnnotationArray*>* p) {
 void Annotations::collect_statistics(KlassSizeStats *sz) const {
   sz->_annotations_bytes = sz->count(this);
   sz->_class_annotations_bytes = sz->count(class_annotations());
+  sz->_class_type_annotations_bytes = sz->count(class_type_annotations());
   sz->_fields_annotations_bytes = count_bytes(fields_annotations());
-  sz->_methods_annotations_bytes = count_bytes(methods_annotations());
-  sz->_methods_parameter_annotations_bytes =
-                          count_bytes(methods_parameter_annotations());
-  sz->_methods_default_annotations_bytes =
-                          count_bytes(methods_default_annotations());
-
-  const Annotations* type_anno = type_annotations();
-  if (type_anno != NULL) {
-    sz->_type_annotations_bytes = sz->count(type_anno);
-    sz->_type_annotations_bytes += sz->count(type_anno->class_annotations());
-    sz->_type_annotations_bytes += count_bytes(type_anno->fields_annotations());
-    sz->_type_annotations_bytes += count_bytes(type_anno->methods_annotations());
-  }
+  sz->_fields_type_annotations_bytes = count_bytes(fields_type_annotations());
 
   sz->_annotations_bytes +=
       sz->_class_annotations_bytes +
+      sz->_class_type_annotations_bytes +
       sz->_fields_annotations_bytes +
-      sz->_methods_annotations_bytes +
-      sz->_methods_parameter_annotations_bytes +
-      sz->_methods_default_annotations_bytes +
-      sz->_type_annotations_bytes;
+      sz->_fields_type_annotations_bytes;
 
   sz->_ro_bytes += sz->_annotations_bytes;
 }
@@ -165,8 +116,7 @@ void Annotations::collect_statistics(KlassSizeStats *sz) const {
 void Annotations::print_on(outputStream* st) const {
   st->print(BULLET"class_annotations            "); class_annotations()->print_value_on(st);
   st->print(BULLET"fields_annotations           "); fields_annotations()->print_value_on(st);
-  st->print(BULLET"methods_annotations          "); methods_annotations()->print_value_on(st);
-  st->print(BULLET"methods_parameter_annotations"); methods_parameter_annotations()->print_value_on(st);
-  st->print(BULLET"methods_default_annotations  "); methods_default_annotations()->print_value_on(st);
+  st->print(BULLET"class_type_annotations       "); class_type_annotations()->print_value_on(st);
+  st->print(BULLET"fields_type_annotations      "); fields_type_annotations()->print_value_on(st);
 }
 #endif // PRODUCT

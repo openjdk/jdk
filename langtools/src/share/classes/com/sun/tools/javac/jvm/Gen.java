@@ -513,7 +513,8 @@ public class Gen extends JCTree.Visitor {
         // that contains them as its body.
         if (clinitCode.length() != 0) {
             MethodSymbol clinit = new MethodSymbol(
-                STATIC, names.clinit,
+                STATIC | (c.flags() & STRICTFP),
+                names.clinit,
                 new MethodType(
                     List.<Type>nil(), syms.voidType,
                     List.<Type>nil(), syms.methodClass),

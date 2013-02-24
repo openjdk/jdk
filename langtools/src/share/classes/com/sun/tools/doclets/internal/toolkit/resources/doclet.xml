@@ -28,6 +28,21 @@
 
 <Doclet>
 
+    <ProfileDoc>
+        <Content>
+            <Summary>
+                <PackageSummary>
+                    <InterfaceSummary/>
+                    <ClassSummary/>
+                    <EnumSummary/>
+                    <ExceptionSummary/>
+                    <ErrorSummary/>
+                    <AnnotationTypeSummary/>
+                </PackageSummary>
+            </Summary>
+        </Content>
+    </ProfileDoc>
+
     <PackageDoc>
         <Content>
             <Summary>

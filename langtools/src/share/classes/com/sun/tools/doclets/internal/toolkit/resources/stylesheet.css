@@ -191,6 +191,9 @@ Page header and footer styles
     margin:10px;
     position:relative;
 }
+.indexHeader span{
+    margin-right:15px;
+}
 .indexHeader h1 {
     font-size:1.3em;
 }

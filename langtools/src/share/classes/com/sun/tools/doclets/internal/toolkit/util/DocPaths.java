@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,26 @@ public class DocPaths {
     /** The name of the file for the package frame. */
     public static final DocPath PACKAGE_FRAME = DocPath.create("package-frame.html");
 
+    /** The name of the file for the profile frame. */
+     public static final DocPath profileFrame(String profileName) {
+        return DocPath.create(profileName + "-frame.html");
+    }
+
+    /** The name of the file for the profile package frame. */
+     public static final DocPath profilePackageFrame(String profileName) {
+        return DocPath.create(profileName + "-package-frame.html");
+    }
+
+    /** The name of the file for the profile package summary. */
+     public static final DocPath profilePackageSummary(String profileName) {
+        return DocPath.create(profileName + "-package-summary.html");
+    }
+
+    /** The name of the file for the profile summary. */
+     public static final DocPath profileSummary(String profileName) {
+        return DocPath.create(profileName + "-summary.html");
+    }
+
     /** The name of the file for the package list. */
     public static final DocPath PACKAGE_LIST = DocPath.create("package-list");
 
@@ -98,6 +118,9 @@ public class DocPaths {
 
     /** The name of the file for the package usage info. */
     public static final DocPath PACKAGE_USE = DocPath.create("package-use.html");
+
+    /** The name of the file for the overview frame. */
+    public static final DocPath PROFILE_OVERVIEW_FRAME = DocPath.create("profile-overview-frame.html");
 
     /** The name of the directory in which resources are generated.
      *  Also the name of the sub-package from which resources are read.

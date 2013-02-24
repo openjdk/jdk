@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @ bug
+ * @bug 8007464
  * @summary Negative regression test from odersky
  * @author odersky
  *
- * @compile/fail  BadTest4.java
+ * @compile/fail -source 7 BadTest4.java
+ * @compile BadTest4.java
  */
 
 class BadTest4 {

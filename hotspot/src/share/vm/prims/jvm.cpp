@@ -1573,9 +1573,9 @@ JVM_ENTRY(jbyteArray, JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls))
   if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
     if (k->oop_is_instance()) {
-      Annotations* type_annotations = InstanceKlass::cast(k)->type_annotations();
+      AnnotationArray* type_annotations = InstanceKlass::cast(k)->class_type_annotations();
       if (type_annotations != NULL) {
-        typeArrayOop a = Annotations::make_java_array(type_annotations->class_annotations(), CHECK_NULL);
+        typeArrayOop a = Annotations::make_java_array(type_annotations, CHECK_NULL);
         return (jbyteArray) JNIHandles::make_local(env, a);
       }
     }
@@ -4528,6 +4528,5 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   // consider to expose this new capability in the sun.rt.jvmCapabilities jvmstat
   // counter defined in runtimeService.cpp.
   info->is_attachable = AttachListener::is_attach_supported();
-  info->is_kernel_jvm = 0; // false;
 }
 JVM_END
