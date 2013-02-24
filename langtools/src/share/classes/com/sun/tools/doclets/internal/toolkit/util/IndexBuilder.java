@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,11 @@ public class IndexBuilder {
      */
     private boolean classesOnly;
 
+    /**
+     * Indicates javafx mode.
+     */
+    private boolean javafx;
+
     // make ProgramElementDoc[] when new toArray is available
     protected final Object[] elements;
 
@@ -115,6 +120,7 @@ public class IndexBuilder {
         }
         this.noDeprecated = noDeprecated;
         this.classesOnly = classesOnly;
+        this.javafx = configuration.javafx;
         buildIndexMap(configuration.root);
         Set<Character> set = indexmap.keySet();
         elements =  set.toArray();
@@ -209,6 +215,12 @@ public class IndexBuilder {
      * Should this doc element be added to the index map?
      */
     protected boolean shouldAddToIndexMap(Doc element) {
+        if (javafx) {
+            if (element.tags("treatAsPrivate").length > 0) {
+                return false;
+            }
+        }
+
         if (element instanceof PackageDoc)
             // Do not add to index map if -nodeprecated option is set and the
             // package is marked as deprecated.

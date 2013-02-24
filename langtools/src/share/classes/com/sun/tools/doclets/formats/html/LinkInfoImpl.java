@@ -198,6 +198,11 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public static final int CONTEXT_CLASS_USE_HEADER = 33;
 
+    /**
+     * The header for property documentation copied from parent.
+     */
+    public static final int CONTEXT_PROPERTY_DOC_COPY = 34;
+
     public final ConfigurationImpl configuration;
 
     /**
@@ -422,6 +427,7 @@ public class LinkInfoImpl extends LinkInfo {
             case CONTEXT_SUBCLASSES:
             case CONTEXT_METHOD_DOC_COPY:
             case CONTEXT_FIELD_DOC_COPY:
+            case CONTEXT_PROPERTY_DOC_COPY:
             case CONTEXT_CLASS_USE_HEADER:
                 includeTypeInClassLinkLabel = false;
                 break;

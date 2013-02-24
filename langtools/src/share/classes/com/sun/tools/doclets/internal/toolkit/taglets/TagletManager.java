@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,13 @@ public class TagletManager {
     private boolean showauthor;
 
     /**
+     * True if we want to use JavaFX-related tags (@propertyGetter,
+     * @propertySetter, @propertyDescription, @defaultValue, @treatAsPrivate,
+     * @expert).
+     */
+    private boolean javafx;
+
+    /**
      * Construct a new <code>TagletManager</code>.
      * @param nosince true if we do not want to use @since tags.
      * @param showversion true if we want to use @version tags.
@@ -164,7 +171,8 @@ public class TagletManager {
      * @param message the message retriever to print warnings.
      */
     public TagletManager(boolean nosince, boolean showversion,
-                         boolean showauthor, MessageRetriever message) {
+                         boolean showauthor, boolean javafx,
+                         MessageRetriever message) {
         overridenStandardTags = new HashSet<String>();
         potentiallyConflictingTags = new HashSet<String>();
         standardTags = new HashSet<String>();
@@ -174,6 +182,7 @@ public class TagletManager {
         this.nosince = nosince;
         this.showversion = showversion;
         this.showauthor = showauthor;
+        this.javafx = javafx;
         this.message = message;
         initStandardTags();
         initStandardTagsLowercase();
@@ -677,6 +686,33 @@ public class TagletManager {
         standardTags.add("Text");
         standardTags.add("literal");
         standardTags.add("code");
+
+        if (javafx) {
+            initJavaFXTags();
+        }
+    }
+
+    /**
+     * Initialize JavaFX-related tags.
+     */
+    private void initJavaFXTags() {
+        Taglet temp;
+        customTags.put((temp = new PropertyGetterTaglet()).getName(), temp);
+        customTags.put((temp = new PropertySetterTaglet()).getName(), temp);
+        customTags.put((temp = new SimpleTaglet("propertyDescription", message.getText("doclet.PropertyDescription"),
+            SimpleTaglet.FIELD + SimpleTaglet.METHOD)).getName(), temp);
+        customTags.put((temp = new SimpleTaglet("defaultValue", message.getText("doclet.DefaultValue"),
+            SimpleTaglet.FIELD + SimpleTaglet.METHOD)).getName(), temp);
+        customTags.put((temp = new SimpleTaglet("treatAsPrivate", null,
+                SimpleTaglet.FIELD + SimpleTaglet.METHOD + SimpleTaglet.TYPE)).getName(), temp);
+        customTags.put((temp = new LegacyTaglet(new ExpertTaglet())).getName(), temp);
+
+        standardTags.add("propertyGetter");
+        standardTags.add("propertySetter");
+        standardTags.add("propertyDescription");
+        standardTags.add("defaultValue");
+        standardTags.add("treatAsPrivate");
+        standardTags.add("expert");
     }
 
     /**
