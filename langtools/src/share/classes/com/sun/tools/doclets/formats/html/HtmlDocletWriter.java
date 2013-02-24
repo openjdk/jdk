@@ -543,7 +543,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             }
             HtmlTree navList = new HtmlTree(HtmlTag.UL);
             navList.addStyle(HtmlStyle.navList);
-            navList.addAttr(HtmlAttr.TITLE, "Navigation");
+            navList.addAttr(HtmlAttr.TITLE,
+                            configuration.getText("doclet.Navigation"));
             if (configuration.createoverview) {
                 navList.addContent(getNavLinkContents());
             }
@@ -1299,13 +1300,31 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public String getDocLink(int context, ClassDoc classDoc, MemberDoc doc,
         String label, boolean strong) {
+        return getDocLink(context, classDoc, doc, label, strong, false);
+    }
+
+   /**
+     * Return the link for the given member.
+     *
+     * @param context the id of the context where the link will be printed.
+     * @param classDoc the classDoc that we should link to.  This is not
+     *                 necessarily equal to doc.containingClass().  We may be
+     *                 inheriting comments.
+     * @param doc the member being linked to.
+     * @param label the label for the link.
+     * @param strong true if the link should be strong.
+     * @param isProperty true if the doc parameter is a JavaFX property.
+     * @return the link for the given member.
+     */
+    public String getDocLink(int context, ClassDoc classDoc, MemberDoc doc,
+        String label, boolean strong, boolean isProperty) {
         if (! (doc.isIncluded() ||
             Util.isLinkable(classDoc, configuration))) {
             return label;
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
             return getLink(new LinkInfoImpl(configuration, context, classDoc,
-                getAnchor(emd), label, strong));
+                getAnchor(emd, isProperty), label, strong));
         } else if (doc instanceof MemberDoc) {
             return getLink(new LinkInfoImpl(configuration, context, classDoc,
                 doc.name(), label, strong));
@@ -1343,6 +1362,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     public String getAnchor(ExecutableMemberDoc emd) {
+        return getAnchor(emd, false);
+    }
+
+    public String getAnchor(ExecutableMemberDoc emd, boolean isProperty) {
+        if (isProperty) {
+            return emd.name();
+        }
         StringBuilder signature = new StringBuilder(emd.signature());
         StringBuilder signatureParsed = new StringBuilder();
         int counter = 0;
