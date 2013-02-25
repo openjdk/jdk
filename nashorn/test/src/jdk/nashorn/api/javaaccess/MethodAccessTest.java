@@ -39,6 +39,11 @@ import org.testng.TestNG;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+/**
+ * @test
+ * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.MethodAccessTest
+ * @run testng jdk.nashorn.api.javaaccess.MethodAccessTest
+ */
 public class MethodAccessTest {
 
     private static ScriptEngine e = null;
@@ -54,8 +59,8 @@ public class MethodAccessTest {
         e = m.getEngineByName("nashorn");
         o.setEngine(e);
         e.put("o", o);
-        e.eval("var SharedObject = Packages.jdk.nashorn.internal.access.SharedObject;");
-        e.eval("var Person = Packages.jdk.nashorn.internal.access.Person;");
+        e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.SharedObject;");
+        e.eval("var Person = Packages.jdk.nashorn.api.javaaccess.Person;");
     }
 
     @Test
@@ -325,13 +330,13 @@ public class MethodAccessTest {
 
     @Test
     public void accessDefaultConstructor() throws ScriptException {
-        e.eval("var dc = new Packages.jdk.nashorn.internal.access.Person()");
+        e.eval("var dc = new Packages.jdk.nashorn.api.javaaccess.Person()");
         assertEquals(new Person(), e.get("dc"));
     }
 
     @Test
     public void accessCustomConstructor() throws ScriptException {
-        e.eval("var cc = new Packages.jdk.nashorn.internal.access.Person(17)");
+        e.eval("var cc = new Packages.jdk.nashorn.api.javaaccess.Person(17)");
         assertEquals(new Person(17), e.get("cc"));
     }
 

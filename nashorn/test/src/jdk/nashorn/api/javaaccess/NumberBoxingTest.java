@@ -35,6 +35,11 @@ import org.testng.TestNG;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+/**
+ * @test
+ * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.NumberBoxingTest
+ * @run testng jdk.nashorn.api.javaaccess.NumberBoxingTest
+ */
 public class NumberBoxingTest {
 
     private static ScriptEngine e = null;
@@ -49,7 +54,7 @@ public class NumberBoxingTest {
         final ScriptEngineManager m = new ScriptEngineManager();
         e = m.getEngineByName("nashorn");
         e.put("o", o);
-        e.eval("var SharedObject = Packages.jdk.nashorn.internal.access.SharedObject;");
+        e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.SharedObject;");
     }
 
     // --------------------------------long
