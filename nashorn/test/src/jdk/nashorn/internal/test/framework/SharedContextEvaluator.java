@@ -135,7 +135,7 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
                     ScriptRuntime.apply(script, global);
                 } catch (final NashornException e) {
                     errors.error(e.toString());
-                    if (context._dump_on_error) {
+                    if (context.getEnv()._dump_on_error) {
                         e.printStackTrace(context.getErr());
                     }
 

@@ -641,7 +641,7 @@ public final class NativeString extends ScriptObject {
     public static Object localeCompare(final Object self, final Object that) {
 
         final String   str      = checkObjectToString(self);
-        final Collator collator = Collator.getInstance(Global.getThisContext().getLocale());
+        final Collator collator = Collator.getInstance(Global.getEnv()._locale);
 
         collator.setStrength(Collator.IDENTICAL);
         collator.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
@@ -996,7 +996,7 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toLocaleLowerCase(final Object self) {
-        return checkObjectToString(self).toLowerCase(Global.getThisContext().getLocale());
+        return checkObjectToString(self).toLowerCase(Global.getEnv()._locale);
     }
 
     /**
@@ -1016,7 +1016,7 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toLocaleUpperCase(final Object self) {
-        return checkObjectToString(self).toUpperCase(Global.getThisContext().getLocale());
+        return checkObjectToString(self).toUpperCase(Global.getEnv()._locale);
     }
 
     /**

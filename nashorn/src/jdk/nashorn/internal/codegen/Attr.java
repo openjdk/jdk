@@ -101,9 +101,6 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  */
 
 final class Attr extends NodeOperatorVisitor {
-    /** Context compiler. */
-    private final Context context;
-
     /**
      * Local definitions in current block (to discriminate from function
      * declarations always defined in the function scope. This is for
@@ -123,11 +120,8 @@ final class Attr extends NodeOperatorVisitor {
 
     /**
      * Constructor.
-     *
-     * @param compiler the compiler
      */
-    Attr(final Context context) {
-        this.context = context;
+    Attr() {
     }
 
     @Override
@@ -258,7 +252,7 @@ final class Attr extends NodeOperatorVisitor {
         }
 
         if (functionNode.isScript()) {
-            initFromPropertyMap(context, functionNode);
+            initFromPropertyMap(functionNode);
         }
 
         // Add function name as local symbol
@@ -1271,10 +1265,9 @@ final class Attr extends NodeOperatorVisitor {
 
     /**
      * Move any properties from a global map into the scope of this method
-     * @param context      context
      * @param functionNode the function node for which to init scope vars
      */
-    private static void initFromPropertyMap(final Context context, final FunctionNode functionNode) {
+    private static void initFromPropertyMap(final FunctionNode functionNode) {
         // For a script, add scope symbols as defined in the property map
         assert functionNode.isScript();
 

@@ -101,6 +101,7 @@ import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.Timing;
@@ -109,8 +110,8 @@ import jdk.nashorn.internal.runtime.Timing;
  * Builds the IR.
  */
 public class Parser extends AbstractParser {
-    /** Current context. */
-    private final Context context;
+    /** Current script environment. */
+    private final ScriptEnvironment env;
 
     /** Is scripting mode. */
     private final boolean scripting;
@@ -132,27 +133,27 @@ public class Parser extends AbstractParser {
     /**
      * Constructor
      *
-     * @param context parser context
+     * @param env     script environment
      * @param source  source to parse
      * @param errors  error manager
      */
-    public Parser(final Context context, final Source source, final ErrorManager errors) {
-        this(context, source, errors, context._strict);
+    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors) {
+        this(env, source, errors, env._strict);
     }
 
     /**
      * Construct a parser.
      *
-     * @param context parser context
+     * @param env     script environment
      * @param source  source to parse
      * @param errors  error manager
      * @param strict  parser created with strict mode enabled.
      */
-    public Parser(final Context context, final Source source, final ErrorManager errors, final boolean strict) {
+    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict) {
         super(source, errors, strict);
-        this.context   = context;
-        this.namespace = new Namespace(context.getNamespace());
-        this.scripting = context._scripting;
+        this.env   = env;
+        this.namespace = new Namespace(env.getNamespace());
+        this.scripting = env._scripting;
     }
 
     /**
@@ -184,7 +185,7 @@ public class Parser extends AbstractParser {
 
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, stream, scripting && !context._no_syntax_extensions);
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
 
             // Set up first token (skips opening EOL.)
             k = -1;
@@ -209,8 +210,8 @@ public class Parser extends AbstractParser {
                 errors.error(message);
             }
 
-            if (context._dump_on_error) {
-                e.printStackTrace(context.getErr());
+            if (env._dump_on_error) {
+                e.printStackTrace(env.getErr());
             }
 
             return null;
@@ -246,8 +247,8 @@ public class Parser extends AbstractParser {
                 errors.error(message);
             }
 
-            if (context._dump_on_error) {
-                e.printStackTrace(context.getErr());
+            if (env._dump_on_error) {
+                e.printStackTrace(env.getErr());
             }
         }
 
@@ -430,7 +431,7 @@ loop:
             if (!(lhs instanceof AccessNode ||
                   lhs instanceof IndexNode ||
                   lhs instanceof IdentNode)) {
-                if (context._early_lvalue_error) {
+                if (env._early_lvalue_error) {
                     error(JSErrorType.REFERENCE_ERROR, AbstractParser.message("invalid.lvalue"), lhs.getToken());
                 }
                 return referenceError(lhs, rhs);
@@ -1018,7 +1019,7 @@ loop:
      * Parse an empty statement.
      */
     private void emptyStatement() {
-        if (context._empty_statements) {
+        if (env._empty_statements) {
             block.addStatement(new EmptyNode(source, token,
                     Token.descPosition(token) + Token.descLength(token)));
         }
@@ -1126,7 +1127,7 @@ loop:
 
             // Nashorn extension: for each expression.
             // iterate property values rather than property names.
-            if (!context._no_syntax_extensions && type == IDENT && "each".equals(getValue())) {
+            if (!env._no_syntax_extensions && type == IDENT && "each".equals(getValue())) {
                 forNode.setIsForEach();
                 next();
             }
@@ -2416,7 +2417,7 @@ loop:
         // The object literal following the "new Constructor()" expresssion
         // is passed as an additional (last) argument to the constructor.
 
-        if (!context._no_syntax_extensions && type == LBRACE) {
+        if (!env._no_syntax_extensions && type == LBRACE) {
             arguments.add(objectLiteral());
         }
 
@@ -2572,7 +2573,7 @@ loop:
             verifyStrictIdent(name, "function name");
         } else if (isStatement) {
             // Nashorn extension: anonymous function statements
-            if (context._no_syntax_extensions || !context._anon_functions) {
+            if (env._no_syntax_extensions || !env._anon_functions) {
                 expect(IDENT);
             }
         }
@@ -2710,7 +2711,7 @@ loop:
             functionNode.setFirstToken(firstToken);
 
             // Nashorn extension: expression closures
-            if (!context._no_syntax_extensions && type != LBRACE) {
+            if (!env._no_syntax_extensions && type != LBRACE) {
                 /*
                  * Example:
                  *
@@ -3072,7 +3073,7 @@ loop:
      * Add a line number node at current position
      */
     private LineNumberNode lineNumber() {
-        if (context._debug_lines) {
+        if (env._debug_lines) {
             return new LineNumberNode(source, token, line);
         }
         return null;

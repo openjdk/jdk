@@ -12,6 +12,7 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -23,7 +24,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  */
 public final class ScriptFunctionTrampolineImpl extends ScriptFunctionImpl {
 
-    private CodeInstaller<Context> installer;
+    private CodeInstaller<ScriptEnvironment> installer;
 
     /** Function node to lazily recompile when trampoline is hit */
     private FunctionNode functionNode;
@@ -37,7 +38,7 @@ public final class ScriptFunctionTrampolineImpl extends ScriptFunctionImpl {
      * @param scope        scope
      * @param allocator    allocator
      */
-    public ScriptFunctionTrampolineImpl(final CodeInstaller<Context> installer, final FunctionNode functionNode, final ScriptFunctionData data, final ScriptObject scope, final MethodHandle allocator) {
+    public ScriptFunctionTrampolineImpl(final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode, final ScriptFunctionData data, final ScriptObject scope, final MethodHandle allocator) {
         super(null, data, scope, allocator);
 
         this.installer    = installer;

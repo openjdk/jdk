@@ -45,6 +45,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -157,12 +158,13 @@ public class Shell {
         }
 
         final ScriptObject global = context.createGlobal();
-        final List<String> files = context.getOptions().getFiles();
+        final ScriptEnvironment env = context.getEnv();
+        final List<String> files = env.getFiles();
         if (files.isEmpty()) {
             return readEvalPrint(context, global);
         }
 
-        if (context._compile_only) {
+        if (env._compile_only) {
             return compileScripts(context, global, files);
         }
 
@@ -237,6 +239,7 @@ public class Shell {
     private static int compileScripts(final Context context, final ScriptObject global, final List<String> files) throws IOException {
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
+        final ScriptEnvironment env = context.getEnv();
         try {
             if (globalChanged) {
                 Context.setGlobal(global);
@@ -245,18 +248,18 @@ public class Shell {
 
             // For each file on the command line.
             for (final String fileName : files) {
-                final FunctionNode functionNode = new Parser(context, new Source(fileName, new File(fileName)), errors).parse();
+                final FunctionNode functionNode = new Parser(env, new Source(fileName, new File(fileName)), errors).parse();
 
                 if (errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
                 }
 
                 //null - pass no code installer - this is compile only
-                new Compiler(context, functionNode).compile();
+                new Compiler(env, functionNode).compile();
             }
         } finally {
-            context.getOut().flush();
-            context.getErr().flush();
+            env.getOut().flush();
+            env.getErr().flush();
             if (globalChanged) {
                 Context.setGlobal(oldGlobal);
             }
@@ -296,7 +299,7 @@ public class Shell {
                     apply(script, global);
                 } catch (final NashornException e) {
                     errors.error(e.toString());
-                    if (context._dump_on_error) {
+                    if (context.getEnv()._dump_on_error) {
                         e.printStackTrace(context.getErr());
                     }
 
@@ -341,6 +344,7 @@ public class Shell {
         final PrintWriter err = context.getErr();
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
+        final ScriptEnvironment env = context.getEnv();
 
         try {
             if (globalChanged) {
@@ -353,7 +357,7 @@ public class Shell {
                 context.eval(global, source.getString(), global, "<shell.js>", false);
             } catch (final Exception e) {
                 err.println(e);
-                if (context._dump_on_error) {
+                if (env._dump_on_error) {
                     e.printStackTrace(err);
                 }
 
@@ -377,10 +381,10 @@ public class Shell {
 
                 Object res;
                 try {
-                    res = context.eval(global, source, global, "<shell>", context._strict);
+                    res = context.eval(global, source, global, "<shell>", env._strict);
                 } catch (final Exception e) {
                     err.println(e);
-                    if (context._dump_on_error) {
+                    if (env._dump_on_error) {
                         e.printStackTrace(err);
                     }
                     continue;

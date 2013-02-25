@@ -42,6 +42,7 @@
 var Parser         = Java.type("jdk.nashorn.internal.parser.Parser")
 var Compiler       = Java.type("jdk.nashorn.internal.codegen.Compiler")
 var Context        = Java.type("jdk.nashorn.internal.runtime.Context")
+var ScriptEnvironment = Java.type("jdk.nashorn.internal.runtime.ScriptEnvironment")
 var Source         = Java.type("jdk.nashorn.internal.runtime.Source")
 var FunctionNode   = Java.type("jdk.nashorn.internal.ir.FunctionNode")
 
@@ -89,9 +90,9 @@ function getFirstFunction(functionNode) {
 // representing it.
 function compile(source) {
     var source   = new Source("<no name>", source);
-    var parser   = new Parser(Context.getContext(), source, null);
+    var parser   = new Parser(Context.getContext().getEnv(), source, null);
     var func     = parseMethod.invoke(parser);
-    var compiler = new Compiler(Context.getContext(), func);
+    var compiler = new Compiler(Context.getContext().getEnv(), func);
 
     compileMethod.invoke(compiler);
 
