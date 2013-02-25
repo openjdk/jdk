@@ -747,6 +747,7 @@ BUILD_OUTPUT
 OVERRIDE_SRC_ROOT
 ADD_SRC_ROOT
 JDK_TOPDIR
+NASHORN_TOPDIR
 HOTSPOT_TOPDIR
 JAXWS_TOPDIR
 JAXP_TOPDIR
@@ -15663,7 +15664,9 @@ CORBA_TOPDIR="$SRC_ROOT/corba"
 JAXP_TOPDIR="$SRC_ROOT/jaxp"
 JAXWS_TOPDIR="$SRC_ROOT/jaxws"
 HOTSPOT_TOPDIR="$SRC_ROOT/hotspot"
+NASHORN_TOPDIR="$SRC_ROOT/nashorn"
 JDK_TOPDIR="$SRC_ROOT/jdk"
+
 
 
 
@@ -15902,6 +15905,19 @@ if test "x$with_override_hotspot" != x; then
 $as_echo_n "checking if hotspot should be overridden... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $HOTSPOT_TOPDIR" >&5
 $as_echo "yes with $HOTSPOT_TOPDIR" >&6; }
+fi
+if test "x$with_override_nashorn" != x; then
+    CURDIR="$PWD"
+    cd "$with_override_nashorn"
+    NASHORN_TOPDIR="`pwd`"
+    cd "$CURDIR"
+    if ! test -f $NASHORN_TOPDIR/makefiles/BuildNashorn.gmk; then
+        as_fn_error $? "You have to override nashorn with a full nashorn repo!" "$LINENO" 5
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if nashorn should be overridden" >&5
+$as_echo_n "checking if nashorn should be overridden... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $NASHORN_TOPDIR" >&5
+$as_echo "yes with $NASHORN_TOPDIR" >&6; }
 fi
 if test "x$with_override_jdk" != x; then
     CURDIR="$PWD"

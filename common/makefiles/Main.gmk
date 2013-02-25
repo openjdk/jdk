@@ -123,6 +123,12 @@ jdk-only: start-make
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk $(JDK_TARGET))
 	@$(call TargetExit)
 
+nashorn: jdk nashorn-only
+nashorn-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(NASHORN_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk)
+	@$(call TargetExit)
+
 demos: jdk demos-only
 demos-only: start-make
 	@$(call TargetEnter)
@@ -131,7 +137,7 @@ demos-only: start-make
 
 # Note: This double-colon rule is intentional, to support
 # custom make file integration.
-images:: source-tips demos images-only
+images:: source-tips demos nashorn images-only
 images-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk images)
@@ -193,7 +199,7 @@ $(OUTPUT_ROOT)/source_tips: FRC
 
 
 # Remove everything, except the output from configure.
-clean: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-images clean-overlay-images clean-bootcycle-build clean-docs
+clean: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-nashorn clean-images clean-overlay-images clean-bootcycle-build clean-docs
 	@($(CD) $(OUTPUT_ROOT) && $(RM) -r tmp source_tips build.log* build-trace*.log*)
 	@$(ECHO) Cleaned all build artifacts.
 
@@ -223,6 +229,8 @@ clean-hotspot:
 	$(call CleanComponent,hotspot)
 clean-jdk:
 	$(call CleanComponent,jdk)
+clean-nashorn:
+	$(call CleanComponent,nashorn)
 clean-images:
 	$(call CleanComponent,images)
 clean-overlay-images:
@@ -233,10 +241,10 @@ clean-docs:
 	$(call CleanComponent,docs)
 	$(call CleanComponent,docstemp)
 
-.PHONY: langtools corba jaxp jaxws hotspot jdk images overlay-images install
-.PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only images-only overlay-images-only install-only
+.PHONY: langtools corba jaxp jaxws hotspot jdk nashorn images overlay-images install
+.PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only nashorn-only images-only overlay-images-only install-only
 .PHONY: all test clean dist-clean bootcycle-images start-make
-.PHONY: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-images clean-overlay-images clean-bootcycle-build
+.PHONY: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-nashorn clean-images clean-overlay-images clean-bootcycle-build
 .PHONY: profiles profiles-only profiles-oscheck
 
 FRC: # Force target
