@@ -34,7 +34,7 @@ import java.util.ArrayList;
  *
  * The <tt>LoggingMXBean</tt> interface provides a standard
  * method for management access to the individual
- * java.util.Logger objects available at runtime.
+ * {@code Logger} objects available at runtime.
  *
  * @author Ron Mann
  * @author Mandy Chung
@@ -75,7 +75,7 @@ class Logging implements LoggingMXBean {
         if (level == null) {
             return EMPTY_STRING;
         } else {
-            return level.getName();
+            return level.getLevelName();
         }
     }
 
@@ -85,7 +85,6 @@ class Logging implements LoggingMXBean {
         }
 
         Logger logger = logManager.getLogger(loggerName);
-
         if (logger == null) {
             throw new IllegalArgumentException("Logger " + loggerName +
                 "does not exist");
@@ -94,7 +93,10 @@ class Logging implements LoggingMXBean {
         Level level = null;
         if (levelName != null) {
             // parse will throw IAE if logLevel is invalid
-            level = Level.parse(levelName);
+            level = Level.findLevel(levelName);
+            if (level == null) {
+                throw new IllegalArgumentException("Unknown level \"" + levelName + "\"");
+            }
         }
 
         logger.setLevel(level);

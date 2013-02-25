@@ -83,7 +83,7 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
      * @param out an OutputStream
      * @exception IOException if an error is encountered.
      */
-    public void pack(JarFile in, OutputStream out) throws IOException {
+    public synchronized void pack(JarFile in, OutputStream out) throws IOException {
         assert(Utils.currentInstance.get() == null);
         TimeZone tz = (props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE))
                       ? null
@@ -118,7 +118,7 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
      * @param out an OutputStream
      * @exception IOException if an error is encountered.
      */
-    public void pack(JarInputStream in, OutputStream out) throws IOException {
+    public synchronized void pack(JarInputStream in, OutputStream out) throws IOException {
         assert(Utils.currentInstance.get() == null);
         TimeZone tz = (props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE)) ? null :
             TimeZone.getDefault();

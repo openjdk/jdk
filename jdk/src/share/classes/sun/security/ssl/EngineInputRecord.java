@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,71 +178,6 @@ final class EngineInputRecord extends InputRecord {
     }
 
     /*
-     * Verifies and removes the MAC value.  Returns true if
-     * the MAC checks out OK.
-     *
-     * On entry:
-     *     position = beginning of app/MAC data
-     *     limit = end of MAC data.
-     *
-     * On return:
-     *     position = beginning of app data
-     *     limit = end of app data
-     */
-    boolean checkMAC(MAC signer, ByteBuffer bb) {
-        if (internalData) {
-            return checkMAC(signer);
-        }
-
-        int len = signer.MAClen();
-        if (len == 0) { // no mac
-            return true;
-        }
-
-        /*
-         * Grab the original limit
-         */
-        int lim = bb.limit();
-
-        /*
-         * Delineate the area to apply a MAC on.
-         */
-        int macData = lim - len;
-        bb.limit(macData);
-
-        byte[] mac = signer.compute(contentType(), bb);
-
-        if (len != mac.length) {
-            throw new RuntimeException("Internal MAC error");
-        }
-
-        /*
-         * Delineate the MAC values, position was already set
-         * by doing the compute above.
-         *
-         * We could zero the MAC area, but not much useful information
-         * there anyway.
-         */
-        bb.position(macData);
-        bb.limit(lim);
-
-        try {
-            for (int i = 0; i < len; i++) {
-                if (bb.get() != mac[i]) {  // No BB.equals(byte []); !
-                    return false;
-                }
-            }
-            return true;
-        } finally {
-            /*
-             * Position to the data.
-             */
-            bb.rewind();
-            bb.limit(macData);
-        }
-    }
-
-    /*
      * Pass the data down if it's internally cached, otherwise
      * do it here.
      *
@@ -251,18 +186,161 @@ final class EngineInputRecord extends InputRecord {
      * If external data(app), return a new ByteBuffer with data to
      * process.
      */
-    ByteBuffer decrypt(CipherBox box, ByteBuffer bb)
-            throws BadPaddingException {
+    ByteBuffer decrypt(MAC signer,
+            CipherBox box, ByteBuffer bb) throws BadPaddingException {
 
         if (internalData) {
-            decrypt(box);
+            decrypt(signer, box);   // MAC is checked during decryption
             return tmpBB;
         }
 
-        box.decrypt(bb);
-        bb.rewind();
+        BadPaddingException reservedBPE = null;
+        int tagLen = signer.MAClen();
+        int cipheredLength = bb.remaining();
+
+        if (!box.isNullCipher()) {
+            // sanity check length of the ciphertext
+            if (!box.sanityCheck(tagLen, cipheredLength)) {
+                throw new BadPaddingException(
+                    "ciphertext sanity check failed");
+            }
+
+            try {
+                // Note that the CipherBox.decrypt() does not change
+                // the capacity of the buffer.
+                box.decrypt(bb, tagLen);
+            } catch (BadPaddingException bpe) {
+                // RFC 2246 states that decryption_failed should be used
+                // for this purpose. However, that allows certain attacks,
+                // so we just send bad record MAC. We also need to make
+                // sure to always check the MAC to avoid a timing attack
+                // for the same issue. See paper by Vaudenay et al and the
+                // update in RFC 4346/5246.
+                //
+                // Failover to message authentication code checking.
+                reservedBPE = bpe;
+            } finally {
+                bb.rewind();
+            }
+        }
+
+        if (tagLen != 0) {
+            int macOffset = bb.limit() - tagLen;
+
+            // Note that although it is not necessary, we run the same MAC
+            // computation and comparison on the payload for both stream
+            // cipher and CBC block cipher.
+            if (bb.remaining() < tagLen) {
+                // negative data length, something is wrong
+                if (reservedBPE == null) {
+                    reservedBPE = new BadPaddingException("bad record");
+                }
+
+                // set offset of the dummy MAC
+                macOffset = cipheredLength - tagLen;
+                bb.limit(cipheredLength);
+            }
+
+            // Run MAC computation and comparison on the payload.
+            if (checkMacTags(contentType(), bb, signer, false)) {
+                if (reservedBPE == null) {
+                    reservedBPE = new BadPaddingException("bad record MAC");
+                }
+            }
+
+            // Run MAC computation and comparison on the remainder.
+            //
+            // It is only necessary for CBC block cipher.  It is used to get a
+            // constant time of MAC computation and comparison on each record.
+            if (box.isCBCMode()) {
+                int remainingLen = calculateRemainingLen(
+                                        signer, cipheredLength, macOffset);
+
+                // NOTE: here we use the InputRecord.buf because I did not find
+                // an effective way to work on ByteBuffer when its capacity is
+                // less than remainingLen.
+
+                // NOTE: remainingLen may be bigger (less than 1 block of the
+                // hash algorithm of the MAC) than the cipheredLength. However,
+                // We won't need to worry about it because we always use a
+                // maximum buffer for every record.  We need a change here if
+                // we use small buffer size in the future.
+                if (remainingLen > buf.length) {
+                    // unlikely to happen, just a placehold
+                    throw new RuntimeException(
+                        "Internal buffer capacity error");
+                }
+
+                // Won't need to worry about the result on the remainder. And
+                // then we won't need to worry about what's actual data to
+                // check MAC tag on.  We start the check from the header of the
+                // buffer so that we don't need to construct a new byte buffer.
+                checkMacTags(contentType(), buf, 0, remainingLen, signer, true);
+            }
+
+            bb.limit(macOffset);
+        }
+
+        // Is it a failover?
+        if (reservedBPE != null) {
+            throw reservedBPE;
+        }
 
         return bb.slice();
+    }
+
+    /*
+     * Run MAC computation and comparison
+     *
+     * Please DON'T change the content of the ByteBuffer parameter!
+     */
+    private static boolean checkMacTags(byte contentType, ByteBuffer bb,
+            MAC signer, boolean isSimulated) {
+
+        int tagLen = signer.MAClen();
+        int lim = bb.limit();
+        int macData = lim - tagLen;
+
+        bb.limit(macData);
+        byte[] hash = signer.compute(contentType, bb, isSimulated);
+        if (hash == null || tagLen != hash.length) {
+            // Something is wrong with MAC implementation.
+            throw new RuntimeException("Internal MAC error");
+        }
+
+        bb.position(macData);
+        bb.limit(lim);
+        try {
+            int[] results = compareMacTags(bb, hash);
+            return (results[0] != 0);
+        } finally {
+            bb.rewind();
+            bb.limit(macData);
+        }
+    }
+
+    /*
+     * A constant-time comparison of the MAC tags.
+     *
+     * Please DON'T change the content of the ByteBuffer parameter!
+     */
+    private static int[] compareMacTags(ByteBuffer bb, byte[] tag) {
+
+        // An array of hits is used to prevent Hotspot optimization for
+        // the purpose of a constant-time check.
+        int[] results = {0, 0};     // {missed #, matched #}
+
+        // The caller ensures there are enough bytes available in the buffer.
+        // So we won't need to check the remaining of the buffer.
+        for (int i = 0; i < tag.length; i++) {
+            if (bb.get() != tag[i]) {
+                results[0]++;       // mismatched bytes
+            } else {
+                results[1]++;       // matched bytes
+            }
+        }
+
+        return results;
     }
 
     /*
