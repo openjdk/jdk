@@ -51,8 +51,8 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.runtime.CodeInstaller;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.Timing;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -83,13 +83,13 @@ public final class Compiler {
 
     private final CompilationSequence sequence;
 
-    private final Context context;
+    private final ScriptEnvironment env;
 
     private final String scriptName;
 
     private boolean strict;
 
-    private CodeInstaller<Context> installer;
+    private CodeInstaller<ScriptEnvironment> installer;
 
     /** logger for compiler, trampolines, splits and related code generation events
      *  that affect classes */
@@ -190,14 +190,14 @@ public final class Compiler {
     /**
      * Constructor
      *
-     * @param installer    code installer from
+     * @param installer    code installer
      * @param functionNode function node (in any available {@link CompilationState}) to compile
      * @param sequence     {@link Compiler#CompilationSequence} of {@link CompilationPhase}s to apply as this compilation
      * @param strict       should this compilation use strict mode semantics
      */
     //TODO support an array of FunctionNodes for batch lazy compilation
-    Compiler(final Context context, final CodeInstaller<Context> installer, final FunctionNode functionNode, final CompilationSequence sequence, final boolean strict) {
-        this.context       = context;
+    Compiler(final ScriptEnvironment env, final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode, final CompilationSequence sequence, final boolean strict) {
+        this.env           = env;
         this.functionNode  = functionNode;
         this.sequence      = sequence;
         this.installer     = installer;
@@ -222,32 +222,32 @@ public final class Compiler {
     /**
      * Constructor
      *
-     * @param installer    code installer from context
+     * @param installer    code installer
      * @param functionNode function node (in any available {@link CompilationState}) to compile
      * @param strict       should this compilation use strict mode semantics
      */
-    public Compiler(final CodeInstaller<Context> installer, final FunctionNode functionNode, final boolean strict) {
+    public Compiler(final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode, final boolean strict) {
         this(installer.getOwner(), installer, functionNode, SEQUENCE_DEFAULT, strict);
     }
 
     /**
-     * Constructor - compilation will use the same strict semantics as context
+     * Constructor - compilation will use the same strict semantics as in script environment
      *
-     * @param installer    code installer from context
+     * @param installer    code installer
      * @param functionNode function node (in any available {@link CompilationState}) to compile
      */
-    public Compiler(final CodeInstaller<Context> installer, final FunctionNode functionNode) {
+    public Compiler(final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode) {
         this(installer.getOwner(), installer, functionNode, SEQUENCE_DEFAULT, installer.getOwner()._strict);
     }
 
     /**
-     * Constructor - compilation needs no installer, but uses a context
+     * Constructor - compilation needs no installer, but uses a script environment
      * Used in "compile only" scenarios
-     * @param context a context
+     * @param env a script environment
      * @param functionNode functionNode to compile
      */
-    public Compiler(final Context context, final FunctionNode functionNode) {
-        this(context, null, functionNode, SEQUENCE_DEFAULT, context._strict);
+    public Compiler(final ScriptEnvironment env, final FunctionNode functionNode) {
+        this(env, null, functionNode, SEQUENCE_DEFAULT, env._strict);
     }
 
     /**
@@ -345,7 +345,7 @@ public final class Compiler {
         return constantData;
     }
 
-    CodeInstaller<Context> getCodeInstaller() {
+    CodeInstaller<ScriptEnvironment> getCodeInstaller() {
         return installer;
     }
 
@@ -357,8 +357,8 @@ public final class Compiler {
         bytecode.put(name, code);
     }
 
-    Context getContext() {
-        return this.context;
+    ScriptEnvironment getEnv() {
+        return this.env;
     }
 
     private static String safeSourceName(final Source source) {
@@ -403,7 +403,7 @@ public final class Compiler {
     }
 
     private CompileUnit initCompileUnit(final String unitClassName, final long initialWeight) {
-        final ClassEmitter classEmitter = new ClassEmitter(context, functionNode.getSource().getName(), unitClassName, strict);
+        final ClassEmitter classEmitter = new ClassEmitter(env, functionNode.getSource().getName(), unitClassName, strict);
         final CompileUnit  compileUnit  = new CompileUnit(unitClassName, classEmitter, initialWeight);
 
         classEmitter.begin();

@@ -24,8 +24,8 @@ import jdk.nashorn.internal.ir.ReferenceNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Timing;
 
 /**
@@ -153,15 +153,15 @@ enum CompilationPhase {
     ATTRIBUTION_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED), ATTR) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
-            final Context context = compiler.getContext();
+            final ScriptEnvironment env = compiler.getEnv();
 
-            fn.accept(new Attr(context));
-            if (context._print_lower_ast) {
-                context.getErr().println(new ASTWriter(fn));
+            fn.accept(new Attr());
+            if (env._print_lower_ast) {
+                env.getErr().println(new ASTWriter(fn));
             }
 
-            if (context._print_lower_parse) {
-                context.getErr().println(new PrintVisitor(fn));
+            if (env._print_lower_parse) {
+                env.getErr().println(new PrintVisitor(fn));
            }
         }
 
@@ -232,7 +232,7 @@ enum CompilationPhase {
     BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED), EMITTED) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
-            final Context context = compiler.getContext();
+            final ScriptEnvironment env = compiler.getEnv();
 
             try {
                 final CodeGenerator codegen = new CodeGenerator(compiler);
@@ -240,10 +240,10 @@ enum CompilationPhase {
                 codegen.generateScopeCalls();
 
             } catch (final VerifyError e) {
-                if (context._verify_code || context._print_code) {
-                    context.getErr().println(e.getClass().getSimpleName() + ": " + e.getMessage());
-                    if (context._dump_on_error) {
-                        e.printStackTrace(context.getErr());
+                if (env._verify_code || env._print_code) {
+                    env.getErr().println(e.getClass().getSimpleName() + ": " + e.getMessage());
+                    if (env._dump_on_error) {
+                        e.printStackTrace(env.getErr());
                     }
                 } else {
                     throw e;
@@ -262,22 +262,22 @@ enum CompilationPhase {
                 compiler.addClass(className, bytecode);
 
                 //should could be printed to stderr for generate class?
-                if (context._print_code) {
+                if (env._print_code) {
                     final StringBuilder sb = new StringBuilder();
                     sb.append("class: " + className).
                         append('\n').
                         append(ClassEmitter.disassemble(bytecode)).
                         append("=====");
-                    context.getErr().println(sb);
+                    env.getErr().println(sb);
                 }
 
                 //should we verify the generated code?
-                if (context._verify_code) {
-                    context.verify(bytecode);
+                if (env._verify_code) {
+                    compiler.getCodeInstaller().verify(bytecode);
                 }
 
                 //should code be dumped to disk - only valid in compile_only mode?
-                if (context._dest_dir != null && context._compile_only) {
+                if (env._dest_dir != null && env._compile_only) {
                     final String fileName = className.replace('.', File.separatorChar) + ".class";
                     final int    index    = fileName.lastIndexOf(File.separatorChar);
 
@@ -287,7 +287,7 @@ enum CompilationPhase {
                             if (!dir.exists() && !dir.mkdirs()) {
                                 throw new IOException(dir.toString());
                             }
-                            final File file = new File(context._dest_dir, fileName);
+                            final File file = new File(env._dest_dir, fileName);
                             try (final FileOutputStream fos = new FileOutputStream(file)) {
                                 fos.write(bytecode);
                             }

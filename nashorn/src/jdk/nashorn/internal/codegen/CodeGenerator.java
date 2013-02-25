@@ -175,7 +175,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
      */
     CodeGenerator(final Compiler compiler) {
         this.compiler      = compiler;
-        this.callSiteFlags = compiler.getContext()._callsite_flags;
+        this.callSiteFlags = compiler.getEnv()._callsite_flags;
     }
 
     /**
@@ -2968,12 +2968,12 @@ final class CodeGenerator extends NodeOperatorVisitor {
      * @param ident identifier for block or function where applicable
      */
     private void printSymbols(final Block block, final String ident) {
-        if (!compiler.getContext()._print_symbols) {
+        if (!compiler.getEnv()._print_symbols) {
             return;
         }
 
         @SuppressWarnings("resource")
-        final PrintWriter out = compiler.getContext().getErr();
+        final PrintWriter out = compiler.getEnv().getErr();
         out.println("[BLOCK in '" + ident + "']");
         if (!block.printSymbols(out)) {
             out.println("<no symbols>");

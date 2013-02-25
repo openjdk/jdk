@@ -43,22 +43,15 @@ import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
-import java.util.Locale;
-import java.util.TimeZone;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
-import jdk.nashorn.internal.codegen.ClassEmitter;
 import jdk.nashorn.internal.codegen.Compiler;
-import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
-import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
-import jdk.nashorn.internal.runtime.options.KeyValueOption;
-import jdk.nashorn.internal.runtime.options.Option;
 import jdk.nashorn.internal.runtime.options.Options;
 import sun.reflect.Reflection;
 
@@ -71,7 +64,7 @@ public final class Context {
      * ContextCodeInstaller that has the privilege of installing classes in the Context.
      * Can only be instantiated from inside the context and is opaque to other classes
      */
-    public static class ContextCodeInstaller implements CodeInstaller<Context> {
+    public static class ContextCodeInstaller implements CodeInstaller<ScriptEnvironment> {
         private final Context      context;
         private final ScriptLoader loader;
         private final CodeSource   codeSource;
@@ -87,13 +80,18 @@ public final class Context {
          * @return context
          */
         @Override
-        public Context getOwner() {
-            return context;
+        public ScriptEnvironment getOwner() {
+            return context.env;
         }
 
         @Override
         public Class<?> install(final String className, final byte[] bytecode) {
             return loader.installClass(className, bytecode, codeSource);
+        }
+
+        @Override
+        public void verify(final byte[] code) {
+            context.verify(code);
         }
     }
 
@@ -198,6 +196,12 @@ public final class Context {
         }
     }
 
+    /** Current environment. */
+    private final ScriptEnvironment env;
+
+    /** is this context in strict mode? Cached from env. as this is used heavily. */
+    public final boolean _strict;
+
     /** class loader to resolve classes from script. */
     private final ClassLoader  appLoader;
 
@@ -207,107 +211,11 @@ public final class Context {
     /** Class loader to load classes compiled from scripts. */
     private final ScriptLoader scriptLoader;
 
-    /** Top level namespace. */
-    private final Namespace namespace;
-
-    /** Current options. */
-    private final Options options;
-
     /** Current error manager. */
     private final ErrorManager errors;
 
-    /** Output writer for this context */
-    private final PrintWriter out;
-
-    /** Error writer for this context */
-    private final PrintWriter err;
-
-    /** Local for error messages */
-    private final Locale locale;
-
     /** Empty map used for seed map for JO$ objects */
     final PropertyMap emptyMap = PropertyMap.newEmptyMap(this);
-
-    // cache fields for "well known" options.
-    // see jdk.nashorn.internal.runtime.Resources
-
-    /** Always allow functions as statements */
-    public final boolean _anon_functions;
-
-    /** Size of the per-global Class cache size */
-    public final int     _class_cache_size;
-
-    /** Only compile script, do not run it or generate other ScriptObjects */
-    public final boolean _compile_only;
-
-    /** Accumulated callsite flags that will be used when boostrapping script callsites */
-    public final int     _callsite_flags;
-
-    /** Genereate line number table in class files */
-    public final boolean _debug_lines;
-
-    /** Package to which generated class files are added */
-    public final String  _dest_dir;
-
-    /** Display stack trace upon error, default is false */
-    public final boolean _dump_on_error;
-
-    /** Invalid lvalue expressions should be reported as early errors */
-    public final boolean _early_lvalue_error;
-
-    /** Empty statements should be preserved in the AST */
-    public final boolean _empty_statements;
-
-    /** Show full Nashorn version */
-    public final boolean _fullversion;
-
-    /** Create a new class loaded for each compilation */
-    public final boolean _loader_per_compile;
-
-    /** Do not support non-standard syntax extensions. */
-    public final boolean _no_syntax_extensions;
-
-    /** Package to which generated class files are added */
-    public final String  _package;
-
-    /** Only parse the source code, do not compile */
-    public final boolean _parse_only;
-
-    /** Print the AST before lowering */
-    public final boolean _print_ast;
-
-    /** Print the AST after lowering */
-    public final boolean _print_lower_ast;
-
-    /** Print resulting bytecode for script */
-    public final boolean _print_code;
-
-    /** Print function will no print newline characters */
-    public final boolean _print_no_newline;
-
-    /** Print AST in more human readable form */
-    public final boolean _print_parse;
-
-    /** Print AST in more human readable form after Lowering */
-    public final boolean _print_lower_parse;
-
-    /** print symbols and their contents for the script */
-    public final boolean _print_symbols;
-
-    /** is this context in scripting mode? */
-    public final boolean _scripting;
-
-    /** is this context in strict mode? */
-    public final boolean _strict;
-
-    /** print version info of Nashorn */
-    public final boolean _version;
-
-    /** should code verification be done of generated bytecode */
-    public final boolean _verify_code;
-
-    /** time zone for this context */
-    public final TimeZone _timezone;
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
@@ -362,6 +270,8 @@ public final class Context {
             sm.checkPermission(new RuntimePermission("createNashornContext"));
         }
 
+        this.env       = new ScriptEnvironment(options, out, err);
+        this._strict   = env._strict;
         this.appLoader = appLoader;
         this.scriptLoader = (ScriptLoader)AccessController.doPrivileged(
              new PrivilegedAction<ClassLoader>() {
@@ -371,73 +281,12 @@ public final class Context {
                     return new ScriptLoader(structureLoader, Context.this);
                 }
              });
-
-        this.namespace = new Namespace();
-        this.options   = options;
         this.errors    = errors;
-        this.locale    = Locale.getDefault();
-        this.out       = out;
-        this.err       = err;
-
-        _anon_functions       = options.getBoolean("anon.functions");
-        _class_cache_size     = options.getInteger("class.cache.size");
-        _compile_only         = options.getBoolean("compile.only");
-        _debug_lines          = options.getBoolean("debug.lines");
-        _dest_dir             = options.getString("d");
-        _dump_on_error        = options.getBoolean("doe");
-        _early_lvalue_error   = options.getBoolean("early.lvalue.error");
-        _empty_statements     = options.getBoolean("empty.statements");
-        _fullversion          = options.getBoolean("fullversion");
-        _loader_per_compile   = options.getBoolean("loader.per.compile");
-        _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
-        _package              = options.getString("package");
-        _parse_only           = options.getBoolean("parse.only");
-        _print_ast            = options.getBoolean("print.ast");
-        _print_lower_ast      = options.getBoolean("print.lower.ast");
-        _print_code           = options.getBoolean("print.code");
-        _print_no_newline     = options.getBoolean("print.no.newline");
-        _print_parse          = options.getBoolean("print.parse");
-        _print_lower_parse    = options.getBoolean("print.lower.parse");
-        _print_symbols        = options.getBoolean("print.symbols");
-        _scripting            = options.getBoolean("scripting");
-        _strict               = options.getBoolean("strict");
-        _version              = options.getBoolean("version");
-        _verify_code          = options.getBoolean("verify.code");
-
-        int callSiteFlags = 0;
-        if (options.getBoolean("profile.callsites")) {
-            callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_PROFILE;
-        }
-
-        if (options.get("trace.callsites") instanceof KeyValueOption) {
-            callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_TRACE;
-            final KeyValueOption kv = (KeyValueOption)options.get("trace.callsites");
-            if (kv.hasValue("miss")) {
-                callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_TRACE_MISSES;
-            }
-            if (kv.hasValue("enterexit") || (callSiteFlags & NashornCallSiteDescriptor.CALLSITE_TRACE_MISSES) == 0) {
-                callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_TRACE_ENTEREXIT;
-            }
-            if (kv.hasValue("objects")) {
-                callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_TRACE_VALUES;
-            }
-            if (kv.hasValue("scope")) {
-                callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_TRACE_SCOPE;
-            }
-        }
-        this._callsite_flags = callSiteFlags;
-
-        final Option<?> option = options.get("timezone");
-        if (option != null) {
-            this._timezone = (TimeZone)option.getValue();
-        } else {
-            this._timezone  = TimeZone.getDefault();
-        }
 
         // if user passed -classpath option, make a class loader with that and set it as
         // thread context class loader so that script can access classes from that path.
         final String classPath = options.getString("classpath");
-        if (! _compile_only && classPath != null && !classPath.isEmpty()) {
+        if (! env._compile_only && classPath != null && !classPath.isEmpty()) {
             // make sure that caller can create a class loader.
             if (sm != null) {
                 sm.checkPermission(new RuntimePermission("createClassLoader"));
@@ -448,11 +297,11 @@ public final class Context {
         }
 
         // print version info if asked.
-        if (_version) {
+        if (env._version) {
             getErr().println("nashorn " + Version.version());
         }
 
-        if (_fullversion) {
+        if (env._fullversion) {
             getErr().println("nashorn full version " + Version.fullVersion());
         }
     }
@@ -466,11 +315,19 @@ public final class Context {
     }
 
     /**
+     * Get the script environment for this context
+     * @return script environment
+     */
+    public ScriptEnvironment getEnv() {
+        return env;
+    }
+
+    /**
      * Get the output stream for this context
      * @return output print writer
      */
     public PrintWriter getOut() {
-        return out;
+        return env.getOut();
     }
 
     /**
@@ -478,39 +335,7 @@ public final class Context {
      * @return error print writer
      */
     public PrintWriter getErr() {
-        return err;
-    }
-
-    /**
-     * Get the namespace for this context
-     * @return namespace
-     */
-    public Namespace getNamespace() {
-        return namespace;
-    }
-
-    /**
-     * Get the options given to this context
-     * @return options
-     */
-    public Options getOptions() {
-        return options;
-    }
-
-    /**
-     * Get the locale for this context
-     * @return locale
-     */
-    public Locale getLocale() {
-        return locale;
-    }
-
-    /**
-     * Get the time zone for this context
-     * @return time zone
-     */
-    public TimeZone getTimeZone() {
-        return _timezone;
+        return env.getErr();
     }
 
     /**
@@ -739,7 +564,7 @@ public final class Context {
 
     /**
      * Verify generated bytecode before emission. This is called back from the
-     * {@link ClassEmitter} or the {@link Compiler}. If the "--verify-code" parameter
+     * {@link ObjectClassGenerator} or the {@link Compiler}. If the "--verify-code" parameter
      * hasn't been given, this is a nop
      *
      * Note that verification may load classes -- we don't want to do that unless
@@ -749,7 +574,7 @@ public final class Context {
      * @param bytecode bytecode to verify
      */
     public void verify(final byte[] bytecode) {
-        if (_verify_code) {
+        if (env._verify_code) {
             // No verification when security manager is around as verifier
             // may load further classes - which should be avoided.
             if (System.getSecurityManager() == null) {
@@ -792,7 +617,7 @@ public final class Context {
         }
 
         // Need only minimal global object, if we are just compiling.
-        if (!_compile_only) {
+        if (!env._compile_only) {
             final ScriptObject oldGlobal = Context.getGlobalTrusted();
             try {
                 Context.setGlobalTrusted(global);
@@ -902,7 +727,7 @@ public final class Context {
         GlobalObject global = null;
         Class<?> script;
 
-        if (_class_cache_size > 0) {
+        if (env._class_cache_size > 0) {
             global = (GlobalObject)Context.getGlobalTrusted();
             script = global.findCachedClass(source);
             if (script != null) {
@@ -910,23 +735,23 @@ public final class Context {
             }
         }
 
-        final FunctionNode functionNode = new Parser(this, source, errMan, strict).parse();
-        if (errors.hasErrors() || _parse_only) {
+        final FunctionNode functionNode = new Parser(env, source, errMan, strict).parse();
+        if (errors.hasErrors() || env._parse_only) {
             return null;
         }
 
-        if (_print_ast) {
+        if (env._print_ast) {
             getErr().println(new ASTWriter(functionNode));
         }
 
-        if (_print_parse) {
+        if (env._print_parse) {
             getErr().println(new PrintVisitor(functionNode));
         }
 
         final URL          url    = source.getURL();
-        final ScriptLoader loader = _loader_per_compile ? createNewLoader() : scriptLoader;
+        final ScriptLoader loader = env._loader_per_compile ? createNewLoader() : scriptLoader;
         final CodeSource   cs     = url == null ? null : new CodeSource(url, (CodeSigner[])null);
-        final CodeInstaller<Context> installer = new ContextCodeInstaller(this, loader, cs);
+        final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
         final Compiler compiler = new Compiler(installer, functionNode, strict);
 

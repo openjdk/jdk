@@ -53,6 +53,7 @@ import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.FunctionScope;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -369,7 +370,7 @@ public final class ObjectClassGenerator {
      * @return Open class emitter.
      */
     private ClassEmitter newClassEmitter(final String className, final String superName) {
-        final ClassEmitter classEmitter = new ClassEmitter(context, className, superName);
+        final ClassEmitter classEmitter = new ClassEmitter(context.getEnv(), className, superName);
         classEmitter.begin();
 
         return classEmitter;
@@ -468,12 +469,13 @@ public final class ObjectClassGenerator {
         classEmitter.end();
 
         final byte[] code = classEmitter.toByteArray();
+        final ScriptEnvironment env = context.getEnv();
 
-        if (context != null && context._print_code) {
-            Context.getCurrentErr().println(ClassEmitter.disassemble(code));
+        if (env._print_code) {
+            env.getErr().println(ClassEmitter.disassemble(code));
         }
 
-        if (context != null && context._verify_code) {
+        if (env._verify_code) {
             context.verify(code);
         }
 

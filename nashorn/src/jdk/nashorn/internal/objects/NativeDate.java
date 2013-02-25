@@ -40,8 +40,8 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ConsString;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -104,10 +104,10 @@ public final class NativeDate extends ScriptObject {
     }
 
     NativeDate(final double time) {
-        final Context context = Global.getThisContext();
+        final ScriptEnvironment env = Global.getEnv();
 
         this.time = time;
-        this.timezone = context.getTimeZone();
+        this.timezone = env._timezone;
         this.setProto(Global.instance().getDatePrototype());
     }
 
@@ -886,7 +886,7 @@ public final class NativeDate extends ScriptObject {
             if (fields[DateParser.TIMEZONE] != null) {
                 d -= fields[DateParser.TIMEZONE] * 60000;
             } else {
-                d = utc(d, Global.getThisContext().getTimeZone());
+                d = utc(d, Global.getEnv()._timezone);
             }
             d = timeClip(d);
             return d;

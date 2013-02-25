@@ -71,7 +71,7 @@ public final class JSONFunctions {
                 new Source("<json>", str),
                 new Context.ThrowErrorManager(),
                 (context != null) ?
-                    context._strict :
+                    context.getEnv()._strict :
                     false);
 
         Node node;

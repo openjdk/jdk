@@ -48,7 +48,7 @@ import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
-import jdk.nashorn.internal.runtime.OptionsObject;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
 import jdk.nashorn.internal.runtime.Scope;
@@ -364,7 +364,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
          */
         this.setMap(getMap().duplicate());
 
-        final int cacheSize = context._class_cache_size;
+        final int cacheSize = context.getEnv()._class_cache_size;
         if (cacheSize > 0) {
             classCache = new ClassCache(cacheSize);
         }
@@ -384,6 +384,15 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     /**
+     * Script access to {@link ScriptEnvironment}
+     *
+     * @return the script environment
+     */
+    static ScriptEnvironment getEnv() {
+        return instance().context.getEnv();
+    }
+
+    /**
      * Script access to {@link Context}
      *
      * @return the context
@@ -398,7 +407,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return true if strict mode enabled in {@link Global#getThisContext()}
      */
     static boolean isStrict() {
-        return getThisContext()._strict;
+        return getEnv()._strict;
     }
 
     // GlobalObject interface implementation
@@ -578,7 +587,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     public PropertyDescriptor newAccessorDescriptor(final Object get, final Object set, final boolean configurable, final boolean enumerable) {
         final AccessorPropertyDescriptor desc = new AccessorPropertyDescriptor(configurable, enumerable, get == null ? UNDEFINED : get, set == null ? UNDEFINED : set);
 
-        final boolean strict = context._strict;
+        final boolean strict = context.getEnv()._strict;
 
         if (get == null) {
             desc.delete(PropertyDescriptor.GET, strict);
@@ -1333,6 +1342,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private void init() {
         assert Context.getGlobal() == this : "this global is not set as current";
 
+        final ScriptEnvironment env = context.getEnv();
         // initialize Function and Object constructor
         initFunctionAndObject();
 
@@ -1352,7 +1362,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.decodeURIComponent = ScriptFunctionImpl.makeFunction("decodeURIComponent", GlobalFunctions.DECODE_URICOMPONENT);
         this.escape             = ScriptFunctionImpl.makeFunction("escape",     GlobalFunctions.ESCAPE);
         this.unescape           = ScriptFunctionImpl.makeFunction("unescape",   GlobalFunctions.UNESCAPE);
-        this.print              = ScriptFunctionImpl.makeFunction("print",      context._print_no_newline ? PRINT : PRINTLN);
+        this.print              = ScriptFunctionImpl.makeFunction("print",      env._print_no_newline ? PRINT : PRINTLN);
         this.load               = ScriptFunctionImpl.makeFunction("load",       LOAD);
         this.exit               = ScriptFunctionImpl.makeFunction("exit",       EXIT);
         this.quit               = ScriptFunctionImpl.makeFunction("quit",       EXIT);
@@ -1395,7 +1405,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         initTypedArray();
 
-        if (context._scripting) {
+        if (env._scripting) {
             initScripting();
         }
 
@@ -1411,11 +1421,11 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.__LINE__ = 0.0;
 
         // expose script (command line) arguments as "arguments" property of global
-        final List<String> arguments = context.getOptions().getArguments();
+        final List<String> arguments = env.getArguments();
         final Object argsObj = wrapAsObject(arguments.toArray());
 
         addOwnProperty("arguments", Attribute.NOT_ENUMERABLE, argsObj);
-        if (context._scripting) {
+        if (env._scripting) {
             // synonym for "arguments" in scripting mode
             addOwnProperty("$ARG", Attribute.NOT_ENUMERABLE, argsObj);
         }
@@ -1493,7 +1503,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         addOwnProperty("echo", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)
-        value = new OptionsObject(context);
+        value = context.getEnv();
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$ENV (scripting-mode-only)
@@ -1568,7 +1578,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     @SuppressWarnings("resource")
     private static Object printImpl(final boolean newLine, final Object... objects) {
-        final PrintWriter out = Global.getThisContext().getOut();
+        final PrintWriter out = Global.getEnv().getOut();
 
         boolean first = true;
         for (final Object object : objects) {

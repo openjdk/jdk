@@ -62,11 +62,10 @@ import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.util.TraceClassVisitor;
-import jdk.nashorn.internal.codegen.Emitter;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -121,8 +120,8 @@ public class ClassEmitter implements Emitter {
     /** The ASM classwriter that we use for all bytecode operations */
     protected final ClassWriter cw;
 
-    /** The context */
-    protected final Context context;
+    /** The script environment */
+    protected final ScriptEnvironment env;
 
     /** Default flags for class generation - oublic class */
     private static final EnumSet<Flag> DEFAULT_METHOD_FLAGS = EnumSet.of(Flag.PUBLIC);
@@ -137,13 +136,13 @@ public class ClassEmitter implements Emitter {
      * Constructor - only used internally in this class as it breaks
      * abstraction towards ASM or other code generator below
      *
-     * @param context  context
-     * @param cw       ASM classwriter
+     * @param env script environment
+     * @param cw  ASM classwriter
      */
-    private ClassEmitter(final Context context, final ClassWriter cw) {
-        assert context != null;
+    private ClassEmitter(final ScriptEnvironment env, final ClassWriter cw) {
+        assert env != null;
 
-        this.context        = context;
+        this.env            = env;
         this.cw             = cw;
         this.methodsStarted = new HashSet<>();
     }
@@ -151,13 +150,13 @@ public class ClassEmitter implements Emitter {
     /**
      * Constructor
      *
-     * @param context         context
+     * @param env             script environment
      * @param className       name of class to weave
      * @param superClassName  super class name for class
      * @param interfaceNames  names of interfaces implemented by this class, or null if none
      */
-    ClassEmitter(final Context context, final String className, final String superClassName, final String... interfaceNames) {
-        this(context, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
+    ClassEmitter(final ScriptEnvironment env, final String className, final String superClassName, final String... interfaceNames) {
+        this(env, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
         cw.visit(V1_7, ACC_PUBLIC | ACC_SUPER, className, null, superClassName, interfaceNames);
     }
 
@@ -168,8 +167,8 @@ public class ClassEmitter implements Emitter {
      * @param unitClassName Compile unit class name.
      * @param strictMode    Should we generate this method in strict mode
      */
-    ClassEmitter(final Context context, final String sourceName, final String unitClassName, final boolean strictMode) {
-        this(context,
+    ClassEmitter(final ScriptEnvironment env, final String sourceName, final String unitClassName, final boolean strictMode) {
+        this(env,
              new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
                 private static final String OBJECT_CLASS  = "java/lang/Object";
 
@@ -372,10 +371,10 @@ public class ClassEmitter implements Emitter {
     }
 
     /**
-     * @return context used for class emission
+     * @return env used for class emission
      */
-    Context getContext() {
-        return context;
+    ScriptEnvironment getEnv() {
+        return env;
     }
 
     /**

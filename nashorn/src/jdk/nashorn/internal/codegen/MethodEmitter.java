@@ -84,10 +84,10 @@ import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.ArgumentSetter;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Scope;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -121,8 +121,8 @@ public class MethodEmitter implements Emitter {
     /** SplitNode representing the current split, or null if none exists */
     private SplitNode splitNode;
 
-    /** The context */
-    private final Context context;
+    /** The script environment */
+    private final ScriptEnvironment env;
 
     /** Threshold in chars for when string constants should be split */
     static final int LARGE_STRING_THRESHOLD = 32 * 1024;
@@ -171,7 +171,7 @@ public class MethodEmitter implements Emitter {
      * @param functionNode a function node representing this method
      */
     MethodEmitter(final ClassEmitter classEmitter, final MethodVisitor method, final FunctionNode functionNode) {
-        this.context      = classEmitter.getContext();
+        this.env          = classEmitter.getEnv();
         this.classEmitter = classEmitter;
         this.method       = method;
         this.functionNode = functionNode;
@@ -2237,7 +2237,7 @@ public class MethodEmitter implements Emitter {
                 sb.append(' ');
             }
 
-            if (context != null) { //early bootstrap code doesn't have inited context yet
+            if (env != null) { //early bootstrap code doesn't have inited context yet
                 LOG.info(sb.toString());
                 if (DEBUG_TRACE_LINE == linePrefix) {
                     new Throwable().printStackTrace(LOG.getOutputStream());

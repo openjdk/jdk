@@ -154,7 +154,7 @@ public class ParserTest {
                 Context.setGlobal(global);
             }
             final Source   source   = new Source(file.getAbsolutePath(), buffer);
-            new Parser(context, source, errors).parse();
+            new Parser(context.getEnv(), source, errors).parse();
             if (errors.getNumberOfErrors() > 0) {
                 log("Parse failed: " + file.getAbsolutePath());
                 failed++;
