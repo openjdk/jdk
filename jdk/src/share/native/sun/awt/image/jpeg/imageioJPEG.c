@@ -57,8 +57,8 @@
 #define MAX(a,b)        ((a) > (b) ? (a) : (b))
 
 /* Cached Java method ids */
-static jmethodID ImageInputStream_readID;
-static jmethodID ImageInputStream_skipBytesID;
+static jmethodID JPEGImageReader_readInputDataID;
+static jmethodID JPEGImageReader_skipInputBytesID;
 static jmethodID JPEGImageReader_warningOccurredID;
 static jmethodID JPEGImageReader_warningWithMessageID;
 static jmethodID JPEGImageReader_setImageDataID;
@@ -923,7 +923,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
     RELEASE_ARRAYS(env, data, src->next_input_byte);
     ret = (*env)->CallIntMethod(env,
                                 sb->stream,
-                                ImageInputStream_readID,
+                                JPEGImageReader_readInputDataID,
                                 sb->hstreamBuffer, 0,
                                 sb->bufferLength);
     if ((*env)->ExceptionOccurred(env)
@@ -1013,7 +1013,7 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
     }
 
     ret = (*env)->CallIntMethod(env, sb->stream,
-                                ImageInputStream_readID,
+                                JPEGImageReader_readInputDataID,
                                 sb->hstreamBuffer,
                                 offset, buflen);
     if ((*env)->ExceptionOccurred(env)
@@ -1107,7 +1107,7 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
     RELEASE_ARRAYS(env, data, src->next_input_byte);
     ret = (*env)->CallLongMethod(env,
                                  sb->stream,
-                                 ImageInputStream_skipBytesID,
+                                 JPEGImageReader_skipInputBytesID,
                                  (jlong) num_bytes);
     if ((*env)->ExceptionOccurred(env)
         || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
@@ -1382,13 +1382,13 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_initReaderIDs
      jclass qTableClass,
      jclass huffClass) {
 
-    ImageInputStream_readID = (*env)->GetMethodID(env,
-                                                  ImageInputStreamClass,
-                                                  "read",
+    JPEGImageReader_readInputDataID = (*env)->GetMethodID(env,
+                                                  cls,
+                                                  "readInputData",
                                                   "([BII)I");
-    ImageInputStream_skipBytesID = (*env)->GetMethodID(env,
-                                                       ImageInputStreamClass,
-                                                       "skipBytes",
+    JPEGImageReader_skipInputBytesID = (*env)->GetMethodID(env,
+                                                       cls,
+                                                       "skipInputBytes",
                                                        "(J)J");
     JPEGImageReader_warningOccurredID = (*env)->GetMethodID(env,
                                                             cls,
@@ -1531,8 +1531,7 @@ JNIEXPORT void JNICALL
 Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_setSource
     (JNIEnv *env,
      jobject this,
-     jlong ptr,
-     jobject source) {
+     jlong ptr) {
 
     imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_common_ptr cinfo;
@@ -1546,7 +1545,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_setSource
 
     cinfo = data->jpegObj;
 
-    imageio_set_stream(env, cinfo, data, source);
+    imageio_set_stream(env, cinfo, data, this);
 
     imageio_init_source((j_decompress_ptr) cinfo);
 }
