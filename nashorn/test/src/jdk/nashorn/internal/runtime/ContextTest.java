@@ -27,19 +27,16 @@ package jdk.nashorn.internal.runtime;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 import java.util.Map;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.testng.annotations.Test;
 
 /**
  * Basic Context API tests.
+ *
+ * @test
+ * @run testng jdk.nashorn.internal.runtime.ContextTest
  */
 public class ContextTest {
     // basic context eval test
@@ -112,84 +109,5 @@ public class ContextTest {
         final ScriptObject global = Context.getGlobal();
         final ScriptFunction func = cx.compileScript(source, global);
         return func != null ? ScriptRuntime.apply(func, global) : null;
-    }
-
-    // Tests for trusted client usage of nashorn script engine factory extension API
-
-    private static class MyClassLoader extends ClassLoader {
-        // to check if script engine uses the specified class loader
-        private final boolean[] reached = new boolean[1];
-
-        @Override
-        protected Class findClass(final String name) throws ClassNotFoundException {
-            // flag that it reached here
-            reached[0] = true;
-            return super.findClass(name);
-        }
-
-        public boolean reached() {
-            return reached[0];
-        }
-    };
-
-    // These are for "private" extension API of NashornScriptEngineFactory that
-    // accepts a ClassLoader and/or command line options.
-
-    @Test
-    public void factoryClassLoaderTest() {
-        final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
-            if (fac instanceof NashornScriptEngineFactory) {
-                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
-                final MyClassLoader loader = new MyClassLoader();
-                // set the classloader as app class loader
-                final ScriptEngine e = nfac.getScriptEngine(loader);
-                try {
-                    e.eval("Packages.foo");
-                    // check that the class loader was attempted
-                    assertTrue(loader.reached(), "did not reach class loader!");
-                } catch (final ScriptException se) {
-                    se.printStackTrace();
-                    fail(se.getMessage());
-                }
-                return;
-            }
-        }
-
-        fail("Cannot find nashorn factory!");
-    }
-
-    @Test
-    public void factoryClassLoaderAndOptionsTest() {
-        final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
-            if (fac instanceof NashornScriptEngineFactory) {
-                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
-                final String[] options = new String[] { "-strict" };
-                final MyClassLoader loader = new MyClassLoader();
-                // set the classloader as app class loader
-                final ScriptEngine e = nfac.getScriptEngine(options, loader);
-                try {
-                    e.eval("Packages.foo");
-                    // check that the class loader was attempted
-                    assertTrue(loader.reached(), "did not reach class loader!");
-                } catch (final ScriptException se) {
-                    se.printStackTrace();
-                    fail(se.getMessage());
-                }
-
-                try {
-                    // strict mode - delete of a var should throw SyntaxError
-                    e.eval("var d = 2; delete d;");
-                } catch (final ScriptException se) {
-                    // check that the error message contains "SyntaxError"
-                    assertTrue(se.getMessage().contains("SyntaxError"));
-                }
-
-                return;
-            }
-        }
-
-        fail("Cannot find nashorn factory!");
     }
 }

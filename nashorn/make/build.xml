@@ -275,7 +275,7 @@
     </condition>
     <fail unless="representation-ok">Representation test failed - output differs!</fail>
     <fileset id="test.classes" dir="${build.test.classes.dir}">
-      <include name="**/access/*Test.class"/>
+      <include name="**/api/javaaccess/*Test.class"/>
       <include name="**/api/scripting/*Test.class"/>
       <include name="**/codegen/*Test.class"/>
       <include name="**/parser/*Test.class"/>
