@@ -63,8 +63,6 @@ public final class LWCToolkit extends LWToolkit {
 
     private static native void initIDs();
 
-    static native void executeNextAppKitEvent();
-
     private static CInputMethodDescriptor sInputMethodDescriptor;
 
     static {
@@ -502,30 +500,6 @@ public final class LWCToolkit extends LWToolkit {
         synchronized(ret) { return ret[0]; }
     }
 
-    /**
-     * Just a wrapper for LWCToolkit.invokeAndWait. Posts an empty event to the
-     * appropriate event queue and waits for it to finish.
-     */
-    public static void flushPendingEventsOnAppkit(final Component component) {
-        try {
-            invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                }
-            }, component);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Kicks an event over to the appropriate eventqueue and waits for it to finish
-    // To avoid deadlocking, we manually run the NSRunLoop while waiting
-    // Any selector invoked using ThreadUtilities performOnMainThread will be processed in doAWTRunLoop
-    // The CInvocationEvent will call LWCToolkit.stopAWTRunLoop() when finished, which will stop our manual runloop
-    public static void invokeAndWait(Runnable event, Component component) throws InterruptedException, InvocationTargetException {
-        invokeAndWait(event, component, true);
-    }
-
     public static <T> T invokeAndWait(final Callable<T> callable, Component component) throws Exception {
         final CallableWrapper<T> wrapper = new CallableWrapper<T>(callable);
         invokeAndWait(wrapper, component);
@@ -555,10 +529,27 @@ public final class LWCToolkit extends LWToolkit {
         }
     }
 
-    public static void invokeAndWait(Runnable event, Component component, boolean detectDeadlocks) throws InterruptedException, InvocationTargetException {
-        long mediator = createAWTRunLoopMediator();
+    // Kicks an event over to the appropriate eventqueue and waits for it to finish
+    // To avoid deadlocking, we manually run the NSRunLoop while waiting
+    // Any selector invoked using ThreadUtilities performOnMainThread will be processed in doAWTRunLoop
+    // The InvocationEvent will call LWCToolkit.stopAWTRunLoop() when finished, which will stop our manual runloop
+    // Does not dispatch native events while in the loop
+    public static void invokeAndWait(Runnable event, Component component) throws InterruptedException, InvocationTargetException {
+        final long mediator = createAWTRunLoopMediator();
 
-        InvocationEvent invocationEvent = new CPeerEvent(event, mediator);
+        InvocationEvent invocationEvent =
+                new InvocationEvent(component != null ? component : Toolkit.getDefaultToolkit(), event) {
+                    @Override
+                    public void dispatch() {
+                        try {
+                            super.dispatch();
+                        } finally {
+                            if (mediator != 0) {
+                                stopAWTRunLoop(mediator);
+                            }
+                        }
+                    }
+                };
 
         if (component != null) {
             AppContext appContext = SunToolkit.targetToAppContext(component);
@@ -571,7 +562,7 @@ public final class LWCToolkit extends LWToolkit {
             ((LWCToolkit)Toolkit.getDefaultToolkit()).getSystemEventQueueForInvokeAndWait().postEvent(invocationEvent);
         }
 
-        doAWTRunLoop(mediator, true, detectDeadlocks);
+        doAWTRunLoop(mediator, false);
 
         Throwable eventException = invocationEvent.getException();
         if (eventException != null) {
@@ -583,7 +574,8 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     public static void invokeLater(Runnable event, Component component) throws InvocationTargetException {
-        final InvocationEvent invocationEvent = new CPeerEvent(event, 0);
+        final InvocationEvent invocationEvent =
+                new InvocationEvent(component != null ? component : Toolkit.getDefaultToolkit(), event);
 
         if (component != null) {
             final AppContext appContext = SunToolkit.targetToAppContext(component);
@@ -688,31 +680,6 @@ public final class LWCToolkit extends LWToolkit {
         return false;
     }
 
-    // Extends PeerEvent because we want to pass long an ObjC mediator object and because we want these events to be posted early
-    // Typically, rather than relying on the notifier to call notifyAll(), we use the mediator to stop the runloop
-    public static class CPeerEvent extends PeerEvent {
-        private long _mediator = 0;
-
-        public CPeerEvent(Runnable runnable, long mediator) {
-            super(Toolkit.getDefaultToolkit(), runnable, null, true, 0);
-            _mediator = mediator;
-        }
-
-        public void dispatch() {
-            try {
-                super.dispatch();
-            } finally {
-                if (_mediator != 0) {
-                    LWCToolkit.stopAWTRunLoop(_mediator);
-                }
-            }
-        }
-    }
-
-    // Call through to native methods
-    public static void doAWTRunLoop(long mediator, boolean awtMode) { doAWTRunLoop(mediator, awtMode, true); }
-    public static void doAWTRunLoop(long mediator) { doAWTRunLoop(mediator, true); }
-
     private static Boolean sunAwtDisableCALayers = null;
 
     /**
@@ -737,12 +704,20 @@ public final class LWCToolkit extends LWToolkit {
      * Native methods section
      ************************/
 
-    // These are public because they are accessed from WebKitPluginObject in JavaDeploy
-    // Basic usage:
-    // createAWTRunLoopMediator. Start client code on another thread. doAWTRunLoop. When client code is finished, stopAWTRunLoop.
-    public static native long createAWTRunLoopMediator();
-    public static native void doAWTRunLoop(long mediator, boolean awtMode, boolean detectDeadlocks);
-    public static native void stopAWTRunLoop(long mediator);
+    static native long createAWTRunLoopMediator();
+    /**
+     * Method to run a nested run-loop. The nested loop is spinned in the javaRunLoop mode, so selectors sent
+     * by [JNFRunLoop performOnMainThreadWaiting] are processed.
+     * @param mediator a native pointer to the mediator object created by createAWTRunLoopMediator
+     * @param processEvents if true - dispatches event while in the nested loop. Used in DnD.
+     *                      Additional attention is needed when using this feature as we short-circuit normal event
+     *                      processing which could break Appkit.
+     *                      (One known example is when the window is resized with the mouse)
+     *
+     *                      if false - all events come after exit form the nested loop
+     */
+    static native void doAWTRunLoop(long mediator, boolean processEvents);
+    static native void stopAWTRunLoop(long mediator);
 
     private native boolean nativeSyncQueue(long timeout);
 

@@ -332,7 +332,7 @@ AWT_ASSERT_APPKIT_THREAD;
  * Signature: (JZZ)V
  */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_doAWTRunLoop
-(JNIEnv *env, jclass clz, jlong mediator, jboolean awtMode, jboolean detectDeadlocks)
+(JNIEnv *env, jclass clz, jlong mediator, jboolean processEvents)
 {
 AWT_ASSERT_APPKIT_THREAD;
 JNF_COCOA_ENTER(env);
@@ -341,26 +341,25 @@ JNF_COCOA_ENTER(env);
 
     if (mediatorObject == nil) return;
 
-    if (!sInPerformFromJava || !detectDeadlocks) {
+    // Don't use acceptInputForMode because that doesn't setup autorelease pools properly
+    BOOL isRunning = true;
+    while (![mediatorObject shouldEndRunLoop] && isRunning) {
+        isRunning = [[NSRunLoop currentRunLoop] runMode:[JNFRunLoop javaRunLoopMode]
+                                             beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.010]];
+        if (processEvents) {
+            //We do not spin a runloop here as date is nil, so does not matter which mode to use
+            NSEvent *event;
+            if ((event = [NSApp nextEventMatchingMask:NSAnyEventMask
+                                           untilDate:nil
+                                              inMode:NSDefaultRunLoopMode
+                                             dequeue:YES]) != nil) {
+                [NSApp sendEvent:event];
+            }
 
-        NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
-        NSDate *distantFuture = [NSDate distantFuture];
-        NSString *mode = (awtMode) ? [JNFRunLoop javaRunLoopMode] : NSDefaultRunLoopMode;
-
-        BOOL isRunning = YES;
-        while (isRunning && ![mediatorObject shouldEndRunLoop]) {
-            // Don't use acceptInputForMode because that doesn't setup autorelease pools properly
-            isRunning = [currentRunLoop runMode:mode beforeDate:distantFuture];
         }
-
     }
-#ifndef PRODUCT_BUILD
-    if (sInPerformFromJava) {
-        NSLog(@"Apple AWT: Short-circuiting CToolkit.invokeAndWait trampoline deadlock!!!!!");
-        NSLog(@"\tPlease file a bug report with this message and a reproducible test case.");
-    }
-#endif
 
+   
     CFRelease(mediatorObject);
 
 JNF_COCOA_EXIT(env);
@@ -379,7 +378,7 @@ JNF_COCOA_ENTER(env);
 
     AWTRunLoopObject* mediatorObject = (AWTRunLoopObject*)jlong_to_ptr(mediator);
 
-    [ThreadUtilities performOnMainThread:@selector(endRunLoop) onObject:mediatorObject withObject:nil waitUntilDone:NO awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(endRunLoop) on:mediatorObject withObject:nil waitUntilDone:NO];
 
     CFRelease(mediatorObject);
 
@@ -463,20 +462,3 @@ Java_sun_font_FontManager_populateFontFileNameMap
 
 }
 
-/*
- * Class:     sun_lwawt_macosx_LWCToolkit
- * Method:    executeNextAppKitEvent
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_executeNextAppKitEvent
-(JNIEnv *env, jclass cls)
-{
-    // Simply get the next event in native loop and pass it to execution
-    // We'll be called repeatedly so there's no need to block here
-    NSRunLoop *theRL = [NSRunLoop currentRunLoop];
-    NSApplication * app = [NSApplication sharedApplication];
-    NSEvent * event = [app nextEventMatchingMask: 0xFFFFFFFF untilDate:nil inMode:NSDefaultRunLoopMode dequeue:YES];
-    if (event != nil) {
-        [app sendEvent: event];
-    }
-}
