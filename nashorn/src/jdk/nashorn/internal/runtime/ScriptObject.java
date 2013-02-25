@@ -628,14 +628,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return FindPropertyData or null if not found.
      */
     public final FindProperty findProperty(final String key, final boolean deep) {
-        return findProperty(key, deep, false);
+        return findProperty(key, deep, false, this);
     }
 
     /**
      * Low level property API (not using property descriptors)
      * <p>
-     * Find a property in the prototype hierarchy. Note: this is final and not
-     * a good idea to override. If you have to, use
+     * Find a property in the prototype hierarchy. Note: this is not a good idea
+     * to override except as it was done in {@link WithObject}.
+     * If you have to, use
      * {jdk.nashorn.internal.objects.NativeArray{@link #getProperty(String)} or
      * {jdk.nashorn.internal.objects.NativeArray{@link #getPropertyDescriptor(String)} as the
      * overriding way to find array properties
@@ -645,27 +646,29 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param key  Property key.
      * @param deep Whether the search should look up proto chain.
      * @param stopOnNonScope should a deep search stop on the first non-scope object?
+     * @param start the object on which the lookup was originally initiated
      *
      * @return FindPropertyData or null if not found.
      */
-    public final FindProperty findProperty(final String key, final boolean deep, final boolean stopOnNonScope) {
-        for (ScriptObject self = this; self != null; self = self.getProto()) {
-            // if doing deep search, stop search on the first non-scope object if asked to do so
-            if (stopOnNonScope && self != this && !self.isScope()) {
-                return null;
-            }
+    FindProperty findProperty(final String key, final boolean deep, final boolean stopOnNonScope, final ScriptObject start) {
+        // if doing deep search, stop search on the first non-scope object if asked to do so
+        if (stopOnNonScope && start != this && !isScope()) {
+            return null;
+        }
 
-            final PropertyMap selfMap  = self.getMap();
-            final Property    property = selfMap.findProperty(key);
+        final PropertyMap selfMap  = getMap();
+        final Property    property = selfMap.findProperty(key);
 
-            if (property != null) {
-                return new FindProperty(this, self, property);
-            }
+        if (property != null) {
+            return new FindProperty(start, this, property);
+        }
 
-            if (!deep) {
-                return null;
+        if (deep) {
+            final ScriptObject proto = getProto();
+            if(proto != null) {
+                return proto.findProperty(key, deep, stopOnNonScope, start);
             }
-         }
+        }
 
         return null;
     }
@@ -1781,12 +1784,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final boolean scope = isScope();
         /*
          * If doing property set on a scope object, we should stop proto search on the first
-         * non-scope object. Without this, for exmaple, when assigning "toString" on global scope,
+         * non-scope object. Without this, for example, when assigning "toString" on global scope,
          * we'll end up assigning it on it's proto - which is Object.prototype.toString !!
          *
          * toString = function() { print("global toString"); } // don't affect Object.prototype.toString
          */
-        FindProperty find = findProperty(name, true, scope);
+        FindProperty find = findProperty(name, true, scope, this);
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
         if (!scope && find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
             // We should still check if inherited data property is not writable

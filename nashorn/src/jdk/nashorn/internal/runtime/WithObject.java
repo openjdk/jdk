@@ -184,6 +184,28 @@ public final class WithObject extends ScriptObject implements Scope {
         return null;
     }
 
+    /**
+     * Overridden to try to find the property first in the expression object (and its prototypes), and only then in this
+     * object (and its prototypes).
+     *
+     * @param key  Property key.
+     * @param deep Whether the search should look up proto chain.
+     * @param stopOnNonScope should a deep search stop on the first non-scope object?
+     * @param start the object on which the lookup was originally initiated
+     *
+     * @return FindPropertyData or null if not found.
+     */
+    @Override
+    FindProperty findProperty(final String key, final boolean deep, final boolean stopOnNonScope, final ScriptObject start) {
+        if (expression instanceof ScriptObject) {
+            final FindProperty exprProperty = ((ScriptObject)expression).findProperty(key, deep, stopOnNonScope, start);
+            if(exprProperty != null) {
+                return exprProperty;
+            }
+        }
+        return super.findProperty(key, deep, stopOnNonScope, start);
+    }
+
     @Override
     public void setSplitState(final int state) {
         getNonWithParent().setSplitState(state);
