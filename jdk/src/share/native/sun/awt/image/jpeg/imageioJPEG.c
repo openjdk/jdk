@@ -66,7 +66,7 @@ static jmethodID JPEGImageReader_acceptPixelsID;
 static jmethodID JPEGImageReader_pushBackID;
 static jmethodID JPEGImageReader_passStartedID;
 static jmethodID JPEGImageReader_passCompleteID;
-static jmethodID ImageOutputStream_writeID;
+static jmethodID JPEGImageWriter_writeOutputDataID;
 static jmethodID JPEGImageWriter_warningOccurredID;
 static jmethodID JPEGImageWriter_warningWithMessageID;
 static jmethodID JPEGImageWriter_writeMetadataID;
@@ -2290,7 +2290,7 @@ imageio_empty_output_buffer (j_compress_ptr cinfo)
 
     (*env)->CallVoidMethod(env,
                            sb->stream,
-                           ImageOutputStream_writeID,
+                           JPEGImageWriter_writeOutputDataID,
                            sb->hstreamBuffer,
                            0,
                            sb->bufferLength);
@@ -2327,7 +2327,7 @@ imageio_term_destination (j_compress_ptr cinfo)
 
         (*env)->CallVoidMethod(env,
                                sb->stream,
-                               ImageOutputStream_writeID,
+                               JPEGImageWriter_writeOutputDataID,
                                sb->hstreamBuffer,
                                0,
                                datacount);
@@ -2365,13 +2365,12 @@ JNIEXPORT void JNICALL
 Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_initWriterIDs
     (JNIEnv *env,
      jclass cls,
-     jclass IOSClass,
      jclass qTableClass,
      jclass huffClass) {
 
-    ImageOutputStream_writeID = (*env)->GetMethodID(env,
-                                                    IOSClass,
-                                                    "write",
+    JPEGImageWriter_writeOutputDataID = (*env)->GetMethodID(env,
+                                                    cls,
+                                                    "writeOutputData",
                                                     "([BII)V");
 
     JPEGImageWriter_warningOccurredID = (*env)->GetMethodID(env,
@@ -2495,8 +2494,7 @@ JNIEXPORT void JNICALL
 Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_setDest
     (JNIEnv *env,
      jobject this,
-     jlong ptr,
-     jobject destination) {
+     jlong ptr) {
 
     imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_compress_ptr cinfo;
@@ -2510,7 +2508,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_setDest
 
     cinfo = (j_compress_ptr) data->jpegObj;
 
-    imageio_set_stream(env, data->jpegObj, data, destination);
+    imageio_set_stream(env, data->jpegObj, data, this);
 
 
     // Don't call the init method, as that depends on pinned arrays
