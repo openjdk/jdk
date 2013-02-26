@@ -569,9 +569,9 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
 #endif
-        )) == -1)
+        )) == -1) {
         return (-1);
-
+    }
     info->manifest_version = NULL;
     info->main_class = NULL;
     info->jre_version = NULL;
@@ -618,15 +618,17 @@ JLI_JarUnpackFile(const char *jarfile, const char *filename, int *size) {
     zentry  entry;
     void    *data = NULL;
 
-    fd = open(jarfile, O_RDONLY
+    if ((fd = open(jarfile, O_RDONLY
 #ifdef O_LARGEFILE
         | O_LARGEFILE /* large file mode */
 #endif
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
 #endif
-        );
-    if (fd != -1 && find_file(fd, &entry, filename) == 0) {
+        )) == -1) {
+        return NULL;
+    }
+    if (find_file(fd, &entry, filename) == 0) {
         data = inflate_file(fd, &entry, size);
     }
     close(fd);
@@ -671,8 +673,9 @@ JLI_ManifestIterate(const char *jarfile, attribute_closure ac, void *user_data)
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
 #endif
-        )) == -1)
+        )) == -1) {
         return (-1);
+    }
 
     if (rc = find_file(fd, &entry, manifest_name) != 0) {
         close(fd);
