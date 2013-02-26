@@ -34,6 +34,7 @@ import java.security.CodeSigner;
 import java.security.cert.Certificate;
 import java.security.AccessController;
 import java.security.CodeSource;
+import sun.misc.IOUtils;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
 import sun.misc.SharedSecrets;
@@ -334,6 +335,9 @@ class JarFile extends ZipFile {
             if (names != null) {
                 for (int i = 0; i < names.length; i++) {
                     JarEntry e = getJarEntry(names[i]);
+                    if (e == null) {
+                        throw new JarException("corrupted jar file");
+                    }
                     if (!e.isDirectory()) {
                         if (mev == null) {
                             mev = new ManifestEntryVerifier
@@ -353,6 +357,10 @@ class JarFile extends ZipFile {
             // treat the jar file as being unsigned
             jv = null;
             verify = false;
+            if (JarVerifier.debug != null) {
+                JarVerifier.debug.println("jarfile parsing error!");
+                ex.printStackTrace();
+            }
         }
 
         // if after initializing the verifier we have nothing
@@ -380,11 +388,9 @@ class JarFile extends ZipFile {
      * META-INF files.
      */
     private byte[] getBytes(ZipEntry ze) throws IOException {
-        byte[] b = new byte[(int)ze.getSize()];
-        try (DataInputStream is = new DataInputStream(super.getInputStream(ze))) {
-            is.readFully(b, 0, b.length);
+        try (InputStream is = super.getInputStream(ze)) {
+            return IOUtils.readFully(is, (int)ze.getSize(), true);
         }
-        return b;
     }
 
     /**
@@ -540,11 +546,7 @@ class JarFile extends ZipFile {
         if (!isKnownNotToHaveSpecialAttributes()) {
             JarEntry manEntry = getManEntry();
             if (manEntry != null) {
-                byte[] b = new byte[(int)manEntry.getSize()];
-                try (DataInputStream dis = new DataInputStream(
-                         super.getInputStream(manEntry))) {
-                    dis.readFully(b, 0, b.length);
-                }
+                byte[] b = getBytes(manEntry);
                 if (match(CLASSPATH_CHARS, b, CLASSPATH_LASTOCC, CLASSPATH_OPTOSFT))
                     hasClassPathAttribute = true;
                 if (match(PROFILE_CHARS, b, PROFILE_LASTOCC, PROFILE_OPTOSFT))
