@@ -801,12 +801,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static
         MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
             // Do not use this function to inject calls into system classes.
-            if (hostClass == null) {
-                hostClass = C_Trampoline;
-            } else if (hostClass.isArray() ||
+            if (hostClass == null
+                ||    (hostClass.isArray() ||
                        hostClass.isPrimitive() ||
                        hostClass.getName().startsWith("java.") ||
-                       hostClass.getName().startsWith("sun.")) {
+                       hostClass.getName().startsWith("sun."))) {
                 throw new InternalError();  // does not happen, and should not anyway
             }
             // For simplicity, convert mh to a varargs-like method.
@@ -814,23 +813,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             // Cache the result of makeInjectedInvoker once per argument class.
             MethodHandle bccInvoker = CV_makeInjectedInvoker.get(hostClass);
             return restoreToType(bccInvoker.bindTo(vamh), mh.type());
-        }
-
-        // This class ("Trampoline") is known to be inside a dead-end class loader.
-        // Inject all doubtful calls into this class.
-        private static Class<?> C_Trampoline;
-        static {
-            Class<?> tramp = null;
-            try {
-                final int FRAME_COUNT_ARG = 1;  // [0] Reflection [1] Trampoline
-                java.lang.reflect.Method gcc = sun.reflect.Reflection.class.getMethod("getCallerClass", int.class);
-                tramp = (Class<?>) sun.reflect.misc.MethodUtil.invoke(gcc, null, new Object[]{ FRAME_COUNT_ARG });
-                if (tramp.getClassLoader() == BindCaller.class.getClassLoader())
-                    throw new RuntimeException(tramp.getName()+" class loader");
-            } catch (Throwable ex) {
-                throw new InternalError(ex);
-            }
-            C_Trampoline = tramp;
         }
 
         private static MethodHandle makeInjectedInvoker(Class<?> hostClass) {

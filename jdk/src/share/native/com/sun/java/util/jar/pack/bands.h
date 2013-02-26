@@ -99,8 +99,8 @@ struct band {
 
   int    getByte()  { assert(ix == null); return vs[0].getByte(); }
   int    getInt()   { assert(ix == null); return vs[0].getInt(); }
-  entry* getRefN()  { assert(ix != null); return getRefCommon(ix, true); }
-  entry* getRef()   { assert(ix != null); return getRefCommon(ix, false); }
+  entry* getRefN()  { return getRefCommon(ix, true); }
+  entry* getRef()   { return getRefCommon(ix, false); }
   entry* getRefUsing(cpindex* ix2)
                     { assert(ix == null); return getRefCommon(ix2, true); }
   entry* getRefCommon(cpindex* ix, bool nullOK);
