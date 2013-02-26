@@ -63,8 +63,13 @@ class JarFile extends ZipFile {
     private JarVerifier jv;
     private boolean jvInitialized;
     private boolean verify;
-    private boolean computedHasClassPathAttribute;
+
+    // indicates if Class-Path attribute present (only valid if hasCheckedSpecialAttributes true)
     private boolean hasClassPathAttribute;
+    // indicates if Profile attribute present (only valid if hasCheckedSpecialAttributes true)
+    private boolean hasProfileAttribute;
+    // true if manifest checked for special attributes
+    private volatile boolean hasCheckedSpecialAttributes;
 
     // Set up JavaUtilJarAccess in SharedSecrets
     static {
@@ -421,27 +426,45 @@ class JarFile extends ZipFile {
             jv);
     }
 
-    // Statics for hand-coded Boyer-Moore search in hasClassPathAttribute()
+    // Statics for hand-coded Boyer-Moore search
+    private static final char[] CLASSPATH_CHARS = {'c','l','a','s','s','-','p','a','t','h'};
+    private static final char[] PROFILE_CHARS = { 'p', 'r', 'o', 'f', 'i', 'l', 'e' };
     // The bad character shift for "class-path"
-    private static int[] lastOcc;
+    private static final int[] CLASSPATH_LASTOCC;
     // The good suffix shift for "class-path"
-    private static int[] optoSft;
-    // Initialize the shift arrays to search for "class-path"
-    private static char[] src = {'c','l','a','s','s','-','p','a','t','h'};
+    private static final int[] CLASSPATH_OPTOSFT;
+    // The bad character shift for "profile"
+    private static final int[] PROFILE_LASTOCC;
+    // The good suffix shift for "profile"
+    private static final int[] PROFILE_OPTOSFT;
+
     static {
-        lastOcc = new int[128];
-        optoSft = new int[10];
-        lastOcc[(int)'c']=1;
-        lastOcc[(int)'l']=2;
-        lastOcc[(int)'s']=5;
-        lastOcc[(int)'-']=6;
-        lastOcc[(int)'p']=7;
-        lastOcc[(int)'a']=8;
-        lastOcc[(int)'t']=9;
-        lastOcc[(int)'h']=10;
+        CLASSPATH_LASTOCC = new int[128];
+        CLASSPATH_OPTOSFT = new int[10];
+        CLASSPATH_LASTOCC[(int)'c'] = 1;
+        CLASSPATH_LASTOCC[(int)'l'] = 2;
+        CLASSPATH_LASTOCC[(int)'s'] = 5;
+        CLASSPATH_LASTOCC[(int)'-'] = 6;
+        CLASSPATH_LASTOCC[(int)'p'] = 7;
+        CLASSPATH_LASTOCC[(int)'a'] = 8;
+        CLASSPATH_LASTOCC[(int)'t'] = 9;
+        CLASSPATH_LASTOCC[(int)'h'] = 10;
         for (int i=0; i<9; i++)
-            optoSft[i]=10;
-        optoSft[9]=1;
+            CLASSPATH_OPTOSFT[i] = 10;
+        CLASSPATH_OPTOSFT[9]=1;
+
+        PROFILE_LASTOCC = new int[128];
+        PROFILE_OPTOSFT = new int[7];
+        PROFILE_LASTOCC[(int)'p'] = 1;
+        PROFILE_LASTOCC[(int)'r'] = 2;
+        PROFILE_LASTOCC[(int)'o'] = 3;
+        PROFILE_LASTOCC[(int)'f'] = 4;
+        PROFILE_LASTOCC[(int)'i'] = 5;
+        PROFILE_LASTOCC[(int)'l'] = 6;
+        PROFILE_LASTOCC[(int)'e'] = 7;
+        for (int i=0; i<6; i++)
+            PROFILE_OPTOSFT[i] = 7;
+        PROFILE_OPTOSFT[6] = 1;
     }
 
     private JarEntry getManEntry() {
@@ -466,17 +489,55 @@ class JarFile extends ZipFile {
         return manEntry;
     }
 
-    // Returns true iff this jar file has a manifest with a class path
-    // attribute. Returns false if there is no manifest or the manifest
-    // does not contain a "Class-Path" attribute. Currently exported to
-    // core libraries via sun.misc.SharedSecrets.
+   /**
+    * Returns {@code true} iff this JAR file has a manifest with the
+    * Class-Path attribute
+    */
     boolean hasClassPathAttribute() throws IOException {
-        if (computedHasClassPathAttribute) {
-            return hasClassPathAttribute;
-        }
+        checkForSpecialAttributes();
+        return hasClassPathAttribute;
+    }
 
-        hasClassPathAttribute = false;
-        if (!isKnownToNotHaveClassPathAttribute()) {
+    /**
+     * Returns {@code true} iff this JAR file has a manifest with the
+     * Profile attribute
+     */
+    boolean hasProfileAttribute() throws IOException {
+        checkForSpecialAttributes();
+        return hasProfileAttribute;
+    }
+
+    /**
+     * Returns true if the pattern {@code src} is found in {@code b}.
+     * The {@code lastOcc} and {@code optoSft} arrays are the precomputed
+     * bad character and good suffix shifts.
+     */
+    private boolean match(char[] src, byte[] b, int[] lastOcc, int[] optoSft) {
+        int len = src.length;
+        int last = b.length - len;
+        int i = 0;
+        next:
+        while (i<=last) {
+            for (int j=(len-1); j>=0; j--) {
+                char c = (char) b[i+j];
+                c = (((c-'A')|('Z'-c)) >= 0) ? (char)(c + 32) : c;
+                if (c != src[j]) {
+                    i += Math.max(j + 1 - lastOcc[c&0x7F], optoSft[j]);
+                    continue next;
+                 }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * On first invocation, check if the JAR file has the Class-Path
+     * and/or Profile attributes. A no-op on subsequent calls.
+     */
+    private void checkForSpecialAttributes() throws IOException {
+        if (hasCheckedSpecialAttributes) return;
+        if (!isKnownNotToHaveSpecialAttributes()) {
             JarEntry manEntry = getManEntry();
             if (manEntry != null) {
                 byte[] b = new byte[(int)manEntry.getSize()];
@@ -484,31 +545,18 @@ class JarFile extends ZipFile {
                          super.getInputStream(manEntry))) {
                     dis.readFully(b, 0, b.length);
                 }
-
-                int last = b.length - src.length;
-                int i = 0;
-                next:
-                while (i<=last) {
-                    for (int j=9; j>=0; j--) {
-                        char c = (char) b[i+j];
-                        c = (((c-'A')|('Z'-c)) >= 0) ? (char)(c + 32) : c;
-                        if (c != src[j]) {
-                            i += Math.max(j + 1 - lastOcc[c&0x7F], optoSft[j]);
-                            continue next;
-                        }
-                    }
+                if (match(CLASSPATH_CHARS, b, CLASSPATH_LASTOCC, CLASSPATH_OPTOSFT))
                     hasClassPathAttribute = true;
-                    break;
-                }
+                if (match(PROFILE_CHARS, b, PROFILE_LASTOCC, PROFILE_OPTOSFT))
+                    hasProfileAttribute = true;
             }
         }
-        computedHasClassPathAttribute = true;
-        return hasClassPathAttribute;
+        hasCheckedSpecialAttributes = true;
     }
 
     private static String javaHome;
-    private static String[] jarNames;
-    private boolean isKnownToNotHaveClassPathAttribute() {
+    private static volatile String[] jarNames;
+    private boolean isKnownNotToHaveSpecialAttributes() {
         // Optimize away even scanning of manifest for jar files we
         // deliver which don't have a class-path attribute. If one of
         // these jars is changed to include such an attribute this code
@@ -518,19 +566,20 @@ class JarFile extends ZipFile {
                 new GetPropertyAction("java.home"));
         }
         if (jarNames == null) {
-            String[] names = new String[10];
+            String[] names = new String[11];
             String fileSep = File.separator;
             int i = 0;
             names[i++] = fileSep + "rt.jar";
-            names[i++] = fileSep + "sunrsasign.jar";
             names[i++] = fileSep + "jsse.jar";
             names[i++] = fileSep + "jce.jar";
             names[i++] = fileSep + "charsets.jar";
             names[i++] = fileSep + "dnsns.jar";
-            names[i++] = fileSep + "ldapsec.jar";
+            names[i++] = fileSep + "zipfs.jar";
             names[i++] = fileSep + "localedata.jar";
+            names[i++] = fileSep = "cldrdata.jar";
             names[i++] = fileSep + "sunjce_provider.jar";
             names[i++] = fileSep + "sunpkcs11.jar";
+            names[i++] = fileSep + "sunec.jar";
             jarNames = names;
         }
 
