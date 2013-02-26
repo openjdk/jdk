@@ -781,15 +781,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                         scrollPane.getCorner(JScrollPane.UPPER_TRAILING_CORNER);
                 if (corner == null || corner instanceof UIResource){
                     corner = null;
-                    Object componentClass = UIManager.get(
-                            "Table.scrollPaneCornerComponent");
-                    if (componentClass instanceof Class){
-                        try {
-                            corner = (Component)
-                                    ((Class)componentClass).newInstance();
-                        } catch (Exception e) {
-                            // just ignore and don't set corner
-                        }
+                    try {
+                        corner = (Component) UIManager.get(
+                                "Table.scrollPaneCornerComponent");
+                    } catch (Exception e) {
+                        // just ignore and don't set corner
                     }
                     scrollPane.setCorner(JScrollPane.UPPER_TRAILING_CORNER,
                             corner);

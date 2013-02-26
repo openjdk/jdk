@@ -327,19 +327,25 @@ public final class AppContext {
             // Before we return the main "system" AppContext, check to
             // see if there's an AWTSecurityManager installed.  If so,
             // allow it to choose the AppContext to return.
-            SecurityManager securityManager = System.getSecurityManager();
-            if ((securityManager != null) &&
-                (securityManager instanceof AWTSecurityManager))
-            {
-                AWTSecurityManager awtSecMgr = (AWTSecurityManager)securityManager;
-                AppContext secAppContext = awtSecMgr.getAppContext();
-                if (secAppContext != null)  {
-                    appContext = secAppContext; // Return what we're told
-                }
+            AppContext secAppContext = getExecutionAppContext();
+            if (secAppContext != null) {
+                appContext = secAppContext; // Return what we're told
             }
         }
 
         return appContext;
+    }
+
+    private final static AppContext getExecutionAppContext() {
+        SecurityManager securityManager = System.getSecurityManager();
+        if ((securityManager != null) &&
+            (securityManager instanceof AWTSecurityManager))
+        {
+            AWTSecurityManager awtSecMgr = (AWTSecurityManager) securityManager;
+            AppContext secAppContext = awtSecMgr.getAppContext();
+            return secAppContext; // Return what we're told
+        }
+        return null;
     }
 
     /**
@@ -805,6 +811,21 @@ public final class AppContext {
             }
             public boolean isMainAppContext() {
                 return (numAppContexts.get() == 1);
+            }
+            public Object getContext() {
+                return getAppContext();
+            }
+            public Object getExecutionContext() {
+                return getExecutionAppContext();
+            }
+            public Object get(Object context, Object key) {
+                return ((AppContext)context).get(key);
+            }
+            public void put(Object context, Object key, Object value) {
+                ((AppContext)context).put(key, value);
+            }
+            public void remove(Object context, Object key) {
+                ((AppContext)context).remove(key);
             }
         });
     }
