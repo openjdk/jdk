@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,11 @@ public class Version {
         "@@java_version@@";
 
     private static final String java_runtime_name =
-	"@@java_runtime_name@@";
- 
+        "@@java_runtime_name@@";
+
+    private static final String java_profile_name =
+        "@@java_profile_name@@";
+
     private static final String java_runtime_version =
         "@@java_runtime_version@@";
 
@@ -49,6 +52,8 @@ public class Version {
         System.setProperty("java.version", java_version);
         System.setProperty("java.runtime.version", java_runtime_version);
         System.setProperty("java.runtime.name", java_runtime_name);
+        if (java_profile_name.length() > 0)
+            System.setProperty("java.runtime.profile", java_profile_name);
     }
 
     private static boolean versionsInitialized = false;
@@ -90,23 +95,28 @@ public class Version {
         boolean isHeadless = false;
 
         /* Report that we're running headless if the property is true */
-	String headless = System.getProperty("java.awt.headless");
-	if ( (headless != null) && (headless.equalsIgnoreCase("true")) ) {
+        String headless = System.getProperty("java.awt.headless");
+        if ( (headless != null) && (headless.equalsIgnoreCase("true")) ) {
             isHeadless = true;
-	} 
+        }
 
         /* First line: platform version. */
         ps.println(launcher_name + " version \"" + java_version + "\"");
 
         /* Second line: runtime version (ie, libraries). */
 
-	ps.print(java_runtime_name + " (build " + java_runtime_version);
+        ps.print(java_runtime_name + " (build " + java_runtime_version);
 
-	if (java_runtime_name.indexOf("Embedded") != -1 && isHeadless) {
-	    // embedded builds report headless state
-	    ps.print(", headless");
-	}
-	ps.println(')');
+        if (java_profile_name.length() > 0) {
+            // profile name
+            ps.print(", profile " + java_profile_name);
+        }
+
+        if (java_runtime_name.indexOf("Embedded") != -1 && isHeadless) {
+            // embedded builds report headless state
+            ps.print(", headless");
+        }
+        ps.println(')');
 
         /* Third line: JVM information. */
         String java_vm_name    = System.getProperty("java.vm.name");
@@ -331,6 +341,67 @@ public class Version {
     // Return false if not available which implies an old VM (Tiger or before).
     private static native boolean getJvmVersionInfo();
     private static native void getJdkVersionInfo();
+
+    // Possible runtime profiles, ordered from small to large
+    private final static String[] PROFILES = { "compact1", "compact2", "compact3" };
+
+    /**
+     * Returns the name of the profile that this runtime implements. The empty
+     * string is returned for the full Java Runtime.
+     */
+    public static String profileName() {
+        return java_profile_name;
+    }
+
+    /**
+     * Indicates if this runtime implements the full Java Runtime.
+     */
+    public static boolean isFullJre() {
+        return java_profile_name.length() == 0;
+    }
+
+    // cached index of this profile's name in PROFILES (1-based)
+    private static int thisRuntimeIndex;
+
+    /**
+     * Indicates if this runtime supports the given profile. Profile names are
+     * case sensitive. 
+     *
+     * @return {@code true} if the given profile is supported
+     */
+    public static boolean supportsProfile(String requiredProfile) {
+        int x = thisRuntimeIndex - 1;
+        if (x < 0) {
+            String profile = profileName();
+            if (profile.length() > 0) {
+                x = 0;
+                while (x < PROFILES.length) {
+                    if (PROFILES[x].equals(profile))
+                        break;
+                    x++;
+                }
+                if (x >= PROFILES.length)
+                    throw new InternalError(profile + " not known to sun.misc.Version");
+
+                // okay if another thread has already set it
+                thisRuntimeIndex = x + 1;
+            }
+            // else we are a full JRE
+        }
+
+        int y = 0;
+        while (y < PROFILES.length) {
+            if (PROFILES[y].equals(requiredProfile))
+                break;
+            y++;
+        }
+        if (y >= PROFILES.length) {
+            // profile not found so caller has requested something that is not defined
+            return false;
+        }
+
+        return x < 0 || x >= y;
+    }
 
 }
 

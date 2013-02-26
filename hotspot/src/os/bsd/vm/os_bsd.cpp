@@ -657,6 +657,18 @@ extern "C" objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFu
 objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction = NULL;
 #endif
 
+#ifdef __APPLE__
+static uint64_t locate_unique_thread_id() {
+  // Additional thread_id used to correlate threads in SA
+  thread_identifier_info_data_t     m_ident_info;
+  mach_msg_type_number_t            count = THREAD_IDENTIFIER_INFO_COUNT;
+
+  thread_info(::mach_thread_self(), THREAD_IDENTIFIER_INFO,
+              (thread_info_t) &m_ident_info, &count);
+  return m_ident_info.thread_id;
+}
+#endif
+
 // Thread start routine for all newly created threads
 static void *java_start(Thread *thread) {
   // Try to randomize the cache line index of hot stack frames.
@@ -685,6 +697,7 @@ static void *java_start(Thread *thread) {
 #ifdef __APPLE__
   // thread_id is mach thread on macos
   osthread->set_thread_id(::mach_thread_self());
+  osthread->set_unique_thread_id(locate_unique_thread_id());
 #else
   // thread_id is pthread_id on BSD
   osthread->set_thread_id(::pthread_self());
@@ -847,6 +860,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   // Store pthread info into the OSThread
 #ifdef __APPLE__
   osthread->set_thread_id(::mach_thread_self());
+  osthread->set_unique_thread_id(locate_unique_thread_id());
 #else
   osthread->set_thread_id(::pthread_self());
 #endif

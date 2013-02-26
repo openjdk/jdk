@@ -1006,6 +1006,7 @@ public class DPrinter {
         public Void visitUndetVar(UndetVar type, Void ignore) {
             for (UndetVar.InferenceBound ib: UndetVar.InferenceBound.values())
                 printList("bounds." + ib, type.getBounds(ib));
+            printInt("declaredCount", type.declaredCount);
             printType("inst", type.inst, Details.SUMMARY);
             return visitDelegatedType(type);
         }

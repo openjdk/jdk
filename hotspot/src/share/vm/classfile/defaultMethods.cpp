@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1146,9 +1146,10 @@ static Method* new_method(
 
   address code_start = static_cast<address>(bytecodes->adr_at(0));
   int code_length = bytecodes->length();
+  InlineTableSizes sizes;
 
   Method* m = Method::allocate(cp->pool_holder()->class_loader_data(),
-                               code_length, flags, 0, 0, 0, 0, 0, 0,
+                               code_length, flags, &sizes,
                                mt, CHECK_NULL);
 
   m->set_constants(NULL); // This will get filled in later
@@ -1285,33 +1286,15 @@ static void merge_in_new_methods(InstanceKlass* klass,
 
   enum { ANNOTATIONS, PARAMETERS, DEFAULTS, NUM_ARRAYS };
 
-  Array<AnnotationArray*>* original_annots[NUM_ARRAYS] = { NULL };
-
   Array<Method*>* original_methods = klass->methods();
-  Annotations* annots = klass->annotations();
-  if (annots != NULL) {
-    original_annots[ANNOTATIONS] = annots->methods_annotations();
-    original_annots[PARAMETERS]  = annots->methods_parameter_annotations();
-    original_annots[DEFAULTS]    = annots->methods_default_annotations();
-  }
-
   Array<int>* original_ordering = klass->method_ordering();
   Array<int>* merged_ordering = Universe::the_empty_int_array();
 
   int new_size = klass->methods()->length() + new_methods->length();
 
-  Array<AnnotationArray*>* merged_annots[NUM_ARRAYS];
-
   Array<Method*>* merged_methods = MetadataFactory::new_array<Method*>(
       klass->class_loader_data(), new_size, NULL, CHECK);
-  for (int i = 0; i < NUM_ARRAYS; ++i) {
-    if (original_annots[i] != NULL) {
-      merged_annots[i] = MetadataFactory::new_array<AnnotationArray*>(
-          klass->class_loader_data(), new_size, CHECK);
-    } else {
-      merged_annots[i] = NULL;
-    }
-  }
+
   if (original_ordering != NULL && original_ordering->length() > 0) {
     merged_ordering = MetadataFactory::new_array<int>(
         klass->class_loader_data(), new_size, CHECK);
@@ -1338,12 +1321,6 @@ static void merge_in_new_methods(InstanceKlass* klass,
         (new_method == NULL || orig_method->name() < new_method->name())) {
       merged_methods->at_put(i, orig_method);
       original_methods->at_put(orig_idx, NULL);
-      for (int j = 0; j < NUM_ARRAYS; ++j) {
-        if (merged_annots[j] != NULL) {
-          merged_annots[j]->at_put(i, original_annots[j]->at(orig_idx));
-          original_annots[j]->at_put(orig_idx, NULL);
-        }
-      }
       if (merged_ordering->length() > 0) {
         merged_ordering->at_put(i, original_ordering->at(orig_idx));
       }
@@ -1372,21 +1349,9 @@ static void merge_in_new_methods(InstanceKlass* klass,
 
   // Replace klass methods with new merged lists
   klass->set_methods(merged_methods);
-  if (annots != NULL) {
-    annots->set_methods_annotations(merged_annots[ANNOTATIONS]);
-    annots->set_methods_parameter_annotations(merged_annots[PARAMETERS]);
-    annots->set_methods_default_annotations(merged_annots[DEFAULTS]);
-  } else {
-    assert(merged_annots[ANNOTATIONS] == NULL, "Must be");
-    assert(merged_annots[PARAMETERS] == NULL, "Must be");
-    assert(merged_annots[DEFAULTS] == NULL, "Must be");
-  }
 
   ClassLoaderData* cld = klass->class_loader_data();
   MetadataFactory::free_array(cld, original_methods);
-  for (int i = 0; i < NUM_ARRAYS; ++i) {
-    MetadataFactory::free_array(cld, original_annots[i]);
-  }
   if (original_ordering->length() > 0) {
     klass->set_method_ordering(merged_ordering);
     MetadataFactory::free_array(cld, original_ordering);

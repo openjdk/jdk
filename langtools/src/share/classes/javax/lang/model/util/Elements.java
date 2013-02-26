@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,4 +249,14 @@ public interface Elements {
      * @param cs the character sequence to return as a name
      */
     Name getName(CharSequence cs);
+
+    /**
+     * Returns {@code true} if the type element is a functional interface, {@code false} otherwise.
+     *
+     * @param type the type element being examined
+     * @return {@code true} if the element is a functional interface, {@code false} otherwise
+     * @jls 9.8 Functional Interfaces
+     * @since 1.8
+     */
+    boolean isFunctionalInterface(TypeElement type);
 }
