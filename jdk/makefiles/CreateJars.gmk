@@ -213,28 +213,28 @@ RT_JAR_EXCLUDES += \
 	org/relaxng/datatype \
 	sun/awt/HKSCS.class \
 	sun/awt/motif/X11GB2312.class \
-	sun/awt/motif/X11GB2312\$$$$Decoder.class \
-	sun/awt/motif/X11GB2312\$$$$Encoder.class \
+	sun/awt/motif/X11GB2312\$$Decoder.class \
+	sun/awt/motif/X11GB2312\$$Encoder.class \
 	sun/awt/motif/X11GBK.class \
-	sun/awt/motif/X11GBK\$$$$Encoder.class \
+	sun/awt/motif/X11GBK\$$Encoder.class \
 	sun/awt/motif/X11KSC5601.class \
-	sun/awt/motif/X11KSC5601\$$$$Decoder.class \
-	sun/awt/motif/X11KSC5601\$$$$Encoder.class \
+	sun/awt/motif/X11KSC5601\$$Decoder.class \
+	sun/awt/motif/X11KSC5601\$$Encoder.class \
 	sun/jvmstat \
 	sun/net/spi/nameservice/dns \
 	sun/nio/cs/ext \
 	sun/rmi/rmic \
 	sun/security/ec/ECDHKeyAgreement.class \
 	sun/security/ec/ECDSASignature.class \
-	sun/security/ec/ECDSASignature\$$$$Raw.class \
-	sun/security/ec/ECDSASignature\$$$$SHA1.class \
-	sun/security/ec/ECDSASignature\$$$$SHA224.class \
-	sun/security/ec/ECDSASignature\$$$$SHA256.class \
-	sun/security/ec/ECDSASignature\$$$$SHA384.class \
-	sun/security/ec/ECDSASignature\$$$$SHA512.class \
+	sun/security/ec/ECDSASignature\$$Raw.class \
+	sun/security/ec/ECDSASignature\$$SHA1.class \
+	sun/security/ec/ECDSASignature\$$SHA224.class \
+	sun/security/ec/ECDSASignature\$$SHA256.class \
+	sun/security/ec/ECDSASignature\$$SHA384.class \
+	sun/security/ec/ECDSASignature\$$SHA512.class \
 	sun/security/ec/ECKeyFactory.class \
 	sun/security/ec/ECKeyPairGenerator.class \
-	sun/security/ec/SunEC\$$$$1.class \
+	sun/security/ec/SunEC\$$1.class \
 	sun/security/ec/SunEC.class \
 	sun/security/ec/SunECEntries.class \
 	sun/security/internal \
