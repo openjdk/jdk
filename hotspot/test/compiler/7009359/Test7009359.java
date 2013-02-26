@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,13 @@
  * @bug 7009359
  * @summary HS with -XX:+AggressiveOpts optimize new StringBuffer(null) so it does not throw NPE as expected
  *
- * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeStringConcat -XX:CompileCommand=exclude,Test7009359,main Test7009359
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeStringConcat -XX:CompileCommand=dontinline,Test7009359,stringmakerBUG Test7009359
  *
  */
 
 public class Test7009359 {
     public static void main (String[] args) {
-        for(int i = 0; i < 1000000; i++) {
+        for(int i = 0; i < 100000; i++) {
             if(!stringmakerBUG(null).equals("NPE")) {
                 System.out.println("StringBuffer(null) does not throw NPE");
                 System.exit(97);

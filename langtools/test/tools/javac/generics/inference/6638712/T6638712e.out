@@ -1,2 +1,2 @@
-T6638712e.java:17:27: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Object, java.lang.Boolean,java.lang.Object)
+T6638712e.java:17:27: compiler.err.prob.found.req: (compiler.misc.incompatible.eq.upper.bounds: X, java.lang.Object, java.lang.Boolean,java.lang.Object)
 1 error

@@ -378,6 +378,8 @@ protected:
   bool is_dead() const;
 #define is_not_dead(n) ((n) == NULL || !VerifyIterativeGVN || !((n)->is_dead()))
 #endif
+  // Check whether node has become unreachable
+  bool is_unreachable(PhaseIterGVN &igvn) const;
 
   // Set a required input edge, also updates corresponding output edge
   void add_req( Node *n ); // Append a NEW required input
@@ -646,7 +648,8 @@ public:
     Flag_may_be_short_branch = Flag_is_dead_loop_safe << 1,
     Flag_avoid_back_to_back  = Flag_may_be_short_branch << 1,
     Flag_has_call            = Flag_avoid_back_to_back << 1,
-    _max_flags = (Flag_has_call << 1) - 1 // allow flags combination
+    Flag_is_expensive        = Flag_has_call << 1,
+    _max_flags = (Flag_is_expensive << 1) - 1 // allow flags combination
   };
 
 private:
@@ -819,6 +822,8 @@ public:
 
   // The node is a "macro" node which needs to be expanded before matching
   bool is_macro() const { return (_flags & Flag_is_macro) != 0; }
+  // The node is expensive: the best control is set during loop opts
+  bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != NULL; }
 
 //----------------- Optimization
 

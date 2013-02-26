@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,29 +199,17 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                             constantPoolHandle cp,
                             bool is_interface,
                             AccessFlags* promoted_flags,
-                            AnnotationArray** method_annotations,
-                            AnnotationArray** method_parameter_annotations,
-                            AnnotationArray** method_default_annotations,
-                            AnnotationArray** method_type_annotations,
                             TRAPS);
   Array<Method*>* parse_methods(ClassLoaderData* loader_data,
                                 constantPoolHandle cp,
                                 bool is_interface,
                                 AccessFlags* promoted_flags,
                                 bool* has_final_method,
-                                Array<AnnotationArray*>** methods_annotations,
-                                Array<AnnotationArray*>** methods_parameter_annotations,
-                                Array<AnnotationArray*>** methods_default_annotations,
-                                Array<AnnotationArray*>** methods_type_annotations,
                                 bool* has_default_method,
                                 TRAPS);
   Array<int>* sort_methods(ClassLoaderData* loader_data,
                            Array<Method*>* methods,
-                           Array<AnnotationArray*>* methods_annotations,
-                           Array<AnnotationArray*>* methods_parameter_annotations,
-                           Array<AnnotationArray*>* methods_default_annotations,
-                           Array<AnnotationArray*>* methods_type_annotations,
-                                TRAPS);
+                           TRAPS);
   u2* parse_exception_table(ClassLoaderData* loader_data,
                             u4 code_length, u4 exception_table_length,
                             constantPoolHandle cp, TRAPS);
@@ -376,6 +364,32 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
             ? cp->tag_at(index).is_klass_or_reference()
             : cp->tag_at(index).is_klass_reference());
   }
+
+  void copy_localvariable_table(ConstMethod* cm, int lvt_cnt,
+                                u2* localvariable_table_length,
+                                u2** localvariable_table_start,
+                                int lvtt_cnt,
+                                u2* localvariable_type_table_length,
+                                u2** localvariable_type_table_start,
+                                TRAPS);
+
+  void copy_method_annotations(ClassLoaderData* loader_data,
+                               ConstMethod* cm,
+                               u1* runtime_visible_annotations,
+                               int runtime_visible_annotations_length,
+                               u1* runtime_invisible_annotations,
+                               int runtime_invisible_annotations_length,
+                               u1* runtime_visible_parameter_annotations,
+                               int runtime_visible_parameter_annotations_length,
+                               u1* runtime_invisible_parameter_annotations,
+                               int runtime_invisible_parameter_annotations_length,
+                               u1* runtime_visible_type_annotations,
+                               int runtime_visible_type_annotations_length,
+                               u1* runtime_invisible_type_annotations,
+                               int runtime_invisible_type_annotations_length,
+                               u1* annotation_default,
+                               int annotation_default_length,
+                               TRAPS);
 
  public:
   // Constructor

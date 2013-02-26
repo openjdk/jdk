@@ -41,6 +41,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.tree.*;
@@ -83,6 +84,7 @@ public class Test {
         File thisFile = new File(testSrc, getClass().getName() + ".java");
         JavacTool javac = JavacTool.create();
         StandardJavaFileManager fm = javac.getStandardFileManager(null, null, null);
+        fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File(".")));
         Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjects(thisFile);
         testAnnoProcessor(javac, fm, fos, out, EXPECT_DOC_COMMENTS);
         testTaskListener(javac, fm, fos, out, EXPECT_DOC_COMMENTS);
