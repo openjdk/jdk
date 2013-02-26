@@ -57,10 +57,13 @@ $(eval $(call SetupJavaCompilation,BUILD_NASHORN,\
     COPY:=.properties .js,\
     BIN:=$(NASHORN_OUTPUTDIR)/nashorn_classes))
 
+NASGEN_SRC := $(FIXPATH) $(NASHORN_TOPDIR)/buildtools/nasgen/src
+ASM_SRC := $(FIXPATH) $(JDK_TOPDIR)/src/share/classes/jdk/internal/org/objectweb/asm
+
 # Build nasgen
 $(eval $(call SetupJavaCompilation,BUILD_NASGEN,\
     SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
-    SRC:=$(NASHORN_TOPDIR)/buildtools/nasgen/src,\
+    SRC:=$(NASGEN_SRC) $(ASM_SRC), \
     BIN:=$(NASHORN_OUTPUTDIR)/nasgen_classes,\
     ADD_JAVAC_FLAGS:=-cp $(NASHORN_OUTPUTDIR)/nashorn_classes))
 
@@ -74,7 +77,7 @@ $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run: $(BUILD_NASGEN)
 	$(MKDIR) -p $(@D)
 	$(RM) -rf $(@D)/jdk $(@D)/netscape
 	$(CP) -R -p $(NASHORN_OUTPUTDIR)/nashorn_classes/* $(@D)/
-	$(FIXPATH) $(JDK_OUTPUTDIR)/bin/java \
+	$(FIXPATH) $(JAVA) \
 		-cp "$(NASHORN_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes" \
 		jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
 	for f in `$(FIND) $(@D)/jdk/nashorn/internal/objects/ -name "*.class"`; do \
