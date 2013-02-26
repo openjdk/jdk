@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,14 @@ void print_debug(const char* format,...) {
      vfprintf(stderr, format, alist);
      va_end(alist);
    }
+}
+
+void print_error(const char* format,...) {
+  va_list alist;
+  va_start(alist, format);
+  fputs("ERROR: ", stderr);
+  vfprintf(stderr, format, alist);
+  va_end(alist);
 }
 
 bool is_debug() {

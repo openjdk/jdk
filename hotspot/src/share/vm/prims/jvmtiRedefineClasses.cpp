@@ -1558,6 +1558,18 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
       } break;
     }
   } // end for each bytecode
+
+  // We also need to rewrite the parameter name indexes, if there is
+  // method parameter data present
+  if(method->has_method_parameters()) {
+    const int len = method->method_parameters_length();
+    MethodParametersElement* elem = method->method_parameters_start();
+
+    for (int i = 0; i < len; i++) {
+      const u2 cp_index = elem[i].name_cp_index;
+      elem[i].name_cp_index = find_new_index(cp_index);
+    }
+  }
 } // end rewrite_cp_refs_in_method()
 
 
