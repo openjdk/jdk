@@ -1964,28 +1964,29 @@ public class Check {
         }
     }
 
-    public void checkClassOverrideEqualsAndHash(ClassSymbol someClass) {
+    private Filter<Symbol> equalsHasCodeFilter = new Filter<Symbol>() {
+        public boolean accepts(Symbol s) {
+            return MethodSymbol.implementation_filter.accepts(s) &&
+                    (s.flags() & BAD_OVERRIDE) == 0;
+
+        }
+    };
+
+    public void checkClassOverrideEqualsAndHash(DiagnosticPosition pos,
+            ClassSymbol someClass) {
         if (lint.isEnabled(LintCategory.OVERRIDES)) {
-            boolean hasEquals = false;
-            boolean hasHashCode = false;
+            MethodSymbol equalsAtObject = (MethodSymbol)syms.objectType
+                    .tsym.members().lookup(names.equals).sym;
+            MethodSymbol hashCodeAtObject = (MethodSymbol)syms.objectType
+                    .tsym.members().lookup(names.hashCode).sym;
 
-            Scope.Entry equalsAtObject = syms.objectType.tsym.members().lookup(names.equals);
-            Scope.Entry hashCodeAtObject = syms.objectType.tsym.members().lookup(names.hashCode);
-            for (Symbol s: someClass.members().getElements(new Filter<Symbol>() {
-                    public boolean accepts(Symbol s) {
-                        return s.kind == Kinds.MTH &&
-                                (s.flags() & BAD_OVERRIDE) == 0;
-                    }
-                })) {
-                MethodSymbol m = (MethodSymbol)s;
-                hasEquals |= m.name.equals(names.equals) &&
-                        m.overrides(equalsAtObject.sym, someClass, types, false);
+            boolean overridesEquals = types.implementation(equalsAtObject,
+                someClass, false, equalsHasCodeFilter).owner == someClass;
+            boolean overridesHashCode = types.implementation(hashCodeAtObject,
+                someClass, false, equalsHasCodeFilter) != hashCodeAtObject;
 
-                hasHashCode |= m.name.equals(names.hashCode) &&
-                        m.overrides(hashCodeAtObject.sym, someClass, types, false);
-            }
-            if (hasEquals && !hasHashCode) {
-                log.warning(LintCategory.OVERRIDES, (DiagnosticPosition) null,
+            if (overridesEquals && !overridesHashCode) {
+                log.warning(LintCategory.OVERRIDES, pos,
                         "override.equals.but.not.hashcode", someClass.fullname);
             }
         }

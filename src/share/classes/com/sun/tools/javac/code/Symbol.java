@@ -1305,7 +1305,7 @@ public abstract class Symbol implements Element {
             return implementation(origin, types, checkResult, implementation_filter);
         }
         // where
-            private static final Filter<Symbol> implementation_filter = new Filter<Symbol>() {
+            public static final Filter<Symbol> implementation_filter = new Filter<Symbol>() {
                 public boolean accepts(Symbol s) {
                     return s.kind == Kinds.MTH &&
                             (s.flags() & SYNTHETIC) == 0;
