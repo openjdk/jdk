@@ -123,7 +123,7 @@ static const FeatureMap featureMap[] =
     {ccmpFeatureTag, ccmpFeatureMask},
     {ligaFeatureTag, ligaFeatureMask},
     {cligFeatureTag, cligFeatureMask},
-        {kernFeatureTag, kernFeatureMask},
+    {kernFeatureTag, kernFeatureMask},
     {paltFeatureTag, paltFeatureMask},
     {markFeatureTag, markFeatureMask},
     {mkmkFeatureTag, mkmkFeatureMask},
@@ -159,6 +159,23 @@ OpenTypeLayoutEngine::OpenTypeLayoutEngine(const LEFontInstance *fontInstance, l
     static const le_uint32 gdefTableTag = LE_GDEF_TABLE_TAG;
     static const le_uint32 gposTableTag = LE_GPOS_TABLE_TAG;
     const GlyphPositioningTableHeader *gposTable = (const GlyphPositioningTableHeader *) getFontTable(gposTableTag);
+
+    applyTypoFlags();
+
+    setScriptAndLanguageTags();
+
+    fGDEFTable = (const GlyphDefinitionTableHeader *) getFontTable(gdefTableTag);
+
+// JK patch, 2008-05-30 - see Sinhala bug report and LKLUG font
+//    if (gposTable != NULL && gposTable->coversScriptAndLanguage(fScriptTag, fLangSysTag)) {
+    if (gposTable != NULL && gposTable->coversScript(fScriptTag)) {
+        fGPOSTable = gposTable;
+    }
+}
+
+void OpenTypeLayoutEngine::applyTypoFlags() {
+    const le_int32& typoFlags = fTypoFlags;
+    const LEFontInstance *fontInstance = fFontInstance;
 
     switch (typoFlags & (LE_SS01_FEATURE_FLAG
                          | LE_SS02_FEATURE_FLAG
@@ -221,15 +238,6 @@ OpenTypeLayoutEngine::OpenTypeLayoutEngine(const LEFontInstance *fontInstance, l
       fSubstitutionFilter = new CharSubstitutionFilter(fontInstance);
     }
 
-    setScriptAndLanguageTags();
-
-    fGDEFTable = (const GlyphDefinitionTableHeader *) getFontTable(gdefTableTag);
-
-// JK patch, 2008-05-30 - see Sinhala bug report and LKLUG font
-//    if (gposTable != NULL && gposTable->coversScriptAndLanguage(fScriptTag, fLangSysTag)) {
-    if (gposTable != NULL && gposTable->coversScript(fScriptTag)) {
-        fGPOSTable = gposTable;
-    }
 }
 
 void OpenTypeLayoutEngine::reset()
@@ -246,13 +254,15 @@ OpenTypeLayoutEngine::OpenTypeLayoutEngine(const LEFontInstance *fontInstance, l
     : LayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success), fFeatureOrder(FALSE),
       fGSUBTable(NULL), fGDEFTable(NULL), fGPOSTable(NULL), fSubstitutionFilter(NULL)
 {
-    setScriptAndLanguageTags();
+  applyTypoFlags();
+  setScriptAndLanguageTags();
 }
 
 OpenTypeLayoutEngine::~OpenTypeLayoutEngine()
 {
-    if (fTypoFlags & 0x80000000L) {
+    if (fTypoFlags & LE_CHAR_FILTER_FEATURE_FLAG) {
         delete fSubstitutionFilter;
+        fSubstitutionFilter = NULL;
     }
 
     reset();

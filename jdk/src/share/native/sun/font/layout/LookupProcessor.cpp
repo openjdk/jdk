@@ -208,7 +208,7 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
     lookupSelectCount = lookupListCount;
 
     le_int32 count, order = 0;
-    le_int32 featureReferences = 0;
+    le_uint32 featureReferences = 0;
     const FeatureTable *featureTable = NULL;
     LETag featureTag;
 
@@ -219,7 +219,7 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
     // be the maximum number of entries in the lookupOrderArray. We can't use
     // lookupListCount because some lookups might be referenced by more than
     // one feature.
-    for (le_int32 feature = 0; feature < featureCount; feature += 1) {
+    for (le_uint32 feature = 0; feature < featureCount; feature += 1) {
         le_uint16 featureIndex = SWAPW(langSysTable->featureIndexArray[feature]);
 
         featureTable = featureListTable->getFeatureTable(featureIndex, &featureTag);

@@ -38,7 +38,6 @@
 #include "ContextualGlyphSubstProc2.h"
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
-#include <stdio.h>
 
 U_NAMESPACE_BEGIN
 
@@ -123,7 +122,7 @@ TTGlyphID ContextualGlyphSubstitutionProcessor2::lookup(le_uint32 offset, LEGlyp
             break;
         }
         case ltfSegmentArray: {
-            printf("Context Lookup Table Format4: specific interpretation needed!\n");
+            //printf("Context Lookup Table Format4: specific interpretation needed!\n");
             break;
         }
         case ltfSingleTable:

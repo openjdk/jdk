@@ -65,6 +65,9 @@ StateTableProcessor::~StateTableProcessor()
 
 void StateTableProcessor::process(LEGlyphStorage &glyphStorage)
 {
+
+    LE_STATE_PATIENCE_INIT();
+
     // Start at state 0
     // XXX: How do we know when to start at state 1?
     ByteOffset currentState = stateArrayOffset;
@@ -76,6 +79,7 @@ void StateTableProcessor::process(LEGlyphStorage &glyphStorage)
     beginStateTable();
 
     while (currGlyph <= glyphCount) {
+        if(LE_STATE_PATIENCE_DECR()) break; // patience exceeded.
         ClassCode classCode = classCodeOOB;
         if (currGlyph == glyphCount) {
             // XXX: How do we handle EOT vs. EOL?
@@ -92,8 +96,9 @@ void StateTableProcessor::process(LEGlyphStorage &glyphStorage)
 
         const EntryTableIndex *stateArray = (const EntryTableIndex *) ((char *) &stateTableHeader->stHeader + currentState);
         EntryTableIndex entryTableIndex = stateArray[(le_uint8)classCode];
-
+        LE_STATE_PATIENCE_CURR(le_int32, currGlyph);
         currentState = processStateEntry(glyphStorage, currGlyph, entryTableIndex);
+        LE_STATE_PATIENCE_INCR(currGlyph);
     }
 
     endStateTable();
