@@ -53,7 +53,7 @@ import java.security.PrivilegedAction;
     private static final String NAME_OBJECT = "java/lang/Object";
     private static final String DESCR_CTOR_SERIALIZED_LAMBDA
             = MethodType.methodType(void.class,
-                                    String.class,
+                                    Class.class,
                                     int.class, String.class, String.class, String.class,
                                     int.class, String.class, String.class, String.class,
                                     String.class,
@@ -284,7 +284,7 @@ import java.security.PrivilegedAction;
         mv.visitCode();
         mv.visitTypeInsn(NEW, NAME_SERIALIZED_LAMBDA);
         mv.visitInsn(DUP);;
-        mv.visitLdcInsn(targetClass.getName().replace('.', '/'));
+        mv.visitLdcInsn(Type.getType(targetClass));
         mv.visitLdcInsn(samInfo.getReferenceKind());
         mv.visitLdcInsn(invokedType.returnType().getName().replace('.', '/'));
         mv.visitLdcInsn(samInfo.getName());
