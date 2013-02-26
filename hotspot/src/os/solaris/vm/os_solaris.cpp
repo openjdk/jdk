@@ -1865,7 +1865,7 @@ void os::abort(bool dump_core) {
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
-  _exit(-1);
+  ::abort(); // dump core (for debugging)
 }
 
 // unused
@@ -4317,7 +4317,9 @@ JVM_handle_solaris_signal(int signo, siginfo_t* siginfo, void* ucontext,
 
 
 void signalHandler(int sig, siginfo_t* info, void* ucVoid) {
+  int orig_errno = errno;  // Preserve errno value over signal handler.
   JVM_handle_solaris_signal(sig, info, ucVoid, true);
+  errno = orig_errno;
 }
 
 /* Do not delete - if guarantee is ever removed,  a signal handler (even empty)
