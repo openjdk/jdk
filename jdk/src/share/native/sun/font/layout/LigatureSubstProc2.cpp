@@ -79,6 +79,11 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
             m = 0;
         }
         componentStack[m] = currGlyph;
+    } else if ( m == -1) {
+        // bad font- skip this glyph.
+        LE_DEBUG_BAD_FONT("m==-1")
+        currGlyph+= dir;
+        return nextStateIndex;
     }
 
     ByteOffset actionOffset = flags & lsfPerformAction;
@@ -93,6 +98,16 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
 
         const le_uint16 *componentTable = (const le_uint16 *)((char *) &ligatureSubstitutionHeader->stHeader + componentOffset);
 
+        const le_uint16 *tableEnd = (const le_uint16 *)((char *) &ligatureSubstitutionHeader + SWAPL(ligatureSubstitutionHeader->length));
+
+        // Check if the font is internally consistent
+        if(tableEnd < (const le_uint16*)&ligatureSubstitutionHeader  // stated end wrapped around?
+           || componentTable > tableEnd) { // offset past end of stated length?
+          currGlyph+= dir;
+          LE_DEBUG_BAD_FONT("ligatureSubstHeader off end of table")
+            return nextStateIndex; // get out! bad font
+        }
+
         do {
             le_uint32 componentGlyph = componentStack[m--]; // pop off
 
@@ -104,19 +119,32 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
 
             offset = action & lafComponentOffsetMask;
             if (offset != 0) {
-
+                if(componentGlyph > glyphStorage.getGlyphCount()) {
+                  LE_DEBUG_BAD_FONT("preposterous componentGlyph");
+                  currGlyph+= dir;
+                  return nextStateIndex; // get out! bad font
+                }
                 i += SWAPW(componentTable[LE_GET_GLYPH(glyphStorage[componentGlyph]) + (SignExtend(offset, lafComponentOffsetMask))]);
 
                 if (action & (lafLast | lafStore))  {
                     TTGlyphID ligatureGlyph = SWAPW(ligatureTable[i]);
                     glyphStorage[componentGlyph] = LE_SET_GLYPH(glyphStorage[componentGlyph], ligatureGlyph);
+                    if(mm==nComponents) {
+                      LE_DEBUG_BAD_FONT("exceeded nComponents");
+                      mm--; // don't overrun the stack.
+                    }
                     stack[++mm] = componentGlyph;
                     i = 0;
                 } else {
                     glyphStorage[componentGlyph] = LE_SET_GLYPH(glyphStorage[componentGlyph], 0xFFFF);
                 }
             }
-        } while (!(action & lafLast));
+#if LE_ASSERT_BAD_FONT
+            if(m<0) {
+              LE_DEBUG_BAD_FONT("m<0")
+            }
+#endif
+        } while (!(action & lafLast) && (m>=0) ); // stop if last bit is set, or if run out of items
 
         while (mm >= 0) {
             if (++m >= nComponents) {

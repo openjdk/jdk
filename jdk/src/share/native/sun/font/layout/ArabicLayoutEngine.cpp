@@ -26,7 +26,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -152,17 +152,16 @@ void ArabicOpenTypeLayoutEngine::adjustGlyphPositions(const LEUnicode chars[], l
 }
 
 UnicodeArabicOpenTypeLayoutEngine::UnicodeArabicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags, LEErrorCode &success)
-    : ArabicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success)
+    : ArabicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags | LE_CHAR_FILTER_FEATURE_FLAG, success)
 {
     fGSUBTable = (const GlyphSubstitutionTableHeader *) CanonShaping::glyphSubstitutionTable;
     fGDEFTable = (const GlyphDefinitionTableHeader *) CanonShaping::glyphDefinitionTable;
-
-    fSubstitutionFilter = new CharSubstitutionFilter(fontInstance);
+    /* OpenTypeLayoutEngine will allocate a substitution filter */
 }
 
 UnicodeArabicOpenTypeLayoutEngine::~UnicodeArabicOpenTypeLayoutEngine()
 {
-    delete fSubstitutionFilter;
+    /* OpenTypeLayoutEngine will cleanup the substitution filter */
 }
 
 // "glyphs", "indices" -> glyphs, indices

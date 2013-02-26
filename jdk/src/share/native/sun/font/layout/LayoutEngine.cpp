@@ -428,7 +428,7 @@ void LayoutEngine::adjustGlyphPositions(const LEUnicode chars[], le_int32 offset
 
     adjustMarkGlyphs(&chars[offset], count, reverse, glyphStorage, &filter, success);
 
-    if (fTypoFlags & 0x1) { /* kerning enabled */
+    if (fTypoFlags & LE_Kerning_FEATURE_FLAG) { /* kerning enabled */
       static const le_uint32 kernTableTag = LE_KERN_TABLE_TAG;
 
       KernTable kt(fFontInstance, getFontTable(kernTableTag));
@@ -571,8 +571,8 @@ void LayoutEngine::reset()
 
 LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, LEErrorCode &success)
 {
-  // 3 -> kerning and ligatures
-  return LayoutEngine::layoutEngineFactory(fontInstance, scriptCode, languageCode, 3, success);
+  //kerning and ligatures - by default
+  return LayoutEngine::layoutEngineFactory(fontInstance, scriptCode, languageCode, LE_DEFAULT_FEATURE_FLAG, success);
 }
 
 LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags, LEErrorCode &success)
@@ -660,11 +660,11 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
         }
     } else {
         MorphTableHeader2 *morxTable = (MorphTableHeader2 *)fontInstance->getFontTable(morxTableTag);
-        if (morxTable != NULL) {
+        if (morxTable != NULL && SWAPL(morxTable->version)==0x00020000) {
             result = new GXLayoutEngine2(fontInstance, scriptCode, languageCode, morxTable, typoFlags, success);
         } else {
             const MorphTableHeader *mortTable = (MorphTableHeader *) fontInstance->getFontTable(mortTableTag);
-            if (mortTable != NULL) { // mort
+            if (mortTable != NULL && SWAPL(mortTable->version)==0x00010000) { // mort
                 result = new GXLayoutEngine(fontInstance, scriptCode, languageCode, mortTable, success);
             } else {
                 switch (scriptCode) {

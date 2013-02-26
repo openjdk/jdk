@@ -38,7 +38,6 @@
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
 #include "LookupTables.h"
-#include <stdio.h>
 
 U_NAMESPACE_BEGIN
 
@@ -72,6 +71,8 @@ void StateTableProcessor2::process(LEGlyphStorage &glyphStorage)
     le_uint16 currentState = 0;
     le_int32 glyphCount = glyphStorage.getGlyphCount();
 
+    LE_STATE_PATIENCE_INIT();
+
     le_int32 currGlyph = 0;
     if ((coverage & scfReverse2) != 0) {  // process glyphs in descending order
         currGlyph = glyphCount - 1;
@@ -86,6 +87,10 @@ void StateTableProcessor2::process(LEGlyphStorage &glyphStorage)
 #ifdef TEST_FORMAT
             SimpleArrayLookupTable *lookupTable0 = (SimpleArrayLookupTable *) classTable;
             while ((dir == 1 && currGlyph <= glyphCount) || (dir == -1 && currGlyph >= -1)) {
+                if(LE_STATE_PATIENCE_DECR()) {
+                  LE_DEBUG_BAD_FONT("patience exceeded - state table not moving")
+                  break; // patience exceeded.
+                }
                 LookupValue classCode = classCodeOOB;
                 if (currGlyph == glyphCount || currGlyph == -1) {
                     // XXX: How do we handle EOT vs. EOL?
@@ -101,7 +106,9 @@ void StateTableProcessor2::process(LEGlyphStorage &glyphStorage)
                     }
                 }
                 EntryTableIndex2 entryTableIndex = SWAPW(stateArray[classCode + currentState * nClasses]);
+                LE_STATE_PATIENCE_CURR(le_int32, currGlyph);
                 currentState = processStateEntry(glyphStorage, currGlyph, entryTableIndex); // return a zero-based index instead of a byte offset
+                LE_STATE_PATIENCE_INCR(currGlyph);
             }
 #endif
             break;
@@ -109,6 +116,10 @@ void StateTableProcessor2::process(LEGlyphStorage &glyphStorage)
         case ltfSegmentSingle: {
             SegmentSingleLookupTable *lookupTable2 = (SegmentSingleLookupTable *) classTable;
             while ((dir == 1 && currGlyph <= glyphCount) || (dir == -1 && currGlyph >= -1)) {
+                if(LE_STATE_PATIENCE_DECR()) {
+                  LE_DEBUG_BAD_FONT("patience exceeded - state table not moving")
+                  break; // patience exceeded.
+                }
                 LookupValue classCode = classCodeOOB;
                 if (currGlyph == glyphCount || currGlyph == -1) {
                     // XXX: How do we handle EOT vs. EOL?
@@ -127,21 +138,31 @@ void StateTableProcessor2::process(LEGlyphStorage &glyphStorage)
                     }
                 }
                 EntryTableIndex2 entryTableIndex = SWAPW(stateArray[classCode + currentState * nClasses]);
+                LE_STATE_PATIENCE_CURR(le_int32, currGlyph);
                 currentState = processStateEntry(glyphStorage, currGlyph, entryTableIndex);
+                LE_STATE_PATIENCE_INCR(currGlyph);
             }
             break;
         }
         case ltfSegmentArray: {
-            printf("Lookup Table Format4: specific interpretation needed!\n");
+          //printf("Lookup Table Format4: specific interpretation needed!\n");
             break;
         }
         case ltfSingleTable: {
             SingleTableLookupTable *lookupTable6 = (SingleTableLookupTable *) classTable;
             while ((dir == 1 && currGlyph <= glyphCount) || (dir == -1 && currGlyph >= -1)) {
+                if(LE_STATE_PATIENCE_DECR()) {
+                  LE_DEBUG_BAD_FONT("patience exceeded - state table not moving")
+                  break; // patience exceeded.
+                }
                 LookupValue classCode = classCodeOOB;
                 if (currGlyph == glyphCount || currGlyph == -1) {
                     // XXX: How do we handle EOT vs. EOL?
                     classCode = classCodeEOT;
+                } else if(currGlyph > glyphCount) {
+                  // note if > glyphCount, we've run off the end (bad font)
+                  currGlyph = glyphCount;
+                  classCode = classCodeEOT;
                 } else {
                     LEGlyphID gid = glyphStorage[currGlyph];
                     TTGlyphID glyphCode = (TTGlyphID) LE_GET_GLYPH(gid);
@@ -156,7 +177,9 @@ void StateTableProcessor2::process(LEGlyphStorage &glyphStorage)
                     }
                 }
                 EntryTableIndex2 entryTableIndex = SWAPW(stateArray[classCode + currentState * nClasses]);
+                LE_STATE_PATIENCE_CURR(le_int32, currGlyph);
                 currentState = processStateEntry(glyphStorage, currGlyph, entryTableIndex);
+                LE_STATE_PATIENCE_INCR(currGlyph);
             }
             break;
         }
@@ -166,6 +189,11 @@ void StateTableProcessor2::process(LEGlyphStorage &glyphStorage)
             TTGlyphID lastGlyph  = firstGlyph + SWAPW(lookupTable8->glyphCount);
 
             while ((dir == 1 && currGlyph <= glyphCount) || (dir == -1 && currGlyph >= -1)) {
+                if(LE_STATE_PATIENCE_DECR()) {
+                  LE_DEBUG_BAD_FONT("patience exceeded - state table not moving")
+                  break; // patience exceeded.
+                }
+
                 LookupValue classCode = classCodeOOB;
                 if (currGlyph == glyphCount || currGlyph == -1) {
                     // XXX: How do we handle EOT vs. EOL?
@@ -179,7 +207,9 @@ void StateTableProcessor2::process(LEGlyphStorage &glyphStorage)
                     }
                 }
                 EntryTableIndex2 entryTableIndex = SWAPW(stateArray[classCode + currentState * nClasses]);
+                LE_STATE_PATIENCE_CURR(le_int32, currGlyph);
                 currentState = processStateEntry(glyphStorage, currGlyph, entryTableIndex);
+                LE_STATE_PATIENCE_INCR(currGlyph);
             }
             break;
         }

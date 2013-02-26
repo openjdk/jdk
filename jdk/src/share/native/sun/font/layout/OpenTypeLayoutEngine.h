@@ -24,7 +24,7 @@
  */
 
 /*
- * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -183,6 +183,11 @@ private:
      * The array of script tags, indexed by script code.
      */
     static const LETag scriptTags[];
+
+    /**
+     * apply the typoflags. Only called by the c'tors.
+     */
+    void applyTypoFlags();
 
 protected:
     /**
