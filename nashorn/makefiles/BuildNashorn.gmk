@@ -57,8 +57,8 @@ $(eval $(call SetupJavaCompilation,BUILD_NASHORN,\
     COPY:=.properties .js,\
     BIN:=$(NASHORN_OUTPUTDIR)/nashorn_classes))
 
-NASGEN_SRC := $(FIXPATH) $(NASHORN_TOPDIR)/buildtools/nasgen/src
-ASM_SRC := $(FIXPATH) $(JDK_TOPDIR)/src/share/classes/jdk/internal/org/objectweb/asm
+NASGEN_SRC := $(NASHORN_TOPDIR)/buildtools/nasgen/src
+ASM_SRC := $(JDK_TOPDIR)/src/share/classes/jdk/internal/org/objectweb/asm
 
 # Build nasgen
 $(eval $(call SetupJavaCompilation,BUILD_NASGEN,\
