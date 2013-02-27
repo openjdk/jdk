@@ -50,29 +50,23 @@ public class PStack extends Tool {
 
    public void run(PrintStream out) {
       Debugger dbg = getAgent().getDebugger();
-      run(out, dbg, getAgent().isJavaMode());
+      run(out, dbg);
    }
 
    public void run(PrintStream out, Debugger dbg) {
-      run(out, dbg, true);
-   }
-
-   private void run(PrintStream out, Debugger dbg, final boolean isJava) {
       CDebugger cdbg = dbg.getCDebugger();
       if (cdbg != null) {
          ConcurrentLocksPrinter concLocksPrinter = null;
-         if (isJava) {
-            // compute and cache java Vframes.
-            initJFrameCache();
-            if (concurrentLocks) {
-               concLocksPrinter = new ConcurrentLocksPrinter();
-            }
-            // print Java level deadlocks
-            try {
-               DeadlockDetector.print(out);
-            } catch (Exception exp) {
-               out.println("can't print deadlock information: " + exp.getMessage());
-            }
+         // compute and cache java Vframes.
+         initJFrameCache();
+         if (concurrentLocks) {
+            concLocksPrinter = new ConcurrentLocksPrinter();
+         }
+         // print Java level deadlocks
+         try {
+            DeadlockDetector.print(out);
+         } catch (Exception exp) {
+            out.println("can't print deadlock information: " + exp.getMessage());
          }
 
          List l = cdbg.getThreadList();
@@ -100,63 +94,59 @@ public class PStack extends Tool {
                      }
                      out.println();
                   } else {
-                     if (isJava) {
-                        // look for one or more java frames
-                        String[] names = null;
-                        // check interpreter frame
-                        Interpreter interp = VM.getVM().getInterpreter();
-                        if (interp.contains(pc)) {
-                           names = getJavaNames(th, f.localVariableBase());
-                           // print codelet name if we can't determine method
-                           if (names == null || names.length == 0) {
-                              out.print("<interpreter> ");
-                              InterpreterCodelet ic = interp.getCodeletContaining(pc);
-                              if (ic != null) {
-                                 String desc = ic.getDescription();
-                                 if (desc != null) out.print(desc);
-                              }
-                              out.println();
-                           }
-                        } else {
-                           // look for known code blobs
-                           CodeCache c = VM.getVM().getCodeCache();
-                           if (c.contains(pc)) {
-                              CodeBlob cb = c.findBlobUnsafe(pc);
-                              if (cb.isNMethod()) {
-                                 names = getJavaNames(th, f.localVariableBase());
-                                 // just print compiled code, if can't determine method
-                                 if (names == null || names.length == 0) {
-                                    out.println("<Unknown compiled code>");
-                                 }
-                              } else if (cb.isBufferBlob()) {
-                                 out.println("<StubRoutines>");
-                              } else if (cb.isRuntimeStub()) {
-                                 out.println("<RuntimeStub>");
-                              } else if (cb.isDeoptimizationStub()) {
-                                 out.println("<DeoptimizationStub>");
-                              } else if (cb.isUncommonTrapStub()) {
-                                 out.println("<UncommonTrap>");
-                              } else if (cb.isExceptionStub()) {
-                                 out.println("<ExceptionStub>");
-                              } else if (cb.isSafepointStub()) {
-                                 out.println("<SafepointStub>");
-                              } else {
-                                 out.println("<Unknown code blob>");
-                              }
-                           } else {
-                              printUnknown(out);
-                           }
-                        }
-                        // print java frames, if any
-                        if (names != null && names.length != 0) {
-                           // print java frame(s)
-                           for (int i = 0; i < names.length; i++) {
-                               out.println(names[i]);
-                           }
-                        }
-                     } else {
-                        printUnknown(out);
-                     }
+                      // look for one or more java frames
+                      String[] names = null;
+                      // check interpreter frame
+                      Interpreter interp = VM.getVM().getInterpreter();
+                      if (interp.contains(pc)) {
+                         names = getJavaNames(th, f.localVariableBase());
+                         // print codelet name if we can't determine method
+                         if (names == null || names.length == 0) {
+                            out.print("<interpreter> ");
+                            InterpreterCodelet ic = interp.getCodeletContaining(pc);
+                            if (ic != null) {
+                               String desc = ic.getDescription();
+                               if (desc != null) out.print(desc);
+                            }
+                            out.println();
+                         }
+                      } else {
+                         // look for known code blobs
+                         CodeCache c = VM.getVM().getCodeCache();
+                         if (c.contains(pc)) {
+                            CodeBlob cb = c.findBlobUnsafe(pc);
+                            if (cb.isNMethod()) {
+                               names = getJavaNames(th, f.localVariableBase());
+                               // just print compiled code, if can't determine method
+                               if (names == null || names.length == 0) {
+                                  out.println("<Unknown compiled code>");
+                               }
+                            } else if (cb.isBufferBlob()) {
+                               out.println("<StubRoutines>");
+                            } else if (cb.isRuntimeStub()) {
+                               out.println("<RuntimeStub>");
+                            } else if (cb.isDeoptimizationStub()) {
+                               out.println("<DeoptimizationStub>");
+                            } else if (cb.isUncommonTrapStub()) {
+                               out.println("<UncommonTrap>");
+                            } else if (cb.isExceptionStub()) {
+                               out.println("<ExceptionStub>");
+                            } else if (cb.isSafepointStub()) {
+                               out.println("<SafepointStub>");
+                            } else {
+                               out.println("<Unknown code blob>");
+                            }
+                         } else {
+                            printUnknown(out);
+                         }
+                      }
+                      // print java frames, if any
+                      if (names != null && names.length != 0) {
+                         // print java frame(s)
+                         for (int i = 0; i < names.length; i++) {
+                             out.println(names[i]);
+                         }
+                      }
                   }
                   f = f.sender(th);
                }
@@ -164,7 +154,7 @@ public class PStack extends Tool {
                exp.printStackTrace();
                // continue, may be we can do a better job for other threads
             }
-            if (isJava && concurrentLocks) {
+            if (concurrentLocks) {
                JavaThread jthread = (JavaThread) proxyToThread.get(th);
                if (jthread != null) {
                    concLocksPrinter.print(jthread, out);
@@ -178,10 +168,6 @@ public class PStack extends Tool {
               out.println("not yet implemented (debugger does not support CDebugger)!");
           }
       }
-   }
-
-   protected boolean requiresVM() {
-      return false;
    }
 
    public static void main(String[] args) throws Exception {
