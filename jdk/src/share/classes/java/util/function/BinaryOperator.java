@@ -30,7 +30,7 @@ package java.util.function;
  *
  * @param <T> the type of operands to {@code apply} and of the result
  *
- * @see BiFunction.
+ * @see BiFunction
  * @since 1.8
  */
 @FunctionalInterface
