@@ -43,8 +43,6 @@ public class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
     public static final int CALLSITE_SCOPE                = 0x01;
     /** Flags that the call site is in code that uses ECMAScript strict mode. */
     public static final int CALLSITE_STRICT               = 0x02;
-    /** Flags that a property setter call site is part of a function declaration that assigns the function object to a name. */
-    public static final int CALLSITE_FUNCTION_DECLARATION = 0x04;
     /** Flags that a property getter or setter call site references a scope variable that is not in the global scope
      * (it is in a function lexical scope), and the function's scope object class is fixed and known in advance. Such
      * getters and setters can often be linked more optimally using these assumptions. */

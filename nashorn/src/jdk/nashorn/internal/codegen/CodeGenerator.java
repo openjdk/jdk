@@ -46,7 +46,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
 import static jdk.nashorn.internal.ir.Symbol.IS_TEMP;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_FAST_SCOPE;
-import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_FUNCTION_DECLARATION;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_SCOPE;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
 
@@ -2052,9 +2051,6 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
         if (needsScope) {
             int flags = CALLSITE_SCOPE | getCallSiteFlags();
-            if (varNode.isFunctionVarNode()) {
-                flags |= CALLSITE_FUNCTION_DECLARATION;
-            }
             final IdentNode identNode = varNode.getName();
             final Type type = identNode.getType();
             if (varSymbol.isFastScope(getCurrentFunctionNode())) {
