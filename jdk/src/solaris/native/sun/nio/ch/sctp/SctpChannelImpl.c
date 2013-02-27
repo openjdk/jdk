@@ -67,8 +67,6 @@ static jclass    spc_class;    /* sun.nio.ch.sctp.PeerAddressChanged         */
 static jmethodID spc_ctrID;    /* sun.nio.ch.sctp.PeerAddressChanged.<init>  */
 static jclass    ss_class;     /* sun.nio.ch.sctp.Shutdown                   */
 static jmethodID ss_ctrID;     /* sun.nio.ch.sctp.Shutdown.<init>            */
-static jfieldID  isa_addrID;   /* java.net.InetSocketAddress.addr            */
-static jfieldID  isa_portID;   /* java.net.InetSocketAddress.port            */
 
 /* defined in SctpNet.c */
 jobject SockAddrToInetSocketAddress(JNIEnv* env, struct sockaddr* addr);
@@ -138,13 +136,6 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_initIDs
     CHECK_NULL(ss_class);
     ss_ctrID = (*env)->GetMethodID(env, cls, "<init>", "(I)V");
     CHECK_NULL(ss_ctrID);
-
-    /* InetSocketAddress */
-    cls = (*env)->FindClass(env, "java/net/InetSocketAddress");
-    CHECK_NULL(cls);
-    isa_addrID = (*env)->GetFieldID(env, cls, "addr", "Ljava/net/InetAddress;");
-    CHECK_NULL(isa_addrID);
-    isa_portID = (*env)->GetFieldID(env, cls, "port", "I");
 }
 
 void getControlData
@@ -509,12 +500,12 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
 /*
  * Class:     sun_nio_ch_sctp_SctpChannelImpl
  * Method:    send0
- * Signature: (IJILjava/net/SocketAddress;IIZI)I
+ * Signature: (IJILjava/net/InetAddress;IIIZI)I
  */
 JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
   (JNIEnv *env, jclass klass, jint fd, jlong address, jint length,
-   jobject saTarget, jint assocId, jint streamNumber, jboolean unordered,
-   jint ppid) {
+   jobject targetAddress, jint targetPort, jint assocId, jint streamNumber,
+   jboolean unordered, jint ppid) {
     SOCKADDR sa;
     int sa_len = sizeof(sa);
     ssize_t rv = 0;
@@ -526,17 +517,13 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
     struct controlData cdata[1];
 
     /* SctpChannel:
-     *    saTarget may contain the preferred address or NULL to use primary,
+     *    targetAddress may contain the preferred address or NULL to use primary,
      *    assocId will always be -1
      * SctpMultiChannell:
-     *    Setup new association, saTarget will contain address, assocId = -1
-     *    Association already existing, assocId != -1, saTarget = preferred addr
+     *    Setup new association, targetAddress will contain address, assocId = -1
+     *    Association already existing, assocId != -1, targetAddress = preferred addr
      */
-    if (saTarget != NULL /*&& assocId <= 0*/) {
-
-        jobject targetAddress = (*env)->GetObjectField(env, saTarget, isa_addrID);
-        jint targetPort = (*env)->GetIntField(env, saTarget, isa_portID);
-
+    if (targetAddress != NULL /*&& assocId <= 0*/) {
         if (NET_InetAddressToSockaddr(env, targetAddress, targetPort,
                                       (struct sockaddr *)&sa,
                                       &sa_len, JNI_TRUE) != 0) {
