@@ -997,13 +997,19 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       // move our object at this point. However, our owner value is safe
       // since it is either the Lock word on a stack or a JavaThread *.
       owning_thread = Threads::owning_thread_from_monitor_owner(owner, !at_safepoint);
-      assert(owning_thread != NULL, "sanity check");
-      if (owning_thread != NULL) {  // robustness
+      // Cannot assume (owning_thread != NULL) here because this function
+      // may not have been called at a safepoint and the owning_thread
+      // might not be suspended.
+      if (owning_thread != NULL) {
         // The monitor's owner either has to be the current thread, at safepoint
         // or it has to be suspended. Any of these conditions will prevent both
         // contending and waiting threads from modifying the state of
         // the monitor.
         if (!at_safepoint && !JvmtiEnv::is_thread_fully_suspended(owning_thread, true, &debug_bits)) {
+          // Don't worry! This return of JVMTI_ERROR_THREAD_NOT_SUSPENDED
+          // will not make it back to the JVM/TI agent. The error code will
+          // get intercepted in JvmtiEnv::GetObjectMonitorUsage() which
+          // will retry the call via a VM_GetObjectMonitorUsage VM op.
           return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
         }
         HandleMark hm;
