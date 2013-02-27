@@ -83,7 +83,6 @@
 
 package jdk.internal.dynalink.beans;
 
-import java.beans.Introspector;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -136,16 +135,16 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             // Add the method as a property getter and/or setter
             if(name.startsWith("get") && name.length() > 3 && method.getParameterTypes().length == 0) {
                 // Property getter
-                setPropertyGetter(Introspector.decapitalize(name.substring(3)), introspector.unreflect(
+                setPropertyGetter(decapitalize(name.substring(3)), introspector.unreflect(
                         getMostGenericGetter(method)), ValidationType.INSTANCE_OF);
             } else if(name.startsWith("is") && name.length() > 2 && method.getParameterTypes().length == 0 &&
                     method.getReturnType() == boolean.class) {
                 // Boolean property getter
-                setPropertyGetter(Introspector.decapitalize(name.substring(2)), introspector.unreflect(
+                setPropertyGetter(decapitalize(name.substring(2)), introspector.unreflect(
                         getMostGenericGetter(method)), ValidationType.INSTANCE_OF);
             } else if(name.startsWith("set") && name.length() > 3 && method.getParameterTypes().length == 1) {
                 // Property setter
-                addMember(Introspector.decapitalize(name.substring(3)), methodHandle, propertySetters);
+                addMember(decapitalize(name.substring(3)), methodHandle, propertySetters);
             }
         }
 
@@ -168,6 +167,27 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
                 setPropertyGetter(name, innerClassSpec.getValue(), ValidationType.EXACT_CLASS);
             }
         }
+    }
+
+    private static String decapitalize(String str) {
+        assert str != null;
+        if(str.isEmpty()) {
+            return str;
+        }
+
+        final char c0 = str.charAt(0);
+        if(Character.isLowerCase(c0)) {
+            return str;
+        }
+
+        // If it has two consecutive upper-case characters, i.e. "URL", don't decapitalize
+        if(str.length() > 1 && Character.isUpperCase(str.charAt(1))) {
+            return str;
+        }
+
+        final char c[] = str.toCharArray();
+        c[0] = Character.toLowerCase(c0);
+        return new String(c);
     }
 
     abstract FacetIntrospector createFacetIntrospector();
