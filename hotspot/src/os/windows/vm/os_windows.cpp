@@ -1940,7 +1940,7 @@ int os::sigexitnum_pd(){
 
 // a counter for each possible signal value, including signal_thread exit signal
 static volatile jint pending_signals[NSIG+1] = { 0 };
-static HANDLE sig_sem;
+static HANDLE sig_sem = NULL;
 
 void os::signal_init_pd() {
   // Initialize signal structures
@@ -1970,10 +1970,11 @@ void os::signal_init_pd() {
 
 void os::signal_notify(int signal_number) {
   BOOL ret;
-
-  Atomic::inc(&pending_signals[signal_number]);
-  ret = ::ReleaseSemaphore(sig_sem, 1, NULL);
-  assert(ret != 0, "ReleaseSemaphore() failed");
+  if (sig_sem != NULL) {
+    Atomic::inc(&pending_signals[signal_number]);
+    ret = ::ReleaseSemaphore(sig_sem, 1, NULL);
+    assert(ret != 0, "ReleaseSemaphore() failed");
+  }
 }
 
 static int check_pending_signals(bool wait_for_signal) {
