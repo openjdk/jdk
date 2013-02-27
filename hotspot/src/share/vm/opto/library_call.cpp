@@ -4005,8 +4005,9 @@ bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
       }
     }
   }
-  else if (method->is_method_handle_intrinsic() ||
-           method->is_compiled_lambda_form()) {
+
+  if (method->is_method_handle_intrinsic() ||
+      method->is_compiled_lambda_form()) {
     // This is an internal adapter frame from the MethodHandleCompiler -- skip it
     return true;
   }
