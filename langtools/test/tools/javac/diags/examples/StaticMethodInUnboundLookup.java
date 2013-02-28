@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,16 @@
  * questions.
  */
 
-// key: compiler.misc.non-static.cant.be.ref
 // key: compiler.err.invalid.mref
+// key: compiler.misc.static.method.in.unbound.lookup
 
-class NonStaticCantBeRefFragment {
+class StaticBoundMref {
 
     interface SAM {
-        void m(Integer u);
+        void m(StaticBoundMref m);
     }
 
-    void f(Integer i) { }
+    SAM s = StaticBoundMref::m;
 
-    static void test() {
-        SAM s = NonStaticCantBeRefFragment::f;
-    }
+    static void m() { }
 }

@@ -29,9 +29,23 @@ class TargetType60 {
     void m012(String s) { }
     void m012(String s1, String s2) { }
 
+    void n0() { }
+    void n1(String s) { }
+    void n2(TargetType60 rec, String s2) { }
+
+    void n01() { }
+    void n01(String s) { }
+
+    void n012() { }
+    void n012(String s) { }
+    void n012(TargetType60 rec, String s2) { }
+
     static String g(Sam0 s) { return null; }
     static <U> U g(Sam1<U> s) { return null; }
     static <U> U g(Sam2<U,String> s) { return null; }
+
+    static <U> U u(Sam1<U> s) { return null; }
+    static <U> U u(Sam2<U,String> s) { return null; }
 
     void testBound() {
         String s1 = g(this::m0); //ok - resolves to g(Sam0)
@@ -42,10 +56,10 @@ class TargetType60 {
     }
 
     static void testUnbound() {
-        TargetType60 s1 = g(TargetType60::m0); //ok - resolves to g(Sam1)
-        TargetType60 s2 = g(TargetType60::m1); //ok - resolves to g(Sam2)
-        TargetType60 s3 = g(TargetType60::m2); //none is applicable
-        TargetType60 s4 = g(TargetType60::m01);//ambiguous (g(Sam1), g(Sam2) apply)
-        TargetType60 s5 = g(TargetType60::m012);//ambiguous (g(Sam1), g(Sam2) apply)
+        TargetType60 s1 = u(TargetType60::n0); //ok - resolves to u(Sam1)
+        TargetType60 s2 = u(TargetType60::n1); //ambiguous (u(Sam1), u(Sam2) apply)
+        TargetType60 s3 = u(TargetType60::n2); //none is applicable
+        TargetType60 s4 = u(TargetType60::n01);//ambiguous (u(Sam1), u(Sam2) apply)
+        TargetType60 s5 = u(TargetType60::n012);//ambiguous (u(Sam1), u(Sam2) apply)
     }
 }
