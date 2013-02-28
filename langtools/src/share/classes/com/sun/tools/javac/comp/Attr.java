@@ -2624,7 +2624,34 @@ public class Attr extends JCTree.Visitor {
             that.sym = refSym.baseSymbol();
             that.kind = lookupHelper.referenceKind(that.sym);
 
+            if (desc.getReturnType() == Type.recoveryType) {
+                // stop here
+                result = that.type = target;
+                return;
+            }
+
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
+
+                if (!that.kind.isUnbound() &&
+                        that.getMode() == ReferenceMode.INVOKE &&
+                        TreeInfo.isStaticSelector(that.expr, names) &&
+                        !that.sym.isStatic()) {
+                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
+                            diags.fragment("non-static.cant.be.ref", Kinds.kindName(refSym), refSym));
+                    result = that.type = types.createErrorType(target);
+                    return;
+                }
+
+                if (that.kind.isUnbound() &&
+                        that.getMode() == ReferenceMode.INVOKE &&
+                        TreeInfo.isStaticSelector(that.expr, names) &&
+                        that.sym.isStatic()) {
+                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
+                            diags.fragment("static.method.in.unbound.lookup", Kinds.kindName(refSym), refSym));
+                    result = that.type = types.createErrorType(target);
+                    return;
+                }
+
                 if (that.sym.isStatic() && TreeInfo.isStaticSelector(that.expr, names) &&
                         exprType.getTypeArguments().nonEmpty()) {
                     //static ref with class type-args
@@ -2647,12 +2674,6 @@ public class Attr extends JCTree.Visitor {
                     // Check that super-qualified symbols are not abstract (JLS)
                     rs.checkNonAbstract(that.pos(), that.sym);
                 }
-            }
-
-            if (desc.getReturnType() == Type.recoveryType) {
-                // stop here
-                result = that.type = target;
-                return;
             }
 
             that.sym = refSym.baseSymbol();

@@ -2661,20 +2661,10 @@ public class Resolve {
             super(referenceTree, name, site, argtypes, typeargtypes, maxPhase);
         }
 
-        protected Symbol lookupReferenceInternal(Env<AttrContext> env, MethodResolutionPhase phase) {
-            return findMethod(env, site, name, argtypes, typeargtypes,
-                    phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
-        }
-
-        protected Symbol adjustLookupResult(Env<AttrContext> env, Symbol sym) {
-            return !TreeInfo.isStaticSelector(referenceTree.expr, names) ||
-                        sym.kind != MTH ||
-                        sym.isStatic() ? sym : new StaticError(sym);
-        }
-
         @Override
         final Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
-            return adjustLookupResult(env, lookupReferenceInternal(env, phase));
+            return findMethod(env, site, name, argtypes, typeargtypes,
+                    phase.isBoxingRequired(), phase.isVarargsRequired(), syms.operatorNames.contains(name));
         }
 
         @Override
@@ -2718,11 +2708,6 @@ public class Resolve {
             if (site.isRaw() && !asSuperSite.isErroneous()) {
                 this.site = asSuperSite;
             }
-        }
-
-        @Override
-        protected Symbol adjustLookupResult(Env<AttrContext> env, Symbol sym) {
-            return sym.kind != MTH || !sym.isStatic() ? sym : new StaticError(sym);
         }
 
         @Override
