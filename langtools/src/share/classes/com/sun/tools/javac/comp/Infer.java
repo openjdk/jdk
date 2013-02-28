@@ -1216,7 +1216,7 @@ public class Infer {
                  * created, effectively replacing the original cyclic nodes.
              */
             void initNodes() {
-                ArrayList<Node> nodes = new ArrayList<Node>();
+                nodes = new ArrayList<Node>();
                 for (Type t : inferenceContext.restvars()) {
                     nodes.add(new Node(t));
                 }
@@ -1235,7 +1235,7 @@ public class Infer {
                         }
                     }
                 }
-                this.nodes = new ArrayList<Node>();
+                ArrayList<Node> acyclicNodes = new ArrayList<Node>();
                 for (List<? extends Node> conSubGraph : GraphUtils.tarjan(nodes)) {
                     if (conSubGraph.length() > 1) {
                         Node root = conSubGraph.head;
@@ -1244,8 +1244,9 @@ public class Infer {
                             notifyUpdate(n, root);
                         }
                     }
-                    this.nodes.add(conSubGraph.head);
+                    acyclicNodes.add(conSubGraph.head);
                 }
+                nodes = acyclicNodes;
             }
 
             /**
