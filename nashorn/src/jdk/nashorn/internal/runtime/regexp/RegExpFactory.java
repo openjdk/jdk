@@ -68,25 +68,6 @@ public class RegExpFactory {
     }
 
     /**
-     * Replace a regexp token as suitable for regexp instances created by this factory.
-     *
-     * @param str a regular expression token
-     * @return the replacement token
-     */
-    protected String replaceToken(final String str) {
-        switch (str) {
-            case "\\s":
-                return "[" + Lexer.getWhitespaceRegExp() + "]";
-            case "\\S":
-                return "[^" + Lexer.getWhitespaceRegExp() + "]";
-            case "[^]":
-                return "[\\s\\S]";
-            default:
-                return str;
-        }
-    }
-
-    /**
      * Compile a regexp with the given {@code source} and {@code flags}.
      *
      * @param pattern RegExp pattern string
@@ -96,16 +77,6 @@ public class RegExpFactory {
      */
     public static RegExp create(final String pattern, final String flags) {
         return instance.compile(pattern,  flags);
-    }
-
-    /**
-     * Replace a regexp token as needed by the currently installed factory instance.
-     *
-     * @param token a regexp token
-     * @return the replacement token
-     */
-    public static String replace(final String token) {
-        return instance.replaceToken(token);
     }
 
     /**
@@ -119,5 +90,14 @@ public class RegExpFactory {
     // @SuppressWarnings({"unused"})
     public static void validate(final String pattern, final String flags) throws ParserException {
         instance.compile(pattern, flags);
+    }
+
+    /**
+     * Returns true if the instance uses the JDK's {@code java.util.regex} package.
+     *
+     * @return true if instance uses JDK regex package
+     */
+    public static boolean usesJavaUtilRegex() {
+        return instance != null && instance.getClass() == RegExpFactory.class;
     }
 }
