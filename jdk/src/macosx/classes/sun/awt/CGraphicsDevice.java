@@ -25,11 +25,11 @@
 
 package sun.awt;
 
+import java.awt.AWTPermission;
+import java.awt.DisplayMode;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.Window;
-import java.awt.AWTPermission;
-import java.awt.DisplayMode;
 import java.util.Objects;
 
 import sun.java2d.opengl.CGLGraphicsConfig;
@@ -58,9 +58,12 @@ public final class CGraphicsDevice extends GraphicsDevice {
     }
 
     /**
+     * Returns CGDirectDisplayID, which is the same id as @"NSScreenNumber" in
+     * NSScreen.
+     *
      * @return CoreGraphics display id.
      */
-    public int getCoreGraphicsScreen() {
+    public int getCGDisplayID() {
         return displayID;
     }
 

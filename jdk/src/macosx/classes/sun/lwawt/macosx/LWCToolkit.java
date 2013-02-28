@@ -352,7 +352,7 @@ public final class LWCToolkit extends LWToolkit {
     @Override
     public Insets getScreenInsets(final GraphicsConfiguration gc) {
         final CGraphicsConfig cgc = (CGraphicsConfig) gc;
-        final int displayId = cgc.getDevice().getCoreGraphicsScreen();
+        final int displayId = cgc.getDevice().getCGDisplayID();
         Rectangle fullScreen, workArea;
         final long screen = CWrapper.NSScreen.screenByDisplayId(displayId);
         try {
