@@ -177,39 +177,6 @@ Java_sun_lwawt_macosx_LWCToolkit_beep
     NSBeep(); // produces both sound and visual flash, if configured in System Preferences
 }
 
-CGDirectDisplayID
-FindCGDirectDisplayIDForScreenIndex(jint screenIndex)
-{
-    // most common case - just one monitor
-    CGDirectDisplayID screenID = CGMainDisplayID();
-
-    CGDisplayCount displayCount = 0;
-    CGGetOnlineDisplayList(0, NULL, &displayCount);
-
-    if ((displayCount > 1) &&
-        (screenIndex >= 0) &&
-        (screenIndex < (jint)displayCount))
-    {
-        if (displayCount < 10) {
-            // stack allocated optimization for less than 10 monitors
-            CGDirectDisplayID onlineDisplays[displayCount];
-            CGGetOnlineDisplayList(displayCount, onlineDisplays, &displayCount);
-            screenID = (CGDirectDisplayID)onlineDisplays[screenIndex];
-        } else {
-            CGDirectDisplayID *onlineDisplays =
-            malloc(displayCount*sizeof(CGDirectDisplayID));
-            if (onlineDisplays != NULL) {
-                CGGetOnlineDisplayList(displayCount, onlineDisplays,
-                                       &displayCount);
-                screenID = (CGDirectDisplayID)onlineDisplays[screenIndex];
-                free(onlineDisplays);
-            }
-        }
-    }
-
-    return screenID;
-}
-
 /*
  * Class:     sun_lwawt_macosx_LWCToolkit
  * Method:    initIDs
