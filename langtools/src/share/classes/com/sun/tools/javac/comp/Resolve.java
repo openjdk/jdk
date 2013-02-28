@@ -984,7 +984,7 @@ public class Resolve {
                                 Type ret_t = desc_t.getReturnType();
                                 Type ret_s = desc_s.getReturnType();
                                 result &= ((tree.refPolyKind == PolyKind.STANDALONE)
-                                        ? standaloneMostSpecific(ret_t, ret_s, tree.type, warn)
+                                        ? standaloneMostSpecific(ret_t, ret_s, tree.sym.type.getReturnType(), warn)
                                         : polyMostSpecific(ret_t, ret_s, warn));
                             } else {
                                 return;
