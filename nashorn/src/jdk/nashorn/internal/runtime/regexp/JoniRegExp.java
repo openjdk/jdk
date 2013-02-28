@@ -117,10 +117,6 @@ public class JoniRegExp extends RegExp {
             return new JoniRegExp(pattern, flags);
         }
 
-        @Override
-        protected String replaceToken(final String str) {
-            return str.equals("[^]") ? "[\\s\\S]" : str;
-        }
     }
 
     class JoniMatcher implements RegExpMatcher {
