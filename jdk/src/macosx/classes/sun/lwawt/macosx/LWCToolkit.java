@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,22 +351,7 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     public Insets getScreenInsets(final GraphicsConfiguration gc) {
-        final CGraphicsConfig cgc = (CGraphicsConfig) gc;
-        final int displayId = cgc.getDevice().getCGDisplayID();
-        Rectangle fullScreen, workArea;
-        final long screen = CWrapper.NSScreen.screenByDisplayId(displayId);
-        try {
-            fullScreen = CWrapper.NSScreen.frame(screen).getBounds();
-            workArea = CWrapper.NSScreen.visibleFrame(screen).getBounds();
-        } finally {
-            CWrapper.NSObject.release(screen);
-        }
-        // Convert between Cocoa's coordinate system and Java.
-        int bottom = workArea.y - fullScreen.y;
-        int top = fullScreen.height - workArea.height - bottom;
-        int left = workArea.x - fullScreen.x;
-        int right = fullScreen.width - workArea.width - left;
-        return  new Insets(top, left, bottom, right);
+        return ((CGraphicsConfig) gc).getDevice().getScreenInsets();
     }
 
     @Override
