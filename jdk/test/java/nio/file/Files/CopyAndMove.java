@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6917021 7006126 6950237
+ * @bug 4313887 6838333 6917021 7006126 6950237 8006645
  * @summary Unit test for java.nio.file.Files copy and move methods
  * @library ..
  * @build CopyAndMove PassThroughFileSystem
@@ -37,6 +37,7 @@ import static java.nio.file.LinkOption.*;
 import java.nio.file.attribute.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class CopyAndMove {
     static final Random rand = new Random();
@@ -94,8 +95,8 @@ public class CopyAndMove {
 
         // check last modified time if not a symbolic link
         if (!attrs1.isSymbolicLink()) {
-            long time1 = attrs1.lastModifiedTime().toMillis();
-            long time2 = attrs2.lastModifiedTime().toMillis();
+            long time1 = attrs1.lastModifiedTime().to(TimeUnit.SECONDS);
+            long time2 = attrs2.lastModifiedTime().to(TimeUnit.SECONDS);
 
             if (time1 != time2) {
                 System.err.format("File time for %s is %s\n", attrs1.fileKey(), attrs1.lastModifiedTime());
