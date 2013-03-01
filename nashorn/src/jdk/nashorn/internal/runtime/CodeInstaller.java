@@ -30,7 +30,7 @@ package jdk.nashorn.internal.runtime;
  * As only the code generating package (i.e. Context) knows about
  * the ScriptLoader and it would be a security hazard otherwise
  * the Compiler is given an installation interface for its code.
- * <p>>
+ * <p>
  * The compiler still retains most of the state around code emission
  * and management internally, so this is to avoid passing around any
  * logic that isn't directly related to installing a class

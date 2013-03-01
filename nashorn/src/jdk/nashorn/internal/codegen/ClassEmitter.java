@@ -95,7 +95,7 @@ import jdk.nashorn.internal.runtime.Source;
  * <p>
  * There is also a very nice debug interface that can emit formatted
  * bytecodes that have been written. This is enabled by setting the
- * environment "nashorn.codegen.debug" to true, or --log=codegen:<level>
+ * environment "nashorn.codegen.debug" to true, or --log=codegen:{@literal <level>}
  * <p>
  * A ClassEmitter implements an Emitter - i.e. it needs to have
  * well defined start and end calls for whatever it is generating. Assertions

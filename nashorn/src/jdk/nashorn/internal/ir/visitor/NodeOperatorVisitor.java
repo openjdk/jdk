@@ -542,7 +542,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering && operator
+     * Binary enter - callback for entering {@literal &&} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -552,7 +552,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving a && operator
+     * Binary leave - callback for leaving a {@literal &&} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -602,7 +602,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering &= operator
+     * Binary enter - callback for entering {@literal &=} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -612,7 +612,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving a &= operator
+     * Binary leave - callback for leaving a {@literal &=} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -722,7 +722,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering >>= operator
+     * Binary enter - callback for entering {@literal >>=} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -732,7 +732,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving a >>= operator
+     * Binary leave - callback for leaving a {@literal >>=} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -742,7 +742,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering a <<= operator
+     * Binary enter - callback for entering a {@literal <<=} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -752,7 +752,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving a <<= operator
+     * Binary leave - callback for leaving a {@literal <<=} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -762,7 +762,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering >>>= operator
+     * Binary enter - callback for entering {@literal >>>=} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -772,7 +772,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving a >>>= operator
+     * Binary leave - callback for leaving a {@literal >>>=} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -822,7 +822,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering & operator
+     * Binary enter - callback for entering {@literal &} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -832,7 +832,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving a & operator
+     * Binary leave - callback for leaving a {@literal &} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -986,7 +986,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering >= operator
+     * Binary enter - callback for entering {@literal >=} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -996,7 +996,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving >= operator
+     * Binary leave - callback for leaving {@literal >=} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -1006,7 +1006,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering > operator
+     * Binary enter - callback for entering {@literal >} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -1016,7 +1016,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving > operator
+     * Binary leave - callback for leaving {@literal >} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -1066,7 +1066,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering <= operator
+     * Binary enter - callback for entering {@literal <=} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -1076,7 +1076,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving <= operator
+     * Binary leave - callback for leaving {@literal <=} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -1086,7 +1086,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering < operator
+     * Binary enter - callback for entering {@literal <} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -1096,7 +1096,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving < operator
+     * Binary leave - callback for leaving {@literal <} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -1205,7 +1205,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering >> operator
+     * Binary enter - callback for entering {@literal >>} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -1215,7 +1215,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving >> operator
+     * Binary leave - callback for leaving {@literal >>} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -1225,7 +1225,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary enter - callback for entering << operator
+     * Binary enter - callback for entering {@literal <<} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -1235,7 +1235,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving << operator
+     * Binary leave - callback for leaving {@literal <<} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
@@ -1244,7 +1244,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
         return leaveDefault(binaryNode);
     }
     /**
-     * Binary enter - callback for entering >>> operator
+     * Binary enter - callback for entering {@literal >>>} operator
      *
      * @param  binaryNode the node
      * @return processed node
@@ -1254,7 +1254,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /**
-     * Binary leave - callback for leaving >>> operator
+     * Binary leave - callback for leaving {@literal >>>} operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node

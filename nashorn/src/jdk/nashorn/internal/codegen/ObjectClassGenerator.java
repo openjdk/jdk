@@ -112,7 +112,7 @@ public final class ObjectClassGenerator {
     private final Context context;
 
     /**
-     * The list of available accessor types in width order. This order is used for type guesses narrow->wide
+     * The list of available accessor types in width order. This order is used for type guesses narrow{@literal ->} wide
      *  in the dual--fields world
      */
     public static final List<Type> ACCESSOR_TYPES = Collections.unmodifiableList(
@@ -184,7 +184,7 @@ public final class ObjectClassGenerator {
 
     /**
      * Return the accessor type based on its index in [0..getNumberOfAccessorTypes())
-     * Indexes are ordered narrower->wider / optimistic->pessimistic. Invalidations always
+     * Indexes are ordered narrower{@literal ->}wider / optimistic{@literal ->}pessimistic. Invalidations always
      * go to a type of higher index
      *
      * @param index accessor type index

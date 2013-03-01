@@ -200,7 +200,7 @@ public final class Options {
 
     /**
      * Return an option given its resource key. If the key doesn't begin with
-     * <resource>.option it will be completed using the resource from this
+     * {@literal <resource>}.option it will be completed using the resource from this
      * instance
      *
      * @param key key for option

@@ -221,7 +221,7 @@ public class DateParser {
      *
      * <p>English month names and selected time zone names as well as AM/PM markers are recognized
      * and handled properly. Additionally, numeric time zone offsets such as <tt>(+|-)hh:mm</tt> or
-     * <tt></tt>(+|-)hhmm</tt> are recognized. If the string does not contain a time zone offset
+     * <tt>(+|-)hhmm</tt> are recognized. If the string does not contain a time zone offset
      * the <tt>TIMEZONE</tt>field is left undefined, meaning the local time zone should be applied.</p>
      *
      * <p>English weekday names are recognized but ignored. All text in parentheses is ignored as well.
