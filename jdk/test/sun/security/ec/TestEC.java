@@ -21,6 +21,11 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /**
  * @test
  * @bug 6840752
@@ -30,7 +35,7 @@
  * @library ../pkcs11/sslecc
  * @library ../../../java/security/testlibrary
  * @compile -XDignore.symbol.file TestEC.java
- * @run main TestEC
+ * @run main/othervm TestEC
  */
 
 import java.security.NoSuchProviderException;
