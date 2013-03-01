@@ -459,120 +459,120 @@ public final class RuntimeCallSite extends MutableCallSite {
     }
 
     /**
-     * Specialized version of < operator for two int arguments. Do not call directly.
+     * Specialized version of {@literal <} operator for two int arguments. Do not call directly.
      * @param a int
      * @param b int
-     * @return a < b
+     * @return a {@code <} b
      */
     public static boolean LT(final int a, final int b) {
         return a < b;
     }
 
     /**
-     * Specialized version of < operator for two double arguments. Do not call directly.
+     * Specialized version of {@literal <} operator for two double arguments. Do not call directly.
      * @param a double
      * @param b double
-     * @return a < b
+     * @return a {@literal <} b
      */
     public static boolean LT(final double a, final double b) {
         return a < b;
     }
 
     /**
-     * Specialized version of < operator for two long arguments. Do not call directly.
+     * Specialized version of {@literal <} operator for two long arguments. Do not call directly.
      * @param a long
      * @param b long
-     * @return a < b
+     * @return a {@literal <} b
      */
     public static boolean LT(final long a, final long b) {
         return a < b;
     }
 
     /**
-     * Specialized version of <= operator for two int arguments. Do not call directly.
+     * Specialized version of {@literal <=} operator for two int arguments. Do not call directly.
      * @param a int
      * @param b int
-     * @return a <= b
+     * @return a {@literal <=} b
      */
     public static boolean LE(final int a, final int b) {
         return a <= b;
     }
 
     /**
-     * Specialized version of <= operator for two double arguments. Do not call directly.
+     * Specialized version of {@literal <=} operator for two double arguments. Do not call directly.
      * @param a double
      * @param b double
-     * @return a <= b
+     * @return a {@literal <=} b
      */
     public static boolean LE(final double a, final double b) {
         return a <= b;
     }
 
     /**
-     * Specialized version of <= operator for two long arguments. Do not call directly.
+     * Specialized version of {@literal <=} operator for two long arguments. Do not call directly.
      * @param a long
      * @param b long
-     * @return a <= b
+     * @return a {@literal <=} b
      */
     public static boolean LE(final long a, final long b) {
         return a <= b;
     }
 
     /**
-     * Specialized version of > operator for two int arguments. Do not call directly.
+     * Specialized version of {@literal >} operator for two int arguments. Do not call directly.
      * @param a int
      * @param b int
-     * @return a > b
+     * @return a {@literal >} b
      */
     public static boolean GT(final int a, final int b) {
         return a > b;
     }
 
     /**
-     * Specialized version of > operator for two double arguments. Do not call directly.
+     * Specialized version of {@literal >} operator for two double arguments. Do not call directly.
      * @param a double
      * @param b double
-     * @return a > b
+     * @return a {@literal >} b
      */
     public static boolean GT(final double a, final double b) {
         return a > b;
     }
 
     /**
-     * Specialized version of > operator for two long arguments. Do not call directly.
+     * Specialized version of {@literal >} operator for two long arguments. Do not call directly.
      * @param a long
      * @param b long
-     * @return a > b
+     * @return a {@literal >} b
      */
     public static boolean GT(final long a, final long b) {
         return a > b;
     }
 
     /**
-     * Specialized version of >= operator for two int arguments. Do not call directly.
+     * Specialized version of {@literal >=} operator for two int arguments. Do not call directly.
      * @param a int
      * @param b int
-     * @return a >= b
+     * @return a {@literal >=} b
      */
     public static boolean GE(final int a, final int b) {
         return a >= b;
     }
 
     /**
-     * Specialized version of >= operator for two double arguments. Do not call directly.
+     * Specialized version of {@literal >=} operator for two double arguments. Do not call directly.
      * @param a double
      * @param b double
-     * @return a >= b
+     * @return a {@literal >=} b
      */
     public static boolean GE(final double a, final double b) {
         return a >= b;
     }
 
     /**
-     * Specialized version of >= operator for two long arguments. Do not call directly.
+     * Specialized version of {@literal >=} operator for two long arguments. Do not call directly.
      * @param a long
      * @param b long
-     * @return a >= b
+     * @return a {@code >=} b
      */
     public static boolean GE(final long a, final long b) {
         return a >= b;

@@ -65,6 +65,7 @@ public final class NativeJava {
     }
 
     /**
+     * <p>
      * Given a name of a Java type, returns an object representing that type in Nashorn. The Java class of the objects
      * used to represent Java types in Nashorn is not {@link java.lang.Class} but rather {@link StaticClass}. They are
      * the objects that you can use with the {@code new} operator to create new instances of the class as well as to
@@ -75,7 +76,8 @@ public final class NativeJava {
      * different expression (e.g. {@code java.io.File}) as an argument in "new" and to address statics, and it is
      * distinct from the {@code Class} object (e.g. {@code java.io.File.class}). Below we cover in details the
      * properties of the type objects.
-     * <h2>Constructing Java objects</h2>
+     * </p>
+     * <p><b>Constructing Java objects</b></p>
      * Examples:
      * <pre>
      * var arrayListType = Java.type("java.util.ArrayList")
@@ -104,19 +106,24 @@ public final class NativeJava {
      * var arctype = Java.type("java.awt.geom.Arc2D")
      * var ftype = arctype.Float
      * </pre>
+     * <p>
      * You can access both static and non-static inner classes. If you want to create an instance of a non-static
      * inner class, remember to pass an instance of its outer class as the first argument to the constructor.
-     * </p><p>
+     * </p>
+     * <p>
      * If the type is abstract, you can instantiate an anonymous subclass of it using an argument list that is
      * applicable to any of its public or protected constructors, but inserting a JavaScript object with functions
      * properties that provide JavaScript implementations of the abstract methods. If method names are overloaded, the
      * JavaScript function will provide implementation for all overloads. E.g.:
+     * </p>
      * <pre>
      * var TimerTask =  Java.type("java.util.TimerTask")
      * var task = new TimerTask({ run: function() { print("Hello World!") } })
      * </pre>
+     * <p>
      * Nashorn supports a syntactic extension where a "new" expression followed by an argument is identical to
      * invoking the constructor and passing the argument to it, so you can write the above example also as:
+     * </p>
      * <pre>
      * var task = new TimerTask {
      *     run: function() {
@@ -124,30 +131,38 @@ public final class NativeJava {
      *     }
      * }
      * </pre>
+     * <p>
      * which is very similar to Java anonymous inner class definition. On the other hand, if the type is an abstract
      * type with a single abstract method (commonly referred to as a "SAM type") or all abstract methods it has share
      * the same overloaded name), then instead of an object, you can just pass a function, so the above example can
      * become even more simplified to:
+     * </p>
      * <pre>
      * var task = new TimerTask(function() { print("Hello World!") })
      * </pre>
+     * <p>
      * Note that in every one of these cases if you are trying to instantiate an abstract class that has constructors
      * that take some arguments, you can invoke those simply by specifying the arguments after the initial
      * implementation object or function.
-     * </p><p>The use of functions can be taken even further; if you are invoking a Java method that takes a SAM type,
+     * </p>
+     * <p>The use of functions can be taken even further; if you are invoking a Java method that takes a SAM type,
      * you can just pass in a function object, and Nashorn will know what you meant:
+     * </p>
      * <pre>
      * var timer = new Java.type("java.util.Timer")
      * timer.schedule(function() { print("Hello World!") })
      * </pre>
+     * <p>
      * Here, {@code Timer.schedule()} expects a {@code TimerTask} as its argument, so Nashorn creates an instance of a
      * {@code TimerTask} subclass and uses the passed function to implement its only abstract method, {@code run()}. In
      * this usage though, you can't use non-default constructors; the type must be either an interface, or must have a
      * protected or public no-arg constructor.
-     * </p><p>
+     * </p>
+     * <p>
      * You can also subclass non-abstract classes; for that you will need to use the {@link #extend(Object, Object...)}
      * method.
-     * <h2>Accessing static members</h2>
+     * </p>
+     * <p><b>Accessing static members</b></p>
      * Examples:
      * <pre>
      * var File = Java.type("java.io.File")
@@ -176,7 +191,7 @@ public final class NativeJava {
      * var File = Java.type("java.io.File")
      * print(File.class.static === File) // prints true
      * </pre>
-     * <h2>{@code instanceof} operator</h2>
+     * <p><b>{@code instanceof} operator</b></p>
      * The standard ECMAScript {@code instanceof} operator is extended to recognize Java objects and their type objects:
      * <pre>
      * var File = Java.type("java.io.File")
@@ -368,6 +383,7 @@ public final class NativeJava {
      * <li>If the Java method is overloaded (as in the above example {@code List.add()}), then your JavaScript adapter
      * must be prepared to deal with all overloads.</li>
      * <li>You can't invoke {@code super.*()} from adapters for now.</li>
+     * </ul>
      * @param self not used
      * @param types the original types. The caller must pass at least one Java type object of class {@link StaticClass}
      * representing either a public interface or a non-final public class with at least one public or protected

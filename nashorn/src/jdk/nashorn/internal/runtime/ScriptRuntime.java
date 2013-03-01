@@ -815,7 +815,7 @@ public final class ScriptRuntime {
     }
 
     /**
-     * ECMA 11.8.1 - The less than operator (<) - generic implementation
+     * ECMA 11.8.1 - The less than operator ({@literal <}) - generic implementation
      *
      * @param x first object to compare
      * @param y second object to compare
@@ -828,7 +828,7 @@ public final class ScriptRuntime {
     }
 
     /**
-     * ECMA 11.8.2 - The greater than operator (>) - generic implementation
+     * ECMA 11.8.2 - The greater than operator ({@literal >}) - generic implementation
      *
      * @param x first object to compare
      * @param y second object to compare
@@ -841,7 +841,7 @@ public final class ScriptRuntime {
     }
 
     /**
-     * ECMA 11.8.3 - The less than or equal operator (<=) - generic implementation
+     * ECMA 11.8.3 - The less than or equal operator ({@literal <=}) - generic implementation
      *
      * @param x first object to compare
      * @param y second object to compare
@@ -854,7 +854,7 @@ public final class ScriptRuntime {
     }
 
     /**
-     * ECMA 11.8.4 - The greater than or equal operator (>=) - generic implementation
+     * ECMA 11.8.4 - The greater than or equal operator ({@literal >=}) - generic implementation
      *
      * @param x first object to compare
      * @param y second object to compare

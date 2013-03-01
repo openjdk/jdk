@@ -180,7 +180,7 @@ public class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
     /**
      * Returns the named operand in this descriptor's name. Equivalent to
      * {@code getNameToken(CallSiteDescriptor.NAME_OPERAND)}. E.g. for operation {@code "dyn:getProp:color"}, returns
-     * {@code "color"}. For call sites without named operands (e.g. {@link "dyn:new"}) returns null.
+     * {@code "color"}. For call sites without named operands (e.g. {@code "dyn:new"}) returns null.
      * @return the named operand in this descriptor's name.
      */
     public String getOperand() {

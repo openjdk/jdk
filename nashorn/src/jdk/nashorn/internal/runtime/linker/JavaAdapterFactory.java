@@ -87,7 +87,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Undefined;
 
 /**
- * A factory class that generates adapter classes. Adapter classes allow implementation of Java interfaces and
+ * <p>A factory class that generates adapter classes. Adapter classes allow implementation of Java interfaces and
  * extending of Java classes from JavaScript. For every combination of a superclass to extend and interfaces to
  * implement (collectively: "original types"), exactly one adapter class is generated that extends the specified
  * superclass and implements the specified interfaces.
