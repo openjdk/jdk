@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 #ifndef OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
 #define OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
 #include "vm_version_x86.hpp"
-
-#pragma warning(disable: 4035) // Disables warnings reporting missing return statement
 
 // Implementation of class OrderAccess.
 
@@ -213,7 +212,5 @@ inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*
   release_store_fence((volatile jint*)p, (jint)v);
 #endif // AMD64
 }
-
-#pragma warning(default: 4035) // Enables warnings reporting missing return statement
 
 #endif // OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
