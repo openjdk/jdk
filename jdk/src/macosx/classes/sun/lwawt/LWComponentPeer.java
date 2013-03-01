@@ -1227,10 +1227,10 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     protected void sendEventToDelegate(final AWTEvent e) {
+        if (getDelegate() == null || !isShowing() || !isEnabled()) {
+            return;
+        }
         synchronized (getDelegateLock()) {
-            if (getDelegate() == null || !isShowing() || !isEnabled()) {
-                return;
-            }
             AWTEvent delegateEvent = createDelegateEvent(e);
             if (delegateEvent != null) {
                 AWTAccessor.getComponentAccessor()
@@ -1244,7 +1244,12 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         }
     }
 
-    protected AWTEvent createDelegateEvent(AWTEvent e) {
+    /**
+     * Changes the target of the AWTEvent from awt component to appropriate
+     * swing delegate.
+     */
+    private AWTEvent createDelegateEvent(final AWTEvent e) {
+        // TODO modifiers should be changed to getModifiers()|getModifiersEx()?
         AWTEvent delegateEvent = null;
         if (e instanceof MouseWheelEvent) {
             MouseWheelEvent me = (MouseWheelEvent) e;
