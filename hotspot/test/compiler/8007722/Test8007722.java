@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @bug 8007722
+ * @summary GetAndSetP's MachNode should capture bottom type
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation Test8007722
  *
  */
 
-package sun.jvm.hotspot.livejvm;
+import java.util.concurrent.atomic.*;
 
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.runtime.*;
+public class Test8007722 {
 
-public class BreakpointEvent extends Event {
-  private Oop thread;
-  private Oop clazz;
-  private JNIid method;
-  private int location;
+    int i;
+    static AtomicReference<Test8007722> ref;
 
-  public BreakpointEvent(Oop thread,
-                         Oop clazz,
-                         JNIid method,
-                         int location) {
-    super(Event.Type.BREAKPOINT);
-    this.thread = thread;
-    this.clazz = clazz;
-    this.method = method;
-    this.location = location;
-  }
+    static int test(Test8007722 new_obj) {
+        Test8007722 o = ref.getAndSet(new_obj);
+        int ret = o.i;
+        o.i = 5;
+        return ret;
+    }
 
-  public Oop thread()     { return thread;   }
-  public Oop clazz()      { return clazz;    }
-  public JNIid methodID() { return method;   }
-  public int location()   { return location; }
+    static public void main(String[] args) {
+        Test8007722 obj = new Test8007722();
+        ref = new AtomicReference<Test8007722>(obj);
+
+        for (int i = 0; i < 20000; i++) {
+            test(obj);
+        }
+
+        System.out.println("PASSED");
+    }
 }
