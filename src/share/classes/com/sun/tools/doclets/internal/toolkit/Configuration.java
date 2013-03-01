@@ -54,6 +54,21 @@ import javax.tools.JavaFileManager;
 public abstract class Configuration {
 
     /**
+     * Exception used to report a problem during setOptions.
+     */
+    public class Fault extends Exception {
+        private static final long serialVersionUID = 0;
+
+        Fault(String msg) {
+            super(msg);
+        }
+
+        Fault(String msg, Exception cause) {
+            super(msg, cause);
+        }
+    }
+
+    /**
      * The factory for builders.
      */
     protected BuilderFactory builderFactory;
@@ -257,7 +272,7 @@ public abstract class Configuration {
      * @param options The array of option names and values.
      * @throws DocletAbortException
      */
-    public abstract void setSpecificDocletOptions(String[][] options);
+    public abstract void setSpecificDocletOptions(String[][] options) throws Fault;
 
     /**
      * Return the doclet specific {@link MessageRetriever}
@@ -413,15 +428,26 @@ public abstract class Configuration {
      *
      * @param options the two dimensional array of options.
      */
-    public void setOptions(String[][] options) {
+    public void setOptions(String[][] options) throws Fault {
         LinkedHashSet<String[]> customTagStrs = new LinkedHashSet<String[]>();
+
+        // Some options, specifically -link and -linkoffline, require that
+        // the output directory has already been created: so do that first.
         for (int oi = 0; oi < options.length; ++oi) {
             String[] os = options[oi];
             String opt = os[0].toLowerCase();
             if (opt.equals("-d")) {
                 destDirName = addTrailingFileSep(os[1]);
                 docFileDestDirName = destDirName;
-            } else if (opt.equals("-docfilessubdirs")) {
+                ensureOutputDirExists();
+                break;
+            }
+        }
+
+        for (int oi = 0; oi < options.length; ++oi) {
+            String[] os = options[oi];
+            String opt = os[0].toLowerCase();
+            if (opt.equals("-docfilessubdirs")) {
                 copydocfilesubdirs = true;
             } else if (opt.equals("-docencoding")) {
                 docencoding = os[1];
@@ -503,7 +529,7 @@ public abstract class Configuration {
      *
      * @throws DocletAbortException
      */
-    public void setOptions() {
+    public void setOptions() throws Fault {
         initPackageArray();
         setOptions(root.options());
         if (!profilespath.isEmpty()) {
@@ -515,6 +541,23 @@ public abstract class Configuration {
             }
         }
         setSpecificDocletOptions(root.options());
+    }
+
+    private void ensureOutputDirExists() throws Fault {
+        DocFile destDir = DocFile.createFileForDirectory(this, destDirName);
+        if (!destDir.exists()) {
+            //Create the output directory (in case it doesn't exist yet)
+            root.printNotice(getText("doclet.dest_dir_create", destDirName));
+            destDir.mkdirs();
+        } else if (!destDir.isDirectory()) {
+            throw new Fault(getText(
+                "doclet.destination_directory_not_directory_0",
+                destDir.getPath()));
+        } else if (!destDir.canWrite()) {
+            throw new Fault(getText(
+                "doclet.destination_directory_not_writable_0",
+                destDir.getPath()));
+        }
     }
 
 
@@ -650,26 +693,7 @@ public abstract class Configuration {
         for (int oi = 0; oi < options.length; oi++) {
             String[] os = options[oi];
             String opt = os[0].toLowerCase();
-            if (opt.equals("-d")) {
-                String destdirname = addTrailingFileSep(os[1]);
-                DocFile destDir = DocFile.createFileForDirectory(this, destdirname);
-                if (!destDir.exists()) {
-                    //Create the output directory (in case it doesn't exist yet)
-                    reporter.printNotice(getText("doclet.dest_dir_create",
-                        destdirname));
-                    destDir.mkdirs();
-                } else if (!destDir.isDirectory()) {
-                    reporter.printError(getText(
-                        "doclet.destination_directory_not_directory_0",
-                        destDir.getPath()));
-                    return false;
-                } else if (!destDir.canWrite()) {
-                    reporter.printError(getText(
-                        "doclet.destination_directory_not_writable_0",
-                        destDir.getPath()));
-                    return false;
-                }
-            } else if (opt.equals("-docencoding")) {
+            if (opt.equals("-docencoding")) {
                 docencodingfound = true;
                 if (!checkOutputFileEncoding(os[1], reporter)) {
                     return false;
