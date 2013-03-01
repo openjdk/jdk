@@ -277,8 +277,6 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
   endif
 endif
 
-EXPORT_LIST += $(EXPORT_JRE_LIB_DIR)/wb.jar
-
 ifeq ($(BUILD_WIN_SA), 1)
   EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.$(LIBRARY_SUFFIX)
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
