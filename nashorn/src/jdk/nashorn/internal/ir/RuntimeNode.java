@@ -64,17 +64,17 @@ public class RuntimeNode extends Node implements TypeOverride {
         EQ_STRICT(TokenType.EQ_STRICT, Type.BOOLEAN, 2, true),
         /** == operator with at least one object */
         EQ(TokenType.EQ, Type.BOOLEAN, 2, true),
-        /** >= operator with at least one object */
+        /** {@literal >=} operator with at least one object */
         GE(TokenType.GE, Type.BOOLEAN, 2, true),
-        /** > operator with at least one object */
+        /** {@literal >} operator with at least one object */
         GT(TokenType.GT, Type.BOOLEAN, 2, true),
         /** in operator */
         IN(TokenType.IN, Type.BOOLEAN, 2),
         /** instanceof operator */
         INSTANCEOF(TokenType.INSTANCEOF, Type.BOOLEAN, 2),
-        /** <= operator with at least one object */
+        /** {@literal <=} operator with at least one object */
         LE(TokenType.LE, Type.BOOLEAN, 2, true),
-        /** < operator with at least one object */
+        /** {@literal <} operator with at least one object */
         LT(TokenType.LT, Type.BOOLEAN, 2, true),
         /** !== operator with at least one object */
         NE_STRICT(TokenType.NE_STRICT, Type.BOOLEAN, 2, true),
@@ -184,7 +184,7 @@ public class RuntimeNode extends Node implements TypeOverride {
 
         /**
          * If this request can be reversed, return the reverse request
-         * Eq EQ -> NE.
+         * Eq EQ {@literal ->} NE.
          *
          * @param request request to reverse
          *

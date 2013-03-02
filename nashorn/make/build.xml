@@ -21,7 +21,7 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<project name="nashorn" default="all" basedir="..">
+<project name="nashorn" default="test" basedir="..">
   <import file="build-nasgen.xml"/>
   <import file="build-benchmark.xml"/>
   <import file="code_coverage.xml"/>

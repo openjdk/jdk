@@ -219,7 +219,7 @@ public class EncodingHelper {
     }
 
     /**
-     * @see [http://www.geocities.jp/kosako3/oniguruma/doc/RE.txt]
+     * @see <a href="http://www.geocities.jp/kosako3/oniguruma/doc/RE.txt">http://www.geocities.jp/kosako3/oniguruma/doc/RE.txt</a>
      */
     public static boolean isCodeCType(int code, int ctype) {
         int type;

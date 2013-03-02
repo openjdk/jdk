@@ -83,7 +83,6 @@
 
 package jdk.internal.dynalink.beans;
 
-import java.beans.BeanInfo;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.DynamicLinkerFactory;
@@ -99,11 +98,9 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * <ul>
  * <li>expose all public methods of form {@code setXxx()}, {@code getXxx()}, and {@code isXxx()} as property setters and
  * getters for {@code dyn:setProp} and {@code dyn:getProp} operations;</li>
- * <li>expose all property getters and setters declared by the class' {@link BeanInfo};</li>
- * <li>expose all public methods and methods declared by the class' {@link BeanInfo} for invocation through
- * {@code dyn:callMethod} operation;</li>
- * <li>expose all public methods and methods declared by the class' {@link BeanInfo} for retrieval for
- * {@code dyn:getMethod} operation; the methods thus retrieved can then be invoked using {@code dyn:call};</li>
+ * <li>expose all public methods for invocation through {@code dyn:callMethod} operation;</li>
+ * <li>expose all public methods for retrieval for {@code dyn:getMethod} operation; the methods thus retrieved can then
+ * be invoked using {@code dyn:call};</li>
  * <li>expose all public fields as properties, unless there are getters or setters for the properties of the same name;</li>
  * <li>expose {@code dyn:getLength}, {@code dyn:getElem} and {@code dyn:setElem} on native Java arrays, as well as
  * {@link java.util.List} and {@link java.util.Map} objects; ({@code dyn:getLength} works on any

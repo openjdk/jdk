@@ -509,7 +509,7 @@ public final class Context {
      *
      * @param fullName  full name of class, e.g. jdk.nashorn.internal.objects.JO$2P1 contains 2 fields and 1 parameter.
      *
-     * @return the Class<?> for this structure
+     * @return the {@code Class<?>} for this structure
      *
      * @throws ClassNotFoundException if structure class cannot be resolved
      */
@@ -523,7 +523,7 @@ public final class Context {
      *
      * @param fullName full name of class to load
      *
-     * @return the Class<?> for the name
+     * @return the {@code Class<?>} for the name
      *
      * @throws ClassNotFoundException if class cannot be resolved
      */

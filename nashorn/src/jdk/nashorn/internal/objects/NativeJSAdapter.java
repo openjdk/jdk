@@ -74,13 +74,16 @@ import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
  *    delete x.p;                 // calls y.__delete__
  *    for (i in x) { print(i); }  // calls y.__getIds__
  * </pre>
+ * <p>
  * JavaScript caller of adapter object is isolated from the fact that the property access/mutation/deletion are really
  * calls to JavaScript methods on adaptee.
- * </p><p>
+ * </p>
+ * <p>
  * JSAdapter constructor can optionally receive an "overrides" object. Properties of overrides object is copied to
  * JSAdapter instance. When user accessed property is one of these, then adaptee's methods like {@code __get__},
  * {@code __put__} etc. are not called for those. This can be used to make certain "preferred" properties that can be
  * accessed in the usual/faster way avoiding proxy mechanism. Example:
+ * </p>
  * <pre>
  *     var x = new JSAdapter({ foo: 444, bar: 6546 }) {
  *          __get__: function(name) { return name; }

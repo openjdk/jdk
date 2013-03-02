@@ -83,18 +83,8 @@ public class VarNode extends Node implements Assignment<IdentNode> {
     }
 
     @Override
-    public void setAssignmentDest(final IdentNode node) {
-        setName(name);
-    }
-
-    @Override
     public Node getAssignmentSource() {
         return isAssignment() ? getInit() : null;
-    }
-
-    @Override
-    public void setAssignmentSource(final Node source) {
-        setInit(source);
     }
 
     /**
