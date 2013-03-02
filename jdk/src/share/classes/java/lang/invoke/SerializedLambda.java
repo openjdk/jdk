@@ -40,7 +40,7 @@ import java.util.Objects;
  */
 public final class SerializedLambda implements Serializable {
     private static final long serialVersionUID = 8025925345765570181L;
-    private final String capturingClass;
+    private final Class<?> capturingClass;
     private final String functionalInterfaceClass;
     private final String functionalInterfaceMethodName;
     private final String functionalInterfaceMethodSignature;
@@ -73,7 +73,7 @@ public final class SerializedLambda implements Serializable {
      * @param capturedArgs The dynamic arguments to the lambda factory site, which represent variables captured by
      *                     the lambda
      */
-    public SerializedLambda(String capturingClass,
+    public SerializedLambda(Class<?> capturingClass,
                             int functionalInterfaceMethodKind,
                             String functionalInterfaceClass,
                             String functionalInterfaceMethodName,
@@ -99,7 +99,7 @@ public final class SerializedLambda implements Serializable {
 
     /** Get the name of the class that captured this lambda */
     public String getCapturingClass() {
-        return capturingClass;
+        return capturingClass.getName().replace('.', '/');
     }
 
     /** Get the name of the functional interface class to which this lambda has been converted */
@@ -166,9 +166,7 @@ public final class SerializedLambda implements Serializable {
             Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
                 @Override
                 public Method run() throws Exception {
-                    Class<?> clazz = Class.forName(capturingClass.replace('/', '.'), true,
-                                                   Thread.currentThread().getContextClassLoader());
-                    Method m = clazz.getDeclaredMethod("$deserializeLambda$", SerializedLambda.class);
+                    Method m = capturingClass.getDeclaredMethod("$deserializeLambda$", SerializedLambda.class);
                     m.setAccessible(true);
                     return m;
                 }
@@ -196,14 +194,4 @@ public final class SerializedLambda implements Serializable {
                              MethodHandleInfo.getReferenceKindString(implMethodKind), implClass, implMethodName,
                              implMethodSignature, instantiatedMethodType, capturedArgs.length);
     }
-
-    /*
-    // @@@ Review question: is it worthwhile implementing a versioned serialization protocol?
-
-    private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
-    }
-
-    private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
-    }
-*/
 }

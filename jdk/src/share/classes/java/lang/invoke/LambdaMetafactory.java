@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,24 +220,11 @@ public class LambdaMetafactory {
      *               of the caller.
      * @param invokedName Stacked automatically by VM; the name of the invoked method as it appears at the call site.
      *                    Currently unused.
-     * @param invokedType Stacked automatically by VM; the signature of the invoked method, which includes the
+     * @param invokedType Stacked automatically by VM; the signature of the invoked method, which includes thefu
      *                    expected static type of the returned lambda object, and the static types of the captured
      *                    arguments for the lambda.  In the event that the implementation method is an instance method,
      *                    the first argument in the invocation signature will correspond to the receiver.
-     * @param samMethod The primary method in the functional interface to which the lambda or method reference is
-     *                  being converted, represented as a method handle.
-     * @param implMethod The implementation method which should be called (with suitable adaptation of argument
-     *                   types, return types, and adjustment for captured arguments) when methods of the resulting
-     *                   functional interface instance are invoked.
-     * @param instantiatedMethodType The signature of the primary functional interface method after type variables
-     *                               are substituted with their instantiation from the capture site
-     * @param flags A bitmask containing flags that may influence the translation of this lambda expression.  Defined
-     *              fields include FLAG_SERIALIZABLE and FLAG_MARKERS.
-     * @param markerInterfaceCount If the FLAG_MARKERS flag is set, this is a count of the number of additional
-     *                             marker interfaces
-     * @param markerInterfaces If the FLAG_MARKERS flag is set, this consists of Class objects identifying additional
-     *                         marker interfaces which the lambda object should implement, whose count equals
-     *                         markerInterfaceCount
+     * @param  args       argument to pass, flags, marker interface count, and marker interfaces as described above
      * @return a CallSite, which, when invoked, will return an instance of the functional interface
      * @throws ReflectiveOperationException
      * @throws LambdaConversionException If any of the meta-factory protocol invariants are violated

@@ -31,9 +31,7 @@ import javax.script.*;
 import java.io.*;
 
 public class VersionTest  {
-
-        private static final String JS_LANG_VERSION = "1.8";
-        private static final String JS_ENGINE_VERSION = "1.7 release 3 PRERELEASE";
+        private static final String JS_LANG_VERSION = "ECMA - 262 Edition 5.1";
 
         public static void main(String[] args) throws Exception {
             ScriptEngineManager manager = new ScriptEngineManager();
@@ -48,9 +46,18 @@ public class VersionTest  {
                             JS_LANG_VERSION);
             }
             String engineVersion = jsengine.getFactory().getEngineVersion();
-            if (! engineVersion.equals(JS_ENGINE_VERSION)) {
-                throw new RuntimeException("Expected Rhino version is " +
-                            JS_ENGINE_VERSION);
+            String expectedVersion = getNashornVersion();
+            if (! engineVersion.equals(expectedVersion)) {
+                throw new RuntimeException("Expected version is " + expectedVersion);
+            }
+        }
+
+        private static String getNashornVersion() {
+            try {
+                Class versionClass = Class.forName("jdk.nashorn.internal.runtime.Version");
+                return (String) versionClass.getMethod("version").invoke(null);
+            } catch (Exception e) {
+                return "Version Unknown!";
             }
         }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,17 @@ class InputRecord extends ByteArrayInputStream implements Record {
     /*
      * Construct the record to hold the maximum sized input record.
      * Data will be filled in separately.
+     *
+     * The structure of the byte buffer looks like:
+     *
+     *     |--------+---------+---------------------------------|
+     *     | header |   IV    | content, MAC/TAG, padding, etc. |
+     *     | headerPlusIVSize |
+     *
+     * header: the header of an SSL records
+     * IV:     the optional IV/nonce field, it is only required for block
+     *         (TLS 1.1 or later) and AEAD cipher suites.
+     *
      */
     InputRecord() {
         super(new byte[maxRecordSize]);
@@ -133,43 +144,82 @@ class InputRecord extends ByteArrayInputStream implements Record {
         return handshakeHash;
     }
 
-    /*
-     * Verify and remove the MAC ... used for all records.
-     */
-    boolean checkMAC(MAC signer) {
-        int len = signer.MAClen();
-        if (len == 0) { // no mac
-            return true;
-        }
+    void decrypt(Authenticator authenticator,
+            CipherBox box) throws BadPaddingException {
 
-        int offset = count - len;
+        BadPaddingException bpe = null;
+        if (!box.isNullCipher()) {
+            try {
+                int cipheredLength = count - headerSize;
 
-        if (offset < headerSize) {
-            // data length would be negative, something is wrong
-            return false;
-        }
+                // apply explicit nonce for AEAD/CBC cipher suites if needed
+                int nonceSize = box.applyExplicitNonce(authenticator,
+                            contentType(), buf, headerSize, cipheredLength);
+                pos = headerSize + nonceSize;
+                lastHashed = pos;   // don't digest the explicit nonce
 
-        byte[] mac = signer.compute(contentType(), buf,
-            headerSize, offset - headerSize);
+                // decrypt the content
+                int offset = headerSize;
+                if (box.isAEADMode()) {
+                    // DON'T encrypt the nonce_explicit for AEAD mode
+                    offset += nonceSize;
+                }   // The explicit IV for CBC mode can be decrypted.
 
-        if (len != mac.length) {
-            throw new RuntimeException("Internal MAC error");
-        }
+                count = offset + box.decrypt(buf, offset, count - offset);
 
-        for (int i = 0; i < len; i++) {
-            if (buf[offset + i] != mac[i]) {
-                return false;
+                // Note that we don't remove the nonce from the buffer.
+            } catch (BadPaddingException e) {
+                // RFC 2246 states that decryption_failed should be used
+                // for this purpose. However, that allows certain attacks,
+                // so we just send bad record MAC. We also need to make
+                // sure to always check the MAC to avoid a timing attack
+                // for the same issue. See paper by Vaudenay et al and the
+                // update in RFC 4346/5246.
+                //
+                // Failover to message authenticatoin code checking.
+                bpe = new BadPaddingException("invalid padding");
             }
         }
-        count -= len;
-        return true;
-    }
 
-    void decrypt(CipherBox box) throws BadPaddingException {
-        int len = count - headerSize;
-        count = headerSize + box.decrypt(buf, headerSize, len);
-    }
+        // Requires message authentication code for null, stream and block
+        // cipher suites.
+        if (authenticator instanceof MAC) {
+            MAC signer = (MAC)authenticator;
+            int macLen = signer.MAClen();
+            if (macLen != 0) {
+                int macOffset = count - macLen;
+                int contentLen = macOffset - pos;
+                if (contentLen < 0) {
+                    // negative data length, something is wrong
+                    throw new BadPaddingException("bad record");
+                }
 
+                count -= macLen;  // Set the count before any MAC checking
+                                  // exception occurs, so that the following
+                                  // process can read the actual decrypted
+                                  // content (minus the MAC) in the fragment
+                                  // if necessary.
+                byte[] hash = signer.compute(contentType(),
+                                            buf, pos, contentLen);
+                if (hash == null || macLen != hash.length) {
+                    // something is wrong with MAC implementation
+                    throw new RuntimeException("Internal MAC error");
+                }
+
+                int offset = macOffset;
+                for (byte b : hash) {
+                    if (buf[offset++] != b) {
+                        throw new BadPaddingException("bad record MAC");
+                    }
+                }
+            }
+        }
+
+        // Is it a failover?
+        if (bpe != null) {
+            throw bpe;
+        }
+    }
 
     /*
      * Well ... hello_request messages are _never_ hashed since we can't

@@ -33,7 +33,7 @@ package java.util.function;
  * @param <U> the type of the second argument to the {@code applyAsDouble}
  * operation.
  *
- * @see BiFunction.
+ * @see BiFunction
  * @since 1.8
  */
 @FunctionalInterface

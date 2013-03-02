@@ -1106,12 +1106,12 @@ public class IdentityHashMap<K,V>
             Object[] tab = table;
             int ti = 0;
             for (int si = 0; si < tab.length; si += 2) {
-                if (tab[si++] != null) { // key present ?
+                if (tab[si] != null) { // key present ?
                     // more elements than expected -> concurrent modification from other thread
                     if (ti >= size) {
                         throw new ConcurrentModificationException();
                     }
-                    a[ti++] = (T) tab[si]; // copy value
+                    a[ti++] = (T) tab[si+1]; // copy value
                 }
             }
             // fewer elements than expected or concurrent modification from other thread detected
