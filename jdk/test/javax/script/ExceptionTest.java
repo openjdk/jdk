@@ -24,14 +24,14 @@
 /*
  * @test
  * @bug 6474943 6705893
- * @summary Test that Rhino exception messages are
+ * @summary Test that script engine exception messages are
  * available from ScriptException.
  */
 
 import java.io.*;
 import javax.script.*;
 
-public class RhinoExceptionTest {
+public class ExceptionTest {
     private static final String ERROR_MSG = "error from JavaScript";
 
     public static void main(String[] args) throws Exception {
