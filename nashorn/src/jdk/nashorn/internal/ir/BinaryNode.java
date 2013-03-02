@@ -140,18 +140,8 @@ public class BinaryNode extends UnaryNode {
     }
 
     @Override
-    public void setAssignmentDest(final Node node) {
-        setLHS(node);
-    }
-
-    @Override
     public Node getAssignmentSource() {
         return rhs();
-    }
-
-    @Override
-    public void setAssignmentSource(final Node source) {
-        setRHS(source);
     }
 
     @Override

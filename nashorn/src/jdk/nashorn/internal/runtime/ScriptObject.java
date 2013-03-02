@@ -1463,7 +1463,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
-     * Returns the set of <property, value> entries that make up this
+     * Returns the set of {@literal <property, value>} entries that make up this
      * ScriptObject's properties
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      *
@@ -1524,7 +1524,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * of their keys to their values
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      *
-     * @param otherMap a <key,value> map of properties to add
+     * @param otherMap a {@literal <key,value>} map of properties to add
      */
     public void putAll(final Map<?, ?> otherMap) {
         final boolean strict = getContext()._strict;

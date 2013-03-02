@@ -109,16 +109,6 @@ public class UnaryNode extends Node implements Assignment<Node> {
     }
 
     @Override
-    public void setAssignmentSource(final Node source) {
-        setAssignmentDest(source);
-    }
-
-    @Override
-    public void setAssignmentDest(final Node source) {
-        setRHS(source);
-    }
-
-    @Override
     public boolean equals(final Object other) {
         if (!super.equals(other)) {
             return false;
