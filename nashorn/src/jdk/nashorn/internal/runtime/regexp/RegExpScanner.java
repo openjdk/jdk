@@ -66,6 +66,9 @@ final class RegExpScanner extends Scanner {
     /** Are we currently inside a character class? */
     private boolean inCharClass = false;
 
+    /** Are we currently inside a negated character class? */
+    private boolean inNegativeClass = false;
+
     private static final String NON_IDENT_ESCAPES = "$^*+(){}[]|\\.?";
 
     private static class Capture {
@@ -719,7 +722,12 @@ final class RegExpScanner extends Scanner {
         case 's':
             if (RegExpFactory.usesJavaUtilRegex()) {
                 sb.setLength(sb.length() - 1);
-                sb.append('[').append(Lexer.getWhitespaceRegExp()).append(']');
+                // No nested class required if we already are inside a character class
+                if (inCharClass) {
+                    sb.append(Lexer.getWhitespaceRegExp());
+                } else {
+                    sb.append('[').append(Lexer.getWhitespaceRegExp()).append(']');
+                }
                 skip(1);
                 return true;
             }
@@ -727,7 +735,8 @@ final class RegExpScanner extends Scanner {
         case 'S':
             if (RegExpFactory.usesJavaUtilRegex()) {
                 sb.setLength(sb.length() - 1);
-                sb.append("[^").append(Lexer.getWhitespaceRegExp()).append(']');
+                // In negative class we must use intersection to get double negation ("not anything else than space")
+                sb.append(inNegativeClass ? "&&[" : "[^").append(Lexer.getWhitespaceRegExp()).append(']');
                 skip(1);
                 return true;
             }
@@ -759,6 +768,7 @@ final class RegExpScanner extends Scanner {
                 commit(1);
 
                 if (ch0 == '^') {
+                    inNegativeClass = true;
                     commit(1);
                 }
 
@@ -768,6 +778,7 @@ final class RegExpScanner extends Scanner {
                 }
             } finally {
                 inCharClass = false;  // no nested character classes in JavaScript
+                inNegativeClass = false;
             }
         }
 
