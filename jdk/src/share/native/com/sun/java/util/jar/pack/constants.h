@@ -505,5 +505,9 @@ enum {
   bc_qldc    = _xldc_op+7,
   bc_qldc_w  = _xldc_op+8,
   _xldc_limit = _xldc_op+9,
+  _invoke_int_op = _xldc_limit,
+  _invokespecial_int = _invoke_int_op+0,
+  _invokestatic_int = _invoke_int_op+1,
+  _invoke_int_limit =  _invoke_int_op+2,
   _xxx_3_end
 };

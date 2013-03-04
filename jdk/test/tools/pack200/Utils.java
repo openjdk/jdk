@@ -314,6 +314,20 @@ class Utils {
             throw new RuntimeException("jar command failed");
         }
     }
+
+    static void testWithRepack(File inFile, String... repackOpts) throws IOException {
+        File cwd = new File(".");
+        // pack using --repack in native mode
+        File nativejarFile = new File(cwd, "out-n" + Utils.JAR_FILE_EXT);
+        repack(inFile, nativejarFile, false, repackOpts);
+        doCompareVerify(inFile, nativejarFile);
+
+        // ensure bit compatibility between the unpacker variants
+        File javajarFile = new File(cwd, "out-j" + Utils.JAR_FILE_EXT);
+        repack(inFile, javajarFile, true, repackOpts);
+        doCompareBitWise(javajarFile, nativejarFile);
+    }
+
     static List<String> repack(File inFile, File outFile,
             boolean disableNative, String... extraOpts) {
         List<String> cmdList = new ArrayList<>();

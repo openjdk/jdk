@@ -2256,6 +2256,12 @@ class PackageReader extends BandStructure {
                         int origBC = bc;
                         int size = 2;
                         switch (bc) {
+                        case _invokestatic_int:
+                            origBC = _invokestatic;
+                            break;
+                        case _invokespecial_int:
+                            origBC = _invokespecial;
+                            break;
                         case _ildc:
                         case _cldc:
                         case _fldc:
