@@ -28,6 +28,6 @@ package jdk.nashorn.internal.scripts;
 /**
  * Root of script classes.
  */
-public class JS$ {
+public class JS {
     // Empty
 }

@@ -49,7 +49,7 @@ public class MapCreator {
     /**
      * Constructor
      *
-     * @param structure structure to generate map for (a JO$ subclass)
+     * @param structure structure to generate map for (a JO subclass)
      * @param keys      list of keys for map
      * @param symbols   list of symbols for map
      */

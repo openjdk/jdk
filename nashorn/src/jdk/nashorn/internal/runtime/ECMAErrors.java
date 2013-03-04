@@ -32,7 +32,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import jdk.nashorn.api.scripting.NashornException;
-import jdk.nashorn.internal.scripts.JS$;
+import jdk.nashorn.internal.scripts.JS;
 
 /**
  * Helper class to throw various standard "ECMA error" exceptions such as Error, ReferenceError, TypeError etc.
@@ -55,7 +55,7 @@ public final class ECMAErrors {
     /** We assume that compiler generates script classes into the known package. */
     private static final String scriptPackage;
     static {
-        String name = JS$.class.getName();
+        String name = JS.class.getName();
         scriptPackage = name.substring(0, name.lastIndexOf('.'));
     }
 

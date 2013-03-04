@@ -517,7 +517,7 @@ public final class Symbol implements Comparable<Symbol> {
 
     /**
      * Get the index of the field used to store this symbol, should it be an AccessorProperty
-     * and get allocated in a JO$-prefixed ScriptObject subclass.
+     * and get allocated in a JO-prefixed ScriptObject subclass.
      *
      * @return field index
      */
@@ -528,7 +528,7 @@ public final class Symbol implements Comparable<Symbol> {
 
     /**
      * Set the index of the field used to store this symbol, should it be an AccessorProperty
-     * and get allocated in a JO$-prefixed ScriptObject subclass.
+     * and get allocated in a JO-prefixed ScriptObject subclass.
      *
      * @param fieldIndex field index - a positive integer
      */

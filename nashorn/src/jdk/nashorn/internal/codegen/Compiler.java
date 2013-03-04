@@ -411,7 +411,7 @@ public final class Compiler {
         final MethodEmitter initMethod = classEmitter.init(EnumSet.of(Flag.PRIVATE));
         initMethod.begin();
         initMethod.load(Type.OBJECT, 0);
-        initMethod.newInstance(jdk.nashorn.internal.scripts.JS$.class);
+        initMethod.newInstance(jdk.nashorn.internal.scripts.JS.class);
         initMethod.returnVoid();
         initMethod.end();
 

@@ -159,7 +159,7 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static ScriptObject wrapAdaptee(final ScriptObject adaptee) {
-        final ScriptObject sobj = new jdk.nashorn.internal.scripts.JO$();
+        final ScriptObject sobj = new jdk.nashorn.internal.scripts.JO();
         sobj.setProto(adaptee);
         return sobj;
     }

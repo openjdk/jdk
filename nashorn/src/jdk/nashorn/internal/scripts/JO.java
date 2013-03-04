@@ -31,12 +31,12 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 /**
  * Empty object class.
  */
-public class JO$ extends ScriptObject {
+public class JO extends ScriptObject {
 
     /**
      * Constructor
      */
-    public JO$() {
+    public JO() {
         super();
     }
 
@@ -45,7 +45,7 @@ public class JO$ extends ScriptObject {
      *
      * @param map the property map
      */
-    public JO$(final PropertyMap map) {
+    public JO(final PropertyMap map) {
         super(map);
     }
 
@@ -57,6 +57,6 @@ public class JO$ extends ScriptObject {
      * @return newly allocated ScriptObject
      */
     public static ScriptObject allocate(final PropertyMap map) {
-        return new JO$(map);
+        return new JO(map);
     }
 }
