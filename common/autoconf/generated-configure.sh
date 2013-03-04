@@ -601,8 +601,8 @@ SJAVAC_SERVER_DIR
 ENABLE_SJAVAC
 SJAVAC_SERVER_CORES
 SJAVAC_SERVER_JAVA
+JOBS
 MEMORY_SIZE
-CONCURRENT_BUILD_JOBS
 NUM_CORES
 SALIB_NAME
 HOTSPOT_MAKE_ARGS
@@ -1002,6 +1002,7 @@ with_zlib
 with_stdc__lib
 with_num_cores
 with_memory_size
+with_jobs
 with_sjavac_server_java
 with_sjavac_server_cores
 enable_sjavac
@@ -1760,6 +1761,8 @@ Optional Packages:
                           --with-num-cores=8 [probed]
   --with-memory-size      memory (in MB) available in the build system, e.g.
                           --with-memory-size=1024 [probed]
+  --with-jobs             number of parallel jobs to let make run [calculated
+                          based on cores and memory]
   --with-sjavac-server-java
                           use this java binary for running the sjavac
                           background server [Boot JDK java]
@@ -3329,6 +3332,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+
+
 #
 # Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -3724,7 +3729,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1361452590
+DATE_WHEN_GENERATED=1362411827
 
 ###############################################################################
 #
@@ -31225,14 +31230,14 @@ fi
 ###############################################################################
 
 
-# How many cores do we have on this build system?
+  # How many cores do we have on this build system?
 
 # Check whether --with-num-cores was given.
 if test "${with_num_cores+set}" = set; then :
   withval=$with_num_cores;
 fi
 
-if test "x$with_num_cores" = x; then
+  if test "x$with_num_cores" = x; then
     # The number of cores were not specified, try to probe them.
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for number of cores" >&5
@@ -31258,10 +31263,6 @@ $as_echo_n "checking for number of cores... " >&6; }
         FOUND_CORES=yes
     fi
 
-    # For c/c++ code we run twice as many concurrent build
-    # jobs than we have cores, otherwise we will stall on io.
-    CONCURRENT_BUILD_JOBS=`expr $NUM_CORES \* 2`
-
     if test "x$FOUND_CORES" = xyes; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NUM_CORES" >&5
 $as_echo "$NUM_CORES" >&6; }
@@ -31273,22 +31274,20 @@ $as_echo "$as_me: WARNING: This will disable all parallelism from build!" >&2;}
     fi
 
 
-else
+  else
     NUM_CORES=$with_num_cores
-    CONCURRENT_BUILD_JOBS=`expr $NUM_CORES \* 2`
-fi
+  fi
 
 
 
-
-# How much memory do we have on this build system?
+  # How much memory do we have on this build system?
 
 # Check whether --with-memory-size was given.
 if test "${with_memory_size+set}" = set; then :
   withval=$with_memory_size;
 fi
 
-if test "x$with_memory_size" = x; then
+  if test "x$with_memory_size" = x; then
     # The memory size was not specified, try to probe it.
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for memory size" >&5
@@ -31328,9 +31327,45 @@ $as_echo "could not detect memory size, defaulting to 1024 MB" >&6; }
 $as_echo "$as_me: WARNING: This might seriously impact build performance!" >&2;}
     fi
 
-else
+  else
     MEMORY_SIZE=$with_memory_size
+  fi
+
+
+
+  # Provide a decent default number of parallel jobs for make depending on
+  # number of cores, amount of memory and machine architecture.
+
+# Check whether --with-jobs was given.
+if test "${with_jobs+set}" = set; then :
+  withval=$with_jobs;
 fi
+
+  if test "x$with_jobs" = x; then
+    # Number of jobs was not specified, calculate.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for appropriate number of jobs to run in parallel" >&5
+$as_echo_n "checking for appropriate number of jobs to run in parallel... " >&6; }
+    # Approximate memory in GB, rounding up a bit.
+    memory_gb=`expr $MEMORY_SIZE / 1100`
+    # Pick the lowest of memory in gb and number of cores.
+    if test "$memory_gb" -lt "$NUM_CORES"; then
+      JOBS="$memory_gb"
+    else
+      JOBS="$NUM_CORES"
+      # On bigger machines, leave some room for other processes to run
+      if test "$JOBS" -gt "4"; then
+        JOBS=`expr $JOBS '*' 90 / 100`
+      fi
+    fi
+    # Cap number of jobs to 16
+    if test "$JOBS" -gt "16"; then
+      JOBS=16
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JOBS" >&5
+$as_echo "$JOBS" >&6; }
+  else
+    JOBS=$with_jobs
+  fi
 
 
 
@@ -33143,7 +33178,7 @@ printf "* C++ Compiler:   $CXX_VENDOR version $CXX_VERSION (at $CXX)\n"
 
 printf "\n"
 printf "Build performance summary:\n"
-printf "* Cores to use:   $NUM_CORES\n"
+printf "* Cores to use:   $JOBS\n"
 printf "* Memory limit:   $MEMORY_SIZE MB\n"
 printf "* ccache status:  $CCACHE_STATUS\n"
 printf "\n"
