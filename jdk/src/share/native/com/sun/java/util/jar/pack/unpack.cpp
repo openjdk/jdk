@@ -2942,6 +2942,9 @@ band* unpacker::ref_band_for_op(int bc) {
   case bc_putfield:
     return &bc_fieldref;
 
+  case _invokespecial_int:
+  case _invokestatic_int:
+    return &bc_imethodref;
   case bc_invokevirtual:
   case bc_invokespecial:
   case bc_invokestatic:
@@ -4177,6 +4180,12 @@ void unpacker::write_bc_ops() {
         }
         origBC = bc;
         switch (bc) {
+        case _invokestatic_int:
+          origBC = bc_invokestatic;
+          break;
+        case _invokespecial_int:
+          origBC = bc_invokespecial;
+          break;
         case bc_ildc:
         case bc_cldc:
         case bc_fldc:

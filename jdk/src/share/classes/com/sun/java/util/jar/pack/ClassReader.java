@@ -564,7 +564,7 @@ class ClassReader {
         code.bytes = new byte[readInt()];
         in.readFully(code.bytes);
         Entry[] cpMap = cls.getCPMap();
-        Instruction.opcodeChecker(code.bytes, cpMap);
+        Instruction.opcodeChecker(code.bytes, cpMap, this.cls.version);
         int nh = readUnsignedShort();
         code.setHandlerCount(nh);
         for (int i = 0; i < nh; i++) {

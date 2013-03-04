@@ -67,17 +67,7 @@ public class AttributeTests {
         File testjarFile = new File(cwd, "test" + Utils.JAR_FILE_EXT);
         Utils.jar("cvf", testjarFile.getName(), javaClassName);
 
-        // pack using native --repack
-        File nativejarFile = new File(cwd, "out-n" + Utils.JAR_FILE_EXT);
-        Utils.repack(testjarFile, nativejarFile, false,
-                     "--unknown-attribute=error");
-        Utils.doCompareVerify(testjarFile, nativejarFile);
-
-        // pack using java --repack
-        File javajarFile = new File(cwd, "out-j" + Utils.JAR_FILE_EXT);
-        Utils.repack(testjarFile, javajarFile, true,
-                     "--unknown-attribute=error");
-        Utils.doCompareBitWise(nativejarFile, javajarFile);
+        Utils.testWithRepack(testjarFile, "--unknown-attribute=error");
     }
     /*
      * this test checks to see if we get the expected strings for output
