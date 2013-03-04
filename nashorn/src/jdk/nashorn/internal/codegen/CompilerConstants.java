@@ -141,9 +141,9 @@ public enum CompilerConstants {
     INIT_ARGUMENTS("$arguments", 3),
 
     /** prefix for all ScriptObject subclasses with fields, @see ObjectGenerator */
-    JS_OBJECT_PREFIX("JO$"),
+    JS_OBJECT_PREFIX("JO"),
 
-    /** name for allocate method in JO$ objects */
+    /** name for allocate method in JO objects */
     ALLOCATE("allocate"),
 
     /** prefix for split methods, @see Splitter */

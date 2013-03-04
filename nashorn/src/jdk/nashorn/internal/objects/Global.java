@@ -58,7 +58,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
-import jdk.nashorn.internal.scripts.JO$;
+import jdk.nashorn.internal.scripts.JO;
 
 /**
  * Representation of global scope.
@@ -1290,7 +1290,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return New empty object.
      */
     public static ScriptObject newEmptyInstance() {
-        final ScriptObject sobj = new JO$();
+        final ScriptObject sobj = new JO();
         sobj.setProto(objectPrototype());
         return sobj;
     }

@@ -146,7 +146,7 @@ public abstract class ObjectCreator {
 
     /**
      * Get the class name for the object class,
-     * e.g. {@code com.nashorn.oracle.scripts.JO$2P0}
+     * e.g. {@code com.nashorn.oracle.scripts.JO2P0}
      *
      * @return script class name
      */

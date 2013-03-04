@@ -214,7 +214,7 @@ public final class Context {
     /** Current error manager. */
     private final ErrorManager errors;
 
-    /** Empty map used for seed map for JO$ objects */
+    /** Empty map used for seed map for JO objects */
     final PropertyMap emptyMap = PropertyMap.newEmptyMap(this);
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
@@ -507,7 +507,7 @@ public final class Context {
      * @see AccessorProperty
      * @see ScriptObject
      *
-     * @param fullName  full name of class, e.g. jdk.nashorn.internal.objects.JO$2P1 contains 2 fields and 1 parameter.
+     * @param fullName  full name of class, e.g. jdk.nashorn.internal.objects.JO2P1 contains 2 fields and 1 parameter.
      *
      * @return the {@code Class<?>} for this structure
      *

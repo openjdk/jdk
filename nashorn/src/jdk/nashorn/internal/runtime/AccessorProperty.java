@@ -94,7 +94,7 @@ public class AccessorProperty extends Property {
     /**
      * Delegate constructor. This is used when adding properties to the Global scope, which
      * is necessary for outermost levels in a script (the ScriptObject is represented by
-     * a JO$-prefixed ScriptObject class, but the properties need to be in the Global scope
+     * a JO-prefixed ScriptObject class, but the properties need to be in the Global scope
      * and are thus rebound with that as receiver
      *
      * @param property  accessor property to rebind

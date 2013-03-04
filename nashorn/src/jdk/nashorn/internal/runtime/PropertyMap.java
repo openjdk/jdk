@@ -153,7 +153,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
         final Context context = Context.fromClass(structure);
 
         // Reduce the number of empty maps in the context.
-        if (structure == jdk.nashorn.internal.scripts.JO$.class) {
+        if (structure == jdk.nashorn.internal.scripts.JO.class) {
             return context.emptyMap;
         }
 
@@ -180,7 +180,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @return New empty {@link PropertyMap}.
      */
     public static PropertyMap newEmptyMap(final Context context) {
-        return new PropertyMap(jdk.nashorn.internal.scripts.JO$.class, context, EMPTY_MAP);
+        return new PropertyMap(jdk.nashorn.internal.scripts.JO.class, context, EMPTY_MAP);
     }
 
     /**
