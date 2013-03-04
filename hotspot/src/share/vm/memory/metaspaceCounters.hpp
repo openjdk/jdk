@@ -29,11 +29,9 @@
 
 class MetaspaceCounters: public CHeapObj<mtClass> {
   friend class VMStructs;
-  PerfVariable*      _current_size;
   PerfVariable*      _capacity;
   PerfVariable*      _used;
   PerfVariable*      _max_capacity;
-  char*              _name_space;
   static MetaspaceCounters* _metaspace_counters;
   void initialize(size_t min_capacity,
                   size_t max_capacity,
