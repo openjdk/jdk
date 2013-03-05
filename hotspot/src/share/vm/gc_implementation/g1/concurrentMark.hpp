@@ -97,7 +97,6 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
                                        HeapWord* limit = NULL) const;
 
   // conversion utilities
-  // XXX Fix these so that offsets are size_t's...
   HeapWord* offsetToHeapWord(size_t offset) const {
     return _bmStartWord + (offset << _shifter);
   }
@@ -105,8 +104,13 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
     return pointer_delta(addr, _bmStartWord) >> _shifter;
   }
   int heapWordDiffToOffsetDiff(size_t diff) const;
-  HeapWord* nextWord(HeapWord* addr) {
-    return offsetToHeapWord(heapWordToOffset(addr) + 1);
+
+  // The argument addr should be the start address of a valid object
+  HeapWord* nextObject(HeapWord* addr) {
+    oop obj = (oop) addr;
+    HeapWord* res =  addr + obj->size();
+    assert(offsetToHeapWord(heapWordToOffset(res)) == res, "sanity");
+    return res;
   }
 
   // debugging
