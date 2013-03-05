@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 6890943
  * @summary JVM mysteriously gives wrong result on 64-bit 1.6 VMs in hotspot mode.
  *
- * @run shell Test6890943.sh
+ * @run shell/timeout=240 Test6890943.sh
  */
 import java.util.*;
 import java.io.*;

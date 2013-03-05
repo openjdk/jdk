@@ -38,6 +38,8 @@
 #import <dlfcn.h>
 #import <limits.h>
 #import <errno.h>
+#import <sys/types.h>
+#import <sys/ptrace.h>
 
 jboolean debug = JNI_FALSE;
 
@@ -430,6 +432,73 @@ Java_sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal_translateTID0(
   return (jint) usable_tid;
 }
 
+
+static bool ptrace_continue(pid_t pid, int signal) {
+  // pass the signal to the process so we don't swallow it
+  int res;
+  if ((res = ptrace(PT_CONTINUE, pid, (caddr_t)1, signal)) < 0) {
+    fprintf(stderr, "attach: ptrace(PT_CONTINUE, %d) failed with %d\n", pid, res);
+    return false;
+  }
+  return true;
+}
+
+// waits until the ATTACH has stopped the process
+// by signal SIGSTOP
+static bool ptrace_waitpid(pid_t pid) {
+  int ret;
+  int status;
+  while (true) {
+    // Wait for debuggee to stop.
+    ret = waitpid(pid, &status, 0);
+    if (ret >= 0) {
+      if (WIFSTOPPED(status)) {
+        // Any signal will stop the thread, make sure it is SIGSTOP. Otherwise SIGSTOP
+        // will still be pending and delivered when the process is DETACHED and the process
+        // will go to sleep.
+        if (WSTOPSIG(status) == SIGSTOP) {
+          // Debuggee stopped by SIGSTOP.
+          return true;
+        }
+        if (!ptrace_continue(pid, WSTOPSIG(status))) {
+          fprintf(stderr, "attach: Failed to correctly attach to VM. VM might HANG! [PTRACE_CONT failed, stopped by %d]\n", WSTOPSIG(status));
+          return false;
+        }
+      } else {
+        fprintf(stderr, "attach: waitpid(): Child process exited/terminated (status = 0x%x)\n", status);
+        return false;
+      }
+    } else {
+      switch (errno) {
+        case EINTR:
+          continue;
+          break;
+        case ECHILD:
+          fprintf(stderr, "attach: waitpid() failed. Child process pid (%d) does not exist \n", pid);
+          break;
+        case EINVAL:
+          fprintf(stderr, "attach: waitpid() failed. Invalid options argument.\n");
+          break;
+        default:
+          fprintf(stderr, "attach: waitpid() failed. Unexpected error %d\n",errno);
+          break;
+      }
+      return false;
+    }
+  }
+}
+
+// attach to a process/thread specified by "pid"
+static bool ptrace_attach(pid_t pid) {
+  int res;
+  if ((res = ptrace(PT_ATTACH, pid, 0, 0)) < 0) {
+    fprintf(stderr, "ptrace(PT_ATTACH, %d) failed with %d\n", pid, res);
+    return false;
+  } else {
+    return ptrace_waitpid(pid);
+  }
+}
+
 /*
  * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
  * Method:    attach0
@@ -445,7 +514,8 @@ JNF_COCOA_ENTER(env);
   else
     debug = JNI_FALSE;
   if (debug) printf("attach0 called for jpid=%d\n", (int)jpid);
-
+  
+  // get the task from the pid
   kern_return_t result;
   task_t gTask = 0;
   result = task_for_pid(mach_task_self(), jpid, &gTask);
@@ -454,6 +524,13 @@ JNF_COCOA_ENTER(env);
     THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the process");
   }
   putTask(env, this_obj, gTask);
+
+  // use ptrace to stop the process
+  // on os x, ptrace only needs to be called on the process, not the individual threads
+  if (ptrace_attach(jpid) != true) {
+    mach_port_deallocate(mach_task_self(), gTask);
+    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the process");
+  }
 
   id symbolicator = nil;
   id jrsSymbolicator = objc_lookUpClass("JRSSymbolicator");
@@ -486,6 +563,21 @@ JNF_COCOA_ENTER(env);
   if (debug) printf("detach0 called\n");
 
   task_t gTask = getTask(env, this_obj);
+
+  // detach from the ptraced process causing it to resume execution
+  int pid;
+  kern_return_t k_res;
+  k_res = pid_for_task(gTask, &pid);
+  if (k_res != KERN_SUCCESS) {
+    fprintf(stderr, "detach: pid_for_task(%d) failed (%d)\n", pid, k_res);
+  }
+  else {
+    int res = ptrace(PT_DETACH, pid, 0, 0);
+    if (res < 0) {
+      fprintf(stderr, "detach: ptrace(PT_DETACH, %d) failed (%d)\n", pid, res);
+    }
+  }
+  
   mach_port_deallocate(mach_task_self(), gTask);
   id symbolicator = getSymbolicator(env, this_obj);
   if (symbolicator != nil) {
