@@ -1775,8 +1775,17 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             boolean isPrivateConstructor() {
+                //hack needed to workaround 292 bug (8005122)
+                //when 292 issue is fixed we should simply remove this
                 return tree.sym.name == names.init &&
                         (tree.sym.flags() & PRIVATE) != 0;
+            }
+
+            boolean receiverAccessible() {
+                //hack needed to workaround 292 bug (7087658)
+                //when 292 issue is fixed we should remove this and change the backend
+                //code to always generate a method handle to an accessible method
+                return tree.ownerAccessible;
             }
 
             /**
@@ -1784,7 +1793,8 @@ public class LambdaToMethod extends TreeTranslator {
              * expanded or "super" is used)
              */
             final boolean needsBridge() {
-                return isSuper || needsVarArgsConversion() || isArrayOp() || isPrivateConstructor();
+                return isSuper || needsVarArgsConversion() || isArrayOp() ||
+                        isPrivateConstructor() || !receiverAccessible();
             }
 
             Type generatedRefSig() {
