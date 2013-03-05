@@ -117,6 +117,9 @@ loadTransportLibrary(char *libdir, char *name)
 
     /* Construct library name (simple name or full path) */
     dbgsysBuildLibName(libname, sizeof(libname), plibdir, name);
+    if (strlen(libname) == 0) {
+        return NULL;
+    }
 
     /* dlopen (unix) / LoadLibrary (windows) the transport library */
     handle = dbgsysLoadLibrary(libname, buf, sizeof(buf));
