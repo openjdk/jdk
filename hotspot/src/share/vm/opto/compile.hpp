@@ -1086,6 +1086,9 @@ class Compile : public Phase {
 
   // Definitions of pd methods
   static void pd_compiler2_init();
+
+  // Auxiliary method for randomized fuzzing/stressing
+  static bool randomized_select(int count);
 };
 
 #endif // SHARE_VM_OPTO_COMPILE_HPP
