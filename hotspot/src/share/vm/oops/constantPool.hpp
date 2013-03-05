@@ -97,10 +97,8 @@ class ConstantPool : public Metadata {
   Array<u2>*           _reference_map;
 
   enum {
-    _has_invokedynamic = 1,           // Flags
-    _has_pseudo_string = 2,
-    _has_preresolution = 4,
-    _on_stack          = 8
+    _has_preresolution = 1,           // Flags
+    _on_stack          = 2
   };
 
   int                  _flags;  // old fashioned bit twiddling
@@ -174,12 +172,6 @@ class ConstantPool : public Metadata {
 
   Array<u1>* tags() const                   { return _tags; }
   Array<u2>* operands() const               { return _operands; }
-
-  bool has_invokedynamic() const            { return (_flags & _has_invokedynamic) != 0; }
-  void set_has_invokedynamic()              { _flags |= _has_invokedynamic; }
-
-  bool has_pseudo_string() const            { return (_flags & _has_pseudo_string) != 0; }
-  void set_has_pseudo_string()              { _flags |= _has_pseudo_string; }
 
   bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
   void set_has_preresolution()              { _flags |= _has_preresolution; }
@@ -324,14 +316,6 @@ class ConstantPool : public Metadata {
     resolved_references()->obj_at_put(obj_index, str);
   }
 
-  void set_object_tag_at(int which) {
-    release_tag_at_put(which, JVM_CONSTANT_Object);
-    }
-
-  void object_at_put(int which, oop obj) {
-    resolved_references()->obj_at_put(cp_to_object_index(which), obj);
-  }
-
   // For temporary use while constructing constant pool
   void string_index_at_put(int which, int string_index) {
     tag_at_put(which, JVM_CONSTANT_StringIndex);
@@ -429,12 +413,6 @@ class ConstantPool : public Metadata {
   // Version that can be used before string oop array is created.
   oop uncached_string_at(int which, TRAPS);
 
-  oop object_at(int which) {
-    assert(tag_at(which).is_object(), "Corrupted constant pool");
-    int obj_index = cp_to_object_index(which);
-    return resolved_references()->obj_at(obj_index);
-  }
-
   // A "pseudo-string" is an non-string oop that has found is way into
   // a String entry.
   // Under EnableInvokeDynamic this can happen if the user patches a live
@@ -454,10 +432,18 @@ class ConstantPool : public Metadata {
     return s;
   }
 
+  oop pseudo_string_at(int which) {
+    assert(tag_at(which).is_string(), "Corrupted constant pool");
+    assert(unresolved_string_at(which) == NULL, "shouldn't have symbol");
+    int obj_index = cp_to_object_index(which);
+    oop s = resolved_references()->obj_at(obj_index);
+    return s;
+  }
+
   void pseudo_string_at_put(int which, int obj_index, oop x) {
     assert(EnableInvokeDynamic, "");
-    set_has_pseudo_string();        // mark header
     assert(tag_at(which).is_string(), "Corrupted constant pool");
+    unresolved_string_at_put(which, NULL); // indicates patched string
     string_at_put(which, obj_index, x);    // this works just fine
   }
 

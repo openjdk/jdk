@@ -122,7 +122,6 @@ FILES_export = \
         sun/lwawt/macosx/CTextPipe.java \
         sun/lwawt/macosx/CDesktopPeer.java \
         sun/java2d/CRenderer.java \
-        sun/lwawt/macosx/EventDispatchAccess.java \
         sun/lwawt/macosx/NSPrintInfo.java \
         sun/lwawt/macosx/CAccessibility.java \
         sun/lwawt/macosx/CAccessible.java \

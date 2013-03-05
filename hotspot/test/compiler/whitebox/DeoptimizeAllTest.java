@@ -23,9 +23,10 @@
 
 /*
  * @test DeoptimizeAllTest
- * @compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI CompilerWhiteBoxTest.java
- * @compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI DeoptimizeAllTest.java
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DeoptimizeAllTest
+ * @library /testlibrary /testlibrary/whitebox
+ * @build DeoptimizeAllTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DeoptimizeAllTest
  * @author igor.ignatyev@oracle.com
  */
 public class DeoptimizeAllTest extends CompilerWhiteBoxTest {

@@ -88,7 +88,13 @@ CXXFLAGS =           \
 # This is VERY important! The version define must only be supplied to vm_version.o
 # If not, ccache will not re-use the cache at all, since the version string might contain
 # a time and date. 
-vm_version.o: CXXFLAGS += ${JRE_VERSION} 
+CXXFLAGS/vm_version.o += ${JRE_VERSION}
+
+CXXFLAGS/BYFILE = $(CXXFLAGS/$@)
+
+# File specific flags
+CXXFLAGS += $(CXXFLAGS/BYFILE)
+
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 CFLAGS += $(CFLAGS_WARN)
@@ -341,12 +347,9 @@ include $(MAKEFILES_DIR)/jsig.make
 # Serviceability agent
 include $(MAKEFILES_DIR)/saproc.make
 
-# Whitebox testing API
-include $(MAKEFILES_DIR)/wb.make
-
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(LIBJVM_DTRACE) $(BUILDLIBSAPROC) dtraceCheck $(WB_JAR)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(LIBJVM_DTRACE) $(BUILDLIBSAPROC) dtraceCheck
 
 install: install_jvm install_jsig install_saproc
 

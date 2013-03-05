@@ -94,7 +94,12 @@ CXXFLAGS =           \
 # This is VERY important! The version define must only be supplied to vm_version.o
 # If not, ccache will not re-use the cache at all, since the version string might contain
 # a time and date. 
-vm_version.o: CXXFLAGS += ${JRE_VERSION} 
+CXXFLAGS/vm_version.o += ${JRE_VERSION}
+
+CXXFLAGS/BYFILE = $(CXXFLAGS/$@)
+
+# File specific flags
+CXXFLAGS += $(CXXFLAGS/BYFILE)
 
 ifdef DEFAULT_LIBPATH
 CXXFLAGS += -DDEFAULT_LIBPATH="\"$(DEFAULT_LIBPATH)\""
@@ -332,9 +337,6 @@ include $(MAKEFILES_DIR)/jsig.make
 # Serviceability agent
 include $(MAKEFILES_DIR)/saproc.make
 
-# Whitebox testing API
-include $(MAKEFILES_DIR)/wb.make
-
 #----------------------------------------------------------------------
 
 ifeq ($(OS_VENDOR), Darwin)
@@ -342,10 +344,10 @@ $(LIBJVM).dSYM: $(LIBJVM)
 	dsymutil $(LIBJVM)
 
 # no libjvm_db for macosx
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM $(WB_JAR)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM
 	echo "Doing vm.make build:"
 else
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(WB_JAR)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
 endif
 
 install: install_jvm install_jsig install_saproc

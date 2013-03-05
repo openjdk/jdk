@@ -143,7 +143,8 @@ void SuperWord::SLP_extract() {
 
   // Ready the block
 
-  construct_bb();
+  if (!construct_bb())
+    return; // Exit if no interesting nodes or complex graph.
 
   dependence_graph();
 
@@ -615,6 +616,7 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
     if (n == stop) break;
     preds.push(n);
     prev = n;
+    assert(n->is_Mem(), err_msg_res("unexpected node %s", n->Name()));
     n = n->in(MemNode::Memory);
   }
 }
@@ -1578,7 +1580,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 
 //------------------------------construct_bb---------------------------
 // Construct reverse postorder list of block members
-void SuperWord::construct_bb() {
+bool SuperWord::construct_bb() {
   Node* entry = bb();
 
   assert(_stk.length() == 0,            "stk is empty");
@@ -1596,6 +1598,12 @@ void SuperWord::construct_bb() {
     Node *n = lpt()->_body.at(i);
     set_bb_idx(n, i); // Create a temporary map
     if (in_bb(n)) {
+      if (n->is_LoadStore() || n->is_MergeMem() ||
+          (n->is_Proj() && !n->as_Proj()->is_CFG())) {
+        // Bailout if the loop has LoadStore, MergeMem or data Proj
+        // nodes. Superword optimization does not work with them.
+        return false;
+      }
       bb_ct++;
       if (!n->is_CFG()) {
         bool found = false;
@@ -1620,6 +1628,10 @@ void SuperWord::construct_bb() {
     if (in_bb(n) && (n->is_Phi() && n->bottom_type() == Type::MEMORY)) {
       Node* n_tail  = n->in(LoopNode::LoopBackControl);
       if (n_tail != n->in(LoopNode::EntryControl)) {
+        if (!n_tail->is_Mem()) {
+          assert(n_tail->is_Mem(), err_msg_res("unexpected node for memory slice: %s", n_tail->Name()));
+          return false; // Bailout
+        }
         _mem_slice_head.push(n);
         _mem_slice_tail.push(n_tail);
       }
@@ -1695,6 +1707,7 @@ void SuperWord::construct_bb() {
   }
 #endif
   assert(rpo_idx == -1 && bb_ct == _block.length(), "all block members found");
+  return (_mem_slice_head.length() > 0) || (_data_entry.length() > 0);
 }
 
 //------------------------------initialize_bb---------------------------
