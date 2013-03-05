@@ -347,7 +347,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         MANDATORY,
         RESOLVE_ERROR,
         SYNTAX,
-        RECOVERABLE
+        RECOVERABLE,
+        NON_DEFERRABLE,
     }
 
     private final DiagnosticType type;

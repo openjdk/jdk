@@ -303,11 +303,6 @@ public class DeferredAttr extends JCTree.Visitor {
             attr.attribTree(newTree, speculativeEnv, resultInfo);
             unenterScanner.scan(newTree);
             return newTree;
-        } catch (Abort ex) {
-            //if some very bad condition occurred during deferred attribution
-            //we should dump all errors before killing javac
-            deferredDiagnosticHandler.reportDeferredDiagnostics();
-            throw ex;
         } finally {
             unenterScanner.scan(newTree);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
