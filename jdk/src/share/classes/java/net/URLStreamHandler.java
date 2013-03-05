@@ -509,8 +509,8 @@ public abstract class URLStreamHandler {
 
     /**
      * Sets the fields of the <code>URL</code> argument to the indicated values.
-     * Only classes derived from URLStreamHandler are supposed to be able
-     * to call the set method on a URL.
+     * Only classes derived from URLStreamHandler are able
+     * to use this method to set the values of the URL fields.
      *
      * @param   u         the URL to modify.
      * @param   protocol  the protocol name.
@@ -539,8 +539,8 @@ public abstract class URLStreamHandler {
 
     /**
      * Sets the fields of the <code>URL</code> argument to the indicated values.
-     * Only classes derived from URLStreamHandler are supposed to be able
-     * to call the set method on a URL.
+     * Only classes derived from URLStreamHandler are able
+     * to use this method to set the values of the URL fields.
      *
      * @param   u         the URL to modify.
      * @param   protocol  the protocol name. This value is ignored since 1.2.
