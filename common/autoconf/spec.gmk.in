@@ -260,6 +260,9 @@ ENABLE_SJAVAC:=@ENABLE_SJAVAC@
 # the sjavac server log files.
 SJAVAC_SERVER_DIR:=@SJAVAC_SERVER_DIR@
 
+# Number of parallel jobs to use for compilation
+JOBS?=@JOBS@
+
 # The OpenJDK makefiles should be changed to using the standard
 # configure output ..._CFLAGS and ..._LIBS. In the meantime we
 # extract the information here.
@@ -283,7 +286,7 @@ X_LIBS:=@X_LIBS@
 OPENWIN_HOME:=@OPENWIN_HOME@
 
 # The lowest required version of macosx to enforce compatiblity for
-MACOSX_REQUIRED_VERSION=@MACOSX_REQUIRED_VERSION@
+MACOSX_VERSION_MIN=@MACOSX_VERSION_MIN@
 
 # There are two types: CC or CL
 # CC is gcc and others behaving reasonably similar.

@@ -24,9 +24,10 @@
 /*
  * @test IsMethodCompilableTest
  * @bug 8007270
- * @compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI CompilerWhiteBoxTest.java
- * @compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI IsMethodCompilableTest.java
- * @run main/othervm/timeout=600 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI IsMethodCompilableTest
+ * @library /testlibrary /testlibrary/whitebox
+ * @build IsMethodCompilableTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI IsMethodCompilableTest
  * @author igor.ignatyev@oracle.com
  */
 public class IsMethodCompilableTest extends CompilerWhiteBoxTest {

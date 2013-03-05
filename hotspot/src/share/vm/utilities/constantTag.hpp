@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,7 @@ enum {
   JVM_CONSTANT_UnresolvedClassInError   = 103,  // Error tag due to resolution error
   JVM_CONSTANT_MethodHandleInError      = 104,  // Error tag due to resolution error
   JVM_CONSTANT_MethodTypeInError        = 105,  // Error tag due to resolution error
-  JVM_CONSTANT_Object                   = 106,  // Required for BoundMethodHandle arguments.
-  JVM_CONSTANT_InternalMax              = 106   // Last implementation tag
+  JVM_CONSTANT_InternalMax              = 105   // Last implementation tag
 };
 
 
@@ -84,8 +83,6 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
   bool is_klass_index() const       { return _tag == JVM_CONSTANT_ClassIndex; }
   bool is_string_index() const      { return _tag == JVM_CONSTANT_StringIndex; }
 
-  bool is_object() const            { return _tag == JVM_CONSTANT_Object; }
-
   bool is_klass_reference() const   { return is_klass_index() || is_unresolved_klass(); }
   bool is_klass_or_reference() const{ return is_klass() || is_klass_reference(); }
   bool is_field_or_method() const   { return is_field() || is_method() || is_interface_method(); }
@@ -98,7 +95,7 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
   bool is_loadable_constant() const {
     return ((_tag >= JVM_CONSTANT_Integer && _tag <= JVM_CONSTANT_String) ||
             is_method_type() || is_method_handle() ||
-            is_unresolved_klass() || is_object());
+            is_unresolved_klass());
   }
 
   constantTag() {

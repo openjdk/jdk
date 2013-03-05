@@ -23,9 +23,10 @@
 
 /*
  * @test SetDontInlineMethodTest
- * @compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI CompilerWhiteBoxTest.java
- * @compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI SetDontInlineMethodTest.java
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SetDontInlineMethodTest
+ * @library /testlibrary /testlibrary/whitebox
+ * @build SetDontInlineMethodTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SetDontInlineMethodTest
  * @author igor.ignatyev@oracle.com
  */
 public class SetDontInlineMethodTest extends CompilerWhiteBoxTest {
