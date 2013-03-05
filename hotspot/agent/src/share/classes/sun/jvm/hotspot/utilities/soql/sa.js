@@ -31,7 +31,6 @@ var sapkg = new Object();
 
 sapkg.hotspot = Packages.sun.jvm.hotspot;
 sapkg.asm = sapkg.hotspot.asm;
-sapkg.bugspot = sapkg.hotspot.bugspot;
 sapkg.c1 = sapkg.hotspot.c1;
 sapkg.code = sapkg.hotspot.code;
 sapkg.compiler = sapkg.hotspot.compiler;
@@ -40,7 +39,6 @@ sapkg.compiler = sapkg.hotspot.compiler;
 // sapkg.debugger = sapkg.hotspot.debugger;
 
 sapkg.interpreter = sapkg.hotspot.interpreter;
-sapkg.livejvm = sapkg.hotspot.livejvm;
 sapkg.jdi = sapkg.hotspot.jdi;
 sapkg.memory = sapkg.hotspot.memory;
 sapkg.oops = sapkg.hotspot.oops;
