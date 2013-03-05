@@ -774,7 +774,7 @@ public class LambdaToMethod extends TreeTranslator {
                 //bridge method body generation - this can be either a method call or a
                 //new instance creation expression, depending on the member reference kind
                 JCExpression bridgeExpr = (tree.getMode() == ReferenceMode.INVOKE)
-                        ? bridgeExpressionInvoke(rcvr)
+                        ? bridgeExpressionInvoke(makeReceiver(rcvr))
                         : bridgeExpressionNew();
 
                 //the body is either a return expression containing a method call,
@@ -787,6 +787,16 @@ public class LambdaToMethod extends TreeTranslator {
                 make.at(prevPos);
             }
         }
+        //where
+            private JCExpression makeReceiver(VarSymbol rcvr) {
+                if (rcvr == null) return null;
+                JCExpression rcvrExpr = make.Ident(rcvr);
+                Type rcvrType = tree.sym.enclClass().type;
+                if (!rcvr.type.tsym.isSubClass(rcvrType.tsym, types)) {
+                    rcvrExpr = make.TypeCast(make.Type(rcvrType), rcvrExpr).setType(rcvrType);
+                }
+                return rcvrExpr;
+            }
 
         /**
          * determine the receiver of the bridged method call - the receiver can
@@ -794,12 +804,12 @@ public class LambdaToMethod extends TreeTranslator {
          * original qualifier expression is never used here, as it might refer
          * to symbols not available in the static context of the bridge
          */
-        private JCExpression bridgeExpressionInvoke(VarSymbol rcvr) {
+        private JCExpression bridgeExpressionInvoke(JCExpression rcvr) {
             JCExpression qualifier =
                     tree.sym.isStatic() ?
                         make.Type(tree.sym.owner.type) :
                         (rcvr != null) ?
-                            make.Ident(rcvr) :
+                            rcvr :
                             tree.getQualifierExpression();
 
             //create the qualifier expression
