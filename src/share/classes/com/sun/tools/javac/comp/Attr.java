@@ -2623,6 +2623,7 @@ public class Attr extends JCTree.Visitor {
 
             that.sym = refSym.baseSymbol();
             that.kind = lookupHelper.referenceKind(that.sym);
+            that.ownerAccessible = rs.isAccessible(localEnv, that.sym.enclClass());
 
             if (desc.getReturnType() == Type.recoveryType) {
                 // stop here
