@@ -23,9 +23,10 @@
 
 /*
  * @test MakeMethodNotCompilableTest
- * @compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI CompilerWhiteBoxTest.java
- * @compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI MakeMethodNotCompilableTest.java
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MakeMethodNotCompilableTest
+ * @library /testlibrary /testlibrary/whitebox
+ * @build MakeMethodNotCompilableTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MakeMethodNotCompilableTest
  * @author igor.ignatyev@oracle.com
  */
 public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {

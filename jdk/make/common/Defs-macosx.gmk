@@ -406,10 +406,16 @@ endif
 
 LIB_LOCATION ?= $(LIBDIR)
 
-# Adding these macros will make it an error to link to mac APIs newer than OS version 10.7
-ifeq ($(MACOSX_REQUIRED_VERSION),)
-  MACOSX_REQUIRED_VERSION:=1070
+# Setting these parameters makes it an error to link to macosx APIs that are 
+# newer than the given OS version and makes the linked binaries compatible even
+# if built on a newer version of the OS.
+# The expected format is X.Y.Z
+ifeq ($(MACOSX_VERSION_MIN),)
+  MACOSX_VERSION_MIN=10.7.0
 endif
-MACOSX_OS_VERSION_CFLAGS := -DMAC_OS_X_VERSION_MAX_ALLOWED=$(MACOSX_REQUIRED_VERSION) -DMAC_OS_X_VERSION_MIN_REQUIRED=$(MACOSX_REQUIRED_VERSION)
+# The macro takes the version with no dots, ex: 1070
+MACOSX_OS_VERSION_CFLAGS := -DMAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(MACOSX_VERSION_MIN)) \
+			    -mmacosx-version-min=$(MACOSX_VERSION_MIN)
 OTHER_CFLAGS += $(MACOSX_OS_VERSION_CFLAGS)
 OTHER_CXXFLAGS += $(MACOSX_OS_VERSION_CFLAGS)
+OTHER_LDFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)

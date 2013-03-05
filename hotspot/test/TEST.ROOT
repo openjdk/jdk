@@ -28,4 +28,4 @@
 # DO NOT EDIT without first contacting hotspot-regtest@sun.com
 
 # The list of keywords supported in this test suite
-keys=cte_test jcmd nmt regression
+keys=cte_test jcmd nmt regression gc
