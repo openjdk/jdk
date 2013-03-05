@@ -216,6 +216,11 @@ bool frame::safe_for_sender(JavaThread *thread) {
       }
     }
 
+    // Could just be some random pointer within the codeBlob
+    if (!_cb->code_contains(_pc)) {
+      return false;
+    }
+
     // Entry frame checks
     if (is_entry_frame()) {
       // an entry frame must have a valid fp.
