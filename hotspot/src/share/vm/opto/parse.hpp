@@ -58,7 +58,7 @@ class InlineTree : public ResourceObj {
   GrowableArray<InlineTree*> _subtrees;
 
   void print_impl(outputStream* stj, int indent) const PRODUCT_RETURN;
-
+  const char* _msg;
 protected:
   InlineTree(Compile* C,
              const InlineTree* caller_tree,
@@ -70,17 +70,29 @@ protected:
   InlineTree *build_inline_tree_for_callee(ciMethod* callee_method,
                                            JVMState* caller_jvms,
                                            int caller_bci);
-  const char* try_to_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result, bool& should_delay);
-  const char* should_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const;
-  const char* should_not_inline(ciMethod* callee_method, ciMethod* caller_method, WarmCallInfo* wci_result) const;
+  bool        try_to_inline(ciMethod* callee_method,
+                            ciMethod* caller_method,
+                            int caller_bci,
+                            ciCallProfile& profile,
+                            WarmCallInfo* wci_result,
+                            bool& should_delay);
+  bool        should_inline(ciMethod* callee_method,
+                            ciMethod* caller_method,
+                            int caller_bci,
+                            ciCallProfile& profile,
+                            WarmCallInfo* wci_result);
+  bool        should_not_inline(ciMethod* callee_method,
+                                ciMethod* caller_method,
+                                WarmCallInfo* wci_result);
   void        print_inlining(ciMethod* callee_method, int caller_bci,
-                             const char* msg, bool success) const;
+                             bool success) const;
 
-  InlineTree *caller_tree()       const { return _caller_tree;  }
+  InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
   int         inline_level()      const { return stack_depth(); }
   int         stack_depth()       const { return _caller_jvms ? _caller_jvms->depth() : 0; }
-
+  const char* msg()               const { return _msg; }
+  void        set_msg(const char* msg)  { _msg = msg; }
 public:
   static const char* check_can_parse(ciMethod* callee);
 

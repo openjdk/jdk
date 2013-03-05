@@ -2887,7 +2887,9 @@ JVM_handle_bsd_signal(int signo, siginfo_t* siginfo,
 
 void signalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
+  int orig_errno = errno;  // Preserve errno value over signal handler.
   JVM_handle_bsd_signal(sig, info, uc, true);
+  errno = orig_errno;
 }
 
 
