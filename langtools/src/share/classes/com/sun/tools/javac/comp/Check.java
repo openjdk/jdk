@@ -285,7 +285,7 @@ public class Check {
      *  @param ex         The failure to report.
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
-        log.error(pos, "cant.access", ex.sym, ex.getDetailValue());
+        log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, pos, "cant.access", ex.sym, ex.getDetailValue());
         if (ex instanceof ClassReader.BadClassFile
                 && !suppressAbortOnBadClassFile) throw new Abort();
         else return syms.errType;
