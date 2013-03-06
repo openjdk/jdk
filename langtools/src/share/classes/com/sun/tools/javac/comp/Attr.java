@@ -3593,8 +3593,7 @@ public class Attr extends JCTree.Visitor {
             env.info.defaultSuperCallSite = null;
         }
 
-        if (sym.isStatic() && site.isInterface()) {
-            Assert.check(env.tree.hasTag(APPLY));
+        if (sym.isStatic() && site.isInterface() && env.tree.hasTag(APPLY)) {
             JCMethodInvocation app = (JCMethodInvocation)env.tree;
             if (app.meth.hasTag(SELECT) &&
                     !TreeInfo.isStaticSelector(((JCFieldAccess)app.meth).selected, names)) {
