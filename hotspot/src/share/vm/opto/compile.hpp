@@ -678,6 +678,7 @@ class Compile : public Phase {
   void         record_dead_node(uint idx)  { if (_dead_node_list.test_set(idx)) return;
                                              _dead_node_count++;
                                            }
+  bool         is_dead_node(uint idx)      { return _dead_node_list.test(idx) != 0; }
   uint         dead_node_count()           { return _dead_node_count; }
   void         reset_dead_node_list()      { _dead_node_list.Reset();
                                              _dead_node_count = 0;
