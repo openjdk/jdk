@@ -184,9 +184,10 @@ bootcycle-images:
 	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
 	@($(CD) $(SRC_ROOT)/common/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) SPEC=$(dir $(SPEC))bootcycle-spec.gmk images)
 
-test: start-make
+test: images test-only
+test-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 -k MAKEFLAGS= PRODUCT_HOME=$(OUTPUT_ROOT)/jdk JPRT_JAVA_HOME=$(OUTPUT_ROOT)/jdk ALT_OUTPUTDIR=$(OUTPUT_ROOT) $(TEST)) || true
+	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 -k MAKEFLAGS= PRODUCT_HOME=$(JDK_IMAGE_DIR) JPRT_JAVA_HOME=$(JDK_IMAGE_DIR) ALT_OUTPUTDIR=$(OUTPUT_ROOT) $(TEST)) || true
 	@$(call TargetExit)
 
 # Stores the tips for each repository. This file is be used when constructing the jdk image and can be
