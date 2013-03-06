@@ -2151,8 +2151,11 @@ public class Attr extends JCTree.Visitor {
                     ResultInfo findDiamondResult = new ResultInfo(VAL,
                             resultInfo.checkContext.inferenceContext().free(resultInfo.pt) ? Type.noType : pt());
                     Type inferred = deferredAttr.attribSpeculative(tree, env, findDiamondResult).type;
+                    Type polyPt = allowPoly ?
+                            syms.objectType :
+                            clazztype;
                     if (!inferred.isErroneous() &&
-                        types.isAssignable(inferred, pt().hasTag(NONE) ? syms.objectType : pt(), types.noWarnings)) {
+                        types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings)) {
                         String key = types.isSameType(clazztype, inferred) ?
                             "diamond.redundant.args" :
                             "diamond.redundant.args.1";
