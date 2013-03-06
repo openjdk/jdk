@@ -2899,6 +2899,13 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       }
     }
     break;
+  case Op_MemBarStoreStore:
+    // Break the link with AllocateNode: it is no longer useful and
+    // confuses register allocation.
+    if (n->req() > MemBarNode::Precedent) {
+      n->set_req(MemBarNode::Precedent, top());
+    }
+    break;
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
