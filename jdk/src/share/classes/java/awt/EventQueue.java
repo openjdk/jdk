@@ -171,7 +171,7 @@ public class EventQueue {
      * The modifiers field of the current event, if the current event is an
      * InputEvent or ActionEvent.
      */
-    private WeakReference currentEvent;
+    private WeakReference<AWTEvent> currentEvent;
 
     /*
      * Non-zero if a thread is waiting in getNextEvent(int) for an event of
@@ -809,7 +809,7 @@ public class EventQueue {
         pushPopLock.lock();
         try {
                 return (Thread.currentThread() == dispatchThread)
-                ? ((AWTEvent)currentEvent.get())
+                ? currentEvent.get()
                 : null;
         } finally {
             pushPopLock.unlock();
@@ -1167,7 +1167,7 @@ public class EventQueue {
                 return;
             }
 
-            currentEvent = new WeakReference(e);
+            currentEvent = new WeakReference<>(e);
 
             // This series of 'instanceof' checks should be replaced with a
             // polymorphic type (for example, an interface which declares a
