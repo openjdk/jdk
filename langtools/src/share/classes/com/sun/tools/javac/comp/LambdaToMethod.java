@@ -1299,7 +1299,7 @@ public class LambdaToMethod extends TreeTranslator {
             buf.append(owner.name);
             buf.append('$');
             int methTypeHash = methodSig(owner.type).hashCode();
-            buf.append(methTypeHash);
+            buf.append(Integer.toHexString(methTypeHash));
             buf.append('$');
             String temp = buf.toString();
             Integer count = serializableLambdaCounts.get(temp);
