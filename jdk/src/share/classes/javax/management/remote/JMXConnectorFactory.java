@@ -542,14 +542,9 @@ public class JMXConnectorFactory {
             }
         }
 
-        if (loader == null)
-            loader = AccessController.doPrivileged(
-                    new PrivilegedAction<ClassLoader>() {
-                        public ClassLoader run() {
-                            return
-                                Thread.currentThread().getContextClassLoader();
-                        }
-                    });
+        if (loader == null) {
+            loader = Thread.currentThread().getContextClassLoader();
+        }
 
         return loader;
     }
