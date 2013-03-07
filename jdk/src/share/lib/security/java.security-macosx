@@ -147,10 +147,7 @@ keystore.type=jks
 # corresponding RuntimePermission ("accessClassInPackage."+package) has
 # been granted.
 package.access=sun.,\
-               com.sun.xml.internal.bind.,\
-               com.sun.xml.internal.org.jvnet.staxex.,\
-               com.sun.xml.internal.stream.,\
-               com.sun.xml.internal.ws.,\
+               com.sun.xml.internal.,\
                com.sun.imageio.,\
                com.sun.istack.internal.,\
                com.sun.jmx.,\
@@ -187,10 +184,7 @@ package.access=sun.,\
 # checkPackageDefinition.
 #
 package.definition=sun.,\
-                   com.sun.xml.internal.bind.,\
-                   com.sun.xml.internal.org.jvnet.staxex.,\
-                   com.sun.xml.internal.stream.,\
-                   com.sun.xml.internal.ws.,\
+                   com.sun.xml.internal.,\
                    com.sun.imageio.,\
                    com.sun.istack.internal.,\
                    com.sun.jmx.,\
