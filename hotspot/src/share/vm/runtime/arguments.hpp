@@ -414,6 +414,7 @@ class Arguments : AllStatic {
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency();
   static void check_deprecated_gcs();
+  static void check_deprecated_gc_flags();
   // Check consistecy or otherwise of VM argument settings
   static bool check_vm_args_consistency();
   // Check stack pages settings
