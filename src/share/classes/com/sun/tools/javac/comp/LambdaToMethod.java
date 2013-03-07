@@ -558,7 +558,7 @@ public class LambdaToMethod extends TreeTranslator {
         String functionalInterfaceClass = classSig(targetType);
         String functionalInterfaceMethodName = samSym.getSimpleName().toString();
         String functionalInterfaceMethodSignature = methodSig(types.erasure(samSym.type));
-        String implClass = classSig(refSym.owner.type);
+        String implClass = classSig(types.erasure(refSym.owner.type));
         String implMethodName = refSym.getQualifiedName().toString();
         String implMethodSignature = methodSig(types.erasure(refSym.type));
 
