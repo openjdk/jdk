@@ -348,7 +348,6 @@ TOOLS = \
 	sun/tools/serialver	\
 	sun/tools/tree		\
 	sun/tools/util		\
-	sun/security/tools/jarsigner/JarBASE64Encoder.class \
 	sun/security/tools/jarsigner/Main.class \
 	sun/security/tools/jarsigner/JarSignerParameters.class \
 	sun/security/tools/jarsigner/Resources.class \
@@ -576,7 +575,6 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/serialver/" >> $@
 	$(ECHO) "sun/tools/tree/" >> $@
 	$(ECHO) "sun/tools/util/" >> $@
-	$(ECHO) "sun/security/tools/jarsigner/JarBASE64Encoder.class" >> $@
 	$(ECHO) "sun/security/tools/jarsigner/Main.class" >> $@
 	$(ECHO) "sun/security/tools/jarsigner/JarSignerParameters.class" >> $@
 	$(ECHO) "sun/security/tools/jarsigner/Resources.class" >> $@
