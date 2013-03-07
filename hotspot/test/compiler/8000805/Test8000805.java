@@ -26,7 +26,7 @@
  * @bug 8000805
  * @summary JMM issue: short loads are non-atomic
  *
- * @run main/othervm -server -XX:-TieredCompilation -Xcomp -XX:+PrintCompilation -XX:CompileOnly=Test8000805.loadS2LmaskFF,Test8000805.loadS2Lmask16,Test8000805.loadS2Lmask13,Test8000805.loadUS_signExt,Test8000805.loadB2L_mask8 Test8000805
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xcomp -XX:+PrintCompilation -XX:CompileOnly=Test8000805.loadS2LmaskFF,Test8000805.loadS2Lmask16,Test8000805.loadS2Lmask13,Test8000805.loadUS_signExt,Test8000805.loadB2L_mask8 Test8000805
  */
 
 public class Test8000805 {
