@@ -1813,6 +1813,13 @@ void Arguments::check_deprecated_gcs() {
   }
 }
 
+void Arguments::check_deprecated_gc_flags() {
+  if (FLAG_IS_CMDLINE(MaxGCMinorPauseMillis)) {
+    warning("Using MaxGCMinorPauseMillis as minor pause goal is deprecated"
+            "and will likely be removed in future release");
+  }
+}
+
 // Check stack pages settings
 bool Arguments::check_stack_pages()
 {
@@ -3292,6 +3299,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     set_g1_gc_flags();
   }
   check_deprecated_gcs();
+  check_deprecated_gc_flags();
 #else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
