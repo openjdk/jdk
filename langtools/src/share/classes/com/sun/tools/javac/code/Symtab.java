@@ -148,6 +148,7 @@ public class Symtab {
     public final Type listType;
     public final Type collectionsType;
     public final Type comparableType;
+    public final Type comparatorType;
     public final Type arraysType;
     public final Type iterableType;
     public final Type iteratorType;
@@ -502,6 +503,7 @@ public class Symtab {
         listType = enterClass("java.util.List");
         collectionsType = enterClass("java.util.Collections");
         comparableType = enterClass("java.lang.Comparable");
+        comparatorType = enterClass("java.util.Comparator");
         arraysType = enterClass("java.util.Arrays");
         iterableType = target.hasIterable()
             ? enterClass("java.lang.Iterable")

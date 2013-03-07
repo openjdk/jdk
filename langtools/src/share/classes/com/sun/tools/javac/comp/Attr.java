@@ -4016,7 +4016,7 @@ public class Attr extends JCTree.Visitor {
                 attribClassBody(env, c);
 
                 chk.checkDeprecatedAnnotation(env.tree.pos(), c);
-                chk.checkClassOverrideEqualsAndHash(env.tree.pos(), c);
+                chk.checkClassOverrideEqualsAndHashIfNeeded(env.tree.pos(), c);
             } finally {
                 env.info.returnResult = prevReturnRes;
                 log.useSource(prev);
