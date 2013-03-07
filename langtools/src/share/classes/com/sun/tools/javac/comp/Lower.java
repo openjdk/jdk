@@ -3158,38 +3158,59 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitAssignop(final JCAssignOp tree) {
+        JCTree lhsAccess = access(TreeInfo.skipParens(tree.lhs));
         final boolean boxingReq = !tree.lhs.type.isPrimitive() &&
             tree.operator.type.getReturnType().isPrimitive();
 
-        // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
-        // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
-        // (but without recomputing x)
-        JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
-                public JCTree build(final JCTree lhs) {
-                    JCTree.Tag newTag = tree.getTag().noAssignOp();
-                    // Erasure (TransTypes) can change the type of
-                    // tree.lhs.  However, we can still get the
-                    // unerased type of tree.lhs as it is stored
-                    // in tree.type in Attr.
-                    Symbol newOperator = rs.resolveBinaryOperator(tree.pos(),
-                                                                  newTag,
-                                                                  attrEnv,
-                                                                  tree.type,
-                                                                  tree.rhs.type);
-                    JCExpression expr = (JCExpression)lhs;
-                    if (expr.type != tree.type)
-                        expr = make.TypeCast(tree.type, expr);
-                    JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
-                    opResult.operator = newOperator;
-                    opResult.type = newOperator.type.getReturnType();
-                    JCExpression newRhs = boxingReq ?
-                            make.TypeCast(types.unboxedType(tree.type),
-                                                      opResult) :
+        if (boxingReq || lhsAccess.hasTag(APPLY)) {
+            // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
+            // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
+            // (but without recomputing x)
+            JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
+                    public JCTree build(final JCTree lhs) {
+                        JCTree.Tag newTag = tree.getTag().noAssignOp();
+                        // Erasure (TransTypes) can change the type of
+                        // tree.lhs.  However, we can still get the
+                        // unerased type of tree.lhs as it is stored
+                        // in tree.type in Attr.
+                        Symbol newOperator = rs.resolveBinaryOperator(tree.pos(),
+                                                                      newTag,
+                                                                      attrEnv,
+                                                                      tree.type,
+                                                                      tree.rhs.type);
+                        JCExpression expr = (JCExpression)lhs;
+                        if (expr.type != tree.type)
+                            expr = make.TypeCast(tree.type, expr);
+                        JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
+                        opResult.operator = newOperator;
+                        opResult.type = newOperator.type.getReturnType();
+                        JCExpression newRhs = boxingReq ?
+                            make.TypeCast(types.unboxedType(tree.type), opResult) :
                             opResult;
-                    return make.Assign((JCExpression)lhs, newRhs).setType(tree.type);
-                }
-            });
-        result = translate(newTree);
+                        return make.Assign((JCExpression)lhs, newRhs).setType(tree.type);
+                    }
+                });
+            result = translate(newTree);
+            return;
+        }
+        tree.lhs = translate(tree.lhs, tree);
+        tree.rhs = translate(tree.rhs, tree.operator.type.getParameterTypes().tail.head);
+
+        // If translated left hand side is an Apply, we are
+        // seeing an access method invocation. In this case, append
+        // right hand side as last argument of the access method.
+        if (tree.lhs.hasTag(APPLY)) {
+            JCMethodInvocation app = (JCMethodInvocation)tree.lhs;
+            // if operation is a += on strings,
+            // make sure to convert argument to string
+            JCExpression rhs = (((OperatorSymbol)tree.operator).opcode == string_add)
+              ? makeString(tree.rhs)
+              : tree.rhs;
+            app.args = List.of(rhs).prependList(app.args);
+            result = app;
+        } else {
+            result = tree;
+        }
     }
 
     /** Lower a tree of the form e++ or e-- where e is an object type */
