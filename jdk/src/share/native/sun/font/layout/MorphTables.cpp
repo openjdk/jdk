@@ -44,61 +44,61 @@
 
 U_NAMESPACE_BEGIN
 
-void MorphTableHeader::process(LEGlyphStorage &glyphStorage) const
+void MorphTableHeader::process(const LETableReference &base, LEGlyphStorage &glyphStorage, LEErrorCode &success) const
 {
-    const ChainHeader *chainHeader = chains;
-    le_uint32 chainCount = SWAPL(this->nChains);
+  le_uint32 chainCount = SWAPL(this->nChains);
+  LEReferenceTo<ChainHeader> chainHeader(base, success, chains); // moving header
+    LEReferenceToArrayOf<ChainHeader> chainHeaderArray(base, success, chains, chainCount);
     le_uint32 chain;
 
-    for (chain = 0; chain < chainCount; chain += 1) {
+    for (chain = 0; LE_SUCCESS(success) && (chain < chainCount); chain += 1) {
         FeatureFlags defaultFlags = SWAPL(chainHeader->defaultFlags);
         le_uint32 chainLength = SWAPL(chainHeader->chainLength);
         le_int16 nFeatureEntries = SWAPW(chainHeader->nFeatureEntries);
         le_int16 nSubtables = SWAPW(chainHeader->nSubtables);
-        const MorphSubtableHeader *subtableHeader =
-            (const MorphSubtableHeader *)&chainHeader->featureTable[nFeatureEntries];
+        LEReferenceTo<MorphSubtableHeader> subtableHeader =
+          LEReferenceTo<MorphSubtableHeader>(chainHeader,success, &(chainHeader->featureTable[nFeatureEntries]));
         le_int16 subtable;
 
-        for (subtable = 0; subtable < nSubtables; subtable += 1) {
+        for (subtable = 0; LE_SUCCESS(success) && (subtable < nSubtables); subtable += 1) {
             le_int16 length = SWAPW(subtableHeader->length);
             SubtableCoverage coverage = SWAPW(subtableHeader->coverage);
             FeatureFlags subtableFeatures = SWAPL(subtableHeader->subtableFeatures);
 
             // should check coverage more carefully...
-            if ((coverage & scfVertical) == 0 && (subtableFeatures & defaultFlags) != 0) {
-                subtableHeader->process(glyphStorage);
+            if ((coverage & scfVertical) == 0 && (subtableFeatures & defaultFlags) != 0  && LE_SUCCESS(success)) {
+              subtableHeader->process(subtableHeader, glyphStorage, success);
             }
 
-            subtableHeader = (const MorphSubtableHeader *) ((char *)subtableHeader + length);
+            subtableHeader.addOffset(length, success);
         }
-
-        chainHeader = (const ChainHeader *)((char *)chainHeader + chainLength);
+        chainHeader.addOffset(chainLength, success);
     }
 }
 
-void MorphSubtableHeader::process(LEGlyphStorage &glyphStorage) const
+void MorphSubtableHeader::process(const LEReferenceTo<MorphSubtableHeader> &base, LEGlyphStorage &glyphStorage, LEErrorCode &success) const
 {
     SubtableProcessor *processor = NULL;
 
     switch (SWAPW(coverage) & scfTypeMask)
     {
     case mstIndicRearrangement:
-        processor = new IndicRearrangementProcessor(this);
+      processor = new IndicRearrangementProcessor(base, success);
         break;
 
     case mstContextualGlyphSubstitution:
-        processor = new ContextualGlyphSubstitutionProcessor(this);
+      processor = new ContextualGlyphSubstitutionProcessor(base, success);
         break;
 
     case mstLigatureSubstitution:
-        processor = new LigatureSubstitutionProcessor(this);
+      processor = new LigatureSubstitutionProcessor(base, success);
         break;
 
     case mstReservedUnused:
         break;
 
     case mstNonContextualGlyphSubstitution:
-        processor = NonContextualGlyphSubstitutionProcessor::createInstance(this);
+      processor = NonContextualGlyphSubstitutionProcessor::createInstance(base, success);
         break;
 
     /*
@@ -112,8 +112,10 @@ void MorphSubtableHeader::process(LEGlyphStorage &glyphStorage) const
     }
 
     if (processor != NULL) {
-        processor->process(glyphStorage);
-        delete processor;
+      if(LE_SUCCESS(success)) {
+        processor->process(glyphStorage, success);
+      }
+      delete processor;
     }
 }
 

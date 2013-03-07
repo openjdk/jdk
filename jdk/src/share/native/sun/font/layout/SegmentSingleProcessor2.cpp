@@ -46,19 +46,19 @@ SegmentSingleProcessor2::SegmentSingleProcessor2()
 {
 }
 
-SegmentSingleProcessor2::SegmentSingleProcessor2(const MorphSubtableHeader2 *morphSubtableHeader)
-  : NonContextualGlyphSubstitutionProcessor2(morphSubtableHeader)
+SegmentSingleProcessor2::SegmentSingleProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success)
+  : NonContextualGlyphSubstitutionProcessor2(morphSubtableHeader, success)
 {
-    const NonContextualGlyphSubstitutionHeader2 *header = (const NonContextualGlyphSubstitutionHeader2 *) morphSubtableHeader;
+  const LEReferenceTo<NonContextualGlyphSubstitutionHeader2> header(morphSubtableHeader, success);
 
-    segmentSingleLookupTable = (const SegmentSingleLookupTable *) &header->table;
+  segmentSingleLookupTable = LEReferenceTo<SegmentSingleLookupTable>(morphSubtableHeader, success, &header->table);
 }
 
 SegmentSingleProcessor2::~SegmentSingleProcessor2()
 {
 }
 
-void SegmentSingleProcessor2::process(LEGlyphStorage &glyphStorage)
+void SegmentSingleProcessor2::process(LEGlyphStorage &glyphStorage, LEErrorCode &success)
 {
     const LookupSegment *segments = segmentSingleLookupTable->segments;
     le_int32 glyphCount = glyphStorage.getGlyphCount();
@@ -66,9 +66,9 @@ void SegmentSingleProcessor2::process(LEGlyphStorage &glyphStorage)
 
     for (glyph = 0; glyph < glyphCount; glyph += 1) {
         LEGlyphID thisGlyph = glyphStorage[glyph];
-        const LookupSegment *lookupSegment = segmentSingleLookupTable->lookupSegment(segments, thisGlyph);
+        const LookupSegment *lookupSegment = segmentSingleLookupTable->lookupSegment(segmentSingleLookupTable, segments, thisGlyph, success);
 
-        if (lookupSegment != NULL) {
+        if (lookupSegment != NULL && LE_SUCCESS(success)) {
             TTGlyphID   newGlyph  = (TTGlyphID) LE_GET_GLYPH(thisGlyph) + SWAPW(lookupSegment->value);
 
             glyphStorage[glyph] = LE_SET_GLYPH(thisGlyph, newGlyph);

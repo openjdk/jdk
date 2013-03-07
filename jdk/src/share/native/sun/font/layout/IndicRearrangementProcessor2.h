@@ -52,13 +52,13 @@ class IndicRearrangementProcessor2 : public StateTableProcessor2
 public:
     virtual void beginStateTable();
 
-    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index);
+    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index, LEErrorCode &success);
 
     virtual void endStateTable();
 
     void doRearrangementAction(LEGlyphStorage &glyphStorage, IndicRearrangementVerb verb) const;
 
-    IndicRearrangementProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    IndicRearrangementProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
     virtual ~IndicRearrangementProcessor2();
 
     /**
@@ -79,8 +79,8 @@ protected:
     le_int32 firstGlyph;
     le_int32 lastGlyph;
 
-    const IndicRearrangementStateEntry2 *entryTable;
-    const IndicRearrangementSubtableHeader2 *indicRearrangementSubtableHeader;
+    LEReferenceToArrayOf<IndicRearrangementStateEntry2> entryTable;
+    LEReferenceTo<IndicRearrangementSubtableHeader2> indicRearrangementSubtableHeader;
 
 };
 

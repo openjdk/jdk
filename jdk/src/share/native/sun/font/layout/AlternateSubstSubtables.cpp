@@ -39,19 +39,20 @@
 
 U_NAMESPACE_BEGIN
 
-le_uint32 AlternateSubstitutionSubtable::process(GlyphIterator *glyphIterator, const LEGlyphFilter *filter) const
+le_uint32 AlternateSubstitutionSubtable::process(const LEReferenceTo<AlternateSubstitutionSubtable> &base,
+                                       GlyphIterator *glyphIterator, LEErrorCode &success, const LEGlyphFilter *filter) const
 {
     // NOTE: For now, we'll just pick the first alternative...
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
-    le_int32 coverageIndex = getGlyphCoverage(glyph);
+    le_int32 coverageIndex = getGlyphCoverage(base, glyph, success);
 
-    if (coverageIndex >= 0) {
+    if (coverageIndex >= 0 && LE_SUCCESS(success)) {
         le_uint16 altSetCount = SWAPW(alternateSetCount);
 
         if (coverageIndex < altSetCount) {
             Offset alternateSetTableOffset = SWAPW(alternateSetTableOffsetArray[coverageIndex]);
-            const AlternateSetTable *alternateSetTable =
-                (const AlternateSetTable *) ((char *) this + alternateSetTableOffset);
+            const LEReferenceTo<AlternateSetTable> alternateSetTable(base, success,
+                                  (const AlternateSetTable *) ((char *) this + alternateSetTableOffset));
             TTGlyphID alternate = SWAPW(alternateSetTable->alternateArray[0]);
 
             if (filter == NULL || filter->accept(LE_SET_GLYPH(glyph, alternate))) {

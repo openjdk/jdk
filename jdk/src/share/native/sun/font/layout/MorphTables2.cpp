@@ -42,27 +42,40 @@
 
 U_NAMESPACE_BEGIN
 
-void MorphTableHeader2::process(LEGlyphStorage &glyphStorage, le_int32 typoFlags) const
+void MorphTableHeader2::process(const LEReferenceTo<MorphTableHeader2> &base, LEGlyphStorage &glyphStorage,
+                                le_int32 typoFlags, LEErrorCode &success) const
 {
-    const ChainHeader2 *chainHeader = chains;
-    le_uint32 chainCount = SWAPL(this->nChains);
-    le_uint32 chain;
+  if(LE_FAILURE(success)) return;
 
-    for (chain = 0; chain < chainCount; chain++) {
+  le_uint32 chainCount = SWAPL(this->nChains);
+  LEReferenceTo<ChainHeader2> chainHeader(base, success, &chains[0]);
+  /* chainHeader and subtableHeader are implemented as a moving pointer rather than an array dereference
+   * to (slightly) reduce code churn. However, must be careful to preincrement them the 2nd time through.
+   * We don't want to increment them at the end of the loop, as that would attempt to dereference
+   * out of range memory.
+   */
+  le_uint32 chain;
+
+  for (chain = 0; LE_SUCCESS(success) && (chain < chainCount); chain++) {
+        if (chain>0) {
+          le_uint32 chainLength = SWAPL(chainHeader->chainLength);
+          chainHeader.addOffset(chainLength, success); // Don't increment the first time
+        }
         FeatureFlags flag = SWAPL(chainHeader->defaultFlags);
-        le_uint32 chainLength = SWAPL(chainHeader->chainLength);
         le_uint32 nFeatureEntries = SWAPL(chainHeader->nFeatureEntries);
         le_uint32 nSubtables = SWAPL(chainHeader->nSubtables);
-        const MorphSubtableHeader2 *subtableHeader =
-            (const MorphSubtableHeader2 *)&chainHeader->featureTable[nFeatureEntries];
+        LEReferenceTo<MorphSubtableHeader2> subtableHeader(chainHeader,
+              success, (const MorphSubtableHeader2 *)&chainHeader->featureTable[nFeatureEntries]);
         le_uint32 subtable;
+        if(LE_FAILURE(success)) break; // malformed table
 
         if (typoFlags != 0) {
            le_uint32 featureEntry;
-
+           LEReferenceToArrayOf<FeatureTableEntry> featureTableRef(chainHeader, success, &chainHeader->featureTable[0], nFeatureEntries);
+           if(LE_FAILURE(success)) break;
             // Feature subtables
             for (featureEntry = 0; featureEntry < nFeatureEntries; featureEntry++) {
-                FeatureTableEntry featureTableEntry = chains->featureTable[featureEntry];
+                const FeatureTableEntry &featureTableEntry = featureTableRef(featureEntry, success);
                 le_int16 featureType = SWAPW(featureTableEntry.featureType);
                 le_int16 featureSetting = SWAPW(featureTableEntry.featureSetting);
                 le_uint32 enableFlags = SWAPL(featureTableEntry.enableFlags);
@@ -172,57 +185,63 @@ void MorphTableHeader2::process(LEGlyphStorage &glyphStorage, le_int32 typoFlags
             }
         }
 
-        for (subtable = 0; subtable < nSubtables; subtable++) {
-            le_uint32 length = SWAPL(subtableHeader->length);
+        for (subtable = 0;  LE_SUCCESS(success) && subtable < nSubtables; subtable++) {
+            if(subtable>0)  {
+              le_uint32 length = SWAPL(subtableHeader->length);
+              subtableHeader.addOffset(length, success); // Don't addOffset for the last entry.
+            }
             le_uint32 coverage = SWAPL(subtableHeader->coverage);
             FeatureFlags subtableFeatures = SWAPL(subtableHeader->subtableFeatures);
             // should check coverage more carefully...
             if (((coverage & scfIgnoreVt2) || !(coverage & scfVertical2)) && (subtableFeatures & flag) != 0) {
-                subtableHeader->process(glyphStorage);
+              subtableHeader->process(subtableHeader, glyphStorage, success);
             }
-            subtableHeader = (const MorphSubtableHeader2 *) ((char *)subtableHeader + length);
         }
-        chainHeader = (const ChainHeader2 *)((char *)chainHeader + chainLength);
     }
 }
 
-void MorphSubtableHeader2::process(LEGlyphStorage &glyphStorage) const
+void MorphSubtableHeader2::process(const LEReferenceTo<MorphSubtableHeader2> &base, LEGlyphStorage &glyphStorage, LEErrorCode &success) const
 {
     SubtableProcessor2 *processor = NULL;
 
     switch (SWAPL(coverage) & scfTypeMask2)
     {
     case mstIndicRearrangement:
-        processor = new IndicRearrangementProcessor2(this);
+        processor = new IndicRearrangementProcessor2(base, success);
         break;
 
     case mstContextualGlyphSubstitution:
-        processor = new ContextualGlyphSubstitutionProcessor2(this);
+        processor = new ContextualGlyphSubstitutionProcessor2(base, success);
         break;
 
     case mstLigatureSubstitution:
-        processor = new LigatureSubstitutionProcessor2(this);
+        processor = new LigatureSubstitutionProcessor2(base, success);
         break;
 
     case mstReservedUnused:
         break;
 
     case mstNonContextualGlyphSubstitution:
-        processor = NonContextualGlyphSubstitutionProcessor2::createInstance(this);
+        processor = NonContextualGlyphSubstitutionProcessor2::createInstance(base, success);
         break;
 
 
     case mstContextualGlyphInsertion:
-        processor = new ContextualGlyphInsertionProcessor2(this);
+        processor = new ContextualGlyphInsertionProcessor2(base, success);
         break;
 
     default:
-        break;
+        return;
+        break; /*NOTREACHED*/
     }
 
     if (processor != NULL) {
-        processor->process(glyphStorage);
+      processor->process(glyphStorage, success);
         delete processor;
+    } else {
+      if(LE_SUCCESS(success)) {
+        success = LE_MEMORY_ALLOCATION_ERROR; // because ptr is null and we didn't break out.
+      }
     }
 }
 

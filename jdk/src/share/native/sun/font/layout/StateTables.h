@@ -111,6 +111,7 @@ struct ClassTable
     le_uint16 nGlyphs;
     ClassCode classArray[ANY_NUMBER];
 };
+LE_VAR_ARRAY(ClassTable, classArray)
 
 enum StateNumber
 {

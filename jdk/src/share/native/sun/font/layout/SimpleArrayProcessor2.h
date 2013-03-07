@@ -50,9 +50,9 @@ class LEGlyphStorage;
 class SimpleArrayProcessor2 : public NonContextualGlyphSubstitutionProcessor2
 {
 public:
-    virtual void process(LEGlyphStorage &glyphStorage);
+    virtual void process(LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
-    SimpleArrayProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    SimpleArrayProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
 
     virtual ~SimpleArrayProcessor2();
 
@@ -74,7 +74,8 @@ private:
     SimpleArrayProcessor2();
 
 protected:
-    const SimpleArrayLookupTable *simpleArrayLookupTable;
+    LEReferenceTo<SimpleArrayLookupTable> simpleArrayLookupTable;
+    LEReferenceToArrayOf<LookupValue> valueArray;
 
 };
 

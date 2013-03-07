@@ -46,26 +46,27 @@ SingleTableProcessor2::SingleTableProcessor2()
 {
 }
 
-SingleTableProcessor2::SingleTableProcessor2(const MorphSubtableHeader2 *moprhSubtableHeader)
-  : NonContextualGlyphSubstitutionProcessor2(moprhSubtableHeader)
+SingleTableProcessor2::SingleTableProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success)
+  : NonContextualGlyphSubstitutionProcessor2(morphSubtableHeader, success)
 {
-    const NonContextualGlyphSubstitutionHeader2 *header = (const NonContextualGlyphSubstitutionHeader2 *) moprhSubtableHeader;
+  const LEReferenceTo<NonContextualGlyphSubstitutionHeader2> header(morphSubtableHeader, success);
 
-    singleTableLookupTable = (const SingleTableLookupTable *) &header->table;
+    singleTableLookupTable = LEReferenceTo<SingleTableLookupTable>(morphSubtableHeader, success, &header->table);
 }
 
 SingleTableProcessor2::~SingleTableProcessor2()
 {
 }
 
-void SingleTableProcessor2::process(LEGlyphStorage &glyphStorage)
+void SingleTableProcessor2::process(LEGlyphStorage &glyphStorage, LEErrorCode &success)
 {
+  if(LE_FAILURE(success)) return;
     const LookupSingle *entries = singleTableLookupTable->entries;
     le_int32 glyph;
     le_int32 glyphCount = glyphStorage.getGlyphCount();
 
     for (glyph = 0; glyph < glyphCount; glyph += 1) {
-        const LookupSingle *lookupSingle = singleTableLookupTable->lookupSingle(entries, glyphStorage[glyph]);
+      const LookupSingle *lookupSingle = singleTableLookupTable->lookupSingle(singleTableLookupTable, entries, glyphStorage[glyph], success);
 
         if (lookupSingle != NULL) {
             glyphStorage[glyph] = SWAPW(lookupSingle->value);

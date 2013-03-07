@@ -51,13 +51,17 @@ struct AlternateSetTable
     TTGlyphID alternateArray[ANY_NUMBER];
 };
 
+LE_VAR_ARRAY(AlternateSetTable, alternateArray)
+
 struct AlternateSubstitutionSubtable : GlyphSubstitutionSubtable
 {
     le_uint16 alternateSetCount;
     Offset    alternateSetTableOffsetArray[ANY_NUMBER];
 
-    le_uint32 process(GlyphIterator *glyphIterator, const LEGlyphFilter *filter = NULL) const;
+    le_uint32 process(const LEReferenceTo<AlternateSubstitutionSubtable> &base, GlyphIterator *glyphIterator, LEErrorCode &success, const LEGlyphFilter *filter = NULL) const;
 };
+
+LE_VAR_ARRAY(AlternateSubstitutionSubtable, alternateSetTableOffsetArray)
 
 U_NAMESPACE_END
 #endif

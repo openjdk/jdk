@@ -217,7 +217,7 @@ le_uint32 ContextualSubstitutionFormat1Subtable::process(const LookupProcessor *
     }
 
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
-    le_int32 coverageIndex = getGlyphCoverage(glyph);
+    le_int32 coverageIndex = getGlyphCoverage(lookupProcessor->getReference(), glyph, success);
 
     if (coverageIndex >= 0) {
         le_uint16 srSetCount = SWAPW(subRuleSetCount);
@@ -266,7 +266,7 @@ le_uint32 ContextualSubstitutionFormat2Subtable::process(const LookupProcessor *
     }
 
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
-    le_int32 coverageIndex = getGlyphCoverage(glyph);
+    le_int32 coverageIndex = getGlyphCoverage(lookupProcessor->getReference(), glyph, success);
 
     if (coverageIndex >= 0) {
         const ClassDefinitionTable *classDefinitionTable =
@@ -394,7 +394,7 @@ le_uint32 ChainingContextualSubstitutionFormat1Subtable::process(const LookupPro
     }
 
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
-    le_int32 coverageIndex = getGlyphCoverage(glyph);
+    le_int32 coverageIndex = getGlyphCoverage(lookupProcessor->getReference(), glyph, success);
 
     if (coverageIndex >= 0) {
         le_uint16 srSetCount = SWAPW(chainSubRuleSetCount);
@@ -465,7 +465,7 @@ le_uint32 ChainingContextualSubstitutionFormat2Subtable::process(const LookupPro
     }
 
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
-    le_int32 coverageIndex = getGlyphCoverage(glyph);
+    le_int32 coverageIndex = getGlyphCoverage(lookupProcessor->getReference(), glyph, success);
 
     if (coverageIndex >= 0) {
         const ClassDefinitionTable *backtrackClassDefinitionTable =

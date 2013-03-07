@@ -56,7 +56,7 @@ public:
 
     virtual void endStateTable();
 
-    ContextualGlyphSubstitutionProcessor(const MorphSubtableHeader *morphSubtableHeader);
+    ContextualGlyphSubstitutionProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success);
     virtual ~ContextualGlyphSubstitutionProcessor();
 
     /**
@@ -78,11 +78,11 @@ private:
 
 protected:
     ByteOffset substitutionTableOffset;
-    const ContextualGlyphSubstitutionStateEntry *entryTable;
-
+    LEReferenceToArrayOf<ContextualGlyphSubstitutionStateEntry> entryTable;
+    LEReferenceToArrayOf<le_int16> int16Table;
     le_int32 markGlyph;
 
-    const ContextualGlyphSubstitutionHeader *contextualGlyphSubstitutionHeader;
+    LEReferenceTo<ContextualGlyphSubstitutionHeader> contextualGlyphSubstitutionHeader;
 
 };
 

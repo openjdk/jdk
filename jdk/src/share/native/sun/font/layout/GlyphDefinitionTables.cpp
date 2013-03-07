@@ -36,24 +36,36 @@
 
 U_NAMESPACE_BEGIN
 
-const GlyphClassDefinitionTable *GlyphDefinitionTableHeader::getGlyphClassDefinitionTable() const
+const LEReferenceTo<GlyphClassDefinitionTable>
+GlyphDefinitionTableHeader::getGlyphClassDefinitionTable(const LEReferenceTo<GlyphDefinitionTableHeader>& base,
+                                                         LEErrorCode &success) const
 {
-    return (const GlyphClassDefinitionTable *) ((char *) this + SWAPW(glyphClassDefOffset));
+  if(LE_FAILURE(success)) return LEReferenceTo<GlyphClassDefinitionTable>();
+  return LEReferenceTo<GlyphClassDefinitionTable>(base, success, SWAPW(glyphClassDefOffset));
 }
 
-const AttachmentListTable *GlyphDefinitionTableHeader::getAttachmentListTable() const
+const LEReferenceTo<AttachmentListTable>
+GlyphDefinitionTableHeader::getAttachmentListTable(const LEReferenceTo<GlyphDefinitionTableHeader>& base,
+                                                         LEErrorCode &success) const
 {
-    return (const AttachmentListTable *) ((char *) this + SWAPW(attachListOffset));
+    if(LE_FAILURE(success)) return LEReferenceTo<AttachmentListTable>();
+    return LEReferenceTo<AttachmentListTable>(base, success, SWAPW(attachListOffset));
 }
 
-const LigatureCaretListTable *GlyphDefinitionTableHeader::getLigatureCaretListTable() const
+const LEReferenceTo<LigatureCaretListTable>
+GlyphDefinitionTableHeader::getLigatureCaretListTable(const LEReferenceTo<GlyphDefinitionTableHeader>& base,
+                                                         LEErrorCode &success) const
 {
-    return (const LigatureCaretListTable *) ((char *) this + SWAPW(ligCaretListOffset));
+    if(LE_FAILURE(success)) return LEReferenceTo<LigatureCaretListTable>();
+    return LEReferenceTo<LigatureCaretListTable>(base, success, SWAPW(ligCaretListOffset));
 }
 
-const MarkAttachClassDefinitionTable *GlyphDefinitionTableHeader::getMarkAttachClassDefinitionTable() const
+const LEReferenceTo<MarkAttachClassDefinitionTable>
+GlyphDefinitionTableHeader::getMarkAttachClassDefinitionTable(const LEReferenceTo<GlyphDefinitionTableHeader>& base,
+                                                         LEErrorCode &success) const
 {
-    return (const MarkAttachClassDefinitionTable *) ((char *) this + SWAPW(MarkAttachClassDefOffset));
+    if(LE_FAILURE(success)) return LEReferenceTo<MarkAttachClassDefinitionTable>();
+    return LEReferenceTo<MarkAttachClassDefinitionTable>(base, success, SWAPW(MarkAttachClassDefOffset));
 }
 
 U_NAMESPACE_END

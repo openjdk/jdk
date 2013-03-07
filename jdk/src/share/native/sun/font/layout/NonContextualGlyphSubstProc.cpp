@@ -47,8 +47,8 @@ NonContextualGlyphSubstitutionProcessor::NonContextualGlyphSubstitutionProcessor
 {
 }
 
-NonContextualGlyphSubstitutionProcessor::NonContextualGlyphSubstitutionProcessor(const MorphSubtableHeader *morphSubtableHeader)
-    : SubtableProcessor(morphSubtableHeader)
+NonContextualGlyphSubstitutionProcessor::NonContextualGlyphSubstitutionProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success)
+  : SubtableProcessor(morphSubtableHeader, success)
 {
 }
 
@@ -56,26 +56,27 @@ NonContextualGlyphSubstitutionProcessor::~NonContextualGlyphSubstitutionProcesso
 {
 }
 
-SubtableProcessor *NonContextualGlyphSubstitutionProcessor::createInstance(const MorphSubtableHeader *morphSubtableHeader)
+SubtableProcessor *NonContextualGlyphSubstitutionProcessor::createInstance(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success)
 {
-    const NonContextualGlyphSubstitutionHeader *header = (const NonContextualGlyphSubstitutionHeader *) morphSubtableHeader;
+  LEReferenceTo<NonContextualGlyphSubstitutionHeader> header(morphSubtableHeader, success);
 
-    switch (SWAPW(header->table.format))
-    {
+  if(LE_FAILURE(success)) return NULL;
+
+  switch (SWAPW(header->table.format)) {
     case ltfSimpleArray:
-        return new SimpleArrayProcessor(morphSubtableHeader);
+      return new SimpleArrayProcessor(morphSubtableHeader, success);
 
     case ltfSegmentSingle:
-        return new SegmentSingleProcessor(morphSubtableHeader);
+      return new SegmentSingleProcessor(morphSubtableHeader, success);
 
     case ltfSegmentArray:
-        return new SegmentArrayProcessor(morphSubtableHeader);
+      return new SegmentArrayProcessor(morphSubtableHeader, success);
 
     case ltfSingleTable:
-        return new SingleTableProcessor(morphSubtableHeader);
+      return new SingleTableProcessor(morphSubtableHeader, success);
 
     case ltfTrimmedArray:
-        return new TrimmedArrayProcessor(morphSubtableHeader);
+      return new TrimmedArrayProcessor(morphSubtableHeader, success);
 
     default:
         return NULL;

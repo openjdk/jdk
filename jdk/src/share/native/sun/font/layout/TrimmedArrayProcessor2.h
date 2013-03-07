@@ -50,9 +50,9 @@ class LEGlyphStorage;
 class TrimmedArrayProcessor2 : public NonContextualGlyphSubstitutionProcessor2
 {
 public:
-    virtual void process(LEGlyphStorage &glyphStorage);
+    virtual void process(LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
-    TrimmedArrayProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    TrimmedArrayProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
 
     virtual ~TrimmedArrayProcessor2();
 
@@ -76,8 +76,8 @@ private:
 protected:
     TTGlyphID firstGlyph;
     TTGlyphID lastGlyph;
-    const TrimmedArrayLookupTable *trimmedArrayLookupTable;
-
+    LEReferenceTo<TrimmedArrayLookupTable> trimmedArrayLookupTable;
+    LEReferenceToArrayOf<LookupValue> valueArray;
 };
 
 U_NAMESPACE_END

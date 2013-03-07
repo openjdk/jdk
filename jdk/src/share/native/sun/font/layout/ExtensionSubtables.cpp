@@ -47,6 +47,8 @@ U_NAMESPACE_BEGIN
 le_uint32 ExtensionSubtable::process(const LookupProcessor *lookupProcessor, le_uint16 lookupType,
                                       GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode& success) const
 {
+    const LEReferenceTo<ExtensionSubtable> thisRef(lookupProcessor->getReference(), success); // create a reference to this
+
     if (LE_FAILURE(success)) {
         return 0;
     }
@@ -55,9 +57,11 @@ le_uint32 ExtensionSubtable::process(const LookupProcessor *lookupProcessor, le_
 
     if (elt != lookupType) {
         le_uint32 extOffset = READ_LONG(extensionOffset);
-        LookupSubtable *subtable = (LookupSubtable *) ((char *) this + extOffset);
+        LEReferenceTo<LookupSubtable> subtable(thisRef, success, extOffset);
 
-        return lookupProcessor->applySubtable(subtable, elt, glyphIterator, fontInstance, success);
+        if(LE_SUCCESS(success)) {
+          return lookupProcessor->applySubtable(subtable, elt, glyphIterator, fontInstance, success);
+        }
     }
 
     return 0;

@@ -41,16 +41,16 @@
 
 U_NAMESPACE_BEGIN
 
-void GlyphPositioningTableHeader::process(LEGlyphStorage &glyphStorage, GlyphPositionAdjustments *glyphPositionAdjustments, le_bool rightToLeft,
+void GlyphPositioningTableHeader::process(const LEReferenceTo<GlyphPositioningTableHeader> &base, LEGlyphStorage &glyphStorage, GlyphPositionAdjustments *glyphPositionAdjustments, le_bool rightToLeft,
                                           LETag scriptTag, LETag languageTag,
-                                          const GlyphDefinitionTableHeader *glyphDefinitionTableHeader, LEErrorCode &success,
+                                          const LEReferenceTo<GlyphDefinitionTableHeader> &glyphDefinitionTableHeader, LEErrorCode &success,
                                           const LEFontInstance *fontInstance, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder) const
 {
     if (LE_FAILURE(success)) {
         return;
     }
 
-    GlyphPositioningLookupProcessor processor(this, scriptTag, languageTag, featureMap, featureMapCount, featureOrder, success);
+    GlyphPositioningLookupProcessor processor(base, scriptTag, languageTag, featureMap, featureMapCount, featureOrder, success);
     if (LE_FAILURE(success)) {
         return;
     }

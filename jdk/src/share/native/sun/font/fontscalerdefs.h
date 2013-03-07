@@ -120,20 +120,19 @@ typedef struct GlyphInfo {
 #define GPOS_TAG 0x47504F53 /* 'GPOS' */
 #define GDEF_TAG 0x47444546 /* 'GDEF' */
 #define MORT_TAG 0x6D6F7274 /* 'mort' */
+#define MORX_TAG 0x6D6F7278 /* 'morx' */
 #define KERN_TAG 0x6B65726E /* 'kern' */
 
+typedef struct TTLayoutTableCacheEntry {
+  const void* ptr;
+  int   len;
+} TTLayoutTableCacheEntry;
+
+#define LAYOUTCACHE_ENTRIES 6
+
 typedef struct TTLayoutTableCache {
-    void* gsub;
-    void* gpos;
-    void* gdef;
-    void* mort;
-    void* kern;
-    void* kernPairs;
-    int gsub_len;
-    int gpos_len;
-    int gdef_len;
-    int mort_len;
-    int kern_len;
+  TTLayoutTableCacheEntry entries[LAYOUTCACHE_ENTRIES];
+  void* kernPairs;
 } TTLayoutTableCache;
 
 #include "sunfontids.h"

@@ -49,13 +49,13 @@ class LEGlyphStorage;
 class NonContextualGlyphSubstitutionProcessor2 : public SubtableProcessor2
 {
 public:
-    virtual void process(LEGlyphStorage &glyphStorage) = 0;
+    virtual void process(LEGlyphStorage &glyphStorage, LEErrorCode &success) = 0;
 
-    static SubtableProcessor2 *createInstance(const MorphSubtableHeader2 *morphSubtableHeader);
+    static SubtableProcessor2 *createInstance(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
 
 protected:
     NonContextualGlyphSubstitutionProcessor2();
-    NonContextualGlyphSubstitutionProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    NonContextualGlyphSubstitutionProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
 
     virtual ~NonContextualGlyphSubstitutionProcessor2();
 

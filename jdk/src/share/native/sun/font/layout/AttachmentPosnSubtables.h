@@ -52,14 +52,14 @@ struct AttachmentPositioningSubtable : GlyphPositioningSubtable
     Offset    markArrayOffset;
     Offset    baseArrayOffset;
 
-    inline le_int32  getBaseCoverage(LEGlyphID baseGlyphId) const;
+    inline le_int32  getBaseCoverage(const LETableReference &base, LEGlyphID baseGlyphId, LEErrorCode &success) const;
 
     le_uint32 process(GlyphIterator *glyphIterator) const;
 };
 
-inline le_int32 AttachmentPositioningSubtable::getBaseCoverage(LEGlyphID baseGlyphID) const
+inline le_int32 AttachmentPositioningSubtable::getBaseCoverage(const LETableReference &base, LEGlyphID baseGlyphID, LEErrorCode &success) const
 {
-    return getGlyphCoverage(baseCoverageTableOffset, baseGlyphID);
+  return getGlyphCoverage(base, baseCoverageTableOffset, baseGlyphID, success);
 }
 
 U_NAMESPACE_END

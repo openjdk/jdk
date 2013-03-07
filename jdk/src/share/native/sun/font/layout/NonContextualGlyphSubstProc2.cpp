@@ -47,8 +47,9 @@ NonContextualGlyphSubstitutionProcessor2::NonContextualGlyphSubstitutionProcesso
 {
 }
 
-NonContextualGlyphSubstitutionProcessor2::NonContextualGlyphSubstitutionProcessor2(const MorphSubtableHeader2 *morphSubtableHeader)
-    : SubtableProcessor2(morphSubtableHeader)
+NonContextualGlyphSubstitutionProcessor2::NonContextualGlyphSubstitutionProcessor2(
+     const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success)
+  : SubtableProcessor2(morphSubtableHeader, success)
 {
 }
 
@@ -56,26 +57,28 @@ NonContextualGlyphSubstitutionProcessor2::~NonContextualGlyphSubstitutionProcess
 {
 }
 
-SubtableProcessor2 *NonContextualGlyphSubstitutionProcessor2::createInstance(const MorphSubtableHeader2 *morphSubtableHeader)
+SubtableProcessor2 *NonContextualGlyphSubstitutionProcessor2::createInstance(
+      const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success)
 {
-    const NonContextualGlyphSubstitutionHeader2 *header = (const NonContextualGlyphSubstitutionHeader2 *) morphSubtableHeader;
+    const LEReferenceTo<NonContextualGlyphSubstitutionHeader2> header(morphSubtableHeader, success);
+    if(LE_FAILURE(success)) return NULL;
 
     switch (SWAPW(header->table.format))
     {
     case ltfSimpleArray:
-        return new SimpleArrayProcessor2(morphSubtableHeader);
+      return new SimpleArrayProcessor2(morphSubtableHeader, success);
 
     case ltfSegmentSingle:
-        return new SegmentSingleProcessor2(morphSubtableHeader);
+      return new SegmentSingleProcessor2(morphSubtableHeader, success);
 
     case ltfSegmentArray:
-        return new SegmentArrayProcessor2(morphSubtableHeader);
+      return new SegmentArrayProcessor2(morphSubtableHeader, success);
 
     case ltfSingleTable:
-        return new SingleTableProcessor2(morphSubtableHeader);
+      return new SingleTableProcessor2(morphSubtableHeader, success);
 
     case ltfTrimmedArray:
-        return new TrimmedArrayProcessor2(morphSubtableHeader);
+      return new TrimmedArrayProcessor2(morphSubtableHeader, success);
 
     default:
         return NULL;

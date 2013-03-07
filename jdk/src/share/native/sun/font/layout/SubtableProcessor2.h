@@ -46,11 +46,11 @@ class LEGlyphStorage;
 
 class SubtableProcessor2 : public UMemory {
 public:
-    virtual void process(LEGlyphStorage &glyphStorage) = 0;
+    virtual void process(LEGlyphStorage &glyphStorage, LEErrorCode &success) = 0;
     virtual ~SubtableProcessor2();
 
 protected:
-    SubtableProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    SubtableProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
 
     SubtableProcessor2();
 
@@ -58,7 +58,7 @@ protected:
     SubtableCoverage2 coverage;
     FeatureFlags subtableFeatures;
 
-    const MorphSubtableHeader2 *subtableHeader;
+    const LEReferenceTo<MorphSubtableHeader2> subtableHeader;
 
 private:
 
