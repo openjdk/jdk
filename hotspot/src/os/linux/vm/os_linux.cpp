@@ -3461,7 +3461,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   assert(thread->is_VM_thread(), "Must be VMThread");
   // read current suspend action
   int action = osthread->sr.suspend_action();
-  if (action == SR_SUSPEND) {
+  if (action == os::Linux::SuspendResume::SR_SUSPEND) {
     suspend_save_context(osthread, siginfo, context);
 
     // Notify the suspend action is about to be completed. do_suspend()
@@ -3483,12 +3483,12 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
     do {
       sigsuspend(&suspend_set);
       // ignore all returns until we get a resume signal
-    } while (osthread->sr.suspend_action() != SR_CONTINUE);
+    } while (osthread->sr.suspend_action() != os::Linux::SuspendResume::SR_CONTINUE);
 
     resume_clear_context(osthread);
 
   } else {
-    assert(action == SR_CONTINUE, "unexpected sr action");
+    assert(action == os::Linux::SuspendResume::SR_CONTINUE, "unexpected sr action");
     // nothing special to do - just leave the handler
   }
 
@@ -3542,7 +3542,7 @@ static int SR_finalize() {
 // but this seems the normal response to library errors
 static bool do_suspend(OSThread* osthread) {
   // mark as suspended and send signal
-  osthread->sr.set_suspend_action(SR_SUSPEND);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_SUSPEND);
   int status = pthread_kill(osthread->pthread_id(), SR_signum);
   assert_status(status == 0, status, "pthread_kill");
 
@@ -3551,18 +3551,18 @@ static bool do_suspend(OSThread* osthread) {
     for (int i = 0; !osthread->sr.is_suspended(); i++) {
       os::yield_all(i);
     }
-    osthread->sr.set_suspend_action(SR_NONE);
+    osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
     return true;
   }
   else {
-    osthread->sr.set_suspend_action(SR_NONE);
+    osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
     return false;
   }
 }
 
 static void do_resume(OSThread* osthread) {
   assert(osthread->sr.is_suspended(), "thread should be suspended");
-  osthread->sr.set_suspend_action(SR_CONTINUE);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_CONTINUE);
 
   int status = pthread_kill(osthread->pthread_id(), SR_signum);
   assert_status(status == 0, status, "pthread_kill");
@@ -3572,7 +3572,7 @@ static void do_resume(OSThread* osthread) {
       os::yield_all(i);
     }
   }
-  osthread->sr.set_suspend_action(SR_NONE);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
