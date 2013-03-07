@@ -46,22 +46,24 @@ TrimmedArrayProcessor2::TrimmedArrayProcessor2()
 {
 }
 
-TrimmedArrayProcessor2::TrimmedArrayProcessor2(const MorphSubtableHeader2 *morphSubtableHeader)
-  : NonContextualGlyphSubstitutionProcessor2(morphSubtableHeader)
+TrimmedArrayProcessor2::TrimmedArrayProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success)
+  : NonContextualGlyphSubstitutionProcessor2(morphSubtableHeader, success)
 {
-    const NonContextualGlyphSubstitutionHeader2 *header = (const NonContextualGlyphSubstitutionHeader2 *) morphSubtableHeader;
+    const LEReferenceTo<NonContextualGlyphSubstitutionHeader2> header(morphSubtableHeader, success);
 
-    trimmedArrayLookupTable = (const TrimmedArrayLookupTable *) &header->table;
+    trimmedArrayLookupTable = LEReferenceTo<TrimmedArrayLookupTable>(morphSubtableHeader, success, &header->table);
     firstGlyph = SWAPW(trimmedArrayLookupTable->firstGlyph);
     lastGlyph = firstGlyph + SWAPW(trimmedArrayLookupTable->glyphCount);
+    valueArray = LEReferenceToArrayOf<LookupValue>(morphSubtableHeader, success, &trimmedArrayLookupTable->valueArray[0], LE_UNBOUNDED_ARRAY);
 }
 
 TrimmedArrayProcessor2::~TrimmedArrayProcessor2()
 {
 }
 
-void TrimmedArrayProcessor2::process(LEGlyphStorage &glyphStorage)
+void TrimmedArrayProcessor2::process(LEGlyphStorage &glyphStorage, LEErrorCode &success)
 {
+    if(LE_FAILURE(success)) return;
     le_int32 glyphCount = glyphStorage.getGlyphCount();
     le_int32 glyph;
 
@@ -70,7 +72,7 @@ void TrimmedArrayProcessor2::process(LEGlyphStorage &glyphStorage)
         TTGlyphID ttGlyph = (TTGlyphID) LE_GET_GLYPH(thisGlyph);
 
         if ((ttGlyph > firstGlyph) && (ttGlyph < lastGlyph)) {
-            TTGlyphID newGlyph = SWAPW(trimmedArrayLookupTable->valueArray[ttGlyph - firstGlyph]);
+            TTGlyphID newGlyph = SWAPW(valueArray(ttGlyph - firstGlyph, success));
 
             glyphStorage[glyph] = LE_SET_GLYPH(thisGlyph, newGlyph);
         }

@@ -53,11 +53,12 @@ class ContextualGlyphInsertionProcessor2 : public StateTableProcessor2
 public:
     virtual void beginStateTable();
 
-    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index);
+    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage,
+                                        le_int32 &currGlyph, EntryTableIndex2 index, LEErrorCode &success);
 
     virtual void endStateTable();
 
-    ContextualGlyphInsertionProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    ContextualGlyphInsertionProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
     virtual ~ContextualGlyphInsertionProcessor2();
 
     /**
@@ -77,12 +78,28 @@ public:
 private:
     ContextualGlyphInsertionProcessor2();
 
+    /**
+     * Perform the actual insertion
+     * @param atGlyph index of glyph to insert at
+     * @param index index into the insertionTable (in/out)
+     * @param count number of insertions
+     * @param isKashidaLike Kashida like (vs Split Vowel like). No effect currently.
+     * @param isBefore if true, insert extra glyphs before the marked glyph
+     */
+    void doInsertion(LEGlyphStorage &glyphStorage,
+                              le_int16 atGlyph,
+                              le_int16 &index,
+                              le_int16 count,
+                              le_bool isKashidaLike,
+                              le_bool isBefore,
+                              LEErrorCode &success);
+
+
 protected:
     le_int32 markGlyph;
-    const le_uint16* insertionTable;
-    const ContextualGlyphInsertionStateEntry2 *entryTable;
-    const ContextualGlyphInsertionHeader2 *contextualGlyphHeader;
-
+    LEReferenceToArrayOf<le_uint16> insertionTable;
+    LEReferenceToArrayOf<ContextualGlyphInsertionStateEntry2> entryTable;
+    LEReferenceTo<ContextualGlyphInsertionHeader2> contextualGlyphHeader;
 };
 
 U_NAMESPACE_END

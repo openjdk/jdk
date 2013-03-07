@@ -64,6 +64,7 @@ private:
     static le_int16    getFieldCount(ValueFormat valueFormat);
     static le_int16    getFieldIndex(ValueFormat valueFormat, ValueRecordField field);
 };
+LE_VAR_ARRAY(ValueRecord, values)
 
 enum ValueRecordFields
 {

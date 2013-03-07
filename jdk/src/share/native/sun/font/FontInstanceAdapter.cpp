@@ -66,8 +66,21 @@ FontInstanceAdapter::FontInstanceAdapter(JNIEnv *theEnv,
     yScalePixelsToUnits = upem / yppem;
 };
 
+
 const void *FontInstanceAdapter::getFontTable(LETag tableTag) const
 {
+  size_t ignored = 0;
+  return getFontTable(tableTag, ignored);
+}
+
+static const LETag cacheMap[LAYOUTCACHE_ENTRIES] = {
+  GPOS_TAG, GDEF_TAG, GSUB_TAG, MORT_TAG, MORX_TAG, KERN_TAG
+};
+
+const void *FontInstanceAdapter::getFontTable(LETag tableTag, size_t &length) const
+{
+  length = 0;
+
   if (!layoutTables) { // t1 font
     return 0;
   }
@@ -75,14 +88,19 @@ const void *FontInstanceAdapter::getFontTable(LETag tableTag) const
   // cache in font's pscaler object
   // font disposer will handle for us
 
-  switch(tableTag) {
-  case GSUB_TAG: if (layoutTables->gsub_len != -1) return (void*)layoutTables->gsub; break;
-  case GPOS_TAG: if (layoutTables->gpos_len != -1) return (void*)layoutTables->gpos; break;
-  case GDEF_TAG: if (layoutTables->gdef_len != -1) return (void*)layoutTables->gdef; break;
-  case MORT_TAG: if (layoutTables->mort_len != -1) return (void*)layoutTables->mort; break;
-  case KERN_TAG: if (layoutTables->kern_len != -1) return (void*)layoutTables->kern; break;
-  default:
-   //fprintf(stderr, "unexpected table request from font instance adapter: %x\n", tableTag);
+  int cacheIdx;
+  for (cacheIdx=0;cacheIdx<LAYOUTCACHE_ENTRIES;cacheIdx++) {
+    if (tableTag==cacheMap[cacheIdx]) break;
+  }
+
+  if (cacheIdx<LAYOUTCACHE_ENTRIES) { // if found
+    if (layoutTables->entries[cacheIdx].len != -1) {
+      length = layoutTables->entries[cacheIdx].len;
+      return layoutTables->entries[cacheIdx].ptr;
+    }
+  } else {
+    //fprintf(stderr, "unexpected table request from font instance adapter: %x\n", tableTag);
+    // (don't load any other tables)
     return 0;
   }
 
@@ -96,16 +114,13 @@ const void *FontInstanceAdapter::getFontTable(LETag tableTag) const
     env->GetByteArrayRegion(tableBytes, 0, len, result);
   }
 
-  switch(tableTag) {
-  case GSUB_TAG: layoutTables->gsub = (void*)result; layoutTables->gsub_len = len; break;
-  case GPOS_TAG: layoutTables->gpos = (void*)result; layoutTables->gpos_len = len; break;
-  case GDEF_TAG: layoutTables->gdef = (void*)result; layoutTables->gdef_len = len; break;
-  case MORT_TAG: layoutTables->mort = (void*)result; layoutTables->mort_len = len; break;
-  case KERN_TAG: layoutTables->kern = (void*)result; layoutTables->kern_len = len; break;
-  default: break;
+  if (cacheIdx<LAYOUTCACHE_ENTRIES) { // if cacheable table
+    layoutTables->entries[cacheIdx].len = len;
+    layoutTables->entries[cacheIdx].ptr = (const void*)result;
   }
 
-  return (void*)result;
+  length = len;
+  return (const void*)result;
 };
 
 LEGlyphID FontInstanceAdapter::mapCharToGlyph(LEUnicode32 ch, const LECharMapper *mapper) const

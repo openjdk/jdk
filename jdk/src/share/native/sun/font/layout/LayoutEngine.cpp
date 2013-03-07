@@ -147,21 +147,21 @@ CharSubstitutionFilter::~CharSubstitutionFilter()
 class CanonMarkFilter : public UMemory, public LEGlyphFilter
 {
 private:
-    const GlyphClassDefinitionTable *classDefTable;
+  const LEReferenceTo<GlyphClassDefinitionTable> classDefTable;
 
     CanonMarkFilter(const CanonMarkFilter &other); // forbid copying of this class
     CanonMarkFilter &operator=(const CanonMarkFilter &other); // forbid copying of this class
 
 public:
-    CanonMarkFilter(const GlyphDefinitionTableHeader *gdefTable);
+    CanonMarkFilter(const LEReferenceTo<GlyphDefinitionTableHeader> &gdefTable, LEErrorCode &success);
     virtual ~CanonMarkFilter();
 
     virtual le_bool accept(LEGlyphID glyph) const;
 };
 
-CanonMarkFilter::CanonMarkFilter(const GlyphDefinitionTableHeader *gdefTable)
+CanonMarkFilter::CanonMarkFilter(const LEReferenceTo<GlyphDefinitionTableHeader> &gdefTable, LEErrorCode &success)
+  : classDefTable(gdefTable->getMarkAttachClassDefinitionTable(gdefTable, success))
 {
-    classDefTable = gdefTable->getMarkAttachClassDefinitionTable();
 }
 
 CanonMarkFilter::~CanonMarkFilter()
@@ -171,9 +171,10 @@ CanonMarkFilter::~CanonMarkFilter()
 
 le_bool CanonMarkFilter::accept(LEGlyphID glyph) const
 {
-    le_int32 glyphClass = classDefTable->getGlyphClass(glyph);
-
-    return glyphClass != 0;
+  LEErrorCode success = LE_NO_ERROR;
+  le_int32 glyphClass = classDefTable->getGlyphClass(classDefTable, glyph, success);
+  if(LE_FAILURE(success)) return false;
+  return glyphClass != 0;
 }
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(LayoutEngine)
@@ -262,20 +263,20 @@ le_int32 LayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 off
       return count;
     }
 
-    const GlyphSubstitutionTableHeader *canonGSUBTable = (GlyphSubstitutionTableHeader *) CanonShaping::glyphSubstitutionTable;
+    LEReferenceTo<GlyphSubstitutionTableHeader> canonGSUBTable((GlyphSubstitutionTableHeader *) CanonShaping::glyphSubstitutionTable);
     LETag scriptTag  = OpenTypeLayoutEngine::getScriptTag(fScriptCode);
     LETag langSysTag = OpenTypeLayoutEngine::getLangSysTag(fLanguageCode);
     le_int32 i, dir = 1, out = 0, outCharCount = count;
 
-    if (canonGSUBTable->coversScript(scriptTag)) {
+    if (canonGSUBTable->coversScript(canonGSUBTable,scriptTag, success) || LE_SUCCESS(success)) {
         CharSubstitutionFilter *substitutionFilter = new CharSubstitutionFilter(fFontInstance);
         if (substitutionFilter == NULL) {
             success = LE_MEMORY_ALLOCATION_ERROR;
             return 0;
         }
 
-                const LEUnicode *inChars = &chars[offset];
-                LEUnicode *reordered = NULL;
+        const LEUnicode *inChars = &chars[offset];
+        LEUnicode *reordered = NULL;
         LEGlyphStorage fakeGlyphStorage;
 
         fakeGlyphStorage.allocateGlyphArray(count, rightToLeft, success);
@@ -285,20 +286,20 @@ le_int32 LayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 off
             return 0;
         }
 
-                // This is the cheapest way to get mark reordering only for Hebrew.
-                // We could just do the mark reordering for all scripts, but most
-                // of them probably don't need it...
-                if (fScriptCode == hebrScriptCode) {
-                        reordered = LE_NEW_ARRAY(LEUnicode, count);
+        // This is the cheapest way to get mark reordering only for Hebrew.
+        // We could just do the mark reordering for all scripts, but most
+        // of them probably don't need it...
+        if (fScriptCode == hebrScriptCode) {
+          reordered = LE_NEW_ARRAY(LEUnicode, count);
 
-                        if (reordered == NULL) {
-                delete substitutionFilter;
-                                success = LE_MEMORY_ALLOCATION_ERROR;
-                                return 0;
-                        }
+          if (reordered == NULL) {
+            delete substitutionFilter;
+            success = LE_MEMORY_ALLOCATION_ERROR;
+            return 0;
+          }
 
-                        CanonShaping::reorderMarks(&chars[offset], count, rightToLeft, reordered, fakeGlyphStorage);
-                        inChars = reordered;
+          CanonShaping::reorderMarks(&chars[offset], count, rightToLeft, reordered, fakeGlyphStorage);
+          inChars = reordered;
                 }
 
         fakeGlyphStorage.allocateAuxData(success);
@@ -318,11 +319,11 @@ le_int32 LayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 off
             fakeGlyphStorage.setAuxData(out, canonFeatures, success);
         }
 
-                if (reordered != NULL) {
-                        LE_DELETE_ARRAY(reordered);
-                }
+        if (reordered != NULL) {
+          LE_DELETE_ARRAY(reordered);
+        }
 
-        outCharCount = canonGSUBTable->process(fakeGlyphStorage, rightToLeft, scriptTag, langSysTag, NULL, substitutionFilter, canonFeatureMap, canonFeatureMapCount, FALSE, success);
+        outCharCount = canonGSUBTable->process(canonGSUBTable, fakeGlyphStorage, rightToLeft, scriptTag, langSysTag, (const GlyphDefinitionTableHeader*)NULL, substitutionFilter, canonFeatureMap, canonFeatureMapCount, FALSE, success);
 
         if (LE_FAILURE(success)) {
             delete substitutionFilter;
@@ -423,16 +424,16 @@ void LayoutEngine::adjustGlyphPositions(const LEUnicode chars[], le_int32 offset
         return;
     }
 
-    GlyphDefinitionTableHeader *gdefTable = (GlyphDefinitionTableHeader *) CanonShaping::glyphDefinitionTable;
-    CanonMarkFilter filter(gdefTable);
+    LEReferenceTo<GlyphDefinitionTableHeader> gdefTable((GlyphDefinitionTableHeader *) CanonShaping::glyphDefinitionTable,
+                                                        CanonShaping::glyphDefinitionTableLen);
+    CanonMarkFilter filter(gdefTable, success);
 
     adjustMarkGlyphs(&chars[offset], count, reverse, glyphStorage, &filter, success);
 
     if (fTypoFlags & LE_Kerning_FEATURE_FLAG) { /* kerning enabled */
-      static const le_uint32 kernTableTag = LE_KERN_TABLE_TAG;
-
-      KernTable kt(fFontInstance, getFontTable(kernTableTag));
-      kt.process(glyphStorage);
+      LETableReference kernTable(fFontInstance, LE_KERN_TABLE_TAG, success);
+      KernTable kt(kernTable, success);
+      kt.process(glyphStorage, success);
     }
 
     // default is no adjustments
@@ -517,9 +518,9 @@ void LayoutEngine::adjustMarkGlyphs(const LEUnicode chars[], le_int32 charCount,
     glyphStorage.adjustPosition(glyphCount, xAdjust, 0, success);
 }
 
-const void *LayoutEngine::getFontTable(LETag tableTag) const
+const void *LayoutEngine::getFontTable(LETag tableTag, size_t &length) const
 {
-    return fFontInstance->getFontTable(tableTag);
+  return fFontInstance->getFontTable(tableTag, length);
 }
 
 void LayoutEngine::mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, le_bool mirror,
@@ -566,7 +567,10 @@ le_int32 LayoutEngine::layoutChars(const LEUnicode chars[], le_int32 offset, le_
 
 void LayoutEngine::reset()
 {
+  if(fGlyphStorage!=NULL) {
     fGlyphStorage->reset();
+    fGlyphStorage = NULL;
+  }
 }
 
 LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, LEErrorCode &success)
@@ -585,19 +589,19 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
         return NULL;
     }
 
-    const GlyphSubstitutionTableHeader *gsubTable = (const GlyphSubstitutionTableHeader *) fontInstance->getFontTable(gsubTableTag);
+    LEReferenceTo<GlyphSubstitutionTableHeader> gsubTable(fontInstance,gsubTableTag,success);
     LayoutEngine *result = NULL;
     LETag scriptTag   = 0x00000000;
     LETag languageTag = 0x00000000;
-        LETag v2ScriptTag = OpenTypeLayoutEngine::getV2ScriptTag(scriptCode);
+    LETag v2ScriptTag = OpenTypeLayoutEngine::getV2ScriptTag(scriptCode);
 
     // Right now, only invoke V2 processing for Devanagari.  TODO: Allow more V2 scripts as they are
     // properly tested.
 
-        if ( v2ScriptTag == dev2ScriptTag && gsubTable != NULL && gsubTable->coversScript( v2ScriptTag )) {
-                result = new IndicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, TRUE, gsubTable, success);
-        }
-    else if (gsubTable != NULL && gsubTable->coversScript(scriptTag = OpenTypeLayoutEngine::getScriptTag(scriptCode))) {
+    if ( v2ScriptTag == dev2ScriptTag && gsubTable.isValid() && gsubTable->coversScript(gsubTable, v2ScriptTag, success )) {
+      result = new IndicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, TRUE, gsubTable, success);
+    }
+    else if (gsubTable.isValid() && gsubTable->coversScript(gsubTable, scriptTag = OpenTypeLayoutEngine::getScriptTag(scriptCode), success)) {
         switch (scriptCode) {
         case bengScriptCode:
         case devaScriptCode:
@@ -633,10 +637,10 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
             case janLanguageCode:
             case zhtLanguageCode:
             case zhsLanguageCode:
-                if (gsubTable->coversScriptAndLanguage(scriptTag, languageTag, TRUE)) {
+              if (gsubTable->coversScriptAndLanguage(gsubTable, scriptTag, languageTag, success, TRUE)) {
                     result = new HanOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, gsubTable, success);
                     break;
-                }
+              }
 
                 // note: falling through to default case.
             default:
@@ -663,9 +667,9 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
         if (morxTable != NULL && SWAPL(morxTable->version)==0x00020000) {
             result = new GXLayoutEngine2(fontInstance, scriptCode, languageCode, morxTable, typoFlags, success);
         } else {
-            const MorphTableHeader *mortTable = (MorphTableHeader *) fontInstance->getFontTable(mortTableTag);
-            if (mortTable != NULL && SWAPL(mortTable->version)==0x00010000) { // mort
-                result = new GXLayoutEngine(fontInstance, scriptCode, languageCode, mortTable, success);
+          LEReferenceTo<MorphTableHeader> mortTable(fontInstance, mortTableTag, success);
+          if (LE_SUCCESS(success) && mortTable.isValid() && SWAPL(mortTable->version)==0x00010000) { // mort
+            result = new GXLayoutEngine(fontInstance, scriptCode, languageCode, mortTable, success);
             } else {
                 switch (scriptCode) {
                     case bengScriptCode:

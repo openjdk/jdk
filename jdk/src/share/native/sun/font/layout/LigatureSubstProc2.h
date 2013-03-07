@@ -54,11 +54,12 @@ class LigatureSubstitutionProcessor2 : public StateTableProcessor2
 public:
     virtual void beginStateTable();
 
-    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index);
+    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph,
+                                        EntryTableIndex2 index, LEErrorCode &success);
 
     virtual void endStateTable();
 
-    LigatureSubstitutionProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    LigatureSubstitutionProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
     virtual ~LigatureSubstitutionProcessor2();
 
     /**
@@ -83,12 +84,12 @@ protected:
     le_uint32 componentOffset;
     le_uint32 ligatureOffset;
 
-    const LigatureSubstitutionStateEntry2 *entryTable;
+    LEReferenceToArrayOf<LigatureSubstitutionStateEntry2> entryTable;
 
     le_int32 componentStack[nComponents];
     le_int16 m;
 
-    const LigatureSubstitutionHeader2 *ligatureSubstitutionHeader;
+    const LEReferenceTo<LigatureSubstitutionHeader2> ligatureSubstitutionHeader;
 
 };
 

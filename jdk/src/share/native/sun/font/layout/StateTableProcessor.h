@@ -49,7 +49,7 @@ class LEGlyphStorage;
 class StateTableProcessor : public SubtableProcessor
 {
 public:
-    void process(LEGlyphStorage &glyphStorage);
+    void process(LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     virtual void beginStateTable() = 0;
 
@@ -58,7 +58,7 @@ public:
     virtual void endStateTable() = 0;
 
 protected:
-    StateTableProcessor(const MorphSubtableHeader *morphSubtableHeader);
+    StateTableProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success);
     virtual ~StateTableProcessor();
 
     StateTableProcessor();
@@ -68,11 +68,12 @@ protected:
     ByteOffset stateArrayOffset;
     ByteOffset entryTableOffset;
 
-    const ClassTable *classTable;
+    LEReferenceTo<ClassTable> classTable;
     TTGlyphID firstGlyph;
     TTGlyphID lastGlyph;
 
-    const MorphStateTableHeader *stateTableHeader;
+    LEReferenceTo<MorphStateTableHeader> stateTableHeader;
+    LEReferenceTo<StateTableHeader> stHeader; // for convenience
 
 private:
     StateTableProcessor(const StateTableProcessor &other); // forbid copying of this class

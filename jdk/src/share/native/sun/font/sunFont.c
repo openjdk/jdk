@@ -320,22 +320,20 @@ Java_sun_font_StrikeCache_getGlyphCacheDescription
 JNIEXPORT TTLayoutTableCache* newLayoutTableCache() {
   TTLayoutTableCache* ltc = calloc(1, sizeof(TTLayoutTableCache));
   if (ltc) {
-    ltc->gsub_len = -1;
-    ltc->gpos_len = -1;
-    ltc->gdef_len = -1;
-    ltc->mort_len = -1;
-    ltc->kern_len = -1;
+    int i;
+    for(i=0;i<LAYOUTCACHE_ENTRIES;i++) {
+      ltc->entries[i].len = -1;
+    }
   }
   return ltc;
 }
 
 JNIEXPORT void freeLayoutTableCache(TTLayoutTableCache* ltc) {
   if (ltc) {
-    if (ltc->gsub) free(ltc->gsub);
-    if (ltc->gpos) free(ltc->gpos);
-    if (ltc->gdef) free(ltc->gdef);
-    if (ltc->mort) free(ltc->mort);
-    if (ltc->kern) free(ltc->kern);
+    int i;
+    for(i=0;i<LAYOUTCACHE_ENTRIES;i++) {
+      if(ltc->entries[i].ptr) free (ltc->entries[i].ptr);
+    }
     if (ltc->kernPairs) free(ltc->kernPairs);
     free(ltc);
   }

@@ -35,6 +35,7 @@
 #include "LEGlyphFilter.h"
 #include "LEFontInstance.h"
 #include "LayoutEngine.h"
+#include "LETableReference.h"
 
 #include "GlyphSubstitutionTables.h"
 #include "GlyphDefinitionTables.h"
@@ -88,7 +89,7 @@ public:
      * @internal
      */
     OpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
-                            le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable, LEErrorCode &success);
+                            le_int32 typoFlags, const LEReferenceTo<GlyphSubstitutionTableHeader> &gsubTable, LEErrorCode &success);
 
     /**
      * This constructor is used when the font requires a "canned" GSUB table which can't be known
@@ -228,21 +229,21 @@ protected:
      *
      * @internal
      */
-    const GlyphSubstitutionTableHeader *fGSUBTable;
+    LEReferenceTo<GlyphSubstitutionTableHeader> fGSUBTable;
 
     /**
      * The address of the GDEF table.
      *
      * @internal
      */
-    const GlyphDefinitionTableHeader   *fGDEFTable;
+    LEReferenceTo<GlyphDefinitionTableHeader> fGDEFTable;
 
     /**
      * The address of the GPOS table.
      *
      * @internal
      */
-    const GlyphPositioningTableHeader  *fGPOSTable;
+    LEReferenceTo<GlyphPositioningTableHeader> fGPOSTable;
 
     /**
      * An optional filter used to inhibit substitutions

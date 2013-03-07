@@ -58,7 +58,7 @@ public:
 
     virtual void endStateTable();
 
-    LigatureSubstitutionProcessor(const MorphSubtableHeader *morphSubtableHeader);
+    LigatureSubstitutionProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success);
     virtual ~LigatureSubstitutionProcessor();
 
     /**
@@ -83,12 +83,12 @@ protected:
     ByteOffset componentTableOffset;
     ByteOffset ligatureTableOffset;
 
-    const LigatureSubstitutionStateEntry *entryTable;
+    LEReferenceToArrayOf<LigatureSubstitutionStateEntry> entryTable;
 
     le_int32 componentStack[nComponents];
     le_int16 m;
 
-    const LigatureSubstitutionHeader *ligatureSubstitutionHeader;
+    LEReferenceTo<LigatureSubstitutionHeader> ligatureSubstitutionHeader;
 
 };
 

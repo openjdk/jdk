@@ -44,7 +44,7 @@
 
 U_NAMESPACE_BEGIN
 
-le_uint32 LookupProcessor::applyLookupTable(const LookupTable *lookupTable, GlyphIterator *glyphIterator,
+le_uint32 LookupProcessor::applyLookupTable(const LEReferenceTo<LookupTable> &lookupTable, GlyphIterator *glyphIterator,
                                          const LEFontInstance *fontInstance, LEErrorCode& success) const
 {
     if (LE_FAILURE(success)) {
@@ -57,7 +57,7 @@ le_uint32 LookupProcessor::applyLookupTable(const LookupTable *lookupTable, Glyp
     le_uint32 delta;
 
     for (le_uint16 subtable = 0; subtable < subtableCount; subtable += 1) {
-        const LookupSubtable *lookupSubtable = lookupTable->getLookupSubtable(subtable);
+      LEReferenceTo<LookupSubtable> lookupSubtable = lookupTable->getLookupSubtable(lookupTable, subtable, success);
 
         delta = applySubtable(lookupSubtable, lookupType, glyphIterator, fontInstance, success);
 
@@ -72,7 +72,7 @@ le_uint32 LookupProcessor::applyLookupTable(const LookupTable *lookupTable, Glyp
 }
 
 le_int32 LookupProcessor::process(LEGlyphStorage &glyphStorage, GlyphPositionAdjustments *glyphPositionAdjustments,
-                              le_bool rightToLeft, const GlyphDefinitionTableHeader *glyphDefinitionTableHeader,
+                                  le_bool rightToLeft, const LEReferenceTo<GlyphDefinitionTableHeader> &glyphDefinitionTableHeader,
                               const LEFontInstance *fontInstance, LEErrorCode& success) const
 {
     if (LE_FAILURE(success)) {
@@ -89,13 +89,13 @@ le_int32 LookupProcessor::process(LEGlyphStorage &glyphStorage, GlyphPositionAdj
                                 rightToLeft, 0, 0, glyphDefinitionTableHeader);
     le_int32 newGlyphCount = glyphCount;
 
-    for (le_uint16 order = 0; order < lookupOrderCount; order += 1) {
+    for (le_uint16 order = 0; order < lookupOrderCount && LE_SUCCESS(success); order += 1) {
         le_uint16 lookup = lookupOrderArray[order];
         FeatureMask selectMask = lookupSelectArray[lookup];
 
         if (selectMask != 0) {
-            const LookupTable *lookupTable = lookupListTable->getLookupTable(lookup);
-            if (!lookupTable) {
+          const LEReferenceTo<LookupTable> lookupTable = lookupListTable->getLookupTable(lookupListTable, lookup, success);
+          if (!lookupTable.isValid() ||LE_FAILURE(success) ) {
                 continue;
             }
             le_uint16 lookupFlags = SWAPW(lookupTable->lookupFlags);
@@ -103,7 +103,7 @@ le_int32 LookupProcessor::process(LEGlyphStorage &glyphStorage, GlyphPositionAdj
             glyphIterator.reset(lookupFlags, selectMask);
 
             while (glyphIterator.findFeatureTag()) {
-                applyLookupTable(lookupTable, &glyphIterator, fontInstance, success);
+              applyLookupTable(lookupTable, &glyphIterator, fontInstance, success); // TODO
                 if (LE_FAILURE(success)) {
                     return 0;
                 }
@@ -123,8 +123,8 @@ le_uint32 LookupProcessor::applySingleLookup(le_uint16 lookupTableIndex, GlyphIt
         return 0;
     }
 
-    const LookupTable *lookupTable = lookupListTable->getLookupTable(lookupTableIndex);
-    if (lookupTable == NULL) {
+    const LEReferenceTo<LookupTable> lookupTable = lookupListTable->getLookupTable(lookupListTable, lookupTableIndex, success);
+    if (!lookupTable.isValid()) {
         success = LE_INTERNAL_ERROR;
         return 0;
     }
@@ -135,33 +135,35 @@ le_uint32 LookupProcessor::applySingleLookup(le_uint16 lookupTableIndex, GlyphIt
     return delta;
 }
 
-le_int32 LookupProcessor::selectLookups(const FeatureTable *featureTable, FeatureMask featureMask, le_int32 order)
+le_int32 LookupProcessor::selectLookups(const LEReferenceTo<FeatureTable> &featureTable, FeatureMask featureMask, le_int32 order, LEErrorCode &success)
 {
-    le_uint16 lookupCount = featureTable? SWAPW(featureTable->lookupCount) : 0;
+  le_uint16 lookupCount = featureTable.isValid()? SWAPW(featureTable->lookupCount) : 0;
     le_int32  store = order;
 
-    for (le_uint16 lookup = 0; lookup < lookupCount; lookup += 1) {
-        le_uint16 lookupListIndex = SWAPW(featureTable->lookupListIndexArray[lookup]);
-        if (lookupListIndex >= lookupSelectCount) {
-            continue;
-        }
+    LEReferenceToArrayOf<le_uint16> lookupListIndexArray(featureTable, success, featureTable->lookupListIndexArray, lookupCount);
 
-        lookupSelectArray[lookupListIndex] |= featureMask;
-        lookupOrderArray[store++] = lookupListIndex;
+    for (le_uint16 lookup = 0; LE_SUCCESS(success) && lookup < lookupCount; lookup += 1) {
+      le_uint16 lookupListIndex = SWAPW(lookupListIndexArray.getObject(lookup,success));
+      if (lookupListIndex >= lookupSelectCount) {
+        continue;
+      }
+
+      lookupSelectArray[lookupListIndex] |= featureMask;
+      lookupOrderArray[store++] = lookupListIndex;
     }
 
     return store - order;
 }
 
-LookupProcessor::LookupProcessor(const char *baseAddress,
+LookupProcessor::LookupProcessor(const LETableReference &baseAddress,
         Offset scriptListOffset, Offset featureListOffset, Offset lookupListOffset,
         LETag scriptTag, LETag languageTag, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool orderFeatures,
         LEErrorCode& success)
-    : lookupListTable(NULL), featureListTable(NULL), lookupSelectArray(NULL), lookupSelectCount(0),
-      lookupOrderArray(NULL), lookupOrderCount(0)
+    : lookupListTable(), featureListTable(), lookupSelectArray(NULL), lookupSelectCount(0),
+      lookupOrderArray(NULL), lookupOrderCount(0), fReference(baseAddress)
 {
-    const ScriptListTable *scriptListTable = NULL;
-    const LangSysTable *langSysTable = NULL;
+  LEReferenceTo<ScriptListTable> scriptListTable;
+  LEReferenceTo<LangSysTable> langSysTable;
     le_uint16 featureCount = 0;
     le_uint16 lookupListCount = 0;
     le_uint16 requiredFeatureIndex;
@@ -171,29 +173,33 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
     }
 
     if (scriptListOffset != 0) {
-        scriptListTable = (const ScriptListTable *) (baseAddress + scriptListOffset);
-        langSysTable = scriptListTable->findLanguage(scriptTag, languageTag);
+      scriptListTable = LEReferenceTo<ScriptListTable>(baseAddress, success, scriptListOffset);
+      langSysTable = scriptListTable->findLanguage(scriptListTable, scriptTag, languageTag, success);
 
-        if (langSysTable != 0) {
-            featureCount = SWAPW(langSysTable->featureCount);
-        }
+      if (langSysTable.isValid() && LE_SUCCESS(success)) {
+        featureCount = SWAPW(langSysTable->featureCount);
+      }
     }
 
     if (featureListOffset != 0) {
-        featureListTable = (const FeatureListTable *) (baseAddress + featureListOffset);
+      featureListTable = LEReferenceTo<FeatureListTable>(baseAddress, success, featureListOffset);
     }
 
     if (lookupListOffset != 0) {
-        lookupListTable = (const LookupListTable *) (baseAddress + lookupListOffset);
+      lookupListTable = LEReferenceTo<LookupListTable>(baseAddress,success, lookupListOffset);
+      if(LE_SUCCESS(success) && lookupListTable.isValid()) {
         lookupListCount = SWAPW(lookupListTable->lookupCount);
+      }
     }
 
-    if (langSysTable == NULL || featureListTable == NULL || lookupListTable == NULL ||
+    if (langSysTable.isEmpty() || featureListTable.isEmpty() || lookupListTable.isEmpty() ||
         featureCount == 0 || lookupListCount == 0) {
         return;
     }
 
-    requiredFeatureIndex = SWAPW(langSysTable->reqFeatureIndex);
+    if(langSysTable.isValid()) {
+      requiredFeatureIndex = SWAPW(langSysTable->reqFeatureIndex);
+    }
 
     lookupSelectArray = LE_NEW_ARRAY(FeatureMask, lookupListCount);
     if (lookupSelectArray == NULL) {
@@ -209,34 +215,38 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
 
     le_int32 count, order = 0;
     le_uint32 featureReferences = 0;
-    const FeatureTable *featureTable = NULL;
+    LEReferenceTo<FeatureTable> featureTable;
     LETag featureTag;
 
-    const FeatureTable *requiredFeatureTable = NULL;
+    LEReferenceTo<FeatureTable> requiredFeatureTable;
     LETag requiredFeatureTag = 0x00000000U;
 
     // Count the total number of lookups referenced by all features. This will
     // be the maximum number of entries in the lookupOrderArray. We can't use
     // lookupListCount because some lookups might be referenced by more than
     // one feature.
-    for (le_uint32 feature = 0; feature < featureCount; feature += 1) {
-        le_uint16 featureIndex = SWAPW(langSysTable->featureIndexArray[feature]);
+    if(featureListTable.isValid() && LE_SUCCESS(success)) {
+      LEReferenceToArrayOf<le_uint16> featureIndexArray(langSysTable, success, langSysTable->featureIndexArray, featureCount);
 
-        featureTable = featureListTable->getFeatureTable(featureIndex, &featureTag);
-        if (!featureTable) {
-             continue;
+      for (le_uint32 feature = 0; LE_SUCCESS(success)&&(feature < featureCount); feature += 1) {
+        le_uint16 featureIndex = SWAPW(featureIndexArray.getObject(feature, success));
+
+        featureTable = featureListTable->getFeatureTable(featureListTable, featureIndex,  &featureTag, success);
+        if (!featureTable.isValid() || LE_FAILURE(success)) {
+          continue;
         }
         featureReferences += SWAPW(featureTable->lookupCount);
+      }
     }
 
-    if (!featureTable) {
+    if (!featureTable.isValid() || LE_FAILURE(success)) {
         success = LE_INTERNAL_ERROR;
         return;
     }
 
     if (requiredFeatureIndex != 0xFFFF) {
-        requiredFeatureTable = featureListTable->getFeatureTable(requiredFeatureIndex, &requiredFeatureTag);
-        featureReferences += SWAPW(featureTable->lookupCount);
+      requiredFeatureTable = featureListTable->getFeatureTable(featureListTable, requiredFeatureIndex, &requiredFeatureTag, success);
+      featureReferences += SWAPW(featureTable->lookupCount);
     }
 
     lookupOrderArray = LE_NEW_ARRAY(le_uint16, featureReferences);
@@ -251,7 +261,7 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
 
         // If this is the required feature, add its lookups
         if (requiredFeatureTag == fm.tag) {
-            count += selectLookups(requiredFeatureTable, fm.mask, order);
+          count += selectLookups(requiredFeatureTable, fm.mask, order, success);
         }
 
         if (orderFeatures) {
@@ -261,7 +271,8 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
             }
 
             for (le_uint16 feature = 0; feature < featureCount; feature += 1) {
-                le_uint16 featureIndex = SWAPW(langSysTable->featureIndexArray[feature]);
+              LEReferenceToArrayOf<le_uint16> featureIndexArray(langSysTable, success, langSysTable->featureIndexArray, featureCount);
+              le_uint16 featureIndex = SWAPW(featureIndexArray.getObject(feature,success));
 
                 // don't add the required feature to the list more than once...
                 // TODO: Do we need this check? (Spec. says required feature won't be in feature list...)
@@ -269,10 +280,10 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
                     continue;
                 }
 
-                featureTable = featureListTable->getFeatureTable(featureIndex, &featureTag);
+                featureTable = featureListTable->getFeatureTable(featureListTable, featureIndex, &featureTag, success);
 
                 if (featureTag == fm.tag) {
-                    count += selectLookups(featureTable, fm.mask, order + count);
+                  count += selectLookups(featureTable, fm.mask, order + count, success);
                 }
             }
 
@@ -281,9 +292,10 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
             }
 
             order += count;
-        } else {
-            for (le_uint16 feature = 0; feature < featureCount; feature += 1) {
-                le_uint16 featureIndex = SWAPW(langSysTable->featureIndexArray[feature]);
+        } else if(langSysTable.isValid()) {
+          LEReferenceToArrayOf<le_uint16> featureIndexArray(langSysTable, success, langSysTable->featureIndexArray, featureCount);
+          for (le_uint16 feature = 0; LE_SUCCESS(success)&& (feature < featureCount); feature += 1) {
+            le_uint16 featureIndex = SWAPW(featureIndexArray.getObject(feature,success));
 
                 // don't add the required feature to the list more than once...
                 // NOTE: This check is commented out because the spec. says that
@@ -295,10 +307,10 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
                 }
 #endif
 
-                featureTable = featureListTable->getFeatureTable(featureIndex, &featureTag);
+                featureTable = featureListTable->getFeatureTable(featureListTable, featureIndex, &featureTag, success);
 
                 if (featureTag == fm.tag) {
-                    order += selectLookups(featureTable, fm.mask, order);
+                  order += selectLookups(featureTable, fm.mask, order, success);
                 }
             }
         }

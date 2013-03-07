@@ -39,6 +39,7 @@
 
 #include "LETypes.h"
 #include "LayoutTables.h"
+#include "LETableReference.h"
 
 U_NAMESPACE_BEGIN
 
@@ -65,6 +66,7 @@ struct ChainHeader
     le_int16           nSubtables;
     FeatureTableEntry   featureTable[ANY_NUMBER];
 };
+LE_VAR_ARRAY(ChainHeader, featureTable)
 
 struct MorphTableHeader
 {
@@ -72,8 +74,9 @@ struct MorphTableHeader
     le_uint32   nChains;
     ChainHeader chains[ANY_NUMBER];
 
-    void process(LEGlyphStorage &glyphStorage) const;
+  void process(const LETableReference& base, LEGlyphStorage &glyphStorage, LEErrorCode &success) const;
 };
+LE_VAR_ARRAY(MorphTableHeader, chains)
 
 typedef le_int16 SubtableCoverage;
 typedef le_uint32 SubtableCoverage2;
@@ -103,7 +106,7 @@ struct MorphSubtableHeader
     SubtableCoverage    coverage;
     FeatureFlags        subtableFeatures;
 
-    void process(LEGlyphStorage &glyphStorage) const;
+  void process(const LEReferenceTo<MorphSubtableHeader> &base, LEGlyphStorage &glyphStorage, LEErrorCode &success) const;
 };
 
 enum SubtableCoverageFlags2
@@ -121,7 +124,7 @@ struct MorphSubtableHeader2
     SubtableCoverage2    coverage;
     FeatureFlags        subtableFeatures;
 
-    void process(LEGlyphStorage &glyphStorage) const;
+    void process(const LEReferenceTo<MorphSubtableHeader2> &base, LEGlyphStorage &glyphStorage, LEErrorCode &success) const;
 };
 
 struct ChainHeader2
@@ -132,6 +135,7 @@ struct ChainHeader2
     le_uint32           nSubtables;
     FeatureTableEntry   featureTable[ANY_NUMBER];
 };
+LE_VAR_ARRAY(ChainHeader2, featureTable)
 
 struct MorphTableHeader2
 {
@@ -139,8 +143,9 @@ struct MorphTableHeader2
     le_uint32   nChains;
     ChainHeader2 chains[ANY_NUMBER];
 
-    void process(LEGlyphStorage &glyphStorage, le_int32 typoFlags) const;
+    void process(const LEReferenceTo<MorphTableHeader2> &base, LEGlyphStorage &glyphStorage, le_int32 typoFlags, LEErrorCode &success) const;
 };
+LE_VAR_ARRAY(MorphTableHeader2, chains)
 
 /*
  * AAT Font Features

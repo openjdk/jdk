@@ -50,16 +50,16 @@ class LEGlyphStorage;
 class StateTableProcessor2 : public SubtableProcessor2
 {
 public:
-    void process(LEGlyphStorage &glyphStorage);
+    void process(LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     virtual void beginStateTable() = 0;
 
-    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index) = 0;
+    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index, LEErrorCode &success) = 0;
 
     virtual void endStateTable() = 0;
 
 protected:
-    StateTableProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    StateTableProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
     virtual ~StateTableProcessor2();
 
     StateTableProcessor2();
@@ -71,9 +71,10 @@ protected:
     le_uint32 stateArrayOffset;
     le_uint32 entryTableOffset;
 
-    const LookupTable *classTable;
-    const EntryTableIndex2 *stateArray;
-    const MorphStateTableHeader2 *stateTableHeader;
+    LEReferenceTo<LookupTable> classTable;
+    LEReferenceToArrayOf<EntryTableIndex2> stateArray;
+    LEReferenceTo<MorphStateTableHeader2> stateTableHeader;
+    LEReferenceTo<StateTableHeader2> stHeader; // for convenience
 
 private:
     StateTableProcessor2(const StateTableProcessor2 &other); // forbid copying of this class

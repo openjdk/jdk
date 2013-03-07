@@ -38,6 +38,7 @@
  */
 
 #include "LETypes.h"
+#include "LETableReference.h"
 
 U_NAMESPACE_BEGIN
 
@@ -50,7 +51,7 @@ typedef le_uint32 fixed32;
 #define LE_GLYPH_GROUP_MASK 0x00000001UL
 typedef le_uint32 FeatureMask;
 
-#define SWAPT(atag) ((LETag) ((atag[0] << 24) + (atag[1] << 16) + (atag[2] << 8) + atag[3]))
+#define SWAPT(atag) ((LETag) (((atag[0]) << 24) + ((atag[1]) << 16) + ((atag[2]) << 8) + (atag[3])))
 
 struct TagAndOffsetRecord
 {

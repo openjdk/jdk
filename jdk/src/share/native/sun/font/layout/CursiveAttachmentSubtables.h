@@ -57,8 +57,9 @@ struct CursiveAttachmentSubtable : GlyphPositioningSubtable
     le_uint16 entryExitCount;
     EntryExitRecord entryExitRecords[ANY_NUMBER];
 
-    le_uint32  process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
+    le_uint32  process(const LEReferenceTo<CursiveAttachmentSubtable> &base, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode &success) const;
 };
+LE_VAR_ARRAY(CursiveAttachmentSubtable, entryExitRecords)
 
 U_NAMESPACE_END
 #endif

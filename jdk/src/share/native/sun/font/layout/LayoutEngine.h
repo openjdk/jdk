@@ -280,12 +280,18 @@ protected:
      * some other way must override this method.
      *
      * @param tableTag - the four byte table tag.
+     * @param length - length to use
      *
      * @return the address of the table.
      *
      * @internal
      */
-    virtual const void *getFontTable(LETag tableTag) const;
+    virtual const void *getFontTable(LETag tableTag, size_t &length) const;
+
+    /**
+     * @deprecated
+     */
+    virtual const void *getFontTable(LETag tableTag) const { size_t ignored; return getFontTable(tableTag, ignored); }
 
     /**
      * This method does character to glyph mapping. The default implementation

@@ -48,7 +48,7 @@ U_NAMESPACE_BEGIN
 
 struct SinglePositioningSubtable : GlyphPositioningSubtable
 {
-    le_uint32  process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
+    le_uint32  process(const LEReferenceTo<SinglePositioningSubtable> &base, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode &success) const;
 };
 
 struct SinglePositioningFormat1Subtable : SinglePositioningSubtable
@@ -56,7 +56,7 @@ struct SinglePositioningFormat1Subtable : SinglePositioningSubtable
     ValueFormat valueFormat;
     ValueRecord valueRecord;
 
-    le_uint32  process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
+    le_uint32  process(const LEReferenceTo<SinglePositioningFormat1Subtable> &base, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode &success) const;
 };
 
 struct SinglePositioningFormat2Subtable : SinglePositioningSubtable
@@ -65,8 +65,9 @@ struct SinglePositioningFormat2Subtable : SinglePositioningSubtable
     le_uint16   valueCount;
     ValueRecord valueRecordArray[ANY_NUMBER];
 
-    le_uint32  process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
+    le_uint32  process(const LEReferenceTo<SinglePositioningFormat2Subtable> &base, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode &success) const;
 };
+LE_VAR_ARRAY(SinglePositioningFormat2Subtable, valueRecordArray)
 
 U_NAMESPACE_END
 #endif

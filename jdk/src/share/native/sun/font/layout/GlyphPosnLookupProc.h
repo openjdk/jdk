@@ -51,7 +51,7 @@ U_NAMESPACE_BEGIN
 class GlyphPositioningLookupProcessor : public LookupProcessor
 {
 public:
-    GlyphPositioningLookupProcessor(const GlyphPositioningTableHeader *glyphPositioningTableHeader,
+    GlyphPositioningLookupProcessor(const LEReferenceTo<GlyphPositioningTableHeader> &glyphPositioningTableHeader,
         LETag scriptTag,
         LETag languageTag,
         const FeatureMap *featureMap,
@@ -61,7 +61,7 @@ public:
 
     virtual ~GlyphPositioningLookupProcessor();
 
-    virtual le_uint32 applySubtable(const LookupSubtable *lookupSubtable, le_uint16 lookupType, GlyphIterator *glyphIterator,
+    virtual le_uint32 applySubtable(const LEReferenceTo<LookupSubtable> &lookupSubtable, le_uint16 lookupType, GlyphIterator *glyphIterator,
         const LEFontInstance *fontInstance, LEErrorCode& success) const;
 
 protected:

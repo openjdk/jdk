@@ -39,10 +39,10 @@ U_NAMESPACE_BEGIN
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(GXLayoutEngine2)
 
-GXLayoutEngine2::GXLayoutEngine2(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, const MorphTableHeader2 *morphTable, le_int32 typoFlags, LEErrorCode &success)
-    : LayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success), fMorphTable(morphTable)
+GXLayoutEngine2::GXLayoutEngine2(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, const LEReferenceTo<MorphTableHeader2> &morphTable, le_int32 typoFlags, LEErrorCode &success)
+  : LayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success), fMorphTable(morphTable)
 {
-    // nothing else to do?
+  // nothing else to do?
 }
 
 GXLayoutEngine2::~GXLayoutEngine2()
@@ -68,7 +68,7 @@ le_int32 GXLayoutEngine2::computeGlyphs(const LEUnicode chars[], le_int32 offset
         return 0;
     }
 
-    fMorphTable->process(glyphStorage, fTypoFlags);
+    fMorphTable->process(fMorphTable, glyphStorage, fTypoFlags, success);
     return count;
 }
 

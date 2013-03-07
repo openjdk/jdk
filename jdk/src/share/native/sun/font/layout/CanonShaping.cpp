@@ -59,15 +59,15 @@ void CanonShaping::sortMarks(le_int32 *indices, const le_int32 *combiningClasses
 void CanonShaping::reorderMarks(const LEUnicode *inChars, le_int32 charCount, le_bool rightToLeft,
                                 LEUnicode *outChars, LEGlyphStorage &glyphStorage)
 {
-    const GlyphDefinitionTableHeader *gdefTable = (const GlyphDefinitionTableHeader *) glyphDefinitionTable;
-    const ClassDefinitionTable *classTable = gdefTable->getMarkAttachClassDefinitionTable();
+    LEErrorCode success = LE_NO_ERROR;
+    LEReferenceTo<GlyphDefinitionTableHeader> gdefTable(CanonShaping::glyphDefinitionTable, CanonShaping::glyphDefinitionTableLen);
+    LEReferenceTo<ClassDefinitionTable> classTable = gdefTable->getMarkAttachClassDefinitionTable(gdefTable, success);
     le_int32 *combiningClasses = LE_NEW_ARRAY(le_int32, charCount);
     le_int32 *indices = LE_NEW_ARRAY(le_int32, charCount);
-    LEErrorCode status = LE_NO_ERROR;
     le_int32 i;
 
     for (i = 0; i < charCount; i += 1) {
-        combiningClasses[i] = classTable->getGlyphClass((LEGlyphID) inChars[i]);
+      combiningClasses[i] = classTable->getGlyphClass(classTable, (LEGlyphID) inChars[i], success);
         indices[i] = i;
     }
 
@@ -96,7 +96,7 @@ void CanonShaping::reorderMarks(const LEUnicode *inChars, le_int32 charCount, le
         le_int32 index = indices[i];
 
         outChars[i] = inChars[index];
-        glyphStorage.setCharIndex(out, index, status);
+        glyphStorage.setCharIndex(out, index, success);
     }
 
     LE_DELETE_ARRAY(indices);
