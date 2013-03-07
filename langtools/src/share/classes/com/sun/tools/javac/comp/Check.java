@@ -1972,14 +1972,32 @@ public class Check {
         }
     };
 
-    public void checkClassOverrideEqualsAndHash(DiagnosticPosition pos,
+    public void checkClassOverrideEqualsAndHashIfNeeded(DiagnosticPosition pos,
+            ClassSymbol someClass) {
+        /* At present, annotations cannot possibly have a method that is override
+         * equivalent with Object.equals(Object) but in any case the condition is
+         * fine for completeness.
+         */
+        if (someClass == (ClassSymbol)syms.objectType.tsym ||
+            someClass.isInterface() || someClass.isEnum() ||
+            (someClass.flags() & ANNOTATION) != 0 ||
+            (someClass.flags() & ABSTRACT) != 0) return;
+        //anonymous inner classes implementing interfaces need especial treatment
+        if (someClass.isAnonymous()) {
+            List<Type> interfaces =  types.interfaces(someClass.type);
+            if (interfaces != null && !interfaces.isEmpty() &&
+                interfaces.head.tsym == syms.comparatorType.tsym) return;
+        }
+        checkClassOverrideEqualsAndHash(pos, someClass);
+    }
+
+    private void checkClassOverrideEqualsAndHash(DiagnosticPosition pos,
             ClassSymbol someClass) {
         if (lint.isEnabled(LintCategory.OVERRIDES)) {
             MethodSymbol equalsAtObject = (MethodSymbol)syms.objectType
                     .tsym.members().lookup(names.equals).sym;
             MethodSymbol hashCodeAtObject = (MethodSymbol)syms.objectType
                     .tsym.members().lookup(names.hashCode).sym;
-
             boolean overridesEquals = types.implementation(equalsAtObject,
                 someClass, false, equalsHasCodeFilter).owner == someClass;
             boolean overridesHashCode = types.implementation(hashCodeAtObject,
@@ -1987,7 +2005,7 @@ public class Check {
 
             if (overridesEquals && !overridesHashCode) {
                 log.warning(LintCategory.OVERRIDES, pos,
-                        "override.equals.but.not.hashcode", someClass.fullname);
+                        "override.equals.but.not.hashcode", someClass);
             }
         }
     }

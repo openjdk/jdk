@@ -237,7 +237,7 @@ public abstract class Symbol implements Element {
     }
 
     /** Has this symbol an empty name? This includes anonymous
-     *  inner classses.
+     *  inner classes.
      */
     public boolean isAnonymous() {
         return name.isEmpty();
