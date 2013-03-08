@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,13 @@
 
 #include <jni.h>
 #include "libproc.h"
+
+#include <elf.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <limits.h>
 
 #if defined(x86_64) && !defined(amd64)
 #define amd64 1
@@ -154,6 +161,39 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
   }
 }
 
+
+/*
+ * Verify that a named ELF binary file (core or executable) has the same
+ * bitness as ourselves.
+ * Throw an exception if there is a mismatch or other problem.
+ *
+ * If we proceed using a mismatched debugger/debuggee, the best to hope
+ * for is a missing symbol, the worst is a crash searching for debug symbols.
+ */
+void verifyBitness(JNIEnv *env, const char *binaryName) {
+  int fd = open(binaryName, O_RDONLY);
+  if (fd < 0) {
+    THROW_NEW_DEBUGGER_EXCEPTION("cannot open binary file");
+  }
+  unsigned char elf_ident[EI_NIDENT];
+  int i = read(fd, &elf_ident, sizeof(elf_ident));
+  close(fd);
+
+  if (i < 0) {
+    THROW_NEW_DEBUGGER_EXCEPTION("cannot read binary file");
+  }
+#ifndef _LP64
+  if (elf_ident[EI_CLASS] == ELFCLASS64) {
+    THROW_NEW_DEBUGGER_EXCEPTION("debuggee is 64 bit, use 64-bit java for debugger");
+  }
+#else
+  if (elf_ident[EI_CLASS] != ELFCLASS64) {
+    THROW_NEW_DEBUGGER_EXCEPTION("debuggee is 32 bit, use 32 bit java for debugger");
+  }
+#endif
+}
+
+
 /*
  * Class:     sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal
  * Method:    attach0
@@ -161,6 +201,12 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
  */
 JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_attach0__I
   (JNIEnv *env, jobject this_obj, jint jpid) {
+
+  // For bitness checking, locate binary at /proc/jpid/exe
+  char buf[PATH_MAX];
+  snprintf((char *) &buf, PATH_MAX, "/proc/%d/exe", jpid);
+  verifyBitness(env, (char *) &buf);
+  CHECK_EXCEPTION;
 
   struct ps_prochandle* ph;
   if ( (ph = Pgrab(jpid)) == NULL) {
@@ -185,6 +231,9 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_at
   execName_cstr = (*env)->GetStringUTFChars(env, execName, &isCopy);
   CHECK_EXCEPTION;
   coreName_cstr = (*env)->GetStringUTFChars(env, coreName, &isCopy);
+  CHECK_EXCEPTION;
+
+  verifyBitness(env, execName_cstr);
   CHECK_EXCEPTION;
 
   if ( (ph = Pgrab_core(execName_cstr, coreName_cstr)) == NULL) {

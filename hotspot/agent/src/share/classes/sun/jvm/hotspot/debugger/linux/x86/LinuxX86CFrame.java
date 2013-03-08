@@ -61,8 +61,13 @@ final public class LinuxX86CFrame extends BasicCFrame {
         return null;
       }
 
+      // Check alignment of ebp
+      if ( dbg.getAddressValue(ebp) % ADDRESS_SIZE != 0) {
+        return null;
+      }
+
       Address nextEBP = ebp.getAddressAt( 0 * ADDRESS_SIZE);
-      if (nextEBP == null) {
+      if (nextEBP == null || nextEBP.lessThanOrEqual(ebp)) {
         return null;
       }
       Address nextPC  = ebp.getAddressAt( 1 * ADDRESS_SIZE);
