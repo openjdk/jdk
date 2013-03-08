@@ -220,63 +220,71 @@ InstanceKlass::InstanceKlass(int vtable_len,
                              bool is_anonymous) {
   No_Safepoint_Verifier no_safepoint; // until k becomes parsable
 
-  int size = InstanceKlass::size(vtable_len, itable_len, nonstatic_oop_map_size,
-                                 access_flags.is_interface(), is_anonymous);
+  int iksize = InstanceKlass::size(vtable_len, itable_len, nonstatic_oop_map_size,
+                                   access_flags.is_interface(), is_anonymous);
 
   // The sizes of these these three variables are used for determining the
   // size of the instanceKlassOop. It is critical that these are set to the right
   // sizes before the first GC, i.e., when we allocate the mirror.
-  this->set_vtable_length(vtable_len);
-  this->set_itable_length(itable_len);
-  this->set_static_field_size(static_field_size);
-  this->set_nonstatic_oop_map_size(nonstatic_oop_map_size);
-  this->set_access_flags(access_flags);
-  this->set_is_anonymous(is_anonymous);
-  assert(this->size() == size, "wrong size for object");
+  set_vtable_length(vtable_len);
+  set_itable_length(itable_len);
+  set_static_field_size(static_field_size);
+  set_nonstatic_oop_map_size(nonstatic_oop_map_size);
+  set_access_flags(access_flags);
+  _misc_flags = 0;  // initialize to zero
+  set_is_anonymous(is_anonymous);
+  assert(size() == iksize, "wrong size for object");
 
-  this->set_array_klasses(NULL);
-  this->set_methods(NULL);
-  this->set_method_ordering(NULL);
-  this->set_local_interfaces(NULL);
-  this->set_transitive_interfaces(NULL);
-  this->init_implementor();
-  this->set_fields(NULL, 0);
-  this->set_constants(NULL);
-  this->set_class_loader_data(NULL);
-  this->set_protection_domain(NULL);
-  this->set_signers(NULL);
-  this->set_source_file_name(NULL);
-  this->set_source_debug_extension(NULL, 0);
-  this->set_array_name(NULL);
-  this->set_inner_classes(NULL);
-  this->set_static_oop_field_count(0);
-  this->set_nonstatic_field_size(0);
-  this->set_is_marked_dependent(false);
-  this->set_init_state(InstanceKlass::allocated);
-  this->set_init_thread(NULL);
-  this->set_init_lock(NULL);
-  this->set_reference_type(rt);
-  this->set_oop_map_cache(NULL);
-  this->set_jni_ids(NULL);
-  this->set_osr_nmethods_head(NULL);
-  this->set_breakpoints(NULL);
-  this->init_previous_versions();
-  this->set_generic_signature(NULL);
-  this->release_set_methods_jmethod_ids(NULL);
-  this->release_set_methods_cached_itable_indices(NULL);
-  this->set_annotations(NULL);
-  this->set_jvmti_cached_class_field_map(NULL);
-  this->set_initial_method_idnum(0);
+  set_array_klasses(NULL);
+  set_methods(NULL);
+  set_method_ordering(NULL);
+  set_local_interfaces(NULL);
+  set_transitive_interfaces(NULL);
+  init_implementor();
+  set_fields(NULL, 0);
+  set_constants(NULL);
+  set_class_loader_data(NULL);
+  set_protection_domain(NULL);
+  set_signers(NULL);
+  set_source_file_name(NULL);
+  set_source_debug_extension(NULL, 0);
+  set_array_name(NULL);
+  set_inner_classes(NULL);
+  set_static_oop_field_count(0);
+  set_nonstatic_field_size(0);
+  set_is_marked_dependent(false);
+  set_init_state(InstanceKlass::allocated);
+  set_init_thread(NULL);
+  set_init_lock(NULL);
+  set_reference_type(rt);
+  set_oop_map_cache(NULL);
+  set_jni_ids(NULL);
+  set_osr_nmethods_head(NULL);
+  set_breakpoints(NULL);
+  init_previous_versions();
+  set_generic_signature(NULL);
+  release_set_methods_jmethod_ids(NULL);
+  release_set_methods_cached_itable_indices(NULL);
+  set_annotations(NULL);
+  set_jvmti_cached_class_field_map(NULL);
+  set_initial_method_idnum(0);
+  _dependencies = NULL;
+  set_jvmti_cached_class_field_map(NULL);
+  set_cached_class_file(NULL, 0);
+  set_initial_method_idnum(0);
+  set_minor_version(0);
+  set_major_version(0);
+  NOT_PRODUCT(_verify_count = 0;)
 
   // initialize the non-header words to zero
   intptr_t* p = (intptr_t*)this;
-  for (int index = InstanceKlass::header_size(); index < size; index++) {
+  for (int index = InstanceKlass::header_size(); index < iksize; index++) {
     p[index] = NULL_WORD;
   }
 
   // Set temporary value until parseClassFile updates it with the real instance
   // size.
-  this->set_layout_helper(Klass::instance_layout_helper(0, true));
+  set_layout_helper(Klass::instance_layout_helper(0, true));
 }
 
 
@@ -2781,7 +2789,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"protection domain: "); ((InstanceKlass*)this)->protection_domain()->print_value_on(st); st->cr();
   st->print(BULLET"host class:        "); host_klass()->print_value_on_maybe_null(st); st->cr();
   st->print(BULLET"signers:           "); signers()->print_value_on(st);               st->cr();
-  st->print(BULLET"init_lock:         "); ((oop)init_lock())->print_value_on(st);             st->cr();
+  st->print(BULLET"init_lock:         "); ((oop)_init_lock)->print_value_on(st);             st->cr();
   if (source_file_name() != NULL) {
     st->print(BULLET"source file:       ");
     source_file_name()->print_value_on(st);

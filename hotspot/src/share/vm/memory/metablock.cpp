@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,9 @@ Metablock* Metablock::initialize(MetaWord* p, size_t word_size) {
   }
 
   Metablock* result = (Metablock*) p;
-
-  // Clear the memory
-  Copy::fill_to_aligned_words((HeapWord*)result, word_size);
 #ifdef ASSERT
+  // Add just to catch missing initializations
+  Copy::fill_to_words((HeapWord*) result, word_size, 0xf1f1f1f1);
   result->set_word_size(word_size);
 #endif
   return result;

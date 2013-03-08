@@ -58,6 +58,12 @@ ConstMethod::ConstMethod(int byte_code_size,
   set_inlined_tables_length(sizes);
   set_method_type(method_type);
   assert(this->size() == size, "wrong size for object");
+  set_name_index(0);
+  set_signature_index(0);
+  set_constants(NULL);
+  set_max_stack(0);
+  set_max_locals(0);
+  set_method_idnum(0);
 }
 
 
