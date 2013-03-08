@@ -43,10 +43,10 @@
 
 // Support tracing except in product build on the client compiler
 #ifndef PRODUCT
-#define JVMTI_TRACE 1
+#define JVMTI_TRACE
 #else
 #ifdef COMPILER2
-#define JVMTI_TRACE 1
+#define JVMTI_TRACE
 #endif
 #endif
 

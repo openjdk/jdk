@@ -2273,10 +2273,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         }
 #if !INCLUDE_JVMTI
         if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
-          warning("profiling and debugging agents are not supported in this VM");
-        } else
+          jio_fprintf(defaultStream::error_stream(),
+            "Profiling and debugging agents are not supported in this VM\n");
+          return JNI_ERR;
+        }
 #endif // !INCLUDE_JVMTI
-          add_init_library(name, options);
+        add_init_library(name, options);
       }
     // -agentlib and -agentpath
     } else if (match_option(option, "-agentlib:", &tail) ||
@@ -2293,16 +2295,19 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         }
 #if !INCLUDE_JVMTI
         if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
-          warning("profiling and debugging agents are not supported in this VM");
-        } else
+          jio_fprintf(defaultStream::error_stream(),
+            "Profiling and debugging agents are not supported in this VM\n");
+          return JNI_ERR;
+        }
 #endif // !INCLUDE_JVMTI
         add_init_agent(name, options, is_absolute_path);
-
       }
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
 #if !INCLUDE_JVMTI
-      warning("Instrumentation agents are not supported in this VM");
+      jio_fprintf(defaultStream::error_stream(),
+        "Instrumentation agents are not supported in this VM\n");
+      return JNI_ERR;
 #else
       if(tail != NULL) {
         char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtInternal), tail);
@@ -2443,8 +2448,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 #if INCLUDE_FPROF
       _has_profile = true;
 #else // INCLUDE_FPROF
-      // do we have to exit?
-      warning("Flat profiling is not supported in this VM.");
+      jio_fprintf(defaultStream::error_stream(),
+        "Flat profiling is not supported in this VM.\n");
+      return JNI_ERR;
 #endif // INCLUDE_FPROF
     // -Xaprof
     } else if (match_option(option, "-Xaprof", &tail)) {
@@ -2478,8 +2484,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 #if INCLUDE_MANAGEMENT
         FLAG_SET_CMDLINE(bool, ManagementServer, true);
 #else
-        vm_exit_during_initialization(
-            "-Dcom.sun.management is not supported in this VM.", NULL);
+        jio_fprintf(defaultStream::output_stream(),
+          "-Dcom.sun.management is not supported in this VM.\n");
+        return JNI_ERR;
 #endif
       }
     // -Xint
@@ -2492,16 +2499,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xcomp", &tail)) {
       // for testing the compiler; turn off all flags that inhibit compilation
           set_mode_flags(_comp);
-
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump", &tail)) {
-#if !INCLUDE_CDS
-      vm_exit_during_initialization(
-          "Dumping a shared archive is not supported in this VM.", NULL);
-#else
       FLAG_SET_CMDLINE(bool, DumpSharedSpaces, true);
       set_mode_flags(_int);     // Prevent compilation, which creates objects
-#endif
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on", &tail)) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, true);
@@ -2514,7 +2515,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xshare:off", &tail)) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, false);
       FLAG_SET_CMDLINE(bool, RequireSharedSpaces, false);
-
     // -Xverify
     } else if (match_option(option, "-Xverify", &tail)) {
       if (strcmp(tail, ":all") == 0 || strcmp(tail, "") == 0) {
@@ -2828,8 +2828,9 @@ SOLARIS_ONLY(
       FLAG_SET_CMDLINE(bool, UseVMInterruptibleIO, true);
 #if !INCLUDE_MANAGEMENT
     } else if (match_option(option, "-XX:+ManagementServer", &tail)) {
-      vm_exit_during_initialization(
-        "ManagementServer is not supported in this VM.", NULL);
+        jio_fprintf(defaultStream::error_stream(),
+          "ManagementServer is not supported in this VM.\n");
+        return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
@@ -3135,7 +3136,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 #if INCLUDE_NMT
       MemTracker::init_tracking_options(tail);
 #else
-      warning("Native Memory Tracking is not supported in this VM");
+      jio_fprintf(defaultStream::error_stream(),
+        "Native Memory Tracking is not supported in this VM\n");
+      return JNI_ERR;
 #endif
     }
 
@@ -3254,6 +3257,16 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   force_serial_gc();
 #endif // INCLUDE_ALL_GCS
 #if !INCLUDE_CDS
+  if (DumpSharedSpaces || RequireSharedSpaces) {
+    jio_fprintf(defaultStream::error_stream(),
+      "Shared spaces are not supported in this VM\n");
+    return JNI_ERR;
+  }
+  if (UseSharedSpaces || PrintSharedSpaces) {
+    warning("Shared spaces are not supported in this VM");
+    FLAG_SET_DEFAULT(UseSharedSpaces, false);
+    FLAG_SET_DEFAULT(PrintSharedSpaces, false);
+  }
   no_shared_spaces();
 #endif // INCLUDE_CDS
 
