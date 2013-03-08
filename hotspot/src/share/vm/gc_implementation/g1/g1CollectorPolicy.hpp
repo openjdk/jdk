@@ -619,6 +619,18 @@ private:
   bool predict_will_fit(uint young_length, double base_time_ms,
                         uint base_free_regions, double target_pause_time_ms);
 
+  // Calculate the minimum number of old regions we'll add to the CSet
+  // during a mixed GC.
+  uint calc_min_old_cset_length();
+
+  // Calculate the maximum number of old regions we'll add to the CSet
+  // during a mixed GC.
+  uint calc_max_old_cset_length();
+
+  // Returns the given amount of uncollected reclaimable space
+  // as a percentage of the current heap capacity.
+  double reclaimable_bytes_perc(size_t reclaimable_bytes);
+
 public:
 
   G1CollectorPolicy();

@@ -26,7 +26,7 @@
  * @bug 6589834
  * @summary deoptimization problem with -XX:+DeoptimizeALot
  *
- * @run main/othervm -server Test_ia32
+ * @run main Test_ia32
  */
 
 /***************************************************************************************

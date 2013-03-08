@@ -536,7 +536,9 @@ class InstanceKlass: public Klass {
     assert(is_anonymous(), "not anonymous");
     Klass** addr = (Klass**)adr_host_klass();
     assert(addr != NULL, "no reversed space");
-    *addr = host;
+    if (addr != NULL) {
+      *addr = host;
+    }
   }
   bool is_anonymous() const                {
     return (_misc_flags & _misc_is_anonymous) != 0;
@@ -758,7 +760,10 @@ class InstanceKlass: public Klass {
   void set_implementor(Klass* k) {
     assert(is_interface(), "not interface");
     Klass** addr = adr_implementor();
-    *addr = k;
+    assert(addr != NULL, "null addr");
+    if (addr != NULL) {
+      *addr = k;
+    }
   }
 
   int  nof_implementors() const       {
