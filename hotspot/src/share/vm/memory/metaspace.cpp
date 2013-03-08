@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ const bool metaspace_slow_verify = false;
 const uint metadata_deallocate_a_lot_block = 10;
 const uint metadata_deallocate_a_lock_chunk = 3;
 size_t const allocation_from_dictionary_limit = 64 * K;
-const size_t metadata_deallocate = 0xf5f5f5f5;
 
 MetaWord* last_allocated = 0;
 

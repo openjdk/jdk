@@ -269,6 +269,8 @@ class InstanceKlass: public Klass {
 
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
 
+  NOT_PRODUCT(int _verify_count;)  // to avoid redundant verifies
+
   // Method array.
   Array<Method*>* _methods;
   // Interface (Klass*s) this class declares locally to implement.
@@ -586,7 +588,7 @@ class InstanceKlass: public Klass {
 
   // symbol unloading support (refcount already added)
   Symbol* array_name()                     { return _array_name; }
-  void set_array_name(Symbol* name)        { assert(_array_name == NULL, "name already created"); _array_name = name; }
+  void set_array_name(Symbol* name)        { assert(_array_name == NULL  || name == NULL, "name already created"); _array_name = name; }
 
   // nonstatic oop-map blocks
   static int nonstatic_oop_map_size(unsigned int oop_map_count) {
