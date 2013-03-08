@@ -263,6 +263,22 @@ final class ProcessImpl extends Process {
             if (needsEscaping(isCmdFile, s)) {
                 cmdbuf.append('"');
                 cmdbuf.append(s);
+
+                // The code protects the [java.exe] and console command line
+                // parser, that interprets the [\"] combination as an escape
+                // sequence for the ["] char.
+                //     http://msdn.microsoft.com/en-us/library/17w5ykft.aspx
+                //
+                // If the argument is an FS path, doubling of the tail [\]
+                // char is not a problem for non-console applications.
+                //
+                // The [\"] sequence is not an escape sequence for the [cmd.exe]
+                // command line parser. The case of the [""] tail escape
+                // sequence could not be realized due to the argument validation
+                // procedure.
+                if (!isCmdFile && s.endsWith("\\")) {
+                    cmdbuf.append('\\');
+                }
                 cmdbuf.append('"');
             } else {
                 cmdbuf.append(s);
