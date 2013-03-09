@@ -3916,15 +3916,27 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
 jlong os::current_thread_cpu_time() {
 #ifdef __APPLE__
   return os::thread_cpu_time(Thread::current(), true /* user + sys */);
+#else
+  Unimplemented();
+  return 0;
 #endif
 }
 
 jlong os::thread_cpu_time(Thread* thread) {
+#ifdef __APPLE__
+  return os::thread_cpu_time(thread, true /* user + sys */);
+#else
+  Unimplemented();
+  return 0;
+#endif
 }
 
 jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
 #ifdef __APPLE__
   return os::thread_cpu_time(Thread::current(), user_sys_cpu_time);
+#else
+  Unimplemented();
+  return 0;
 #endif
 }
 
@@ -3948,6 +3960,9 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   } else {
     return ((jlong)tinfo.user_time.seconds * 1000000000) + ((jlong)tinfo.user_time.microseconds * (jlong)1000);
   }
+#else
+  Unimplemented();
+  return 0;
 #endif
 }
 

@@ -45,5 +45,5 @@ ${TESTJAVA}/bin/jar -uf0 foo.jar Test7068051.java
 
 ${TESTJAVA}/bin/javac -d . Test7068051.java
 
-${TESTJAVA}/bin/java -showversion -Xbatch ${TESTVMOPTS} Test7068051 foo.jar
+${TESTJAVA}/bin/java ${TESTVMOPTS} -showversion -Xbatch Test7068051 foo.jar
 
