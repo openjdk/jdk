@@ -138,7 +138,7 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
             final Constructor<?>[] ctrs = clazz.getConstructors();
             final List<MethodHandle> mhs = new ArrayList<>(ctrs.length);
             for(int i = 0; i < ctrs.length; ++i) {
-                mhs.add(drop(Lookup.PUBLIC.unreflectConstructor(ctrs[i])));
+                mhs.add(drop(SafeUnreflector.unreflectConstructor(ctrs[i])));
             }
             return createDynamicMethod(mhs, clazz, "<init>");
         }

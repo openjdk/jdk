@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -42,7 +44,7 @@ import netscape.javascript.JSObject;
  * A Dynalink linker to handle web browser built-in JS (DOM etc.) objects as well
  * as ScriptObjects from other Nashorn contexts.
  */
-public final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
+final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
    /**
      * Instances of this class are used to represent a method member of a JSObject
      */

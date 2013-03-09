@@ -27,7 +27,7 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -46,8 +46,8 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
-import jdk.nashorn.internal.runtime.linker.Lookup;
-import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
+import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * This class is the implementation of the Nashorn-specific global object named {@code JSAdapter}. It can be

@@ -25,7 +25,8 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

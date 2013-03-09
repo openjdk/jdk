@@ -48,7 +48,7 @@ import jdk.nashorn.internal.runtime.ECMAErrors;
  *   var r = new Runnable(function() { print("Hello World" })
  * </pre>
  */
-class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
+final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
     private static final GuardingDynamicLinker staticClassLinker = BeansLinker.getLinkerForClass(StaticClass.class);
 
     @Override

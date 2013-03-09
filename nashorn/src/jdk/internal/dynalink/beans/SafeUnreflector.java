@@ -83,56 +83,74 @@
 
 package jdk.internal.dynalink.beans;
 
-import java.lang.reflect.Modifier;
-import java.security.AccessControlContext;
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.security.Permissions;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
+import jdk.internal.dynalink.beans.sandbox.Unreflector;
 
 /**
- * A utility class to check whether a given class is in a package with restricted access e.g. "sun.*" etc.
+ * Provides lookup of unreflected method handles through delegation to an instance of {@link SafeUnreflectorImpl}. If
+ * Dynalink is run as trusted code, the delegate class is loaded into an isolated zero-permissions protection domain,
+ * serving as a firebreak against an accidental privilege escalation downstream.
  */
-class CheckRestrictedPackage {
-    private static final AccessControlContext NO_PERMISSIONS_CONTEXT = createNoPermissionsContext();
+final class SafeUnreflector {
+    private static final String UNREFLECTOR_IMPL_CLASS_NAME = "jdk.internal.dynalink.beans.SafeUnreflectorImpl";
+    private static final Unreflector impl = createImpl();
 
-    /**
-     * Returns true if the class is either not public, or it resides in a package with restricted access.
-     * @param clazz the class to test
-     * @return true if the class is either not public, or it resides in a package with restricted access.
-     */
-    static boolean isRestrictedClass(Class<?> clazz) {
-        if(!Modifier.isPublic(clazz.getModifiers())) {
-            // Non-public classes are always restricted
-            return true;
-        }
-        final SecurityManager sm = System.getSecurityManager();
-        if(sm == null) {
-            // No further restrictions if we don't have a security manager
-            return false;
-        }
-        final String name = clazz.getName();
-        final int i = name.lastIndexOf('.');
-        if (i == -1) {
-            // Classes in default package are never restricted
-            return false;
-        }
-        // Do a package access check from within an access control context with no permissions
-        try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    sm.checkPackageAccess(name.substring(0, i));
-                    return null;
-                }
-            }, NO_PERMISSIONS_CONTEXT);
-        } catch(SecurityException e) {
-            return true;
-        }
-        return false;
+    private SafeUnreflector() {
     }
 
-    private static AccessControlContext createNoPermissionsContext() {
-        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
+    /**
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflect(Method)}, converting any encountered
+     * {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param m the method to unreflect
+     * @return the unreflected method handle.
+     */
+    static MethodHandle unreflect(Method m) {
+        return impl.unreflect(m);
+    }
+
+    /**
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectGetter(Field)}, converting any encountered
+     * {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param f the field for which a getter is unreflected
+     * @return the unreflected field getter handle.
+     */
+    static MethodHandle unreflectGetter(Field f) {
+        return impl.unreflectGetter(f);
+    }
+
+    /**
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field)}, converting any encountered
+     * {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param f the field for which a setter is unreflected
+     * @return the unreflected field setter handle.
+     */
+    static MethodHandle unreflectSetter(Field f) {
+        return impl.unreflectSetter(f);
+    }
+
+    static MethodHandle unreflectConstructor(Constructor<?> c) {
+        return impl.unreflectConstructor(c);
+    }
+
+    private static Unreflector createImpl() {
+        final Class<?> unreflectorImplClass = AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
+            @Override
+            public Class<?> run() {
+                return SandboxClassLoader.loadClass(UNREFLECTOR_IMPL_CLASS_NAME);
+            }
+        });
+        try {
+            return (Unreflector)unreflectorImplClass.newInstance();
+        } catch(InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 }

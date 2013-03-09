@@ -26,13 +26,13 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
-import jdk.nashorn.internal.runtime.linker.Lookup;
+import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 

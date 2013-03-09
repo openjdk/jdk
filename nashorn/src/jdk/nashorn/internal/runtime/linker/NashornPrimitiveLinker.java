@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -45,7 +45,7 @@ import jdk.nashorn.internal.runtime.GlobalObject;
  * engines. It is used for treatment of strings, boolean, and numbers as JavaScript primitives. Also provides ECMAScript
  * primitive type conversions for these types when linking to Java methods.
  */
-class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
+final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
     @Override
     public boolean canLinkType(final Class<?> type) {
         return canLinkTypeStatic(type);

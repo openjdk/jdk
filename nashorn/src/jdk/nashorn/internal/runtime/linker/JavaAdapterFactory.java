@@ -41,7 +41,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;

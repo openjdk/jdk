@@ -28,7 +28,7 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.codegen.types.Type.BOOLEAN;
 import static jdk.nashorn.internal.codegen.types.Type.INT;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
@@ -43,8 +43,8 @@ import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-import jdk.nashorn.internal.runtime.linker.Lookup;
-import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
+import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * Optimistic call site that assumes its Object arguments to be of a boxed type.

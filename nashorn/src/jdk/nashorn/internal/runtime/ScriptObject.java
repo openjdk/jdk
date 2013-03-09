@@ -39,7 +39,7 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndexNoThrow;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -65,8 +65,8 @@ import jdk.nashorn.internal.objects.AccessorPropertyDescriptor;
 import jdk.nashorn.internal.objects.DataPropertyDescriptor;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-import jdk.nashorn.internal.runtime.linker.Lookup;
-import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
+import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 

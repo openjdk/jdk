@@ -34,7 +34,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
