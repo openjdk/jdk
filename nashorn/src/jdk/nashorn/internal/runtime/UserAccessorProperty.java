@@ -26,7 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import java.lang.invoke.MethodHandle;
-import jdk.nashorn.internal.runtime.linker.Lookup;
+import jdk.nashorn.internal.lookup.Lookup;
 
 /**
  * Property with user defined getters/setters. Actual getter and setter

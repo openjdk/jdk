@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime.linker;
+package jdk.nashorn.internal.lookup;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

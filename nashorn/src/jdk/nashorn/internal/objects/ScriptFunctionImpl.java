@@ -34,7 +34,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.linker.Lookup;
+import jdk.nashorn.internal.lookup.Lookup;
 
 /**
  * Concrete implementation of ScriptFunction. This sets correct map for the

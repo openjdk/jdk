@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -47,7 +47,7 @@ import jdk.nashorn.internal.runtime.Undefined;
  * language runtimes by being declared in {@code META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker}
  * file of Nashorn's distribution.
  */
-public class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
+final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
     /**
      * Returns true if {@code ScriptObject} is assignable from {@code type}, or it is {@code Undefined}.
      */

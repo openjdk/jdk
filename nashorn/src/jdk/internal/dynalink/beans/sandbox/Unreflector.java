@@ -81,58 +81,52 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.beans;
+package jdk.internal.dynalink.beans.sandbox;
 
-import java.lang.reflect.Modifier;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
- * A utility class to check whether a given class is in a package with restricted access e.g. "sun.*" etc.
+ * Interface for creating unreflected method handles. This class is public for implementation purposes and is not part
+ * of any supported API.
  */
-class CheckRestrictedPackage {
-    private static final AccessControlContext NO_PERMISSIONS_CONTEXT = createNoPermissionsContext();
+public interface Unreflector {
+    /**
+     * Performs similarly to {@link java.lang.invoke.MethodHandles.Lookup#unreflect(Method)} for some lookup object,
+     * also converting any encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param m the method to unreflect
+     * @return the unreflected method handle.
+     */
+    public MethodHandle unreflect(Method m);
 
     /**
-     * Returns true if the class is either not public, or it resides in a package with restricted access.
-     * @param clazz the class to test
-     * @return true if the class is either not public, or it resides in a package with restricted access.
+     * Performs similarly to {@link java.lang.invoke.MethodHandles.Lookup#unreflectGetter(Field)} for some lookup
+     * object, also converting any encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param f the field for which a getter is unreflected
+     * @return the unreflected field getter handle.
      */
-    static boolean isRestrictedClass(Class<?> clazz) {
-        if(!Modifier.isPublic(clazz.getModifiers())) {
-            // Non-public classes are always restricted
-            return true;
-        }
-        final SecurityManager sm = System.getSecurityManager();
-        if(sm == null) {
-            // No further restrictions if we don't have a security manager
-            return false;
-        }
-        final String name = clazz.getName();
-        final int i = name.lastIndexOf('.');
-        if (i == -1) {
-            // Classes in default package are never restricted
-            return false;
-        }
-        // Do a package access check from within an access control context with no permissions
-        try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    sm.checkPackageAccess(name.substring(0, i));
-                    return null;
-                }
-            }, NO_PERMISSIONS_CONTEXT);
-        } catch(SecurityException e) {
-            return true;
-        }
-        return false;
-    }
+    public MethodHandle unreflectGetter(Field f);
 
-    private static AccessControlContext createNoPermissionsContext() {
-        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
-    }
+    /**
+     * Performs similarly to {@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field)} for some lookup
+     * object, also converting any encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param f the field for which a setter is unreflected
+     * @return the unreflected field setter handle.
+     */
+    public MethodHandle unreflectSetter(Field f);
+
+    /**
+     * Performs similarly to {@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor(Constructor)} for some
+     * lookup object, also converting any encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param c the constructor to unreflect
+     * @return the unreflected constructor handle.
+     */
+    public MethodHandle unreflectConstructor(Constructor<?> c);
+
 }

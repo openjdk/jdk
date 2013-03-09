@@ -83,31 +83,64 @@
 
 package jdk.internal.dynalink.beans;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import jdk.internal.dynalink.beans.sandbox.Unreflector;
 
 /**
- * This class is never referenced directly from code of any other class, but is loaded into a secure class loader that
- * gives it no permissions whatsoever, so it can be used to reliably test whether a given package has restricted access
- * or not. See {@link CheckRestrictedPackageInternal} for details.
- * @author Attila Szegedi
- * @version $Id: $
+ * Performs lookup of unreflected method handles by delegating to {@link MethodHandles#lookup()} using itself as the
+ * lookup class. When Dynalink runs as trusted code, this class is loaded into an isolated zero-permissions protection
+ * domain to stop any accidental privilege escalation.
  */
-class RestrictedPackageTester implements PrivilegedAction<Void> {
+final class SafeUnreflectorImpl implements Unreflector {
 
-    private final String pkgName;
-
-    private RestrictedPackageTester(String pkgName) {
-        this.pkgName = pkgName;
-    }
-
-    static void checkPackageAccess(String pkgName) {
-        AccessController.doPrivileged(new RestrictedPackageTester(pkgName));
+    SafeUnreflectorImpl() {
     }
 
     @Override
-    public Void run() {
-        System.getSecurityManager().checkPackageAccess(pkgName);
-        return null;
+    public MethodHandle unreflect(Method m) {
+        try {
+            return MethodHandles.lookup().unreflect(m);
+        } catch(IllegalAccessException e) {
+            final IllegalAccessError ee = new IllegalAccessError("Failed to unreflect method " + m);
+            ee.initCause(e);
+            throw ee;
+        }
+    }
+
+    @Override
+    public MethodHandle unreflectGetter(Field f) {
+        try {
+            return MethodHandles.lookup().unreflectGetter(f);
+        } catch(IllegalAccessException e) {
+            final IllegalAccessError ee = new IllegalAccessError("Failed to unreflect getter for field " + f);
+            ee.initCause(e);
+            throw ee;
+        }
+    }
+
+    @Override
+    public MethodHandle unreflectSetter(Field f) {
+        try {
+            return MethodHandles.lookup().unreflectSetter(f);
+        } catch(IllegalAccessException e) {
+            final IllegalAccessError ee = new IllegalAccessError("Failed to unreflect setter for field " + f);
+            ee.initCause(e);
+            throw ee;
+        }
+    }
+
+    @Override
+    public MethodHandle unreflectConstructor(Constructor<?> c) {
+        try {
+            return MethodHandles.lookup().unreflectConstructor(c);
+        } catch(IllegalAccessException e) {
+            final IllegalAccessError ee = new IllegalAccessError("Failed to unreflect constructor " + c);
+            ee.initCause(e);
+            throw ee;
+        }
     }
 }

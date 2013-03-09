@@ -36,16 +36,16 @@ import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createSetter;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getAccessorType;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getAccessorTypeIndex;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getNumberOfAccessorTypes;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
-import static jdk.nashorn.internal.runtime.linker.MethodHandleFactory.stripName;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.lookup.MethodHandleFactory.stripName;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.runtime.linker.Lookup;
-import jdk.nashorn.internal.runtime.linker.MethodHandleFactory;
+import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * An AccessorProperty is the most generic property type. An AccessorProperty is

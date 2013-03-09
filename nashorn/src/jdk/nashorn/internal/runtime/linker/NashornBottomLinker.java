@@ -27,7 +27,7 @@ package jdk.nashorn.internal.runtime.linker;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.runtime.linker.Lookup.MH;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -46,7 +46,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * setters for Java objects that couldn't be linked by any other linker, and throw appropriate ECMAScript errors for
  * attempts to invoke arbitrary Java objects as functions or constructors.
  */
-class NashornBottomLinker implements GuardingDynamicLinker {
+final class NashornBottomLinker implements GuardingDynamicLinker {
 
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices)
