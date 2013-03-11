@@ -1296,7 +1296,12 @@ public class LambdaToMethod extends TreeTranslator {
         private Name serializedLambdaName(Symbol owner) {
             StringBuilder buf = new StringBuilder();
             buf.append(names.lambda);
-            buf.append(owner.name);
+            String methodName = owner.name.toString();
+            if (methodName.equals("<clinit>"))
+                methodName = "static";
+            else if (methodName.equals("<init>"))
+                methodName = "new";
+            buf.append(methodName);
             buf.append('$');
             int methTypeHash = methodSig(owner.type).hashCode();
             buf.append(Integer.toHexString(methTypeHash));
