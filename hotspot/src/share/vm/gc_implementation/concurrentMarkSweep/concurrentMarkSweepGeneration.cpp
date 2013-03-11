@@ -2063,11 +2063,6 @@ void CMSCollector::do_mark_sweep_work(bool clear_all_soft_refs,
       // required.
       _collectorState = FinalMarking;
   }
-  if (PrintGCDetails &&
-      (_collectorState > Idling ||
-       !GCCause::is_user_requested_gc(GenCollectedHeap::heap()->gc_cause()))) {
-    gclog_or_tty->print(" (concurrent mode failure)");
-  }
   collect_in_foreground(clear_all_soft_refs);
 
   // For a mark-sweep, compute_new_size() will be called
