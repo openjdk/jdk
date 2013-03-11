@@ -3807,8 +3807,16 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitTry(JCTry tree) {
+        /* special case of try without catchers and with finally emtpy.
+         * Don't give it a try, translate only the body.
+         */
         if (tree.resources.isEmpty()) {
-            super.visitTry(tree);
+            if (tree.catchers.isEmpty() &&
+                tree.finalizer.getStatements().isEmpty()) {
+                result = translate(tree.body);
+            } else {
+                super.visitTry(tree);
+            }
         } else {
             result = makeTwrTry(tree);
         }
