@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,6 @@
 #ifndef OS_CPU_BSD_ZERO_VM_ATOMIC_BSD_ZERO_INLINE_HPP
 #define OS_CPU_BSD_ZERO_VM_ATOMIC_BSD_ZERO_INLINE_HPP
 
-#include "orderAccess_bsd_zero.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "vm_version_zero.hpp"

@@ -26,7 +26,7 @@
  * @test
  * @bug 6795161
  * @summary Escape analysis leads to data corruption
- * @run main/othervm -server  -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:CompileOnly=Test -XX:+DoEscapeAnalysis Test
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:CompileOnly=Test -XX:+DoEscapeAnalysis Test
  */
 
 class Test_Class_1 {

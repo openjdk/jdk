@@ -1101,12 +1101,6 @@ void PhaseMacroExpand::expand_allocate_common(
   Node* klass_node        = alloc->in(AllocateNode::KlassNode);
   Node* initial_slow_test = alloc->in(AllocateNode::InitialTest);
 
-  Node* storestore = alloc->storestore();
-  if (storestore != NULL) {
-    // Break this link that is no longer useful and confuses register allocation
-    storestore->set_req(MemBarNode::Precedent, top());
-  }
-
   assert(ctrl != NULL, "must have control");
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
@@ -1324,7 +1318,7 @@ void PhaseMacroExpand::expand_allocate_common(
         // No InitializeNode or no stores captured by zeroing
         // elimination. Simply add the MemBarStoreStore after object
         // initialization.
-        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot, fast_oop_rawmem);
+        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
         transform_later(mb);
 
         mb->init_req(TypeFunc::Memory, fast_oop_rawmem);
