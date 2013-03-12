@@ -68,11 +68,15 @@ public class Basic {
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang"},
              new String[] {"-V", "package", "-e", "java\\.lang\\..*"});
-        // test -classpath and -all options
+        // test -classpath and wildcard options
         test(null,
              new String[] {"com.sun.tools.jdeps", "java.lang", "java.util",
-                           "java.util.regex", "java.io", "p"},
+                           "java.util.regex", "java.io"},
              new String[] {"--classpath", testDir.getPath(), "*"});
+        // -v shows intra-dependency
+        test(new File(testDir, "Test.class"),
+             new String[] {"java.lang.Object", "p.Foo"},
+             new String[] {"-v", "--classpath", testDir.getPath(), "Test.class"});
         return errors;
     }
 

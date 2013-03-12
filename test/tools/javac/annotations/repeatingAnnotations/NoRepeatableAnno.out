@@ -1,3 +1,2 @@
-NoRepeatableAnno.java:11:1: compiler.err.duplicate.annotation.missing.container: Foo, java.lang.annotation.Repeatable
 NoRepeatableAnno.java:11:6: compiler.err.duplicate.annotation.missing.container: Foo, java.lang.annotation.Repeatable
-2 errors
+1 error
