@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,71 @@ final class EngineInputRecord extends InputRecord {
     }
 
     /*
+     * Verifies and removes the MAC value.  Returns true if
+     * the MAC checks out OK.
+     *
+     * On entry:
+     *     position = beginning of app/MAC data
+     *     limit = end of MAC data.
+     *
+     * On return:
+     *     position = beginning of app data
+     *     limit = end of app data
+     */
+    boolean checkMAC(MAC signer, ByteBuffer bb) {
+        if (internalData) {
+            return checkMAC(signer);
+        }
+
+        int len = signer.MAClen();
+        if (len == 0) { // no mac
+            return true;
+        }
+
+        /*
+         * Grab the original limit
+         */
+        int lim = bb.limit();
+
+        /*
+         * Delineate the area to apply a MAC on.
+         */
+        int macData = lim - len;
+        bb.limit(macData);
+
+        byte[] mac = signer.compute(contentType(), bb);
+
+        if (len != mac.length) {
+            throw new RuntimeException("Internal MAC error");
+        }
+
+        /*
+         * Delineate the MAC values, position was already set
+         * by doing the compute above.
+         *
+         * We could zero the MAC area, but not much useful information
+         * there anyway.
+         */
+        bb.position(macData);
+        bb.limit(lim);
+
+        try {
+            for (int i = 0; i < len; i++) {
+                if (bb.get() != mac[i]) {  // No BB.equals(byte []); !
+                    return false;
+                }
+            }
+            return true;
+        } finally {
+            /*
+             * Position to the data.
+             */
+            bb.rewind();
+            bb.limit(macData);
+        }
+    }
+
+    /*
      * Pass the data down if it's internally cached, otherwise
      * do it here.
      *
@@ -186,85 +251,16 @@ final class EngineInputRecord extends InputRecord {
      * If external data(app), return a new ByteBuffer with data to
      * process.
      */
-    ByteBuffer decrypt(Authenticator authenticator,
-            CipherBox box, ByteBuffer bb) throws BadPaddingException {
+    ByteBuffer decrypt(CipherBox box, ByteBuffer bb)
+            throws BadPaddingException {
 
         if (internalData) {
-            decrypt(authenticator, box);    // MAC is checked during decryption
+            decrypt(box);
             return tmpBB;
         }
 
-        BadPaddingException bpe = null;
-        if (!box.isNullCipher()) {
-            try {
-                // apply explicit nonce for AEAD/CBC cipher suites if needed
-                int nonceSize =
-                    box.applyExplicitNonce(authenticator, contentType(), bb);
-
-                // decrypt the content
-                if (box.isAEADMode()) {
-                    // DON'T encrypt the nonce_explicit for AEAD mode
-                    bb.position(bb.position() + nonceSize);
-                }   // The explicit IV for CBC mode can be decrypted.
-
-                box.decrypt(bb);
-                bb.position(nonceSize); // We don't actually remove the nonce.
-            } catch (BadPaddingException e) {
-                // RFC 2246 states that decryption_failed should be used
-                // for this purpose. However, that allows certain attacks,
-                // so we just send bad record MAC. We also need to make
-                // sure to always check the MAC to avoid a timing attack
-                // for the same issue. See paper by Vaudenay et al and the
-                // update in RFC 4346/5246.
-                //
-                // Failover to message authentication code checking.
-                bpe = new BadPaddingException("invalid padding");
-            }
-        }
-
-        // Requires message authentication code for null, stream and block
-        // cipher suites.
-        if (authenticator instanceof MAC) {
-            MAC signer = (MAC)authenticator;
-            int macLen = signer.MAClen();
-            if (macLen != 0) {
-                if (bb.remaining() < macLen) {
-                    // negative data length, something is wrong
-                    throw new BadPaddingException("bad record");
-                }
-
-                int position = bb.position();
-                int limit = bb.limit();
-                int macOffset = limit - macLen;
-
-                bb.limit(macOffset);
-                byte[] hash = signer.compute(contentType(), bb);
-                if (hash == null || macLen != hash.length) {
-                    // something is wrong with MAC implementation
-                    throw new RuntimeException("Internal MAC error");
-                }
-
-                bb.position(macOffset);
-                bb.limit(limit);
-
-                try {
-                    for (byte b : hash) {       // No BB.equals(byte []); !
-                        if (bb.get() != b) {
-                            throw new BadPaddingException("bad record MAC");
-                        }
-                    }
-                } finally {
-                    // reset to the data
-                    bb.position(position);
-                    bb.limit(macOffset);
-                }
-            }
-        }
-
-        // Is it a failover?
-        if (bpe != null) {
-            throw bpe;
-        }
+        box.decrypt(bb);
+        bb.rewind();
 
         return bb.slice();
     }
@@ -342,8 +338,8 @@ final class EngineInputRecord extends InputRecord {
         if (debug != null && Debug.isOn("packet")) {
             try {
                 HexDumpEncoder hd = new HexDumpEncoder();
+                srcBB.limit(srcPos + len);
                 ByteBuffer bb = srcBB.duplicate();  // Use copy of BB
-                bb.limit(srcPos + len);
 
                 System.out.println("[Raw read (bb)]: length = " + len);
                 hd.encodeBuffer(bb, System.out);
