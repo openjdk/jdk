@@ -23,8 +23,12 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public class NoAccessibleConstructorClass {
-    NoAccessibleConstructorClass() { }
+public abstract class Toothpaste {
+    public void applyToBrush() {
+        applyToBrushImpl();
+    }
+
+    protected abstract void applyToBrushImpl();
 }

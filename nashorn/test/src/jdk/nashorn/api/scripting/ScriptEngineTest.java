@@ -47,7 +47,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
-import jdk.nashorn.internal.runtime.Version;
 import netscape.javascript.JSObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -129,7 +128,6 @@ public class ScriptEngineTest {
         assertEquals(fac.getParameter(ScriptEngine.NAME), "javascript");
         assertEquals(fac.getLanguageVersion(), "ECMA - 262 Edition 5.1");
         assertEquals(fac.getEngineName(), "Oracle Nashorn");
-        assertEquals(fac.getEngineVersion(), Version.version());
         assertEquals(fac.getOutputStatement("context"), "print(context)");
         assertEquals(fac.getProgram("print('hello')", "print('world')"), "print('hello');print('world');");
         assertEquals(fac.getParameter(ScriptEngine.NAME), "javascript");
@@ -308,27 +306,6 @@ public class ScriptEngineTest {
             e.put("y", "foo");
             e.eval("print(y)");
         } catch (final ScriptException exp) {
-            exp.printStackTrace();
-            fail(exp.getMessage());
-        }
-    }
-
-    public static void alert(final Object msg) {
-        System.out.println(msg);
-    }
-
-    @Test
-    public void exposeMethodTest() {
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-
-        try {
-            final Method alert = ScriptEngineTest.class.getMethod("alert", Object.class);
-            // expose a Method object as global var.
-            e.put("alert", alert);
-            // call the global var.
-            e.eval("alert.invoke(null, 'alert! alert!!')");
-        } catch (final NoSuchMethodException | SecurityException | ScriptException exp) {
             exp.printStackTrace();
             fail(exp.getMessage());
         }
@@ -590,13 +567,6 @@ public class ScriptEngineTest {
             exp.printStackTrace();
             fail(exp.getMessage());
         }
-    }
-
-    @Test
-    public void versionTest() {
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-        assertEquals(e.getFactory().getEngineVersion(), Version.version());
     }
 
     @Test
@@ -873,27 +843,5 @@ public class ScriptEngineTest {
             se.printStackTrace();
             fail(se.getMessage());
         }
-    }
-
-    @Test
-    public void factoryOptionsTest() {
-        final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
-            if (fac instanceof NashornScriptEngineFactory) {
-                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
-                // specify --no-syntax-extensions flag
-                final String[] options = new String[] { "--no-syntax-extensions" };
-                final ScriptEngine e = nfac.getScriptEngine(options);
-                try {
-                    // try nashorn specific extension
-                    e.eval("var f = funtion(x) 2*x;");
-                    fail("should have thrown exception!");
-                } catch (final ScriptException se) {
-                }
-                return;
-            }
-        }
-
-        fail("Cannot find nashorn factory!");
     }
 }

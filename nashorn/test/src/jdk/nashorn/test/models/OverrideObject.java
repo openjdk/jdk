@@ -23,8 +23,22 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public final class FinalClass {
-    //empty
+public class OverrideObject {
+    @Override
+    public int hashCode() {
+        return 5;
+    }
+
+    @Override
+    public String toString() {
+        return "override-object";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // TODO: add a FindBugs annotation to ignore EQ_ALWAYS_FALSE here. This is just a test.
+        return false;
+    }
 }

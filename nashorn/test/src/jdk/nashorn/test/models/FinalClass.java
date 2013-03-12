@@ -23,14 +23,8 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public class DessertToppingFloorWaxDriver {
-    public void decorateDessert(DessertTopping dt) {
-        dt.pourOnDessert();
-    }
-
-    public void waxFloor(FloorWax fw) {
-        fw.shineUpTheFloor();
-    }
+public final class FinalClass {
+    //empty
 }

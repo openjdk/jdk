@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,20 +23,8 @@
  * questions.
  */
 
-/**
- * Conversion of ConsString to String
- *
- * @test
- * @run
- */
+package jdk.nashorn.test.models;
 
-var list = new java.util.ArrayList();
-var str = "foo";
-
-list.add(str);                               // plain string
-list.add(String(str + "1"));                 // String() called as function
-list.add(String(new String(str + "2")));     // String() called as function with String object
-list.add((str + "3").toString());            // toString() called on primitive string
-list.add(new String(str + "4").toString());  // toString() called on String object
-
-Packages.jdk.nashorn.test.models.StringArgs.checkString(list);
+public class NoAccessibleConstructorClass {
+    NoAccessibleConstructorClass() { }
+}

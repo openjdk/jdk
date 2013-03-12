@@ -23,43 +23,14 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public class OuterClass {
-    private final String value;
-
-    public OuterClass(String value) {
-        this.value = value;
+public class DessertToppingFloorWaxDriver {
+    public void decorateDessert(DessertTopping dt) {
+        dt.pourOnDessert();
     }
 
-    public static class InnerStaticClass {
-        private final String value;
-
-        public InnerStaticClass(String value) {
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return "InnerStaticClass[value=" + value + "]";
-        }
-    }
-
-    public class InnerNonStaticClass {
-        private final String value;
-
-        public InnerNonStaticClass(String value) {
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return "InnerNonStaticClass[value=" + value + ", outer=" + OuterClass.this + "]";
-        }
-    }
-
-    @Override
-    public String toString() {
-        return "OuterClass[value=" + value + "]";
+    public void waxFloor(FloorWax fw) {
+        fw.shineUpTheFloor();
     }
 }

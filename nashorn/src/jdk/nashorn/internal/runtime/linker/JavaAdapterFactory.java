@@ -54,6 +54,7 @@ import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
 import java.security.SecureRandom;
@@ -410,9 +411,13 @@ public final class JavaAdapterFactory {
      */
     public static MethodHandle getConstructor(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final StaticClass adapterClass = getAdapterClassFor(new Class<?>[] { targetType });
-        return MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(NashornCallSiteDescriptor.get(
-                "dyn:new", MethodType.methodType(targetType, StaticClass.class, sourceType), 0), false,
-                adapterClass, null)).getInvocation(), adapterClass);
+        return AccessController.doPrivileged(new PrivilegedExceptionAction<MethodHandle>() {
+            public MethodHandle run() throws Exception {
+                return  MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(NashornCallSiteDescriptor.get(
+                    "dyn:new", MethodType.methodType(targetType, StaticClass.class, sourceType), 0), false,
+                    adapterClass, null)).getInvocation(), adapterClass);
+            }
+        });
     }
 
     /**
@@ -456,7 +461,24 @@ public final class JavaAdapterFactory {
     private static ClassLoader createClassLoader(final ClassLoader parentLoader, final String className,
             final byte[] classBytes, final String privilegedActionClassName) {
         return new AdapterLoader(parentLoader) {
+            private final ClassLoader myLoader = getClass().getClassLoader();
             private final ProtectionDomain myProtectionDomain = getClass().getProtectionDomain();
+
+            @Override
+            public Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
+                try {
+                    return super.loadClass(name, resolve);
+                } catch (final SecurityException se) {
+                    // we may be implementing an interface or extending a class that was
+                    // loaded by a loader that prevents package.access. If so, it'd throw
+                    // SecurityException for nashorn's classes!. For adapter's to work, we
+                    // should be able to refer to nashorn classes.
+                    if (name.startsWith("jdk.nashorn.internal.")) {
+                        return myLoader.loadClass(name);
+                    }
+                    throw se;
+                }
+            }
 
             @Override
             protected Class<?> findClass(final String name) throws ClassNotFoundException {

@@ -23,18 +23,8 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public abstract class ConstructorWithArgument {
-    private final String token;
-
-    protected ConstructorWithArgument(String token) {
-        this.token = token;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    protected abstract void doSomething();
+public interface DessertTopping {
+    public String pourOnDessert();
 }

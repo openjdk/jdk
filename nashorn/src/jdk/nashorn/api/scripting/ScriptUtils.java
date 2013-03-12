@@ -23,9 +23,26 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.api.scripting;
 
-public interface OverloadedSam {
-    public void sam(String s);
-    public void sam(String s1, String s2);
+import jdk.nashorn.internal.runtime.ScriptRuntime;
+
+/**
+ * Utilities that are to be called from script code
+ */
+public final class ScriptUtils {
+    private ScriptUtils() {}
+
+    /**
+     * Returns AST as JSON compatible string. This is used to
+     * implement "parse" function in resources/parse.js script.
+     *
+     * @param code code to be parsed
+     * @param name name of the code source (used for location)
+     * @param includeLoc tells whether to include location information for nodes or not
+     * @return JSON string representation of AST of the supplied code
+     */
+    public static String parse(final String code, final String name, final boolean includeLoc) {
+        return ScriptRuntime.parse(code, name, includeLoc);
+    }
 }

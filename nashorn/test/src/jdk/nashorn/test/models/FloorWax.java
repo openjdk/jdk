@@ -23,8 +23,8 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public interface DessertTopping {
-    public String pourOnDessert();
+public interface FloorWax {
+    public String shineUpTheFloor();
 }

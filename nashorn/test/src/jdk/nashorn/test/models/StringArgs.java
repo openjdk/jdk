@@ -23,12 +23,17 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public abstract class Toothpaste {
-    public void applyToBrush() {
-        applyToBrushImpl();
+import java.util.List;
+
+public class StringArgs {
+
+    public static void checkString(List<?> list) {
+        for (Object s : list) {
+            if (!(s instanceof String)) {
+                throw new AssertionError("Not a String: " + s);
+            }
+        }
     }
-
-    protected abstract void applyToBrushImpl();
 }
