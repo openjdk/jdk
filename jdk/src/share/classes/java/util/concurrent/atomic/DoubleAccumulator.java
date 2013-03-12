@@ -100,14 +100,14 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
         Cell[] as; long b, v, r; int m; Cell a;
         if ((as = cells) != null ||
             (r = Double.doubleToRawLongBits
-             (function.operateAsDouble
+             (function.applyAsDouble
               (Double.longBitsToDouble(b = base), x))) != b  && !casBase(b, r)) {
             boolean uncontended = true;
             if (as == null || (m = as.length - 1) < 0 ||
                 (a = as[getProbe() & m]) == null ||
                 !(uncontended =
                   (r = Double.doubleToRawLongBits
-                   (function.operateAsDouble
+                   (function.applyAsDouble
                     (Double.longBitsToDouble(v = a.value), x))) == v ||
                   a.cas(v, r)))
                 doubleAccumulate(x, function, uncontended);
@@ -129,7 +129,7 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null)
-                    result = function.operateAsDouble
+                    result = function.applyAsDouble
                         (result, Double.longBitsToDouble(a.value));
             }
         }
@@ -174,7 +174,7 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
                 if ((a = as[i]) != null) {
                     double v = Double.longBitsToDouble(a.value);
                     a.value = identity;
-                    result = function.operateAsDouble(result, v);
+                    result = function.applyAsDouble(result, v);
                 }
             }
         }

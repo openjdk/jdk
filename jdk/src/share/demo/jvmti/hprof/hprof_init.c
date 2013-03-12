@@ -1899,11 +1899,17 @@ load_library(char *name)
      */
     getSystemProperty("sun.boot.library.path", &boot_path);
     md_build_library_name(lname, FILENAME_MAX, boot_path, name);
+    if ( strlen(lname) == 0 ) {
+        HPROF_ERROR(JNI_TRUE, "Could not find library");
+    }
     jvmtiDeallocate(boot_path);
     handle = md_load_library(lname, err_buf, (int)sizeof(err_buf));
     if ( handle == NULL ) {
         /* This may be necessary on Windows. */
         md_build_library_name(lname, FILENAME_MAX, "", name);
+        if ( strlen(lname) == 0 ) {
+            HPROF_ERROR(JNI_TRUE, "Could not find library");
+        }
         handle = md_load_library(lname, err_buf, (int)sizeof(err_buf));
         if ( handle == NULL ) {
             HPROF_ERROR(JNI_TRUE, err_buf);
@@ -1968,6 +1974,9 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     getSystemProperty("sun.boot.library.path", &boot_path);
     /* Load in NPT library for character conversions */
     md_build_library_name(npt_lib, sizeof(npt_lib), boot_path, NPT_LIBNAME);
+    if ( strlen(npt_lib) == 0 ) {
+        HPROF_ERROR(JNI_TRUE, "Could not find npt library");
+    }
     jvmtiDeallocate(boot_path);
     NPT_INITIALIZE(npt_lib, &(gdata->npt), NPT_VERSION, NULL);
     if ( gdata->npt == NULL ) {

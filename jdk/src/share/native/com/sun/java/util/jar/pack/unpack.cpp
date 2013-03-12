@@ -2488,7 +2488,7 @@ void unpacker::read_attrs(int attrc, int obj_count) {
     method_MethodParameters_NB.readData(count);
     count = method_MethodParameters_NB.getIntTotal();
     method_MethodParameters_name_RUN.readData(count);
-    method_MethodParameters_flag_I.readData(count);
+    method_MethodParameters_flag_FH.readData(count);
     CHECK;
     break;
 
@@ -2942,6 +2942,9 @@ band* unpacker::ref_band_for_op(int bc) {
   case bc_putfield:
     return &bc_fieldref;
 
+  case _invokespecial_int:
+  case _invokestatic_int:
+    return &bc_imethodref;
   case bc_invokevirtual:
   case bc_invokespecial:
   case bc_invokestatic:
@@ -4177,6 +4180,12 @@ void unpacker::write_bc_ops() {
         }
         origBC = bc;
         switch (bc) {
+        case _invokestatic_int:
+          origBC = bc_invokestatic;
+          break;
+        case _invokespecial_int:
+          origBC = bc_invokespecial;
+          break;
         case bc_ildc:
         case bc_cldc:
         case bc_fldc:
@@ -4431,7 +4440,7 @@ int unpacker::write_attrs(int attrc, julong indexBits) {
         putu1(count = method_MethodParameters_NB.getByte());
         for (j = 0; j < count; j++) {
           putref(method_MethodParameters_name_RUN.getRefN());
-          putu4(method_MethodParameters_flag_I.getInt());
+          putu2(method_MethodParameters_flag_FH.getInt());
         }
         break;
 

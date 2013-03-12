@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
 package java.lang.invoke;
 import java.lang.invoke.MethodHandleNatives.Constants;
 
-//Not yet public: public
-class MethodHandleInfo {
+/**
+ * Cracking (reflecting) method handles back into their constituent symbolic parts.
+ *
+ */
+final class MethodHandleInfo {
    public static final int
-       REF_NONE                    = Constants.REF_NONE,
        REF_getField                = Constants.REF_getField,
        REF_getStatic               = Constants.REF_getStatic,
        REF_putField                = Constants.REF_putField,
@@ -45,12 +47,17 @@ class MethodHandleInfo {
    private final MethodType methodType;
    private final int referenceKind;
 
-   public MethodHandleInfo(MethodHandle mh) throws ReflectiveOperationException {
+   public MethodHandleInfo(MethodHandle mh) {
        MemberName mn = mh.internalMemberName();
+       if (mn == null)  throw new IllegalArgumentException("not a direct method handle");
        this.declaringClass = mn.getDeclaringClass();
        this.name = mn.getName();
-       this.methodType = mn.getMethodType();
-       this.referenceKind = mn.getReferenceKind();
+       this.methodType = mn.getMethodOrFieldType();
+       byte refKind = mn.getReferenceKind();
+       if (refKind == REF_invokeSpecial && !mh.isInvokeSpecial())
+           // Devirtualized method invocation is usually formally virtual.
+           refKind = REF_invokeVirtual;
+       this.referenceKind = refKind;
    }
 
    public Class<?> getDeclaringClass() {
@@ -65,7 +72,32 @@ class MethodHandleInfo {
        return methodType;
    }
 
+   public int getModifiers() {
+       return -1; //TODO
+   }
+
    public int getReferenceKind() {
        return referenceKind;
    }
+
+   static String getReferenceKindString(int referenceKind) {
+        switch (referenceKind) {
+            case REF_getField: return "getfield";
+            case REF_getStatic: return "getstatic";
+            case REF_putField: return "putfield";
+            case REF_putStatic: return "putstatic";
+            case REF_invokeVirtual: return "invokevirtual";
+            case REF_invokeStatic: return "invokestatic";
+            case REF_invokeSpecial: return "invokespecial";
+            case REF_newInvokeSpecial: return "newinvokespecial";
+            case REF_invokeInterface: return "invokeinterface";
+            default: return "UNKNOWN_REFENCE_KIND" + "[" + referenceKind + "]";
+        }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s %s.%s:%s", getReferenceKindString(referenceKind),
+                             declaringClass.getName(), name, methodType);
+    }
 }

@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
 import sun.invoke.util.Wrapper;
 import static sun.invoke.util.Wrapper.*;
 
@@ -48,6 +49,9 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
     private static final int[][] wideningOpcodes = new int[NUM_WRAPPERS][NUM_WRAPPERS];
 
     private static final Wrapper[] FROM_WRAPPER_NAME = new Wrapper[16];
+
+    // Table of wrappers for primitives, indexed by ASM type sorts
+    private static final Wrapper[] FROM_TYPE_SORT = new Wrapper[16];
 
     static {
         for (Wrapper w : Wrapper.values()) {
@@ -71,6 +75,15 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         initWidening(DOUBLE, Opcodes.I2D, BYTE, SHORT, INT, CHAR);
         initWidening(DOUBLE, Opcodes.F2D, FLOAT);
         initWidening(DOUBLE, Opcodes.L2D, LONG);
+
+        FROM_TYPE_SORT[Type.BYTE] = Wrapper.BYTE;
+        FROM_TYPE_SORT[Type.SHORT] = Wrapper.SHORT;
+        FROM_TYPE_SORT[Type.INT] = Wrapper.INT;
+        FROM_TYPE_SORT[Type.LONG] = Wrapper.LONG;
+        FROM_TYPE_SORT[Type.CHAR] = Wrapper.CHAR;
+        FROM_TYPE_SORT[Type.FLOAT] = Wrapper.FLOAT;
+        FROM_TYPE_SORT[Type.DOUBLE] = Wrapper.DOUBLE;
+        FROM_TYPE_SORT[Type.BOOLEAN] = Wrapper.BOOLEAN;
     }
 
     private static void initWidening(Wrapper to, int opcode, Wrapper... from) {
@@ -124,8 +137,9 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         return "()" + w.basicTypeChar();
     }
 
-    void boxIfPrimitive(Wrapper w) {
-        if (w.zero() != null) {
+    void boxIfTypePrimitive(Type t) {
+        Wrapper w = FROM_TYPE_SORT[t.getSort()];
+        if (w != null) {
             box(w);
         }
     }
@@ -262,6 +276,24 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
                 // Both reference types: just case to target type
                 cast(dSrc, dTarget);
             }
+        }
+    }
+
+    /**
+     * The following method is copied from
+     * org.objectweb.asm.commons.InstructionAdapter. Part of ASM: a very small
+     * and fast Java bytecode manipulation framework.
+     * Copyright (c) 2000-2005 INRIA, France Telecom All rights reserved.
+     */
+    void iconst(final int cst) {
+        if (cst >= -1 && cst <= 5) {
+            mv.visitInsn(Opcodes.ICONST_0 + cst);
+        } else if (cst >= Byte.MIN_VALUE && cst <= Byte.MAX_VALUE) {
+            mv.visitIntInsn(Opcodes.BIPUSH, cst);
+        } else if (cst >= Short.MIN_VALUE && cst <= Short.MAX_VALUE) {
+            mv.visitIntInsn(Opcodes.SIPUSH, cst);
+        } else {
+            mv.visitLdcInsn(cst);
         }
     }
 }

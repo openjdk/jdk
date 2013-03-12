@@ -26,7 +26,10 @@ package java.util.function;
 
 /**
  * An operation on two {@code long} operands yielding a {@code long} result.
+ * This is the primitive type specialization of {@link BinaryOperator} for
+ * {@code long}.
  *
+ * @see BinaryOperator
  * @since 1.8
  */
 @FunctionalInterface
@@ -41,5 +44,5 @@ public interface LongBinaryOperator {
      * @param right  the right operand value
      * @return the result of the operation
      */
-    public long operateAsLong(long left, long right);
+    public long applyAsLong(long left, long right);
 }

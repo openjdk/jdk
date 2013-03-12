@@ -60,6 +60,7 @@ static void dll_build_name(char* buffer, size_t buflen,
 
     char *path_sep = PATH_SEPARATOR;
     char *pathname = (char *)pname;
+    *buffer = '\0';
     while (strlen(pathname) > 0) {
         char *p = strchr(pathname, *path_sep);
         if (p == NULL) {
@@ -69,13 +70,17 @@ static void dll_build_name(char* buffer, size_t buflen,
         if (p == pathname) {
             continue;
         }
-        (void)snprintf(buffer, buflen, "%.*s/lib%s." LIB_SUFFIX, (p - pathname),
+        (void)snprintf(buffer, buflen, "%.*s/lib%s." LIB_SUFFIX, (int)(p - pathname),
                        pathname, fname);
 
         if (access(buffer, F_OK) == 0) {
             break;
         }
-        pathname = p + 1;
+        if (*p == '\0') {
+            pathname = p;
+        } else {
+            pathname = p + 1;
+        }
         *buffer = '\0';
     }
 }
