@@ -309,6 +309,7 @@ class Arguments : AllStatic {
   // Garbage-First (UseG1GC)
   static void set_g1_gc_flags();
   // GC ergonomics
+  static void set_use_compressed_oops();
   static void set_ergonomics_flags();
   static void set_shared_spaces_flags();
   // Setup heap size
