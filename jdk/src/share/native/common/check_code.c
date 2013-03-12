@@ -206,6 +206,8 @@ enum {
 
 #define LDC_METHOD_HANDLE_MAJOR_VERSION 51
 
+#define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION 51
+
 #define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION  52
 
 #define ALLOC_STACK_SIZE 16 /* big enough */
@@ -1146,11 +1148,14 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         int *saved_operand;
         int keys;
         int k, delta;
-        /* 4639449, 4647081: Padding bytes must be zero. */
-        unsigned char* bptr = (unsigned char*) (code + offset + 1);
-        for (; bptr < (unsigned char*)lpc; bptr++) {
-            if (*bptr != 0) {
-                CCerror(context, "Non zero padding bytes in switch");
+
+        if (context->major_version < NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION) {
+            /* 4639449, 4647081: Padding bytes must be zero. */
+            unsigned char* bptr = (unsigned char*) (code + offset + 1);
+            for (; bptr < (unsigned char*)lpc; bptr++) {
+                if (*bptr != 0) {
+                    CCerror(context, "Non zero padding bytes in switch");
+                }
             }
         }
         if (opcode == JVM_OPC_tableswitch) {
