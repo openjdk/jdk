@@ -28,7 +28,7 @@
  * @run
  */
 var m = new (Java.type("java.util.LinkedHashMap"));
-print("m.class.name=" + m.class.name) // Has "class" property like any POJO
+print("m.class.name=" + Java.typeName(m.class)) // Has "class" property like any POJO
 
 var empty_key = "empty"
 

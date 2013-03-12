@@ -34,6 +34,9 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1503,8 +1506,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         addOwnProperty("echo", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)
-        value = context.getEnv();
-        addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, value);
+        final ScriptObject options = newEmptyInstance();
+        final ScriptEnvironment scriptEnv = context.getEnv();
+        copyOptions(options, scriptEnv);
+        addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, options);
 
         // Nashorn extension: global.$ENV (scripting-mode-only)
         if (System.getSecurityManager() == null) {
@@ -1521,6 +1526,21 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         addOwnProperty(ScriptingFunctions.OUT_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
         addOwnProperty(ScriptingFunctions.ERR_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
         addOwnProperty(ScriptingFunctions.EXIT_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
+    }
+
+    private void copyOptions(final ScriptObject options, final ScriptEnvironment scriptEnv) {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                for (Field f : scriptEnv.getClass().getFields()) {
+                    try {
+                        options.set(f.getName(), f.get(scriptEnv), false);
+                    } catch (final IllegalArgumentException | IllegalAccessException exp) {
+                        throw new RuntimeException(exp);
+                    }
+                }
+                return null;
+            }
+        });
     }
 
     private void initTypedArray() {

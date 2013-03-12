@@ -39,10 +39,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.internal.codegen.Compiler;
@@ -123,7 +126,7 @@ public final class Context {
             if (callerLoader != myLoader &&
                 !(callerLoader instanceof StructureLoader) &&
                 !(JavaAdapterFactory.isAdapterClass(caller))) {
-                sm.checkPermission(new RuntimePermission("getNashornGlobal"));
+                sm.checkPermission(new RuntimePermission("nashorn.getGlobal"));
             }
         }
 
@@ -137,7 +140,7 @@ public final class Context {
     public static void setGlobal(final ScriptObject global) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission("setNashornGlobal"));
+            sm.checkPermission(new RuntimePermission("nashorn.setGlobal"));
         }
 
         if (global != null && !(global instanceof GlobalObject)) {
@@ -154,7 +157,7 @@ public final class Context {
     public static Context getContext() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getNashornContext"));
+            sm.checkPermission(new RuntimePermission("nashorn.getContext"));
         }
         return getContextTrusted();
     }
@@ -267,7 +270,7 @@ public final class Context {
     public Context(final Options options, final ErrorManager errors, final PrintWriter out, final PrintWriter err, final ClassLoader appLoader) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission("createNashornContext"));
+            sm.checkPermission(new RuntimePermission("nashorn.createContext"));
         }
 
         this.env       = new ScriptEnvironment(options, out, err);
@@ -533,7 +536,13 @@ public final class Context {
         if (index != -1) {
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPackageAccess(fullName.substring(0, index));
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    @Override
+                    public Void run() {
+                        sm.checkPackageAccess(fullName.substring(0, index));
+                        return null;
+                    }
+                }, createNoPermissionsContext());
             }
         }
 
@@ -599,7 +608,7 @@ public final class Context {
     public ScriptObject newGlobal() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission("createNashornGlobal"));
+            sm.checkPermission(new RuntimePermission("nashorn.newGlobal"));
         }
 
         return newGlobalTrusted();
@@ -674,6 +683,10 @@ public final class Context {
         }
 
         return (context != null) ? context : Context.getContextTrusted();
+    }
+
+    private static AccessControlContext createNoPermissionsContext() {
+        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
     }
 
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
