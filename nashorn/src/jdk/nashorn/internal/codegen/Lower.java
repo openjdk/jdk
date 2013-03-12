@@ -237,6 +237,7 @@ final class Lower extends NodeOperatorVisitor {
 
         if (!forNode.isForIn() && conservativeAlwaysTrue(test)) {
             forNode.setTest(null);
+            setHasGoto(forNode);
             setTerminal(forNode, !escapes);
         }
 
