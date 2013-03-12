@@ -3023,7 +3023,7 @@ if [[ -n $CRID ]]; then
             cleanup='s|\[#\(JDK-[0-9]\{5,\}\)\] \(.*\)|\1 : \2|'
         fi
         if [[ -n $WGET ]]; then
-            msg=`$WGET --timeout=10 --tries=1 -q $url -O - | grep '<title>' | sed 's/<title>\(.*\)<\/title>/\1/' | sed "$cleanup"`
+            msg=`$WGET --timeout=10 --tries=1 -q $url -O - | grep '<title>' | sed 's/<title>\(.*\)<\/title>/\1/' | sed "$cleanup" | html_quote`
         fi
         if [[ -z $msg ]]; then
             msg="${id}"
