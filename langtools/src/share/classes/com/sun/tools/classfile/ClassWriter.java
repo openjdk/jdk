@@ -483,7 +483,7 @@ public class ClassWriter {
             out.writeByte(attr.method_parameter_table.length);
             for (MethodParameters_attribute.Entry e : attr.method_parameter_table) {
                 out.writeShort(e.name_index);
-                out.writeInt(e.flags);
+                out.writeShort(e.flags);
             }
             return null;
         }
