@@ -197,7 +197,7 @@ static BOOL sSetupHelpMenu = NO;
 
     if (self == sActiveMenuBar) {
         NSArray *args = [[NSArray alloc] initWithObjects:theMenu, [NSNumber numberWithInt:-1], nil];
-        [ThreadUtilities performOnMainThread:@selector(nativeAddMenuAtIndex_OnAppKitThread:) onObject:self withObject:args waitUntilDone:YES awtMode:YES];
+        [ThreadUtilities performOnMainThread:@selector(nativeAddMenuAtIndex_OnAppKitThread:) on:self withObject:args waitUntilDone:YES];
         [args release];
     }
 }
@@ -216,7 +216,7 @@ static BOOL sSetupHelpMenu = NO;
 
     if (self == sActiveMenuBar) {
         NSArray *args = [[NSArray alloc] initWithObjects:theMenu, [NSNumber numberWithInt:index], nil];
-        [ThreadUtilities performOnMainThread:@selector(nativeAddMenuAtIndex_OnAppKitThread:) onObject:self withObject:args waitUntilDone:YES awtMode:YES];
+        [ThreadUtilities performOnMainThread:@selector(nativeAddMenuAtIndex_OnAppKitThread:) on:self withObject:args waitUntilDone:YES];
         [args release];
     }
 }
@@ -286,7 +286,7 @@ static BOOL sSetupHelpMenu = NO;
 
 - (void) javaDeleteMenu: (jint)index {
     if (self == sActiveMenuBar) {
-        [ThreadUtilities performOnMainThread:@selector(nativeDeleteMenu_OnAppKitThread:) onObject:self withObject:[NSNumber numberWithInt:index] waitUntilDone:YES awtMode:YES];
+        [ThreadUtilities performOnMainThread:@selector(nativeDeleteMenu_OnAppKitThread:) on:self withObject:[NSNumber numberWithInt:index] waitUntilDone:YES];
     }
 
     @synchronized(self) {
@@ -388,7 +388,7 @@ Java_sun_lwawt_macosx_CMenuBar_nativeCreateMenuBar
     // We use an array here only to be able to get a return value
     NSMutableArray *args = [[NSMutableArray alloc] initWithObjects:[NSValue valueWithBytes:&cPeerObjGlobal objCType:@encode(jobject)], nil];
 
-    [ThreadUtilities performOnMainThread:@selector(_create_OnAppKitThread:) onObject:[CMenuBar alloc] withObject:args waitUntilDone:YES awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(_create_OnAppKitThread:) on:[CMenuBar alloc] withObject:args waitUntilDone:YES];
 
     aCMenuBar = (CMenuBar *)[args objectAtIndex: 0];
 

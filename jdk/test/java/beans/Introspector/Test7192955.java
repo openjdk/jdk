@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,20 @@
 
 /*
  * @test
- * @bug 7192955
+ * @bug 7192955 8000183
  * @summary Tests that all properties are bound
  * @author Sergey Malenkov
  */
 
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyDescriptor;
 import java.util.List;
 
 public class Test7192955 {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IntrospectionException {
         if (!BeanUtils.findPropertyDescriptor(MyBean.class, "test").isBound()) {
             throw new Error("a simple property is not bound");
         }
@@ -42,6 +45,12 @@ public class Test7192955 {
         }
         if (!BeanUtils.findPropertyDescriptor(MyBean.class, "readOnly").isBound()) {
             throw new Error("a read-only property is not bound");
+        }
+        PropertyDescriptor[] pds = Introspector.getBeanInfo(MyBean.class, BaseBean.class).getPropertyDescriptors();
+        for (PropertyDescriptor pd : pds) {
+            if (pd.getName().equals("test") && pd.isBound()) {
+                throw new Error("a simple property is bound without superclass");
+            }
         }
     }
 
