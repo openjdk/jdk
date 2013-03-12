@@ -3395,10 +3395,10 @@ CMSPhaseAccounting::CMSPhaseAccounting(CMSCollector *collector,
   if (PrintCMSStatistics != 0) {
     _collector->resetYields();
   }
-  if (PrintGCDetails && PrintGCTimeStamps) {
+  if (PrintGCDetails) {
     gclog_or_tty->date_stamp(PrintGCDateStamps);
-    gclog_or_tty->stamp();
-    gclog_or_tty->print_cr(": [%s-concurrent-%s-start]",
+    gclog_or_tty->stamp(PrintGCTimeStamps);
+    gclog_or_tty->print_cr("[%s-concurrent-%s-start]",
       _collector->cmsGen()->short_name(), _phase);
   }
   _collector->resetTimer();
