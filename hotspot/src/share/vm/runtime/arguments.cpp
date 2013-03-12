@@ -3262,7 +3262,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       "Shared spaces are not supported in this VM\n");
     return JNI_ERR;
   }
-  if (UseSharedSpaces || PrintSharedSpaces) {
+  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) || PrintSharedSpaces) {
     warning("Shared spaces are not supported in this VM");
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
     FLAG_SET_DEFAULT(PrintSharedSpaces, false);
