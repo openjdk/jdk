@@ -2,10 +2,10 @@ package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.ATTR;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.CONSTANT_FOLDED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.EMITTED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.FINALIZED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.INITIALIZED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOWERED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.PARSED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
 
 import java.io.File;
@@ -39,7 +39,7 @@ enum CompilationPhase {
      * default policy. The will get trampolines and only be generated when
      * called
      */
-    LAZY_INITIALIZATION_PHASE(EnumSet.of(FunctionNode.CompilationState.INITIALIZED)) {
+    LAZY_INITIALIZATION_PHASE(EnumSet.of(INITIALIZED, PARSED)) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
 
@@ -79,8 +79,10 @@ enum CompilationPhase {
                     if (node == outermostFunctionNode) {
                         return node;
                     }
-                    assert Compiler.LAZY_JIT;
+                    assert compiler.isLazy();
                     lazy.add(node);
+
+                    //also needs scope, potentially needs arguments etc etc
 
                     return node;
                 }
@@ -113,7 +115,7 @@ enum CompilationPhase {
      * Constant folding pass
      *   Simple constant folding that will make elementary constructs go away
      */
-    CONSTANT_FOLDING_PHASE(EnumSet.of(INITIALIZED), CONSTANT_FOLDED) {
+    CONSTANT_FOLDING_PHASE(EnumSet.of(INITIALIZED, PARSED)) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
             fn.accept(new FoldConstants());
@@ -134,7 +136,7 @@ enum CompilationPhase {
      *   as runtime nodes where applicable.
      *
      */
-    LOWERING_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED), LOWERED) {
+    LOWERING_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED)) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
             fn.accept(new Lower());
@@ -150,19 +152,10 @@ enum CompilationPhase {
      * Attribution
      *   Assign symbols and types to all nodes.
      */
-    ATTRIBUTION_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED), ATTR) {
+    ATTRIBUTION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED)) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
-            final ScriptEnvironment env = compiler.getEnv();
-
             fn.accept(new Attr());
-            if (env._print_lower_ast) {
-                env.getErr().println(new ASTWriter(fn));
-            }
-
-            if (env._print_lower_parse) {
-                env.getErr().println(new PrintVisitor(fn));
-           }
         }
 
         @Override
@@ -178,7 +171,7 @@ enum CompilationPhase {
      *   a + b a ScriptRuntime.ADD with call overhead or a dadd with much
      *   less). Split IR can lead to scope information being changed.
      */
-    SPLITTING_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED, ATTR), SPLIT) {
+    SPLITTING_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR)) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
             final CompileUnit outermostCompileUnit = compiler.addCompileUnit(compiler.firstCompileUnitName());
@@ -212,10 +205,20 @@ enum CompilationPhase {
      * Contract: all variables must have slot assignments and scope assignments
      * before type finalization.
      */
-    TYPE_FINALIZATION_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT), FINALIZED) {
+    TYPE_FINALIZATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT)) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
+            final ScriptEnvironment env = compiler.getEnv();
+
             fn.accept(new FinalizeTypes());
+
+            if (env._print_lower_ast) {
+                env.getErr().println(new ASTWriter(fn));
+            }
+
+            if (env._print_lower_parse) {
+                env.getErr().println(new PrintVisitor(fn));
+           }
         }
 
         @Override
@@ -229,7 +232,7 @@ enum CompilationPhase {
      *
      *   Generate the byte code class(es) resulting from the compiled FunctionNode
      */
-    BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED), EMITTED) {
+    BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED)) {
         @Override
         void transform(final Compiler compiler, final FunctionNode fn) {
             final ScriptEnvironment env = compiler.getEnv();
@@ -306,18 +309,12 @@ enum CompilationPhase {
     };
 
     private final EnumSet<CompilationState> pre;
-    private final CompilationState post;
     private long startTime;
     private long endTime;
     private boolean isFinished;
 
     private CompilationPhase(final EnumSet<CompilationState> pre) {
-        this(pre, null);
-    }
-
-    private CompilationPhase(final EnumSet<CompilationState> pre, final CompilationState post) {
-        this.pre  = pre;
-        this.post = post;
+        this.pre = pre;
     }
 
     boolean isApplicable(final FunctionNode functionNode) {
@@ -342,10 +339,6 @@ enum CompilationPhase {
     protected void end(final FunctionNode functionNode) {
         endTime = System.currentTimeMillis();
         Timing.accumulateTime(toString(), endTime - startTime);
-
-        if (post != null) {
-            functionNode.setState(post);
-        }
 
         isFinished = true;
     }

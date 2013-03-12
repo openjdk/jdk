@@ -45,11 +45,15 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
+import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
@@ -70,8 +74,6 @@ public final class Compiler {
 
     /** Name of the objects package */
     public static final String OBJECTS_PACKAGE = "jdk/nashorn/internal/objects";
-
-    static final boolean LAZY_JIT = Options.getBooleanProperty("nashorn.compiler.lazy");
 
     private final Map<String, byte[]> bytecode;
 
@@ -164,7 +166,7 @@ public final class Compiler {
      * and JIT it at once. This can lead to long startup time and fewer type
      * specializations
      */
-    final static CompilationSequence SEQUENCE_NORMAL = new CompilationSequence(
+    final static CompilationSequence SEQUENCE_EAGER = new CompilationSequence(
         CompilationPhase.CONSTANT_FOLDING_PHASE,
         CompilationPhase.LOWERING_PHASE,
         CompilationPhase.ATTRIBUTION_PHASE,
@@ -173,12 +175,15 @@ public final class Compiler {
         CompilationPhase.BYTECODE_GENERATION_PHASE);
 
     final static CompilationSequence SEQUENCE_LAZY =
-        SEQUENCE_NORMAL.insertFirst(CompilationPhase.LAZY_INITIALIZATION_PHASE);
+        SEQUENCE_EAGER.insertFirst(CompilationPhase.LAZY_INITIALIZATION_PHASE);
 
-    final static CompilationSequence SEQUENCE_DEFAULT =
-        LAZY_JIT ?
-            SEQUENCE_LAZY :
-            SEQUENCE_NORMAL;
+    private static CompilationSequence sequence(final boolean lazy) {
+        return lazy ? SEQUENCE_LAZY : SEQUENCE_EAGER;
+    }
+
+    boolean isLazy() {
+        return sequence == SEQUENCE_LAZY;
+    }
 
     private static String lazyTag(final FunctionNode functionNode) {
         if (functionNode.isLazy()) {
@@ -213,10 +218,7 @@ public final class Compiler {
 
         this.scriptName = sb.toString();
 
-        LOG.info("Initializing compiler for '" + functionNode.getName() + "' scriptName = " + scriptName + ", root function: '" + functionNode.getName() + "'");
-        if (functionNode.isLazy()) {
-            LOG.info(">>> This is a lazy recompilation triggered by a trampoline");
-        }
+        LOG.info("Initializing compiler for '" + functionNode.getName() + "' scriptName = " + scriptName + ", root function: '" + functionNode.getName() + "' lazy=" + functionNode.isLazy());
     }
 
     /**
@@ -227,7 +229,7 @@ public final class Compiler {
      * @param strict       should this compilation use strict mode semantics
      */
     public Compiler(final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode, final boolean strict) {
-        this(installer.getOwner(), installer, functionNode, SEQUENCE_DEFAULT, strict);
+        this(installer.getOwner(), installer, functionNode, sequence(installer.getOwner()._lazy_compilation), strict);
     }
 
     /**
@@ -237,7 +239,7 @@ public final class Compiler {
      * @param functionNode function node (in any available {@link CompilationState}) to compile
      */
     public Compiler(final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode) {
-        this(installer.getOwner(), installer, functionNode, SEQUENCE_DEFAULT, installer.getOwner()._strict);
+        this(installer.getOwner(), installer, functionNode, sequence(installer.getOwner()._lazy_compilation), installer.getOwner()._strict);
     }
 
     /**
@@ -247,28 +249,104 @@ public final class Compiler {
      * @param functionNode functionNode to compile
      */
     public Compiler(final ScriptEnvironment env, final FunctionNode functionNode) {
-        this(env, null, functionNode, SEQUENCE_DEFAULT, env._strict);
+        this(env, null, functionNode, sequence(env._lazy_compilation), env._strict);
     }
 
     /**
      * Execute the compilation this Compiler was created with
+     * @params param types if known, for specialization
      * @throws CompilationException if something goes wrong
+     * @return this compiler, for possible chaining
      */
-    public void compile() throws CompilationException {
+    public Compiler compile() throws CompilationException {
+        return compile(null);
+    }
+
+    /**
+     * Execute the compilation this Compiler was created with
+     * @param paramTypes param types if known, for specialization
+     * @throws CompilationException if something goes wrong
+     * @return this compiler, for possible chaining
+     */
+    public Compiler compile(final Class<?> paramTypes) throws CompilationException {
         for (final String reservedName : RESERVED_NAMES) {
             functionNode.uniqueName(reservedName);
         }
 
+        final boolean fine = !LOG.levelAbove(Level.FINE);
+        final boolean info = !LOG.levelAbove(Level.INFO);
+
+        long time = 0L;
+
         for (final CompilationPhase phase : sequence) {
             phase.apply(this, functionNode);
-            final String end = phase.toString() + " done for function '" + functionNode.getName() + "'";
-            if (Timing.isEnabled()) {
-                final long duration = phase.getEndTime() - phase.getStartTime();
-                LOG.info(end + " in " + duration + " ms");
-            } else {
-                LOG.info(end);
+
+            final long duration = Timing.isEnabled() ? (phase.getEndTime() - phase.getStartTime()) : 0L;
+            time += duration;
+
+            if (fine) {
+                final StringBuilder sb = new StringBuilder();
+
+                sb.append(phase.toString()).
+                    append(" done for function '").
+                    append(functionNode.getName()).
+                    append('\'');
+
+                if (duration > 0L) {
+                    sb.append(" in ").
+                        append(duration).
+                        append(" ms ");
+                }
+
+                LOG.fine(sb.toString());
             }
         }
+
+        if (info) {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Compile job for '").
+                append(functionNode.getName()).
+                append("' finished");
+
+            if (time > 0L) {
+                sb.append(" in ").
+                    append(time).
+                    append(" ms");
+            }
+
+            LOG.info(sb.toString());
+        }
+
+        return this;
+    }
+
+    private Class<?> install(final String className, final byte[] code) {
+        LOG.fine("Installing class " + className);
+
+        final Class<?> clazz = installer.install(Compiler.binaryName(className), code);
+
+        try {
+            final Source   source    = getSource();
+            final Object[] constants = getConstantData().toArray();
+            // Need doPrivileged because these fields are private
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws Exception {
+                    //use reflection to write source and constants table to installed classes
+                    final Field sourceField    = clazz.getDeclaredField(SOURCE.tag());
+                    final Field constantsField = clazz.getDeclaredField(CONSTANTS.tag());
+                    sourceField.setAccessible(true);
+                    constantsField.setAccessible(true);
+                    sourceField.set(null, source);
+                    constantsField.set(null, constants);
+                    return null;
+                }
+            });
+        } catch (final PrivilegedActionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return clazz;
     }
 
     /**
@@ -280,42 +358,38 @@ public final class Compiler {
 
         assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " has no bytecode and cannot be installed";
 
-        Class<?> rootClass = null;
+        final Map<String, Class<?>> installedClasses = new HashMap<>();
+
+        final String   rootClassName = firstCompileUnitName();
+        final Class<?> rootClass     = install(rootClassName, bytecode.get(rootClassName));
+
+        installedClasses.put(rootClassName, rootClass);
 
         for (final Entry<String, byte[]> entry : bytecode.entrySet()) {
-            final String     className = entry.getKey();
-            LOG.fine("Installing class " + className);
-
-            final byte[]     code  = entry.getValue();
-            final Class<?>   clazz = installer.install(Compiler.binaryName(className), code);
-
-            if (rootClass == null && firstCompileUnitName().equals(className)) {
-                rootClass = clazz;
+            final String className = entry.getKey();
+            if (className.equals(rootClassName)) {
+                continue;
             }
-
-            try {
-                final Source source = getSource();
-                final Object[] constants = getConstantData().toArray();
-                // Need doPrivileged because these fields are private
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                    @Override
-                    public Void run() throws Exception {
-                        //use reflection to write source and constants table to installed classes
-                        final Field sourceField = clazz.getDeclaredField(SOURCE.tag());
-                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.tag());
-                        sourceField.setAccessible(true);
-                        constantsField.setAccessible(true);
-                        sourceField.set(null, source);
-                        constantsField.set(null, constants);
-                        return null;
-                    }
-                });
-            } catch (final PrivilegedActionException e) {
-                throw new RuntimeException(e);
-            }
+            installedClasses.put(className, install(className, entry.getValue()));
         }
 
+        for (final CompileUnit unit : compileUnits) {
+            unit.setCode(installedClasses.get(unit.getUnitClassName()));
+        }
+
+        functionNode.accept(new NodeVisitor() {
+            @Override
+            public Node enter(final FunctionNode node) {
+                if (node.isLazy()) {
+                    return null;
+                }
+                node.setState(CompilationState.INSTALLED);
+                return node;
+            }
+        });
+
         LOG.info("Installed root class: " + rootClass + " and " + bytecode.size() + " compile unit classes");
+
         if (Timing.isEnabled()) {
             final long duration = System.currentTimeMillis() - t0;
             Timing.accumulateTime("[Code Installation]", duration);
@@ -444,8 +518,6 @@ public final class Compiler {
      * TODO: We currently generate no overflow checks so this is
      * disabled
      *
-     * @see #shouldUseIntegers()
-     *
      * @return true if arithmetic operations should not widen integer
      *   operands by default.
      */
@@ -459,5 +531,6 @@ public final class Compiler {
         USE_INT_ARITH  =  Options.getBooleanProperty("nashorn.compiler.intarithmetic");
         assert !USE_INT_ARITH : "Integer arithmetic is not enabled";
     }
+
 
 }

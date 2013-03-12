@@ -25,10 +25,8 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.ClassEmitter.Flag.HANDLE_STATIC;
 import static jdk.nashorn.internal.codegen.ClassEmitter.Flag.PRIVATE;
 import static jdk.nashorn.internal.codegen.ClassEmitter.Flag.STATIC;
-import static jdk.nashorn.internal.codegen.CompilerConstants.ALLOCATE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.GET_MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.GET_STRING;
 import static jdk.nashorn.internal.codegen.CompilerConstants.LEAF;
@@ -50,7 +48,6 @@ import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALL
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
 
 import java.io.PrintWriter;
-import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -84,6 +81,7 @@ import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
 import jdk.nashorn.internal.ir.Node;
@@ -108,14 +106,13 @@ import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Lexer.RegexToken;
 import jdk.nashorn.internal.parser.TokenType;
-import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
@@ -148,8 +145,6 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     /** Name of the ScriptFunctionImpl, cannot be referred to as .class @see FunctionObjectCreator */
     private static final String SCRIPTFUNCTION_IMPL_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "ScriptFunctionImpl";
-
-    private static final String SCRIPTFUNCTION_TRAMPOLINE_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "ScriptFunctionTrampolineImpl";
 
     /** Constant data & installation. The only reason the compiler keeps this is because it is assigned
      *  by reflection in class installation */
@@ -982,6 +977,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
         method.label(functionNode.getEntryLabel());
 
         initLocals(functionNode);
+        functionNode.setState(CompilationState.EMITTED);
 
         return functionNode;
     }
@@ -3234,42 +3230,23 @@ final class CodeGenerator extends NodeOperatorVisitor {
     }
 
     private void newFunctionObject(final FunctionNode functionNode) {
-        final boolean isLazy = functionNode.isLazy();
-        final Class<?>[] cparams = new Class<?>[] { ScriptFunctionData.class, ScriptObject.class, MethodHandle.class };
+        final boolean    isLazy  = functionNode.isLazy();
+        final Class<?>[] cparams = new Class<?>[] { RecompilableScriptFunctionData.class, ScriptObject.class };
 
         new ObjectCreator(this, new ArrayList<String>(), new ArrayList<Symbol>(), false, false) {
             @Override
-            protected void makeObject(final MethodEmitter method) {
-                final String className = isLazy ? SCRIPTFUNCTION_TRAMPOLINE_OBJECT : SCRIPTFUNCTION_IMPL_OBJECT;
+            protected void makeObject(final MethodEmitter m) {
+                final String className = SCRIPTFUNCTION_IMPL_OBJECT;
 
-                method._new(className).dup();
-                if (isLazy) {
-                    loadConstant(compiler.getCodeInstaller());
-                    loadConstant(functionNode);
-                } else {
-                    final String signature = new FunctionSignature(true, functionNode.needsCallee(), functionNode.getReturnType(), functionNode.isVarArg() ? null : functionNode.getParameters()).toString();
-                    method.loadHandle(functionNode.getCompileUnit().getUnitClassName(), functionNode.getName(), signature, EnumSet.of(HANDLE_STATIC)); // function
-                }
-                loadConstant(new ScriptFunctionData(functionNode, makeMap()));
+                m._new(className).dup();
+                loadConstant(new RecompilableScriptFunctionData(functionNode, compiler.getCodeInstaller(), Compiler.binaryName(getClassName()), makeMap()));
 
                 if (isLazy || functionNode.needsParentScope()) {
-                    method.loadScope();
+                    m.loadScope();
                 } else {
-                    method.loadNull();
+                    m.loadNull();
                 }
-
-                method.loadHandle(getClassName(), ALLOCATE.tag(), methodDescriptor(ScriptObject.class, PropertyMap.class), EnumSet.of(HANDLE_STATIC));
-
-                final List<Class<?>> cparamList = new ArrayList<>();
-                if (isLazy) {
-                    cparamList.add(CodeInstaller.class);
-                    cparamList.add(FunctionNode.class);
-                } else {
-                    cparamList.add(MethodHandle.class);
-                }
-                cparamList.addAll(Arrays.asList(cparams));
-
-                method.invoke(constructorNoLookup(className, cparamList.toArray(new Class<?>[cparamList.size()])));
+                m.invoke(constructorNoLookup(className, cparams));
             }
         }.makeObject(method);
     }

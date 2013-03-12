@@ -162,21 +162,6 @@ public final class NativeDebug extends ScriptObject {
     }
 
     /**
-     * Nashorn extension: get invocation handle from {@link ScriptFunction}
-     *
-     * @param self self reference
-     * @param obj script function
-     * @return the invocation handle for the given ScriptFunction
-     */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object methodHandle(final Object self, final Object obj) {
-        if (obj instanceof ScriptFunction) {
-            return ((ScriptFunction)obj).getInvokeHandle();
-        }
-        return UNDEFINED;
-    }
-
-    /**
      * Check object identity comparison regardless of type
      *
      * @param self self reference

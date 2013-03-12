@@ -69,6 +69,7 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
@@ -331,6 +332,8 @@ final class Lower extends NodeOperatorVisitor {
 
         LOG.info("END FunctionNode: " + functionNode.getName());
         unnest(functionNode);
+
+        functionNode.setState(CompilationState.LOWERED);
 
         return null;
     }
@@ -636,7 +639,7 @@ final class Lower extends NodeOperatorVisitor {
             } else if (conservativeAlwaysTrue(test)) {
                 node = new ForNode(whileNode.getSource(), whileNode.getToken(), whileNode.getFinish());
                 ((ForNode)node).setBody(body);
-                ((ForNode)node).accept(this);
+                node.accept(this);
                 setTerminal(node, !escapes);
             }
         }

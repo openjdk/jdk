@@ -59,6 +59,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.ir.AccessNode;
@@ -96,7 +97,7 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
@@ -115,9 +116,6 @@ public class Parser extends AbstractParser {
 
     /** Is scripting mode. */
     private final boolean scripting;
-
-    /** Top level script being parsed. */
-    private FunctionNode script;
 
     /** Current function being parsed. */
     private FunctionNode function;
@@ -304,6 +302,7 @@ loop:
         final FunctionNode functionBlock = new FunctionNode(source, token, Token.descPosition(token), namespace, block, ident, name);
         block = function = functionBlock;
         function.setStrictMode(isStrictMode);
+        function.setState(errors.hasErrors() ? CompilationState.PARSE_ERROR : CompilationState.PARSED);
 
         return functionBlock;
     }
@@ -312,7 +311,7 @@ loop:
      * Restore the current block.
      */
     private void restoreBlock() {
-        block = block.getParent();
+        block    = block.getParent();
         function = block.getFunction();
     }
 
@@ -338,7 +337,7 @@ loop:
             popControlNode();
         }
 
-    final int possibleEnd = Token.descPosition(token) + Token.descLength(token);
+        final int possibleEnd = Token.descPosition(token) + Token.descLength(token);
 
         // Block closing brace.
         if (needsBraces) {
@@ -438,7 +437,7 @@ loop:
             }
 
             if (lhs instanceof IdentNode) {
-                if (! checkIdentLValue((IdentNode)lhs)) {
+                if (!checkIdentLValue((IdentNode)lhs)) {
                     return referenceError(lhs, rhs);
                 }
                 verifyStrictIdent((IdentNode)lhs, "assignment");
@@ -621,15 +620,13 @@ loop:
         // Make a fake token for the script.
         final long functionToken = Token.toDesc(FUNCTION, 0, source.getLength());
         // Set up the script to append elements.
-        script = newFunctionBlock(new IdentNode(source, functionToken, Token.descPosition(functionToken), scriptName));
-        // set kind to be SCRIPT
+
+        final FunctionNode script = newFunctionBlock(new IdentNode(source, functionToken, Token.descPosition(functionToken), scriptName));
+
         script.setKind(FunctionNode.Kind.SCRIPT);
-        // Set the first token of the script.
         script.setFirstToken(functionToken);
-        // Gather source elements.
         sourceElements();
         expect(EOF);
-        // Set the last token of the script.
         script.setLastToken(token);
         script.setFinish(source.getLength() - 1);
 
@@ -1231,7 +1228,7 @@ loop:
                 }
 
                 if (init instanceof IdentNode) {
-                    if (! checkIdentLValue((IdentNode)init)) {
+                    if (!checkIdentLValue((IdentNode)init)) {
                         error(AbstractParser.message("not.lvalue.for.in.loop"), init.getToken());
                     }
                     verifyStrictIdent((IdentNode)init, "for-in iterator");
@@ -2026,7 +2023,7 @@ loop:
                 break;
 
             default:
-                if (! elision) {
+                if (!elision) {
                     error(AbstractParser.message("expected.comma", type.getNameOrType()));
                 }
                 // Add expression element.
@@ -2067,15 +2064,11 @@ loop:
         next();
 
         // Object context.
-        Block objectContext = null;
         // Prepare to accumulate elements.
         final List<Node> elements = new ArrayList<>();
         final Map<Object, PropertyNode> map = new HashMap<>();
 
-        try {
-            // Create a block for the object literal.
-            objectContext = newBlock();
-
+        // Create a block for the object literal.
             boolean commaSeen = true;
 loop:
             while (true) {
@@ -2090,97 +2083,90 @@ loop:
                     break;
 
                 default:
-                    if (! commaSeen) {
+                    if (!commaSeen) {
                         error(AbstractParser.message("expected.comma", type.getNameOrType()));
-                    }
-
-                    commaSeen = false;
-                    // Get and add the next property.
-                    final PropertyNode property = propertyAssignment();
-                    final Object key = property.getKeyName();
-                    final PropertyNode existingProperty = map.get(key);
-
-                    if (existingProperty != null) {
-                        // ECMA section 11.1.5 Object Initialiser
-                        // point # 4 on property assignment production
-                        final Node value  = property.getValue();
-                        final Node getter = property.getGetter();
-                        final Node setter = property.getSetter();
-
-                        final Node prevValue  = existingProperty.getValue();
-                        final Node prevGetter = existingProperty.getGetter();
-                        final Node prevSetter = existingProperty.getSetter();
-
-                        boolean redefinitionOk = true;
-                        // ECMA 11.1.5 strict mode restrictions
-                        if (isStrictMode) {
-                            if (value != null && prevValue != null) {
-                                redefinitionOk = false;
-                            }
-                        }
-
-                        final boolean isPrevAccessor = prevGetter != null || prevSetter != null;
-                        final boolean isAccessor = getter != null || setter != null;
-
-                        // data property redefined as accessor property
-                        if (prevValue != null && isAccessor) {
-                            redefinitionOk = false;
-                        }
-
-                        // accessor property redefined as data
-                        if (isPrevAccessor && value != null) {
-                            redefinitionOk = false;
-                        }
-
-                        if (isAccessor && isPrevAccessor) {
-                            if (getter != null && prevGetter != null ||
-                                setter != null && prevSetter != null) {
-                                redefinitionOk = false;
-                            }
-                        }
-
-                        if (! redefinitionOk) {
-                            error(AbstractParser.message("property.redefinition", key.toString()), property.getToken());
-                        }
-
-                        if (value != null) {
-                            final Node existingValue = existingProperty.getValue();
-
-                            if (existingValue == null) {
-                                existingProperty.setValue(value);
-                            } else {
-                                final long propertyToken = Token.recast(existingProperty.getToken(), COMMARIGHT);
-                                existingProperty.setValue(new BinaryNode(source, propertyToken, existingValue, value));
-                            }
-
-                            existingProperty.setGetter(null);
-                            existingProperty.setSetter(null);
-                        }
-
-                        if (getter != null) {
-                            existingProperty.setGetter(getter);
-                        }
-
-                        if (setter != null) {
-                            existingProperty.setSetter(setter);
-                        }
-                    } else {
-                        map.put(key, property);
-                        elements.add(property);
-                    }
-
-                    break;
                 }
+
+                commaSeen = false;
+                // Get and add the next property.
+                final PropertyNode property = propertyAssignment();
+                final Object key = property.getKeyName();
+                final PropertyNode existingProperty = map.get(key);
+
+                if (existingProperty != null) {
+                    // ECMA section 11.1.5 Object Initialiser
+                    // point # 4 on property assignment production
+                    final Node value  = property.getValue();
+                    final Node getter = property.getGetter();
+                    final Node setter = property.getSetter();
+
+                    final Node prevValue  = existingProperty.getValue();
+                    final Node prevGetter = existingProperty.getGetter();
+                    final Node prevSetter = existingProperty.getSetter();
+
+                    boolean redefinitionOk = true;
+                    // ECMA 11.1.5 strict mode restrictions
+                    if (isStrictMode) {
+                        if (value != null && prevValue != null) {
+                            redefinitionOk = false;
+                        }
+                    }
+
+                    final boolean isPrevAccessor = prevGetter != null || prevSetter != null;
+                    final boolean isAccessor = getter != null || setter != null;
+
+                    // data property redefined as accessor property
+                    if (prevValue != null && isAccessor) {
+                        redefinitionOk = false;
+                    }
+
+                    // accessor property redefined as data
+                    if (isPrevAccessor && value != null) {
+                        redefinitionOk = false;
+                    }
+
+                    if (isAccessor && isPrevAccessor) {
+                        if (getter != null && prevGetter != null ||
+                            setter != null && prevSetter != null) {
+                            redefinitionOk = false;
+                        }
+                    }
+
+                    if (!redefinitionOk) {
+                        error(AbstractParser.message("property.redefinition", key.toString()), property.getToken());
+                    }
+
+                    if (value != null) {
+                        final Node existingValue = existingProperty.getValue();
+
+                        if (existingValue == null) {
+                            existingProperty.setValue(value);
+                        } else {
+                            final long propertyToken = Token.recast(existingProperty.getToken(), COMMARIGHT);
+                            existingProperty.setValue(new BinaryNode(source, propertyToken, existingValue, value));
+                        }
+
+                        existingProperty.setGetter(null);
+                        existingProperty.setSetter(null);
+                    }
+
+                    if (getter != null) {
+                        existingProperty.setGetter(getter);
+                    }
+
+                    if (setter != null) {
+                        existingProperty.setSetter(setter);
+                    }
+                } else {
+                    map.put(key, property);
+                    elements.add(property);
+                }
+
+                break;
             }
-        } finally {
-            restoreBlock();
         }
 
-        // Construct new object literal.
-        objectContext.setFinish(finish);
-        objectContext.setStart(Token.descPosition(objectToken));
-
-        return new ObjectNode(source, objectToken, finish, objectContext, elements);
+        return new ObjectNode(source, objectToken, finish, elements);
     }
 
     /**
@@ -2845,7 +2831,7 @@ loop:
             }
 
             if (lhs instanceof IdentNode) {
-                if (! checkIdentLValue((IdentNode)lhs)) {
+                if (!checkIdentLValue((IdentNode)lhs)) {
                     return referenceError(lhs, null);
                 }
                 verifyStrictIdent((IdentNode)lhs, "operand for " + opType.getName() + " operator");
@@ -2872,7 +2858,7 @@ loop:
                     return referenceError(lhs, null);
                 }
                 if (lhs instanceof IdentNode) {
-                    if (! checkIdentLValue((IdentNode)lhs)) {
+                    if (!checkIdentLValue((IdentNode)lhs)) {
                         next();
                         return referenceError(lhs, null);
                     }

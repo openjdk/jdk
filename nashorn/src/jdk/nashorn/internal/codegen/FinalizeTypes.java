@@ -34,6 +34,7 @@ import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CallNode.EvalArgs;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.DoWhileNode;
@@ -235,19 +236,19 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveBIT_AND(BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : binaryNode.getSymbol();
+        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
     public Node leaveBIT_OR(BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger();
+        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
     public Node leaveBIT_XOR(BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger();
+        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
@@ -255,7 +256,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     public Node leaveCOMMALEFT(final BinaryNode binaryNode) {
         assert binaryNode.getSymbol() != null;
         binaryNode.setRHS(discard(binaryNode.rhs()));
-        // AccessSpecializer - the type of rhs, which is the remaining value of this node may have changed
+        // AccessSpecializer - the type of lhs, which is the remaining value of this node may have changed
         // in that case, update the node type as well
         propagateType(binaryNode, binaryNode.lhs().getType());
         return binaryNode;
@@ -344,7 +345,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveSHR(final BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isLong();
+        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isLong() : "long coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
@@ -432,6 +433,8 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         }
 
         updateSymbols(functionNode);
+        functionNode.setState(CompilationState.FINALIZED);
+
         return functionNode;
     }
 
@@ -511,7 +514,6 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leave(final VarNode varNode) {
-
         final Node rhs = varNode.getInit();
         if (rhs != null) {
             Type destType = specialize(varNode);

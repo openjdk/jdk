@@ -164,7 +164,6 @@ public class AccessorProperty extends Property {
         super(key, flags, slot);
 
         /*
-         *
          * primitiveGetter and primitiveSetter are only used in dual fields mode. Setting them to null also
          * works in dual field mode, it only means that the property never has a primitive
          * representation.
@@ -348,11 +347,10 @@ public class AccessorProperty extends Property {
 
     private MethodHandle debug(final MethodHandle mh, final Class<?> forType, final Class<?> type, final String tag) {
         if (DEBUG_FIELDS) {
-           final MethodHandle mhd = MethodHandleFactory.addDebugPrintout(
+           return MethodHandleFactory.addDebugPrintout(
                LOG,
                mh,
                tag + " '" + getKey() + "' (property="+ Debug.id(this) + ", forType=" + stripName(forType) + ", type=" + stripName(type) + ')');
-           return mhd;
         }
         return mh;
     }

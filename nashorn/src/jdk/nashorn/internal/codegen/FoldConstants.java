@@ -30,11 +30,13 @@ import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
+import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
@@ -69,6 +71,20 @@ final class FoldConstants extends NodeVisitor {
             return literalNode;
         }
         return binaryNode;
+    }
+
+    @Override
+    public Node enter(final FunctionNode functionNode) {
+        if (functionNode.isLazy()) {
+            return null;
+        }
+        return functionNode;
+    }
+
+    @Override
+    public Node leave(final FunctionNode functionNode) {
+        functionNode.setState(CompilationState.CONSTANT_FOLDED);
+        return functionNode;
     }
 
     @Override

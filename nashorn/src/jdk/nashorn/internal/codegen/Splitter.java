@@ -39,6 +39,7 @@ import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.DoWhileNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
@@ -92,15 +93,16 @@ final class Splitter extends NodeVisitor {
      */
     void split() {
         if (functionNode.isLazy()) {
-            LOG.fine("Postponing split of '" + functionNode.getName() + "' as it's lazy");
+            LOG.finest("Postponing split of '" + functionNode.getName() + "' as it's lazy");
             return;
         }
-        LOG.fine("Initiating split of '" + functionNode.getName() + "'");
+
+        LOG.finest("Initiating split of '" + functionNode.getName() + "'");
 
         long weight = WeighNodes.weigh(functionNode);
 
         if (weight >= SPLIT_THRESHOLD) {
-            LOG.fine("Splitting '" + functionNode.getName() + "' as its weight " + weight + " exceeds split threshold " + SPLIT_THRESHOLD);
+            LOG.finest("Splitting '" + functionNode.getName() + "' as its weight " + weight + " exceeds split threshold " + SPLIT_THRESHOLD);
 
             functionNode.accept(this);
 
@@ -133,6 +135,8 @@ final class Splitter extends NodeVisitor {
         for (final FunctionNode function : functionNode.getFunctions()) {
             new Splitter(compiler, function, outermostCompileUnit).split();
         }
+
+        functionNode.setState(CompilationState.SPLIT);
     }
 
     /**
