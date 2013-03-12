@@ -49,7 +49,6 @@ import sun.security.ssl.HandshakeMessage.*;
 import sun.security.ssl.CipherSuite.*;
 
 import static sun.security.ssl.CipherSuite.PRF.*;
-import static sun.security.ssl.CipherSuite.CipherType.*;
 
 /**
  * Handshaker ... processes handshake records from an SSL V3.0
@@ -715,47 +714,33 @@ abstract class Handshaker {
     /**
      * Create a new read MAC and return it to caller.
      */
-    Authenticator newReadAuthenticator()
-            throws NoSuchAlgorithmException, InvalidKeyException {
-
-        Authenticator authenticator = null;
-        if (cipherSuite.cipher.cipherType == AEAD_CIPHER) {
-            authenticator = new Authenticator(protocolVersion);
+    MAC newReadMAC() throws NoSuchAlgorithmException, InvalidKeyException {
+        MacAlg macAlg = cipherSuite.macAlg;
+        MAC mac;
+        if (isClient) {
+            mac = macAlg.newMac(protocolVersion, svrMacSecret);
+            svrMacSecret = null;
         } else {
-            MacAlg macAlg = cipherSuite.macAlg;
-            if (isClient) {
-                authenticator = macAlg.newMac(protocolVersion, svrMacSecret);
-                svrMacSecret = null;
-            } else {
-                authenticator = macAlg.newMac(protocolVersion, clntMacSecret);
-                clntMacSecret = null;
-            }
+            mac = macAlg.newMac(protocolVersion, clntMacSecret);
+            clntMacSecret = null;
         }
-
-        return authenticator;
+        return mac;
     }
 
     /**
      * Create a new write MAC and return it to caller.
      */
-    Authenticator newWriteAuthenticator()
-            throws NoSuchAlgorithmException, InvalidKeyException {
-
-        Authenticator authenticator = null;
-        if (cipherSuite.cipher.cipherType == AEAD_CIPHER) {
-            authenticator = new Authenticator(protocolVersion);
+    MAC newWriteMAC() throws NoSuchAlgorithmException, InvalidKeyException {
+        MacAlg macAlg = cipherSuite.macAlg;
+        MAC mac;
+        if (isClient) {
+            mac = macAlg.newMac(protocolVersion, clntMacSecret);
+            clntMacSecret = null;
         } else {
-            MacAlg macAlg = cipherSuite.macAlg;
-            if (isClient) {
-                authenticator = macAlg.newMac(protocolVersion, clntMacSecret);
-                clntMacSecret = null;
-            } else {
-                authenticator = macAlg.newMac(protocolVersion, svrMacSecret);
-                svrMacSecret = null;
-            }
+            mac = macAlg.newMac(protocolVersion, svrMacSecret);
+            svrMacSecret = null;
         }
-
-        return authenticator;
+        return mac;
     }
 
     /*
@@ -1204,23 +1189,11 @@ abstract class Handshaker {
         int prfHashLength = prf.getPRFHashLength();
         int prfBlockSize = prf.getPRFBlockSize();
 
-        // TLS v1.1 or later uses an explicit IV in CBC cipher suites to
-        // protect against the CBC attacks.  AEAD/GCM cipher suites in TLS
-        // v1.2 or later use a fixed IV as the implicit part of the partially
-        // implicit nonce technique described in RFC 5116.
-        int ivSize = cipher.ivSize;
-        if (cipher.cipherType == AEAD_CIPHER) {
-            ivSize = cipher.fixedIvSize;
-        } else if (protocolVersion.v >= ProtocolVersion.TLS11.v &&
-                cipher.cipherType == BLOCK_CIPHER) {
-            ivSize = 0;
-        }
-
         TlsKeyMaterialParameterSpec spec = new TlsKeyMaterialParameterSpec(
             masterKey, protocolVersion.major, protocolVersion.minor,
             clnt_random.random_bytes, svr_random.random_bytes,
             cipher.algorithm, cipher.keySize, expandedKeySize,
-            ivSize, hashSize,
+            cipher.ivSize, hashSize,
             prfHashAlg, prfHashLength, prfBlockSize);
 
         try {
@@ -1228,15 +1201,14 @@ abstract class Handshaker {
             kg.init(spec);
             TlsKeyMaterialSpec keySpec = (TlsKeyMaterialSpec)kg.generateKey();
 
-            // Return null if cipher keys are not supposed to be generated.
             clntWriteKey = keySpec.getClientCipherKey();
             svrWriteKey = keySpec.getServerCipherKey();
 
             // Return null if IVs are not supposed to be generated.
+            // e.g. TLS 1.1+.
             clntWriteIV = keySpec.getClientIv();
             svrWriteIV = keySpec.getServerIv();
 
-            // Return null if MAC keys are not supposed to be generated.
             clntMacSecret = keySpec.getClientMacKey();
             svrMacSecret = keySpec.getServerMacKey();
         } catch (GeneralSecurityException e) {
@@ -1261,14 +1233,10 @@ abstract class Handshaker {
                 printHex(dump, masterKey.getEncoded());
 
                 // Outputs:
-                if (clntMacSecret != null) {
-                    System.out.println("Client MAC write Secret:");
-                    printHex(dump, clntMacSecret.getEncoded());
-                    System.out.println("Server MAC write Secret:");
-                    printHex(dump, svrMacSecret.getEncoded());
-                } else {
-                    System.out.println("... no MAC keys used for this cipher");
-                }
+                System.out.println("Client MAC write Secret:");
+                printHex(dump, clntMacSecret.getEncoded());
+                System.out.println("Server MAC write Secret:");
+                printHex(dump, svrMacSecret.getEncoded());
 
                 if (clntWriteKey != null) {
                     System.out.println("Client write key:");

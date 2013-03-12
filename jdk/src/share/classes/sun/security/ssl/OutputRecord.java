@@ -54,7 +54,6 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
     private int                 lastHashed;
     private boolean             firstMessage;
     final private byte          contentType;
-    private int                 headerOffset;
 
     // current protocol version, sent as record version
     ProtocolVersion     protocolVersion;
@@ -71,23 +70,6 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
      * Default constructor makes a record supporting the maximum
      * SSL record size.  It allocates the header bytes directly.
      *
-     * The structure of the byte buffer looks like:
-     *
-     *     |---------+--------+-------+---------------------------------|
-     *     | unused  | header |  IV   | content, MAC/TAG, padding, etc. |
-     *     |    headerPlusMaxIVSize   |
-     *
-     * unused: unused part of the buffer of size
-     *
-     *             headerPlusMaxIVSize - header size - IV size
-     *
-     *         When this object is created, we don't know the protocol
-     *         version number, IV length, etc., so reserve space in front
-     *         to avoid extra data movement (copies).
-     * header: the header of an SSL record
-     * IV:     the optional IV/nonce field, it is only required for block
-     *         (TLS 1.1 or later) and AEAD cipher suites.
-     *
      * @param type the content type for the record
      */
     OutputRecord(byte type, int size) {
@@ -95,10 +77,9 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
         this.protocolVersion = ProtocolVersion.DEFAULT;
         this.helloVersion = ProtocolVersion.DEFAULT_HELLO;
         firstMessage = true;
-        count = headerPlusMaxIVSize;
+        count = headerSize;
         contentType = type;
         lastHashed = count;
-        headerOffset = headerPlusMaxIVSize - headerSize;
     }
 
     OutputRecord(byte type) {
@@ -138,9 +119,8 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
     @Override
     public synchronized void reset() {
         super.reset();
-        count = headerPlusMaxIVSize;
+        count = headerSize;
         lastHashed = count;
-        headerOffset = headerPlusMaxIVSize - headerSize;
     }
 
     /*
@@ -193,84 +173,58 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
      * of sending empty records over the network.
      */
     boolean isEmpty() {
-        return count == headerPlusMaxIVSize;
+        return count == headerSize;
     }
 
     /*
-     * Return true if the record is of an alert of the given description.
-     *
-     * Per SSL/TLS specifications, alert messages convey the severity of the
-     * message (warning or fatal) and a description of the alert. An alert
-     * is defined with a two bytes struct, {byte level, byte description},
-     * following after the header bytes.
+     * Return true if the record is of a given alert.
      */
     boolean isAlert(byte description) {
-        if ((count > (headerPlusMaxIVSize + 1)) && (contentType == ct_alert)) {
-            return buf[headerPlusMaxIVSize + 1] == description;
+        // An alert is defined with a two bytes struct,
+        // {byte level, byte description}, following after the header bytes.
+        if (count > (headerSize + 1) && contentType == ct_alert) {
+            return buf[headerSize + 1] == description;
         }
 
         return false;
     }
 
     /*
-     * Encrypt ... length may grow due to block cipher padding, or
-     * message authentication code or tag.
+     * Compute the MAC and append it to this record.  In case we
+     * are automatically flushing a handshake stream, make sure we
+     * have hashed the message first.
      */
-    void encrypt(Authenticator authenticator, CipherBox box)
-            throws IOException {
-
-        // In case we are automatically flushing a handshake stream, make
-        // sure we have hashed the message first.
+    void addMAC(MAC signer) throws IOException {
         //
         // when we support compression, hashing can't go here
         // since it'll need to be done on the uncompressed data,
         // and the MAC applies to the compressed data.
+        //
         if (contentType == ct_handshake) {
             doHashes();
         }
-
-        // Requires message authentication code for stream and block
-        // cipher suites.
-        if (authenticator instanceof MAC) {
-            MAC signer = (MAC)authenticator;
-            if (signer.MAClen() != 0) {
-                byte[] hash = signer.compute(contentType, buf,
-                    headerPlusMaxIVSize, count - headerPlusMaxIVSize);
-                write(hash);
-            }
-        }
-
-        if (!box.isNullCipher()) {
-            // Requires explicit IV/nonce for CBC/AEAD cipher suites for
-            // TLS 1.1 or later.
-            if ((protocolVersion.v >= ProtocolVersion.TLS11.v) &&
-                                    (box.isCBCMode() || box.isAEADMode())) {
-                byte[] nonce = box.createExplicitNonce(authenticator,
-                                    contentType, count - headerPlusMaxIVSize);
-                int offset = headerPlusMaxIVSize - nonce.length;
-                System.arraycopy(nonce, 0, buf, offset, nonce.length);
-                headerOffset = offset - headerSize;
-            } else {
-                headerOffset = headerPlusMaxIVSize - headerSize;
-            }
-
-            // encrypt the content
-            int offset = headerPlusMaxIVSize;
-            if (!box.isAEADMode()) {
-                // The explicit IV can be encrypted.
-                offset = headerOffset + headerSize;
-            }   // Otherwise, DON'T encrypt the nonce_explicit for AEAD mode
-
-            count = offset + box.encrypt(buf, offset, count - offset);
+        if (signer.MAClen() != 0) {
+            byte[] hash = signer.compute(contentType, buf,
+                    headerSize, count - headerSize);
+            write(hash);
         }
     }
+
+    /*
+     * Encrypt ... length may grow due to block cipher padding
+     */
+    void encrypt(CipherBox box) {
+        int len = count - headerSize;
+        count = headerSize + box.encrypt(buf, headerSize, len);
+    }
+
 
     /*
      * Tell how full the buffer is ... for filling it with application or
      * handshake data.
      */
     final int availableDataBytes() {
-        int dataSize = count - headerPlusMaxIVSize;
+        int dataSize = count - headerSize;
         return maxDataSize - dataSize;
     }
 
@@ -316,11 +270,11 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
          * Don't emit content-free records.  (Even change cipher spec
          * messages have a byte of data!)
          */
-        if (count == headerPlusMaxIVSize) {
+        if (count == headerSize) {
             return;
         }
 
-        int length = count - headerOffset - headerSize;
+        int length = count - headerSize;
         // "should" really never write more than about 14 Kb...
         if (length < 0) {
             throw new SSLException("output record size too small: "
@@ -345,9 +299,7 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
          */
          if (firstMessage && useV2Hello()) {
             byte[] v3Msg = new byte[length - 4];
-            System.arraycopy(buf, headerPlusMaxIVSize + 4,
-                                        v3Msg, 0, v3Msg.length);
-            headerOffset = 0;   // reset the header offset
+            System.arraycopy(buf, headerSize + 4, v3Msg, 0, v3Msg.length);
             V3toV2ClientHello(v3Msg);
             handshakeHash.reset();
             lastHashed = 2;
@@ -362,11 +314,11 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
             /*
              * Fill out the header, write it and the message.
              */
-            buf[headerOffset + 0] = contentType;
-            buf[headerOffset + 1] = protocolVersion.major;
-            buf[headerOffset + 2] = protocolVersion.minor;
-            buf[headerOffset + 3] = (byte)(length >> 8);
-            buf[headerOffset + 4] = (byte)(length);
+            buf[0] = contentType;
+            buf[1] = protocolVersion.major;
+            buf[2] = protocolVersion.minor;
+            buf[3] = (byte)(length >> 8);
+            buf[4] = (byte)(length);
         }
         firstMessage = false;
 
@@ -386,8 +338,7 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
              * when holdRecord is true, the implementation in this class
              * will be used.
              */
-            writeBuffer(heldRecordBuffer,
-                        buf, headerOffset, count - headerOffset, debugOffset);
+            writeBuffer(heldRecordBuffer, buf, 0, count, debugOffset);
         } else {
             // It's time to send, do we have buffered data?
             // May or may not have a heldRecordBuffer.
@@ -395,18 +346,15 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
                 int heldLen = heldRecordBuffer.size();
 
                 // Ensure the capacity of this buffer.
-                int newCount = count + heldLen - headerOffset;
-                ensureCapacity(newCount);
+                ensureCapacity(count + heldLen);
 
                 // Slide everything in the buffer to the right.
-                System.arraycopy(buf, headerOffset,
-                                    buf, heldLen, count - headerOffset);
+                System.arraycopy(buf, 0, buf, heldLen, count);
 
                 // Prepend the held record to the buffer.
                 System.arraycopy(
                     heldRecordBuffer.toByteArray(), 0, buf, 0, heldLen);
-                count = newCount;
-                headerOffset = 0;
+                count += heldLen;
 
                 // Clear the held buffer.
                 heldRecordBuffer.reset();
@@ -414,8 +362,7 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
                 // The held buffer has been dumped, set the debug dump offset.
                 debugOffset = heldLen;
             }
-            writeBuffer(s, buf, headerOffset,
-                        count - headerOffset, debugOffset);
+            writeBuffer(s, buf, 0, count, debugOffset);
         }
 
         reset();
@@ -435,11 +382,12 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
         if (debug != null && Debug.isOn("packet")) {
             try {
                 HexDumpEncoder hd = new HexDumpEncoder();
+                ByteBuffer bb = ByteBuffer.wrap(
+                        buf, off + debugOffset, len - debugOffset);
 
                 System.out.println("[Raw write]: length = " +
-                                                    (len - debugOffset));
-                hd.encodeBuffer(new ByteArrayInputStream(buf,
-                    off + debugOffset, len - debugOffset), System.out);
+                    bb.remaining());
+                hd.encodeBuffer(bb, System.out);
             } catch (IOException e) { }
         }
     }
@@ -452,13 +400,8 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
         return firstMessage
             && (helloVersion == ProtocolVersion.SSL20Hello)
             && (contentType == ct_handshake)
-            && (buf[headerOffset + 5] == HandshakeMessage.ht_client_hello)
-                                            //  5: recode header size
-            && (buf[headerPlusMaxIVSize + 4 + 2 + 32] == 0);
-                                            // V3 session ID is empty
-                                            //  4: handshake header size
-                                            //  2: client_version in ClientHello
-                                            // 32: random in ClientHello
+            && (buf[5] == HandshakeMessage.ht_client_hello)
+            && (buf[headerSize + 4+2+32] == 0); // V3 session ID is empty
     }
 
     /*

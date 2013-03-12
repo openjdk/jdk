@@ -292,7 +292,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     /*
      * Crypto state that's reinitialized when the session changes.
      */
-    private Authenticator       readAuthenticator, writeAuthenticator;
+    private MAC                 readMAC, writeMAC;
     private CipherBox           readCipher, writeCipher;
     // NOTE: compression state would be saved here
 
@@ -586,9 +586,9 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
          * Note:  compression support would go here too
          */
         readCipher = CipherBox.NULL;
-        readAuthenticator = MAC.NULL;
+        readMAC = MAC.NULL;
         writeCipher = CipherBox.NULL;
-        writeAuthenticator = MAC.NULL;
+        writeMAC = MAC.NULL;
 
         // initial security parameters for secure renegotiation
         secureRenegotiation = false;
@@ -829,7 +829,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             boolean holdRecord) throws IOException {
 
         // r.compress(c);
-        r.encrypt(writeAuthenticator, writeCipher);
+        r.addMAC(writeMAC);
+        r.encrypt(writeCipher);
 
         if (holdRecord) {
             // If we were requested to delay the record due to possibility
@@ -860,7 +861,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
          * of the last record cannot be wrapped.
          */
         if (connectionState < cs_ERROR) {
-            checkSequenceNumber(writeAuthenticator, r.contentType());
+            checkSequenceNumber(writeMAC, r.contentType());
         }
 
         // turn off the flag of the first application record
@@ -985,14 +986,29 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
              * throw a fatal alert if the integrity check fails.
              */
             try {
-                r.decrypt(readAuthenticator, readCipher);
+                r.decrypt(readCipher);
             } catch (BadPaddingException e) {
+                // RFC 2246 states that decryption_failed should be used
+                // for this purpose. However, that allows certain attacks,
+                // so we just send bad record MAC. We also need to make
+                // sure to always check the MAC to avoid a timing attack
+                // for the same issue. See paper by Vaudenay et al.
+                r.checkMAC(readMAC);
                 // use the same alert types as for MAC failure below
                 byte alertType = (r.contentType() == Record.ct_handshake)
                                         ? Alerts.alert_handshake_failure
                                         : Alerts.alert_bad_record_mac;
-                fatal(alertType, e.getMessage(), e);
+                fatal(alertType, "Invalid padding", e);
             }
+            if (!r.checkMAC(readMAC)) {
+                if (r.contentType() == Record.ct_handshake) {
+                    fatal(Alerts.alert_handshake_failure,
+                        "bad handshake record MAC");
+                } else {
+                    fatal(Alerts.alert_bad_record_mac, "bad record MAC");
+                }
+            }
+
 
             // if (!r.decompress(c))
             //     fatal(Alerts.alert_decompression_failure,
@@ -1143,7 +1159,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                * of the last record cannot be wrapped.
                */
               if (connectionState < cs_ERROR) {
-                  checkSequenceNumber(readAuthenticator, r.contentType());
+                  checkSequenceNumber(readMAC, r.contentType());
               }
 
               return;
@@ -1166,14 +1182,14 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * implementation would need to wrap a sequence number, it must
      * renegotiate instead."
      */
-    private void checkSequenceNumber(Authenticator authenticator, byte type)
+    private void checkSequenceNumber(MAC mac, byte type)
             throws IOException {
 
         /*
          * Don't bother to check the sequence number for error or
          * closed connections, or NULL MAC.
          */
-        if (connectionState >= cs_ERROR || authenticator == MAC.NULL) {
+        if (connectionState >= cs_ERROR || mac == MAC.NULL) {
             return;
         }
 
@@ -1181,7 +1197,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
          * Conservatively, close the connection immediately when the
          * sequence number is close to overflow
          */
-        if (authenticator.seqNumOverflow()) {
+        if (mac.seqNumOverflow()) {
             /*
              * TLS protocols do not define a error alert for sequence
              * number overflow. We use handshake_failure error alert
@@ -1203,7 +1219,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
          * Don't bother to kickstart the renegotiation when the local is
          * asking for it.
          */
-        if ((type != Record.ct_handshake) && authenticator.seqNumIsHuge()) {
+        if ((type != Record.ct_handshake) && mac.seqNumIsHuge()) {
             if (debug != null && Debug.isOn("ssl")) {
                 System.out.println(Thread.currentThread().getName() +
                         ", request renegotiation " +
@@ -2065,7 +2081,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
 
         try {
             readCipher = handshaker.newReadCipher();
-            readAuthenticator = handshaker.newReadAuthenticator();
+            readMAC = handshaker.newReadMAC();
         } catch (GeneralSecurityException e) {
             // "can't happen"
             throw new SSLException("Algorithm missing:  ", e);
@@ -2096,7 +2112,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
 
         try {
             writeCipher = handshaker.newWriteCipher();
-            writeAuthenticator = handshaker.newWriteAuthenticator();
+            writeMAC = handshaker.newWriteMAC();
         } catch (GeneralSecurityException e) {
             // "can't happen"
             throw new SSLException("Algorithm missing:  ", e);
