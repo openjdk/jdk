@@ -258,7 +258,7 @@ public class Flags {
     public static final long CLASH = 1L<<42;
 
     /**
-     * Flag that marks either a default method or an interface containing default methods
+     * Flag that marks either a default method or an interface containing default methods.
      */
     public static final long DEFAULT = 1L<<43;
 
@@ -272,6 +272,11 @@ public class Flags {
      * Flag that marks that a symbol is not available in the current profile
      */
     public static final long NOT_IN_PROFILE = 1L<<45;
+
+    /**
+     * Flag that indicates that an override error has been detected by Check.
+     */
+    public static final long BAD_OVERRIDE = 1L<<45;
 
     /** Modifier masks.
      */

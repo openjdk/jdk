@@ -293,6 +293,7 @@ public class Pool {
                     expectedKind = Kinds.MTH;
                     break;
                 case ClassFile.REF_invokeStatic:
+                    interfaceOwner = true;
                     staticOk = true;
                 case ClassFile.REF_invokeVirtual:
                 case ClassFile.REF_invokeSpecial:

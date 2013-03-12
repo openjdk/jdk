@@ -146,6 +146,15 @@ public class WriterFactoryImpl implements WriterFactory {
     /**
      * {@inheritDoc}
      */
+    public PropertyWriterImpl getPropertyWriter(ClassWriter classWriter)
+            throws Exception {
+        return new PropertyWriterImpl((SubWriterHolderWriter) classWriter,
+            classWriter.getClassDoc());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public MethodWriterImpl getMethodWriter(ClassWriter classWriter)
             throws Exception {
         return new MethodWriterImpl((SubWriterHolderWriter) classWriter,
@@ -174,6 +183,8 @@ public class WriterFactoryImpl implements WriterFactory {
                 return getEnumConstantWriter(classWriter);
             case VisibleMemberMap.FIELDS:
                 return getFieldWriter(classWriter);
+            case VisibleMemberMap.PROPERTIES:
+                return getPropertyWriter(classWriter);
             case VisibleMemberMap.INNERCLASSES:
                 return new NestedClassWriterImpl((SubWriterHolderWriter)
                     classWriter, classWriter.getClassDoc());
