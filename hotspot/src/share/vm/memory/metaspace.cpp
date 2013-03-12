@@ -2440,7 +2440,8 @@ void MetaspaceAux::print_on(outputStream* out, Metaspace::MetadataType mdtype) {
              free_chunks_capacity_bytes / K,
              used_and_free / K,
              capacity_bytes / K);
-  assert(used_and_free == capacity_bytes, "Accounting is wrong");
+  // Accounting can only be correct if we got the values during a safepoint
+  assert(!SafepointSynchronize::is_at_safepoint() || used_and_free == capacity_bytes, "Accounting is wrong");
 }
 
 // Print total fragmentation for class and data metaspaces separately
