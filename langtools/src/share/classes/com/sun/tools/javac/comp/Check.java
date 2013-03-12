@@ -670,10 +670,17 @@ public class Check {
         t = checkClassOrArrayType(pos, t);
         if (t.hasTag(CLASS)) {
             if ((t.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
-                log.error(pos, "abstract.cant.be.instantiated");
+                log.error(pos, "abstract.cant.be.instantiated", t.tsym);
                 t = types.createErrorType(t);
             } else if ((t.tsym.flags() & ENUM) != 0) {
                 log.error(pos, "enum.cant.be.instantiated");
+                t = types.createErrorType(t);
+            } else {
+                t = checkClassType(pos, t, true);
+            }
+        } else if (t.hasTag(ARRAY)) {
+            if (!types.isReifiable(((ArrayType)t).elemtype)) {
+                log.error(pos, "generic.array.creation");
                 t = types.createErrorType(t);
             }
         }
