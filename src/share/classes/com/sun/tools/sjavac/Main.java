@@ -443,7 +443,7 @@ public class Main {
                     out[source_path+1] = out[source_path+1]+File.pathSeparatorChar+args[i+1];
                     i++;
                 }
-            } else if (args[i].equals("-classpath")) {
+            } else if (args[i].equals("-classpath") || args[i].equals("-cp")) {
                 if (class_path == -1) {
                     class_path = j;
                     out[j] = args[i];
@@ -663,6 +663,7 @@ public class Main {
                o.equals("-d") ||
                o.equals("-sourcepath") ||
                o.equals("-classpath") ||
+               o.equals("-cp") ||
                o.equals("-bootclasspath") ||
                o.equals("-src");
     }
@@ -953,7 +954,8 @@ public class Main {
             if (args[i].equals("-src") ||
                 args[i].equals("-sourcepath") ||
                 args[i].equals("-modulepath") ||
-                args[i].equals("-classpath"))
+                args[i].equals("-classpath") ||
+                args[i].equals("-cp"))
             {
                 // Reset the includes,excludes and excludefiles after they have been used.
                 includes = new LinkedList<String>();
