@@ -42,6 +42,7 @@ import static jdk.nashorn.internal.ir.Symbol.IS_VAR;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +52,7 @@ import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CallNode.EvalArgs;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ForNode;
@@ -332,7 +334,13 @@ final class Attr extends NodeOperatorVisitor {
             functionNode.setNeedsSelfSymbol(functionNode.getSelfSymbolInit().accept(this));
         }
 
+        if (functionNode.hasLazyChildren()) {
+            objectifySymbols(functionNode);
+        }
+
         functionNode.popFrame();
+
+        functionNode.setState(CompilationState.ATTR);
 
         end(functionNode, false);
 
@@ -957,20 +965,17 @@ final class Attr extends NodeOperatorVisitor {
 
     @Override
     public Node leaveBIT_AND(final BinaryNode binaryNode) {
-        newTemporary(Type.INT, binaryNode);
-        return binaryNode;
+        return end(coerce(binaryNode, Type.INT));
     }
 
     @Override
     public Node leaveBIT_OR(final BinaryNode binaryNode) {
-        newTemporary(Type.INT, binaryNode);
-        return binaryNode;
+        return end(coerce(binaryNode, Type.INT));
     }
 
     @Override
     public Node leaveBIT_XOR(final BinaryNode binaryNode) {
-        newTemporary(Type.INT, binaryNode);
-        return binaryNode;
+        return end(coerce(binaryNode, Type.INT));
     }
 
     @Override
@@ -1002,14 +1007,28 @@ final class Attr extends NodeOperatorVisitor {
         return binaryNode;
     }
 
+    private Node coerce(final BinaryNode binaryNode, final Type operandType, final Type destType) {
+        // TODO we currently don't support changing inferred type based on uses, only on
+        // definitions. we would need some additional logic. We probably want to do that
+        // in the future, if e.g. a specialized method gets parameter that is only used
+        // as, say, an int : function(x) { return x & 4711 }, and x is not defined in
+        // the function. to make this work, uncomment the following two type inferences
+        // and debug.
+
+        //newType(binaryNode.lhs().getSymbol(), operandType);
+        //newType(binaryNode.rhs().getSymbol(), operandType);
+        newTemporary(destType, binaryNode);
+        return binaryNode;
+    }
+
+    private Node coerce(final BinaryNode binaryNode, final Type type) {
+        return coerce(binaryNode, type, type);
+    }
+
     //leave a binary node and inherit the widest type of lhs , rhs
     private Node leaveBinaryArithmetic(final BinaryNode binaryNode) {
-        if (!Compiler.shouldUseIntegerArithmetic()) {
-            newTemporary(Type.NUMBER, binaryNode);
-            return binaryNode;
-        }
-        newTemporary(Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType(), Type.NUMBER), binaryNode);
-        return binaryNode;
+        assert !Compiler.shouldUseIntegerArithmetic();
+        return end(coerce(binaryNode, Type.NUMBER));
     }
 
     @Override
@@ -1089,23 +1108,17 @@ final class Attr extends NodeOperatorVisitor {
 
     @Override
     public Node leaveSAR(final BinaryNode binaryNode) {
-        newTemporary(Type.INT, binaryNode);
-        end(binaryNode);
-        return binaryNode;
+        return end(coerce(binaryNode, Type.INT));
     }
 
     @Override
     public Node leaveSHL(final BinaryNode binaryNode) {
-        newTemporary(Type.INT, binaryNode);
-        end(binaryNode);
-        return binaryNode;
+        return end(coerce(binaryNode, Type.INT));
     }
 
     @Override
     public Node leaveSHR(final BinaryNode binaryNode) {
-        newTemporary(Type.LONG, binaryNode);
-        end(binaryNode);
-        return binaryNode;
+        return end(coerce(binaryNode, Type.LONG));
     }
 
     @Override
@@ -1211,11 +1224,17 @@ final class Attr extends NodeOperatorVisitor {
         // type or its parameters with the widest (OBJECT) type for safety.
         functionNode.setReturnType(Type.UNKNOWN);
 
-        for (final IdentNode ident : functionNode.getParameters()) {
-            addLocalDef(ident.getName());
-            final Symbol paramSymbol = functionNode.defineSymbol(ident.getName(), IS_PARAM, ident);
+        for (final IdentNode param : functionNode.getParameters()) {
+            addLocalDef(param.getName());
+            final Symbol paramSymbol = functionNode.defineSymbol(param.getName(), IS_PARAM, param);
             if (paramSymbol != null) {
-                newType(paramSymbol, Type.UNKNOWN);
+                final Type callSiteParamType = functionNode.getSpecializedType(param);
+                if (callSiteParamType != null) {
+                    LOG.info("Param " + paramSymbol + " has a callsite type " + callSiteParamType + ". Using that.");
+
+                    System.err.println("Param " + param + " has a callsite type " + callSiteParamType + ". Using that.");
+                }
+                newType(paramSymbol, callSiteParamType == null ? Type.UNKNOWN : callSiteParamType);
             }
 
             LOG.info("Initialized param " + paramSymbol);
@@ -1229,36 +1248,29 @@ final class Attr extends NodeOperatorVisitor {
      * @param functionNode functionNode
      */
     private static void finalizeParameters(final FunctionNode functionNode) {
-        boolean nonObjectParams = false;
-        List<Type> paramSpecializations = new ArrayList<>();
+        final boolean isVarArg = functionNode.isVarArg();
 
         for (final IdentNode ident : functionNode.getParameters()) {
             final Symbol paramSymbol = ident.getSymbol();
-            if (paramSymbol != null) {
-                Type type = paramSymbol.getSymbolType();
-                if (type.isUnknown()) {
-                    type = Type.OBJECT;
-                }
-                paramSpecializations.add(type);
-                if (!type.isObject()) {
-                    nonObjectParams = true;
-                }
-                newType(paramSymbol, Type.OBJECT);
+
+            assert paramSymbol != null;
+            Type type = functionNode.getSpecializedType(ident);
+            if (type == null) {
+                type = Type.OBJECT;
             }
-        }
 
-        if (!nonObjectParams) {
-            paramSpecializations = null;
-            // Later, when resolving a call to this method, the linker can say "I have a double, an int and an object" as parameters
-            // here. If the callee has parameter specializations, we can regenerate it with those particular types for speed.
-        } else {
-            LOG.info("parameter specialization possible: " + functionNode.getName() + " " + paramSpecializations);
-        }
+            // if we know that a parameter is only used as a certain type throughout
+            // this function, we can tell the runtime system that no matter what the
+            // call site is, use this information. TODO
+            if (!paramSymbol.getSymbolType().isObject()) {
+                LOG.finest("Parameter " + ident + " could profit from specialization to " + paramSymbol.getSymbolType());
+            }
 
-        // parameters should not be slots for a function that uses variable arity signature
-        if (functionNode.isVarArg()) {
-            for (final IdentNode param : functionNode.getParameters()) {
-                param.getSymbol().setNeedsSlot(false);
+            newType(paramSymbol, Type.widest(type, paramSymbol.getSymbolType()));
+
+            // parameters should not be slots for a function that uses variable arity signature
+            if (isVarArg) {
+                paramSymbol.setNeedsSlot(false);
             }
         }
     }
@@ -1546,6 +1558,39 @@ final class Attr extends NodeOperatorVisitor {
     private void addLocalUse(final String name) {
         LOG.info("Adding local use of symbol: '" + name + "'");
         localUses.add(name);
+    }
+
+    /**
+     * Pessimistically promote all symbols in current function node to Object types
+     * This is done when the function contains unevaluated black boxes such as
+     * lazy sub-function nodes that have not been compiled.
+     *
+     * @param functionNode function node in whose scope symbols should conservatively be made objects
+     */
+    private static void objectifySymbols(final FunctionNode functionNode) {
+        functionNode.accept(new NodeVisitor() {
+            private void toObject(final Block block) {
+                for (final Iterator<Symbol> iter = block.symbolIterator(); iter.hasNext();) {
+                    final Symbol symbol = iter.next();
+                    newType(symbol, Type.OBJECT);
+                }
+            }
+
+            @Override
+            public Node enter(final Block block) {
+                toObject(block);
+                return block;
+            }
+
+            @Override
+            public Node enter(final FunctionNode node) {
+                toObject(node);
+                if (node.isLazy()) {
+                    return null;
+                }
+                return node;
+            }
+        });
     }
 
     private static String name(final Node node) {

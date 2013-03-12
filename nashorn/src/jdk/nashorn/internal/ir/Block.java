@@ -38,26 +38,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import jdk.nashorn.internal.codegen.Frame;
 import jdk.nashorn.internal.codegen.Label;
-import jdk.nashorn.internal.ir.annotations.Ignore;
-import jdk.nashorn.internal.ir.annotations.ParentNode;
+import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for a list of statements and functions. All provides the
  * basis for script body.
- *
  */
 public class Block extends Node {
     /** Parent context */
-    @ParentNode @Ignore
+    @Reference
     private Block parent;
 
-    /** Owning function. */
-    @Ignore //don't print it, it is apparent in the tree
+    /** Owning function - a FunctionNode has itself as function */
+    @Reference
     protected FunctionNode function;
 
     /** List of statements */
@@ -271,6 +270,14 @@ public class Block extends Node {
         }
 
         return this;
+    }
+
+    /**
+     * Get an iterator for all the symbols defined in this block
+     * @return symbol iterator
+     */
+    public Iterator<Symbol> symbolIterator() {
+        return symbols.values().iterator();
     }
 
     /**

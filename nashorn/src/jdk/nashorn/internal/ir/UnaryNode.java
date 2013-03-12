@@ -152,9 +152,9 @@ public class UnaryNode extends Node implements Assignment<Node> {
 
         if (isConvert) {
             convertPos = sb.length();
-            sb.append("((");
+            sb.append("(");
             sb.append(getType());
-            sb.append(")");
+            sb.append(")(");
         }
 
         if (!isPostfix && !isConvert) {
@@ -191,8 +191,6 @@ public class UnaryNode extends Node implements Assignment<Node> {
                 sb.setCharAt(convertPos, ' ');
             }
         }
-
-        //TODO - conversions still have too many parenthesis - makes --print-lower-parse hard to read
     }
 
     /**

@@ -33,8 +33,10 @@ import static jdk.nashorn.internal.ir.Symbol.IS_TEMP;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
@@ -45,13 +47,13 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Parser;
+import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.UserAccessorProperty;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
  * IR representation for function (or script.)
- *
  */
 public class FunctionNode extends Block {
 
@@ -86,7 +88,9 @@ public class FunctionNode extends Block {
         /** method has had its types finalized */
         FINALIZED,
         /** method has been emitted to bytecode */
-        EMITTED
+        EMITTED,
+        /** code installed in a class loader */
+        INSTALLED
     }
 
     /** External function identifier. */
@@ -173,6 +177,9 @@ public class FunctionNode extends Block {
     @Ignore
     private final EnumSet<CompilationState> compilationState;
 
+    /** Type hints, e.g based on parameters at call site */
+    private final Map<IdentNode, Type> specializedTypes;
+
     /** Function flags. */
     private int flags;
 
@@ -256,11 +263,17 @@ public class FunctionNode extends Block {
         // constructed, so it can't be seen from other threads.
         this.function          = this;
         this.compilationState  = EnumSet.of(CompilationState.INITIALIZED);
+        this.specializedTypes  = new HashMap<>();
     }
 
     @SuppressWarnings("LeakingThisInConstructor")
     private FunctionNode(final FunctionNode functionNode, final CopyState cs) {
         super(functionNode, cs);
+
+        this.functions = new ArrayList<>();
+        for (final FunctionNode f : functionNode.getFunctions()) {
+            this.functions.add((FunctionNode)cs.existingOrCopy(f));
+        }
 
         this.ident = (IdentNode)cs.existingOrCopy(functionNode.ident);
         this.name  = functionNode.name;
@@ -268,10 +281,9 @@ public class FunctionNode extends Block {
 
         this.parameters = new ArrayList<>();
         for (final IdentNode param : functionNode.getParameters()) {
-            this.parameters.add((IdentNode) cs.existingOrCopy(param));
+            this.parameters.add((IdentNode)cs.existingOrCopy(param));
         }
 
-        this.functions         = new ArrayList<>();
         this.firstToken        = functionNode.firstToken;
         this.lastToken         = functionNode.lastToken;
         this.namespace         = functionNode.getNamespace();
@@ -300,6 +312,7 @@ public class FunctionNode extends Block {
         this.function = this;
 
         this.compilationState = EnumSet.copyOf(functionNode.compilationState);
+        this.specializedTypes = new HashMap<>();
     }
 
     @Override
@@ -710,10 +723,14 @@ public class FunctionNode extends Block {
      * Check if this function's generated Java method needs a {@code callee} parameter. Functions that need access to
      * their parent scope, functions that reference themselves, and non-strict functions that need an Arguments object
      * (since it exposes {@code arguments.callee} property) will need to have a callee parameter.
+     *
+     * We also conservatively need a callee if we have lazy children, i.e. nested function nodes that have not yet
+     * been evaluated. _They_ may need the callee and we don't know it
+     *
      * @return true if the function's generated Java method needs a {@code callee} parameter.
      */
     public boolean needsCallee() {
-        return needsParentScope() || needsSelfSymbol() || (needsArguments() && !isStrictMode());
+        return hasLazyChildren() || needsParentScope() || needsSelfSymbol() || (needsArguments() && !isStrictMode());
     }
 
     /**
@@ -916,6 +933,27 @@ public class FunctionNode extends Block {
      */
     public void setParameters(final List<IdentNode> parameters) {
         this.parameters = parameters;
+    }
+
+    /**
+     * Get a specialized type for an identity, if one exists
+     * @param node node to check specialized type for
+     * @return null if no specialization exists, otherwise type
+     */
+    public Type getSpecializedType(final IdentNode node) {
+        return specializedTypes.get(node);
+    }
+
+    /**
+     * Set parameter type hints for specialization.
+     * @param types types array of length equal to parameter list size
+     */
+    public void setParameterTypes(final Class<?>[] types) {
+        assert types.length == parameters.size() : "Type vector length doesn't correspond to parameter types";
+        //diff - skip the callee and this etc, they are not explicit params in the parse tree
+        for (int i = 0; i < types.length ; i++) {
+            specializedTypes.put(parameters.get(i), Type.typeFor(types[i]));
+        }
     }
 
     /**
@@ -1266,7 +1304,7 @@ public class FunctionNode extends Block {
      * @param parentBlock  a block to remember as parent
      */
     public void addReferencingParentBlock(final Block parentBlock) {
-        assert parentBlock.getFunction() == function.findParentFunction(); // all parent blocks must be in the same function
+        assert parentBlock.getFunction() == function.findParentFunction() : Debug.id(parentBlock.getFunction()) + "!=" + Debug.id(function.findParentFunction()); // all parent blocks must be in the same function
         if (parentBlock != function.getParent()) {
             if (referencingParentBlocks == null) {
                 referencingParentBlocks = new LinkedList<>();

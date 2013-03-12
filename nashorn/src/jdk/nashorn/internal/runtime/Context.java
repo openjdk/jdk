@@ -80,7 +80,7 @@ public final class Context {
 
         /**
          * Return the context for this installer
-         * @return context
+         * @return ScriptEnvironment
          */
         @Override
         public ScriptEnvironment getOwner() {
