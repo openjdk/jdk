@@ -226,15 +226,15 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     }
 
     @SuppressWarnings("deprecation")
-    public void synthesizeWindowActivation(final boolean doActivate) {
-        if (!doActivate || EventQueue.isDispatchThread()) {
-            ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(doActivate);
+    public void synthesizeWindowActivation(final boolean activate) {
+        if (!activate || EventQueue.isDispatchThread()) {
+            ((WFramePeer)getPeer()).emulateActivation(activate);
         } else {
             // To avoid focus concurrence b/w IE and EmbeddedFrame
             // activation is postponed by means of posting it to EDT.
             EventQueue.invokeLater(new Runnable() {
                     public void run() {
-                        ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(true);
+                        ((WFramePeer)getPeer()).emulateActivation(true);
                     }
                 });
         }

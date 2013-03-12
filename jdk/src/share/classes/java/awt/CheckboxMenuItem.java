@@ -277,7 +277,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @since 1.4
      */
     public synchronized ItemListener[] getItemListeners() {
-        return (ItemListener[])(getListeners(ItemListener.class));
+        return getListeners(ItemListener.class);
     }
 
     /**

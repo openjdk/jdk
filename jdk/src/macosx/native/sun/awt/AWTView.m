@@ -227,7 +227,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (void) mouseMoved: (NSEvent *)event {
     // TODO: better way to redirect move events to the "under" view
-
+    
     NSPoint eventLocation = [event locationInWindow];
     NSPoint localPoint = [self convertPoint: eventLocation fromView: nil];
 
@@ -668,7 +668,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (void) setDropTarget:(CDropTarget *)target {
     self._dropTarget = target;
-    [ThreadUtilities performOnMainThread:@selector(controlModelControlValid) onObject:self._dropTarget withObject:nil waitUntilDone:YES awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(controlModelControlValid) on:self._dropTarget withObject:nil waitUntilDone:YES];
 }
 
 /********************************  BEGIN NSDraggingSource Interface  ********************************/
@@ -1215,7 +1215,7 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     fprintf(stderr, "AWTView InputMethod Selector Called : [abandonInput]\n");
 #endif // IM_DEBUG
 
-    [ThreadUtilities performOnMainThread:@selector(markedTextAbandoned:) onObject:[NSInputManager currentInputManager] withObject:self waitUntilDone:YES awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(markedTextAbandoned:) on:[NSInputManager currentInputManager] withObject:self waitUntilDone:YES];
     [self unmarkText];
 }
 

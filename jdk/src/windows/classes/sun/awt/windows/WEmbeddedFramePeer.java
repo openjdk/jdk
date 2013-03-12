@@ -65,8 +65,6 @@ public class WEmbeddedFramePeer extends WFramePeer {
 
     public native Rectangle getBoundsPrivate();
 
-    public native void synthesizeWmActivate(boolean doActivate);
-
     @Override
     public boolean isAccelCapable() {
         // REMIND: Temp workaround for issues with using HW acceleration
