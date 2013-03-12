@@ -52,7 +52,7 @@
     <javac debug="flase" source="1.5" target="1.5" srcdir="${src}" destdir="${build}"/>
   </target>
 
-  <target name="run" depends="dist" 
+  <target name="run" depends="dist"
     description="run J2DBench" >
     <java jar="${dist}/J2DBench.jar"
        fork="true"
@@ -60,7 +60,7 @@
     </java>
   </target>
 
-  <target name="analyze" depends="dist" 
+  <target name="analyze" depends="dist"
     description="run J2DAnalyzer" >
     <java jar="${dist}/J2DAnalyzer.jar"
        fork="true"
@@ -80,6 +80,10 @@
     <copy todir="${build}/j2dbench/tests/iio/images">
       <fileset dir="${resources}/images" />
     </copy>
+    <mkdir dir="${build}/j2dbench/tests/cmm/images"/>
+    <copy todir="${build}/j2dbench/tests/cmm/images">
+      <fileset dir="${resources}/cmm_images" />
+    </copy>
   </target>
 
   <target name="dist" depends="compile, resources"
@@ -88,14 +92,14 @@
     <mkdir dir="${dist}"/>
 
     <!-- Put everything in ${build} into the J2DBench.jar file -->
-    <jar jarfile="${dist}/J2DBench.jar" basedir="${build}" 
+    <jar jarfile="${dist}/J2DBench.jar" basedir="${build}"
         excludes="j2dbench/report/**" >
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
 	<attribute name="Main-Class" value="j2dbench.J2DBench"/>
       </manifest>
     </jar>
-    <jar jarfile="${dist}/J2DAnalyzer.jar" basedir="${build}" 
+    <jar jarfile="${dist}/J2DAnalyzer.jar" basedir="${build}"
         includes="j2dbench/report/**" >
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>

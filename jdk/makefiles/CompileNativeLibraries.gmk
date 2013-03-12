@@ -1218,7 +1218,7 @@ ifdef OPENJDK
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
                 SRC:=$(JDK_TOPDIR)/src/share/native/sun/java2d/cmm/lcms,\
 		LANG:=C,\
-		OPTIMIZATION:=LOW, \
+		OPTIMIZATION:=HIGHEST, \
 		CFLAGS:=$(filter-out -xc99=%none,$(CFLAGS_JDKLIB)) \
 			$(SHARED_LIBRARY_FLAGS) \
 			-I$(JDK_TOPDIR)/src/share/native/sun/java2d \
