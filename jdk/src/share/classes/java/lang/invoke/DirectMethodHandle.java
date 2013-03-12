@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     // Factory methods:
-
-    static DirectMethodHandle make(Class<?> receiver, MemberName member) {
+    static DirectMethodHandle make(byte refKind, Class<?> receiver, MemberName member) {
         MethodType mtype = member.getMethodOrFieldType();
         if (!member.isStatic()) {
             if (!member.getDeclaringClass().isAssignableFrom(receiver) || member.isConstructor())
@@ -64,8 +63,14 @@ class DirectMethodHandle extends MethodHandle {
             mtype = mtype.insertParameterTypes(0, receiver);
         }
         if (!member.isField()) {
-            LambdaForm lform = preparedLambdaForm(member);
-            return new DirectMethodHandle(mtype, lform, member);
+            if (refKind == REF_invokeSpecial) {
+                member = member.asSpecial();
+                LambdaForm lform = preparedLambdaForm(member);
+                return new Special(mtype, lform, member);
+            } else {
+                LambdaForm lform = preparedLambdaForm(member);
+                return new DirectMethodHandle(mtype, lform, member);
+            }
         } else {
             LambdaForm lform = preparedFieldLambdaForm(member);
             if (member.isStatic()) {
@@ -78,6 +83,12 @@ class DirectMethodHandle extends MethodHandle {
                 return new Accessor(mtype, lform, member, (int)offset);
             }
         }
+    }
+    static DirectMethodHandle make(Class<?> receiver, MemberName member) {
+        byte refKind = member.getReferenceKind();
+        if (refKind == REF_invokeSpecial)
+            refKind =  REF_invokeVirtual;
+        return make(refKind, receiver, member);
     }
     static DirectMethodHandle make(MemberName member) {
         if (member.isConstructor())
@@ -113,6 +124,10 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     //// Implementation methods.
+    @Override
+    MethodHandle viewAsType(MethodType newType) {
+        return new DirectMethodHandle(newType, form, member);
+    }
     @Override
     @ForceInline
     MemberName internalMemberName() {
@@ -357,6 +372,21 @@ class DirectMethodHandle extends MethodHandle {
         ((DirectMethodHandle)mh).ensureInitialized();
     }
 
+    /** This subclass represents invokespecial instructions. */
+    static class Special extends DirectMethodHandle {
+        private Special(MethodType mtype, LambdaForm form, MemberName member) {
+            super(mtype, form, member);
+        }
+        @Override
+        boolean isInvokeSpecial() {
+            return true;
+        }
+        @Override
+        MethodHandle viewAsType(MethodType newType) {
+            return new Special(newType, form, member);
+        }
+    }
+
     /** This subclass handles constructor references. */
     static class Constructor extends DirectMethodHandle {
         final MemberName initMethod;
@@ -368,6 +398,10 @@ class DirectMethodHandle extends MethodHandle {
             this.initMethod = initMethod;
             this.instanceClass = instanceClass;
             assert(initMethod.isResolved());
+        }
+        @Override
+        MethodHandle viewAsType(MethodType newType) {
+            return new Constructor(newType, form, member, initMethod, instanceClass);
         }
     }
 
@@ -394,6 +428,10 @@ class DirectMethodHandle extends MethodHandle {
 
         @Override Object checkCast(Object obj) {
             return fieldType.cast(obj);
+        }
+        @Override
+        MethodHandle viewAsType(MethodType newType) {
+            return new Accessor(newType, form, member, fieldOffset);
         }
     }
 
@@ -433,6 +471,10 @@ class DirectMethodHandle extends MethodHandle {
 
         @Override Object checkCast(Object obj) {
             return fieldType.cast(obj);
+        }
+        @Override
+        MethodHandle viewAsType(MethodType newType) {
+            return new StaticAccessor(newType, form, member, staticBase, staticOffset);
         }
     }
 

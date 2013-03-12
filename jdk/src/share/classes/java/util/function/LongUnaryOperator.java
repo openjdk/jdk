@@ -26,7 +26,10 @@ package java.util.function;
 
 /**
  * An operation on a single {@code long} operand yielding a {@code long} result.
+ * This is the primitive type specialization of {@link UnaryOperator} for
+ * {@code long}.
  *
+ * @see UnaryOperator
  * @since 1.8
  */
 @FunctionalInterface
@@ -39,5 +42,5 @@ public interface LongUnaryOperator {
      * @param operand the operand value
      * @return the operation result value
      */
-    public long operateAsLong(long operand);
+    public long applyAsLong(long operand);
 }

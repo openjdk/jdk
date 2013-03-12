@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,16 +367,22 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         @Override
         MethodHandle viewAsType(MethodType newType) {
-            MethodHandle mh = super.viewAsType(newType);
+            if (newType.lastParameterType() != type().lastParameterType())
+                throw new InternalError();
+            MethodHandle newTarget = asFixedArity().viewAsType(newType);
             // put back the varargs bit:
-            MethodType type = mh.type();
-            int arity = type.parameterCount();
-            return mh.asVarargsCollector(type.parameterType(arity-1));
+            return new AsVarargsCollector(newTarget, newType, arrayType);
         }
 
         @Override
         MemberName internalMemberName() {
             return asFixedArity().internalMemberName();
+        }
+
+        /*non-public*/
+        @Override
+        boolean isInvokeSpecial() {
+            return asFixedArity().isInvokeSpecial();
         }
 
 

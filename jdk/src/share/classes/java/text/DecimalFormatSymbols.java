@@ -71,13 +71,19 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
 public class DecimalFormatSymbols implements Cloneable, Serializable {
 
     /**
-     * Create a DecimalFormatSymbols object for the default locale.
+     * Create a DecimalFormatSymbols object for the default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * This constructor can only construct instances for the locales
      * supported by the Java runtime environment, not for those
      * supported by installed
      * {@link java.text.spi.DecimalFormatSymbolsProvider DecimalFormatSymbolsProvider}
      * implementations. For full locale coverage, use the
      * {@link #getInstance(Locale) getInstance} method.
+     * <p>This is equivalent to calling
+     * {@link #DecimalFormatSymbols(Locale)
+     *     DecimalFormatSymbols(Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      */
     public DecimalFormatSymbols() {
         initialize( Locale.getDefault(Locale.Category.FORMAT) );
@@ -133,6 +139,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * as for those supported by installed
      * {@link java.text.spi.DecimalFormatSymbolsProvider
      * DecimalFormatSymbolsProvider} implementations.
+     * <p>This is equivalent to calling
+     * {@link #getInstance(Locale)
+     *     getInstance(Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @return a <code>DecimalFormatSymbols</code> instance.
      * @since 1.6
      */
