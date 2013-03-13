@@ -3492,7 +3492,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     int next_static_word_offset;
     int next_static_short_offset;
     int next_static_byte_offset;
-    int next_static_padded_offset;
     int next_nonstatic_oop_offset;
     int next_nonstatic_double_offset;
     int next_nonstatic_word_offset;
@@ -3505,33 +3504,25 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     int next_nonstatic_padded_offset;
 
     // Count the contended fields by type.
-    int static_contended_count = 0;
     int nonstatic_contended_count = 0;
     FieldAllocationCount fac_contended;
     for (AllFieldStream fs(fields, cp); !fs.done(); fs.next()) {
       FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
       if (fs.is_contended()) {
         fac_contended.count[atype]++;
-        if (fs.access_flags().is_static()) {
-          static_contended_count++;
-        } else {
+        if (!fs.access_flags().is_static()) {
           nonstatic_contended_count++;
         }
       }
     }
-    int contended_count = static_contended_count + nonstatic_contended_count;
+    int contended_count = nonstatic_contended_count;
 
 
     // Calculate the starting byte offsets
     next_static_oop_offset      = InstanceMirrorKlass::offset_of_static_fields();
 
-    // class is contended, pad before all the fields
-    if (parsed_annotations.is_contended()) {
-      next_static_oop_offset += pad_size;
-    }
-
     next_static_double_offset   = next_static_oop_offset +
-                                  ((fac.count[STATIC_OOP] - fac_contended.count[STATIC_OOP]) * heapOopSize);
+                                  ((fac.count[STATIC_OOP]) * heapOopSize);
     if ( fac.count[STATIC_DOUBLE] &&
          (Universe::field_type_should_be_aligned(T_DOUBLE) ||
           Universe::field_type_should_be_aligned(T_LONG)) ) {
@@ -3539,13 +3530,11 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     next_static_word_offset     = next_static_double_offset +
-                                  ((fac.count[STATIC_DOUBLE] - fac_contended.count[STATIC_DOUBLE]) * BytesPerLong);
+                                  ((fac.count[STATIC_DOUBLE]) * BytesPerLong);
     next_static_short_offset    = next_static_word_offset +
-                                  ((fac.count[STATIC_WORD]   - fac_contended.count[STATIC_WORD]) * BytesPerInt);
+                                  ((fac.count[STATIC_WORD]) * BytesPerInt);
     next_static_byte_offset     = next_static_short_offset +
-                                  ((fac.count[STATIC_SHORT]  - fac_contended.count[STATIC_SHORT]) * BytesPerShort);
-    next_static_padded_offset   = next_static_byte_offset +
-                                  ((fac.count[STATIC_BYTE]   - fac_contended.count[STATIC_BYTE]) * 1);
+                                  ((fac.count[STATIC_SHORT]) * BytesPerShort);
 
     first_nonstatic_field_offset = instanceOopDesc::base_offset_in_bytes() +
                                    nonstatic_field_size * heapOopSize;
@@ -3738,8 +3727,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       // skip already laid out fields
       if (fs.is_offset_set()) continue;
 
-      // contended fields are handled below
-      if (fs.is_contended()) continue;
+      // contended instance fields are handled below
+      if (fs.is_contended() && !fs.access_flags().is_static()) continue;
 
       int real_offset;
       FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
@@ -3943,86 +3932,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
       // handle static fields
 
-      // if there is at least one contended field, we need to have pre-padding for them
-      if (static_contended_count > 0) {
-        next_static_padded_offset += pad_size;
-      }
-
-      current_group = -1;
-      while ((current_group = (int)bm.get_next_one_offset(current_group + 1)) != (int)bm.size()) {
-
-        for (AllFieldStream fs(fields, cp); !fs.done(); fs.next()) {
-
-          // skip already laid out fields
-          if (fs.is_offset_set()) continue;
-
-          // skip non-contended fields and fields from different group
-          if (!fs.is_contended() || (fs.contended_group() != current_group)) continue;
-
-          // non-statics already handled above
-          if (!fs.access_flags().is_static()) continue;
-
-          int real_offset;
-          FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
-
-          switch (atype) {
-
-            case STATIC_BYTE:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, 1);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += 1;
-              break;
-
-            case STATIC_SHORT:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, BytesPerShort);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += BytesPerShort;
-              break;
-
-            case STATIC_WORD:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, BytesPerInt);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += BytesPerInt;
-              break;
-
-            case STATIC_DOUBLE:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, BytesPerLong);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += BytesPerLong;
-              break;
-
-            case STATIC_OOP:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, heapOopSize);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += heapOopSize;
-              break;
-
-            default:
-              ShouldNotReachHere();
-          }
-
-          if (fs.contended_group() == 0) {
-            // Contended group defines the equivalence class over the fields:
-            // the fields within the same contended group are not inter-padded.
-            // The only exception is default group, which does not incur the
-            // equivalence, and so requires intra-padding.
-            next_static_padded_offset += pad_size;
-          }
-
-          fs.set_offset(real_offset);
-        } // for
-
-        // Start laying out the next group.
-        // Note that this will effectively pad the last group in the back;
-        // this is expected to alleviate memory contention effects for
-        // subclass fields and/or adjacent object.
-        // If this was the default group, the padding is already in place.
-        if (current_group != 0) {
-          next_static_padded_offset += pad_size;
-        }
-
-      }
-
     } // handle contended
 
     // Size of instances
@@ -4035,10 +3944,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // and/or adjacent object.
     if (parsed_annotations.is_contended()) {
       notaligned_offset += pad_size;
-      next_static_padded_offset += pad_size;
     }
 
-    int next_static_type_offset     = align_size_up(next_static_padded_offset, wordSize);
+    int next_static_type_offset     = align_size_up(next_static_byte_offset, wordSize);
     int static_field_size           = (next_static_type_offset -
                                   InstanceMirrorKlass::offset_of_static_fields()) / wordSize;
 
