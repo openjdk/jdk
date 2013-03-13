@@ -65,9 +65,10 @@ Metablock* Metablock::initialize(MetaWord* p, size_t word_size) {
   }
 
   Metablock* result = (Metablock*) p;
+
+  // Clear the memory
+  Copy::fill_to_aligned_words((HeapWord*)result, word_size);
 #ifdef ASSERT
-  // Add just to catch missing initializations
-  Copy::fill_to_words((HeapWord*) result, word_size, 0xf1f1f1f1);
   result->set_word_size(word_size);
 #endif
   return result;
