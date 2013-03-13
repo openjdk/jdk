@@ -67,6 +67,12 @@ ConstMethod::ConstMethod(int byte_code_size,
   set_size_of_parameters(0);
 }
 
+// Accessor that copies to metadata.
+void ConstMethod::copy_stackmap_data(ClassLoaderData* loader_data,
+                                     u1* sd, int length, TRAPS) {
+  _stackmap_data = MetadataFactory::new_array<u1>(loader_data, length, CHECK);
+  memcpy((void*)_stackmap_data->adr_at(0), (void*)sd, length);
+}
 
 // Deallocate metadata fields associated with ConstMethod*
 void ConstMethod::deallocate_contents(ClassLoaderData* loader_data) {

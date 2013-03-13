@@ -165,7 +165,8 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
 
 volatile int InstanceKlass::_total_instanceKlass_count = 0;
 
-Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
+InstanceKlass* InstanceKlass::allocate_instance_klass(
+                                              ClassLoaderData* loader_data,
                                               int vtable_len,
                                               int itable_len,
                                               int static_field_size,
@@ -207,9 +208,34 @@ Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
         access_flags, is_anonymous);
   }
 
+  // Check for pending exception before adding to the loader data and incrementing
+  // class count.  Can get OOM here.
+  if (HAS_PENDING_EXCEPTION) {
+    return NULL;
+  }
+
+  // Add all classes to our internal class loader list here,
+  // including classes in the bootstrap (NULL) class loader.
+  loader_data->add_class(ik);
+
   Atomic::inc(&_total_instanceKlass_count);
   return ik;
 }
+
+
+// copy method ordering from resource area to Metaspace
+void InstanceKlass::copy_method_ordering(intArray* m, TRAPS) {
+  if (m != NULL) {
+    // allocate a new array and copy contents (memcpy?)
+    _method_ordering = MetadataFactory::new_array<int>(class_loader_data(), m->length(), CHECK);
+    for (int i = 0; i < m->length(); i++) {
+      _method_ordering->at_put(i, m->at(i));
+    }
+  } else {
+    _method_ordering = Universe::the_empty_int_array();
+  }
+}
+
 
 InstanceKlass::InstanceKlass(int vtable_len,
                              int itable_len,
@@ -223,9 +249,6 @@ InstanceKlass::InstanceKlass(int vtable_len,
   int iksize = InstanceKlass::size(vtable_len, itable_len, nonstatic_oop_map_size,
                                    access_flags.is_interface(), is_anonymous);
 
-  // The sizes of these these three variables are used for determining the
-  // size of the instanceKlassOop. It is critical that these are set to the right
-  // sizes before the first GC, i.e., when we allocate the mirror.
   set_vtable_length(vtable_len);
   set_itable_length(itable_len);
   set_static_field_size(static_field_size);
@@ -288,12 +311,51 @@ InstanceKlass::InstanceKlass(int vtable_len,
 }
 
 
+void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
+                                       Array<Method*>* methods) {
+  if (methods != NULL && methods != Universe::the_empty_method_array()) {
+    for (int i = 0; i < methods->length(); i++) {
+      Method* method = methods->at(i);
+      if (method == NULL) continue;  // maybe null if error processing
+      // Only want to delete methods that are not executing for RedefineClasses.
+      // The previous version will point to them so they're not totally dangling
+      assert (!method->on_stack(), "shouldn't be called with methods on stack");
+      MetadataFactory::free_metadata(loader_data, method);
+    }
+    MetadataFactory::free_array<Method*>(loader_data, methods);
+  }
+}
+
+void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
+                                          Klass* super_klass,
+                                          Array<Klass*>* local_interfaces,
+                                          Array<Klass*>* transitive_interfaces) {
+  // Only deallocate transitive interfaces if not empty, same as super class
+  // or same as local interfaces.  See code in parseClassFile.
+  Array<Klass*>* ti = transitive_interfaces;
+  if (ti != Universe::the_empty_klass_array() && ti != local_interfaces) {
+    // check that the interfaces don't come from super class
+    Array<Klass*>* sti = (super_klass == NULL) ? NULL :
+                    InstanceKlass::cast(super_klass)->transitive_interfaces();
+    if (ti != sti) {
+      MetadataFactory::free_array<Klass*>(loader_data, ti);
+    }
+  }
+
+  // local interfaces can be empty
+  if (local_interfaces != Universe::the_empty_klass_array()) {
+    MetadataFactory::free_array<Klass*>(loader_data, local_interfaces);
+  }
+}
+
 // This function deallocates the metadata and C heap pointers that the
 // InstanceKlass points to.
 void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   // Orphan the mirror first, CMS thinks it's still live.
-  java_lang_Class::set_klass(java_mirror(), NULL);
+  if (java_mirror() != NULL) {
+    java_lang_Class::set_klass(java_mirror(), NULL);
+  }
 
   // Need to take this class off the class loader data list.
   loader_data->remove_class(this);
@@ -308,17 +370,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // reference counting symbol names.
   release_C_heap_structures();
 
-  Array<Method*>* ms = methods();
-  if (ms != Universe::the_empty_method_array()) {
-    for (int i = 0; i <= methods()->length() -1 ; i++) {
-      Method* method = methods()->at(i);
-      // Only want to delete methods that are not executing for RedefineClasses.
-      // The previous version will point to them so they're not totally dangling
-      assert (!method->on_stack(), "shouldn't be called with methods on stack");
-      MetadataFactory::free_metadata(loader_data, method);
-    }
-    MetadataFactory::free_array<Method*>(loader_data, methods());
-  }
+  deallocate_methods(loader_data, methods());
   set_methods(NULL);
 
   if (method_ordering() != Universe::the_empty_int_array()) {
@@ -335,24 +387,8 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_secondary_supers(NULL);
 
-  // Only deallocate transitive interfaces if not empty, same as super class
-  // or same as local interfaces.   See code in parseClassFile.
-  Array<Klass*>* ti = transitive_interfaces();
-  if (ti != Universe::the_empty_klass_array() && ti != local_interfaces()) {
-    // check that the interfaces don't come from super class
-    Array<Klass*>* sti = (super() == NULL) ? NULL :
-       InstanceKlass::cast(super())->transitive_interfaces();
-    if (ti != sti) {
-      MetadataFactory::free_array<Klass*>(loader_data, ti);
-    }
-  }
+  deallocate_interfaces(loader_data, super(), local_interfaces(), transitive_interfaces());
   set_transitive_interfaces(NULL);
-
-  // local interfaces can be empty
-  Array<Klass*>* li = local_interfaces();
-  if (li != Universe::the_empty_klass_array()) {
-    MetadataFactory::free_array<Klass*>(loader_data, li);
-  }
   set_local_interfaces(NULL);
 
   MetadataFactory::free_array<jushort>(loader_data, fields());
@@ -360,9 +396,11 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
-  assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
-  MetadataFactory::free_metadata(loader_data, constants());
-  set_constants(NULL);
+  if (constants() != NULL) {
+    assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
+    MetadataFactory::free_metadata(loader_data, constants());
+    set_constants(NULL);
+  }
 
   if (inner_classes() != Universe::the_empty_short_array()) {
     MetadataFactory::free_array<jushort>(loader_data, inner_classes());
