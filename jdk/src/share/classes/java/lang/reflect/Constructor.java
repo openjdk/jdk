@@ -532,6 +532,7 @@ public final class Constructor<T> extends Executable {
      * {@inheritDoc}
      * @since 1.8
      */
+    @Override
     public AnnotatedType getAnnotatedReturnType() {
         return getAnnotatedReturnType0(getDeclaringClass());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1250,8 +1250,6 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     MethodHandle viewAsType(MethodType newType) {
         // No actual conversions, just a new view of the same method.
-        if (!type.isViewableAs(newType))
-            throw new InternalError();
         return MethodHandleImpl.makePairwiseConvert(this, newType, 0);
     }
 
@@ -1265,6 +1263,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     MemberName internalMemberName() {
         return null;  // DMH returns DMH.member
+    }
+
+    /*non-public*/
+    boolean isInvokeSpecial() {
+        return false;  // DMH.Special returns true
     }
 
     /*non-public*/

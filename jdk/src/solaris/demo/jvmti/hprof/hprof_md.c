@@ -385,6 +385,7 @@ static void dll_build_name(char* buffer, size_t buflen,
     // Loosely based on os_solaris.cpp
 
       char *pathname = (char *)pname;
+      *buffer = '\0';
       while (strlen(pathname) > 0) {
           char *p = strchr(pathname, ':');
           if (p == NULL) {
@@ -395,12 +396,16 @@ static void dll_build_name(char* buffer, size_t buflen,
               continue;
           }
           (void)snprintf(buffer, buflen, "%.*s/lib%s" JNI_LIB_SUFFIX,
-                         (p - pathname), pathname, fname);
+                         (int)(p - pathname), pathname, fname);
 
           if (access(buffer, F_OK) == 0) {
-            break;
+              break;
           }
-          pathname = p + 1;
+          if (*p == '\0') {
+              pathname = p;
+          } else {
+              pathname = p + 1;
+          }
           *buffer = '\0';
       }
 }

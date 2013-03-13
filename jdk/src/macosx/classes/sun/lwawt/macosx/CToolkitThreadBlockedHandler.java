@@ -25,27 +25,33 @@
 
 package sun.lwawt.macosx;
 
+import sun.awt.Mutex;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
 
-final class CToolkitThreadBlockedHandler implements ToolkitThreadBlockedHandler {
-    private final LWCToolkit toolkit = (LWCToolkit)java.awt.Toolkit.getDefaultToolkit();
+final class CToolkitThreadBlockedHandler extends Mutex implements ToolkitThreadBlockedHandler {
+    private long awtRunLoopMediator = 0;
+    private final boolean processEvents;
 
-    public void lock() {
-    }
-
-    public void unlock() {
-    }
-
-    protected boolean isOwned() {
-       return false;
+    CToolkitThreadBlockedHandler() {
+        super();
+        this.processEvents = true;
     }
 
     public void enter() {
-        // Execute the next AppKit event while we are waiting for system to
-        // finish our request - this will save us from biting our own tail
-        toolkit.executeNextAppKitEvent();
+        if (!isOwned()) {
+            throw new IllegalMonitorStateException();
+        }
+        awtRunLoopMediator = LWCToolkit.createAWTRunLoopMediator();
+        unlock();
+        LWCToolkit.doAWTRunLoop(awtRunLoopMediator, processEvents);
+        lock();
     }
 
     public void exit() {
+        if (!isOwned()) {
+            throw new IllegalMonitorStateException();
+        }
+        LWCToolkit.stopAWTRunLoop(awtRunLoopMediator);
+        awtRunLoopMediator = 0;
     }
 }

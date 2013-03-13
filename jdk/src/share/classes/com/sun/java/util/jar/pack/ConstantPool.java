@@ -207,6 +207,10 @@ class ConstantPool {
             return tag;
         }
 
+        public final boolean tagEquals(int tag) {
+            return getTag() == tag;
+        }
+
         public Entry getRef(int i) {
             return null;
         }

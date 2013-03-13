@@ -22,14 +22,43 @@
  */
 
 /* @test
- * @bug 8004502
+ * @bug 8004502 8008793
  * @summary Sanity check that SecurityManager methods that check AWTPermission
  *   behave as expected when AWT is not present
  */
 
+import java.security.AllPermission;
+import java.security.Permission;
+
 public class NoAWT {
+
+    static class MySecurityManager extends SecurityManager {
+        Class<?> expectedClass;
+
+        void setExpectedPermissionClass(Class<?> c) {
+            expectedClass = c;
+        }
+
+        @Override
+        public void checkPermission(Permission perm) {
+            if (perm.getClass() != expectedClass)
+                throw new RuntimeException("Got: " + perm.getClass() + ", expected: " + expectedClass);
+            super.checkPermission(perm);
+        }
+    }
+
     public static void main(String[] args) {
-        SecurityManager sm = new SecurityManager();
+        Class<?> awtPermissionClass = null;
+        try {
+            awtPermissionClass = Class.forName("java.awt.AWTPermission");
+        } catch (ClassNotFoundException ignore) { }
+
+        MySecurityManager sm = new MySecurityManager();
+        if (awtPermissionClass != null) {
+            sm.setExpectedPermissionClass(awtPermissionClass);
+        } else {
+            sm.setExpectedPermissionClass(AllPermission.class);
+        }
 
         try {
             sm.checkAwtEventQueueAccess();

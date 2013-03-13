@@ -46,7 +46,7 @@ public class Test {
     static int failures;
 
     static void doTest(Object test[], InetAddress ia1, InetAddress ia2,
-                       boolean silent) {
+                       boolean silent) throws Exception {
         String s1_type = (String)test[0];
         String s2_type = (String)test[1];
         int port = 0;
@@ -64,11 +64,10 @@ public class Test {
         boolean failed = false;
         Exception failed_exc = null;
 
+        Socket sock1 = null;
+        ServerSocket ss = null;
+        DatagramSocket dsock1 = null;
         try {
-            Socket sock1, sock2;
-            ServerSocket ss;
-            DatagramSocket dsock1, dsock2;
-
             /* bind the first socket */
 
             if (s1_type.equals("Socket")) {
@@ -90,16 +89,18 @@ public class Test {
             /* bind the second socket */
 
             if (s2_type.equals("Socket")) {
-                sock2 = new Socket();
-                sock2.bind( new InetSocketAddress(ia2, port));
+                try (Socket sock2 = new Socket()) {
+                    sock2.bind( new InetSocketAddress(ia2, port));
+                }
             }
 
             if (s2_type.equals("ServerSocket")) {
-                ss = new ServerSocket(port, 0, ia2);
+                try (ServerSocket ss2 = new ServerSocket(port, 0, ia2)) { }
             }
 
             if (s2_type.equals("DatagramSocket")) {
-                dsock2 = new DatagramSocket( new InetSocketAddress(ia2, port) );
+                try (DatagramSocket ds =
+                        new DatagramSocket(new InetSocketAddress(ia2, port))) { }
             }
 
         } catch (BindException be) {
@@ -107,6 +108,10 @@ public class Test {
         } catch (Exception e) {
             failed = true;
             failed_exc = e;
+        } finally {
+            if (sock1 != null) sock1.close();
+            if (ss != null) ss.close();
+            if (dsock1 != null) dsock1.close();
         }
 
         /*

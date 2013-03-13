@@ -30,8 +30,8 @@ import java.util.*;
 import java.security.*;
 
 import sun.net.www.MessageHeader;
-import sun.misc.BASE64Encoder;
-import sun.misc.BASE64Decoder;
+import java.util.Base64;
+
 
 import sun.security.pkcs.*;
 import sun.security.x509.AlgorithmId;
@@ -305,7 +305,6 @@ public class SignatureFile {
         }
         smh.set("Name", name);
 
-        BASE64Encoder encoder = new BASE64Encoder();
         try {
             for (int i = 0; i < hashes.length; ++i) {
                 MessageDigest dig = getDigest(hashes[i]);
@@ -314,7 +313,7 @@ public class SignatureFile {
                 mh.print(ps);
                 byte[] headerBytes = baos.toByteArray();
                 byte[] digest = dig.digest(headerBytes);
-                smh.set(hashes[i] + "-Digest", encoder.encode(digest));
+                smh.set(hashes[i] + "-Digest", Base64.getMimeEncoder().encodeToString(digest));
             }
             return smh;
         } catch (NoSuchAlgorithmException e) {

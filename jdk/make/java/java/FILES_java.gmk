@@ -257,6 +257,7 @@ JAVA_JAVA_java = \
         sun/util/calendar/ZoneInfoFile.java \
     java/util/TooManyListenersException.java \
     java/util/Comparator.java \
+    java/util/Comparators.java \
     java/util/Collections.java \
     java/util/Iterator.java \
     java/util/ListIterator.java \

@@ -51,6 +51,7 @@ public class ColorConversionTests extends CMMTests {
 
         DataConversionTests.init();
         ColorConvertOpTests.init();
+        EmbeddedProfileTests.init();
     }
 
     protected ColorConversionTests(Group parent, String nodeName, String description) {

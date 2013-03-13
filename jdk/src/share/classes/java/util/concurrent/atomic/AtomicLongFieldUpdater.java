@@ -284,7 +284,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         long prev, next;
         do {
             prev = get(obj);
-            next = updateFunction.operateAsLong(prev);
+            next = updateFunction.applyAsLong(prev);
         } while (!compareAndSet(obj, prev, next));
         return prev;
     }
@@ -304,7 +304,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         long prev, next;
         do {
             prev = get(obj);
-            next = updateFunction.operateAsLong(prev);
+            next = updateFunction.applyAsLong(prev);
         } while (!compareAndSet(obj, prev, next));
         return next;
     }
@@ -329,7 +329,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         long prev, next;
         do {
             prev = get(obj);
-            next = accumulatorFunction.operateAsLong(prev, x);
+            next = accumulatorFunction.applyAsLong(prev, x);
         } while (!compareAndSet(obj, prev, next));
         return prev;
     }
@@ -354,7 +354,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         long prev, next;
         do {
             prev = get(obj);
-            next = accumulatorFunction.operateAsLong(prev, x);
+            next = accumulatorFunction.applyAsLong(prev, x);
         } while (!compareAndSet(obj, prev, next));
         return next;
     }
