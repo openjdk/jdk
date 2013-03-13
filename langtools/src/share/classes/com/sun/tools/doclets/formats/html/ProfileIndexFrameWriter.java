@@ -107,7 +107,7 @@ public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
         String profileName = (Profile.lookup(profile)).name;
         profileLabel = new StringContent(profileName);
         profileLinkContent = getHyperLink(DocPaths.profileFrame(profileName), profileLabel, "",
-                    "profileListFrame");
+                    "packageListFrame");
         Content li = HtmlTree.LI(profileLinkContent);
         return li;
     }
@@ -154,7 +154,7 @@ public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
      */
     protected void addAllPackagesLink(Content div) {
         Content linkContent = getHyperLink(DocPaths.OVERVIEW_FRAME,
-                allpackagesLabel, "", "profileListFrame");
+                allpackagesLabel, "", "packageListFrame");
         Content span = HtmlTree.SPAN(linkContent);
         div.addContent(span);
     }
