@@ -1021,6 +1021,33 @@ Java_sun_nio_fs_WindowsNativeDispatcher_AdjustTokenPrivileges(JNIEnv* env,
         throwWindowsException(env, GetLastError());
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_AccessCheck(JNIEnv* env,
+    jclass this, jlong token, jlong securityInfo, jint accessMask,
+    jint genericRead, jint genericWrite, jint genericExecute, jint genericAll)
+{
+    HANDLE hImpersonatedToken = (HANDLE)jlong_to_ptr(token);
+    PSECURITY_DESCRIPTOR security = (PSECURITY_DESCRIPTOR)jlong_to_ptr(securityInfo);
+    DWORD checkAccessRights = (DWORD)accessMask;
+    GENERIC_MAPPING mapping = {
+        genericRead,
+        genericWrite,
+        genericExecute,
+        genericAll};
+    PRIVILEGE_SET privileges = {0};
+    DWORD privilegesLength = sizeof(privileges);
+    DWORD grantedAccess = 0;
+    BOOL result = FALSE;
+
+    /* checkAccessRights is in-out parameter */
+    MapGenericMask(&checkAccessRights, &mapping);
+    if (AccessCheck(security, hImpersonatedToken, checkAccessRights,
+            &mapping, &privileges, &privilegesLength, &grantedAccess, &result) == 0)
+        throwWindowsException(env, GetLastError());
+
+    return (result == FALSE) ? JNI_FALSE : JNI_TRUE;
+}
+
 JNIEXPORT jlong JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_LookupPrivilegeValue0(JNIEnv* env,
     jclass this, jlong name)
@@ -1035,35 +1062,6 @@ Java_sun_nio_fs_WindowsNativeDispatcher_LookupPrivilegeValue0(JNIEnv* env,
             throwWindowsException(env, GetLastError());
     }
     return ptr_to_jlong(pLuid);
-}
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_BuildTrusteeWithSid(JNIEnv* env,
-    jclass this, jlong sid)
-{
-    PSID pSid = (HANDLE)jlong_to_ptr(sid);
-    PTRUSTEE_W pTrustee = LocalAlloc(0, sizeof(TRUSTEE_W));
-
-    if (pTrustee == NULL) {
-        JNU_ThrowInternalError(env, "Unable to allocate TRUSTEE_W structure");
-    } else {
-        BuildTrusteeWithSidW(pTrustee, pSid);
-    }
-    return ptr_to_jlong(pTrustee);
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_GetEffectiveRightsFromAcl(JNIEnv* env,
-    jclass this, jlong acl, jlong trustee)
-{
-    ACCESS_MASK access;
-    PACL pAcl = (PACL)jlong_to_ptr(acl);
-    PTRUSTEE pTrustee = (PTRUSTEE)jlong_to_ptr(trustee);
-
-    if (GetEffectiveRightsFromAcl(pAcl, pTrustee, &access) != ERROR_SUCCESS) {
-        throwWindowsException(env, GetLastError());
-    }
-    return (jint)access;
 }
 
 JNIEXPORT void JNICALL
