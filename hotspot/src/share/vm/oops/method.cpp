@@ -87,6 +87,9 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
 #endif
   set_intrinsic_id(vmIntrinsics::_none);
   set_jfr_towrite(false);
+  set_force_inline(false);
+  set_hidden(false);
+  set_dont_inline(false);
   set_method_data(NULL);
   set_interpreter_throwout_count(0);
   set_vtable_index(Method::garbage_vtable_index);

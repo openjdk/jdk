@@ -55,7 +55,7 @@ ConstMethod::ConstMethod(int byte_code_size,
   set_stackmap_data(NULL);
   set_code_size(byte_code_size);
   set_constMethod_size(size);
-  set_inlined_tables_length(sizes);
+  set_inlined_tables_length(sizes); // sets _flags
   set_method_type(method_type);
   assert(this->size() == size, "wrong size for object");
   set_name_index(0);
@@ -64,6 +64,7 @@ ConstMethod::ConstMethod(int byte_code_size,
   set_max_stack(0);
   set_max_locals(0);
   set_method_idnum(0);
+  set_size_of_parameters(0);
 }
 
 
