@@ -446,12 +446,14 @@ class Instruction  {
     public static boolean isCPRefOp(int bc) {
         if (bc < BC_INDEX[0].length && BC_INDEX[0][bc] > 0)  return true;
         if (bc >= _xldc_op && bc < _xldc_limit)  return true;
+        if (bc == _invokespecial_int || bc == _invokestatic_int) return true;
         return false;
     }
 
     public static byte getCPRefOpTag(int bc) {
         if (bc < BC_INDEX[0].length && BC_INDEX[0][bc] > 0)  return BC_TAG[0][bc];
         if (bc >= _xldc_op && bc < _xldc_limit)  return CONSTANT_LoadableValue;
+        if (bc == _invokestatic_int || bc == _invokespecial_int) return CONSTANT_InterfaceMethodref;
         return CONSTANT_None;
     }
 
@@ -647,7 +649,8 @@ class Instruction  {
         }
     }
 
-    public static void opcodeChecker(byte[] code, ConstantPool.Entry[] cpMap) throws FormatException {
+    public static void opcodeChecker(byte[] code, ConstantPool.Entry[] cpMap,
+            Package.Version clsVersion) throws FormatException {
         Instruction i = at(code, 0);
         while (i != null) {
             int opcode = i.getBC();
@@ -658,10 +661,17 @@ class Instruction  {
             ConstantPool.Entry e = i.getCPRef(cpMap);
             if (e != null) {
                 byte tag = i.getCPTag();
-                if (!e.tagMatches(tag)) {
-                    String message = "illegal reference, expected type=" +
-                                     ConstantPool.tagName(tag) + ": " +
-                                     i.toString(cpMap);
+                boolean match = e.tagMatches(tag);
+                if (!match &&
+                        (i.bc == _invokespecial || i.bc == _invokestatic) &&
+                        e.tagMatches(CONSTANT_InterfaceMethodref) &&
+                        clsVersion.greaterThan(Constants.JAVA7_MAX_CLASS_VERSION)) {
+                    match = true;
+                }
+                if (!match) {
+                    String message = "illegal reference, expected type="
+                            + ConstantPool.tagName(tag) + ": "
+                            + i.toString(cpMap);
                     throw new FormatException(message);
                 }
             }

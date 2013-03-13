@@ -153,7 +153,8 @@ typedef jint    IntArgbPreDataType;
 #define DeclareIntArgbPreAlphaLoadData(PREFIX) \
     jint PREFIX;
 
-#define InitIntArgbPreAlphaLoadData(PREFIX, pRasInfo)
+#define InitIntArgbPreAlphaLoadData(PREFIX, pRasInfo) \
+    PREFIX = 0
 
 #define LoadAlphaFromIntArgbPreFor4ByteArgb(pRas, PREFIX, COMP_PREFIX) \
     do { \

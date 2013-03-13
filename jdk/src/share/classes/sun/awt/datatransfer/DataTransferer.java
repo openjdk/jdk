@@ -1873,7 +1873,7 @@ search:
      */
     public class ReencodingInputStream extends InputStream {
         protected BufferedReader wrapped;
-        protected final char[] in = new char[1];
+        protected final char[] in = new char[2];
         protected byte[] out;
 
         protected CharsetEncoder encoder;
@@ -1926,7 +1926,7 @@ search:
 
             try {
                 encoder = Charset.forName(targetEncoding).newEncoder();
-                out = new byte[(int)(encoder.maxBytesPerChar() + 0.5)];
+                out = new byte[(int)(encoder.maxBytesPerChar() * 2 + 0.5)];
                 inBuf = CharBuffer.wrap(in);
                 outBuf = ByteBuffer.wrap(out);
             } catch (IllegalCharsetNameException e) {
@@ -1950,31 +1950,50 @@ search:
             }
         }
 
+        private int readChar() throws IOException {
+            int c = wrapped.read();
+
+            if (c == -1) { // -1 is EOS
+                eos = true;
+                return -1;
+            }
+
+            // "c == 0" is not quite correct, but good enough on Windows.
+            if (numTerminators > 0 && c == 0) {
+                eos = true;
+                return -1;
+            } else if (eoln != null && matchCharArray(eoln, c)) {
+                c = '\n' & 0xFFFF;
+            }
+
+            return c;
+        }
+
         public int read() throws IOException {
             if (eos) {
                 return -1;
             }
 
             if (index >= limit) {
-                int c = wrapped.read();
-
-                if (c == -1) { // -1 is EOS
-                    eos = true;
+                // deal with supplementary characters
+                int c = readChar();
+                if (c == -1) {
                     return -1;
                 }
 
-                // "c == 0" is not quite correct, but good enough on Windows.
-                if (numTerminators > 0 && c == 0) {
-                    eos = true;
-                    return -1;
-                } else if (eoln != null && matchCharArray(eoln, c)) {
-                    c = '\n' & 0xFFFF;
+                in[0] = (char) c;
+                in[1] = 0;
+                inBuf.limit(1);
+                if (Character.isHighSurrogate((char) c)) {
+                    c = readChar();
+                    if (c != -1) {
+                        in[1] = (char) c;
+                        inBuf.limit(2);
+                    }
                 }
-
-                in[0] = (char)c;
 
                 inBuf.rewind();
-                outBuf.rewind();
+                outBuf.limit(out.length).rewind();
                 encoder.encode(inBuf, outBuf, false);
                 outBuf.flip();
                 limit = outBuf.limit();

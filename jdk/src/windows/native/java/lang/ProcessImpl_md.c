@@ -120,10 +120,12 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
             goto Catch;
         }
         si.hStdInput = inRead;
-        SetHandleInformation(inWrite, HANDLE_FLAG_INHERIT, FALSE);
+        SetHandleInformation(inWrite, HANDLE_FLAG_INHERIT, 0);
         handles[0] = (jlong) inWrite;
     }
-    SetHandleInformation(si.hStdInput, HANDLE_FLAG_INHERIT, TRUE);
+    SetHandleInformation(si.hStdInput,
+        HANDLE_FLAG_INHERIT,
+        HANDLE_FLAG_INHERIT);
 
     if (handles[1] != (jlong) -1) {
         si.hStdOutput = (HANDLE) handles[1];
@@ -134,10 +136,12 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
             goto Catch;
         }
         si.hStdOutput = outWrite;
-        SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, FALSE);
+        SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0);
         handles[1] = (jlong) outRead;
     }
-    SetHandleInformation(si.hStdOutput, HANDLE_FLAG_INHERIT, TRUE);
+    SetHandleInformation(si.hStdOutput,
+        HANDLE_FLAG_INHERIT,
+        HANDLE_FLAG_INHERIT);
 
     if (redirectErrorStream) {
         si.hStdError = si.hStdOutput;
@@ -151,10 +155,12 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
             goto Catch;
         }
         si.hStdError = errWrite;
-        SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, FALSE);
+        SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, 0);
         handles[2] = (jlong) errRead;
     }
-    SetHandleInformation(si.hStdError, HANDLE_FLAG_INHERIT, TRUE);
+    SetHandleInformation(si.hStdError,
+        HANDLE_FLAG_INHERIT,
+        HANDLE_FLAG_INHERIT);
 
     processFlag = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
     ret = CreateProcessW(0,                /* executable name */

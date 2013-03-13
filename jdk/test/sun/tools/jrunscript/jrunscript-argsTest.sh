@@ -41,7 +41,7 @@ fi
 
 # we check whether "excess" args are passed as script arguments
 
-${JRUNSCRIPT} -J-Djava.awt.headless=true -f - hello world <<EOF
+${JRUNSCRIPT} -l nashorn -J-Djava.awt.headless=true -f - hello world <<EOF
 
 if (typeof(arguments) == 'undefined') { println("arguments expected"); exit(1); }
 
