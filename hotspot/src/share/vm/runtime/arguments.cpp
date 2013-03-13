@@ -1381,6 +1381,40 @@ bool Arguments::should_auto_select_low_pause_collector() {
   return false;
 }
 
+void Arguments::set_use_compressed_oops() {
+#ifndef ZERO
+#ifdef _LP64
+  // MaxHeapSize is not set up properly at this point, but
+  // the only value that can override MaxHeapSize if we are
+  // to use UseCompressedOops is InitialHeapSize.
+  size_t max_heap_size = MAX2(MaxHeapSize, InitialHeapSize);
+
+  if (max_heap_size <= max_heap_for_compressed_oops()) {
+#if !defined(COMPILER1) || defined(TIERED)
+    if (FLAG_IS_DEFAULT(UseCompressedOops)) {
+      FLAG_SET_ERGO(bool, UseCompressedOops, true);
+    }
+#endif
+#ifdef _WIN64
+    if (UseLargePages && UseCompressedOops) {
+      // Cannot allocate guard pages for implicit checks in indexed addressing
+      // mode, when large pages are specified on windows.
+      // This flag could be switched ON if narrow oop base address is set to 0,
+      // see code in Universe::initialize_heap().
+      Universe::set_narrow_oop_use_implicit_null_checks(false);
+    }
+#endif //  _WIN64
+  } else {
+    if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
+      warning("Max heap size too large for Compressed Oops");
+      FLAG_SET_DEFAULT(UseCompressedOops, false);
+      FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+    }
+  }
+#endif // _LP64
+#endif // ZERO
+}
+
 void Arguments::set_ergonomics_flags() {
 
   if (os::is_server_class_machine()) {
@@ -1410,30 +1444,7 @@ void Arguments::set_ergonomics_flags() {
 
 #ifndef ZERO
 #ifdef _LP64
-  // Check that UseCompressedOops can be set with the max heap size allocated
-  // by ergonomics.
-  if (MaxHeapSize <= max_heap_for_compressed_oops()) {
-#if !defined(COMPILER1) || defined(TIERED)
-    if (FLAG_IS_DEFAULT(UseCompressedOops)) {
-      FLAG_SET_ERGO(bool, UseCompressedOops, true);
-    }
-#endif
-#ifdef _WIN64
-    if (UseLargePages && UseCompressedOops) {
-      // Cannot allocate guard pages for implicit checks in indexed addressing
-      // mode, when large pages are specified on windows.
-      // This flag could be switched ON if narrow oop base address is set to 0,
-      // see code in Universe::initialize_heap().
-      Universe::set_narrow_oop_use_implicit_null_checks(false);
-    }
-#endif //  _WIN64
-  } else {
-    if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
-      warning("Max heap size too large for Compressed Oops");
-      FLAG_SET_DEFAULT(UseCompressedOops, false);
-      FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
-    }
-  }
+  set_use_compressed_oops();
   // UseCompressedOops must be on for UseCompressedKlassPointers to be on.
   if (!UseCompressedOops) {
     if (UseCompressedKlassPointers) {
