@@ -280,6 +280,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_DXSDK],
     dxsdk_path="$with_dxsdk"
   elif test "x$DXSDK_DIR" != x; then
     dxsdk_path="$DXSDK_DIR"
+  elif test -d "C:/DXSDK"; then
+    dxsdk_path="C:/DXSDK"
   else
     AC_MSG_ERROR([Could not find the DirectX SDK])
   fi
