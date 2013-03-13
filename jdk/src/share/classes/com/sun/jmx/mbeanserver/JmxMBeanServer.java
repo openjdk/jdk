@@ -51,6 +51,7 @@ import javax.management.MBeanPermission;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
+import javax.management.MBeanServerPermission;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
@@ -1409,6 +1410,8 @@ public final class JmxMBeanServer
         // Default is true.
         final boolean fairLock = DEFAULT_FAIR_LOCK_POLICY;
 
+        checkNewMBeanServerPermission();
+
         // This constructor happens to disregard the value of the interceptors
         // flag - that is, it always uses the default value - false.
         // This is admitedly a bug, but we chose not to fix it for now
@@ -1494,4 +1497,11 @@ public final class JmxMBeanServer
         }
     }
 
+    private static void checkNewMBeanServerPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            Permission perm = new MBeanServerPermission("newMBeanServer");
+            sm.checkPermission(perm);
+        }
+    }
 }
