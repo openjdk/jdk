@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1957,8 +1957,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO,\
 				        -lsendfile -ljava -lnet -lc,\
 		LDFLAGS_SUFFIX_windows:=jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
 					$(JDK_OUTPUTDIR)/objs/libnet/net.lib \
-                                        $(JDK_OUTPUTDIR)/objs/libjava/io_util.obj \
-		                        $(JDK_OUTPUTDIR)/objs/libjava/FileDescriptor_md.obj \
 					advapi32.lib,\
 		LDFLAGS_SUFFIX_macosx:=-ljava -lnet -pthread -framework CoreFoundation,\
 		LDFLAGS_SUFFIX:=,\
