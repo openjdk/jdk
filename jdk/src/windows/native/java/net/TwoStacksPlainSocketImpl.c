@@ -394,7 +394,8 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
  */
 JNIEXPORT void JNICALL
 Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
-                                         jobject iaObj, jint localport) {
+                                         jobject iaObj, jint localport,
+                                         jboolean exclBind) {
 
     /* fdObj is the FileDescriptor field on this */
     jobject fdObj, fd1Obj;
@@ -438,13 +439,12 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
                           (struct sockaddr *)&him, &len, JNI_FALSE) != 0) {
       return;
     }
-
     if (ipv6_supported) {
         struct ipv6bind v6bind;
         v6bind.addr = &him;
         v6bind.ipv4_fd = fd;
         v6bind.ipv6_fd = fd1;
-        rv = NET_BindV6(&v6bind);
+        rv = NET_BindV6(&v6bind, exclBind);
         if (rv != -1) {
             /* check if the fds have changed */
             if (v6bind.ipv4_fd != fd) {
@@ -469,7 +469,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
             }
         }
     } else {
-        rv = NET_Bind(fd, (struct sockaddr *)&him, len);
+        rv = NET_WinBind(fd, (struct sockaddr *)&him, len, exclBind);
     }
 
     if (rv == -1) {
@@ -835,11 +835,12 @@ Java_java_net_TwoStacksPlainSocketImpl_socketClose0(JNIEnv *env, jobject this,
  *
  *
  * Class:     java_net_TwoStacksPlainSocketImpl
- * Method:    socketSetOption
+ * Method:    socketNativeSetOption
  * Signature: (IZLjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_TwoStacksPlainSocketImpl_socketSetOption(JNIEnv *env, jobject this,
+Java_java_net_TwoStacksPlainSocketImpl_socketNativeSetOption(JNIEnv *env,
+                                              jobject this,
                                               jint cmd, jboolean on,
                                               jobject value) {
     int fd, fd1;

@@ -74,6 +74,9 @@ class ServerSocketChannelImpl
     // Binding
     private SocketAddress localAddress; // null => unbound
 
+    // set true when exclusive binding is on and SO_REUSEADDR is emulated
+    private boolean isReuseAddress;
+
     // Our socket adaptor, if any
     ServerSocket socket;
 
@@ -125,13 +128,18 @@ class ServerSocketChannelImpl
             throw new NullPointerException();
         if (!supportedOptions().contains(name))
             throw new UnsupportedOperationException("'" + name + "' not supported");
-
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
-
-            // no options that require special handling
-            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            if (name == StandardSocketOptions.SO_REUSEADDR &&
+                    Net.useExclusiveBind())
+            {
+                // SO_REUSEADDR emulated when using exclusive bind
+                isReuseAddress = (Boolean)value;
+            } else {
+                // no options that require special handling
+                Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            }
             return this;
         }
     }
@@ -149,7 +157,12 @@ class ServerSocketChannelImpl
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
-
+            if (name == StandardSocketOptions.SO_REUSEADDR &&
+                    Net.useExclusiveBind())
+            {
+                // SO_REUSEADDR emulated when using exclusive bind
+                return (T)Boolean.valueOf(isReuseAddress);
+            }
             // no options that require special handling
             return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
         }
