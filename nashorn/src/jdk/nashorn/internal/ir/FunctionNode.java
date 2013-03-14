@@ -218,8 +218,9 @@ public class FunctionNode extends Block {
     private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_WITH_OR_EVAL | IS_SPLIT | HAS_LAZY_CHILDREN;
     /** Does this function potentially need "arguments"? Note that this is not a full test, as further negative check of REDEFINES_ARGS is needed. */
     private static final int MAYBE_NEEDS_ARGUMENTS = USES_ARGUMENTS | HAS_EVAL;
-    /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep with or eval. */
-    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_WITH_OR_EVAL;
+    /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep with or eval.
+     *  We also pessimistically need a parent scope if we have lazy children that have not yet been compiled */
+    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_WITH_OR_EVAL | HAS_LAZY_CHILDREN;
 
     /** What is the return type of this function? */
     private Type returnType = Type.UNKNOWN;
@@ -724,13 +725,10 @@ public class FunctionNode extends Block {
      * their parent scope, functions that reference themselves, and non-strict functions that need an Arguments object
      * (since it exposes {@code arguments.callee} property) will need to have a callee parameter.
      *
-     * We also conservatively need a callee if we have lazy children, i.e. nested function nodes that have not yet
-     * been evaluated. _They_ may need the callee and we don't know it
-     *
      * @return true if the function's generated Java method needs a {@code callee} parameter.
      */
     public boolean needsCallee() {
-        return hasLazyChildren() || needsParentScope() || needsSelfSymbol() || (needsArguments() && !isStrictMode());
+        return needsParentScope() || needsSelfSymbol() || (needsArguments() && !isStrictMode());
     }
 
     /**
@@ -1076,7 +1074,7 @@ public class FunctionNode extends Block {
         } else {
             this.flags |= USES_ANCESTOR_SCOPE;
             final FunctionNode parentFn = findParentFunction();
-            if(parentFn != null) {
+            if (parentFn != null) {
                 parentFn.setUsesScopeSymbol(symbol);
             }
         }

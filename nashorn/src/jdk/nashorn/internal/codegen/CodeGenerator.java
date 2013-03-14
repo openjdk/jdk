@@ -3230,8 +3230,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
     }
 
     private void newFunctionObject(final FunctionNode functionNode) {
-        final boolean    isLazy  = functionNode.isLazy();
-        final Class<?>[] cparams = new Class<?>[] { RecompilableScriptFunctionData.class, ScriptObject.class };
+        final boolean isLazy  = functionNode.isLazy();
 
         new ObjectCreator(this, new ArrayList<String>(), new ArrayList<Symbol>(), false, false) {
             @Override
@@ -3246,7 +3245,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
                 } else {
                     m.loadNull();
                 }
-                m.invoke(constructorNoLookup(className, cparams));
+                m.invoke(constructorNoLookup(className, RecompilableScriptFunctionData.class, ScriptObject.class));
             }
         }.makeObject(method);
     }

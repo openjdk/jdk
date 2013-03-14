@@ -744,6 +744,7 @@ public final class Context {
             global = (GlobalObject)Context.getGlobalTrusted();
             script = global.findCachedClass(source);
             if (script != null) {
+                Compiler.LOG.fine("Code cache hit for " + source + " avoiding recompile.");
                 return script;
             }
         }

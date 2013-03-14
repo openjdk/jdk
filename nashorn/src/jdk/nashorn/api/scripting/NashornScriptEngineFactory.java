@@ -176,7 +176,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
 
     // -- Internals only below this point
 
-    private void checkConfigPermission() {
+    private static void checkConfigPermission() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("nashorn.setConfig"));

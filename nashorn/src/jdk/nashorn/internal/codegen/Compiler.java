@@ -217,8 +217,6 @@ public final class Compiler {
                 append(safeSourceName(functionNode.getSource()));
 
         this.scriptName = sb.toString();
-
-        LOG.info("Initializing compiler for '" + functionNode.getName() + "' scriptName = " + scriptName + ", root function: '" + functionNode.getName() + "' lazy=" + functionNode.isLazy());
     }
 
     /**
@@ -361,7 +359,10 @@ public final class Compiler {
         final Map<String, Class<?>> installedClasses = new HashMap<>();
 
         final String   rootClassName = firstCompileUnitName();
-        final Class<?> rootClass     = install(rootClassName, bytecode.get(rootClassName));
+        final byte[]   rootByteCode  = bytecode.get(rootClassName);
+        final Class<?> rootClass     = install(rootClassName, rootByteCode);
+
+        int length = rootByteCode.length;
 
         installedClasses.put(rootClassName, rootClass);
 
@@ -370,7 +371,10 @@ public final class Compiler {
             if (className.equals(rootClassName)) {
                 continue;
             }
-            installedClasses.put(className, install(className, entry.getValue()));
+            final byte[] code = entry.getValue();
+            length += code.length;
+
+            installedClasses.put(className, install(className, code));
         }
 
         for (final CompileUnit unit : compileUnits) {
@@ -388,12 +392,32 @@ public final class Compiler {
             }
         });
 
-        LOG.info("Installed root class: " + rootClass + " and " + bytecode.size() + " compile unit classes");
+        final StringBuilder sb;
+        if (LOG.isEnabled()) {
+            sb = new StringBuilder();
+            sb.append("Installed class '").
+                append(rootClass.getSimpleName()).
+                append('\'').
+                append(" bytes=").
+                append(length).
+                append('.');
+            if (bytecode.size() > 1) {
+                sb.append(' ').append(bytecode.size()).append(" compile units.");
+            }
+        } else {
+            sb = null;
+        }
 
         if (Timing.isEnabled()) {
             final long duration = System.currentTimeMillis() - t0;
             Timing.accumulateTime("[Code Installation]", duration);
-            LOG.info("Installation time: " + duration + " ms");
+            if (sb != null) {
+                sb.append(" Install time: ").append(duration).append(" ms");
+            }
+        }
+
+        if (sb != null) {
+            LOG.info(sb.toString());
         }
 
         return rootClass;

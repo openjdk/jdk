@@ -126,7 +126,7 @@ public class Parser extends AbstractParser {
     /** Namespace for function names where not explicitly given */
     private final Namespace namespace;
 
-    private static DebugLogger LOG = new DebugLogger("parser");
+    private static final DebugLogger LOG = new DebugLogger("parser");
 
     /**
      * Constructor
