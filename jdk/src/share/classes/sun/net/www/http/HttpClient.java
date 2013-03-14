@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,14 @@ public class HttpClient extends NetworkClient {
     public boolean reuse = false;
 
     // Traffic capture tool, if configured. See HttpCapture class for info
-     private HttpCapture capture = null;
+    private HttpCapture capture = null;
+
+    private static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
+    private static void logFinest(String msg) {
+        if (logger.isLoggable(PlatformLogger.FINEST)) {
+            logger.finest(msg);
+        }
+    }
 
     /**
      * A NOP method kept for backwards binary compatibility
@@ -266,8 +273,11 @@ public class HttpClient extends NetworkClient {
             if (ret != null && httpuc != null &&
                 httpuc.streaming() &&
                 httpuc.getRequestMethod() == "POST") {
-                if (!ret.available())
+                if (!ret.available()) {
+                    ret.inCache = false;
+                    ret.closeServer();
                     ret = null;
+                }
             }
 
             if (ret != null) {
@@ -279,10 +289,7 @@ public class HttpClient extends NetworkClient {
                         ret.inCache = false;
                         if (httpuc != null && ret.needsTunneling())
                             httpuc.setTunnelState(TUNNELING);
-                        PlatformLogger logger = HttpURLConnection.getHttpLogger();
-                        if (logger.isLoggable(PlatformLogger.FINEST)) {
-                            logger.finest("KeepAlive stream retrieved from the cache, " + ret);
-                        }
+                        logFinest("KeepAlive stream retrieved from the cache, " + ret);
                     }
                 } else {
                     // We cannot return this connection to the cache as it's
@@ -360,30 +367,33 @@ public class HttpClient extends NetworkClient {
         }
     }
 
-    protected synchronized boolean available() throws IOException {
+    protected synchronized boolean available() {
         boolean available = true;
-        int old = serverSocket.getSoTimeout();
-        serverSocket.setSoTimeout(1);
-        BufferedInputStream tmpbuf =
-            new BufferedInputStream(serverSocket.getInputStream());
+        int old = -1;
 
-        PlatformLogger logger = HttpURLConnection.getHttpLogger();
         try {
-            int r = tmpbuf.read();
-            if (r == -1) {
-                if (logger.isLoggable(PlatformLogger.FINEST)) {
-                    logger.finest("HttpClient.available(): " +
-                        "read returned -1: not available");
+            try {
+                old = serverSocket.getSoTimeout();
+                serverSocket.setSoTimeout(1);
+                BufferedInputStream tmpbuf =
+                        new BufferedInputStream(serverSocket.getInputStream());
+                int r = tmpbuf.read();
+                if (r == -1) {
+                    logFinest("HttpClient.available(): " +
+                            "read returned -1: not available");
+                    available = false;
                 }
-                available = false;
+            } catch (SocketTimeoutException e) {
+                logFinest("HttpClient.available(): " +
+                        "SocketTimeout: its available");
+            } finally {
+                if (old != -1)
+                    serverSocket.setSoTimeout(old);
             }
-        } catch (SocketTimeoutException e) {
-            if (logger.isLoggable(PlatformLogger.FINEST)) {
-                logger.finest("HttpClient.available(): " +
-                    "SocketTimeout: its available");
-            }
-        } finally {
-            serverSocket.setSoTimeout(old);
+        } catch (IOException e) {
+            logFinest("HttpClient.available(): " +
+                        "SocketException: not available");
+            available = false;
         }
         return available;
     }
@@ -865,10 +875,7 @@ public class HttpClient extends NetworkClient {
 
             if (isKeepingAlive())   {
                 // Wrap KeepAliveStream if keep alive is enabled.
-                PlatformLogger logger = HttpURLConnection.getHttpLogger();
-                if (logger.isLoggable(PlatformLogger.FINEST)) {
-                    logger.finest("KeepAlive stream used: " + url);
-                }
+                logFinest("KeepAlive stream used: " + url);
                 serverInput = new KeepAliveStream(serverInput, pi, cl, this);
                 failedOnce = false;
             }
