@@ -22,119 +22,55 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+# Included or excluded types must take one of two forms
+# - *.class   to indicate all classes; or else
+# - a full single type name e.g.
+#      com/sun/security/auth/callback/DialogCallbackHandler$$1.class
+# You can not use arbitrary wildcards like DialogCallbackHandler*.class.
+#
+# Notes:
+#  -  Nested types must use $$ in place of $ as $ is the make meta-character
+#  -  If a package is not listed in any profile's inclusion list then it will
+#     not appear in any profile. But if a package is also missing from the
+#     full JRE's inclusion list then it will still be part of the full JRE.
+#     This is because the full JRE's inclusion lists are only used to define
+#     the exclusion lists for profiles; they are not used to define the full
+#     JRE contents - that is still done with the pre-profile legacy mechanism
+#     (all packagesthat can be found, less those not intended for rt.jar).
+#     This was done to minimize the impact of profiles on the regular
+#     non-profile build.
+#
 PROFILE_1_RTJAR_INCLUDE_PACKAGES := \
     com/sun/demo/jvmti/hprof \
     com/sun/java/util/jar/pack \
     com/sun/net/ssl \
-    com/sun/net/ssl/internal/www/protocol/https \
     com/sun/nio/file \
     com/sun/security/cert/internal/x509 \
     java/io \
     java/lang \
-    java/lang/annotation \
-    java/lang/invoke \
-    java/lang/ref \
-    java/lang/reflect \
     java/math \
     java/net \
     java/nio \
-    java/nio/channels \
-    java/nio/channels/spi \
-    java/nio/charset \
-    java/nio/charset/spi \
-    java/nio/file \
-    java/nio/file/attribute \
-    java/nio/file/spi \
     java/security \
-    java/security/cert \
-    java/security/interfaces \
-    java/security/spec \
     java/text \
-    java/text/spi \
     java/time \
     java/util \
-    java/util/concurrent \
-    java/util/concurrent/atomic \
-    java/util/concurrent/locks \
-    java/util/function \
-    java/util/jar \
-    java/util/logging \
-    java/util/regex \
-    java/util/spi \
-    java/util/zip \
     javax/net \
-    javax/net/ssl \
-    javax/security/auth \
-    javax/security/auth/callback \
-    javax/security/auth/login \
-    javax/security/auth/spi \
-    javax/security/auth/x500 \
-    javax/security/cert \
-    jdk/internal \
+    javax/security \
+    jdk \
     sun/invoke \
-    sun/invoke/anon \
-    sun/invoke/empty \
-    sun/invoke/util \
     sun/launcher \
-    sun/launcher/resources \
     sun/misc \
-    sun/misc/resources \
     sun/net/ \
-    sun/net/idn \
-    sun/net/sdp \
-    sun/net/spi \
-    sun/net/spi/nameservice \
-    sun/net/util \
-    sun/net/www \
-    sun/net/www/http \
-    sun/net/www/protocol/file \
-    sun/net/www/protocol/http/ \
-    sun/net/www/protocol/http/logging \
-    sun/net/www/protocol/https \
-    sun/net/www/protocol/jar \
     sun/nio \
-    sun/nio/ch \
-    sun/nio/cs \
-    sun/nio/fs \
     sun/reflect \
-    sun/reflect/annotation \
-    sun/reflect/generics/factory \
-    sun/reflect/generics/parser \
-    sun/reflect/generics/reflectiveObjects \
-    sun/reflect/generics/repository \
-    sun/reflect/generics/scope \
-    sun/reflect/generics/tree \
-    sun/reflect/generics/visitor \
-    sun/reflect/misc \
-    sun/security/action \
-    sun/security/ec \
-    sun/security/jca \
-    sun/security/pkcs \
-    sun/security/pkcs10 \
-    sun/security/pkcs12 \
-    sun/security/provider \
-    sun/security/provider/certpath \
-    sun/security/provider/certpath/ssl \
-    sun/security/rsa \
-    sun/security/timestamp \
-    sun/security/tools \
-    sun/security/tools/keytool \
-    sun/security/util \
-    sun/security/validator \
-    sun/security/x509 \
+    sun/security \
     sun/text \
-    sun/text/bidi \
-    sun/text/normalizer \
-    sun/text/resources \
     sun/usagetracker \
-    sun/util \
-    sun/util/calendar \
-    sun/util/locale \
-    sun/util/logging \
-    sun/util/logging/resources \
-    sun/util/resources
+    sun/util
 
-PROFILE_1_RTJAR_INCLUDE_TYPES :=
+PROFILE_1_RTJAR_INCLUDE_TYPES := 
 
 PROFILE_1_RTJAR_EXCLUDE_TYPES := 
 
@@ -144,139 +80,19 @@ PROFILE_1_INCLUDE_METAINF_SERVICES :=
 PROFILE_2_RTJAR_INCLUDE_PACKAGES := \
     com/sun/java_cup/internal/runtime \
     com/sun/net/httpserver \
-    com/sun/net/httpserver/spi \
-    com/sun/org/apache/bcel/internal \
-    com/sun/org/apache/bcel/internal/classfile \
-    com/sun/org/apache/bcel/internal/generic \
-    com/sun/org/apache/bcel/internal/util \
-    com/sun/org/apache/regexp/internal \
-    com/sun/org/apache/xalan/internal \
-    com/sun/org/apache/xalan/internal/extensions \
-    com/sun/org/apache/xalan/internal/lib \
-    com/sun/org/apache/xalan/internal/res \
-    com/sun/org/apache/xalan/internal/templates \
-    com/sun/org/apache/xalan/internal/utils \
-    com/sun/org/apache/xalan/internal/xslt \
-    com/sun/org/apache/xalan/internal/xsltc \
-    com/sun/org/apache/xalan/internal/xsltc/cmdline \
-    com/sun/org/apache/xalan/internal/xsltc/cmdline/getopt \
-    com/sun/org/apache/xalan/internal/xsltc/compiler \
-    com/sun/org/apache/xalan/internal/xsltc/compiler/util \
-    com/sun/org/apache/xalan/internal/xsltc/dom \
-    com/sun/org/apache/xalan/internal/xsltc/runtime \
-    com/sun/org/apache/xalan/internal/xsltc/runtime/output \
-    com/sun/org/apache/xalan/internal/xsltc/trax \
-    com/sun/org/apache/xalan/internal/xsltc/util \
-    com/sun/org/apache/xerces/internal/dom \
-    com/sun/org/apache/xerces/internal/dom/events \
-    com/sun/org/apache/xerces/internal/impl \
-    com/sun/org/apache/xerces/internal/impl/dtd \
-    com/sun/org/apache/xerces/internal/impl/dtd/models \
-    com/sun/org/apache/xerces/internal/impl/dv \
-    com/sun/org/apache/xerces/internal/impl/dv/dtd \
-    com/sun/org/apache/xerces/internal/impl/dv/util \
-    com/sun/org/apache/xerces/internal/impl/dv/xs \
-    com/sun/org/apache/xerces/internal/impl/io \
-    com/sun/org/apache/xerces/internal/impl/msg \
-    com/sun/org/apache/xerces/internal/impl/validation \
-    com/sun/org/apache/xerces/internal/impl/xpath \
-    com/sun/org/apache/xerces/internal/impl/xpath/regex \
-    com/sun/org/apache/xerces/internal/impl/xs \
-    com/sun/org/apache/xerces/internal/impl/xs/identity \
-    com/sun/org/apache/xerces/internal/impl/xs/models \
-    com/sun/org/apache/xerces/internal/impl/xs/opti \
-    com/sun/org/apache/xerces/internal/impl/xs/traversers \
-    com/sun/org/apache/xerces/internal/impl/xs/util \
-    com/sun/org/apache/xerces/internal/jaxp \
-    com/sun/org/apache/xerces/internal/jaxp/datatype \
-    com/sun/org/apache/xerces/internal/jaxp/validation \
-    com/sun/org/apache/xerces/internal/parsers \
-    com/sun/org/apache/xerces/internal/util \
-    com/sun/org/apache/xerces/internal/utils \
-    com/sun/org/apache/xerces/internal/xinclude \
-    com/sun/org/apache/xerces/internal/xni \
-    com/sun/org/apache/xerces/internal/xni/grammars \
-    com/sun/org/apache/xerces/internal/xni/parser \
-    com/sun/org/apache/xerces/internal/xpointer \
-    com/sun/org/apache/xerces/internal/xs \
-    com/sun/org/apache/xerces/internal/xs/datatypes \
-    com/sun/org/apache/xml/internal/dtm \
-    com/sun/org/apache/xml/internal/dtm/ref \
-    com/sun/org/apache/xml/internal/dtm/ref/dom2dtm \
-    com/sun/org/apache/xml/internal/dtm/ref/sax2dtm \
-    com/sun/org/apache/xml/internal/res \
-    com/sun/org/apache/xml/internal/resolver \
-    com/sun/org/apache/xml/internal/resolver/helpers \
-    com/sun/org/apache/xml/internal/resolver/readers \
-    com/sun/org/apache/xml/internal/resolver/tools \
-    com/sun/org/apache/xml/internal/serialize \
-    com/sun/org/apache/xml/internal/serializer \
-    com/sun/org/apache/xml/internal/serializer/utils \
-    com/sun/org/apache/xml/internal/utils \
-    com/sun/org/apache/xml/internal/utils/res \
-    com/sun/org/apache/xpath/internal \
-    com/sun/org/apache/xpath/internal/axes \
-    com/sun/org/apache/xpath/internal/compiler \
-    com/sun/org/apache/xpath/internal/domapi \
-    com/sun/org/apache/xpath/internal/functions \
-    com/sun/org/apache/xpath/internal/jaxp \
-    com/sun/org/apache/xpath/internal/objects \
-    com/sun/org/apache/xpath/internal/operations \
-    com/sun/org/apache/xpath/internal/patterns \
-    com/sun/org/apache/xpath/internal/res \
+    com/sun/org/apache \
     com/sun/rmi/rmid \
-    com/sun/xml/internal/stream/ \
-    com/sun/xml/internal/stream/dtd \
-    com/sun/xml/internal/stream/dtd/nonvalidating \
-    com/sun/xml/internal/stream/events \
-    com/sun/xml/internal/stream/util \
-    com/sun/xml/internal/stream/writers \
+    com/sun/xml/internal/stream \
     java/rmi \
-    java/rmi/activation \
-    java/rmi/dgc \
-    java/rmi/registry \
-    java/rmi/server \
     java/sql \
     javax/rmi/ssl \
     javax/sql \
     javax/transaction \
-    javax/transaction/xa \
     javax/xml \
-    javax/xml/datatype \
-    javax/xml/namespace \
-    javax/xml/parsers \
-    javax/xml/stream \
-    javax/xml/stream/events \
-    javax/xml/stream/util \
-    javax/xml/transform \
-    javax/xml/transform/dom \
-    javax/xml/transform/sax \
-    javax/xml/transform/stax \
-    javax/xml/transform/stream \
-    javax/xml/validation \
-    javax/xml/xpath \
-    org/w3c/dom \
-    org/w3c/dom/bootstrap \
-    org/w3c/dom/css \
-    org/w3c/dom/events \
-    org/w3c/dom/html \
-    org/w3c/dom/ls \
-    org/w3c/dom/ranges \
-    org/w3c/dom/stylesheets \
-    org/w3c/dom/traversal \
-    org/w3c/dom/views \
-    org/w3c/dom/xpath \
+    org/w3c \
     org/xml/sax \
-    org/xml/sax/ext \
-    org/xml/sax/helpers \
     sun/net/httpserver \
-    sun/rmi/log \
-    sun/rmi/registry \
-    sun/rmi/runtime \
-    sun/rmi/server \
-    sun/rmi/transport \
-    sun/rmi/transport/proxy \
-    sun/rmi/transport/tcp \
+    sun/rmi \
     sun/util/xml
 
 PROFILE_2_RTJAR_INCLUDE_TYPES := 
@@ -284,287 +100,83 @@ PROFILE_2_RTJAR_INCLUDE_TYPES :=
 PROFILE_2_RTJAR_EXCLUDE_TYPES := 
 
 PROFILE_2_INCLUDE_METAINF_SERVICES := \
-    META-INF/services/sun.util.spi.XmlPropertiesProvider
+    META-INF/services/sun.util.spi.XmlPropertiesProvider 
 
 
 PROFILE_3_RTJAR_INCLUDE_PACKAGES := \
-    com/sun/jmx/defaults \
-    com/sun/jmx/interceptor \
-    com/sun/jmx/mbeanserver \
-    com/sun/jmx/remote/internal \
-    com/sun/jmx/remote/protocol/rmi \
-    com/sun/jmx/remote/security \
-    com/sun/jmx/remote/util \
-    com/sun/jmx/snmp \
-    com/sun/jmx/snmp/IPAcl \
-    com/sun/jmx/snmp/agent \
-    com/sun/jmx/snmp/daemon \
-    com/sun/jmx/snmp/defaults \
-    com/sun/jmx/snmp/internal \
-    com/sun/jmx/snmp/mpm \
-    com/sun/jmx/snmp/tasks \
-    com/sun/jmx/trace \
-    com/sun/jndi/dns \
-    com/sun/jndi/ldap \
-    com/sun/jndi/ldap/ext \
-    com/sun/jndi/ldap/pool \
-    com/sun/jndi/ldap/sasl \
-    com/sun/jndi/rmi/registry \
-    com/sun/jndi/toolkit/ctx \
-    com/sun/jndi/toolkit/dir \
-    com/sun/jndi/toolkit/url \
-    com/sun/jndi/url/dns \
-    com/sun/jndi/url/ldap \
-    com/sun/jndi/url/ldaps \
-    com/sun/jndi/url/rmi \
+    com/sun/jmx \
+    com/sun/jndi \
     com/sun/management \
-    com/sun/management/jmx \
     com/sun/naming/internal \
     com/sun/nio/sctp \
     com/sun/org/apache/xml/internal/security \
-    com/sun/org/apache/xml/internal/security/algorithms \
-    com/sun/org/apache/xml/internal/security/algorithms/implementations \
-    com/sun/org/apache/xml/internal/security/c14n \
-    com/sun/org/apache/xml/internal/security/c14n/helper \
-    com/sun/org/apache/xml/internal/security/c14n/implementations \
-    com/sun/org/apache/xml/internal/security/encryption \
-    com/sun/org/apache/xml/internal/security/exceptions \
-    com/sun/org/apache/xml/internal/security/keys \
-    com/sun/org/apache/xml/internal/security/keys/content \
-    com/sun/org/apache/xml/internal/security/keys/content/keyvalues \
-    com/sun/org/apache/xml/internal/security/keys/content/x509 \
-    com/sun/org/apache/xml/internal/security/keys/keyresolver \
-    com/sun/org/apache/xml/internal/security/keys/keyresolver/implementations \
-    com/sun/org/apache/xml/internal/security/keys/storage \
-    com/sun/org/apache/xml/internal/security/keys/storage/implementations \
-    com/sun/org/apache/xml/internal/security/signature \
-    com/sun/org/apache/xml/internal/security/transforms \
-    com/sun/org/apache/xml/internal/security/transforms/implementations \
-    com/sun/org/apache/xml/internal/security/transforms/params \
-    com/sun/org/apache/xml/internal/security/utils \
-    com/sun/org/apache/xml/internal/security/utils/resolver \
-    com/sun/org/apache/xml/internal/security/utils/resolver/implementations \
     com/sun/rowset \
-    com/sun/rowset/internal \
-    com/sun/rowset/providers \
-    com/sun/script/javascript \
-    com/sun/script/util \
+    com/sun/script \
     com/sun/security/auth \
-    com/sun/security/auth/callback \
-    com/sun/security/auth/login \
-    com/sun/security/auth/module \
     com/sun/security/jgss \
     com/sun/security/ntlm \
     com/sun/security/sasl \
-    com/sun/security/sasl/digest \
-    com/sun/security/sasl/gsskerb \
-    com/sun/security/sasl/ntlm \
-    com/sun/security/sasl/util \
     com/sun/tracing \
-    com/sun/tracing/dtrace \
     java/lang/instrument \
     java/lang/management \
     java/security/acl \
     java/util/prefs \
     javax/annotation/processing \
     javax/lang/model \
-    javax/lang/model/element \
-    javax/lang/model/type \
-    javax/lang/model/util \
     javax/management \
-    javax/management/loading \
-    javax/management/modelmbean \
-    javax/management/monitor \
-    javax/management/openmbean \
-    javax/management/relation \
-    javax/management/remote \
-    javax/management/remote/rmi \
-    javax/management/timer \
     javax/naming \
-    javax/naming/directory \
-    javax/naming/event \
-    javax/naming/ldap \
-    javax/naming/spi \
     javax/script \
     javax/security/auth/kerberos \
     javax/security/sasl \
     javax/smartcardio \
     javax/sql/rowset \
-    javax/sql/rowset/serial \
-    javax/sql/rowset/spi \
     javax/tools \
-    javax/tools/annotation \
     javax/xml/crypto \
-    javax/xml/crypto/dom \
-    javax/xml/crypto/dsig \
-    javax/xml/crypto/dsig/dom \
-    javax/xml/crypto/dsig/keyinfo \
-    javax/xml/crypto/dsig/spec \
     org/ietf/jgss \
-    org/jcp/xml/dsig/internal \
-    org/jcp/xml/dsig/internal/dom \
+    org/jcp/xml \
     sun/instrument \
     sun/management \
-    sun/management/counter \
-    sun/management/counter/perf \
-    sun/management/jmxremote \
-    sun/management/resources \
-    sun/management/snmp \
-    sun/management/snmp/jvminstr \
-    sun/management/snmp/jvmmib \
-    sun/management/snmp/util \
     sun/net/dns \
     sun/net/www/protocol/http/ntlm \
     sun/net/www/protocol/http/spnego \
     sun/nio/ch/sctp \
-    sun/org/mozilla/classfile/internal \
-    sun/org/mozilla/javascript/internal \
-    sun/org/mozilla/javascript/internal/annotations \
-    sun/org/mozilla/javascript/internal/ast \
-    sun/org/mozilla/javascript/internal/debug \
-    sun/org/mozilla/javascript/internal/jdk13 \
-    sun/org/mozilla/javascript/internal/jdk15 \
-    sun/org/mozilla/javascript/internal/json \
-    sun/org/mozilla/javascript/internal/optimizer \
-    sun/org/mozilla/javascript/internal/regexp \
-    sun/org/mozilla/javascript/internal/serialize \
-    sun/org/mozilla/javascript/internal/xml \
-    sun/org/mozilla/javascript/internal/xmlimpl \
+    sun/org/mozilla \
     sun/security/acl \
     sun/security/jgss \
-    sun/security/jgss/krb5 \
-    sun/security/jgss/spi \
-    sun/security/jgss/spnego \
-    sun/security/jgss/wrapper \
     sun/security/krb5 \
-    sun/security/krb5/internal \
-    sun/security/krb5/internal/ccache \
-    sun/security/krb5/internal/crypto \
-    sun/security/krb5/internal/crypto/dk \
-    sun/security/krb5/internal/ktab \
-    sun/security/krb5/internal/rcache \
-    sun/security/krb5/internal/util \
     sun/security/provider/certpath/ldap \
     sun/security/smartcardio \
-    sun/tracing \
-    sun/tracing/dtrace
+    sun/tracing
 
-PROFILE_3_RTJAR_INCLUDE_TYPES :=
+PROFILE_3_RTJAR_INCLUDE_TYPES := 
 
 PROFILE_3_RTJAR_EXCLUDE_TYPES := \
+    com/sun/security/auth/callback/DialogCallbackHandler$$1.class \
+    com/sun/security/auth/callback/DialogCallbackHandler$$2.class \
+    com/sun/security/auth/callback/DialogCallbackHandler$$Action.class \
+    com/sun/security/auth/callback/DialogCallbackHandler$$ConfirmationInfo.class \
+    com/sun/security/auth/callback/DialogCallbackHandler.class \
     javax/management/remote/rmi/_RMIConnectionImpl_Tie.class \
     javax/management/remote/rmi/_RMIConnection_Stub.class \
     javax/management/remote/rmi/_RMIServerImpl_Tie.class \
-    javax/management/remote/rmi/_RMIServer_Stub.class \
-    com/sun/security/auth/callback/DialogCallbackHandler.class \
-    com/sun/security/auth/callback/DialogCallbackHandler\$$1.class \
-    com/sun/security/auth/callback/DialogCallbackHandler\$$2.class \
-    com/sun/security/auth/callback/DialogCallbackHandler\$$Action.class \
-    com/sun/security/auth/callback/DialogCallbackHandler\$$ConfirmationInfo.class
+    javax/management/remote/rmi/_RMIServer_Stub.class
 
 PROFILE_3_INCLUDE_METAINF_SERVICES := \
     META-INF/services/javax.script.ScriptEngineFactory 
 
 
-PROFILE_4_RTJAR_INCLUDE_PACKAGES := \
-    com/oracle/net \
-    com/oracle/nio \
-    com/oracle/util \
+FULL_JRE_RTJAR_INCLUDE_PACKAGES := \
+    com/oracle \
     com/sun/accessibility/internal/resources \
     com/sun/activation/registries \
     com/sun/awt \
     com/sun/beans \
-    com/sun/beans/decoder \
-    com/sun/beans/finder \
-    com/sun/corba/se/impl/activation \
-    com/sun/corba/se/impl/copyobject \
-    com/sun/corba/se/impl/corba \
-    com/sun/corba/se/impl/dynamicany \
-    com/sun/corba/se/impl/encoding \
-    com/sun/corba/se/impl/interceptors \
-    com/sun/corba/se/impl/io \
-    com/sun/corba/se/impl/ior \
-    com/sun/corba/se/impl/ior/iiop \
-    com/sun/corba/se/impl/javax/rmi \
-    com/sun/corba/se/impl/javax/rmi/CORBA \
-    com/sun/corba/se/impl/legacy/connection \
-    com/sun/corba/se/impl/logging \
-    com/sun/corba/se/impl/monitoring \
-    com/sun/corba/se/impl/naming/cosnaming \
-    com/sun/corba/se/impl/naming/namingutil \
-    com/sun/corba/se/impl/naming/pcosnaming \
-    com/sun/corba/se/impl/oa \
-    com/sun/corba/se/impl/oa/poa \
-    com/sun/corba/se/impl/oa/toa \
-    com/sun/corba/se/impl/orb \
-    com/sun/corba/se/impl/orbutil \
-    com/sun/corba/se/impl/orbutil/closure \
-    com/sun/corba/se/impl/orbutil/concurrent \
-    com/sun/corba/se/impl/orbutil/fsm \
-    com/sun/corba/se/impl/orbutil/graph \
-    com/sun/corba/se/impl/orbutil/threadpool \
-    com/sun/corba/se/impl/presentation/rmi \
-    com/sun/corba/se/impl/protocol \
-    com/sun/corba/se/impl/protocol/giopmsgheaders \
-    com/sun/corba/se/impl/resolver \
-    com/sun/corba/se/impl/transport \
-    com/sun/corba/se/impl/util \
-    com/sun/corba/se/internal/CosNaming \
-    com/sun/corba/se/internal/Interceptors \
-    com/sun/corba/se/internal/POA \
-    com/sun/corba/se/internal/corba \
-    com/sun/corba/se/internal/iiop \
-    com/sun/corba/se/org/omg/CORBA \
-    com/sun/corba/se/pept/broker \
-    com/sun/corba/se/pept/encoding \
-    com/sun/corba/se/pept/protocol \
-    com/sun/corba/se/pept/transport \
-    com/sun/corba/se/spi/activation \
-    com/sun/corba/se/spi/activation/InitialNameServicePackage \
-    com/sun/corba/se/spi/activation/LocatorPackage \
-    com/sun/corba/se/spi/activation/RepositoryPackage \
-    com/sun/corba/se/spi/copyobject \
-    com/sun/corba/se/spi/encoding \
-    com/sun/corba/se/spi/extension \
-    com/sun/corba/se/spi/ior \
-    com/sun/corba/se/spi/ior/iiop \
-    com/sun/corba/se/spi/legacy/connection \
-    com/sun/corba/se/spi/legacy/interceptor \
-    com/sun/corba/se/spi/logging \
-    com/sun/corba/se/spi/monitoring \
-    com/sun/corba/se/spi/oa \
-    com/sun/corba/se/spi/orb \
-    com/sun/corba/se/spi/orbutil/closure \
-    com/sun/corba/se/spi/orbutil/fsm \
-    com/sun/corba/se/spi/orbutil/proxy \
-    com/sun/corba/se/spi/orbutil/threadpool \
-    com/sun/corba/se/spi/presentation/rmi \
-    com/sun/corba/se/spi/protocol \
-    com/sun/corba/se/spi/resolver \
-    com/sun/corba/se/spi/servicecontext \
-    com/sun/corba/se/spi/transport \
+    com/sun/corba \
     com/sun/image/codec/jpeg \
-    com/sun/imageio/plugins/bmp \
-    com/sun/imageio/plugins/common \
-    com/sun/imageio/plugins/gif \
-    com/sun/imageio/plugins/jpeg \
-    com/sun/imageio/plugins/png \
-    com/sun/imageio/plugins/wbmp \
-    com/sun/imageio/spi \
-    com/sun/imageio/stream \
-    com/sun/istack/internal \
-    com/sun/istack/internal/localization \
-    com/sun/istack/internal/logging \
-    com/sun/java/browser/dom \
-    com/sun/java/browser/net \
+    com/sun/imageio \
+    com/sun/istack \
+    com/sun/java/browser \
     com/sun/java/swing \
-    com/sun/java/swing/plaf/gtk \
-    com/sun/java/swing/plaf/gtk/resources \
-    com/sun/java/swing/plaf/motif \
-    com/sun/java/swing/plaf/motif/resources \
-    com/sun/java/swing/plaf/nimbus \
-    com/sun/java/swing/plaf/windows \
-    com/sun/java/swing/plaf/windows/resources \
     com/sun/jmx/remote/protocol/iiop \
     com/sun/jndi/cosnaming \
     com/sun/jndi/toolkit/corba \
@@ -572,313 +184,41 @@ PROFILE_4_RTJAR_INCLUDE_PACKAGES := \
     com/sun/jndi/url/iiop \
     com/sun/jndi/url/iiopname \
     com/sun/media/sound \
-    com/sun/org/glassfish/external/amx \
-    com/sun/org/glassfish/external/arc \
-    com/sun/org/glassfish/external/probe/provider \
-    com/sun/org/glassfish/external/probe/provider/annotations \
-    com/sun/org/glassfish/external/statistics \
-    com/sun/org/glassfish/external/statistics/annotations \
-    com/sun/org/glassfish/external/statistics/impl \
-    com/sun/org/glassfish/gmbal \
-    com/sun/org/glassfish/gmbal/util \
-    com/sun/org/omg/CORBA \
-    com/sun/org/omg/CORBA/ValueDefPackage \
-    com/sun/org/omg/CORBA/portable \
-    com/sun/org/omg/SendingContext \
-    com/sun/org/omg/SendingContext/CodeBasePackage \
+    com/sun/org/glassfish \
+    com/sun/org/omg \
     com/sun/servicetag \
-    com/sun/swing/internal/plaf/basic/resources \
-    com/sun/swing/internal/plaf/metal/resources \
-    com/sun/swing/internal/plaf/synth/resources \
+    com/sun/swing \
     com/sun/xml/internal/bind \
-    com/sun/xml/internal/bind/annotation \
-    com/sun/xml/internal/bind/api \
-    com/sun/xml/internal/bind/api/impl \
-    com/sun/xml/internal/bind/marshaller \
-    com/sun/xml/internal/bind/unmarshaller \
-    com/sun/xml/internal/bind/util \
-    com/sun/xml/internal/bind/v2 \
-    com/sun/xml/internal/bind/v2/bytecode \
-    com/sun/xml/internal/bind/v2/model/annotation \
-    com/sun/xml/internal/bind/v2/model/core \
-    com/sun/xml/internal/bind/v2/model/impl \
-    com/sun/xml/internal/bind/v2/model/nav \
-    com/sun/xml/internal/bind/v2/model/runtime \
-    com/sun/xml/internal/bind/v2/runtime \
-    com/sun/xml/internal/bind/v2/runtime/output \
-    com/sun/xml/internal/bind/v2/runtime/property \
-    com/sun/xml/internal/bind/v2/runtime/reflect \
-    com/sun/xml/internal/bind/v2/runtime/reflect/opt \
-    com/sun/xml/internal/bind/v2/runtime/unmarshaller \
-    com/sun/xml/internal/bind/v2/schemagen \
-    com/sun/xml/internal/bind/v2/schemagen/episode \
-    com/sun/xml/internal/bind/v2/schemagen/xmlschema \
-    com/sun/xml/internal/bind/v2/util \
     com/sun/xml/internal/fastinfoset \
-    com/sun/xml/internal/fastinfoset/algorithm \
-    com/sun/xml/internal/fastinfoset/alphabet \
-    com/sun/xml/internal/fastinfoset/dom \
-    com/sun/xml/internal/fastinfoset/org/apache/xerces/util \
-    com/sun/xml/internal/fastinfoset/sax \
-    com/sun/xml/internal/fastinfoset/stax \
-    com/sun/xml/internal/fastinfoset/stax/events \
-    com/sun/xml/internal/fastinfoset/stax/factory \
-    com/sun/xml/internal/fastinfoset/stax/util \
-    com/sun/xml/internal/fastinfoset/tools \
-    com/sun/xml/internal/fastinfoset/util \
-    com/sun/xml/internal/fastinfoset/vocab \
-    com/sun/xml/internal/messaging/saaj \
-    com/sun/xml/internal/messaging/saaj/client/p2p \
-    com/sun/xml/internal/messaging/saaj/packaging/mime \
-    com/sun/xml/internal/messaging/saaj/packaging/mime/internet \
-    com/sun/xml/internal/messaging/saaj/packaging/mime/util \
-    com/sun/xml/internal/messaging/saaj/soap \
-    com/sun/xml/internal/messaging/saaj/soap/dynamic \
-    com/sun/xml/internal/messaging/saaj/soap/impl \
-    com/sun/xml/internal/messaging/saaj/soap/name \
-    com/sun/xml/internal/messaging/saaj/soap/ver1_1 \
-    com/sun/xml/internal/messaging/saaj/soap/ver1_2 \
-    com/sun/xml/internal/messaging/saaj/util \
-    com/sun/xml/internal/messaging/saaj/util/transform \
-    com/sun/xml/internal/org/jvnet/fastinfoset \
-    com/sun/xml/internal/org/jvnet/fastinfoset/sax \
-    com/sun/xml/internal/org/jvnet/fastinfoset/sax/helpers \
-    com/sun/xml/internal/org/jvnet/fastinfoset/stax \
-    com/sun/xml/internal/org/jvnet/mimepull \
-    com/sun/xml/internal/org/jvnet/staxex \
-    com/sun/xml/internal/org/jvnet/ws \
-    com/sun/xml/internal/org/jvnet/ws/databinding \
-    com/sun/xml/internal/org/jvnet/ws/message \
+    com/sun/xml/internal/messaging \
+    com/sun/xml/internal/org \
     com/sun/xml/internal/stream/buffer \
-    com/sun/xml/internal/stream/buffer/sax \
-    com/sun/xml/internal/stream/buffer/stax \
     com/sun/xml/internal/txw2 \
-    com/sun/xml/internal/txw2/annotation \
-    com/sun/xml/internal/txw2/output \
-    com/sun/xml/internal/ws/addressing \
-    com/sun/xml/internal/ws/addressing/model \
-    com/sun/xml/internal/ws/addressing/policy \
-    com/sun/xml/internal/ws/addressing/v200408 \
-    com/sun/xml/internal/ws/api \
-    com/sun/xml/internal/ws/api/addressing \
-    com/sun/xml/internal/ws/api/client \
-    com/sun/xml/internal/ws/api/config/management \
-    com/sun/xml/internal/ws/api/config/management/policy \
-    com/sun/xml/internal/ws/api/databinding \
-    com/sun/xml/internal/ws/api/fastinfoset \
-    com/sun/xml/internal/ws/api/ha \
-    com/sun/xml/internal/ws/api/handler \
-    com/sun/xml/internal/ws/api/message \
-    com/sun/xml/internal/ws/api/message/saaj \
-    com/sun/xml/internal/ws/api/message/stream \
-    com/sun/xml/internal/ws/api/model \
-    com/sun/xml/internal/ws/api/model/soap \
-    com/sun/xml/internal/ws/api/model/wsdl \
-    com/sun/xml/internal/ws/api/pipe \
-    com/sun/xml/internal/ws/api/pipe/helper \
-    com/sun/xml/internal/ws/api/policy \
-    com/sun/xml/internal/ws/api/policy/subject \
-    com/sun/xml/internal/ws/api/server \
-    com/sun/xml/internal/ws/api/streaming \
-    com/sun/xml/internal/ws/api/wsdl/parser \
-    com/sun/xml/internal/ws/api/wsdl/writer \
-    com/sun/xml/internal/ws/binding \
-    com/sun/xml/internal/ws/client \
-    com/sun/xml/internal/ws/client/dispatch \
-    com/sun/xml/internal/ws/client/sei \
-    com/sun/xml/internal/ws/config/management/policy \
-    com/sun/xml/internal/ws/db \
-    com/sun/xml/internal/ws/db/glassfish \
-    com/sun/xml/internal/ws/developer \
-    com/sun/xml/internal/ws/encoding \
-    com/sun/xml/internal/ws/encoding/fastinfoset \
-    com/sun/xml/internal/ws/encoding/policy \
-    com/sun/xml/internal/ws/encoding/soap \
-    com/sun/xml/internal/ws/encoding/soap/streaming \
-    com/sun/xml/internal/ws/encoding/xml \
-    com/sun/xml/internal/ws/fault \
-    com/sun/xml/internal/ws/handler \
-    com/sun/xml/internal/ws/message \
-    com/sun/xml/internal/ws/message/jaxb \
-    com/sun/xml/internal/ws/message/saaj \
-    com/sun/xml/internal/ws/message/source \
-    com/sun/xml/internal/ws/message/stream \
-    com/sun/xml/internal/ws/model \
-    com/sun/xml/internal/ws/model/soap \
-    com/sun/xml/internal/ws/model/wsdl \
-    com/sun/xml/internal/ws/org/objectweb/asm \
-    com/sun/xml/internal/ws/policy \
-    com/sun/xml/internal/ws/policy/jaxws \
-    com/sun/xml/internal/ws/policy/jaxws/spi \
-    com/sun/xml/internal/ws/policy/privateutil \
-    com/sun/xml/internal/ws/policy/sourcemodel \
-    com/sun/xml/internal/ws/policy/sourcemodel/attach \
-    com/sun/xml/internal/ws/policy/sourcemodel/wspolicy \
-    com/sun/xml/internal/ws/policy/spi \
-    com/sun/xml/internal/ws/policy/subject \
-    com/sun/xml/internal/ws/protocol/soap \
-    com/sun/xml/internal/ws/protocol/xml \
-    com/sun/xml/internal/ws/resources \
-    com/sun/xml/internal/ws/server \
-    com/sun/xml/internal/ws/server/provider \
-    com/sun/xml/internal/ws/server/sei \
-    com/sun/xml/internal/ws/spi \
-    com/sun/xml/internal/ws/spi/db \
-    com/sun/xml/internal/ws/streaming \
-    com/sun/xml/internal/ws/transport \
-    com/sun/xml/internal/ws/transport/http \
-    com/sun/xml/internal/ws/transport/http/client \
-    com/sun/xml/internal/ws/transport/http/server \
-    com/sun/xml/internal/ws/util \
-    com/sun/xml/internal/ws/util/exception \
-    com/sun/xml/internal/ws/util/localization \
-    com/sun/xml/internal/ws/util/pipe \
-    com/sun/xml/internal/ws/util/xml \
-    com/sun/xml/internal/ws/wsdl \
-    com/sun/xml/internal/ws/wsdl/parser \
-    com/sun/xml/internal/ws/wsdl/writer \
-    com/sun/xml/internal/ws/wsdl/writer/document \
-    com/sun/xml/internal/ws/wsdl/writer/document/http \
-    com/sun/xml/internal/ws/wsdl/writer/document/soap \
-    com/sun/xml/internal/ws/wsdl/writer/document/soap12 \
-    com/sun/xml/internal/ws/wsdl/writer/document/xsd \
+    com/sun/xml/internal/ws \
     java/applet \
     java/awt \
-    java/awt/color \
-    java/awt/datatransfer \
-    java/awt/dnd \
-    java/awt/dnd/peer \
-    java/awt/event \
-    java/awt/font \
-    java/awt/geom \
-    java/awt/im \
-    java/awt/im/spi \
-    java/awt/image \
-    java/awt/image/renderable \
-    java/awt/peer \
-    java/awt/print \
     java/beans \
     javax/accessibility \
     javax/activation \
     javax/activity \
     javax/imageio \
-    javax/imageio/event \
-    javax/imageio/metadata \
-    javax/imageio/plugins/bmp \
-    javax/imageio/plugins/jpeg \
-    javax/imageio/spi \
-    javax/imageio/stream \
     javax/jws \
-    javax/jws/soap \
     javax/print \
-    javax/print/attribute \
-    javax/print/attribute/standard \
-    javax/print/event \
     javax/rmi/CORBA \
-    javax/sound/midi \
-    javax/sound/midi/spi \
-    javax/sound/sampled \
-    javax/sound/sampled/spi \
+    javax/sound \
     javax/swing \
-    javax/swing/border \
-    javax/swing/colorchooser \
-    javax/swing/event \
-    javax/swing/filechooser \
-    javax/swing/plaf \
-    javax/swing/plaf/basic \
-    javax/swing/plaf/metal \
-    javax/swing/plaf/multi \
-    javax/swing/plaf/nimbus \
-    javax/swing/plaf/synth \
-    javax/swing/table \
-    javax/swing/text \
-    javax/swing/text/html \
-    javax/swing/text/html/parser \
-    javax/swing/text/rtf \
-    javax/swing/tree \
-    javax/swing/undo \
     javax/xml/bind \
-    javax/xml/bind/annotation \
-    javax/xml/bind/annotation/adapters \
-    javax/xml/bind/attachment \
-    javax/xml/bind/helpers \
-    javax/xml/bind/util \
     javax/xml/soap \
     javax/xml/ws \
-    javax/xml/ws/handler \
-    javax/xml/ws/handler/soap \
-    javax/xml/ws/http \
-    javax/xml/ws/soap \
-    javax/xml/ws/spi \
-    javax/xml/ws/spi/http \
-    javax/xml/ws/wsaddressing \
-    org/omg/CORBA \
-    org/omg/CORBA/DynAnyPackage \
-    org/omg/CORBA/ORBPackage \
-    org/omg/CORBA/TypeCodePackage \
-    org/omg/CORBA/portable \
-    org/omg/CORBA_2_3 \
-    org/omg/CORBA_2_3/portable \
-    org/omg/CosNaming \
-    org/omg/CosNaming/NamingContextExtPackage \
-    org/omg/CosNaming/NamingContextPackage \
-    org/omg/Dynamic \
-    org/omg/DynamicAny \
-    org/omg/DynamicAny/DynAnyFactoryPackage \
-    org/omg/DynamicAny/DynAnyPackage \
-    org/omg/IOP \
-    org/omg/IOP/CodecFactoryPackage \
-    org/omg/IOP/CodecPackage \
-    org/omg/Messaging \
-    org/omg/PortableInterceptor \
-    org/omg/PortableInterceptor/ORBInitInfoPackage \
-    org/omg/PortableServer \
-    org/omg/PortableServer/CurrentPackage \
-    org/omg/PortableServer/POAManagerPackage \
-    org/omg/PortableServer/POAPackage \
-    org/omg/PortableServer/ServantLocatorPackage \
-    org/omg/PortableServer/portable \
-    org/omg/SendingContext \
-    org/omg/stub/java/rmi \
-    org/omg/stub/javax/management/remote/rmi \
+    org/omg \
     sun/applet \
-    sun/applet/resources \
     sun/audio \
     sun/awt \
-    sun/awt/X11 \
-    sun/awt/datatransfer \
-    sun/awt/dnd \
-    sun/awt/event \
-    sun/awt/geom \
-    sun/awt/im \
-    sun/awt/image \
-    sun/awt/image/codec \
-    sun/awt/motif \
-    sun/awt/resources \
-    sun/awt/shell \
-    sun/awt/util \
-    sun/awt/windows \
-    sun/beans/editors \
-    sun/beans/infos \
     sun/corba \
     sun/dc \
-    sun/dc/path \
-    sun/dc/pr \
     sun/font \
     sun/java2d \
-    sun/java2d/cmm \
-    sun/java2d/cmm/kcms \
-    sun/java2d/cmm/lcms \
-    sun/java2d/jules \
-    sun/java2d/loops \
-    sun/java2d/opengl \
-    sun/java2d/pipe \
-    sun/java2d/pipe/hw \
-    sun/java2d/pisces \
-    sun/java2d/x11 \
-    sun/java2d/xr \
     sun/net/ftp \
-    sun/net/ftp/impl \
     sun/net/smtp \
     sun/net/www/content/audio \
     sun/net/www/content/image \
@@ -887,27 +227,26 @@ PROFILE_4_RTJAR_INCLUDE_PACKAGES := \
     sun/net/www/protocol/mailto \
     sun/net/www/protocol/netdoc \
     sun/print \
-    sun/print/resources \
     sun/security/tools/policytool \
     sun/swing \
-    sun/swing/icon \
-    sun/swing/plaf \
-    sun/swing/plaf/synth \
-    sun/swing/plaf/windows \
-    sun/swing/table \
-    sun/swing/text \
-    sun/swing/text/html \
-    sun/tools/jar \
-    sun/tools/jar/resources
+    sun/tools/jar
 
-PROFILE_4_RTJAR_INCLUDE_TYPES := \
-    com/sun/xml/internal/ws/*.class \
+FULL_JRE_RTJAR_INCLUDE_TYPES := \
+    com/sun/security/auth/callback/DialogCallbackHandler$$1.class \
+    com/sun/security/auth/callback/DialogCallbackHandler$$2.class \
+    com/sun/security/auth/callback/DialogCallbackHandler$$Action.class \
+    com/sun/security/auth/callback/DialogCallbackHandler$$ConfirmationInfo.class \
+    com/sun/security/auth/callback/DialogCallbackHandler.class \
     javax/annotation/*.class \
+    javax/management/remote/rmi/_RMIConnectionImpl_Tie.class \
+    javax/management/remote/rmi/_RMIConnection_Stub.class \
+    javax/management/remote/rmi/_RMIServerImpl_Tie.class \
+    javax/management/remote/rmi/_RMIServer_Stub.class \
     javax/rmi/*.class
 
-PROFILE_4_RTJAR_EXCLUDE_TYPES := 
+FULL_JRE_RTJAR_EXCLUDE_TYPES := 
 
-PROFILE_4_INCLUDE_METAINF_SERVICES := \
+FULL_JRE_INCLUDE_METAINF_SERVICES := \
     META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin  \
     META-INF/services/com.sun.tools.internal.xjc.Plugin  \
     META-INF/services/javax.print.PrintServiceLookup  \

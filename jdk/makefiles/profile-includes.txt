@@ -142,7 +142,7 @@ PROFILE_3_JRE_JAR_FILES := \
     management-agent.jar
 
 
-PROFILE_4_JRE_BIN_FILES := \
+FULL_JRE_BIN_FILES := \
     orbd$(EXE_SUFFIX) \
     pack200$(EXE_SUFFIX) \
     policytool$(EXE_SUFFIX) \
@@ -150,7 +150,7 @@ PROFILE_4_JRE_BIN_FILES := \
     tnameserv$(EXE_SUFFIX) \
     unpack200$(EXE_SUFFIX)
 
-PROFILE_4_JRE_LIB_FILES := \
+FULL_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)awt$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)awt_headless$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)awt_xawt$(SHARED_LIBRARY_SUFFIX) \
@@ -222,7 +222,7 @@ PROFILE_4_JRE_LIB_FILES := \
     servicetag/jdk_header.png \
     sound.properties
 
-PROFILE_4_JRE_OTHER_FILES := \
+FULL_JRE_OTHER_FILES := \
     man/ja_JP.UTF-8/man1/java.1 \
     man/ja_JP.UTF-8/man1/javaws.1 \
     man/ja_JP.UTF-8/man1/keytool.1 \
@@ -246,7 +246,7 @@ PROFILE_4_JRE_OTHER_FILES := \
     man/man1/tnameserv.1 \
     man/man1/unpack200.1
 
-PROFILE_4_JRE_JAR_FILES := \
+FULL_JRE_JAR_FILES := \
     alt-rt.jar \
     charsets.jar \
     ext/cldrdata.jar \
