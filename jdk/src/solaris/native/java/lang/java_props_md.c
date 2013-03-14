@@ -514,6 +514,11 @@ GetJavaProperties(JNIEnv *env)
         }
     }
 
+    /* ABI property (optional) */
+#ifdef JDK_ARCH_ABI_PROP_NAME
+    sprops.sun_arch_abi = JDK_ARCH_ABI_PROP_NAME;
+#endif
+
     /* Determine the language, country, variant, and encoding from the host,
      * and store these in the user.language, user.country, user.variant and
      * file.encoding system properties. */

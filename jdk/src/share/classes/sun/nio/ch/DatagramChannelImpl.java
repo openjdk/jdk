@@ -421,7 +421,7 @@ class DatagramChannelImpl
 
         synchronized (writeLock) {
             ensureOpen();
-            InetSocketAddress isa = (InetSocketAddress)target;
+            InetSocketAddress isa = Net.checkAddress(target);
             InetAddress ia = isa.getAddress();
             if (ia == null)
                 throw new IOException("Target address not resolved");
@@ -432,9 +432,9 @@ class DatagramChannelImpl
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null) {
                         if (ia.isMulticastAddress()) {
-                            sm.checkMulticast(isa.getAddress());
+                            sm.checkMulticast(ia);
                         } else {
-                            sm.checkConnect(isa.getAddress().getHostAddress(),
+                            sm.checkConnect(ia.getHostAddress(),
                                             isa.getPort());
                         }
                     }
@@ -454,7 +454,7 @@ class DatagramChannelImpl
                     return 0;
                 writerThread = NativeThread.current();
                 do {
-                    n = send(fd, src, target);
+                    n = send(fd, src, isa);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
 
                 synchronized (stateLock) {
@@ -471,7 +471,7 @@ class DatagramChannelImpl
         }
     }
 
-    private int send(FileDescriptor fd, ByteBuffer src, SocketAddress target)
+    private int send(FileDescriptor fd, ByteBuffer src, InetSocketAddress target)
         throws IOException
     {
         if (src instanceof DirectBuffer)
@@ -502,7 +502,7 @@ class DatagramChannelImpl
     }
 
     private int sendFromNativeBuffer(FileDescriptor fd, ByteBuffer bb,
-                                            SocketAddress target)
+                                     InetSocketAddress target)
         throws IOException
     {
         int pos = bb.position();
@@ -514,7 +514,7 @@ class DatagramChannelImpl
         int written;
         try {
             written = send0(preferIPv6, fd, ((DirectBuffer)bb).address() + pos,
-                            rem, target);
+                            rem, target.getAddress(), target.getPort());
         } catch (PortUnreachableException pue) {
             if (isConnected())
                 throw pue;
@@ -1116,8 +1116,8 @@ class DatagramChannelImpl
                                 boolean connected)
         throws IOException;
 
-    private native int send0(boolean preferIPv6, FileDescriptor fd, long address, int len,
-                             SocketAddress sa)
+    private native int send0(boolean preferIPv6, FileDescriptor fd, long address,
+                             int len, InetAddress addr, int port)
         throws IOException;
 
     static {

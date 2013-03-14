@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import java.lang.reflect.AnnotatedElement;
 import java.io.InputStream;
 import java.util.Enumeration;
 
@@ -383,6 +384,16 @@ public class Package implements java.lang.reflect.AnnotatedElement {
      */
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         return getPackageInfo().getAnnotation(annotationClass);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.5
+     */
+    @Override
+    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+        return AnnotatedElement.super.isAnnotationPresent(annotationClass);
     }
 
     /**

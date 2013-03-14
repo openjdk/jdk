@@ -281,7 +281,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
         int prev, next;
         do {
             prev = get(obj);
-            next = updateFunction.operateAsInt(prev);
+            next = updateFunction.applyAsInt(prev);
         } while (!compareAndSet(obj, prev, next));
         return prev;
     }
@@ -301,7 +301,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
         int prev, next;
         do {
             prev = get(obj);
-            next = updateFunction.operateAsInt(prev);
+            next = updateFunction.applyAsInt(prev);
         } while (!compareAndSet(obj, prev, next));
         return next;
     }
@@ -326,7 +326,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
         int prev, next;
         do {
             prev = get(obj);
-            next = accumulatorFunction.operateAsInt(prev, x);
+            next = accumulatorFunction.applyAsInt(prev, x);
         } while (!compareAndSet(obj, prev, next));
         return prev;
     }
@@ -351,7 +351,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
         int prev, next;
         do {
             prev = get(obj);
-            next = accumulatorFunction.operateAsInt(prev, x);
+            next = accumulatorFunction.applyAsInt(prev, x);
         } while (!compareAndSet(obj, prev, next));
         return next;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
  * questions.
  */
 
-#include "LWCToolkit.h"
+#import "LWCToolkit.h"
+#import "ThreadUtilities.h"
 
 /*
  * Convert the mode string to the more convinient bits per pixel value
@@ -144,6 +145,47 @@ Java_sun_awt_CGraphicsDevice_nativeGetYResolution
     jfloat inches = size.height / 25.4f;
     jfloat dpi = rect.size.height / inches;
     return dpi;
+}
+
+/*
+ * Class:     sun_awt_CGraphicsDevice
+ * Method:    nativeGetScreenInsets
+ * Signature: (I)D
+ */
+JNIEXPORT jobject JNICALL
+Java_sun_awt_CGraphicsDevice_nativeGetScreenInsets
+  (JNIEnv *env, jclass class, jint displayID)
+{
+    jobject ret = NULL;
+    __block NSRect frame = NSZeroRect;
+    __block NSRect visibleFrame = NSZeroRect;
+JNF_COCOA_ENTER(env);
+    
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        NSArray *screens = [NSScreen screens];
+        for (NSScreen *screen in screens) {
+            NSDictionary *screenInfo = [screen deviceDescription];
+            NSNumber *screenID = [screenInfo objectForKey:@"NSScreenNumber"];
+            if ([screenID pointerValue] == displayID){
+                frame = [screen frame];
+                visibleFrame = [screen visibleFrame];
+                break;
+            }
+        }
+    }];
+    // Convert between Cocoa's coordinate system and Java.
+    jint bottom = visibleFrame.origin.y - frame.origin.y;
+    jint top = frame.size.height - visibleFrame.size.height - bottom;
+    jint left = visibleFrame.origin.x - frame.origin.x;
+    jint right = frame.size.width - visibleFrame.size.width - left;
+    
+    static JNF_CLASS_CACHE(jc_Insets, "java/awt/Insets");
+    static JNF_CTOR_CACHE(jc_Insets_ctor, jc_Insets, "(IIII)V");
+    ret = JNFNewObject(env, jc_Insets_ctor, top, left, bottom, right);
+
+JNF_COCOA_EXIT(env);
+
+    return ret;
 }
 
 /*

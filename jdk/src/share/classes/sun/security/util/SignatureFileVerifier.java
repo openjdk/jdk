@@ -35,7 +35,7 @@ import java.util.*;
 import java.util.jar.*;
 
 import sun.security.pkcs.*;
-import sun.misc.BASE64Decoder;
+import java.util.Base64;
 
 import sun.security.jca.Providers;
 
@@ -220,7 +220,6 @@ public class SignatureFileVerifier {
                                         name);
         }
 
-        BASE64Decoder decoder = new BASE64Decoder();
 
         CodeSigner[] newSigners = getSigners(infos, block);
 
@@ -232,10 +231,10 @@ public class SignatureFileVerifier {
                                 sf.getEntries().entrySet().iterator();
 
         // see if we can verify the whole manifest first
-        boolean manifestSigned = verifyManifestHash(sf, md, decoder, manifestDigests);
+        boolean manifestSigned = verifyManifestHash(sf, md, manifestDigests);
 
         // verify manifest main attributes
-        if (!manifestSigned && !verifyManifestMainAttrs(sf, md, decoder)) {
+        if (!manifestSigned && !verifyManifestMainAttrs(sf, md)) {
             throw new SecurityException
                 ("Invalid signature file digest for Manifest main attributes");
         }
@@ -247,7 +246,7 @@ public class SignatureFileVerifier {
             String name = e.getKey();
 
             if (manifestSigned ||
-                (verifySection(e.getValue(), name, md, decoder))) {
+                (verifySection(e.getValue(), name, md))) {
 
                 if (name.startsWith("./"))
                     name = name.substring(2);
@@ -275,7 +274,6 @@ public class SignatureFileVerifier {
      */
     private boolean verifyManifestHash(Manifest sf,
                                        ManifestDigester md,
-                                       BASE64Decoder decoder,
                                        List<Object> manifestDigests)
          throws IOException
     {
@@ -297,7 +295,7 @@ public class SignatureFileVerifier {
                 if (digest != null) {
                     byte[] computedHash = md.manifestDigest(digest);
                     byte[] expectedHash =
-                        decoder.decodeBuffer((String)se.getValue());
+                        Base64.getMimeDecoder().decode((String)se.getValue());
 
                     if (debug != null) {
                      debug.println("Signature File: Manifest digest " +
@@ -320,8 +318,7 @@ public class SignatureFileVerifier {
     }
 
     private boolean verifyManifestMainAttrs(Manifest sf,
-                                        ManifestDigester md,
-                                        BASE64Decoder decoder)
+                                        ManifestDigester md)
          throws IOException
     {
         Attributes mattr = sf.getMainAttributes();
@@ -342,7 +339,7 @@ public class SignatureFileVerifier {
                         md.get(ManifestDigester.MF_MAIN_ATTRS, false);
                     byte[] computedHash = mde.digest(digest);
                     byte[] expectedHash =
-                        decoder.decodeBuffer((String)se.getValue());
+                        Base64.getMimeDecoder().decode((String)se.getValue());
 
                     if (debug != null) {
                      debug.println("Signature File: " +
@@ -387,8 +384,7 @@ public class SignatureFileVerifier {
 
     private boolean verifySection(Attributes sfAttr,
                                   String name,
-                                  ManifestDigester md,
-                                  BASE64Decoder decoder)
+                                  ManifestDigester md)
          throws IOException
     {
         boolean oneDigestVerified = false;
@@ -418,7 +414,7 @@ public class SignatureFileVerifier {
                         boolean ok = false;
 
                         byte[] expected =
-                            decoder.decodeBuffer((String)se.getValue());
+                            Base64.getMimeDecoder().decode((String)se.getValue());
                         byte[] computed;
                         if (workaround) {
                             computed = mde.digestWorkaround(digest);

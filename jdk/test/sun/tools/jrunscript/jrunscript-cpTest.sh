@@ -46,7 +46,7 @@ ${JAVAC} ${TESTSRC}/Hello.java -d .
 # work with jrunscript. Script should be able to
 # access Java class "Hello".
 
-${JRUNSCRIPT} -cp . <<EOF
+${JRUNSCRIPT} -l nashorn -cp . <<EOF
 var v;  
 try { v = new Packages.Hello(); } catch (e) { println(e); exit(1) }
 if (v.string != 'hello') { println("Unexpected property value"); exit(1); }
@@ -58,7 +58,7 @@ fi
 
 # -classpath and -cp are synonyms
 
-${JRUNSCRIPT} -classpath . <<EOF
+${JRUNSCRIPT} -l nashorn -classpath . <<EOF
 var v;
 try { v = new Packages.Hello(); } catch (e) { println(e); exit(1) }
 if (v.string != 'hello') { println("unexpected property value"); exit(1); }
