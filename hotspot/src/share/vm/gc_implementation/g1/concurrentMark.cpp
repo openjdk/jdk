@@ -1310,11 +1310,6 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     _markStack.expand();
   }
 
-#if VERIFY_OBJS_PROCESSED
-  _scan_obj_cl.objs_processed = 0;
-  ThreadLocalObjQueue::objs_enqueued = 0;
-#endif
-
   // Statistics
   double now = os::elapsedTime();
   _remark_mark_times.add((mark_work_end - start) * 1000.0);
@@ -2555,17 +2550,6 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   guarantee(satb_mq_set.completed_buffers_num() == 0, "invariant");
 
   print_stats();
-
-#if VERIFY_OBJS_PROCESSED
-  if (_scan_obj_cl.objs_processed != ThreadLocalObjQueue::objs_enqueued) {
-    gclog_or_tty->print_cr("Processed = %d, enqueued = %d.",
-                           _scan_obj_cl.objs_processed,
-                           ThreadLocalObjQueue::objs_enqueued);
-    guarantee(_scan_obj_cl.objs_processed ==
-              ThreadLocalObjQueue::objs_enqueued,
-              "Different number of objs processed and enqueued.");
-  }
-#endif
 }
 
 #ifndef PRODUCT
