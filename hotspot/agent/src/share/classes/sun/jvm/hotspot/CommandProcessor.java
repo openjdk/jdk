@@ -1517,7 +1517,7 @@ public class CommandProcessor {
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
-                            out.println(bos.toString() + " = " + thread.getAddress());
+                            out.println("Thread " + bos.toString() + " Address: " + thread.getAddress());
                             HTMLGenerator gen = new HTMLGenerator(false);
                             try {
                                 out.println(gen.genHTMLForJavaStackTrace(thread));
@@ -1546,7 +1546,7 @@ public class CommandProcessor {
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
-                            out.println(bos.toString() + " = " + thread.getAddress());
+                            out.println("Thread " + bos.toString() + " Address " + thread.getAddress());
                             if (!all) return;
                         }
                     }
