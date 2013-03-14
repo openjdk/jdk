@@ -6068,6 +6068,10 @@ void CMSCollector::sweep(bool asynch) {
   verify_work_stacks_empty();
   verify_overflow_empty();
 
+  if (should_unload_classes()) {
+    ClassLoaderDataGraph::purge();
+  }
+
   _intra_sweep_timer.stop();
   _intra_sweep_estimate.sample(_intra_sweep_timer.seconds());
 

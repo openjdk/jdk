@@ -1309,8 +1309,7 @@ void MetaspaceGC::compute_new_size() {
       gclog_or_tty->print_cr("  metaspace HWM: %.1fK", new_capacity_until_GC / (double) K);
     }
   }
-  assert(vsl->used_bytes_sum() == used_after_gc &&
-         used_after_gc <= vsl->capacity_bytes_sum(),
+  assert(used_after_gc <= vsl->capacity_bytes_sum(),
          "sanity check");
 
 }
@@ -1970,6 +1969,9 @@ void SpaceManager::initialize() {
 }
 
 SpaceManager::~SpaceManager() {
+  // This call this->_lock which can't be done while holding expand_lock()
+  const size_t in_use_before = sum_capacity_in_chunks_in_use();
+
   MutexLockerEx fcl(SpaceManager::expand_lock(),
                     Mutex::_no_safepoint_check_flag);
 
@@ -1987,7 +1989,7 @@ SpaceManager::~SpaceManager() {
 
   // Have to update before the chunks_in_use lists are emptied
   // below.
-  chunk_manager->inc_free_chunks_total(sum_capacity_in_chunks_in_use(),
+  chunk_manager->inc_free_chunks_total(in_use_before,
                                        sum_count_in_chunks_in_use());
 
   // Add all the chunks in use by this space manager
