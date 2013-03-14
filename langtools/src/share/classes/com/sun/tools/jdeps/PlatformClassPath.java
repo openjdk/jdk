@@ -37,34 +37,6 @@ import java.util.*;
  * ClassPath for Java SE and JDK
  */
 class PlatformClassPath {
-    /*
-     * Profiles for Java SE
-     *
-     * This is a temporary workaround until a common API is defined for langtools
-     * to determine which profile a given classname belongs to.  The list of
-     * packages and profile names are hardcoded in jdk.properties and
-     * split packages are not supported.
-     */
-    static class Profile {
-        final String name;
-        final Set<String> packages;
-
-        Profile(String name) {
-            this.name = name;
-            this.packages = new HashSet<String>();
-        }
-    }
-
-    private final static String JAVAFX = "javafx";
-    private final static Map<String,Profile> map = getProfilePackages();
-    static String getProfileName(String packageName) {
-        Profile profile = map.get(packageName);
-        if (packageName.startsWith(JAVAFX + ".")) {
-            profile = map.get(JAVAFX);
-        }
-        return profile != null ? profile.name : "";
-    }
-
     private final static List<Archive> javaHomeArchives = init();
     static List<Archive> getArchives() {
         return javaHomeArchives;
@@ -100,13 +72,6 @@ class PlatformClassPath {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        // add a JavaFX profile if there is jfxrt.jar
-        for (Archive archive : result) {
-            if (archive.getFileName().equals("jfxrt.jar")) {
-                map.put(JAVAFX, new Profile("jfxrt.jar"));
-            }
-        }
         return result;
     }
 
@@ -139,31 +104,5 @@ class PlatformClassPath {
             }
         });
         return result;
-    }
-
-    private static Map<String,Profile> getProfilePackages() {
-        Map<String,Profile> map = new HashMap<String,Profile>();
-
-        // read the properties as a ResourceBundle as the build compiles
-        // the properties file into Java class.  Another alternative is
-        // to load it as Properties and fix the build to exclude this file.
-        ResourceBundle profileBundle =
-            ResourceBundle.getBundle("com.sun.tools.jdeps.resources.jdk");
-
-        int i=1;
-        String key;
-        while (profileBundle.containsKey((key = "profile." + i + ".name"))) {
-            Profile profile = new Profile(profileBundle.getString(key));
-            String n = profileBundle.getString("profile." + i + ".packages");
-            String[] pkgs = n.split("\\s+");
-            for (String p : pkgs) {
-                if (p.isEmpty()) continue;
-                assert(map.containsKey(p) == false);
-                profile.packages.add(p);
-                map.put(p, profile);
-            }
-            i++;
-        }
-        return map;
     }
 }
