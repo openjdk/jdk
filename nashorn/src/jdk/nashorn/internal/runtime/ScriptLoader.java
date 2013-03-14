@@ -60,8 +60,7 @@ final class ScriptLoader extends NashornLoader {
     synchronized Class<?> installClass(final String name, final byte[] data, final CodeSource cs) {
         if (cs == null) {
             return defineClass(name, data, 0, data.length, new ProtectionDomain(null, getPermissions(null)));
-        } else {
-            return defineClass(name, data, 0, data.length, cs);
         }
+        return defineClass(name, data, 0, data.length, cs);
     }
 }

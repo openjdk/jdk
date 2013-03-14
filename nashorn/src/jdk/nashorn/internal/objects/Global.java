@@ -1528,8 +1528,9 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         addOwnProperty(ScriptingFunctions.EXIT_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
     }
 
-    private void copyOptions(final ScriptObject options, final ScriptEnvironment scriptEnv) {
+    private static void copyOptions(final ScriptObject options, final ScriptEnvironment scriptEnv) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
             public Void run() {
                 for (Field f : scriptEnv.getClass().getFields()) {
                     try {

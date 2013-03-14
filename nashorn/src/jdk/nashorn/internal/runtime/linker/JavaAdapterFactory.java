@@ -412,6 +412,7 @@ public final class JavaAdapterFactory {
     public static MethodHandle getConstructor(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final StaticClass adapterClass = getAdapterClassFor(new Class<?>[] { targetType });
         return AccessController.doPrivileged(new PrivilegedExceptionAction<MethodHandle>() {
+            @Override
             public MethodHandle run() throws Exception {
                 return  MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(NashornCallSiteDescriptor.get(
                     "dyn:new", MethodType.methodType(targetType, StaticClass.class, sourceType), 0), false,
