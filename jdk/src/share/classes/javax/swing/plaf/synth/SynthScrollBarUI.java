@@ -57,6 +57,7 @@ public class SynthScrollBarUI extends BasicScrollBarUI
      */
     @Override
     protected void installDefaults() {
+        super.installDefaults();
         trackHighlight = NO_HIGHLIGHT;
         if (scrollbar.getLayout() == null ||
                      (scrollbar.getLayout() instanceof UIResource)) {
