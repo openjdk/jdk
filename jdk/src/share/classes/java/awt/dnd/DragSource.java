@@ -600,7 +600,7 @@ public class DragSource implements Serializable {
      * @since    1.4
      */
     public DragSourceListener[] getDragSourceListeners() {
-        return (DragSourceListener[])getListeners(DragSourceListener.class);
+        return getListeners(DragSourceListener.class);
     }
 
     /**
@@ -660,8 +660,7 @@ public class DragSource implements Serializable {
      * @since    1.4
      */
     public DragSourceMotionListener[] getDragSourceMotionListeners() {
-        return (DragSourceMotionListener[])
-            getListeners(DragSourceMotionListener.class);
+        return getListeners(DragSourceMotionListener.class);
     }
 
     /**
@@ -896,8 +895,8 @@ public class DragSource implements Serializable {
      * @since 1.5
      */
     public static int getDragThreshold() {
-        int ts = ((Integer)AccessController.doPrivileged(
-                new GetIntegerAction("awt.dnd.drag.threshold", 0))).intValue();
+        int ts = AccessController.doPrivileged(
+                new GetIntegerAction("awt.dnd.drag.threshold", 0)).intValue();
         if (ts > 0) {
             return ts;
         } else {

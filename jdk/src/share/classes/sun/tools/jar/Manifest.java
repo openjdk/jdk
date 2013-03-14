@@ -30,8 +30,7 @@ import java.util.*;
 import java.security.*;
 
 import sun.net.www.MessageHeader;
-import sun.misc.BASE64Encoder;
-import sun.misc.BASE64Decoder;
+import java.util.Base64;
 
 /**
  * This is OBSOLETE. DO NOT USE THIS. Use java.util.jar.Manifest
@@ -178,7 +177,6 @@ public class Manifest {
             return;
         }
 
-        BASE64Encoder enc = new BASE64Encoder();
 
         /* compute hashes, write over any other "Hash-Algorithms" (?) */
         for (int j = 0; j < hashes.length; ++j) {
@@ -190,7 +188,7 @@ public class Manifest {
                 while ((len = is.read(tmpbuf, 0, tmpbuf.length)) != -1) {
                     dig.update(tmpbuf, 0, len);
                 }
-                mh.set(hashes[j] + "-Digest", enc.encode(dig.digest()));
+                mh.set(hashes[j] + "-Digest", Base64.getMimeEncoder().encodeToString(dig.digest()));
             } catch (NoSuchAlgorithmException e) {
                 throw new JarException("Digest algorithm " + hashes[j] +
                                        " not available.");

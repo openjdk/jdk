@@ -219,7 +219,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         int prev, next;
         do {
             prev = get();
-            next = updateFunction.operateAsInt(prev);
+            next = updateFunction.applyAsInt(prev);
         } while (!compareAndSet(prev, next));
         return prev;
     }
@@ -238,7 +238,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         int prev, next;
         do {
             prev = get();
-            next = updateFunction.operateAsInt(prev);
+            next = updateFunction.applyAsInt(prev);
         } while (!compareAndSet(prev, next));
         return next;
     }
@@ -262,7 +262,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         int prev, next;
         do {
             prev = get();
-            next = accumulatorFunction.operateAsInt(prev, x);
+            next = accumulatorFunction.applyAsInt(prev, x);
         } while (!compareAndSet(prev, next));
         return prev;
     }
@@ -286,7 +286,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         int prev, next;
         do {
             prev = get();
-            next = accumulatorFunction.operateAsInt(prev, x);
+            next = accumulatorFunction.applyAsInt(prev, x);
         } while (!compareAndSet(prev, next));
         return next;
     }

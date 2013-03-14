@@ -1409,6 +1409,10 @@ class PackageWriter extends BandStructure {
         int bc = i.getBC();
         if (!(bc >= _first_linker_op && bc <= _last_linker_op))  return -1;
         MemberEntry ref = (MemberEntry) i.getCPRef(curCPMap);
+        // do not optimize this case, simply fall back to regular coding
+        if ((bc == _invokespecial || bc == _invokestatic) &&
+                ref.tagEquals(CONSTANT_InterfaceMethodref))
+            return -1;
         ClassEntry refClass = ref.classRef;
         int self_bc = _self_linker_op + (bc - _first_linker_op);
         if (refClass == curClass.thisClass)
@@ -1609,7 +1613,16 @@ class PackageWriter extends BandStructure {
                 case CONSTANT_Fieldref:
                     bc_which = bc_fieldref; break;
                 case CONSTANT_Methodref:
-                    bc_which = bc_methodref; break;
+                    if (ref.tagEquals(CONSTANT_InterfaceMethodref)) {
+                        if (bc == _invokespecial)
+                            vbc = _invokespecial_int;
+                        if (bc == _invokestatic)
+                            vbc = _invokestatic_int;
+                        bc_which = bc_imethodref;
+                    } else {
+                        bc_which = bc_methodref;
+                    }
+                    break;
                 case CONSTANT_InterfaceMethodref:
                     bc_which = bc_imethodref; break;
                 case CONSTANT_InvokeDynamic:

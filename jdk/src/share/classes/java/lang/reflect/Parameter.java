@@ -115,7 +115,9 @@ public final class Parameter implements AnnotatedElement {
             (type.toString());
 
         sb.append(Modifier.toString(getModifiers()));
-        sb.append(" ");
+
+        if(0 != modifiers)
+            sb.append(" ");
 
         if(isVarArgs())
             sb.append(typename.replaceFirst("\\[\\]$", "..."));
