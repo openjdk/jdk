@@ -139,8 +139,11 @@ class JdepsTask {
             }
         },
         new Option(false, "-P", "--profile") {
-            void process(JdepsTask task, String opt, String arg) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.showProfile = true;
+                if (Profiles.getProfileCount() == 0) {
+                    throw task.new BadArgs("err.option.unsupported", opt, getMessage("err.profiles.msg"));
+                }
             }
         },
         new Option(false, "-R", "--recursive") {
@@ -382,9 +385,9 @@ class JdepsTask {
 
     private void printSummary(final PrintWriter out, final Analyzer analyzer) {
         Analyzer.Visitor visitor = new Analyzer.Visitor() {
-            public void visit(String origin, String profile) {
+            public void visit(String origin, String target, String profile) {
                 if (options.showProfile) {
-                    out.format("%-30s -> %s%n", origin, profile);
+                    out.format("%-30s -> %s%n", origin, target);
                 }
             }
             public void visit(Archive origin, Archive target) {
@@ -399,17 +402,15 @@ class JdepsTask {
     private void printDependencies(final PrintWriter out, final Analyzer analyzer) {
         Analyzer.Visitor visitor = new Analyzer.Visitor() {
             private String pkg = "";
-            public void visit(String origin, String target) {
+            public void visit(String origin, String target, String profile) {
                 if (!origin.equals(pkg)) {
                     pkg = origin;
-                    out.format("   %s (%s)%n", origin, analyzer.getArchiveName(origin));
+                    out.format("   %s (%s)%n", origin, analyzer.getArchive(origin).getFileName());
                 }
-                Archive source = analyzer.getArchive(target);
-                String profile = options.showProfile ? analyzer.getProfile(target) : "";
                 out.format("      -> %-50s %s%n", target,
-                           PlatformClassPath.contains(source)
+                           (options.showProfile && !profile.isEmpty())
                                ? profile
-                               : analyzer.getArchiveName(target));
+                               : analyzer.getArchiveName(target, profile));
             }
             public void visit(Archive origin, Archive target) {
                 out.format("%s -> %s%n", origin, target);
