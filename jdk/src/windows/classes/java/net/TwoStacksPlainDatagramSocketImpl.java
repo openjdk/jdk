@@ -66,6 +66,22 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         init();
     }
 
+    // true if this socket is exclusively bound
+    private final boolean exclusiveBind;
+
+    /*
+     * Set to true if SO_REUSEADDR is set after the socket is bound to
+     * indicate SO_REUSEADDR is being emulated
+     */
+    private boolean reuseAddressEmulated;
+
+    // emulates SO_REUSEADDR when exclusiveBind is true and socket is bound
+    private boolean isReuseAddress;
+
+    TwoStacksPlainDatagramSocketImpl(boolean exclBind) {
+        exclusiveBind = exclBind;
+    }
+
     protected synchronized void create() throws SocketException {
         fd1 = new FileDescriptor();
         try {
@@ -82,6 +98,14 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         if (laddr.isAnyLocalAddress()) {
             anyLocalBoundAddr = laddr;
         }
+    }
+
+    @Override
+    protected synchronized void bind0(int lport, InetAddress laddr)
+        throws SocketException
+    {
+        bind0(lport, laddr, exclusiveBind);
+
     }
 
     protected synchronized void receive(DatagramPacket p)
@@ -104,8 +128,24 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
             }
             int family = connectedAddress == null ? -1 : connectedAddress.holder().getFamily();
             return socketLocalAddress(family);
-        } else
+        } else if (optID == SO_REUSEADDR && reuseAddressEmulated) {
+            return isReuseAddress;
+        } else {
             return super.getOption(optID);
+        }
+    }
+
+    protected void socketSetOption(int opt, Object val)
+        throws SocketException
+    {
+        if (opt == SO_REUSEADDR && exclusiveBind && localPort != 0)  {
+            // socket already bound, emulate
+            reuseAddressEmulated = true;
+            isReuseAddress = (Boolean)val;
+        } else {
+            socketNativeSetOption(opt, val);
+        }
+
     }
 
     protected boolean isClosed() {
@@ -123,7 +163,8 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     /* Native methods */
 
-    protected synchronized native void bind0(int lport, InetAddress laddr)
+    protected synchronized native void bind0(int lport, InetAddress laddr,
+                                             boolean exclBind)
         throws SocketException;
 
     protected native void send(DatagramPacket p) throws IOException;
@@ -155,7 +196,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected native void datagramSocketClose();
 
-    protected native void socketSetOption(int opt, Object val)
+    protected native void socketNativeSetOption(int opt, Object val)
         throws SocketException;
 
     protected native Object socketGetOption(int opt) throws SocketException;

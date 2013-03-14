@@ -421,7 +421,8 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_init(JNIEnv *env, jclass cls) {
 
 JNIEXPORT void JNICALL
 Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
-                                           jint port, jobject addressObj) {
+                                           jint port, jobject addressObj,
+                                           jboolean exclBind) {
     jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
     jobject fd1Obj = (*env)->GetObjectField(env, this, pdsi_fd1ID);
 
@@ -464,7 +465,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
         v6bind.addr = &lcladdr;
         v6bind.ipv4_fd = fd;
         v6bind.ipv6_fd = fd1;
-        if (NET_BindV6(&v6bind) != -1) {
+        if (NET_BindV6(&v6bind, exclBind) != -1) {
             /* check if the fds have changed */
             if (v6bind.ipv4_fd != fd) {
                 fd = v6bind.ipv4_fd;
@@ -491,7 +492,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
             return;
         }
     } else {
-        if (bind(fd, (struct sockaddr *)&lcladdr, lcladdrlen) == -1) {
+        if (NET_WinBind(fd, (struct sockaddr *)&lcladdr, lcladdrlen, exclBind) == -1) {
             if (WSAGetLastError() == WSAEACCES) {
                 WSASetLastError(WSAEADDRINUSE);
             }
@@ -1776,11 +1777,11 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
 
 /*
  * Class:     java_net_TwoStacksPlainDatagramSocketImpl
- * Method:    socketSetOption
+ * Method:    socketNativeSetOption
  * Signature: (ILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_TwoStacksPlainDatagramSocketImpl_socketSetOption(JNIEnv *env,jobject this,
+Java_java_net_TwoStacksPlainDatagramSocketImpl_socketNativeSetOption(JNIEnv *env,jobject this,
                                                       jint opt,jobject value) {
 
     int fd=-1, fd1=-1;

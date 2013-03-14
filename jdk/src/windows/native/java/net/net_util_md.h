@@ -311,13 +311,16 @@ void NET_ThrowSocketException(JNIEnv *env, char* msg);
  */
 JNIEXPORT int JNICALL NET_Timeout2(int fd, int fd1, long timeout, int *fdret);
 
-JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind* b);
+JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind* b, jboolean exclBind);
 
 #define NET_WAIT_READ   0x01
 #define NET_WAIT_WRITE  0x02
 #define NET_WAIT_CONNECT        0x04
 
 extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
+
+JNIEXPORT int JNICALL NET_WinBind(int s, struct sockaddr *him, int len,
+                                   jboolean exclBind);
 
 /* XP versions of the native routines */
 

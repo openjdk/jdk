@@ -70,6 +70,9 @@ class SocketChannelImpl
 
     // -- The following fields are protected by stateLock
 
+    // set true when exclusive binding is on and SO_REUSEADDR is emulated
+    private boolean isReuseAddress;
+
     // State, increases monotonically
     private static final int ST_UNINITIALIZED = -1;
     private static final int ST_UNCONNECTED = 0;
@@ -174,6 +177,12 @@ class SocketChannelImpl
                 if (!Net.isIPv6Available())
                     Net.setSocketOption(fd, StandardProtocolFamily.INET, name, value);
                 return this;
+            } else if (name == StandardSocketOptions.SO_REUSEADDR &&
+                           Net.useExclusiveBind())
+            {
+                // SO_REUSEADDR emulated when using exclusive bind
+                isReuseAddress = (Boolean)value;
+                return this;
             }
 
             // no options that require special handling
@@ -195,6 +204,13 @@ class SocketChannelImpl
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
+
+            if (name == StandardSocketOptions.SO_REUSEADDR &&
+                    Net.useExclusiveBind())
+            {
+                // SO_REUSEADDR emulated when using exclusive bind
+                return (T)Boolean.valueOf(isReuseAddress);
+            }
 
             // special handling for IP_TOS: always return 0 when IPv6
             if (name == StandardSocketOptions.IP_TOS) {

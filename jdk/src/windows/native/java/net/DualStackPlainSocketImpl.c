@@ -82,7 +82,9 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_socket0
  * Signature: (ILjava/net/InetAddress;I)V
  */
 JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_bind0
-  (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
+  (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port,
+   jboolean exclBind)
+{
     SOCKETADDRESS sa;
     int rv;
     int sa_len = sizeof(sa);
@@ -92,7 +94,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_bind0
       return;
     }
 
-    rv = NET_Bind(fd, (struct sockaddr *)&sa, sa_len);
+    rv = NET_WinBind(fd, (struct sockaddr *)&sa, sa_len, exclBind);
 
     if (rv == SOCKET_ERROR)
         NET_ThrowNew(env, WSAGetLastError(), "JVM_Bind");

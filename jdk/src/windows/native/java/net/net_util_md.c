@@ -387,10 +387,22 @@ NET_SetSockOpt(int s, int level, int optname, const void *optval,
                int optlen)
 {
     int rv;
+    int parg;
+    int plen = sizeof(parg);
 
     if (level == IPPROTO_IP && optname == IP_TOS) {
         int *tos = (int *)optval;
         *tos &= (IPTOS_TOS_MASK | IPTOS_PREC_MASK);
+    }
+
+    if (optname == SO_REUSEADDR) {
+        /*
+         * Do not set SO_REUSEADDE if SO_EXCLUSIVEADDUSE is already set
+         */
+        rv = NET_GetSockOpt(s, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *)&parg, &plen);
+        if (rv == 0 && parg == 1) {
+            return rv;
+        }
     }
 
     rv = setsockopt(s, level, optname, optval, optlen);
@@ -456,15 +468,32 @@ NET_GetSockOpt(int s, int level, int optname, void *optval,
 }
 
 /*
+ * Sets SO_ECLUSIVEADDRUSE if SO_REUSEADDR is not already set.
+ */
+void setExclusiveBind(int fd) {
+    int parg;
+    int plen = sizeof(parg);
+    int rv = 0;
+    rv = NET_GetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&parg, &plen);
+    if (rv == 0 && parg == 0) {
+        parg = 1;
+        rv = NET_SetSockOpt(fd, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char*)&parg, plen);
+    }
+}
+
+/*
  * Wrapper for bind winsock call - transparent converts an
  * error related to binding to a port that has exclusive access
  * into an error indicating the port is in use (facilitates
  * better error reporting).
+ *
+ * Should be only called by the wrapper method NET_WinBind
  */
 JNIEXPORT int JNICALL
 NET_Bind(int s, struct sockaddr *him, int len)
 {
-    int rv = bind(s, him, len);
+    int rv;
+    rv = bind(s, him, len);
 
     if (rv == SOCKET_ERROR) {
         /*
@@ -477,6 +506,18 @@ NET_Bind(int s, struct sockaddr *him, int len)
     }
 
     return rv;
+}
+
+/*
+ * Wrapper for NET_Bind call. Sets SO_EXCLUSIVEADDRUSE
+ * if required, and then calls NET_BIND
+ */
+JNIEXPORT int JNICALL
+NET_WinBind(int s, struct sockaddr *him, int len, jboolean exclBind)
+{
+    if (exclBind == JNI_TRUE)
+        setExclusiveBind(s);
+    return NET_Bind(s, him, len);
 }
 
 JNIEXPORT int JNICALL
@@ -625,7 +666,7 @@ void dumpAddr (char *str, void *addr) {
  */
 
 JNIEXPORT int JNICALL
-NET_BindV6(struct ipv6bind* b) {
+NET_BindV6(struct ipv6bind* b, jboolean exclBind) {
     int fd=-1, ofd=-1, rv, len;
     /* need to defer close until new sockets created */
     int close_fd=-1, close_ofd=-1;
@@ -638,8 +679,8 @@ NET_BindV6(struct ipv6bind* b) {
     if (family == AF_INET && (b->addr->him4.sin_addr.s_addr != INADDR_ANY)) {
         /* bind to v4 only */
         int ret;
-        ret = NET_Bind ((int)b->ipv4_fd, (struct sockaddr *)b->addr,
-                                sizeof (struct sockaddr_in));
+        ret = NET_WinBind ((int)b->ipv4_fd, (struct sockaddr *)b->addr,
+                                sizeof (struct sockaddr_in), exclBind);
         if (ret == SOCKET_ERROR) {
             CLOSE_SOCKETS_AND_RETURN;
         }
@@ -650,8 +691,8 @@ NET_BindV6(struct ipv6bind* b) {
     if (family == AF_INET6 && (!IN6_IS_ADDR_ANY(&b->addr->him6.sin6_addr))) {
         /* bind to v6 only */
         int ret;
-        ret = NET_Bind ((int)b->ipv6_fd, (struct sockaddr *)b->addr,
-                                sizeof (struct SOCKADDR_IN6));
+        ret = NET_WinBind ((int)b->ipv6_fd, (struct sockaddr *)b->addr,
+                                sizeof (struct SOCKADDR_IN6), exclBind);
         if (ret == SOCKET_ERROR) {
             CLOSE_SOCKETS_AND_RETURN;
         }
@@ -680,7 +721,7 @@ NET_BindV6(struct ipv6bind* b) {
         oaddr.him4.sin_addr.s_addr = INADDR_ANY;
     }
 
-    rv = NET_Bind (fd, (struct sockaddr *)b->addr, SOCKETADDRESS_LEN(b->addr));
+    rv = NET_WinBind(fd, (struct sockaddr *)b->addr, SOCKETADDRESS_LEN(b->addr), exclBind);
     if (rv == SOCKET_ERROR) {
         CLOSE_SOCKETS_AND_RETURN;
     }
@@ -692,8 +733,8 @@ NET_BindV6(struct ipv6bind* b) {
     }
     bound_port = GET_PORT (b->addr);
     SET_PORT (&oaddr, bound_port);
-    if ((rv=NET_Bind (ofd, (struct sockaddr *) &oaddr,
-                                SOCKETADDRESS_LEN (&oaddr))) == SOCKET_ERROR) {
+    if ((rv=NET_WinBind (ofd, (struct sockaddr *) &oaddr,
+                         SOCKETADDRESS_LEN (&oaddr), exclBind)) == SOCKET_ERROR) {
         int retries;
         int sotype, arglen=sizeof(sotype);
 
@@ -729,7 +770,8 @@ NET_BindV6(struct ipv6bind* b) {
 
             /* bind random port on first socket */
             SET_PORT (&oaddr, 0);
-            rv = NET_Bind (ofd, (struct sockaddr *)&oaddr, SOCKETADDRESS_LEN(&oaddr));
+            rv = NET_WinBind (ofd, (struct sockaddr *)&oaddr, SOCKETADDRESS_LEN(&oaddr),
+                              exclBind);
             if (rv == SOCKET_ERROR) {
                 CLOSE_SOCKETS_AND_RETURN;
             }
@@ -745,7 +787,8 @@ NET_BindV6(struct ipv6bind* b) {
             }
             bound_port = GET_PORT (&oaddr);
             SET_PORT (b->addr, bound_port);
-            rv = NET_Bind (fd, (struct sockaddr *)b->addr, SOCKETADDRESS_LEN(b->addr));
+            rv = NET_WinBind (fd, (struct sockaddr *)b->addr, SOCKETADDRESS_LEN(b->addr),
+                              exclBind);
 
             if (rv != SOCKET_ERROR) {
                 if (family == AF_INET) {
