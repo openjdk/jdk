@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8003562
+ * @bug 8003562 8005428
  * @summary Basic tests for jdeps tool
  * @build Test p.Foo
  * @run main Basic
@@ -33,13 +33,35 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.*;
 
 public class Basic {
+    private static boolean symbolFileExist = initProfiles();
+    private static boolean initProfiles() {
+        // check if ct.sym exists; if not use the profiles.properties file
+        Path home = Paths.get(System.getProperty("java.home"));
+        if (home.endsWith("jre")) {
+            home = home.getParent();
+        }
+        Path ctsym = home.resolve("lib").resolve("ct.sym");
+        boolean symbolExists = ctsym.toFile().exists();
+        if (!symbolExists) {
+            Path testSrcProfiles =
+                Paths.get(System.getProperty("test.src", "."), "profiles.properties");
+            if (!testSrcProfiles.toFile().exists())
+                throw new Error(testSrcProfiles + " does not exist");
+            System.out.format("%s doesn't exist.%nUse %s to initialize profiles info%n",
+                ctsym, testSrcProfiles);
+            System.setProperty("jdeps.profiles", testSrcProfiles.toString());
+        }
+        return symbolExists;
+    }
+
     public static void main(String... args) throws Exception {
         int errors = 0;
-
         errors += new Basic().run();
         if (errors > 0)
             throw new Exception(errors + " errors found");
@@ -49,54 +71,70 @@ public class Basic {
         File testDir = new File(System.getProperty("test.classes", "."));
         // test a .class file
         test(new File(testDir, "Test.class"),
-             new String[] {"java.lang", "p"});
+             new String[] {"java.lang", "p"},
+             new String[] {"compact1", "not found"});
         // test a directory
         test(new File(testDir, "p"),
-             new String[] {"java.lang", "java.util"});
+             new String[] {"java.lang", "java.util", "java.lang.management"},
+             new String[] {"compact1", "compact1", "compact3"});
         // test class-level dependency output
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang.Object", "p.Foo"},
+             new String[] {"compact1", "not found"},
              new String[] {"-V", "class"});
         // test -p option
         test(new File(testDir, "Test.class"),
              new String[] {"p.Foo"},
+             new String[] {"not found"},
              new String[] {"--verbose-level=class", "-p", "p"});
         // test -e option
         test(new File(testDir, "Test.class"),
              new String[] {"p.Foo"},
+             new String[] {"not found"},
              new String[] {"-V", "class", "-e", "p\\..*"});
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang"},
+             new String[] {"compact1"},
              new String[] {"-V", "package", "-e", "java\\.lang\\..*"});
         // test -classpath and wildcard options
         test(null,
              new String[] {"com.sun.tools.jdeps", "java.lang", "java.util",
-                           "java.util.regex", "java.io"},
+                           "java.util.regex", "java.io", "java.nio.file",
+                           "java.lang.management"},
+             new String[] {(symbolFileExist? "not found" : "JDK internal API (classes)"),
+                           "compact1", "compact1", "compact1",
+                           "compact1", "compact1", "compact3"},
              new String[] {"--classpath", testDir.getPath(), "*"});
-        // -v shows intra-dependency
-        test(new File(testDir, "Test.class"),
-             new String[] {"java.lang.Object", "p.Foo"},
-             new String[] {"-v", "--classpath", testDir.getPath(), "Test.class"});
+        /* Temporary disable this test case.  Test.class has a dependency
+         * on java.lang.String on certain windows machine (8008479).
+         // -v shows intra-dependency
+         test(new File(testDir, "Test.class"),
+              new String[] {"java.lang.Object", "p.Foo"},
+              new String[] {"compact1", testDir.getName()},
+              new String[] {"-v", "--classpath", testDir.getPath(), "Test.class"});
+        */
         return errors;
     }
 
-    void test(File file, String[] expect) {
-        test(file, expect, new String[0]);
+    void test(File file, String[] expect, String[] profiles) {
+        test(file, expect, profiles, new String[0]);
     }
 
-    void test(File file, String[] expect, String[] options) {
-        String[] args;
+    void test(File file, String[] expect, String[] profiles, String[] options) {
+        List<String> args = new ArrayList<>(Arrays.asList(options));
         if (file != null) {
-            args = Arrays.copyOf(options, options.length+1);
-            args[options.length] = file.getPath();
-        } else {
-            args = options;
+            args.add(file.getPath());
         }
-        String[] deps = jdeps(args);
-        checkEqual("dependencies", expect, deps);
+        List<String> argsWithDashP = new ArrayList<>();
+        argsWithDashP.add("-P");
+        argsWithDashP.addAll(args);
+        // test without -P
+        checkResult("dependencies", expect, jdeps(args.toArray(new String[0])).keySet());
+        // test with -P
+        checkResult("profiles", expect, profiles, jdeps(argsWithDashP.toArray(new String[0])));
     }
 
-    String[] jdeps(String... args) {
+    Map<String,String> jdeps(String... args) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         System.err.println("jdeps " + Arrays.toString(args));
@@ -112,12 +150,12 @@ public class Basic {
 
     // Pattern used to parse lines
     private static Pattern linePattern = Pattern.compile(".*\r?\n");
-    private static Pattern pattern = Pattern.compile("\\s+ -> (\\S+) +.*");
+    private static Pattern pattern = Pattern.compile("\\s+ -> (\\S+) +(.*)");
 
     // Use the linePattern to break the given String into lines, applying
     // the pattern to each line to see if we have a match
-    private static String[] findDeps(String out) {
-        List<String> result = new ArrayList<>();
+    private static Map<String,String> findDeps(String out) {
+        Map<String,String> result = new HashMap<>();
         Matcher lm = linePattern.matcher(out);  // Line matcher
         Matcher pm = null;                      // Pattern matcher
         int lines = 0;
@@ -129,19 +167,41 @@ public class Basic {
             else
                 pm.reset(cs);
             if (pm.find())
-                result.add(pm.group(1));
+                result.put(pm.group(1), pm.group(2).trim());
             if (lm.end() == out.length())
                 break;
         }
-        return result.toArray(new String[0]);
+        return result;
     }
 
-    void checkEqual(String label, String[] expect, String[] found) {
-        Set<String> s1 = new HashSet<>(Arrays.asList(expect));
-        Set<String> s2 = new HashSet<>(Arrays.asList(found));
+    void checkResult(String label, String[] expect, Collection<String> found) {
+        List<String> list = Arrays.asList(expect);
+        if (!isEqual(list, found))
+            error("Unexpected " + label + " found: '" + found + "', expected: '" + list + "'");
+    }
 
-        if (!s1.equals(s2))
-            error("Unexpected " + label + " found: '" + s2 + "', expected: '" + s1 + "'");
+    void checkResult(String label, String[] expect, String[] profiles, Map<String,String> result) {
+        if (expect.length != profiles.length)
+            error("Invalid expected names and profiles");
+
+        // check the dependencies
+        checkResult(label, expect, result.keySet());
+        // check profile information
+        checkResult(label, profiles, result.values());
+        for (int i=0; i < expect.length; i++) {
+            String profile = result.get(expect[i]);
+            if (!profile.equals(profiles[i]))
+                error("Unexpected profile: '" + profile + "', expected: '" + profiles[i] + "'");
+        }
+    }
+
+    boolean isEqual(List<String> expected, Collection<String> found) {
+        if (expected.size() != found.size())
+            return false;
+
+        List<String> list = new ArrayList<>(found);
+        list.removeAll(expected);
+        return list.isEmpty();
     }
 
     void error(String msg) {
