@@ -40,7 +40,7 @@ pull_default=""
 repos=""
 repos_extra=""
 if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
-  subrepos="corba jaxp jaxws langtools jdk hotspot"
+  subrepos="corba jaxp jaxws langtools jdk hotspot nashorn"
   if [ -f .hg/hgrc ] ; then
     pull_default=`hg paths default`
     if [ "${pull_default}" = "" ] ; then
