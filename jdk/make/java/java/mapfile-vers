@@ -133,6 +133,7 @@ SUNWprivate_1.1 {
 		Java_java_lang_ClassLoader_00024NativeLibrary_find;
 		Java_java_lang_ClassLoader_00024NativeLibrary_load;
 		Java_java_lang_ClassLoader_00024NativeLibrary_unload;
+		Java_java_lang_ClassLoader_00024NativeLibrary_findBuiltinLib;
 		Java_java_lang_ClassLoader_getCaller; 
 		Java_java_lang_ClassLoader_registerNatives;
 		Java_java_lang_Compiler_registerNatives;
