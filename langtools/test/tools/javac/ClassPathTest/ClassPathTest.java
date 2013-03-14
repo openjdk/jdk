@@ -31,9 +31,11 @@
  */
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import com.sun.tools.javac.util.ArrayUtils;
 
 //original test: test/tools/javac/ClassPathTest/ClassPathTest.sh
 public class ClassPathTest {
@@ -92,24 +94,31 @@ public class ClassPathTest {
     }
 
     void checkCompileCommands() throws Exception {
-        String[] mainArgs = ToolBox.getJavacBin();
-
 //        Without the -cp . parameter the command will fail seems like when called
 //        from the command line, the current dir is added to the classpath
 //        automatically but this is not happening when called using ProcessBuilder
 
 //        testJavac success ClassPathTest3.java
-        String[] commonArgs = ArrayUtils.concatOpen(mainArgs, "-cp", ".");
+        List<String> mainArgs = new ArrayList<>();
+        mainArgs.add(ToolBox.javacBinary.toString());
+        if (ToolBox.testToolVMOpts != null) {
+            mainArgs.addAll(ToolBox.testToolVMOpts);
+        }
 
-        ToolBox.AnyToolArgs successParams =
-                new ToolBox.AnyToolArgs()
-                .setAllArgs(ArrayUtils.concatOpen(commonArgs, "ClassPathTest3.java"));
+        List<String> commonArgs = new ArrayList<>();
+        commonArgs.addAll(mainArgs);
+        commonArgs.addAll(Arrays.asList("-cp", "."));
+
+        ToolBox.AnyToolArgs successParams = new ToolBox.AnyToolArgs()
+                .appendArgs(commonArgs)
+                .appendArgs("ClassPathTest3.java");
         ToolBox.executeCommand(successParams);
 
 //        testJavac failure ClassPathTest1.java
         ToolBox.AnyToolArgs failParams =
                 new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .setAllArgs(ArrayUtils.concatOpen(commonArgs, "ClassPathTest1.java"));
+                .appendArgs(commonArgs)
+                .appendArgs("ClassPathTest1.java");
         ToolBox.executeCommand(failParams);
 
 //        This is done inside the executeCommand method
@@ -119,29 +128,50 @@ public class ClassPathTest {
         extVars.put("CLASSPATH", "bar");
 
 //        testJavac success ClassPathTest2.java
-        successParams.setAllArgs(ArrayUtils.concatOpen(mainArgs, "ClassPathTest2.java")).set(extVars);
+        successParams = new ToolBox.AnyToolArgs()
+                .appendArgs(mainArgs)
+                .appendArgs("ClassPathTest2.java")
+                .set(extVars);
         ToolBox.executeCommand(successParams);
 
 //        testJavac failure ClassPathTest1.java
-        failParams.setAllArgs(ArrayUtils.concatOpen(mainArgs, "ClassPathTest1.java")).set(extVars);
+        failParams = new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
+                .appendArgs(mainArgs)
+                .appendArgs("ClassPathTest1.java")
+                .set(extVars);
         ToolBox.executeCommand(failParams);
 
 //        testJavac failure ClassPathTest3.java
-        failParams.setAllArgs(ArrayUtils.concatOpen(mainArgs, "ClassPathTest3.java"));
+        failParams = new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
+                .appendArgs(mainArgs)
+                .appendArgs("ClassPathTest3.java")
+                .set(extVars);
         ToolBox.executeCommand(failParams);
 
 //        testJavac success -classpath foo ClassPathTest1.java
 
-        commonArgs = ArrayUtils.concatOpen(mainArgs, "-cp", "foo");
-        successParams.setAllArgs(ArrayUtils.concatOpen(commonArgs, "ClassPathTest1.java"));
+        commonArgs.clear();
+        commonArgs.addAll(mainArgs);
+        commonArgs.addAll(Arrays.asList("-cp", "foo"));
+
+        successParams = new ToolBox.AnyToolArgs()
+                .appendArgs(commonArgs)
+                .appendArgs("ClassPathTest1.java")
+                .set(extVars);
         ToolBox.executeCommand(successParams);
 
 //        testJavac failure -classpath foo ClassPathTest2.java
-        failParams.setAllArgs(ArrayUtils.concatOpen(commonArgs, "ClassPathTest2.java"));
+        failParams = new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
+                .appendArgs(commonArgs)
+                .appendArgs("ClassPathTest2.java")
+                .set(extVars);
         ToolBox.executeCommand(failParams);
 
 //        testJavac failure -classpath foo ClassPathTest3.java
-        failParams.setAllArgs(ArrayUtils.concatOpen(commonArgs, "ClassPathTest3.java"));
+        failParams = new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
+                .appendArgs(commonArgs)
+                .appendArgs("ClassPathTest3.java")
+                .set(extVars);
         ToolBox.executeCommand(failParams);
     }
 
