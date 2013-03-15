@@ -90,8 +90,7 @@
 // Extension method support.
 #define JAVA_8_VERSION                    52
 
-
-void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, constantPoolHandle cp, int length, TRAPS) {
+void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
   // Use a local copy of ClassFileStream. It helps the C++ compiler to optimize
   // this function (_current can be allocated in a register, with scalar
   // replacement of aggregates). The _current pointer is copied back to
@@ -104,7 +103,7 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
   assert(cfs->allocated_on_stack(),"should be local");
   u1* old_current = cfs0->current();
 #endif
-  Handle class_loader(THREAD, loader_data->class_loader());
+  Handle class_loader(THREAD, _loader_data->class_loader());
 
   // Used for batching symbol allocations.
   const char* names[SymbolTable::symbol_alloc_batch_size];
@@ -124,7 +123,7 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
         {
           cfs->guarantee_more(3, CHECK);  // name_index, tag/access_flags
           u2 name_index = cfs->get_u2_fast();
-          cp->klass_index_at_put(index, name_index);
+          _cp->klass_index_at_put(index, name_index);
         }
         break;
       case JVM_CONSTANT_Fieldref :
@@ -132,7 +131,7 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
           cfs->guarantee_more(5, CHECK);  // class_index, name_and_type_index, tag/access_flags
           u2 class_index = cfs->get_u2_fast();
           u2 name_and_type_index = cfs->get_u2_fast();
-          cp->field_at_put(index, class_index, name_and_type_index);
+          _cp->field_at_put(index, class_index, name_and_type_index);
         }
         break;
       case JVM_CONSTANT_Methodref :
@@ -140,7 +139,7 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
           cfs->guarantee_more(5, CHECK);  // class_index, name_and_type_index, tag/access_flags
           u2 class_index = cfs->get_u2_fast();
           u2 name_and_type_index = cfs->get_u2_fast();
-          cp->method_at_put(index, class_index, name_and_type_index);
+          _cp->method_at_put(index, class_index, name_and_type_index);
         }
         break;
       case JVM_CONSTANT_InterfaceMethodref :
@@ -148,14 +147,14 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
           cfs->guarantee_more(5, CHECK);  // class_index, name_and_type_index, tag/access_flags
           u2 class_index = cfs->get_u2_fast();
           u2 name_and_type_index = cfs->get_u2_fast();
-          cp->interface_method_at_put(index, class_index, name_and_type_index);
+          _cp->interface_method_at_put(index, class_index, name_and_type_index);
         }
         break;
       case JVM_CONSTANT_String :
         {
           cfs->guarantee_more(3, CHECK);  // string_index, tag/access_flags
           u2 string_index = cfs->get_u2_fast();
-          cp->string_index_at_put(index, string_index);
+          _cp->string_index_at_put(index, string_index);
         }
         break;
       case JVM_CONSTANT_MethodHandle :
@@ -174,11 +173,11 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
           cfs->guarantee_more(4, CHECK);  // ref_kind, method_index, tag/access_flags
           u1 ref_kind = cfs->get_u1_fast();
           u2 method_index = cfs->get_u2_fast();
-          cp->method_handle_index_at_put(index, ref_kind, method_index);
+          _cp->method_handle_index_at_put(index, ref_kind, method_index);
         } else if (tag == JVM_CONSTANT_MethodType) {
           cfs->guarantee_more(3, CHECK);  // signature_index, tag/access_flags
           u2 signature_index = cfs->get_u2_fast();
-          cp->method_type_index_at_put(index, signature_index);
+          _cp->method_type_index_at_put(index, signature_index);
         } else {
           ShouldNotReachHere();
         }
@@ -200,21 +199,21 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
           u2 name_and_type_index = cfs->get_u2_fast();
           if (_max_bootstrap_specifier_index < (int) bootstrap_specifier_index)
             _max_bootstrap_specifier_index = (int) bootstrap_specifier_index;  // collect for later
-          cp->invoke_dynamic_at_put(index, bootstrap_specifier_index, name_and_type_index);
+          _cp->invoke_dynamic_at_put(index, bootstrap_specifier_index, name_and_type_index);
         }
         break;
       case JVM_CONSTANT_Integer :
         {
           cfs->guarantee_more(5, CHECK);  // bytes, tag/access_flags
           u4 bytes = cfs->get_u4_fast();
-          cp->int_at_put(index, (jint) bytes);
+          _cp->int_at_put(index, (jint) bytes);
         }
         break;
       case JVM_CONSTANT_Float :
         {
           cfs->guarantee_more(5, CHECK);  // bytes, tag/access_flags
           u4 bytes = cfs->get_u4_fast();
-          cp->float_at_put(index, *(jfloat*)&bytes);
+          _cp->float_at_put(index, *(jfloat*)&bytes);
         }
         break;
       case JVM_CONSTANT_Long :
@@ -225,7 +224,7 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
         {
           cfs->guarantee_more(9, CHECK);  // bytes, tag/access_flags
           u8 bytes = cfs->get_u8_fast();
-          cp->long_at_put(index, bytes);
+          _cp->long_at_put(index, bytes);
         }
         index++;   // Skip entry following eigth-byte constant, see JVM book p. 98
         break;
@@ -237,7 +236,7 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
         {
           cfs->guarantee_more(9, CHECK);  // bytes, tag/access_flags
           u8 bytes = cfs->get_u8_fast();
-          cp->double_at_put(index, *(jdouble*)&bytes);
+          _cp->double_at_put(index, *(jdouble*)&bytes);
         }
         index++;   // Skip entry following eigth-byte constant, see JVM book p. 98
         break;
@@ -246,7 +245,7 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
           cfs->guarantee_more(5, CHECK);  // name_index, signature_index, tag/access_flags
           u2 name_index = cfs->get_u2_fast();
           u2 signature_index = cfs->get_u2_fast();
-          cp->name_and_type_at_put(index, name_index, signature_index);
+          _cp->name_and_type_at_put(index, name_index, signature_index);
         }
         break;
       case JVM_CONSTANT_Utf8 :
@@ -283,11 +282,11 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
             indices[names_count] = index;
             hashValues[names_count++] = hash;
             if (names_count == SymbolTable::symbol_alloc_batch_size) {
-              SymbolTable::new_symbols(loader_data, cp, names_count, names, lengths, indices, hashValues, CHECK);
+              SymbolTable::new_symbols(_loader_data, _cp, names_count, names, lengths, indices, hashValues, CHECK);
               names_count = 0;
             }
           } else {
-            cp->symbol_at_put(index, result);
+            _cp->symbol_at_put(index, result);
           }
         }
         break;
@@ -300,7 +299,7 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
 
   // Allocate the remaining symbols
   if (names_count > 0) {
-    SymbolTable::new_symbols(loader_data, cp, names_count, names, lengths, indices, hashValues, CHECK);
+    SymbolTable::new_symbols(_loader_data, _cp, names_count, names, lengths, indices, hashValues, CHECK);
   }
 
   // Copy _current pointer of local copy back to stream().
@@ -309,23 +308,6 @@ void ClassFileParser::parse_constant_pool_entries(ClassLoaderData* loader_data, 
 #endif
   cfs0->set_current(cfs1.current());
 }
-
-// This class unreferences constant pool symbols if an error has occurred
-// while parsing the class before it is assigned into the class.
-// If it gets an error after that it is unloaded and the constant pool will
-// be cleaned up then.
-class ConstantPoolCleaner : public StackObj {
-  constantPoolHandle _cphandle;
-  bool               _in_error;
- public:
-  ConstantPoolCleaner(constantPoolHandle cp) : _cphandle(cp), _in_error(true) {}
-  ~ConstantPoolCleaner() {
-    if (_in_error && _cphandle.not_null()) {
-      _cphandle->unreference_symbols();
-    }
-  }
-  void set_in_error(bool clean) { _in_error = clean; }
-};
 
 bool inline valid_cp_range(int index, int length) { return (index > 0 && index < length); }
 
@@ -336,7 +318,7 @@ inline Symbol* check_symbol_at(constantPoolHandle cp, int index) {
     return NULL;
 }
 
-constantPoolHandle ClassFileParser::parse_constant_pool(ClassLoaderData* loader_data, TRAPS) {
+constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   ClassFileStream* cfs = stream();
   constantPoolHandle nullHandle;
 
@@ -345,16 +327,13 @@ constantPoolHandle ClassFileParser::parse_constant_pool(ClassLoaderData* loader_
   guarantee_property(
     length >= 1, "Illegal constant pool size %u in class file %s",
     length, CHECK_(nullHandle));
-  ConstantPool* constant_pool =
-                      ConstantPool::allocate(loader_data,
-                                                    length,
-                                                   CHECK_(nullHandle));
+  ConstantPool* constant_pool = ConstantPool::allocate(_loader_data, length,
+                                                        CHECK_(nullHandle));
+  _cp = constant_pool; // save in case of errors
   constantPoolHandle cp (THREAD, constant_pool);
 
-  ConstantPoolCleaner cp_in_error(cp); // set constant pool to be cleaned up.
-
   // parsing constant pool entries
-  parse_constant_pool_entries(loader_data, cp, length, CHECK_(nullHandle));
+  parse_constant_pool_entries(length, CHECK_(nullHandle));
 
   int index = 1;  // declared outside of loops for portability
 
@@ -373,8 +352,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(ClassLoaderData* loader_
         if (!_need_verify) break;
         int klass_ref_index = cp->klass_ref_index_at(index);
         int name_and_type_ref_index = cp->name_and_type_ref_index_at(index);
-        check_property(valid_cp_range(klass_ref_index, length) &&
-                       is_klass_reference(cp, klass_ref_index),
+        check_property(valid_klass_reference_at(klass_ref_index),
                        "Invalid constant pool index %u in class file %s",
                        klass_ref_index,
                        CHECK_(nullHandle));
@@ -404,16 +382,12 @@ constantPoolHandle ClassFileParser::parse_constant_pool(ClassLoaderData* loader_
         if (!_need_verify) break;
         int name_ref_index = cp->name_ref_index_at(index);
         int signature_ref_index = cp->signature_ref_index_at(index);
-        check_property(
-          valid_cp_range(name_ref_index, length) &&
-            cp->tag_at(name_ref_index).is_utf8(),
-          "Invalid constant pool index %u in class file %s",
-          name_ref_index, CHECK_(nullHandle));
-        check_property(
-          valid_cp_range(signature_ref_index, length) &&
-            cp->tag_at(signature_ref_index).is_utf8(),
-          "Invalid constant pool index %u in class file %s",
-          signature_ref_index, CHECK_(nullHandle));
+        check_property(valid_symbol_at(name_ref_index),
+                 "Invalid constant pool index %u in class file %s",
+                 name_ref_index, CHECK_(nullHandle));
+        check_property(valid_symbol_at(signature_ref_index),
+                 "Invalid constant pool index %u in class file %s",
+                 signature_ref_index, CHECK_(nullHandle));
         break;
       }
       case JVM_CONSTANT_Utf8 :
@@ -425,22 +399,18 @@ constantPoolHandle ClassFileParser::parse_constant_pool(ClassLoaderData* loader_
       case JVM_CONSTANT_ClassIndex :
         {
           int class_index = cp->klass_index_at(index);
-          check_property(
-            valid_cp_range(class_index, length) &&
-              cp->tag_at(class_index).is_utf8(),
-            "Invalid constant pool index %u in class file %s",
-            class_index, CHECK_(nullHandle));
+          check_property(valid_symbol_at(class_index),
+                 "Invalid constant pool index %u in class file %s",
+                 class_index, CHECK_(nullHandle));
           cp->unresolved_klass_at_put(index, cp->symbol_at(class_index));
         }
         break;
       case JVM_CONSTANT_StringIndex :
         {
           int string_index = cp->string_index_at(index);
-          check_property(
-            valid_cp_range(string_index, length) &&
-              cp->tag_at(string_index).is_utf8(),
-            "Invalid constant pool index %u in class file %s",
-            string_index, CHECK_(nullHandle));
+          check_property(valid_symbol_at(string_index),
+                 "Invalid constant pool index %u in class file %s",
+                 string_index, CHECK_(nullHandle));
           Symbol* sym = cp->symbol_at(string_index);
           cp->unresolved_string_at_put(index, sym);
         }
@@ -491,12 +461,9 @@ constantPoolHandle ClassFileParser::parse_constant_pool(ClassLoaderData* loader_
       case JVM_CONSTANT_MethodType :
         {
           int ref_index = cp->method_type_index_at(index);
-          check_property(
-            valid_cp_range(ref_index, length) &&
-                cp->tag_at(ref_index).is_utf8() &&
-                EnableInvokeDynamic,
-              "Invalid constant pool index %u in class file %s",
-              ref_index, CHECK_(nullHandle));
+          check_property(valid_symbol_at(ref_index) && EnableInvokeDynamic,
+                 "Invalid constant pool index %u in class file %s",
+                 ref_index, CHECK_(nullHandle));
         }
         break;
       case JVM_CONSTANT_InvokeDynamic :
@@ -541,7 +508,6 @@ constantPoolHandle ClassFileParser::parse_constant_pool(ClassLoaderData* loader_
   }
 
   if (!_need_verify) {
-    cp_in_error.set_in_error(false);
     return cp;
   }
 
@@ -664,7 +630,6 @@ constantPoolHandle ClassFileParser::parse_constant_pool(ClassLoaderData* loader_
     }  // end of switch
   }  // end of for
 
-  cp_in_error.set_in_error(false);
   return cp;
 }
 
@@ -786,93 +751,92 @@ bool put_after_lookup(Symbol* name, Symbol* sig, NameSigHash** table) {
 }
 
 
-Array<Klass*>* ClassFileParser::parse_interfaces(constantPoolHandle cp,
-                                                 int length,
-                                                 ClassLoaderData* loader_data,
+Array<Klass*>* ClassFileParser::parse_interfaces(int length,
                                                  Handle protection_domain,
                                                  Symbol* class_name,
                                                  bool* has_default_methods,
                                                  TRAPS) {
-  ClassFileStream* cfs = stream();
-  assert(length > 0, "only called for length>0");
-  // FIXME: Leak at later OOM.
-  Array<Klass*>* interfaces = MetadataFactory::new_array<Klass*>(loader_data, length, NULL, CHECK_NULL);
+  if (length == 0) {
+    _local_interfaces = Universe::the_empty_klass_array();
+  } else {
+    ClassFileStream* cfs = stream();
+    assert(length > 0, "only called for length>0");
+    _local_interfaces = MetadataFactory::new_array<Klass*>(_loader_data, length, NULL, CHECK_NULL);
 
-  int index;
-  for (index = 0; index < length; index++) {
-    u2 interface_index = cfs->get_u2(CHECK_NULL);
-    KlassHandle interf;
-    check_property(
-      valid_cp_range(interface_index, cp->length()) &&
-      is_klass_reference(cp, interface_index),
-      "Interface name has bad constant pool index %u in class file %s",
-      interface_index, CHECK_NULL);
-    if (cp->tag_at(interface_index).is_klass()) {
-      interf = KlassHandle(THREAD, cp->resolved_klass_at(interface_index));
-    } else {
-      Symbol*  unresolved_klass  = cp->klass_name_at(interface_index);
-
-      // Don't need to check legal name because it's checked when parsing constant pool.
-      // But need to make sure it's not an array type.
-      guarantee_property(unresolved_klass->byte_at(0) != JVM_SIGNATURE_ARRAY,
-                         "Bad interface name in class file %s", CHECK_NULL);
-      Handle class_loader(THREAD, loader_data->class_loader());
-
-      // Call resolve_super so classcircularity is checked
-      Klass* k = SystemDictionary::resolve_super_or_fail(class_name,
-                    unresolved_klass, class_loader, protection_domain,
-                    false, CHECK_NULL);
-      interf = KlassHandle(THREAD, k);
-    }
-
-    if (!interf()->is_interface()) {
-      THROW_MSG_(vmSymbols::java_lang_IncompatibleClassChangeError(), "Implementing class", NULL);
-    }
-    if (InstanceKlass::cast(interf())->has_default_methods()) {
-      *has_default_methods = true;
-    }
-    interfaces->at_put(index, interf());
-  }
-
-  if (!_need_verify || length <= 1) {
-    return interfaces;
-  }
-
-  // Check if there's any duplicates in interfaces
-  ResourceMark rm(THREAD);
-  NameSigHash** interface_names = NEW_RESOURCE_ARRAY_IN_THREAD(
-    THREAD, NameSigHash*, HASH_ROW_SIZE);
-  initialize_hashtable(interface_names);
-  bool dup = false;
-  {
-    debug_only(No_Safepoint_Verifier nsv;)
+    int index;
     for (index = 0; index < length; index++) {
-      Klass* k = interfaces->at(index);
-      Symbol* name = InstanceKlass::cast(k)->name();
-      // If no duplicates, add (name, NULL) in hashtable interface_names.
-      if (!put_after_lookup(name, NULL, interface_names)) {
-        dup = true;
-        break;
+      u2 interface_index = cfs->get_u2(CHECK_NULL);
+      KlassHandle interf;
+      check_property(
+        valid_klass_reference_at(interface_index),
+        "Interface name has bad constant pool index %u in class file %s",
+        interface_index, CHECK_NULL);
+      if (_cp->tag_at(interface_index).is_klass()) {
+        interf = KlassHandle(THREAD, _cp->resolved_klass_at(interface_index));
+      } else {
+        Symbol*  unresolved_klass  = _cp->klass_name_at(interface_index);
+
+        // Don't need to check legal name because it's checked when parsing constant pool.
+        // But need to make sure it's not an array type.
+        guarantee_property(unresolved_klass->byte_at(0) != JVM_SIGNATURE_ARRAY,
+                           "Bad interface name in class file %s", CHECK_NULL);
+        Handle class_loader(THREAD, _loader_data->class_loader());
+
+        // Call resolve_super so classcircularity is checked
+        Klass* k = SystemDictionary::resolve_super_or_fail(class_name,
+                      unresolved_klass, class_loader, protection_domain,
+                      false, CHECK_NULL);
+        interf = KlassHandle(THREAD, k);
+      }
+
+      if (!interf()->is_interface()) {
+        THROW_MSG_(vmSymbols::java_lang_IncompatibleClassChangeError(), "Implementing class", NULL);
+      }
+      if (InstanceKlass::cast(interf())->has_default_methods()) {
+        *has_default_methods = true;
+      }
+      _local_interfaces->at_put(index, interf());
+    }
+
+    if (!_need_verify || length <= 1) {
+      return _local_interfaces;
+    }
+
+    // Check if there's any duplicates in interfaces
+    ResourceMark rm(THREAD);
+    NameSigHash** interface_names = NEW_RESOURCE_ARRAY_IN_THREAD(
+      THREAD, NameSigHash*, HASH_ROW_SIZE);
+    initialize_hashtable(interface_names);
+    bool dup = false;
+    {
+      debug_only(No_Safepoint_Verifier nsv;)
+      for (index = 0; index < length; index++) {
+        Klass* k = _local_interfaces->at(index);
+        Symbol* name = InstanceKlass::cast(k)->name();
+        // If no duplicates, add (name, NULL) in hashtable interface_names.
+        if (!put_after_lookup(name, NULL, interface_names)) {
+          dup = true;
+          break;
+        }
       }
     }
+    if (dup) {
+      classfile_parse_error("Duplicate interface name in class file %s", CHECK_NULL);
+    }
   }
-  if (dup) {
-    classfile_parse_error("Duplicate interface name in class file %s", CHECK_NULL);
-  }
-
-  return interfaces;
+  return _local_interfaces;
 }
 
 
-void ClassFileParser::verify_constantvalue(int constantvalue_index, int signature_index, constantPoolHandle cp, TRAPS) {
+void ClassFileParser::verify_constantvalue(int constantvalue_index, int signature_index, TRAPS) {
   // Make sure the constant pool entry is of a type appropriate to this field
   guarantee_property(
     (constantvalue_index > 0 &&
-      constantvalue_index < cp->length()),
+      constantvalue_index < _cp->length()),
     "Bad initial value index %u in ConstantValue attribute in class file %s",
     constantvalue_index, CHECK);
-  constantTag value_type = cp->tag_at(constantvalue_index);
-  switch ( cp->basic_type_for_signature_at(signature_index) ) {
+  constantTag value_type = _cp->tag_at(constantvalue_index);
+  switch ( _cp->basic_type_for_signature_at(signature_index) ) {
     case T_LONG:
       guarantee_property(value_type.is_long(), "Inconsistent constant value type in class file %s", CHECK);
       break;
@@ -886,7 +850,7 @@ void ClassFileParser::verify_constantvalue(int constantvalue_index, int signatur
       guarantee_property(value_type.is_int(), "Inconsistent constant value type in class file %s", CHECK);
       break;
     case T_OBJECT:
-      guarantee_property((cp->symbol_at(signature_index)->equals("Ljava/lang/String;")
+      guarantee_property((_cp->symbol_at(signature_index)->equals("Ljava/lang/String;")
                          && value_type.is_string()),
                          "Bad string initial value in class file %s", CHECK);
       break;
@@ -899,15 +863,11 @@ void ClassFileParser::verify_constantvalue(int constantvalue_index, int signatur
 
 
 // Parse attributes for a field.
-void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
-                                             constantPoolHandle cp,
-                                             u2 attributes_count,
+void ClassFileParser::parse_field_attributes(u2 attributes_count,
                                              bool is_static, u2 signature_index,
                                              u2* constantvalue_index_addr,
                                              bool* is_synthetic_addr,
                                              u2* generic_signature_index_addr,
-                                             AnnotationArray** field_annotations,
-                                             AnnotationArray** field_type_annotations,
                                              ClassFileParser::FieldAnnotationCollector* parsed_annotations,
                                              TRAPS) {
   ClassFileStream* cfs = stream();
@@ -927,12 +887,11 @@ void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
     cfs->guarantee_more(6, CHECK);  // attribute_name_index, attribute_length
     u2 attribute_name_index = cfs->get_u2_fast();
     u4 attribute_length = cfs->get_u4_fast();
-    check_property(valid_cp_range(attribute_name_index, cp->length()) &&
-                   cp->tag_at(attribute_name_index).is_utf8(),
+    check_property(valid_symbol_at(attribute_name_index),
                    "Invalid field attribute index %u in class file %s",
                    attribute_name_index,
                    CHECK);
-    Symbol* attribute_name = cp->symbol_at(attribute_name_index);
+    Symbol* attribute_name = _cp->symbol_at(attribute_name_index);
     if (is_static && attribute_name == vmSymbols::tag_constant_value()) {
       // ignore if non-static
       if (constantvalue_index != 0) {
@@ -944,7 +903,7 @@ void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
         attribute_length, CHECK);
       constantvalue_index = cfs->get_u2(CHECK);
       if (_need_verify) {
-        verify_constantvalue(constantvalue_index, signature_index, cp, CHECK);
+        verify_constantvalue(constantvalue_index, signature_index, CHECK);
       }
     } else if (attribute_name == vmSymbols::tag_synthetic()) {
       if (attribute_length != 0) {
@@ -971,10 +930,8 @@ void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
         runtime_visible_annotations_length = attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
-        parse_annotations(loader_data,
-                          runtime_visible_annotations,
+        parse_annotations(runtime_visible_annotations,
                           runtime_visible_annotations_length,
-                          cp,
                           parsed_annotations,
                           CHECK);
         cfs->skip_u1(runtime_visible_annotations_length, CHECK);
@@ -1004,18 +961,18 @@ void ClassFileParser::parse_field_attributes(ClassLoaderData* loader_data,
   *constantvalue_index_addr = constantvalue_index;
   *is_synthetic_addr = is_synthetic;
   *generic_signature_index_addr = generic_signature_index;
-  *field_annotations = assemble_annotations(loader_data,
-                                            runtime_visible_annotations,
+  AnnotationArray* a = assemble_annotations(runtime_visible_annotations,
                                             runtime_visible_annotations_length,
                                             runtime_invisible_annotations,
                                             runtime_invisible_annotations_length,
                                             CHECK);
-  *field_type_annotations = assemble_annotations(loader_data,
-                                            runtime_visible_type_annotations,
-                                            runtime_visible_type_annotations_length,
-                                            runtime_invisible_type_annotations,
-                                            runtime_invisible_type_annotations_length,
-                                            CHECK);
+  parsed_annotations->set_field_annotations(a);
+  a = assemble_annotations(runtime_visible_type_annotations,
+                           runtime_visible_type_annotations_length,
+                           runtime_invisible_type_annotations,
+                           runtime_invisible_type_annotations_length,
+                           CHECK);
+  parsed_annotations->set_field_type_annotations(a);
   return;
 }
 
@@ -1106,13 +1063,9 @@ class FieldAllocationCount: public ResourceObj {
   }
 };
 
-Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
-                                         Symbol* class_name,
-                                         constantPoolHandle cp,
+Array<u2>* ClassFileParser::parse_fields(Symbol* class_name,
                                          bool is_interface,
                                          FieldAllocationCount *fac,
-                                         Array<AnnotationArray*>** fields_annotations,
-                                         Array<AnnotationArray*>** fields_type_annotations,
                                          u2* java_fields_count_ptr, TRAPS) {
   ClassFileStream* cfs = stream();
   cfs->guarantee_more(2, CHECK_NULL);  // length
@@ -1147,8 +1100,6 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
   u2* fa = NEW_RESOURCE_ARRAY_IN_THREAD(
              THREAD, u2, total_fields * (FieldInfo::field_slots + 1));
 
-  AnnotationArray* field_annotations = NULL;
-  AnnotationArray* field_type_annotations = NULL;
   // The generic signature slots start after all other fields' data.
   int generic_signature_slot = total_fields * FieldInfo::field_slots;
   int num_generic_signature = 0;
@@ -1161,53 +1112,52 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
     access_flags.set_flags(flags);
 
     u2 name_index = cfs->get_u2_fast();
-    int cp_size = cp->length();
-    check_property(
-      valid_cp_range(name_index, cp_size) && cp->tag_at(name_index).is_utf8(),
+    int cp_size = _cp->length();
+    check_property(valid_symbol_at(name_index),
       "Invalid constant pool index %u for field name in class file %s",
-      name_index, CHECK_NULL);
-    Symbol*  name = cp->symbol_at(name_index);
+      name_index,
+      CHECK_NULL);
+    Symbol*  name = _cp->symbol_at(name_index);
     verify_legal_field_name(name, CHECK_NULL);
 
     u2 signature_index = cfs->get_u2_fast();
-    check_property(
-      valid_cp_range(signature_index, cp_size) &&
-        cp->tag_at(signature_index).is_utf8(),
+    check_property(valid_symbol_at(signature_index),
       "Invalid constant pool index %u for field signature in class file %s",
       signature_index, CHECK_NULL);
-    Symbol*  sig = cp->symbol_at(signature_index);
+    Symbol*  sig = _cp->symbol_at(signature_index);
     verify_legal_field_signature(name, sig, CHECK_NULL);
 
     u2 constantvalue_index = 0;
     bool is_synthetic = false;
     u2 generic_signature_index = 0;
     bool is_static = access_flags.is_static();
-    FieldAnnotationCollector parsed_annotations;
+    FieldAnnotationCollector parsed_annotations(_loader_data);
 
     u2 attributes_count = cfs->get_u2_fast();
     if (attributes_count > 0) {
-      parse_field_attributes(loader_data,
-                             cp, attributes_count, is_static, signature_index,
+      parse_field_attributes(attributes_count, is_static, signature_index,
                              &constantvalue_index, &is_synthetic,
-                             &generic_signature_index, &field_annotations,
-                             &field_type_annotations, &parsed_annotations,
+                             &generic_signature_index, &parsed_annotations,
                              CHECK_NULL);
-      if (field_annotations != NULL) {
-        if (*fields_annotations == NULL) {
-          *fields_annotations = MetadataFactory::new_array<AnnotationArray*>(
-                                             loader_data, length, NULL,
+      if (parsed_annotations.field_annotations() != NULL) {
+        if (_fields_annotations == NULL) {
+          _fields_annotations = MetadataFactory::new_array<AnnotationArray*>(
+                                             _loader_data, length, NULL,
                                              CHECK_NULL);
         }
-        (*fields_annotations)->at_put(n, field_annotations);
+        _fields_annotations->at_put(n, parsed_annotations.field_annotations());
+        parsed_annotations.set_field_annotations(NULL);
       }
-      if (field_type_annotations != NULL) {
-        if (*fields_type_annotations == NULL) {
-          *fields_type_annotations = MetadataFactory::new_array<AnnotationArray*>(
-                                                  loader_data, length, NULL,
+      if (parsed_annotations.field_type_annotations() != NULL) {
+        if (_fields_type_annotations == NULL) {
+          _fields_type_annotations = MetadataFactory::new_array<AnnotationArray*>(
+                                                  _loader_data, length, NULL,
                                                   CHECK_NULL);
         }
-        (*fields_type_annotations)->at_put(n, field_type_annotations);
+        _fields_type_annotations->at_put(n, parsed_annotations.field_type_annotations());
+        parsed_annotations.set_field_type_annotations(NULL);
       }
+
       if (is_synthetic) {
         access_flags.set_is_synthetic();
       }
@@ -1224,7 +1174,7 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
                       name_index,
                       signature_index,
                       constantvalue_index);
-    BasicType type = cp->basic_type_for_signature_at(signature_index);
+    BasicType type = _cp->basic_type_for_signature_at(signature_index);
 
     // Remember how many oops we encountered and compute allocation type
     FieldAllocationType atype = fac->update(is_static, type);
@@ -1245,8 +1195,8 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
         bool duplicate = false;
         for (int i = 0; i < length; i++) {
           FieldInfo* f = FieldInfo::from_field_array(fa, i);
-          if (name      == cp->symbol_at(f->name_index()) &&
-              signature == cp->symbol_at(f->signature_index())) {
+          if (name      == _cp->symbol_at(f->name_index()) &&
+              signature == _cp->symbol_at(f->signature_index())) {
             // Symbol is desclared in Java so skip this one
             duplicate = true;
             break;
@@ -1280,8 +1230,9 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
   // fields array is trimed. Also unused slots that were reserved
   // for generic signature indexes are discarded.
   Array<u2>* fields = MetadataFactory::new_array<u2>(
-          loader_data, index * FieldInfo::field_slots + num_generic_signature,
+          _loader_data, index * FieldInfo::field_slots + num_generic_signature,
           CHECK_NULL);
+  _fields = fields; // save in case of error
   {
     int i = 0;
     for (; i < index * FieldInfo::field_slots; i++) {
@@ -1303,7 +1254,7 @@ Array<u2>* ClassFileParser::parse_fields(ClassLoaderData* loader_data,
     bool dup = false;
     {
       debug_only(No_Safepoint_Verifier nsv;)
-      for (AllFieldStream fs(fields, cp); !fs.done(); fs.next()) {
+      for (AllFieldStream fs(fields, _cp); !fs.done(); fs.next()) {
         Symbol* name = fs.name();
         Symbol* sig = fs.signature();
         // If no duplicates, add name/signature in hashtable names_and_sigs.
@@ -1330,10 +1281,8 @@ static void copy_u2_with_conversion(u2* dest, u2* src, int length) {
 }
 
 
-u2* ClassFileParser::parse_exception_table(ClassLoaderData* loader_data,
-                                           u4 code_length,
+u2* ClassFileParser::parse_exception_table(u4 code_length,
                                            u4 exception_table_length,
-                                           constantPoolHandle cp,
                                            TRAPS) {
   ClassFileStream* cfs = stream();
 
@@ -1354,8 +1303,7 @@ u2* ClassFileParser::parse_exception_table(ClassLoaderData* loader_data,
                          "Illegal exception table handler in class file %s",
                          CHECK_NULL);
       if (catch_type_index != 0) {
-        guarantee_property(valid_cp_range(catch_type_index, cp->length()) &&
-                           is_klass_reference(cp, catch_type_index),
+        guarantee_property(valid_klass_reference_at(catch_type_index),
                            "Catch type in exception table has bad constant type in class file %s", CHECK_NULL);
       }
     }
@@ -1506,7 +1454,6 @@ void copy_lvt_element(Classfile_LVT_Element *src, LocalVariableTableElement *lvt
 u2* ClassFileParser::parse_localvariable_table(u4 code_length,
                                                u2 max_locals,
                                                u4 code_attribute_length,
-                                               constantPoolHandle cp,
                                                u2* localvariable_table_length,
                                                bool isLVTT,
                                                TRAPS) {
@@ -1544,20 +1491,16 @@ u2* ClassFileParser::parse_localvariable_table(u4 code_length,
           "Invalid length %u in %s in class file %s",
           length, tbl_name, CHECK_NULL);
       }
-      int cp_size = cp->length();
-      guarantee_property(
-        valid_cp_range(name_index, cp_size) &&
-          cp->tag_at(name_index).is_utf8(),
+      int cp_size = _cp->length();
+      guarantee_property(valid_symbol_at(name_index),
         "Name index %u in %s has bad constant type in class file %s",
         name_index, tbl_name, CHECK_NULL);
-      guarantee_property(
-        valid_cp_range(descriptor_index, cp_size) &&
-          cp->tag_at(descriptor_index).is_utf8(),
+      guarantee_property(valid_symbol_at(descriptor_index),
         "Signature index %u in %s has bad constant type in class file %s",
         descriptor_index, tbl_name, CHECK_NULL);
 
-      Symbol*  name = cp->symbol_at(name_index);
-      Symbol*  sig = cp->symbol_at(descriptor_index);
+      Symbol*  name = _cp->symbol_at(name_index);
+      Symbol*  sig = _cp->symbol_at(descriptor_index);
       verify_legal_field_name(name, CHECK_NULL);
       u2 extra_slot = 0;
       if (!isLVTT) {
@@ -1579,7 +1522,7 @@ u2* ClassFileParser::parse_localvariable_table(u4 code_length,
 
 
 void ClassFileParser::parse_type_array(u2 array_length, u4 code_length, u4* u1_index, u4* u2_index,
-                                      u1* u1_array, u2* u2_array, constantPoolHandle cp, TRAPS) {
+                                      u1* u1_array, u2* u2_array, TRAPS) {
   ClassFileStream* cfs = stream();
   u2 index = 0; // index in the array with long/double occupying two slots
   u4 i1 = *u1_index;
@@ -1591,8 +1534,7 @@ void ClassFileParser::parse_type_array(u2 array_length, u4 code_length, u4* u1_i
       index++;
     } else if (tag == ITEM_Object) {
       u2 class_index = u2_array[i2++] = cfs->get_u2(CHECK);
-      guarantee_property(valid_cp_range(class_index, cp->length()) &&
-                         is_klass_reference(cp, class_index),
+      guarantee_property(valid_klass_reference_at(class_index),
                          "Bad class index %u in StackMap in class file %s",
                          class_index, CHECK);
     } else if (tag == ITEM_Uninitialized) {
@@ -1613,8 +1555,7 @@ void ClassFileParser::parse_type_array(u2 array_length, u4 code_length, u4* u1_i
   *u2_index = i2;
 }
 
-Array<u1>* ClassFileParser::parse_stackmap_table(
-    ClassLoaderData* loader_data,
+u1* ClassFileParser::parse_stackmap_table(
     u4 code_attribute_length, TRAPS) {
   if (code_attribute_length == 0)
     return NULL;
@@ -1629,18 +1570,12 @@ Array<u1>* ClassFileParser::parse_stackmap_table(
   if (!_need_verify && !DumpSharedSpaces) {
     return NULL;
   }
-
-  Array<u1>* stackmap_data =
-    MetadataFactory::new_array<u1>(loader_data, code_attribute_length, 0, CHECK_NULL);
-
-  memcpy((void*)stackmap_data->adr_at(0),
-         (void*)stackmap_table_start, code_attribute_length);
-  return stackmap_data;
+  return stackmap_table_start;
 }
 
 u2* ClassFileParser::parse_checked_exceptions(u2* checked_exceptions_length,
                                               u4 method_attribute_length,
-                                              constantPoolHandle cp, TRAPS) {
+                                              TRAPS) {
   ClassFileStream* cfs = stream();
   cfs->guarantee_more(2, CHECK_NULL);  // checked_exceptions_length
   *checked_exceptions_length = cfs->get_u2_fast();
@@ -1657,8 +1592,7 @@ u2* ClassFileParser::parse_checked_exceptions(u2* checked_exceptions_length,
     for (int i = 0; i < len; i++) {
       checked_exception = cfs->get_u2_fast();
       check_property(
-        valid_cp_range(checked_exception, cp->length()) &&
-        is_klass_reference(cp, checked_exception),
+        valid_klass_reference_at(checked_exception),
         "Exception name has bad type at constant pool %u in class file %s",
         checked_exception, CHECK_NULL);
     }
@@ -1735,9 +1669,7 @@ int ClassFileParser::skip_annotation_value(u1* buffer, int limit, int index) {
 }
 
 // Sift through annotations, looking for those significant to the VM:
-void ClassFileParser::parse_annotations(ClassLoaderData* loader_data,
-                                        u1* buffer, int limit,
-                                        constantPoolHandle cp,
+void ClassFileParser::parse_annotations(u1* buffer, int limit,
                                         ClassFileParser::AnnotationCollector* coll,
                                         TRAPS) {
   // annotations := do(nann:u2) {annotation}
@@ -1767,17 +1699,17 @@ void ClassFileParser::parse_annotations(ClassLoaderData* loader_data,
     u1* abase = buffer + index0;
     int atype = Bytes::get_Java_u2(abase + atype_off);
     int count = Bytes::get_Java_u2(abase + count_off);
-    Symbol* aname = check_symbol_at(cp, atype);
+    Symbol* aname = check_symbol_at(_cp, atype);
     if (aname == NULL)  break;  // invalid annotation name
     Symbol* member = NULL;
     if (count >= 1) {
       int member_index = Bytes::get_Java_u2(abase + member_off);
-      member = check_symbol_at(cp, member_index);
+      member = check_symbol_at(_cp, member_index);
       if (member == NULL)  break;  // invalid member name
     }
 
     // Here is where parsing particular annotations will take place.
-    AnnotationCollector::ID id = coll->annotation_index(loader_data, aname);
+    AnnotationCollector::ID id = coll->annotation_index(_loader_data, aname);
     if (id == AnnotationCollector::_unknown)  continue;
     coll->set_annotation(id);
 
@@ -1834,6 +1766,12 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
 void ClassFileParser::FieldAnnotationCollector::apply_to(FieldInfo* f) {
   if (is_contended())
     f->set_contended_group(contended_group());
+}
+
+ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
+  // If there's an error deallocate metadata for field annotations
+  MetadataFactory::free_array<u1>(_loader_data, _field_annotations);
+  MetadataFactory::free_array<u1>(_loader_data, _field_type_annotations);
 }
 
 void ClassFileParser::MethodAnnotationCollector::apply_to(methodHandle m) {
@@ -1894,10 +1832,9 @@ void ClassFileParser::copy_localvariable_table(ConstMethod* cm,
           && _need_verify
           && _major_version >= JAVA_1_5_VERSION) {
         clear_hashtable(lvt_Hash);
-        ConstantPool* cp = cm->constants();
         classfile_parse_error("Duplicated LocalVariableTable attribute "
                               "entry for '%s' in class file %s",
-                               cp->symbol_at(lvt->name_cp_index)->as_utf8(),
+                               _cp->symbol_at(lvt->name_cp_index)->as_utf8(),
                                CHECK);
       }
     }
@@ -1916,18 +1853,16 @@ void ClassFileParser::copy_localvariable_table(ConstMethod* cm,
       if (entry == NULL) {
         if (_need_verify) {
           clear_hashtable(lvt_Hash);
-          ConstantPool* cp = cm->constants();
           classfile_parse_error("LVTT entry for '%s' in class file %s "
                                 "does not match any LVT entry",
-                                 cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
+                                 _cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
                                  CHECK);
         }
       } else if (entry->_elem->signature_cp_index != 0 && _need_verify) {
         clear_hashtable(lvt_Hash);
-        ConstantPool* cp = cm->constants();
         classfile_parse_error("Duplicated LocalVariableTypeTable attribute "
                               "entry for '%s' in class file %s",
-                               cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
+                               _cp->symbol_at(lvtt_elem.name_cp_index)->as_utf8(),
                                CHECK);
       } else {
         // to add generic signatures into LocalVariableTable
@@ -1939,8 +1874,7 @@ void ClassFileParser::copy_localvariable_table(ConstMethod* cm,
 }
 
 
-void ClassFileParser::copy_method_annotations(ClassLoaderData* loader_data,
-                                       ConstMethod* cm,
+void ClassFileParser::copy_method_annotations(ConstMethod* cm,
                                        u1* runtime_visible_annotations,
                                        int runtime_visible_annotations_length,
                                        u1* runtime_invisible_annotations,
@@ -1961,8 +1895,7 @@ void ClassFileParser::copy_method_annotations(ClassLoaderData* loader_data,
 
   if (runtime_visible_annotations_length +
       runtime_invisible_annotations_length > 0) {
-     a = assemble_annotations(loader_data,
-                              runtime_visible_annotations,
+     a = assemble_annotations(runtime_visible_annotations,
                               runtime_visible_annotations_length,
                               runtime_invisible_annotations,
                               runtime_invisible_annotations_length,
@@ -1972,8 +1905,7 @@ void ClassFileParser::copy_method_annotations(ClassLoaderData* loader_data,
 
   if (runtime_visible_parameter_annotations_length +
       runtime_invisible_parameter_annotations_length > 0) {
-    a = assemble_annotations(loader_data,
-                             runtime_visible_parameter_annotations,
+    a = assemble_annotations(runtime_visible_parameter_annotations,
                              runtime_visible_parameter_annotations_length,
                              runtime_invisible_parameter_annotations,
                              runtime_invisible_parameter_annotations_length,
@@ -1982,8 +1914,7 @@ void ClassFileParser::copy_method_annotations(ClassLoaderData* loader_data,
   }
 
   if (annotation_default_length > 0) {
-    a = assemble_annotations(loader_data,
-                             annotation_default,
+    a = assemble_annotations(annotation_default,
                              annotation_default_length,
                              NULL,
                              0,
@@ -1993,8 +1924,7 @@ void ClassFileParser::copy_method_annotations(ClassLoaderData* loader_data,
 
   if (runtime_visible_type_annotations_length +
       runtime_invisible_type_annotations_length > 0) {
-    a = assemble_annotations(loader_data,
-                             runtime_visible_type_annotations,
+    a = assemble_annotations(runtime_visible_type_annotations,
                              runtime_visible_type_annotations_length,
                              runtime_invisible_type_annotations,
                              runtime_invisible_type_annotations_length,
@@ -2013,9 +1943,7 @@ void ClassFileParser::copy_method_annotations(ClassLoaderData* loader_data,
 // from the method back up to the containing klass. These flag values
 // are added to klass's access_flags.
 
-methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
-                                           constantPoolHandle cp,
-                                           bool is_interface,
+methodHandle ClassFileParser::parse_method(bool is_interface,
                                            AccessFlags *promoted_flags,
                                            TRAPS) {
   ClassFileStream* cfs = stream();
@@ -2026,22 +1954,20 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
 
   int flags = cfs->get_u2_fast();
   u2 name_index = cfs->get_u2_fast();
-  int cp_size = cp->length();
+  int cp_size = _cp->length();
   check_property(
-    valid_cp_range(name_index, cp_size) &&
-      cp->tag_at(name_index).is_utf8(),
+    valid_symbol_at(name_index),
     "Illegal constant pool index %u for method name in class file %s",
     name_index, CHECK_(nullHandle));
-  Symbol*  name = cp->symbol_at(name_index);
+  Symbol*  name = _cp->symbol_at(name_index);
   verify_legal_method_name(name, CHECK_(nullHandle));
 
   u2 signature_index = cfs->get_u2_fast();
   guarantee_property(
-    valid_cp_range(signature_index, cp_size) &&
-      cp->tag_at(signature_index).is_utf8(),
+    valid_symbol_at(signature_index),
     "Illegal constant pool index %u for method signature in class file %s",
     signature_index, CHECK_(nullHandle));
-  Symbol*  signature = cp->symbol_at(signature_index);
+  Symbol*  signature = _cp->symbol_at(signature_index);
 
   AccessFlags access_flags;
   if (name == vmSymbols::class_initializer_name()) {
@@ -2097,7 +2023,8 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   bool parsed_checked_exceptions_attribute = false;
   bool parsed_stackmap_attribute = false;
   // stackmap attribute - JDK1.5
-  Array<u1>* stackmap_data = NULL;
+  u1* stackmap_data = NULL;
+  int stackmap_data_length = 0;
   u2 generic_signature_index = 0;
   MethodAnnotationCollector parsed_annotations;
   u1* runtime_visible_annotations = NULL;
@@ -2122,12 +2049,11 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
     u2 method_attribute_name_index = cfs->get_u2_fast();
     u4 method_attribute_length = cfs->get_u4_fast();
     check_property(
-      valid_cp_range(method_attribute_name_index, cp_size) &&
-        cp->tag_at(method_attribute_name_index).is_utf8(),
+      valid_symbol_at(method_attribute_name_index),
       "Invalid method attribute name index %u in class file %s",
       method_attribute_name_index, CHECK_(nullHandle));
 
-    Symbol* method_attribute_name = cp->symbol_at(method_attribute_name_index);
+    Symbol* method_attribute_name = _cp->symbol_at(method_attribute_name_index);
     if (method_attribute_name == vmSymbols::tag_code()) {
       // Parse Code attribute
       if (_need_verify) {
@@ -2171,7 +2097,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
       exception_table_length = cfs->get_u2_fast();
       if (exception_table_length > 0) {
         exception_table_start =
-              parse_exception_table(loader_data, code_length, exception_table_length, cp, CHECK_(nullHandle));
+              parse_exception_table(code_length, exception_table_length, CHECK_(nullHandle));
       }
 
       // Parse additional attributes in code attribute
@@ -2204,19 +2130,18 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
         calculated_attribute_length += code_attribute_length +
                                        sizeof(code_attribute_name_index) +
                                        sizeof(code_attribute_length);
-        check_property(valid_cp_range(code_attribute_name_index, cp_size) &&
-                       cp->tag_at(code_attribute_name_index).is_utf8(),
+        check_property(valid_symbol_at(code_attribute_name_index),
                        "Invalid code attribute name index %u in class file %s",
                        code_attribute_name_index,
                        CHECK_(nullHandle));
         if (LoadLineNumberTables &&
-            cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_line_number_table()) {
+            _cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_line_number_table()) {
           // Parse and compress line number table
           parse_linenumber_table(code_attribute_length, code_length,
             &linenumber_table, CHECK_(nullHandle));
 
         } else if (LoadLocalVariableTables &&
-                   cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_local_variable_table()) {
+                   _cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_local_variable_table()) {
           // Parse local variable table
           if (!lvt_allocated) {
             localvariable_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
@@ -2238,7 +2163,6 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
             parse_localvariable_table(code_length,
                                       max_locals,
                                       code_attribute_length,
-                                      cp,
                                       &localvariable_table_length[lvt_cnt],
                                       false,    // is not LVTT
                                       CHECK_(nullHandle));
@@ -2246,7 +2170,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
           lvt_cnt++;
         } else if (LoadLocalVariableTypeTables &&
                    _major_version >= JAVA_1_5_VERSION &&
-                   cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_local_variable_type_table()) {
+                   _cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_local_variable_type_table()) {
           if (!lvt_allocated) {
             localvariable_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
@@ -2268,19 +2192,19 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
             parse_localvariable_table(code_length,
                                       max_locals,
                                       code_attribute_length,
-                                      cp,
                                       &localvariable_type_table_length[lvtt_cnt],
                                       true,     // is LVTT
                                       CHECK_(nullHandle));
           lvtt_cnt++;
         } else if (UseSplitVerifier &&
                    _major_version >= Verifier::STACKMAP_ATTRIBUTE_MAJOR_VERSION &&
-                   cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_stack_map_table()) {
+                   _cp->symbol_at(code_attribute_name_index) == vmSymbols::tag_stack_map_table()) {
           // Stack map is only needed by the new verifier in JDK1.5.
           if (parsed_stackmap_attribute) {
             classfile_parse_error("Multiple StackMapTable attributes in class file %s", CHECK_(nullHandle));
           }
-          stackmap_data = parse_stackmap_table(loader_data, code_attribute_length, CHECK_(nullHandle));
+          stackmap_data = parse_stackmap_table(code_attribute_length, CHECK_(nullHandle));
+          stackmap_data_length = code_attribute_length;
           parsed_stackmap_attribute = true;
         } else {
           // Skip unknown attributes
@@ -2301,7 +2225,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
       checked_exceptions_start =
             parse_checked_exceptions(&checked_exceptions_length,
                                      method_attribute_length,
-                                     cp, CHECK_(nullHandle));
+                                     CHECK_(nullHandle));
     } else if (method_attribute_name == vmSymbols::tag_method_parameters()) {
       // reject multiple method parameters
       if (method_parameters_seen) {
@@ -2359,9 +2283,8 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
         runtime_visible_annotations_length = method_attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
-        parse_annotations(loader_data,
-            runtime_visible_annotations,
-            runtime_visible_annotations_length, cp, &parsed_annotations,
+        parse_annotations(runtime_visible_annotations,
+            runtime_visible_annotations_length, &parsed_annotations,
             CHECK_(nullHandle));
         cfs->skip_u1(runtime_visible_annotations_length, CHECK_(nullHandle));
       } else if (PreserveAllAnnotations && method_attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
@@ -2434,18 +2357,18 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
       0);
 
   Method* m = Method::allocate(
-      loader_data, code_length, access_flags, &sizes,
+      _loader_data, code_length, access_flags, &sizes,
       ConstMethod::NORMAL, CHECK_(nullHandle));
 
   ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
 
   // Fill in information from fixed part (access_flags already set)
-  m->set_constants(cp());
+  m->set_constants(_cp);
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
 #ifdef CC_INTERP
   // hmm is there a gc issue here??
-  ResultTypeFinder rtf(cp->symbol_at(signature_index));
+  ResultTypeFinder rtf(_cp->symbol_at(signature_index));
   m->set_result_index(rtf.type());
 #endif
 
@@ -2464,7 +2387,10 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
   // Fill in code attribute information
   m->set_max_stack(max_stack);
   m->set_max_locals(max_locals);
-  m->constMethod()->set_stackmap_data(stackmap_data);
+  if (stackmap_data != NULL) {
+    m->constMethod()->copy_stackmap_data(_loader_data, stackmap_data,
+                                         stackmap_data_length, CHECK_NULL);
+  }
 
   // Copy byte codes
   m->set_code(code_start);
@@ -2520,7 +2446,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
     parsed_annotations.apply_to(m);
 
   // Copy annotations
-  copy_method_annotations(loader_data, m->constMethod(),
+  copy_method_annotations(m->constMethod(),
                           runtime_visible_annotations,
                           runtime_visible_annotations_length,
                           runtime_invisible_annotations,
@@ -2560,9 +2486,7 @@ methodHandle ClassFileParser::parse_method(ClassLoaderData* loader_data,
 // from the methods back up to the containing klass. These flag values
 // are added to klass's access_flags.
 
-Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
-                                               constantPoolHandle cp,
-                                               bool is_interface,
+Array<Method*>* ClassFileParser::parse_methods(bool is_interface,
                                                AccessFlags* promoted_flags,
                                                bool* has_final_method,
                                                bool* has_default_methods,
@@ -2571,15 +2495,13 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
   cfs->guarantee_more(2, CHECK_NULL);  // length
   u2 length = cfs->get_u2_fast();
   if (length == 0) {
-    return Universe::the_empty_method_array();
+    _methods = Universe::the_empty_method_array();
   } else {
-    // FIXME: Handle leaks at later failures.
-    Array<Method*>* methods = MetadataFactory::new_array<Method*>(loader_data, length, NULL, CHECK_NULL);
+    _methods = MetadataFactory::new_array<Method*>(_loader_data, length, NULL, CHECK_NULL);
 
     HandleMark hm(THREAD);
     for (int index = 0; index < length; index++) {
-      methodHandle method = parse_method(loader_data,
-                                         cp, is_interface,
+      methodHandle method = parse_method(is_interface,
                                          promoted_flags,
                                          CHECK_NULL);
 
@@ -2590,7 +2512,7 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
         // default method
         *has_default_methods = true;
       }
-      methods->at_put(index, method());
+      _methods->at_put(index, method());
     }
 
     if (_need_verify && length > 1) {
@@ -2603,7 +2525,7 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
       {
         debug_only(No_Safepoint_Verifier nsv;)
         for (int i = 0; i < length; i++) {
-          Method* m = methods->at(i);
+          Method* m = _methods->at(i);
           // If no duplicates, add name/signature in hashtable names_and_sigs.
           if (!put_after_lookup(m->name(), m->signature(), names_and_sigs)) {
             dup = true;
@@ -2616,14 +2538,12 @@ Array<Method*>* ClassFileParser::parse_methods(ClassLoaderData* loader_data,
                               CHECK_NULL);
       }
     }
-    return methods;
   }
+  return _methods;
 }
 
 
-Array<int>* ClassFileParser::sort_methods(ClassLoaderData* loader_data,
-                                          Array<Method*>* methods,
-                                          TRAPS) {
+intArray* ClassFileParser::sort_methods(Array<Method*>* methods) {
   int length = methods->length();
   // If JVMTI original method ordering or sharing is enabled we have to
   // remember the original class file ordering.
@@ -2641,10 +2561,11 @@ Array<int>* ClassFileParser::sort_methods(ClassLoaderData* loader_data,
   // Note that the ordering is not alphabetical, see Symbol::fast_compare
   Method::sort_methods(methods);
 
+  intArray* method_ordering = NULL;
   // If JVMTI original method ordering or sharing is enabled construct int
   // array remembering the original ordering
   if (JvmtiExport::can_maintain_original_method_order() || DumpSharedSpaces) {
-    Array<int>* method_ordering = MetadataFactory::new_array<int>(loader_data, length, CHECK_NULL);
+    method_ordering = new intArray(length);
     for (int index = 0; index < length; index++) {
       Method* m = methods->at(index);
       int old_index = m->vtable_index();
@@ -2652,29 +2573,25 @@ Array<int>* ClassFileParser::sort_methods(ClassLoaderData* loader_data,
       method_ordering->at_put(index, old_index);
       m->set_vtable_index(Method::invalid_vtable_index);
     }
-    return method_ordering;
-  } else {
-    return Universe::the_empty_int_array();
   }
+  return method_ordering;
 }
 
 
-void ClassFileParser::parse_classfile_sourcefile_attribute(constantPoolHandle cp, TRAPS) {
+void ClassFileParser::parse_classfile_sourcefile_attribute(TRAPS) {
   ClassFileStream* cfs = stream();
   cfs->guarantee_more(2, CHECK);  // sourcefile_index
   u2 sourcefile_index = cfs->get_u2_fast();
   check_property(
-    valid_cp_range(sourcefile_index, cp->length()) &&
-      cp->tag_at(sourcefile_index).is_utf8(),
+    valid_symbol_at(sourcefile_index),
     "Invalid SourceFile attribute at constant pool index %u in class file %s",
     sourcefile_index, CHECK);
-  set_class_sourcefile(cp->symbol_at(sourcefile_index));
+  set_class_sourcefile(_cp->symbol_at(sourcefile_index));
 }
 
 
 
-void ClassFileParser::parse_classfile_source_debug_extension_attribute(constantPoolHandle cp,
-                                                                       int length, TRAPS) {
+void ClassFileParser::parse_classfile_source_debug_extension_attribute(int length, TRAPS) {
   ClassFileStream* cfs = stream();
   u1* sde_buffer = cfs->get_u1_buffer();
   assert(sde_buffer != NULL, "null sde buffer");
@@ -2698,12 +2615,10 @@ void ClassFileParser::parse_classfile_source_debug_extension_attribute(constantP
 #define RECOGNIZED_INNER_CLASS_MODIFIERS (JVM_RECOGNIZED_CLASS_MODIFIERS | JVM_ACC_PRIVATE | JVM_ACC_PROTECTED | JVM_ACC_STATIC)
 
 // Return number of classes in the inner classes attribute table
-u2 ClassFileParser::parse_classfile_inner_classes_attribute(ClassLoaderData* loader_data,
-                                                            u1* inner_classes_attribute_start,
+u2 ClassFileParser::parse_classfile_inner_classes_attribute(u1* inner_classes_attribute_start,
                                                             bool parsed_enclosingmethod_attribute,
                                                             u2 enclosing_method_class_index,
                                                             u2 enclosing_method_method_index,
-                                                            constantPoolHandle cp,
                                                             TRAPS) {
   ClassFileStream* cfs = stream();
   u1* current_mark = cfs->current();
@@ -2724,33 +2639,31 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(ClassLoaderData* loa
   //    enclosing_method_class_index,
   //    enclosing_method_method_index]
   int size = length * 4 + (parsed_enclosingmethod_attribute ? 2 : 0);
-  // FIXME: Will leak on exceptions.
-  Array<u2>* inner_classes = MetadataFactory::new_array<u2>(loader_data, size, CHECK_0);
+  Array<u2>* inner_classes = MetadataFactory::new_array<u2>(_loader_data, size, CHECK_0);
+  _inner_classes = inner_classes;
+
   int index = 0;
-  int cp_size = cp->length();
+  int cp_size = _cp->length();
   cfs->guarantee_more(8 * length, CHECK_0);  // 4-tuples of u2
   for (int n = 0; n < length; n++) {
     // Inner class index
     u2 inner_class_info_index = cfs->get_u2_fast();
     check_property(
       inner_class_info_index == 0 ||
-        (valid_cp_range(inner_class_info_index, cp_size) &&
-        is_klass_reference(cp, inner_class_info_index)),
+        valid_klass_reference_at(inner_class_info_index),
       "inner_class_info_index %u has bad constant type in class file %s",
       inner_class_info_index, CHECK_0);
     // Outer class index
     u2 outer_class_info_index = cfs->get_u2_fast();
     check_property(
       outer_class_info_index == 0 ||
-        (valid_cp_range(outer_class_info_index, cp_size) &&
-        is_klass_reference(cp, outer_class_info_index)),
+        valid_klass_reference_at(outer_class_info_index),
       "outer_class_info_index %u has bad constant type in class file %s",
       outer_class_info_index, CHECK_0);
     // Inner class name
     u2 inner_name_index = cfs->get_u2_fast();
     check_property(
-      inner_name_index == 0 || (valid_cp_range(inner_name_index, cp_size) &&
-        cp->tag_at(inner_name_index).is_utf8()),
+      inner_name_index == 0 || valid_symbol_at(inner_name_index),
       "inner_name_index %u has bad constant type in class file %s",
       inner_name_index, CHECK_0);
     if (_need_verify) {
@@ -2794,33 +2707,27 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(ClassLoaderData* loa
   }
   assert(index == size, "wrong size");
 
-  // Update InstanceKlass with inner class info.
-  set_class_inner_classes(inner_classes);
-
   // Restore buffer's current position.
   cfs->set_current(current_mark);
 
   return length;
 }
 
-void ClassFileParser::parse_classfile_synthetic_attribute(constantPoolHandle cp, TRAPS) {
+void ClassFileParser::parse_classfile_synthetic_attribute(TRAPS) {
   set_class_synthetic_flag(true);
 }
 
-void ClassFileParser::parse_classfile_signature_attribute(constantPoolHandle cp, TRAPS) {
+void ClassFileParser::parse_classfile_signature_attribute(TRAPS) {
   ClassFileStream* cfs = stream();
   u2 signature_index = cfs->get_u2(CHECK);
   check_property(
-    valid_cp_range(signature_index, cp->length()) &&
-      cp->tag_at(signature_index).is_utf8(),
+    valid_symbol_at(signature_index),
     "Invalid constant pool index %u in Signature attribute in class file %s",
     signature_index, CHECK);
-  set_class_generic_signature(cp->symbol_at(signature_index));
+  set_class_generic_signature(_cp->symbol_at(signature_index));
 }
 
-void ClassFileParser::parse_classfile_bootstrap_methods_attribute(ClassLoaderData* loader_data,
-                                                                  constantPoolHandle cp,
-                                                                  u4 attribute_byte_length, TRAPS) {
+void ClassFileParser::parse_classfile_bootstrap_methods_attribute(u4 attribute_byte_length, TRAPS) {
   ClassFileStream* cfs = stream();
   u1* current_start = cfs->current();
 
@@ -2841,10 +2748,14 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(ClassLoaderDat
   // The array begins with a series of short[2] pairs, one for each tuple.
   int index_size = (attribute_array_length * 2);
 
-  Array<u2>* operands = MetadataFactory::new_array<u2>(loader_data, index_size + operand_count, CHECK);
+  Array<u2>* operands = MetadataFactory::new_array<u2>(_loader_data, index_size + operand_count, CHECK);
+
+  // Eagerly assign operands so they will be deallocated with the constant
+  // pool if there is an error.
+  _cp->set_operands(operands);
 
   int operand_fill_index = index_size;
-  int cp_size = cp->length();
+  int cp_size = _cp->length();
 
   for (int n = 0; n < attribute_array_length; n++) {
     // Store a 32-bit offset into the header of the operand array.
@@ -2856,7 +2767,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(ClassLoaderDat
     u2 argument_count = cfs->get_u2_fast();
     check_property(
       valid_cp_range(bootstrap_method_index, cp_size) &&
-      cp->tag_at(bootstrap_method_index).is_method_handle(),
+      _cp->tag_at(bootstrap_method_index).is_method_handle(),
       "bootstrap_method_index %u has bad constant type in class file %s",
       bootstrap_method_index,
       CHECK);
@@ -2868,7 +2779,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(ClassLoaderDat
       u2 argument_index = cfs->get_u2_fast();
       check_property(
         valid_cp_range(argument_index, cp_size) &&
-        cp->tag_at(argument_index).is_loadable_constant(),
+        _cp->tag_at(argument_index).is_loadable_constant(),
         "argument_index %u has bad constant type in class file %s",
         argument_index,
         CHECK);
@@ -2883,17 +2794,13 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(ClassLoaderDat
   guarantee_property(current_end == current_start + attribute_byte_length,
                      "Bad length on BootstrapMethods in class file %s",
                      CHECK);
-
-  cp->set_operands(operands);
 }
 
-void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
-                                                 constantPoolHandle cp,
-                                                 ClassFileParser::ClassAnnotationCollector* parsed_annotations,
+void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotationCollector* parsed_annotations,
                                                  TRAPS) {
   ClassFileStream* cfs = stream();
   // Set inner classes attribute to default sentinel
-  set_class_inner_classes(Universe::the_empty_short_array());
+  _inner_classes = Universe::the_empty_short_array();
   cfs->guarantee_more(2, CHECK);  // attributes_count
   u2 attributes_count = cfs->get_u2_fast();
   bool parsed_sourcefile_attribute = false;
@@ -2918,11 +2825,10 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
     u2 attribute_name_index = cfs->get_u2_fast();
     u4 attribute_length = cfs->get_u4_fast();
     check_property(
-      valid_cp_range(attribute_name_index, cp->length()) &&
-        cp->tag_at(attribute_name_index).is_utf8(),
+      valid_symbol_at(attribute_name_index),
       "Attribute name has bad constant pool index %u in class file %s",
       attribute_name_index, CHECK);
-    Symbol* tag = cp->symbol_at(attribute_name_index);
+    Symbol* tag = _cp->symbol_at(attribute_name_index);
     if (tag == vmSymbols::tag_source_file()) {
       // Check for SourceFile tag
       if (_need_verify) {
@@ -2933,10 +2839,10 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
       } else {
         parsed_sourcefile_attribute = true;
       }
-      parse_classfile_sourcefile_attribute(cp, CHECK);
+      parse_classfile_sourcefile_attribute(CHECK);
     } else if (tag == vmSymbols::tag_source_debug_extension()) {
       // Check for SourceDebugExtension tag
-      parse_classfile_source_debug_extension_attribute(cp, (int)attribute_length, CHECK);
+      parse_classfile_source_debug_extension_attribute((int)attribute_length, CHECK);
     } else if (tag == vmSymbols::tag_inner_classes()) {
       // Check for InnerClasses tag
       if (parsed_innerclasses_attribute) {
@@ -2955,7 +2861,7 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
           "Invalid Synthetic classfile attribute length %u in class file %s",
           attribute_length, CHECK);
       }
-      parse_classfile_synthetic_attribute(cp, CHECK);
+      parse_classfile_synthetic_attribute(CHECK);
     } else if (tag == vmSymbols::tag_deprecated()) {
       // Check for Deprecatd tag - 4276120
       if (attribute_length != 0) {
@@ -2970,15 +2876,13 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
             "Wrong Signature attribute length %u in class file %s",
             attribute_length, CHECK);
         }
-        parse_classfile_signature_attribute(cp, CHECK);
+        parse_classfile_signature_attribute(CHECK);
       } else if (tag == vmSymbols::tag_runtime_visible_annotations()) {
         runtime_visible_annotations_length = attribute_length;
         runtime_visible_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
-        parse_annotations(loader_data,
-                          runtime_visible_annotations,
+        parse_annotations(runtime_visible_annotations,
                           runtime_visible_annotations_length,
-                          cp,
                           parsed_annotations,
                           CHECK);
         cfs->skip_u1(runtime_visible_annotations_length, CHECK);
@@ -3000,13 +2904,11 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
           classfile_parse_error("Invalid class index in EnclosingMethod attribute in class file %s", CHECK);
         }
         // Validate the constant pool indices and types
-        if (!cp->is_within_bounds(enclosing_method_class_index) ||
-            !is_klass_reference(cp, enclosing_method_class_index)) {
-          classfile_parse_error("Invalid or out-of-bounds class index in EnclosingMethod attribute in class file %s", CHECK);
-        }
+        check_property(valid_klass_reference_at(enclosing_method_class_index),
+          "Invalid or out-of-bounds class index in EnclosingMethod attribute in class file %s", CHECK);
         if (enclosing_method_method_index != 0 &&
-            (!cp->is_within_bounds(enclosing_method_method_index) ||
-             !cp->tag_at(enclosing_method_method_index).is_name_and_type())) {
+            (!_cp->is_within_bounds(enclosing_method_method_index) ||
+             !_cp->tag_at(enclosing_method_method_index).is_name_and_type())) {
           classfile_parse_error("Invalid or out-of-bounds method index in EnclosingMethod attribute in class file %s", CHECK);
         }
       } else if (tag == vmSymbols::tag_bootstrap_methods() &&
@@ -3014,7 +2916,7 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
         if (parsed_bootstrap_methods_attribute)
           classfile_parse_error("Multiple BootstrapMethods attributes in class file %s", CHECK);
         parsed_bootstrap_methods_attribute = true;
-        parse_classfile_bootstrap_methods_attribute(loader_data, cp, attribute_length, CHECK);
+        parse_classfile_bootstrap_methods_attribute(attribute_length, CHECK);
       } else if (tag == vmSymbols::tag_runtime_visible_type_annotations()) {
         runtime_visible_type_annotations_length = attribute_length;
         runtime_visible_type_annotations = cfs->get_u1_buffer();
@@ -3035,29 +2937,24 @@ void ClassFileParser::parse_classfile_attributes(ClassLoaderData* loader_data,
       cfs->skip_u1(attribute_length, CHECK);
     }
   }
-  AnnotationArray* annotations = assemble_annotations(loader_data,
-                                                      runtime_visible_annotations,
-                                                      runtime_visible_annotations_length,
-                                                      runtime_invisible_annotations,
-                                                      runtime_invisible_annotations_length,
-                                                      CHECK);
-  set_class_annotations(annotations);
-  AnnotationArray* type_annotations = assemble_annotations(loader_data,
-                                                           runtime_visible_type_annotations,
-                                                           runtime_visible_type_annotations_length,
-                                                           runtime_invisible_type_annotations,
-                                                           runtime_invisible_type_annotations_length,
-                                                           CHECK);
-  set_class_type_annotations(type_annotations);
+  _annotations = assemble_annotations(runtime_visible_annotations,
+                                      runtime_visible_annotations_length,
+                                      runtime_invisible_annotations,
+                                      runtime_invisible_annotations_length,
+                                      CHECK);
+  _type_annotations = assemble_annotations(runtime_visible_type_annotations,
+                                           runtime_visible_type_annotations_length,
+                                           runtime_invisible_type_annotations,
+                                           runtime_invisible_type_annotations_length,
+                                           CHECK);
 
   if (parsed_innerclasses_attribute || parsed_enclosingmethod_attribute) {
     u2 num_of_classes = parse_classfile_inner_classes_attribute(
-                            loader_data,
                             inner_classes_attribute_start,
                             parsed_innerclasses_attribute,
                             enclosing_method_class_index,
                             enclosing_method_method_index,
-                            cp, CHECK);
+                            CHECK);
     if (parsed_innerclasses_attribute &&_need_verify && _major_version >= JAVA_1_5_VERSION) {
       guarantee_property(
         inner_classes_attribute_length == sizeof(num_of_classes) + 4 * sizeof(u2) * num_of_classes,
@@ -3085,18 +2982,43 @@ void ClassFileParser::apply_parsed_class_attributes(instanceKlassHandle k) {
   if (_sde_buffer != NULL) {
     k->set_source_debug_extension(_sde_buffer, _sde_length);
   }
-  k->set_inner_classes(_inner_classes);
 }
 
-AnnotationArray* ClassFileParser::assemble_annotations(ClassLoaderData* loader_data,
-                                                       u1* runtime_visible_annotations,
+// Transfer ownership of metadata allocated to the InstanceKlass.
+void ClassFileParser::apply_parsed_class_metadata(
+                                            instanceKlassHandle this_klass,
+                                            int java_fields_count, TRAPS) {
+  // Assign annotations if needed
+  if (_annotations != NULL || _type_annotations != NULL ||
+      _fields_annotations != NULL || _fields_type_annotations != NULL) {
+    Annotations* annotations = Annotations::allocate(_loader_data, CHECK);
+    annotations->set_class_annotations(_annotations);
+    annotations->set_class_type_annotations(_type_annotations);
+    annotations->set_fields_annotations(_fields_annotations);
+    annotations->set_fields_type_annotations(_fields_type_annotations);
+    this_klass->set_annotations(annotations);
+  }
+
+  _cp->set_pool_holder(this_klass());
+  this_klass->set_constants(_cp);
+  this_klass->set_fields(_fields, java_fields_count);
+  this_klass->set_methods(_methods);
+  this_klass->set_inner_classes(_inner_classes);
+  this_klass->set_local_interfaces(_local_interfaces);
+  this_klass->set_transitive_interfaces(_transitive_interfaces);
+
+  // Clear out these fields so they don't get deallocated by the destructor
+  clear_class_metadata();
+}
+
+AnnotationArray* ClassFileParser::assemble_annotations(u1* runtime_visible_annotations,
                                                        int runtime_visible_annotations_length,
                                                        u1* runtime_invisible_annotations,
                                                        int runtime_invisible_annotations_length, TRAPS) {
   AnnotationArray* annotations = NULL;
   if (runtime_visible_annotations != NULL ||
       runtime_invisible_annotations != NULL) {
-    annotations = MetadataFactory::new_array<u1>(loader_data,
+    annotations = MetadataFactory::new_array<u1>(_loader_data,
                                           runtime_visible_annotations_length +
                                           runtime_invisible_annotations_length,
                                           CHECK_(annotations));
@@ -3144,6 +3066,581 @@ static void parseAndPrintGenericSignatures(
 #endif // ndef PRODUCT
 
 
+instanceKlassHandle ClassFileParser::parse_super_class(int super_class_index,
+                                                       TRAPS) {
+  instanceKlassHandle super_klass;
+  if (super_class_index == 0) {
+    check_property(_class_name == vmSymbols::java_lang_Object(),
+                   "Invalid superclass index %u in class file %s",
+                   super_class_index,
+                   CHECK_NULL);
+  } else {
+    check_property(valid_klass_reference_at(super_class_index),
+                   "Invalid superclass index %u in class file %s",
+                   super_class_index,
+                   CHECK_NULL);
+    // The class name should be legal because it is checked when parsing constant pool.
+    // However, make sure it is not an array type.
+    bool is_array = false;
+    if (_cp->tag_at(super_class_index).is_klass()) {
+      super_klass = instanceKlassHandle(THREAD, _cp->resolved_klass_at(super_class_index));
+      if (_need_verify)
+        is_array = super_klass->oop_is_array();
+    } else if (_need_verify) {
+      is_array = (_cp->unresolved_klass_at(super_class_index)->byte_at(0) == JVM_SIGNATURE_ARRAY);
+    }
+    if (_need_verify) {
+      guarantee_property(!is_array,
+                        "Bad superclass name in class file %s", CHECK_NULL);
+    }
+  }
+  return super_klass;
+}
+
+
+// Values needed for oopmap and InstanceKlass creation
+class FieldLayoutInfo : public StackObj {
+ public:
+  int*          nonstatic_oop_offsets;
+  unsigned int* nonstatic_oop_counts;
+  unsigned int  nonstatic_oop_map_count;
+  unsigned int  total_oop_map_count;
+  int           instance_size;
+  int           nonstatic_field_size;
+  int           static_field_size;
+  bool          has_nonstatic_fields;
+};
+
+// Layout fields and fill in FieldLayoutInfo.  Could use more refactoring!
+void ClassFileParser::layout_fields(Handle class_loader,
+                                    FieldAllocationCount* fac,
+                                    ClassAnnotationCollector* parsed_annotations,
+                                    FieldLayoutInfo* info,
+                                    TRAPS) {
+
+  // get the padding width from the option
+  // TODO: Ask VM about specific CPU we are running on
+  int pad_size = ContendedPaddingWidth;
+
+  // Field size and offset computation
+  int nonstatic_field_size = _super_klass() == NULL ? 0 : _super_klass()->nonstatic_field_size();
+#ifndef PRODUCT
+  int orig_nonstatic_field_size = 0;
+#endif
+  int next_static_oop_offset;
+  int next_static_double_offset;
+  int next_static_word_offset;
+  int next_static_short_offset;
+  int next_static_byte_offset;
+  int next_nonstatic_oop_offset;
+  int next_nonstatic_double_offset;
+  int next_nonstatic_word_offset;
+  int next_nonstatic_short_offset;
+  int next_nonstatic_byte_offset;
+  int next_nonstatic_type_offset;
+  int first_nonstatic_oop_offset;
+  int first_nonstatic_field_offset;
+  int next_nonstatic_field_offset;
+  int next_nonstatic_padded_offset;
+
+  // Count the contended fields by type.
+  int nonstatic_contended_count = 0;
+  FieldAllocationCount fac_contended;
+  for (AllFieldStream fs(_fields, _cp); !fs.done(); fs.next()) {
+    FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
+    if (fs.is_contended()) {
+      fac_contended.count[atype]++;
+      if (!fs.access_flags().is_static()) {
+        nonstatic_contended_count++;
+      }
+    }
+  }
+  int contended_count = nonstatic_contended_count;
+
+
+  // Calculate the starting byte offsets
+  next_static_oop_offset      = InstanceMirrorKlass::offset_of_static_fields();
+  next_static_double_offset   = next_static_oop_offset +
+                                ((fac->count[STATIC_OOP]) * heapOopSize);
+  if ( fac->count[STATIC_DOUBLE] &&
+       (Universe::field_type_should_be_aligned(T_DOUBLE) ||
+        Universe::field_type_should_be_aligned(T_LONG)) ) {
+    next_static_double_offset = align_size_up(next_static_double_offset, BytesPerLong);
+  }
+
+  next_static_word_offset     = next_static_double_offset +
+                                ((fac->count[STATIC_DOUBLE]) * BytesPerLong);
+  next_static_short_offset    = next_static_word_offset +
+                                ((fac->count[STATIC_WORD]) * BytesPerInt);
+  next_static_byte_offset     = next_static_short_offset +
+                                ((fac->count[STATIC_SHORT]) * BytesPerShort);
+
+  first_nonstatic_field_offset = instanceOopDesc::base_offset_in_bytes() +
+                                 nonstatic_field_size * heapOopSize;
+
+  // class is contended, pad before all the fields
+  if (parsed_annotations->is_contended()) {
+    first_nonstatic_field_offset += pad_size;
+  }
+
+  next_nonstatic_field_offset = first_nonstatic_field_offset;
+
+  unsigned int nonstatic_double_count = fac->count[NONSTATIC_DOUBLE] - fac_contended.count[NONSTATIC_DOUBLE];
+  unsigned int nonstatic_word_count   = fac->count[NONSTATIC_WORD]   - fac_contended.count[NONSTATIC_WORD];
+  unsigned int nonstatic_short_count  = fac->count[NONSTATIC_SHORT]  - fac_contended.count[NONSTATIC_SHORT];
+  unsigned int nonstatic_byte_count   = fac->count[NONSTATIC_BYTE]   - fac_contended.count[NONSTATIC_BYTE];
+  unsigned int nonstatic_oop_count    = fac->count[NONSTATIC_OOP]    - fac_contended.count[NONSTATIC_OOP];
+
+  bool super_has_nonstatic_fields =
+          (_super_klass() != NULL && _super_klass->has_nonstatic_fields());
+  bool has_nonstatic_fields = super_has_nonstatic_fields ||
+          ((nonstatic_double_count + nonstatic_word_count +
+            nonstatic_short_count + nonstatic_byte_count +
+            nonstatic_oop_count) != 0);
+
+
+  // Prepare list of oops for oop map generation.
+  int* nonstatic_oop_offsets;
+  unsigned int* nonstatic_oop_counts;
+  unsigned int nonstatic_oop_map_count = 0;
+
+  nonstatic_oop_offsets = NEW_RESOURCE_ARRAY_IN_THREAD(
+            THREAD, int, nonstatic_oop_count + 1);
+  nonstatic_oop_counts  = NEW_RESOURCE_ARRAY_IN_THREAD(
+            THREAD, unsigned int, nonstatic_oop_count + 1);
+
+  first_nonstatic_oop_offset = 0; // will be set for first oop field
+
+#ifndef PRODUCT
+  if( PrintCompactFieldsSavings ) {
+    next_nonstatic_double_offset = next_nonstatic_field_offset +
+                                   (nonstatic_oop_count * heapOopSize);
+    if ( nonstatic_double_count > 0 ) {
+      next_nonstatic_double_offset = align_size_up(next_nonstatic_double_offset, BytesPerLong);
+    }
+    next_nonstatic_word_offset  = next_nonstatic_double_offset +
+                                  (nonstatic_double_count * BytesPerLong);
+    next_nonstatic_short_offset = next_nonstatic_word_offset +
+                                  (nonstatic_word_count * BytesPerInt);
+    next_nonstatic_byte_offset  = next_nonstatic_short_offset +
+                                  (nonstatic_short_count * BytesPerShort);
+    next_nonstatic_type_offset  = align_size_up((next_nonstatic_byte_offset +
+                                  nonstatic_byte_count ), heapOopSize );
+    orig_nonstatic_field_size   = nonstatic_field_size +
+    ((next_nonstatic_type_offset - first_nonstatic_field_offset)/heapOopSize);
+  }
+#endif
+  bool compact_fields   = CompactFields;
+  int  allocation_style = FieldsAllocationStyle;
+  if( allocation_style < 0 || allocation_style > 2 ) { // Out of range?
+    assert(false, "0 <= FieldsAllocationStyle <= 2");
+    allocation_style = 1; // Optimistic
+  }
+
+  // The next classes have predefined hard-coded fields offsets
+  // (see in JavaClasses::compute_hard_coded_offsets()).
+  // Use default fields allocation order for them.
+  if( (allocation_style != 0 || compact_fields ) && class_loader.is_null() &&
+      (_class_name == vmSymbols::java_lang_AssertionStatusDirectives() ||
+       _class_name == vmSymbols::java_lang_Class() ||
+       _class_name == vmSymbols::java_lang_ClassLoader() ||
+       _class_name == vmSymbols::java_lang_ref_Reference() ||
+       _class_name == vmSymbols::java_lang_ref_SoftReference() ||
+       _class_name == vmSymbols::java_lang_StackTraceElement() ||
+       _class_name == vmSymbols::java_lang_String() ||
+       _class_name == vmSymbols::java_lang_Throwable() ||
+       _class_name == vmSymbols::java_lang_Boolean() ||
+       _class_name == vmSymbols::java_lang_Character() ||
+       _class_name == vmSymbols::java_lang_Float() ||
+       _class_name == vmSymbols::java_lang_Double() ||
+       _class_name == vmSymbols::java_lang_Byte() ||
+       _class_name == vmSymbols::java_lang_Short() ||
+       _class_name == vmSymbols::java_lang_Integer() ||
+       _class_name == vmSymbols::java_lang_Long())) {
+    allocation_style = 0;     // Allocate oops first
+    compact_fields   = false; // Don't compact fields
+  }
+
+  if( allocation_style == 0 ) {
+    // Fields order: oops, longs/doubles, ints, shorts/chars, bytes, padded fields
+    next_nonstatic_oop_offset    = next_nonstatic_field_offset;
+    next_nonstatic_double_offset = next_nonstatic_oop_offset +
+                                    (nonstatic_oop_count * heapOopSize);
+  } else if( allocation_style == 1 ) {
+    // Fields order: longs/doubles, ints, shorts/chars, bytes, oops, padded fields
+    next_nonstatic_double_offset = next_nonstatic_field_offset;
+  } else if( allocation_style == 2 ) {
+    // Fields allocation: oops fields in super and sub classes are together.
+    if( nonstatic_field_size > 0 && _super_klass() != NULL &&
+        _super_klass->nonstatic_oop_map_size() > 0 ) {
+      unsigned int map_count = _super_klass->nonstatic_oop_map_count();
+      OopMapBlock* first_map = _super_klass->start_of_nonstatic_oop_maps();
+      OopMapBlock* last_map = first_map + map_count - 1;
+      int next_offset = last_map->offset() + (last_map->count() * heapOopSize);
+      if (next_offset == next_nonstatic_field_offset) {
+        allocation_style = 0;   // allocate oops first
+        next_nonstatic_oop_offset    = next_nonstatic_field_offset;
+        next_nonstatic_double_offset = next_nonstatic_oop_offset +
+                                       (nonstatic_oop_count * heapOopSize);
+      }
+    }
+    if( allocation_style == 2 ) {
+      allocation_style = 1;     // allocate oops last
+      next_nonstatic_double_offset = next_nonstatic_field_offset;
+    }
+  } else {
+    ShouldNotReachHere();
+  }
+
+  int nonstatic_oop_space_count   = 0;
+  int nonstatic_word_space_count  = 0;
+  int nonstatic_short_space_count = 0;
+  int nonstatic_byte_space_count  = 0;
+  int nonstatic_oop_space_offset;
+  int nonstatic_word_space_offset;
+  int nonstatic_short_space_offset;
+  int nonstatic_byte_space_offset;
+
+  if( nonstatic_double_count > 0 ) {
+    int offset = next_nonstatic_double_offset;
+    next_nonstatic_double_offset = align_size_up(offset, BytesPerLong);
+    if( compact_fields && offset != next_nonstatic_double_offset ) {
+      // Allocate available fields into the gap before double field.
+      int length = next_nonstatic_double_offset - offset;
+      assert(length == BytesPerInt, "");
+      nonstatic_word_space_offset = offset;
+      if( nonstatic_word_count > 0 ) {
+        nonstatic_word_count      -= 1;
+        nonstatic_word_space_count = 1; // Only one will fit
+        length -= BytesPerInt;
+        offset += BytesPerInt;
+      }
+      nonstatic_short_space_offset = offset;
+      while( length >= BytesPerShort && nonstatic_short_count > 0 ) {
+        nonstatic_short_count       -= 1;
+        nonstatic_short_space_count += 1;
+        length -= BytesPerShort;
+        offset += BytesPerShort;
+      }
+      nonstatic_byte_space_offset = offset;
+      while( length > 0 && nonstatic_byte_count > 0 ) {
+        nonstatic_byte_count       -= 1;
+        nonstatic_byte_space_count += 1;
+        length -= 1;
+      }
+      // Allocate oop field in the gap if there are no other fields for that.
+      nonstatic_oop_space_offset = offset;
+      if( length >= heapOopSize && nonstatic_oop_count > 0 &&
+          allocation_style != 0 ) { // when oop fields not first
+        nonstatic_oop_count      -= 1;
+        nonstatic_oop_space_count = 1; // Only one will fit
+        length -= heapOopSize;
+        offset += heapOopSize;
+      }
+    }
+  }
+
+  next_nonstatic_word_offset  = next_nonstatic_double_offset +
+                                (nonstatic_double_count * BytesPerLong);
+  next_nonstatic_short_offset = next_nonstatic_word_offset +
+                                (nonstatic_word_count * BytesPerInt);
+  next_nonstatic_byte_offset  = next_nonstatic_short_offset +
+                                (nonstatic_short_count * BytesPerShort);
+  next_nonstatic_padded_offset = next_nonstatic_byte_offset +
+                                nonstatic_byte_count;
+
+  // let oops jump before padding with this allocation style
+  if( allocation_style == 1 ) {
+    next_nonstatic_oop_offset = next_nonstatic_padded_offset;
+    if( nonstatic_oop_count > 0 ) {
+      next_nonstatic_oop_offset = align_size_up(next_nonstatic_oop_offset, heapOopSize);
+    }
+    next_nonstatic_padded_offset = next_nonstatic_oop_offset + (nonstatic_oop_count * heapOopSize);
+  }
+
+  // Iterate over fields again and compute correct offsets.
+  // The field allocation type was temporarily stored in the offset slot.
+  // oop fields are located before non-oop fields (static and non-static).
+  for (AllFieldStream fs(_fields, _cp); !fs.done(); fs.next()) {
+
+    // skip already laid out fields
+    if (fs.is_offset_set()) continue;
+
+    // contended instance fields are handled below
+    if (fs.is_contended() && !fs.access_flags().is_static()) continue;
+
+    int real_offset;
+    FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
+
+    // pack the rest of the fields
+    switch (atype) {
+      case STATIC_OOP:
+        real_offset = next_static_oop_offset;
+        next_static_oop_offset += heapOopSize;
+        break;
+      case STATIC_BYTE:
+        real_offset = next_static_byte_offset;
+        next_static_byte_offset += 1;
+        break;
+      case STATIC_SHORT:
+        real_offset = next_static_short_offset;
+        next_static_short_offset += BytesPerShort;
+        break;
+      case STATIC_WORD:
+        real_offset = next_static_word_offset;
+        next_static_word_offset += BytesPerInt;
+        break;
+      case STATIC_DOUBLE:
+        real_offset = next_static_double_offset;
+        next_static_double_offset += BytesPerLong;
+        break;
+      case NONSTATIC_OOP:
+        if( nonstatic_oop_space_count > 0 ) {
+          real_offset = nonstatic_oop_space_offset;
+          nonstatic_oop_space_offset += heapOopSize;
+          nonstatic_oop_space_count  -= 1;
+        } else {
+          real_offset = next_nonstatic_oop_offset;
+          next_nonstatic_oop_offset += heapOopSize;
+        }
+        // Update oop maps
+        if( nonstatic_oop_map_count > 0 &&
+            nonstatic_oop_offsets[nonstatic_oop_map_count - 1] ==
+            real_offset -
+            int(nonstatic_oop_counts[nonstatic_oop_map_count - 1]) *
+            heapOopSize ) {
+          // Extend current oop map
+          nonstatic_oop_counts[nonstatic_oop_map_count - 1] += 1;
+        } else {
+          // Create new oop map
+          nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
+          nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
+          nonstatic_oop_map_count += 1;
+          if( first_nonstatic_oop_offset == 0 ) { // Undefined
+            first_nonstatic_oop_offset = real_offset;
+          }
+        }
+        break;
+      case NONSTATIC_BYTE:
+        if( nonstatic_byte_space_count > 0 ) {
+          real_offset = nonstatic_byte_space_offset;
+          nonstatic_byte_space_offset += 1;
+          nonstatic_byte_space_count  -= 1;
+        } else {
+          real_offset = next_nonstatic_byte_offset;
+          next_nonstatic_byte_offset += 1;
+        }
+        break;
+      case NONSTATIC_SHORT:
+        if( nonstatic_short_space_count > 0 ) {
+          real_offset = nonstatic_short_space_offset;
+          nonstatic_short_space_offset += BytesPerShort;
+          nonstatic_short_space_count  -= 1;
+        } else {
+          real_offset = next_nonstatic_short_offset;
+          next_nonstatic_short_offset += BytesPerShort;
+        }
+        break;
+      case NONSTATIC_WORD:
+        if( nonstatic_word_space_count > 0 ) {
+          real_offset = nonstatic_word_space_offset;
+          nonstatic_word_space_offset += BytesPerInt;
+          nonstatic_word_space_count  -= 1;
+        } else {
+          real_offset = next_nonstatic_word_offset;
+          next_nonstatic_word_offset += BytesPerInt;
+        }
+        break;
+      case NONSTATIC_DOUBLE:
+        real_offset = next_nonstatic_double_offset;
+        next_nonstatic_double_offset += BytesPerLong;
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+    fs.set_offset(real_offset);
+  }
+
+
+  // Handle the contended cases.
+  //
+  // Each contended field should not intersect the cache line with another contended field.
+  // In the absence of alignment information, we end up with pessimistically separating
+  // the fields with full-width padding.
+  //
+  // Additionally, this should not break alignment for the fields, so we round the alignment up
+  // for each field.
+  if (contended_count > 0) {
+
+    // if there is at least one contended field, we need to have pre-padding for them
+    if (nonstatic_contended_count > 0) {
+      next_nonstatic_padded_offset += pad_size;
+    }
+
+    // collect all contended groups
+    BitMap bm(_cp->size());
+    for (AllFieldStream fs(_fields, _cp); !fs.done(); fs.next()) {
+      // skip already laid out fields
+      if (fs.is_offset_set()) continue;
+
+      if (fs.is_contended()) {
+        bm.set_bit(fs.contended_group());
+      }
+    }
+
+    int current_group = -1;
+    while ((current_group = (int)bm.get_next_one_offset(current_group + 1)) != (int)bm.size()) {
+
+      for (AllFieldStream fs(_fields, _cp); !fs.done(); fs.next()) {
+
+        // skip already laid out fields
+        if (fs.is_offset_set()) continue;
+
+        // skip non-contended fields and fields from different group
+        if (!fs.is_contended() || (fs.contended_group() != current_group)) continue;
+
+        // handle statics below
+        if (fs.access_flags().is_static()) continue;
+
+        int real_offset;
+        FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
+
+        switch (atype) {
+          case NONSTATIC_BYTE:
+            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, 1);
+            real_offset = next_nonstatic_padded_offset;
+            next_nonstatic_padded_offset += 1;
+            break;
+
+          case NONSTATIC_SHORT:
+            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerShort);
+            real_offset = next_nonstatic_padded_offset;
+            next_nonstatic_padded_offset += BytesPerShort;
+            break;
+
+          case NONSTATIC_WORD:
+            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerInt);
+            real_offset = next_nonstatic_padded_offset;
+            next_nonstatic_padded_offset += BytesPerInt;
+            break;
+
+          case NONSTATIC_DOUBLE:
+            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerLong);
+            real_offset = next_nonstatic_padded_offset;
+            next_nonstatic_padded_offset += BytesPerLong;
+            break;
+
+          case NONSTATIC_OOP:
+            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, heapOopSize);
+            real_offset = next_nonstatic_padded_offset;
+            next_nonstatic_padded_offset += heapOopSize;
+
+            // Create new oop map
+            nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
+            nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
+            nonstatic_oop_map_count += 1;
+            if( first_nonstatic_oop_offset == 0 ) { // Undefined
+              first_nonstatic_oop_offset = real_offset;
+            }
+            break;
+
+          default:
+            ShouldNotReachHere();
+        }
+
+        if (fs.contended_group() == 0) {
+          // Contended group defines the equivalence class over the fields:
+          // the fields within the same contended group are not inter-padded.
+          // The only exception is default group, which does not incur the
+          // equivalence, and so requires intra-padding.
+          next_nonstatic_padded_offset += pad_size;
+        }
+
+        fs.set_offset(real_offset);
+      } // for
+
+      // Start laying out the next group.
+      // Note that this will effectively pad the last group in the back;
+      // this is expected to alleviate memory contention effects for
+      // subclass fields and/or adjacent object.
+      // If this was the default group, the padding is already in place.
+      if (current_group != 0) {
+        next_nonstatic_padded_offset += pad_size;
+      }
+    }
+
+    // handle static fields
+  }
+
+  // Size of instances
+  int notaligned_offset = next_nonstatic_padded_offset;
+
+  // Entire class is contended, pad in the back.
+  // This helps to alleviate memory contention effects for subclass fields
+  // and/or adjacent object.
+  if (parsed_annotations->is_contended()) {
+    notaligned_offset += pad_size;
+  }
+
+  int next_static_type_offset     = align_size_up(next_static_byte_offset, wordSize);
+  int static_field_size           = (next_static_type_offset -
+                                InstanceMirrorKlass::offset_of_static_fields()) / wordSize;
+
+  next_nonstatic_type_offset = align_size_up(notaligned_offset, heapOopSize );
+  nonstatic_field_size = nonstatic_field_size + ((next_nonstatic_type_offset
+                                 - first_nonstatic_field_offset)/heapOopSize);
+
+  next_nonstatic_type_offset = align_size_up(notaligned_offset, wordSize );
+  int instance_size = align_object_size(next_nonstatic_type_offset / wordSize);
+
+  assert(instance_size == align_object_size(align_size_up(
+         (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize + ((parsed_annotations->is_contended()) ? pad_size : 0)),
+          wordSize) / wordSize), "consistent layout helper value");
+
+  // Number of non-static oop map blocks allocated at end of klass.
+  const unsigned int total_oop_map_count =
+    compute_oop_map_count(_super_klass, nonstatic_oop_map_count,
+                          first_nonstatic_oop_offset);
+
+#ifndef PRODUCT
+  if( PrintCompactFieldsSavings ) {
+    ResourceMark rm;
+    if( nonstatic_field_size < orig_nonstatic_field_size ) {
+      tty->print("[Saved %d of %d bytes in %s]\n",
+               (orig_nonstatic_field_size - nonstatic_field_size)*heapOopSize,
+               orig_nonstatic_field_size*heapOopSize,
+               _class_name);
+    } else if( nonstatic_field_size > orig_nonstatic_field_size ) {
+      tty->print("[Wasted %d over %d bytes in %s]\n",
+               (nonstatic_field_size - orig_nonstatic_field_size)*heapOopSize,
+               orig_nonstatic_field_size*heapOopSize,
+               _class_name);
+    }
+  }
+
+  if (PrintFieldLayout) {
+    print_field_layout(_class_name,
+          _fields,
+          _cp,
+          instance_size,
+          first_nonstatic_field_offset,
+          next_nonstatic_field_offset,
+          next_static_type_offset);
+  }
+
+#endif
+  // Pass back information needed for InstanceKlass creation
+  info->nonstatic_oop_offsets = nonstatic_oop_offsets;
+  info->nonstatic_oop_counts = nonstatic_oop_counts;
+  info->nonstatic_oop_map_count = nonstatic_oop_map_count;
+  info->total_oop_map_count = total_oop_map_count;
+  info->instance_size = instance_size;
+  info->static_field_size = static_field_size;
+  info->nonstatic_field_size = nonstatic_field_size;
+  info->has_nonstatic_fields = has_nonstatic_fields;
+}
+
+
 instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                     ClassLoaderData* loader_data,
                                                     Handle protection_domain,
@@ -3176,7 +3673,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                             jt->get_thread_stat()->perf_timers_addr(),
                             PerfClassTraceTime::PARSE_CLASS);
 
-  init_parsed_class_attributes();
+  init_parsed_class_attributes(loader_data);
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
     // Get the cached class file bytes (if any) from the class that
@@ -3271,8 +3768,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   _relax_verify = Verifier::relax_verify_for(class_loader());
 
   // Constant pool
-  constantPoolHandle cp = parse_constant_pool(loader_data, CHECK_(nullHandle));
-  ConstantPoolCleaner error_handler(cp); // set constant pool to be cleaned up.
+  constantPoolHandle cp = parse_constant_pool(CHECK_(nullHandle));
 
   int cp_size = cp->length();
 
@@ -3290,7 +3786,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   access_flags.set_flags(flags);
 
   // This class and superclass
-  instanceKlassHandle super_klass;
   u2 this_class_index = cfs->get_u2_fast();
   check_property(
     valid_cp_range(this_class_index, cp_size) &&
@@ -3345,59 +3840,27 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     u2 super_class_index = cfs->get_u2_fast();
-    if (super_class_index == 0) {
-      check_property(class_name == vmSymbols::java_lang_Object(),
-                     "Invalid superclass index %u in class file %s",
-                     super_class_index,
-                     CHECK_(nullHandle));
-    } else {
-      check_property(valid_cp_range(super_class_index, cp_size) &&
-                     is_klass_reference(cp, super_class_index),
-                     "Invalid superclass index %u in class file %s",
-                     super_class_index,
-                     CHECK_(nullHandle));
-      // The class name should be legal because it is checked when parsing constant pool.
-      // However, make sure it is not an array type.
-      bool is_array = false;
-      if (cp->tag_at(super_class_index).is_klass()) {
-        super_klass = instanceKlassHandle(THREAD, cp->resolved_klass_at(super_class_index));
-        if (_need_verify)
-          is_array = super_klass->oop_is_array();
-      } else if (_need_verify) {
-        is_array = (cp->unresolved_klass_at(super_class_index)->byte_at(0) == JVM_SIGNATURE_ARRAY);
-      }
-      if (_need_verify) {
-        guarantee_property(!is_array,
-                          "Bad superclass name in class file %s", CHECK_(nullHandle));
-      }
-    }
+    instanceKlassHandle super_klass = parse_super_class(super_class_index,
+                                                        CHECK_NULL);
 
     // Interfaces
     u2 itfs_len = cfs->get_u2_fast();
-    Array<Klass*>* local_interfaces;
-    if (itfs_len == 0) {
-      local_interfaces = Universe::the_empty_klass_array();
-    } else {
-      local_interfaces = parse_interfaces(
-          cp, itfs_len, loader_data, protection_domain, _class_name,
-          &has_default_methods, CHECK_(nullHandle));
-    }
+    Array<Klass*>* local_interfaces =
+      parse_interfaces(itfs_len, protection_domain, _class_name,
+                       &has_default_methods, CHECK_(nullHandle));
 
     u2 java_fields_count = 0;
     // Fields (offsets are filled in later)
     FieldAllocationCount fac;
-    Array<AnnotationArray*>* fields_annotations = NULL;
-    Array<AnnotationArray*>* fields_type_annotations = NULL;
-    Array<u2>* fields = parse_fields(loader_data, class_name, cp, access_flags.is_interface(), &fac, &fields_annotations,
-                                          &fields_type_annotations,
-                                          &java_fields_count,
-                                          CHECK_(nullHandle));
+    Array<u2>* fields = parse_fields(class_name,
+                                     access_flags.is_interface(),
+                                     &fac, &java_fields_count,
+                                     CHECK_(nullHandle));
     // Methods
     bool has_final_method = false;
     AccessFlags promoted_flags;
     promoted_flags.set_flags(0);
-    Array<Method*>* methods = parse_methods(loader_data,
-                                            cp, access_flags.is_interface(),
+    Array<Method*>* methods = parse_methods(access_flags.is_interface(),
                                             &promoted_flags,
                                             &has_final_method,
                                             &has_default_methods,
@@ -3405,7 +3868,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
     // Additional attributes
     ClassAnnotationCollector parsed_annotations;
-    parse_classfile_attributes(loader_data, cp, &parsed_annotations, CHECK_(nullHandle));
+    parse_classfile_attributes(&parsed_annotations, CHECK_(nullHandle));
 
     // Make sure this is the end of class file stream
     guarantee_property(cfs->at_eos(), "Extra bytes at the end of class file %s", CHECK_(nullHandle));
@@ -3452,13 +3915,15 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       }
     }
 
+    // save super klass for error handling.
+    _super_klass = super_klass;
+
     // Compute the transitive list of all unique interfaces implemented by this class
-    Array<Klass*>* transitive_interfaces = compute_transitive_interfaces(loader_data, super_klass, local_interfaces, CHECK_(nullHandle));
+    _transitive_interfaces =
+          compute_transitive_interfaces(super_klass, local_interfaces, CHECK_(nullHandle));
 
     // sort methods
-    Array<int>* method_ordering = sort_methods(loader_data,
-                                               methods,
-                                               CHECK_(nullHandle));
+    intArray* method_ordering = sort_methods(methods);
 
     // promote flags from parse_methods() to the klass' flags
     access_flags.add_promoted_flags(promoted_flags.as_int());
@@ -3476,587 +3941,14 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                       CHECK_(nullHandle));
 
     // Size of Java itable (in words)
-    itable_size = access_flags.is_interface() ? 0 : klassItable::compute_itable_size(transitive_interfaces);
+    itable_size = access_flags.is_interface() ? 0 : klassItable::compute_itable_size(_transitive_interfaces);
 
-    // get the padding width from the option
-    // TODO: Ask VM about specific CPU we are running on
-    int pad_size = ContendedPaddingWidth;
+    FieldLayoutInfo info;
+    layout_fields(class_loader, &fac, &parsed_annotations, &info, CHECK_NULL);
 
-    // Field size and offset computation
-    int nonstatic_field_size = super_klass() == NULL ? 0 : super_klass->nonstatic_field_size();
-#ifndef PRODUCT
-    int orig_nonstatic_field_size = 0;
-#endif
-    int next_static_oop_offset;
-    int next_static_double_offset;
-    int next_static_word_offset;
-    int next_static_short_offset;
-    int next_static_byte_offset;
-    int next_static_padded_offset;
-    int next_nonstatic_oop_offset;
-    int next_nonstatic_double_offset;
-    int next_nonstatic_word_offset;
-    int next_nonstatic_short_offset;
-    int next_nonstatic_byte_offset;
-    int next_nonstatic_type_offset;
-    int first_nonstatic_oop_offset;
-    int first_nonstatic_field_offset;
-    int next_nonstatic_field_offset;
-    int next_nonstatic_padded_offset;
+    int total_oop_map_size2 =
+          InstanceKlass::nonstatic_oop_map_size(info.total_oop_map_count);
 
-    // Count the contended fields by type.
-    int static_contended_count = 0;
-    int nonstatic_contended_count = 0;
-    FieldAllocationCount fac_contended;
-    for (AllFieldStream fs(fields, cp); !fs.done(); fs.next()) {
-      FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
-      if (fs.is_contended()) {
-        fac_contended.count[atype]++;
-        if (fs.access_flags().is_static()) {
-          static_contended_count++;
-        } else {
-          nonstatic_contended_count++;
-        }
-      }
-    }
-    int contended_count = static_contended_count + nonstatic_contended_count;
-
-
-    // Calculate the starting byte offsets
-    next_static_oop_offset      = InstanceMirrorKlass::offset_of_static_fields();
-
-    // class is contended, pad before all the fields
-    if (parsed_annotations.is_contended()) {
-      next_static_oop_offset += pad_size;
-    }
-
-    next_static_double_offset   = next_static_oop_offset +
-                                  ((fac.count[STATIC_OOP] - fac_contended.count[STATIC_OOP]) * heapOopSize);
-    if ( fac.count[STATIC_DOUBLE] &&
-         (Universe::field_type_should_be_aligned(T_DOUBLE) ||
-          Universe::field_type_should_be_aligned(T_LONG)) ) {
-      next_static_double_offset = align_size_up(next_static_double_offset, BytesPerLong);
-    }
-
-    next_static_word_offset     = next_static_double_offset +
-                                  ((fac.count[STATIC_DOUBLE] - fac_contended.count[STATIC_DOUBLE]) * BytesPerLong);
-    next_static_short_offset    = next_static_word_offset +
-                                  ((fac.count[STATIC_WORD]   - fac_contended.count[STATIC_WORD]) * BytesPerInt);
-    next_static_byte_offset     = next_static_short_offset +
-                                  ((fac.count[STATIC_SHORT]  - fac_contended.count[STATIC_SHORT]) * BytesPerShort);
-    next_static_padded_offset   = next_static_byte_offset +
-                                  ((fac.count[STATIC_BYTE]   - fac_contended.count[STATIC_BYTE]) * 1);
-
-    first_nonstatic_field_offset = instanceOopDesc::base_offset_in_bytes() +
-                                   nonstatic_field_size * heapOopSize;
-
-    // class is contended, pad before all the fields
-    if (parsed_annotations.is_contended()) {
-      first_nonstatic_field_offset += pad_size;
-    }
-
-    next_nonstatic_field_offset = first_nonstatic_field_offset;
-
-    unsigned int nonstatic_double_count = fac.count[NONSTATIC_DOUBLE] - fac_contended.count[NONSTATIC_DOUBLE];
-    unsigned int nonstatic_word_count   = fac.count[NONSTATIC_WORD]   - fac_contended.count[NONSTATIC_WORD];
-    unsigned int nonstatic_short_count  = fac.count[NONSTATIC_SHORT]  - fac_contended.count[NONSTATIC_SHORT];
-    unsigned int nonstatic_byte_count   = fac.count[NONSTATIC_BYTE]   - fac_contended.count[NONSTATIC_BYTE];
-    unsigned int nonstatic_oop_count    = fac.count[NONSTATIC_OOP]    - fac_contended.count[NONSTATIC_OOP];
-
-    bool super_has_nonstatic_fields =
-            (super_klass() != NULL && super_klass->has_nonstatic_fields());
-    bool has_nonstatic_fields  =  super_has_nonstatic_fields ||
-            ((nonstatic_double_count + nonstatic_word_count +
-              nonstatic_short_count + nonstatic_byte_count +
-              nonstatic_oop_count) != 0);
-
-
-    // Prepare list of oops for oop map generation.
-    int* nonstatic_oop_offsets;
-    unsigned int* nonstatic_oop_counts;
-    unsigned int nonstatic_oop_map_count = 0;
-
-    nonstatic_oop_offsets = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, int, nonstatic_oop_count + 1);
-    nonstatic_oop_counts  = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, unsigned int, nonstatic_oop_count + 1);
-
-    first_nonstatic_oop_offset = 0; // will be set for first oop field
-
-#ifndef PRODUCT
-    if( PrintCompactFieldsSavings ) {
-      next_nonstatic_double_offset = next_nonstatic_field_offset +
-                                     (nonstatic_oop_count * heapOopSize);
-      if ( nonstatic_double_count > 0 ) {
-        next_nonstatic_double_offset = align_size_up(next_nonstatic_double_offset, BytesPerLong);
-      }
-      next_nonstatic_word_offset  = next_nonstatic_double_offset +
-                                    (nonstatic_double_count * BytesPerLong);
-      next_nonstatic_short_offset = next_nonstatic_word_offset +
-                                    (nonstatic_word_count * BytesPerInt);
-      next_nonstatic_byte_offset  = next_nonstatic_short_offset +
-                                    (nonstatic_short_count * BytesPerShort);
-      next_nonstatic_type_offset  = align_size_up((next_nonstatic_byte_offset +
-                                    nonstatic_byte_count ), heapOopSize );
-      orig_nonstatic_field_size   = nonstatic_field_size +
-      ((next_nonstatic_type_offset - first_nonstatic_field_offset)/heapOopSize);
-    }
-#endif
-    bool compact_fields   = CompactFields;
-    int  allocation_style = FieldsAllocationStyle;
-    if( allocation_style < 0 || allocation_style > 2 ) { // Out of range?
-      assert(false, "0 <= FieldsAllocationStyle <= 2");
-      allocation_style = 1; // Optimistic
-    }
-
-    // The next classes have predefined hard-coded fields offsets
-    // (see in JavaClasses::compute_hard_coded_offsets()).
-    // Use default fields allocation order for them.
-    if( (allocation_style != 0 || compact_fields ) && class_loader.is_null() &&
-        (class_name == vmSymbols::java_lang_AssertionStatusDirectives() ||
-         class_name == vmSymbols::java_lang_Class() ||
-         class_name == vmSymbols::java_lang_ClassLoader() ||
-         class_name == vmSymbols::java_lang_ref_Reference() ||
-         class_name == vmSymbols::java_lang_ref_SoftReference() ||
-         class_name == vmSymbols::java_lang_StackTraceElement() ||
-         class_name == vmSymbols::java_lang_String() ||
-         class_name == vmSymbols::java_lang_Throwable() ||
-         class_name == vmSymbols::java_lang_Boolean() ||
-         class_name == vmSymbols::java_lang_Character() ||
-         class_name == vmSymbols::java_lang_Float() ||
-         class_name == vmSymbols::java_lang_Double() ||
-         class_name == vmSymbols::java_lang_Byte() ||
-         class_name == vmSymbols::java_lang_Short() ||
-         class_name == vmSymbols::java_lang_Integer() ||
-         class_name == vmSymbols::java_lang_Long())) {
-      allocation_style = 0;     // Allocate oops first
-      compact_fields   = false; // Don't compact fields
-    }
-
-    if( allocation_style == 0 ) {
-      // Fields order: oops, longs/doubles, ints, shorts/chars, bytes, padded fields
-      next_nonstatic_oop_offset    = next_nonstatic_field_offset;
-      next_nonstatic_double_offset = next_nonstatic_oop_offset +
-                                      (nonstatic_oop_count * heapOopSize);
-    } else if( allocation_style == 1 ) {
-      // Fields order: longs/doubles, ints, shorts/chars, bytes, oops, padded fields
-      next_nonstatic_double_offset = next_nonstatic_field_offset;
-    } else if( allocation_style == 2 ) {
-      // Fields allocation: oops fields in super and sub classes are together.
-      if( nonstatic_field_size > 0 && super_klass() != NULL &&
-          super_klass->nonstatic_oop_map_size() > 0 ) {
-        int map_count = super_klass->nonstatic_oop_map_count();
-        OopMapBlock* first_map = super_klass->start_of_nonstatic_oop_maps();
-        OopMapBlock* last_map = first_map + map_count - 1;
-        int next_offset = last_map->offset() + (last_map->count() * heapOopSize);
-        if (next_offset == next_nonstatic_field_offset) {
-          allocation_style = 0;   // allocate oops first
-          next_nonstatic_oop_offset    = next_nonstatic_field_offset;
-          next_nonstatic_double_offset = next_nonstatic_oop_offset +
-                                         (nonstatic_oop_count * heapOopSize);
-        }
-      }
-      if( allocation_style == 2 ) {
-        allocation_style = 1;     // allocate oops last
-        next_nonstatic_double_offset = next_nonstatic_field_offset;
-      }
-    } else {
-      ShouldNotReachHere();
-    }
-
-    int nonstatic_oop_space_count   = 0;
-    int nonstatic_word_space_count  = 0;
-    int nonstatic_short_space_count = 0;
-    int nonstatic_byte_space_count  = 0;
-    int nonstatic_oop_space_offset;
-    int nonstatic_word_space_offset;
-    int nonstatic_short_space_offset;
-    int nonstatic_byte_space_offset;
-
-    if( nonstatic_double_count > 0 ) {
-      int offset = next_nonstatic_double_offset;
-      next_nonstatic_double_offset = align_size_up(offset, BytesPerLong);
-      if( compact_fields && offset != next_nonstatic_double_offset ) {
-        // Allocate available fields into the gap before double field.
-        int length = next_nonstatic_double_offset - offset;
-        assert(length == BytesPerInt, "");
-        nonstatic_word_space_offset = offset;
-        if( nonstatic_word_count > 0 ) {
-          nonstatic_word_count      -= 1;
-          nonstatic_word_space_count = 1; // Only one will fit
-          length -= BytesPerInt;
-          offset += BytesPerInt;
-        }
-        nonstatic_short_space_offset = offset;
-        while( length >= BytesPerShort && nonstatic_short_count > 0 ) {
-          nonstatic_short_count       -= 1;
-          nonstatic_short_space_count += 1;
-          length -= BytesPerShort;
-          offset += BytesPerShort;
-        }
-        nonstatic_byte_space_offset = offset;
-        while( length > 0 && nonstatic_byte_count > 0 ) {
-          nonstatic_byte_count       -= 1;
-          nonstatic_byte_space_count += 1;
-          length -= 1;
-        }
-        // Allocate oop field in the gap if there are no other fields for that.
-        nonstatic_oop_space_offset = offset;
-        if( length >= heapOopSize && nonstatic_oop_count > 0 &&
-            allocation_style != 0 ) { // when oop fields not first
-          nonstatic_oop_count      -= 1;
-          nonstatic_oop_space_count = 1; // Only one will fit
-          length -= heapOopSize;
-          offset += heapOopSize;
-        }
-      }
-    }
-
-    next_nonstatic_word_offset  = next_nonstatic_double_offset +
-                                  (nonstatic_double_count * BytesPerLong);
-    next_nonstatic_short_offset = next_nonstatic_word_offset +
-                                  (nonstatic_word_count * BytesPerInt);
-    next_nonstatic_byte_offset  = next_nonstatic_short_offset +
-                                  (nonstatic_short_count * BytesPerShort);
-    next_nonstatic_padded_offset = next_nonstatic_byte_offset +
-                                  nonstatic_byte_count;
-
-    // let oops jump before padding with this allocation style
-    if( allocation_style == 1 ) {
-      next_nonstatic_oop_offset = next_nonstatic_padded_offset;
-      if( nonstatic_oop_count > 0 ) {
-        next_nonstatic_oop_offset = align_size_up(next_nonstatic_oop_offset, heapOopSize);
-      }
-      next_nonstatic_padded_offset = next_nonstatic_oop_offset + (nonstatic_oop_count * heapOopSize);
-    }
-
-    // Iterate over fields again and compute correct offsets.
-    // The field allocation type was temporarily stored in the offset slot.
-    // oop fields are located before non-oop fields (static and non-static).
-    for (AllFieldStream fs(fields, cp); !fs.done(); fs.next()) {
-
-      // skip already laid out fields
-      if (fs.is_offset_set()) continue;
-
-      // contended fields are handled below
-      if (fs.is_contended()) continue;
-
-      int real_offset;
-      FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
-
-      // pack the rest of the fields
-      switch (atype) {
-        case STATIC_OOP:
-          real_offset = next_static_oop_offset;
-          next_static_oop_offset += heapOopSize;
-          break;
-        case STATIC_BYTE:
-          real_offset = next_static_byte_offset;
-          next_static_byte_offset += 1;
-          break;
-        case STATIC_SHORT:
-          real_offset = next_static_short_offset;
-          next_static_short_offset += BytesPerShort;
-          break;
-        case STATIC_WORD:
-          real_offset = next_static_word_offset;
-          next_static_word_offset += BytesPerInt;
-          break;
-        case STATIC_DOUBLE:
-          real_offset = next_static_double_offset;
-          next_static_double_offset += BytesPerLong;
-          break;
-        case NONSTATIC_OOP:
-          if( nonstatic_oop_space_count > 0 ) {
-            real_offset = nonstatic_oop_space_offset;
-            nonstatic_oop_space_offset += heapOopSize;
-            nonstatic_oop_space_count  -= 1;
-          } else {
-            real_offset = next_nonstatic_oop_offset;
-            next_nonstatic_oop_offset += heapOopSize;
-          }
-          // Update oop maps
-          if( nonstatic_oop_map_count > 0 &&
-              nonstatic_oop_offsets[nonstatic_oop_map_count - 1] ==
-              real_offset -
-              int(nonstatic_oop_counts[nonstatic_oop_map_count - 1]) *
-              heapOopSize ) {
-            // Extend current oop map
-            nonstatic_oop_counts[nonstatic_oop_map_count - 1] += 1;
-          } else {
-            // Create new oop map
-            nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
-            nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
-            nonstatic_oop_map_count += 1;
-            if( first_nonstatic_oop_offset == 0 ) { // Undefined
-              first_nonstatic_oop_offset = real_offset;
-            }
-          }
-          break;
-        case NONSTATIC_BYTE:
-          if( nonstatic_byte_space_count > 0 ) {
-            real_offset = nonstatic_byte_space_offset;
-            nonstatic_byte_space_offset += 1;
-            nonstatic_byte_space_count  -= 1;
-          } else {
-            real_offset = next_nonstatic_byte_offset;
-            next_nonstatic_byte_offset += 1;
-          }
-          break;
-        case NONSTATIC_SHORT:
-          if( nonstatic_short_space_count > 0 ) {
-            real_offset = nonstatic_short_space_offset;
-            nonstatic_short_space_offset += BytesPerShort;
-            nonstatic_short_space_count  -= 1;
-          } else {
-            real_offset = next_nonstatic_short_offset;
-            next_nonstatic_short_offset += BytesPerShort;
-          }
-          break;
-        case NONSTATIC_WORD:
-          if( nonstatic_word_space_count > 0 ) {
-            real_offset = nonstatic_word_space_offset;
-            nonstatic_word_space_offset += BytesPerInt;
-            nonstatic_word_space_count  -= 1;
-          } else {
-            real_offset = next_nonstatic_word_offset;
-            next_nonstatic_word_offset += BytesPerInt;
-          }
-          break;
-        case NONSTATIC_DOUBLE:
-          real_offset = next_nonstatic_double_offset;
-          next_nonstatic_double_offset += BytesPerLong;
-          break;
-        default:
-          ShouldNotReachHere();
-      }
-      fs.set_offset(real_offset);
-    }
-
-
-    // Handle the contended cases.
-    //
-    // Each contended field should not intersect the cache line with another contended field.
-    // In the absence of alignment information, we end up with pessimistically separating
-    // the fields with full-width padding.
-    //
-    // Additionally, this should not break alignment for the fields, so we round the alignment up
-    // for each field.
-    if (contended_count > 0) {
-
-      // if there is at least one contended field, we need to have pre-padding for them
-      if (nonstatic_contended_count > 0) {
-        next_nonstatic_padded_offset += pad_size;
-      }
-
-      // collect all contended groups
-      BitMap bm(cp->size());
-      for (AllFieldStream fs(fields, cp); !fs.done(); fs.next()) {
-        // skip already laid out fields
-        if (fs.is_offset_set()) continue;
-
-        if (fs.is_contended()) {
-          bm.set_bit(fs.contended_group());
-        }
-      }
-
-      int current_group = -1;
-      while ((current_group = (int)bm.get_next_one_offset(current_group + 1)) != (int)bm.size()) {
-
-        for (AllFieldStream fs(fields, cp); !fs.done(); fs.next()) {
-
-          // skip already laid out fields
-          if (fs.is_offset_set()) continue;
-
-          // skip non-contended fields and fields from different group
-          if (!fs.is_contended() || (fs.contended_group() != current_group)) continue;
-
-          // handle statics below
-          if (fs.access_flags().is_static()) continue;
-
-          int real_offset;
-          FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
-
-          switch (atype) {
-            case NONSTATIC_BYTE:
-              next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, 1);
-              real_offset = next_nonstatic_padded_offset;
-              next_nonstatic_padded_offset += 1;
-              break;
-
-            case NONSTATIC_SHORT:
-              next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerShort);
-              real_offset = next_nonstatic_padded_offset;
-              next_nonstatic_padded_offset += BytesPerShort;
-              break;
-
-            case NONSTATIC_WORD:
-              next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerInt);
-              real_offset = next_nonstatic_padded_offset;
-              next_nonstatic_padded_offset += BytesPerInt;
-              break;
-
-            case NONSTATIC_DOUBLE:
-              next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerLong);
-              real_offset = next_nonstatic_padded_offset;
-              next_nonstatic_padded_offset += BytesPerLong;
-              break;
-
-            case NONSTATIC_OOP:
-              next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, heapOopSize);
-              real_offset = next_nonstatic_padded_offset;
-              next_nonstatic_padded_offset += heapOopSize;
-
-              // Create new oop map
-              nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
-              nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
-              nonstatic_oop_map_count += 1;
-              if( first_nonstatic_oop_offset == 0 ) { // Undefined
-                first_nonstatic_oop_offset = real_offset;
-              }
-              break;
-
-            default:
-              ShouldNotReachHere();
-          }
-
-          if (fs.contended_group() == 0) {
-            // Contended group defines the equivalence class over the fields:
-            // the fields within the same contended group are not inter-padded.
-            // The only exception is default group, which does not incur the
-            // equivalence, and so requires intra-padding.
-            next_nonstatic_padded_offset += pad_size;
-          }
-
-          fs.set_offset(real_offset);
-        } // for
-
-        // Start laying out the next group.
-        // Note that this will effectively pad the last group in the back;
-        // this is expected to alleviate memory contention effects for
-        // subclass fields and/or adjacent object.
-        // If this was the default group, the padding is already in place.
-        if (current_group != 0) {
-          next_nonstatic_padded_offset += pad_size;
-        }
-      }
-
-      // handle static fields
-
-      // if there is at least one contended field, we need to have pre-padding for them
-      if (static_contended_count > 0) {
-        next_static_padded_offset += pad_size;
-      }
-
-      current_group = -1;
-      while ((current_group = (int)bm.get_next_one_offset(current_group + 1)) != (int)bm.size()) {
-
-        for (AllFieldStream fs(fields, cp); !fs.done(); fs.next()) {
-
-          // skip already laid out fields
-          if (fs.is_offset_set()) continue;
-
-          // skip non-contended fields and fields from different group
-          if (!fs.is_contended() || (fs.contended_group() != current_group)) continue;
-
-          // non-statics already handled above
-          if (!fs.access_flags().is_static()) continue;
-
-          int real_offset;
-          FieldAllocationType atype = (FieldAllocationType) fs.allocation_type();
-
-          switch (atype) {
-
-            case STATIC_BYTE:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, 1);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += 1;
-              break;
-
-            case STATIC_SHORT:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, BytesPerShort);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += BytesPerShort;
-              break;
-
-            case STATIC_WORD:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, BytesPerInt);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += BytesPerInt;
-              break;
-
-            case STATIC_DOUBLE:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, BytesPerLong);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += BytesPerLong;
-              break;
-
-            case STATIC_OOP:
-              next_static_padded_offset = align_size_up(next_static_padded_offset, heapOopSize);
-              real_offset = next_static_padded_offset;
-              next_static_padded_offset += heapOopSize;
-              break;
-
-            default:
-              ShouldNotReachHere();
-          }
-
-          if (fs.contended_group() == 0) {
-            // Contended group defines the equivalence class over the fields:
-            // the fields within the same contended group are not inter-padded.
-            // The only exception is default group, which does not incur the
-            // equivalence, and so requires intra-padding.
-            next_static_padded_offset += pad_size;
-          }
-
-          fs.set_offset(real_offset);
-        } // for
-
-        // Start laying out the next group.
-        // Note that this will effectively pad the last group in the back;
-        // this is expected to alleviate memory contention effects for
-        // subclass fields and/or adjacent object.
-        // If this was the default group, the padding is already in place.
-        if (current_group != 0) {
-          next_static_padded_offset += pad_size;
-        }
-
-      }
-
-    } // handle contended
-
-    // Size of instances
-    int instance_size;
-
-    int notaligned_offset = next_nonstatic_padded_offset;
-
-    // Entire class is contended, pad in the back.
-    // This helps to alleviate memory contention effects for subclass fields
-    // and/or adjacent object.
-    if (parsed_annotations.is_contended()) {
-      notaligned_offset += pad_size;
-      next_static_padded_offset += pad_size;
-    }
-
-    int next_static_type_offset     = align_size_up(next_static_padded_offset, wordSize);
-    int static_field_size           = (next_static_type_offset -
-                                  InstanceMirrorKlass::offset_of_static_fields()) / wordSize;
-
-    next_nonstatic_type_offset = align_size_up(notaligned_offset, heapOopSize );
-    nonstatic_field_size = nonstatic_field_size + ((next_nonstatic_type_offset
-                                   - first_nonstatic_field_offset)/heapOopSize);
-
-    next_nonstatic_type_offset = align_size_up(notaligned_offset, wordSize );
-    instance_size = align_object_size(next_nonstatic_type_offset / wordSize);
-
-    assert(instance_size == align_object_size(align_size_up(
-                (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize + ((parsed_annotations.is_contended()) ? pad_size : 0)),
-            wordSize) / wordSize), "consistent layout helper value");
-
-    // Number of non-static oop map blocks allocated at end of klass.
-    const unsigned int total_oop_map_count =
-      compute_oop_map_count(super_klass, nonstatic_oop_map_count,
-                            first_nonstatic_oop_offset);
     // Compute reference type
     ReferenceType rt;
     if (super_klass() == NULL) {
@@ -4066,53 +3958,42 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     // We can now create the basic Klass* for this klass
-    int total_oop_map_size2 =
-      InstanceKlass::nonstatic_oop_map_size(total_oop_map_count);
+    _klass = InstanceKlass::allocate_instance_klass(loader_data,
+                                                    vtable_size,
+                                                    itable_size,
+                                                    info.static_field_size,
+                                                    total_oop_map_size2,
+                                                    rt,
+                                                    access_flags,
+                                                    name,
+                                                    super_klass(),
+                                                    !host_klass.is_null(),
+                                                    CHECK_(nullHandle));
+    instanceKlassHandle this_klass (THREAD, _klass);
 
-    Klass* ik = InstanceKlass::allocate_instance_klass(loader_data,
-                                                       vtable_size,
-                                                       itable_size,
-                                                       static_field_size,
-                                                       total_oop_map_size2,
-                                                       rt,
-                                                       access_flags,
-                                                       name,
-                                                       super_klass(),
-                                                       !host_klass.is_null(),
-                                                       CHECK_(nullHandle));
-
-    // Add all classes to our internal class loader list here,
-    // including classes in the bootstrap (NULL) class loader.
-    loader_data->add_class(ik);
-
-    instanceKlassHandle this_klass (THREAD, ik);
-
-    assert(this_klass->static_field_size() == static_field_size, "sanity");
-    assert(this_klass->nonstatic_oop_map_count() == total_oop_map_count,
+    assert(this_klass->static_field_size() == info.static_field_size, "sanity");
+    assert(this_klass->nonstatic_oop_map_count() == info.total_oop_map_count,
            "sanity");
 
     // Fill in information already parsed
     this_klass->set_should_verify_class(verify);
-    jint lh = Klass::instance_layout_helper(instance_size, false);
+    jint lh = Klass::instance_layout_helper(info.instance_size, false);
     this_klass->set_layout_helper(lh);
     assert(this_klass->oop_is_instance(), "layout is correct");
-    assert(this_klass->size_helper() == instance_size, "correct size_helper");
+    assert(this_klass->size_helper() == info.instance_size, "correct size_helper");
     // Not yet: supers are done below to support the new subtype-checking fields
     //this_klass->set_super(super_klass());
     this_klass->set_class_loader_data(loader_data);
-    this_klass->set_nonstatic_field_size(nonstatic_field_size);
-    this_klass->set_has_nonstatic_fields(has_nonstatic_fields);
+    this_klass->set_nonstatic_field_size(info.nonstatic_field_size);
+    this_klass->set_has_nonstatic_fields(info.has_nonstatic_fields);
     this_klass->set_static_oop_field_count(fac.count[STATIC_OOP]);
-    cp->set_pool_holder(this_klass());
-    error_handler.set_in_error(false);   // turn off error handler for cp
-    this_klass->set_constants(cp());
-    this_klass->set_local_interfaces(local_interfaces);
-    this_klass->set_fields(fields, java_fields_count);
-    this_klass->set_methods(methods);
+
+    apply_parsed_class_metadata(this_klass, java_fields_count, CHECK_NULL);
+
     if (has_final_method) {
       this_klass->set_has_final_method();
     }
-    this_klass->set_method_ordering(method_ordering);
+    this_klass->copy_method_ordering(method_ordering, CHECK_NULL);
     // The InstanceKlass::_methods_jmethod_ids cache and the
     // InstanceKlass::_methods_cached_itable_indices cache are
     // both managed on the assumption that the initial cache
@@ -4123,17 +4004,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     this_klass->set_name(cp->klass_name_at(this_class_index));
     if (is_anonymous())  // I am well known to myself
       cp->klass_at_put(this_class_index, this_klass()); // eagerly resolve
-
-    // Assign allocations if needed
-    if (_annotations != NULL || _type_annotations != NULL ||
-        fields_annotations != NULL || fields_type_annotations != NULL) {
-      Annotations* annotations = Annotations::allocate(loader_data, CHECK_NULL);
-      annotations->set_class_annotations(_annotations);
-      annotations->set_class_type_annotations(_type_annotations);
-      annotations->set_fields_annotations(fields_annotations);
-      annotations->set_fields_type_annotations(fields_type_annotations);
-      this_klass->set_annotations(annotations);
-    }
 
     this_klass->set_minor_version(minor_version);
     this_klass->set_major_version(major_version);
@@ -4169,8 +4039,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       this_klass->set_has_miranda_methods(); // then set a flag
     }
 
-    this_klass->set_transitive_interfaces(transitive_interfaces);
-
     // Fill in information needed to compute superclasses.
     this_klass->initialize_supers(super_klass(), CHECK_(nullHandle));
 
@@ -4179,7 +4047,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
     // Compute transitive closure of interfaces this class implements
     // Do final class setup
-    fill_oop_maps(this_klass, nonstatic_oop_map_count, nonstatic_oop_offsets, nonstatic_oop_counts);
+    fill_oop_maps(this_klass, info.nonstatic_oop_map_count, info.nonstatic_oop_offsets, info.nonstatic_oop_counts);
 
     // Fill in has_finalizer, has_vanilla_constructor, and layout_helper
     set_precomputed_flags(this_klass);
@@ -4278,35 +4146,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       }
     }
 
-#ifndef PRODUCT
-    if( PrintCompactFieldsSavings ) {
-      ResourceMark rm;
-      if( nonstatic_field_size < orig_nonstatic_field_size ) {
-        tty->print("[Saved %d of %d bytes in %s]\n",
-                 (orig_nonstatic_field_size - nonstatic_field_size)*heapOopSize,
-                 orig_nonstatic_field_size*heapOopSize,
-                 this_klass->external_name());
-      } else if( nonstatic_field_size > orig_nonstatic_field_size ) {
-        tty->print("[Wasted %d over %d bytes in %s]\n",
-                 (nonstatic_field_size - orig_nonstatic_field_size)*heapOopSize,
-                 orig_nonstatic_field_size*heapOopSize,
-                 this_klass->external_name());
-      }
-    }
-#endif
-
-#ifndef PRODUCT
-    if (PrintFieldLayout) {
-      print_field_layout(name,
-            fields,
-            cp,
-            instance_size,
-            first_nonstatic_field_offset,
-            next_nonstatic_field_offset,
-            next_static_type_offset);
-    }
-#endif
-
     // preserve result across HandleMark
     preserve_this_klass = this_klass();
   }
@@ -4316,7 +4155,38 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   instanceKlassHandle this_klass (THREAD, preserve_this_klass);
   debug_only(this_klass->verify();)
 
+  // Clear class if no error has occurred so destructor doesn't deallocate it
+  _klass = NULL;
   return this_klass;
+}
+
+// Destructor to clean up if there's an error
+ClassFileParser::~ClassFileParser() {
+  MetadataFactory::free_metadata(_loader_data, _cp);
+  MetadataFactory::free_array<u2>(_loader_data, _fields);
+
+  // Free methods
+  InstanceKlass::deallocate_methods(_loader_data, _methods);
+
+  // beware of the Universe::empty_blah_array!!
+  if (_inner_classes != Universe::the_empty_short_array()) {
+    MetadataFactory::free_array<u2>(_loader_data, _inner_classes);
+  }
+
+  // Free interfaces
+  InstanceKlass::deallocate_interfaces(_loader_data, _super_klass(),
+                                       _local_interfaces, _transitive_interfaces);
+
+  MetadataFactory::free_array<u1>(_loader_data, _annotations);
+  MetadataFactory::free_array<u1>(_loader_data, _type_annotations);
+  Annotations::free_contents(_loader_data, _fields_annotations);
+  Annotations::free_contents(_loader_data, _fields_type_annotations);
+
+  clear_class_metadata();
+
+  // deallocate the klass if already created.
+  MetadataFactory::free_metadata(_loader_data, _klass);
+  _klass = NULL;
 }
 
 void ClassFileParser::print_field_layout(Symbol* name,
@@ -4510,7 +4380,7 @@ void ClassFileParser::record_defined_class_dependencies(instanceKlassHandle defi
   }
 }
 
-// utility method for appending and array with check for duplicates
+// utility methods for appending an array with check for duplicates
 
 void append_interfaces(GrowableArray<Klass*>* result, Array<Klass*>* ifs) {
   // iterate over new interfaces
@@ -4522,8 +4392,9 @@ void append_interfaces(GrowableArray<Klass*>* result, Array<Klass*>* ifs) {
   }
 }
 
-
-Array<Klass*>* ClassFileParser::compute_transitive_interfaces(ClassLoaderData* loader_data, instanceKlassHandle super, Array<Klass*>* local_ifs, TRAPS) {
+Array<Klass*>* ClassFileParser::compute_transitive_interfaces(
+                                        instanceKlassHandle super,
+                                        Array<Klass*>* local_ifs, TRAPS) {
   // Compute maximum size for transitive interfaces
   int max_transitive_size = 0;
   int super_size = 0;
@@ -4570,7 +4441,7 @@ Array<Klass*>* ClassFileParser::compute_transitive_interfaces(ClassLoaderData* l
     // length will be less than the max_transitive_size if duplicates were removed
     int length = result->length();
     assert(length <= max_transitive_size, "just checking");
-    Array<Klass*>* new_result = MetadataFactory::new_array<Klass*>(loader_data, length, CHECK_NULL);
+    Array<Klass*>* new_result = MetadataFactory::new_array<Klass*>(_loader_data, length, CHECK_NULL);
     for (int i = 0; i < length; i++) {
       Klass* e = result->at(i);
         assert(e != NULL, "just checking");
@@ -4579,7 +4450,6 @@ Array<Klass*>* ClassFileParser::compute_transitive_interfaces(ClassLoaderData* l
     return new_result;
   }
 }
-
 
 void ClassFileParser::check_super_class_access(instanceKlassHandle this_klass, TRAPS) {
   Klass* super = this_klass->super();

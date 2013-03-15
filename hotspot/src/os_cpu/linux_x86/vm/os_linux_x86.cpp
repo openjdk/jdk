@@ -305,6 +305,11 @@ JVM_handle_linux_signal(int sig,
           // to handle_unexpected_exception way down below.
           thread->disable_stack_red_zone();
           tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
+
+          // This is a likely cause, but hard to verify. Let's just print
+          // it as a hint.
+          tty->print_raw_cr("Please check if any of your loaded .so files has "
+                            "enabled executable stack (see man page execstack(8))");
         } else {
           // Accessing stack address below sp may cause SEGV if current
           // thread has MAP_GROWSDOWN stack. This should only happen when
