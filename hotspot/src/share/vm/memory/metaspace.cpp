@@ -334,6 +334,9 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 
   // byte_size is the size of the associated virtualspace.
 VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(0) {
+  // align up to vm allocation granularity
+  byte_size = align_size_up(byte_size, os::vm_allocation_granularity());
+
   // This allocates memory with mmap.  For DumpSharedspaces, allocate the
   // space at low memory so that other shared images don't conflict.
   // This is the same address as memory needed for UseCompressedOops but
