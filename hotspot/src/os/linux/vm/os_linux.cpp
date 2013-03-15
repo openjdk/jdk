@@ -3461,7 +3461,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   assert(thread->is_VM_thread(), "Must be VMThread");
   // read current suspend action
   int action = osthread->sr.suspend_action();
-  if (action == SR_SUSPEND) {
+  if (action == os::Linux::SuspendResume::SR_SUSPEND) {
     suspend_save_context(osthread, siginfo, context);
 
     // Notify the suspend action is about to be completed. do_suspend()
@@ -3483,12 +3483,12 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
     do {
       sigsuspend(&suspend_set);
       // ignore all returns until we get a resume signal
-    } while (osthread->sr.suspend_action() != SR_CONTINUE);
+    } while (osthread->sr.suspend_action() != os::Linux::SuspendResume::SR_CONTINUE);
 
     resume_clear_context(osthread);
 
   } else {
-    assert(action == SR_CONTINUE, "unexpected sr action");
+    assert(action == os::Linux::SuspendResume::SR_CONTINUE, "unexpected sr action");
     // nothing special to do - just leave the handler
   }
 
@@ -3542,7 +3542,7 @@ static int SR_finalize() {
 // but this seems the normal response to library errors
 static bool do_suspend(OSThread* osthread) {
   // mark as suspended and send signal
-  osthread->sr.set_suspend_action(SR_SUSPEND);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_SUSPEND);
   int status = pthread_kill(osthread->pthread_id(), SR_signum);
   assert_status(status == 0, status, "pthread_kill");
 
@@ -3551,18 +3551,18 @@ static bool do_suspend(OSThread* osthread) {
     for (int i = 0; !osthread->sr.is_suspended(); i++) {
       os::yield_all(i);
     }
-    osthread->sr.set_suspend_action(SR_NONE);
+    osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
     return true;
   }
   else {
-    osthread->sr.set_suspend_action(SR_NONE);
+    osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
     return false;
   }
 }
 
 static void do_resume(OSThread* osthread) {
   assert(osthread->sr.is_suspended(), "thread should be suspended");
-  osthread->sr.set_suspend_action(SR_CONTINUE);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_CONTINUE);
 
   int status = pthread_kill(osthread->pthread_id(), SR_signum);
   assert_status(status == 0, status, "pthread_kill");
@@ -3572,7 +3572,7 @@ static void do_resume(OSThread* osthread) {
       os::yield_all(i);
     }
   }
-  osthread->sr.set_suspend_action(SR_NONE);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3653,7 +3653,9 @@ JVM_handle_linux_signal(int signo, siginfo_t* siginfo,
 
 void signalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
+  int orig_errno = errno;  // Preserve errno value over signal handler.
   JVM_handle_linux_signal(sig, info, uc, true);
+  errno = orig_errno;
 }
 
 
@@ -4741,49 +4743,26 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 //
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-  static bool proc_pid_cpu_avail = true;
   static bool proc_task_unchecked = true;
   static const char *proc_stat_path = "/proc/%d/stat";
   pid_t  tid = thread->osthread()->thread_id();
-  int i;
   char *s;
   char stat[2048];
   int statlen;
   char proc_name[64];
   int count;
   long sys_time, user_time;
-  char string[64];
   char cdummy;
   int idummy;
   long ldummy;
   FILE *fp;
 
-  // We first try accessing /proc/<pid>/cpu since this is faster to
-  // process.  If this file is not present (linux kernels 2.5 and above)
-  // then we open /proc/<pid>/stat.
-  if ( proc_pid_cpu_avail ) {
-    sprintf(proc_name, "/proc/%d/cpu", tid);
-    fp =  fopen(proc_name, "r");
-    if ( fp != NULL ) {
-      count = fscanf( fp, "%s %lu %lu\n", string, &user_time, &sys_time);
-      fclose(fp);
-      if ( count != 3 ) return -1;
-
-      if (user_sys_cpu_time) {
-        return ((jlong)sys_time + (jlong)user_time) * (1000000000 / clock_tics_per_sec);
-      } else {
-        return (jlong)user_time * (1000000000 / clock_tics_per_sec);
-      }
-    }
-    else proc_pid_cpu_avail = false;
-  }
-
   // The /proc/<tid>/stat aggregates per-process usage on
   // new Linux kernels 2.6+ where NPTL is supported.
   // The /proc/self/task/<tid>/stat still has the per-thread usage.
   // See bug 6328462.
-  // There can be no directory /proc/self/task on kernels 2.4 with NPTL
-  // and possibly in some other cases, so we check its availability.
+  // There possibly can be cases where there is no directory
+  // /proc/self/task, so we check its availability.
   if (proc_task_unchecked && os::Linux::is_NPTL()) {
     // This is executed only once
     proc_task_unchecked = false;
@@ -4808,7 +4787,6 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   // We don't really need to know the command string, just find the last
   // occurrence of ")" and then start parsing from there. See bug 4726580.
   s = strrchr(stat, ')');
-  i = 0;
   if (s == NULL ) return -1;
 
   // Skip blank chars

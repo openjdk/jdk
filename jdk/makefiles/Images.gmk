@@ -59,7 +59,7 @@ define process-doc-file
 	$(ECHO) $(LOG_INFO) Processing $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(SED) 's/$$//g' $< > $@
+	LC_ALL=C $(SED) 's/$$//g' $< > $@
 	$(CHMOD) 444 $@
 endef
 
@@ -263,6 +263,13 @@ $(foreach f,$(filter $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_ISADIR)/%,$(JDK_JD
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR),$f,JDK_OVERLAY_LIB_TARGETS)))
 $(foreach f,$(filter $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_ISADIR)/%,$(JDKJRE_JDKOUT_LIB_LIST)),\
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR)/jre,$f,JDKJRE_OVERLAY_LIB_TARGETS)))
+
+ifneq ($(PROFILE),)
+# Files in lib$(PROFILE) are excluded from the generic copying routines so 
+# we have to add them back in here
+$(foreach f,$(CUSTOM_PROFILE_JARS),\
+    $(eval $(call AddFileToCopy,$(IMAGES_OUTPUTDIR)/lib$(PROFILE),$(JRE_IMAGE_DIR)/lib,$f,JRE_LIB_TARGETS)))
+endif
 
 # CTE plugin security change require new empty directory lib/applet
 $(JRE_IMAGE_DIR)/lib/applet: 
@@ -602,6 +609,7 @@ define create-info-file
 	$(call info-file-item, "OS_NAME",      "$(REQUIRED_OS_NAME)")
 	$(call info-file-item, "OS_VERSION",   "$(REQUIRED_OS_VERSION)")
 	$(call info-file-item, "OS_ARCH",      "$(OPENJDK_TARGET_CPU_LEGACY)")
+	if [ -n "$(JDK_ARCH_ABI_PROP_NAME)" ]; then $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"); fi
 	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
 endef
 
@@ -738,11 +746,6 @@ jdk-overlay-image: $(JDK_OVERLAY_BIN_TARGETS) $(JDKJRE_OVERLAY_BIN_TARGETS) \
 	$(JDKJRE_OVERLAY_STRIP_LIST) $(JDK_OVERLAY_BIN_STRIP_LIST) 
 
 ifneq ($(PROFILE),)
-# Files in lib$(PROFILE) are excluded from the generic copying routines so
-# we have to add them back in here
-$(foreach f,$(CUSTOM_PROFILE_JARS),\
-    $(eval $(call AddFileToCopy,$(IMAGES_OUTPUTDIR)/lib$(PROFILE),$(JRE_IMAGE_DIR)/lib,$f,JRE_LIB_TARGETS)))
-
 PROFILE_IMAGE_JARS := $(filter %.jar, $(JRE_LIB_TARGETS))
 
 PROFILE_IMAGE_JARS_CHECKED := $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/_jars_checked

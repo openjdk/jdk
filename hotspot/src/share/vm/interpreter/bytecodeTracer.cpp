@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,9 +335,6 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
     st->print_cr(" %s", constants->resolved_klass_at(i)->external_name());
   } else if (tag.is_unresolved_klass()) {
     st->print_cr(" <unresolved klass at %d>", i);
-  } else if (tag.is_object()) {
-    st->print(" <Object>");
-    print_oop(constants->object_at(i), st);
   } else if (tag.is_method_type()) {
     int i2 = constants->method_type_index_at(i);
     st->print(" <MethodType> %d", i2);

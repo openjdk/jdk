@@ -267,7 +267,15 @@ G1CollectorPolicy::G1CollectorPolicy() :
   double max_gc_time = (double) MaxGCPauseMillis / 1000.0;
   double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
   _mmu_tracker = new G1MMUTrackerQueue(time_slice, max_gc_time);
-  _sigma = (double) G1ConfidencePercent / 100.0;
+
+  uintx confidence_perc = G1ConfidencePercent;
+  // Put an artificial ceiling on this so that it's not set to a silly value.
+  if (confidence_perc > 100) {
+    confidence_perc = 100;
+    warning("G1ConfidencePercent is set to a value that is too large, "
+            "it's been updated to %u", confidence_perc);
+  }
+  _sigma = (double) confidence_perc / 100.0;
 
   // start conservatively (around 50ms is about right)
   _concurrent_mark_remark_times_ms->add(0.05);
@@ -1798,6 +1806,14 @@ void G1CollectorPolicy::print_collection_set(HeapRegion* list_head, outputStream
 }
 #endif // !PRODUCT
 
+double G1CollectorPolicy::reclaimable_bytes_perc(size_t reclaimable_bytes) {
+  // Returns the given amount of reclaimable bytes (that represents
+  // the amount of reclaimable space still to be collected) as a
+  // percentage of the current heap capacity.
+  size_t capacity_bytes = _g1->capacity();
+  return (double) reclaimable_bytes * 100.0 / (double) capacity_bytes;
+}
+
 bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                                                 const char* false_action_str) {
   CollectionSetChooser* cset_chooser = _collectionSetChooser;
@@ -1807,19 +1823,21 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                   ergo_format_reason("candidate old regions not available"));
     return false;
   }
+
+  // Is the amount of uncollected reclaimable space above G1HeapWastePercent?
   size_t reclaimable_bytes = cset_chooser->remaining_reclaimable_bytes();
-  size_t capacity_bytes = _g1->capacity();
-  double perc = (double) reclaimable_bytes * 100.0 / (double) capacity_bytes;
+  double reclaimable_perc = reclaimable_bytes_perc(reclaimable_bytes);
   double threshold = (double) G1HeapWastePercent;
-  if (perc < threshold) {
+  if (reclaimable_perc <= threshold) {
     ergo_verbose4(ErgoMixedGCs,
               false_action_str,
-              ergo_format_reason("reclaimable percentage lower than threshold")
+              ergo_format_reason("reclaimable percentage not over threshold")
               ergo_format_region("candidate old regions")
               ergo_format_byte_perc("reclaimable")
               ergo_format_perc("threshold"),
               cset_chooser->remaining_regions(),
-              reclaimable_bytes, perc, threshold);
+              reclaimable_bytes,
+              reclaimable_perc, threshold);
     return false;
   }
 
@@ -1830,9 +1848,49 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                 ergo_format_byte_perc("reclaimable")
                 ergo_format_perc("threshold"),
                 cset_chooser->remaining_regions(),
-                reclaimable_bytes, perc, threshold);
+                reclaimable_bytes,
+                reclaimable_perc, threshold);
   return true;
 }
+
+uint G1CollectorPolicy::calc_min_old_cset_length() {
+  // The min old CSet region bound is based on the maximum desired
+  // number of mixed GCs after a cycle. I.e., even if some old regions
+  // look expensive, we should add them to the CSet anyway to make
+  // sure we go through the available old regions in no more than the
+  // maximum desired number of mixed GCs.
+  //
+  // The calculation is based on the number of marked regions we added
+  // to the CSet chooser in the first place, not how many remain, so
+  // that the result is the same during all mixed GCs that follow a cycle.
+
+  const size_t region_num = (size_t) _collectionSetChooser->length();
+  const size_t gc_num = (size_t) MAX2(G1MixedGCCountTarget, (uintx) 1);
+  size_t result = region_num / gc_num;
+  // emulate ceiling
+  if (result * gc_num < region_num) {
+    result += 1;
+  }
+  return (uint) result;
+}
+
+uint G1CollectorPolicy::calc_max_old_cset_length() {
+  // The max old CSet region bound is based on the threshold expressed
+  // as a percentage of the heap size. I.e., it should bound the
+  // number of old regions added to the CSet irrespective of how many
+  // of them are available.
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  const size_t region_num = g1h->n_regions();
+  const size_t perc = (size_t) G1OldCSetRegionThresholdPercent;
+  size_t result = region_num * perc / 100;
+  // emulate ceiling
+  if (100 * result < region_num * perc) {
+    result += 1;
+  }
+  return (uint) result;
+}
+
 
 void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   double young_start_time_sec = os::elapsedTime();
@@ -1847,7 +1905,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);
   double predicted_pause_time_ms = base_time_ms;
-  double time_remaining_ms = target_pause_time_ms - base_time_ms;
+  double time_remaining_ms = MAX2(target_pause_time_ms - base_time_ms, 0.0);
 
   ergo_verbose4(ErgoCSetConstruction | ErgoHigh,
                 "start choosing CSet",
@@ -1885,7 +1943,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
 
   _collection_set = _inc_cset_head;
   _collection_set_bytes_used_before = _inc_cset_bytes_used_before;
-  time_remaining_ms -= _inc_cset_predicted_elapsed_time_ms;
+  time_remaining_ms = MAX2(time_remaining_ms - _inc_cset_predicted_elapsed_time_ms, 0.0);
   predicted_pause_time_ms += _inc_cset_predicted_elapsed_time_ms;
 
   ergo_verbose3(ErgoCSetConstruction | ErgoHigh,
@@ -1909,8 +1967,8 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   if (!gcs_are_young()) {
     CollectionSetChooser* cset_chooser = _collectionSetChooser;
     cset_chooser->verify();
-    const uint min_old_cset_length = cset_chooser->calc_min_old_cset_length();
-    const uint max_old_cset_length = cset_chooser->calc_max_old_cset_length();
+    const uint min_old_cset_length = calc_min_old_cset_length();
+    const uint max_old_cset_length = calc_max_old_cset_length();
 
     uint expensive_region_num = 0;
     bool check_time_remaining = adaptive_young_list_length();
@@ -1925,6 +1983,30 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
                       ergo_format_region("old")
                       ergo_format_region("max"),
                       old_cset_region_length(), max_old_cset_length);
+        break;
+      }
+
+
+      // Stop adding regions if the remaining reclaimable space is
+      // not above G1HeapWastePercent.
+      size_t reclaimable_bytes = cset_chooser->remaining_reclaimable_bytes();
+      double reclaimable_perc = reclaimable_bytes_perc(reclaimable_bytes);
+      double threshold = (double) G1HeapWastePercent;
+      if (reclaimable_perc <= threshold) {
+        // We've added enough old regions that the amount of uncollected
+        // reclaimable space is at or below the waste threshold. Stop
+        // adding old regions to the CSet.
+        ergo_verbose5(ErgoCSetConstruction,
+                      "finish adding old regions to CSet",
+                      ergo_format_reason("reclaimable percentage not over threshold")
+                      ergo_format_region("old")
+                      ergo_format_region("max")
+                      ergo_format_byte_perc("reclaimable")
+                      ergo_format_perc("threshold"),
+                      old_cset_region_length(),
+                      max_old_cset_length,
+                      reclaimable_bytes,
+                      reclaimable_perc, threshold);
         break;
       }
 
@@ -1967,7 +2049,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
       }
 
       // We will add this region to the CSet.
-      time_remaining_ms -= predicted_time_ms;
+      time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
       predicted_pause_time_ms += predicted_time_ms;
       cset_chooser->remove_and_move_to_next(hr);
       _g1->old_set_remove(hr);

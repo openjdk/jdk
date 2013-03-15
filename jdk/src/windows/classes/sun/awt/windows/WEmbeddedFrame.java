@@ -27,6 +27,7 @@ package sun.awt.windows;
 
 import sun.awt.*;
 import java.awt.*;
+import java.awt.event.InvocationEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.image.*;
 import sun.awt.image.ByteInterleavedRaster;
@@ -232,11 +233,13 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         } else {
             // To avoid focus concurrence b/w IE and EmbeddedFrame
             // activation is postponed by means of posting it to EDT.
-            EventQueue.invokeLater(new Runnable() {
-                    public void run() {
-                        ((WFramePeer)getPeer()).emulateActivation(true);
-                    }
-                });
+            Runnable r = new Runnable() {
+                public void run() {
+                    ((WFramePeer)getPeer()).emulateActivation(true);
+                }
+            };
+            WToolkit.postEvent(WToolkit.targetToAppContext(this),
+                               new InvocationEvent(this, r));
         }
     }
 

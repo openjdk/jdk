@@ -527,9 +527,92 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
     }
 
+    private PageFormat attributeToPageFormat(PrintService service,
+                                               PrintRequestAttributeSet attSet) {
+        PageFormat page = defaultPage();
+
+        if (service == null) {
+            return page;
+        }
+
+        OrientationRequested orient = (OrientationRequested)
+                                      attSet.get(OrientationRequested.class);
+        if (orient == null) {
+            orient = (OrientationRequested)
+                    service.getDefaultAttributeValue(OrientationRequested.class);
+        }
+        if (orient == OrientationRequested.REVERSE_LANDSCAPE) {
+            page.setOrientation(PageFormat.REVERSE_LANDSCAPE);
+        } else if (orient == OrientationRequested.LANDSCAPE) {
+            page.setOrientation(PageFormat.LANDSCAPE);
+        } else {
+            page.setOrientation(PageFormat.PORTRAIT);
+        }
+
+        Media media = (Media)attSet.get(Media.class);
+        if (media == null) {
+            media =
+                (Media)service.getDefaultAttributeValue(Media.class);
+        }
+        if (!(media instanceof MediaSizeName)) {
+            media = MediaSizeName.NA_LETTER;
+        }
+        MediaSize size =
+            MediaSize.getMediaSizeForName((MediaSizeName)media);
+        if (size == null) {
+            size = MediaSize.NA.LETTER;
+        }
+        Paper paper = new Paper();
+        float dim[] = size.getSize(1); //units == 1 to avoid FP error
+        double w = Math.rint((dim[0]*72.0)/Size2DSyntax.INCH);
+        double h = Math.rint((dim[1]*72.0)/Size2DSyntax.INCH);
+        paper.setSize(w, h);
+        MediaPrintableArea area =
+             (MediaPrintableArea)
+             attSet.get(MediaPrintableArea.class);
+        double ix, iw, iy, ih;
+
+        if (area != null) {
+            // Should pass in same unit as updatePageAttributes
+            // to avoid rounding off errors.
+            ix = Math.rint(
+                           area.getX(MediaPrintableArea.INCH) * DPI);
+            iy = Math.rint(
+                           area.getY(MediaPrintableArea.INCH) * DPI);
+            iw = Math.rint(
+                           area.getWidth(MediaPrintableArea.INCH) * DPI);
+            ih = Math.rint(
+                           area.getHeight(MediaPrintableArea.INCH) * DPI);
+        }
+        else {
+            if (w >= 72.0 * 6.0) {
+                ix = 72.0;
+                iw = w - 2 * 72.0;
+            } else {
+                ix = w / 6.0;
+                iw = w * 0.75;
+            }
+            if (h >= 72.0 * 6.0) {
+                iy = 72.0;
+                ih = h - 2 * 72.0;
+            } else {
+                iy = h / 6.0;
+                ih = h * 0.75;
+            }
+        }
+        paper.setImageableArea(ix, iy, iw, ih);
+        page.setPaper(paper);
+        return page;
+    }
 
     protected void updatePageAttributes(PrintService service,
                                         PageFormat page) {
+        updateAttributesWithPageFormat(service, page, this.attributes);
+    }
+
+    protected void updateAttributesWithPageFormat(PrintService service,
+                                        PageFormat page,
+                                        PrintRequestAttributeSet attributes) {
         if (service == null || page == null) {
             return;
         }
@@ -659,6 +742,18 @@ public abstract class RasterPrinterJob extends PrinterJob {
             throw new HeadlessException();
         }
 
+        DialogTypeSelection dlg =
+            (DialogTypeSelection)attributes.get(DialogTypeSelection.class);
+
+        // Check for native, note that default dialog is COMMON.
+        if (dlg == DialogTypeSelection.NATIVE) {
+            PrintService pservice = getPrintService();
+            PageFormat page = pageDialog(attributeToPageFormat(pservice,
+                                                               attributes));
+            updateAttributesWithPageFormat(pservice, page, attributes);
+            return page;
+        }
+
         final GraphicsConfiguration gc =
             GraphicsEnvironment.getLocalGraphicsEnvironment().
             getDefaultScreenDevice().getDefaultConfiguration();
@@ -698,77 +793,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 attributes.remove(amCategory);
             }
             attributes.addAll(newas);
-
-            PageFormat page = defaultPage();
-
-            OrientationRequested orient =
-                (OrientationRequested)
-                attributes.get(OrientationRequested.class);
-            int pfOrient =  PageFormat.PORTRAIT;
-            if (orient != null) {
-                if (orient == OrientationRequested.REVERSE_LANDSCAPE) {
-                    pfOrient = PageFormat.REVERSE_LANDSCAPE;
-                } else if (orient == OrientationRequested.LANDSCAPE) {
-                    pfOrient = PageFormat.LANDSCAPE;
-                }
-            }
-            page.setOrientation(pfOrient);
-
-            Media media = (Media)attributes.get(Media.class);
-            if (media == null) {
-                media =
-                    (Media)service.getDefaultAttributeValue(Media.class);
-            }
-            if (!(media instanceof MediaSizeName)) {
-                media = MediaSizeName.NA_LETTER;
-            }
-            MediaSize size =
-                MediaSize.getMediaSizeForName((MediaSizeName)media);
-            if (size == null) {
-                size = MediaSize.NA.LETTER;
-            }
-            Paper paper = new Paper();
-            float dim[] = size.getSize(1); //units == 1 to avoid FP error
-            double w = Math.rint((dim[0]*72.0)/Size2DSyntax.INCH);
-            double h = Math.rint((dim[1]*72.0)/Size2DSyntax.INCH);
-            paper.setSize(w, h);
-            MediaPrintableArea area =
-                (MediaPrintableArea)
-                attributes.get(MediaPrintableArea.class);
-            double ix, iw, iy, ih;
-
-            if (area != null) {
-                // Should pass in same unit as updatePageAttributes
-                // to avoid rounding off errors.
-                ix = Math.rint(
-                               area.getX(MediaPrintableArea.INCH) * DPI);
-                iy = Math.rint(
-                               area.getY(MediaPrintableArea.INCH) * DPI);
-                iw = Math.rint(
-                               area.getWidth(MediaPrintableArea.INCH) * DPI);
-                ih = Math.rint(
-                               area.getHeight(MediaPrintableArea.INCH) * DPI);
-            }
-            else {
-                if (w >= 72.0 * 6.0) {
-                    ix = 72.0;
-                    iw = w - 2 * 72.0;
-                } else {
-                    ix = w / 6.0;
-                    iw = w * 0.75;
-                }
-                if (h >= 72.0 * 6.0) {
-                    iy = 72.0;
-                    ih = h - 2 * 72.0;
-                } else {
-                    iy = h / 6.0;
-                    ih = h * 0.75;
-                }
-            }
-            paper.setImageableArea(ix, iy, iw, ih);
-            page.setPaper(paper);
-
-            return page;
+            return attributeToPageFormat(service, attributes);
         } else {
             return null;
         }
@@ -795,7 +820,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
             throw new HeadlessException();
         }
 
-
         DialogTypeSelection dlg =
             (DialogTypeSelection)attributes.get(DialogTypeSelection.class);
 
@@ -815,7 +839,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
             return ret;
 
         }
-
 
         /* A security check has already been performed in the
          * java.awt.print.printerJob.getPrinterJob method.
