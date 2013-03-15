@@ -734,6 +734,10 @@ cmsSEQ* CMSEXPORT cmsAllocProfileSequenceDescription(cmsContext ContextID, cmsUI
     Seq -> seq      = (cmsPSEQDESC*) _cmsCalloc(ContextID, n, sizeof(cmsPSEQDESC));
     Seq -> n        = n;
 
+    if (Seq -> seq == NULL) {
+        _cmsFree(ContextID, Seq);
+        return NULL;
+    }
 
     for (i=0; i < n; i++) {
         Seq -> seq[i].Manufacturer = NULL;
