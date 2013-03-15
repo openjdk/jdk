@@ -90,10 +90,6 @@ public class VM {
   /** Flags indicating whether we are attached to a core, C1, or C2 build */
   private boolean      usingClientCompiler;
   private boolean      usingServerCompiler;
-  /** Flag indicating whether UseTLAB is turned on */
-  private boolean      useTLAB;
-  /** Flag indicating whether invokedynamic support is on */
-  private boolean      enableInvokeDynamic;
   /** alignment constants */
   private boolean      isLP64;
   private int          bytesPerLong;
@@ -325,9 +321,6 @@ public class VM {
         }
       }
     }
-
-    useTLAB = (db.lookupIntConstant("UseTLAB").intValue() != 0);
-    enableInvokeDynamic = (db.lookupIntConstant("EnableInvokeDynamic").intValue() != 0);
 
     if (debugger != null) {
       isLP64 = debugger.getMachineDescription().isLP64();
@@ -579,15 +572,6 @@ public class VM {
     }
   }
 
-  /** Indicates whether Thread-Local Allocation Buffers are used */
-  public boolean getUseTLAB() {
-    return useTLAB;
-  }
-
-  public boolean getEnableInvokeDynamic() {
-    return enableInvokeDynamic;
-  }
-
   public TypeDataBase getTypeDataBase() {
     return db;
   }
@@ -820,6 +804,12 @@ public class VM {
         objectAlignmentInBytes = (flag == null) ? 8 : (int)flag.getIntx();
     }
     return objectAlignmentInBytes;
+  }
+
+  /** Indicates whether Thread-Local Allocation Buffers are used */
+  public boolean getUseTLAB() {
+      Flag flag = getCommandLineFlag("UseTLAB");
+      return (flag == null) ? false: flag.getBool();
   }
 
   // returns null, if not available.

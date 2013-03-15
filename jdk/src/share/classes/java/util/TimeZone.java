@@ -534,7 +534,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
     /**
      * Gets the {@code TimeZone} for the given {@code zoneId}.
      *
-     * @param zoneid a {@link ZoneId} from which the time zone ID is obtained
+     * @param zoneId a {@link ZoneId} from which the time zone ID is obtained
      * @return the specified {@code TimeZone}, or the GMT zone if the given ID
      *         cannot be understood.
      * @throws NullPointerException if {@code zoneId} is {@code null}

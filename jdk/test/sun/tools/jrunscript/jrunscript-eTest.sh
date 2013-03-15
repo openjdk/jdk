@@ -39,21 +39,10 @@ if [ $? -eq 2 ]; then
     exit 0
 fi
 
-rm -f jrunscript-eTest.out 2>/dev/null
-${JRUNSCRIPT} -J-Djava.awt.headless=true -e "println('hello')" > jrunscript-eTest.out 2>&1
-
-$golden_diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
-if [ $? != 0 ]
-then
-  echo "Output of jrunscript -e differ from expected output. Failed."
-  rm -f jrunscript-eTest.out 2>/dev/null
-  exit 1
-fi
-
 # -e option with JavaScript explicitly choosen as language
 
 rm -f jrunscript-eTest.out 2>/dev/null
-${JRUNSCRIPT} -J-Djava.awt.headless=true -l js -e "println('hello')" > jrunscript-eTest.out 2>&1
+${JRUNSCRIPT} -J-Djava.awt.headless=true -l nashorn -e "println('hello')" > jrunscript-eTest.out 2>&1
 
 $golden_diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
 if [ $? != 0 ]

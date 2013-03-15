@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -208,6 +209,28 @@ unsigned int Symbol::new_hash(jint seed) {
   ResourceMark rm;
   // Use alternate hashing algorithm on this symbol.
   return AltHashing::murmur3_32(seed, (const jbyte*)as_C_string(), utf8_length());
+}
+
+void Symbol::increment_refcount() {
+  // Only increment the refcount if positive.  If negative either
+  // overflow has occurred or it is a permanent symbol in a read only
+  // shared archive.
+  if (_refcount >= 0) {
+    Atomic::inc(&_refcount);
+    NOT_PRODUCT(Atomic::inc(&_total_count);)
+  }
+}
+
+void Symbol::decrement_refcount() {
+  if (_refcount >= 0) {
+    Atomic::dec(&_refcount);
+#ifdef ASSERT
+    if (_refcount < 0) {
+      print();
+      assert(false, "reference count underflow for symbol");
+    }
+#endif
+  }
 }
 
 void Symbol::print_on(outputStream* st) const {

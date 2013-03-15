@@ -1046,6 +1046,8 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
   }
 #endif
 
+  int cand_cnt = 0;  // number of candidates tried
+
   // Walk up the dominator tree from LCA (Lowest common ancestor) to
   // the earliest legal location.  Capture the least execution frequency.
   while (LCA != early) {
@@ -1071,8 +1073,11 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
         LCA->_pre_order, LCA->_nodes[0]->_idx, start_lat, end_idx, end_lat, LCA_freq);
     }
 #endif
+    cand_cnt++;
     if (LCA_freq < least_freq              || // Better Frequency
-        ( !in_latency                   &&    // No block containing latency
+        (StressGCM && Compile::randomized_select(cand_cnt)) || // Should be randomly accepted in stress mode
+         (!StressGCM                    &&    // Otherwise, choose with latency
+          !in_latency                   &&    // No block containing latency
           LCA_freq < least_freq * delta &&    // No worse frequency
           target >= end_lat             &&    // within latency range
           !self->is_iteratively_computed() )  // But don't hoist IV increments
@@ -1210,7 +1215,8 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_List &stack) {
     }
 
     // If there is no opportunity to hoist, then we're done.
-    bool try_to_hoist = (LCA != early);
+    // In stress mode, try to hoist even the single operations.
+    bool try_to_hoist = StressGCM || (LCA != early);
 
     // Must clone guys stay next to use; no hoisting allowed.
     // Also cannot hoist guys that alter memory or are otherwise not

@@ -2109,8 +2109,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /* Useful globals */                                                    \
   /******************/                                                    \
                                                                           \
-  declare_constant(UseTLAB)                                               \
-  declare_constant(EnableInvokeDynamic)                                   \
                                                                           \
   /**************/                                                        \
   /* Stack bias */                                                        \

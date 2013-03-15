@@ -26,23 +26,22 @@ package java.util.function;
 
 /**
  * An operation on two {@code double} operands yielding a {@code double} result.
+ * This is the primitive type specialization of {@link BinaryOperator} for
+ * {@code double}.
  *
+ * @see BinaryOperator
  * @since 1.8
  */
 @FunctionalInterface
-public interface DoubleBinaryOperator /* extends BinaryOperator<Double> */ {
-//
-//    @Override
-//    public default Double operate(Double left, Double right) { return operateAsDouble((double) left, (double) right); }
-
+public interface DoubleBinaryOperator {
     /**
      * Returns the {@code double} result of the operation upon the
      * {@code double} operands. The parameters are named {@code left} and
      * {@code right} for operations where the order of parameters matters.
      *
      * @param left the left operand value
-     * @param right  the right operand value
+     * @param right the right operand value
      * @return the result of the operation
      */
-    public double operateAsDouble(double left, double right);
+    public double applyAsDouble(double left, double right);
 }

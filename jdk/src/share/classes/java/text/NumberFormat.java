@@ -389,7 +389,8 @@ public abstract class NumberFormat extends Format  {
     //============== Locale Stuff =====================
 
     /**
-     * Returns a general-purpose number format for the current default locale.
+     * Returns a general-purpose number format for the current default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * This is the same as calling
      * {@link #getNumberInstance() getNumberInstance()}.
      */
@@ -407,7 +408,13 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Returns a general-purpose number format for the current default locale.
+     * Returns a general-purpose number format for the current default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getNumberInstance(Locale)
+     *     getNumberInstance(Locale.getDefault(Locale.Category.FORMAT))}.
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      */
     public final static NumberFormat getNumberInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), NUMBERSTYLE);
@@ -421,14 +428,20 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Returns an integer number format for the current default locale. The
+     * Returns an integer number format for the current default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale. The
      * returned number format is configured to round floating point numbers
      * to the nearest integer using half-even rounding (see {@link
      * java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}) for formatting,
      * and to parse only the integer part of an input string (see {@link
      * #isParseIntegerOnly isParseIntegerOnly}).
+     * <p>This is equivalent to calling
+     * {@link #getIntegerInstance(Locale)
+     *     getIntegerInstance(Locale.getDefault(Locale.Category.FORMAT))}.
      *
      * @see #getRoundingMode()
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      * @return a number format for integer values
      * @since 1.4
      */
@@ -453,7 +466,14 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Returns a currency format for the current default locale.
+     * Returns a currency format for the current default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getCurrencyInstance(Locale)
+     *     getCurrencyInstance(Locale.getDefault(Locale.Category.FORMAT))}.
+     *
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      */
     public final static NumberFormat getCurrencyInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), CURRENCYSTYLE);
@@ -467,7 +487,14 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Returns a percentage format for the current default locale.
+     * Returns a percentage format for the current default
+     * {@link java.util.Locale.Category#FORMAT FORMAT} locale.
+     * <p>This is equivalent to calling
+     * {@link #getPercentInstance(Locale)
+     *     getPercentInstance(Locale.getDefault(Locale.Category.FORMAT))}.
+     *
+     * @see java.util.Locale#getDefault(java.util.Locale.Category)
+     * @see java.util.Locale.Category#FORMAT
      */
     public final static NumberFormat getPercentInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), PERCENTSTYLE);

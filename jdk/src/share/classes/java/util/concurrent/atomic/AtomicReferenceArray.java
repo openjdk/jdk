@@ -217,7 +217,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         E prev, next;
         do {
             prev = getRaw(offset);
-            next = updateFunction.operate(prev);
+            next = updateFunction.apply(prev);
         } while (!compareAndSetRaw(offset, prev, next));
         return prev;
     }
@@ -238,7 +238,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         E prev, next;
         do {
             prev = getRaw(offset);
-            next = updateFunction.operate(prev);
+            next = updateFunction.apply(prev);
         } while (!compareAndSetRaw(offset, prev, next));
         return next;
     }
@@ -264,7 +264,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         E prev, next;
         do {
             prev = getRaw(offset);
-            next = accumulatorFunction.operate(prev, x);
+            next = accumulatorFunction.apply(prev, x);
         } while (!compareAndSetRaw(offset, prev, next));
         return prev;
     }
@@ -290,7 +290,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         E prev, next;
         do {
             prev = getRaw(offset);
-            next = accumulatorFunction.operate(prev, x);
+            next = accumulatorFunction.apply(prev, x);
         } while (!compareAndSetRaw(offset, prev, next));
         return next;
     }

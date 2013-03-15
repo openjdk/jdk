@@ -1738,16 +1738,6 @@ bool Arguments::verify_percentage(uintx value, const char* name) {
   return false;
 }
 
-static void force_serial_gc() {
-  FLAG_SET_DEFAULT(UseSerialGC, true);
-  FLAG_SET_DEFAULT(UseParNewGC, false);
-  FLAG_SET_DEFAULT(UseConcMarkSweepGC, false);
-  FLAG_SET_DEFAULT(CMSIncrementalMode, false);  // special CMS suboption
-  FLAG_SET_DEFAULT(UseParallelGC, false);
-  FLAG_SET_DEFAULT(UseParallelOldGC, false);
-  FLAG_SET_DEFAULT(UseG1GC, false);
-}
-
 static bool verify_serial_gc_flags() {
   return (UseSerialGC &&
         !(UseParNewGC || (UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC ||
@@ -2191,19 +2181,6 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
     FREE_C_HEAP_ARRAY(char, altclasses_path, mtInternal);
   }
 
-  if (WhiteBoxAPI) {
-    // Append wb.jar to bootclasspath if enabled
-    const char* wb_jar = "wb.jar";
-    size_t wb_path_len = strlen(get_meta_index_dir()) + 1 +
-                         strlen(wb_jar);
-    char* wb_path = NEW_C_HEAP_ARRAY(char, wb_path_len, mtInternal);
-    strcpy(wb_path, get_meta_index_dir());
-    strcat(wb_path, wb_jar);
-    scp.add_suffix(wb_path);
-    scp_assembly_required = true;
-    FREE_C_HEAP_ARRAY(char, wb_path, mtInternal);
-  }
-
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
   result = parse_java_options_environment_variable(&scp, &scp_assembly_required);
   if (result != JNI_OK) {
@@ -2498,7 +2475,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       }
       // Out of the box management support
       if (match_option(option, "-Dcom.sun.management", &tail)) {
+#if INCLUDE_MANAGEMENT
         FLAG_SET_CMDLINE(bool, ManagementServer, true);
+#else
+        vm_exit_during_initialization(
+            "-Dcom.sun.management is not supported in this VM.", NULL);
+#endif
       }
     // -Xint
     } else if (match_option(option, "-Xint", &tail)) {
@@ -2844,6 +2826,11 @@ SOLARIS_ONLY(
       //       away and will cause VM initialization failures!
       warning("-XX:+UseVMInterruptibleIO is obsolete and will be removed in a future release.");
       FLAG_SET_CMDLINE(bool, UseVMInterruptibleIO, true);
+#if !INCLUDE_MANAGEMENT
+    } else if (match_option(option, "-XX:+ManagementServer", &tail)) {
+      vm_exit_during_initialization(
+        "ManagementServer is not supported in this VM.", NULL);
+#endif // INCLUDE_MANAGEMENT
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
@@ -3072,6 +3059,27 @@ do {                                                            \
   }                                                             \
 } while(0)
 
+
+#define UNSUPPORTED_GC_OPTION(gc)                                     \
+do {                                                                  \
+  if (gc) {                                                           \
+    if (FLAG_IS_CMDLINE(gc)) {                                        \
+      warning(#gc " is not supported in this VM.  Using Serial GC."); \
+    }                                                                 \
+    FLAG_SET_DEFAULT(gc, false);                                      \
+  }                                                                   \
+} while(0)
+
+static void force_serial_gc() {
+  FLAG_SET_DEFAULT(UseSerialGC, true);
+  FLAG_SET_DEFAULT(CMSIncrementalMode, false);  // special CMS suboption
+  UNSUPPORTED_GC_OPTION(UseG1GC);
+  UNSUPPORTED_GC_OPTION(UseParallelGC);
+  UNSUPPORTED_GC_OPTION(UseParallelOldGC);
+  UNSUPPORTED_GC_OPTION(UseConcMarkSweepGC);
+  UNSUPPORTED_GC_OPTION(UseParNewGC);
+}
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* args) {
@@ -3187,28 +3195,15 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
             hotspotrc, hotspotrc);
   }
 
-#if (defined JAVASE_EMBEDDED || defined ARM)
-  UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
-#endif
-
 #ifdef _ALLBSD_SOURCE  // UseLargePages is not yet supported on BSD.
   UNSUPPORTED_OPTION(UseLargePages, "-XX:+UseLargePages");
 #endif
 
-#if !INCLUDE_ALL_GCS
-  if (UseParallelGC) {
-    warning("Parallel GC is not supported in this VM.  Using Serial GC.");
-  }
-  if (UseParallelOldGC) {
-    warning("Parallel Old GC is not supported in this VM.  Using Serial GC.");
-  }
-  if (UseConcMarkSweepGC) {
-    warning("Concurrent Mark Sweep GC is not supported in this VM.  Using Serial GC.");
-  }
-  if (UseParNewGC) {
-    warning("Par New GC is not supported in this VM.  Using Serial GC.");
-  }
-#endif // INCLUDE_ALL_GCS
+#if INCLUDE_ALL_GCS
+  #if (defined JAVASE_EMBEDDED || defined ARM)
+    UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
+  #endif
+#endif
 
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {

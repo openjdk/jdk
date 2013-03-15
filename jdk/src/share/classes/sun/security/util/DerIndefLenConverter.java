@@ -325,6 +325,10 @@ class DerIndefLenConverter {
             }
         }
 
+        if (unresolved != 0) {
+            throw new IOException("not all indef len BER resolved");
+        }
+
         newData = new byte[dataSize + numOfTotalLenBytes + unused];
         dataPos=0; newDataPos=0; index=0;
 
