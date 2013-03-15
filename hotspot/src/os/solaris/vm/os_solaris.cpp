@@ -2945,7 +2945,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   while (p < (uint64_t)end) {
     addrs[0] = p;
     size_t addrs_count = 1;
-    while (addrs_count < MAX_MEMINFO_CNT && addrs[addrs_count - 1] < (uint64_t)end) {
+    while (addrs_count < MAX_MEMINFO_CNT && addrs[addrs_count - 1] + page_size < (uint64_t)end) {
       addrs[addrs_count] = addrs[addrs_count - 1] + page_size;
       addrs_count++;
     }
