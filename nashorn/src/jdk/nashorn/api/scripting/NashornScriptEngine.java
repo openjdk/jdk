@@ -394,14 +394,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             setContextVariables(ctxt);
             final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
             final String fileName = (val != null) ? val.toString() : "<eval>";
-
-            // NOTE: FIXME: If this is jrunscript's init.js, we want to run the replacement.
-            // This should go away once we fix jrunscript's copy of init.js.
-            if ("<system-init>".equals(fileName)) {
-                evalSupportScript("resources/init.js", "nashorn:engine/resources/init.js");
-                return null;
-            }
-
             Object res = ScriptRuntime.apply(script, ctxtGlobal);
             return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, ctxtGlobal));
         } catch (final Exception e) {

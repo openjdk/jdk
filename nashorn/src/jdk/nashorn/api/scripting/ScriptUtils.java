@@ -45,4 +45,16 @@ public final class ScriptUtils {
     public static String parse(final String code, final String name, final boolean includeLoc) {
         return ScriptRuntime.parse(code, name, includeLoc);
     }
+
+    /**
+     * Method which converts javascript types to java types for the
+     * String.format method (jrunscript function sprintf).
+     *
+     * @param format a format string
+     * @param args arguments referenced by the format specifiers in format
+     * @return a formatted string
+     */
+    public static String format(final String format, final Object[] args) {
+        return Formatter.format(format, args);
+    }
 }
