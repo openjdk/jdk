@@ -1293,9 +1293,16 @@ public class LambdaToMethod extends TreeTranslator {
             return names.lambda.append(names.fromString("" + lambdaCount++));
         }
 
+        /**
+         * For a serializable lambda, generate a name which maximizes name
+         * stability across deserialization.
+         * @param owner
+         * @return Name to use for the synthetic lambda method name
+         */
         private Name serializedLambdaName(Symbol owner) {
             StringBuilder buf = new StringBuilder();
             buf.append(names.lambda);
+            // Append the name of the method enclosing the lambda.
             String methodName = owner.name.toString();
             if (methodName.equals("<clinit>"))
                 methodName = "static";
@@ -1303,9 +1310,18 @@ public class LambdaToMethod extends TreeTranslator {
                 methodName = "new";
             buf.append(methodName);
             buf.append('$');
-            int methTypeHash = methodSig(owner.type).hashCode();
-            buf.append(Integer.toHexString(methTypeHash));
+            // Append a hash of the enclosing method signature to differentiate
+            // overloaded enclosing methods.  For lambdas enclosed in lambdas,
+            // the generated lambda method will not have type yet, but the
+            // enclosing method's name will have been generated with this same
+            // method, so it will be unique and never be overloaded.
+            if (owner.type != null) {
+                int methTypeHash = methodSig(owner.type).hashCode();
+                buf.append(Integer.toHexString(methTypeHash));
+            }
             buf.append('$');
+            // The above appended name components may not be unique, append a
+            // count based on the above name components.
             String temp = buf.toString();
             Integer count = serializableLambdaCounts.get(temp);
             if (count == null) {
