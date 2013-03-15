@@ -804,6 +804,32 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
       }
     } // load_instance_class loop
 
+    if (HAS_PENDING_EXCEPTION) {
+      // An exception, such as OOM could have happened at various places inside
+      // load_instance_class. We might have partially initialized a shared class
+      // and need to clean it up.
+      if (class_loader.is_null()) {
+        // In some cases k may be null. Let's find the shared class again.
+        instanceKlassHandle ik(THREAD, find_shared_class(name));
+        if (ik.not_null()) {
+          if (ik->class_loader_data() == NULL) {
+            // We didn't go as far as Klass::restore_unshareable_info(),
+            // so nothing to clean up.
+          } else {
+            MutexLocker mu(SystemDictionary_lock, THREAD);
+            Klass* kk = find_class(name, ik->class_loader_data());
+            if (kk != NULL) {
+              // No clean up is needed if the shared class has been entered
+              // into system dictionary, as load_shared_class() won't be called
+              // again.
+            } else {
+              clean_up_shared_class(ik, class_loader, THREAD);
+            }
+          }
+        }
+      }
+    }
+
     if (load_instance_added == true) {
       // clean up placeholder entries for LOAD_INSTANCE success or error
       // This brackets the SystemDictionary updates for both defining
@@ -1140,11 +1166,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(
   return load_shared_class(ik, class_loader, THREAD);
 }
 
-// Note well!  Changes to this method may affect oop access order
-// in the shared archive.  Please take care to not make changes that
-// adversely affect cold start time by changing the oop access order
-// that is specified in dump.cpp MarkAndMoveOrderedReadOnly and
-// MarkAndMoveOrderedReadWrite closures.
 instanceKlassHandle SystemDictionary::load_shared_class(
                  instanceKlassHandle ik, Handle class_loader, TRAPS) {
   assert(class_loader.is_null(), "non-null classloader for shared class?");
@@ -1205,6 +1226,19 @@ instanceKlassHandle SystemDictionary::load_shared_class(
   return ik;
 }
 
+void SystemDictionary::clean_up_shared_class(instanceKlassHandle ik, Handle class_loader, TRAPS) {
+  // Updating methods must be done under a lock so multiple
+  // threads don't update these in parallel
+  // Shared classes are all currently loaded by the bootstrap
+  // classloader, so this will never cause a deadlock on
+  // a custom class loader lock.
+  {
+    Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
+    check_loader_lock_contention(lockObject, THREAD);
+    ObjectLocker ol(lockObject, THREAD, true);
+    ik->remove_unshareable_info();
+  }
+}
 
 instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
