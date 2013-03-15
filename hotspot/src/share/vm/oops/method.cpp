@@ -798,7 +798,15 @@ void Method::unlink_method() {
   backedge_counter()->reset();
   _adapter = NULL;
   _from_compiled_entry = NULL;
-  assert(_method_data == NULL, "unexpected method data?");
+
+  // In case of DumpSharedSpaces, _method_data should always be NULL.
+  //
+  // During runtime (!DumpSharedSpaces), when we are cleaning a
+  // shared class that failed to load, this->link_method() may
+  // have already been called (before an exception happened), so
+  // this->_method_data may not be NULL.
+  assert(!DumpSharedSpaces || _method_data == NULL, "unexpected method data?");
+
   set_method_data(NULL);
   set_interpreter_throwout_count(0);
   set_interpreter_invocation_count(0);
