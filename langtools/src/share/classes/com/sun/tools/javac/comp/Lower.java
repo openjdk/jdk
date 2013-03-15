@@ -3434,14 +3434,16 @@ public class Lower extends TreeTranslator {
                 tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);
             Symbol iterator = lookupMethod(tree.expr.pos(),
                                            names.iterator,
-                                           types.erasure(syms.iterableType),
+                                           eType,
                                            List.<Type>nil());
             VarSymbol itvar = new VarSymbol(0, names.fromString("i" + target.syntheticNameChar()),
                                             types.erasure(iterator.type.getReturnType()),
                                             currentMethodSym);
-            JCStatement init = make.
-                VarDef(itvar,
-                       make.App(make.Select(tree.expr, iterator)));
+
+             JCStatement init = make.
+                VarDef(itvar, make.App(make.Select(tree.expr, iterator)
+                     .setType(types.erasure(iterator.type))));
+
             Symbol hasNext = lookupMethod(tree.expr.pos(),
                                           names.hasNext,
                                           itvar.type,
