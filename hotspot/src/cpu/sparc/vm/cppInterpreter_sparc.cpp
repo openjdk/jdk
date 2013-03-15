@@ -2194,7 +2194,8 @@ int AbstractInterpreter::layout_activation(Method* method,
                                            int callee_locals_size,
                                            frame* caller,
                                            frame* interpreter_frame,
-                                           bool is_top_frame) {
+                                           bool is_top_frame,
+                                           bool is_bottom_frame) {
 
   assert(popframe_extra_args == 0, "NEED TO FIX");
   // NOTE this code must exactly mimic what InterpreterGenerator::generate_compute_interpreter_state()

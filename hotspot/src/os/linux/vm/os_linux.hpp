@@ -94,6 +94,9 @@ class Linux {
   static void print_libversion_info(outputStream* st);
 
  public:
+  static bool _stack_is_executable;
+  static void *dll_load_inner(const char *name);
+
   static void init_thread_fpu_state();
   static int  get_fpu_control_word();
   static void set_fpu_control_word(int fpu_control);

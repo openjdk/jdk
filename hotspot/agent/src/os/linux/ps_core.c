@@ -132,12 +132,12 @@ static map_info* add_map_info(struct ps_prochandle* ph, int fd, off_t offset,
 }
 
 // Part of the class sharing workaround
-static map_info* add_class_share_map_info(struct ps_prochandle* ph, off_t offset,
+static void add_class_share_map_info(struct ps_prochandle* ph, off_t offset,
                              uintptr_t vaddr, size_t memsz) {
    map_info* map;
    if ((map = allocate_init_map(ph->core->classes_jsa_fd,
                                 offset, vaddr, memsz)) == NULL) {
-      return NULL;
+      return;
    }
 
    map->next = ph->core->class_share_maps;

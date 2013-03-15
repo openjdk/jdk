@@ -505,7 +505,7 @@ void CompileTask::log_task(xmlStream* log) {
   ResourceMark rm(thread);
 
   // <task id='9' method='M' osr_bci='X' level='1' blocking='1' stamp='1.234'>
-  if (_compile_id != 0)   log->print(" compile_id='%d'", _compile_id);
+  log->print(" compile_id='%d'", _compile_id);
   if (_osr_bci != CompileBroker::standard_entry_bci) {
     log->print(" compile_kind='osr'");  // same as nmethod::compile_kind
   } // else compile_kind='c2c'
