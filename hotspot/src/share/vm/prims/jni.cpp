@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -92,7 +92,7 @@
 # include "os_bsd.inline.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_1_6;
+static jint CurrentVersion = JNI_VERSION_1_8;
 
 
 // The DT_RETURN_MARK macros create a scoped object to fire the dtrace
