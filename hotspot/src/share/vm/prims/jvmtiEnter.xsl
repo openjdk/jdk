@@ -773,7 +773,7 @@ static jvmtiError JNICALL
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">     
       <xsl:with-param name="err">JVMTI_ERROR_INVALID_THREAD</xsl:with-param>
-      <xsl:with-param name="comment"> - jthread resolved to NULL - jthread = %0x%x</xsl:with-param>
+      <xsl:with-param name="comment"> - jthread resolved to NULL - jthread = 0x%x</xsl:with-param>
       <xsl:with-param name="extraValue">, <xsl:value-of select="$name"/></xsl:with-param>
     </xsl:apply-templates>
     <xsl:text>
@@ -782,7 +782,7 @@ static jvmtiError JNICALL
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">     
       <xsl:with-param name="err">JVMTI_ERROR_INVALID_THREAD</xsl:with-param>
-      <xsl:with-param name="comment"> - oop is not a thread - jthread = %0x%x</xsl:with-param>
+      <xsl:with-param name="comment"> - oop is not a thread - jthread = 0x%x</xsl:with-param>
       <xsl:with-param name="extraValue">, <xsl:value-of select="$name"/></xsl:with-param>
     </xsl:apply-templates>
     <xsl:text>
@@ -794,7 +794,7 @@ static jvmtiError JNICALL
       <xsl:with-param name="err">
         <xsl:text>JVMTI_ERROR_THREAD_NOT_ALIVE</xsl:text>
       </xsl:with-param>
-      <xsl:with-param name="comment"> - not a Java thread - jthread = %0x%x</xsl:with-param>
+      <xsl:with-param name="comment"> - not a Java thread - jthread = 0x%x</xsl:with-param>
       <xsl:with-param name="extraValue">, <xsl:value-of select="$name"/></xsl:with-param>
     </xsl:apply-templates>
     <xsl:text>
@@ -838,7 +838,7 @@ static jvmtiError JNICALL
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">     
       <xsl:with-param name="err">JVMTI_ERROR_ILLEGAL_ARGUMENT</xsl:with-param>
-      <xsl:with-param name="comment"> - negative depth - jthread = %0x%x</xsl:with-param>
+      <xsl:with-param name="comment"> - negative depth - jthread = 0x%x</xsl:with-param>
       <xsl:with-param name="extraValue">, <xsl:value-of select="$name"/></xsl:with-param>
     </xsl:apply-templates>
     <xsl:text>

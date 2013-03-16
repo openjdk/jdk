@@ -1241,7 +1241,6 @@ void LinkResolver::resolve_handle_call(CallInfo& result, KlassHandle resolved_kl
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
   assert(EnableInvokeDynamic, "");
-  pool->set_has_invokedynamic();    // mark header to flag active call sites
 
   //resolve_pool(<resolved_klass>, method_name, method_signature, current_klass, pool, index, CHECK);
   Symbol* method_name       = pool->name_ref_at(index);
