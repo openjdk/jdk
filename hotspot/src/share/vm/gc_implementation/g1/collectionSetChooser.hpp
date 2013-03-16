@@ -51,6 +51,8 @@ class CollectionSetChooser: public CHeapObj<mtGC> {
   uint _curr_index;
 
   // The number of candidate old regions added to the CSet chooser.
+  // Note: this is not updated when removing a region using
+  // remove_and_move_to_next() below.
   uint _length;
 
   // Keeps track of the start of the next array chunk to be claimed by
@@ -111,13 +113,8 @@ public:
             hr->live_bytes() < _region_live_threshold_bytes;
   }
 
-  // Calculate the minimum number of old regions we'll add to the CSet
-  // during a mixed GC.
-  uint calc_min_old_cset_length();
-
-  // Calculate the maximum number of old regions we'll add to the CSet
-  // during a mixed GC.
-  uint calc_max_old_cset_length();
+  // Returns the number candidate old regions added
+  uint length() { return _length; }
 
   // Serial version.
   void add_region(HeapRegion *hr);

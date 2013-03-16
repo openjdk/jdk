@@ -192,12 +192,12 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_initCGL
 JNIEXPORT jlong JNICALL
 Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
     (JNIEnv *env, jclass cglgc,
-     jint screennum, jint pixfmt, jint swapInterval)
+     jint displayID, jint pixfmt, jint swapInterval)
 {
   jlong ret = 0L;
   JNF_COCOA_ENTER(env);
   NSMutableArray * retArray = [NSMutableArray arrayWithCapacity:3];
-  [retArray addObject: [NSNumber numberWithInt: (int)screennum]];
+  [retArray addObject: [NSNumber numberWithInt: (int)displayID]];
   [retArray addObject: [NSNumber numberWithInt: (int)pixfmt]];
   [retArray addObject: [NSNumber numberWithInt: (int)swapInterval]];
   if ([NSThread isMainThread]) {
@@ -217,7 +217,7 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
 + (void) _getCGLConfigInfo: (NSMutableArray *)argValue {
     AWT_ASSERT_APPKIT_THREAD;
 
-    jint screennum = (jint)[(NSNumber *)[argValue objectAtIndex: 0] intValue];
+    jint displayID = (jint)[(NSNumber *)[argValue objectAtIndex: 0] intValue];
     jint pixfmt = (jint)[(NSNumber *)[argValue objectAtIndex: 1] intValue];
     jint swapInterval = (jint)[(NSNumber *)[argValue objectAtIndex: 2] intValue];
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
@@ -230,16 +230,11 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
     CGOpenGLDisplayMask glMask = (CGOpenGLDisplayMask)pixfmt;
     if (sharedContext == NULL) {
         if (glMask == 0) {
-            CGDirectDisplayID id =
-                FindCGDirectDisplayIDForScreenIndex(screennum);
-            glMask = CGDisplayIDToOpenGLDisplayMask(id);
+            glMask = CGDisplayIDToOpenGLDisplayMask(displayID);
         }
 
         NSOpenGLPixelFormatAttribute attrs[] = {
             NSOpenGLPFAClosestPolicy,
-            NSOpenGLPFANoRecovery,
-            NSOpenGLPFAAccelerated,
-            NSOpenGLPFAFullScreen,
             NSOpenGLPFAWindow,
             NSOpenGLPFAPixelBuffer,
             NSOpenGLPFADoubleBuffer,
@@ -412,7 +407,7 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
         return;
     }
     memset(cglinfo, 0, sizeof(CGLGraphicsConfigInfo));
-    cglinfo->screen = screennum;
+    cglinfo->screen = displayID;
     cglinfo->pixfmt = sharedPixelFormat;
     cglinfo->context = oglc;
 
@@ -421,17 +416,6 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
     [pool drain];
 }
 @end //GraphicsConfigUtil
-
-
-JNIEXPORT jint JNICALL
-Java_sun_java2d_opengl_CGLGraphicsConfig_getDefaultPixFmt
-    (JNIEnv *env, jclass cglgc, jint screennum)
-{
-    J2dTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_getDefaultPixFmt");
-
-    CGDirectDisplayID id = FindCGDirectDisplayIDForScreenIndex(screennum);
-    return (jint)CGDisplayIDToOpenGLDisplayMask(id);
-}
 
 JNIEXPORT jint JNICALL
 Java_sun_java2d_opengl_CGLGraphicsConfig_getOGLCapabilities

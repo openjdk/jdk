@@ -1,0 +1,10 @@
+int method 2
+double method 2
+string method 2
+int method 3: 10
+double method 3: 10.0
+double method 3: 10.2
+double method 3: NaN
+int method 4: 10
+double method 4: 10.2
+double method 4: NaN

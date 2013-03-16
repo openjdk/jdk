@@ -53,13 +53,11 @@ struct EnableEditingStruct {
  * AwtTextComponent fields
  */
 
-/* java.awt.TextComponent fields */
-jfieldID AwtTextComponent::canAccessClipboardID;
-
-
 /************************************************************************
  * AwtTextComponent methods
  */
+
+jmethodID AwtTextComponent::canAccessClipboardMID;
 
 AwtTextComponent::AwtTextComponent() {
     m_synthetic = FALSE;
@@ -367,8 +365,7 @@ AwtTextComponent::WmPaste()
         }
         jobject target = GetTarget(env);
         jboolean canAccessClipboard =
-            env->GetBooleanField(target,
-                                 AwtTextComponent::canAccessClipboardID);
+            env->CallBooleanMethod (target, AwtTextComponent::canAccessClipboardMID);
         env->DeleteLocalRef(target);
         return (canAccessClipboard) ? mrDoDefault : mrConsume;
     }
@@ -854,12 +851,13 @@ Java_sun_awt_windows_WTextComponentPeer_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
 
-    cls = env->FindClass("java/awt/TextComponent");
-    if (cls != NULL) {
-        AwtTextComponent::canAccessClipboardID =
-            env->GetFieldID(cls, "canAccessClipboard", "Z");
-        DASSERT(AwtTextComponent::canAccessClipboardID != NULL);
-    }
+    jclass textComponentClassID = env->FindClass("java/awt/TextComponent");
+    AwtTextComponent::canAccessClipboardMID =
+        env->GetMethodID(textComponentClassID,
+        "canAccessClipboard", "()Z");
+    env->DeleteLocalRef(textComponentClassID);
+
+    DASSERT(AwtTextComponent::canAccessClipboardMID != NULL);
 
     CATCH_BAD_ALLOC;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1152,7 +1152,7 @@ public final class Files {
      *     and file system dependent and therefore unspecified. Minimally, the
      *     {@link BasicFileAttributes#lastModifiedTime last-modified-time} is
      *     copied to the target file if supported by both the source and target
-     *     file store. Copying of file timestamps may result in precision
+     *     file stores. Copying of file timestamps may result in precision
      *     loss. </td>
      * </tr>
      * <tr>
@@ -1169,12 +1169,12 @@ public final class Files {
      * implementation specific options.
      *
      * <p> Copying a file is not an atomic operation. If an {@link IOException}
-     * is thrown then it possible that the target file is incomplete or some of
-     * its file attributes have not been copied from the source file. When the
-     * {@code REPLACE_EXISTING} option is specified and the target file exists,
-     * then the target file is replaced. The check for the existence of the file
-     * and the creation of the new file may not be atomic with respect to other
-     * file system activities.
+     * is thrown, then it is possible that the target file is incomplete or some
+     * of its file attributes have not been copied from the source file. When
+     * the {@code REPLACE_EXISTING} option is specified and the target file
+     * exists, then the target file is replaced. The check for the existence of
+     * the file and the creation of the new file may not be atomic with respect
+     * to other file system activities.
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to copy a file into a directory, giving it the same file
@@ -1279,15 +1279,16 @@ public final class Files {
      * <p> An implementation of this interface may support additional
      * implementation specific options.
      *
-     * <p> Where the move requires that the file be copied then the {@link
-     * BasicFileAttributes#lastModifiedTime last-modified-time} is copied to the
-     * new file. An implementation may also attempt to copy other file
-     * attributes but is not required to fail if the file attributes cannot be
-     * copied. When the move is performed as a non-atomic operation, and a {@code
-     * IOException} is thrown, then the state of the files is not defined. The
-     * original file and the target file may both exist, the target file may be
-     * incomplete or some of its file attributes may not been copied from the
-     * original file.
+     * <p> Moving a file will copy the {@link
+     * BasicFileAttributes#lastModifiedTime last-modified-time} to the target
+     * file if supported by both source and target file stores. Copying of file
+     * timestamps may result in precision loss. An implementation may also
+     * attempt to copy other file attributes but is not required to fail if the
+     * file attributes cannot be copied. When the move is performed as
+     * a non-atomic operation, and an {@code IOException} is thrown, then the
+     * state of the files is not defined. The original file and the target file
+     * may both exist, the target file may be incomplete or some of its file
+     * attributes may not been copied from the original file.
      *
      * <p> <b>Usage Examples:</b>
      * Suppose we want to rename a file to "newname", keeping the file in the

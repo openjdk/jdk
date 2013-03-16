@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<project xmlns="http://www.netbeans.org/ns/project/1">
+    <type>org.netbeans.modules.ant.freeform</type>
+    <configuration>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
+            <name>nashorn</name>
+        </general-data>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
+            <!-- Do not use Project Properties customizer when editing this file manually. -->
+            <name>nashorn</name>
+            <properties/>
+            <folders>
+                <source-folder>
+                    <label>nashorn</label>
+                    <location>.</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>../src</label>
+                    <location>../src</location>
+                </source-folder>
+                <source-folder>
+                    <label>../test/src</label>
+                    <location>../test/src</location>
+                </source-folder>
+                <source-folder>
+                    <label>../buildtools/nasgen/src</label>
+                    <location>../buildtools/nasgen/src</location>
+                </source-folder>
+                <source-folder>
+                    <label>../test/src</label>
+                    <type>java</type>
+                    <location>../test/src</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>../src</label>
+                    <type>java</type>
+                    <location>../src</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>../buildtools/nasgen/src</label>
+                    <type>java</type>
+                    <location>../buildtools/nasgen/src</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+            </folders>
+            <ide-actions>
+                <action name="build">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>jar</target>
+                </action>
+                <action name="clean">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>clean</target>
+                </action>
+                <action name="javadoc">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>javadoc</target>
+                </action>
+                <action name="test">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>test</target>
+                </action>
+                <action name="rebuild">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>clean</target>
+                    <target>jar</target>
+                </action>
+                <action name="run">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>run</target>
+                </action>
+                <action name="debug">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>debug-nb</target>
+                </action>
+                <action name="debug.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>debug-selected-file-in-src</target>
+                    <context>
+                        <property>debug.class</property>
+                        <folder>test/src</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="run.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>run-selected-file-in-src</target>
+                    <context>
+                        <property>run.class</property>
+                        <folder>test/src</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+            </ide-actions>
+            <view>
+                <items>
+                    <source-folder style="packages">
+                        <label>../test/src</label>
+                        <location>../test/src</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>../src</label>
+                        <location>../src</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>../buildtools/nasgen/src</label>
+                        <location>../buildtools/nasgen/src</location>
+                    </source-folder>
+                    <source-file>
+                        <location>build.xml</location>
+                    </source-file>
+                </items>
+                <context-menu>
+                    <ide-action name="build"/>
+                    <ide-action name="rebuild"/>
+                    <ide-action name="clean"/>
+                    <ide-action name="javadoc"/>
+                    <ide-action name="run"/>
+                    <ide-action name="test"/>
+                    <ide-action name="debug"/>
+                </context-menu>
+            </view>
+            <subprojects/>
+        </general-data>
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/3">
+            <compilation-unit>
+                <package-root>../test/src</package-root>
+                <unit-tests/>
+                <classpath mode="compile">../test/lib/testng.jar:../build/classes:../src</classpath>
+                <source-level>1.7</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>../src</package-root>
+                <source-level>1.7</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>../buildtools/nasgen/src</package-root>
+                <classpath mode="compile">../build/classes:../src</classpath>
+                <source-level>1.7</source-level>
+            </compilation-unit>
+        </java-data>
+    </configuration>
+</project>

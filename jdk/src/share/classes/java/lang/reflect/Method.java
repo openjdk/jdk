@@ -629,6 +629,7 @@ public final class Method extends Executable {
      * {@inheritDoc}
      * @since 1.8
      */
+    @Override
     public AnnotatedType getAnnotatedReturnType() {
         return getAnnotatedReturnType0(getGenericReturnType());
     }

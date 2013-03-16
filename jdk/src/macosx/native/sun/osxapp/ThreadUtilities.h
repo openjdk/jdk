@@ -122,18 +122,11 @@ do {                                  \
 #endif /* AWT_THREAD_ASSERTS */
 // --------------------------------------------------------------------------
 
-// This tracks if we are current inside of a performOnMainThread that is both waiting and in the AWTRunLoopMode
-extern BOOL sInPerformFromJava;
-
-// This is an empty Obj-C object just so that -performSelectorOnMainThread
-// can be used, and to use the Obj-C +initialize feature.
 __attribute__((visibility("default")))
-@interface ThreadUtilities : NSObject { }
+@interface ThreadUtilities { }
 
 + (JNIEnv*)getJNIEnv;
 + (JNIEnv*)getJNIEnvUncached;
-
-+ (void)performOnMainThread:(SEL)aSelector onObject:(id)target withObject:(id)arg waitUntilDone:(BOOL)wait awtMode:(BOOL)inAWT;
 
 //Wrappers for the corresponding JNFRunLoop methods with a check for main thread
 + (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block;

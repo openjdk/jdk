@@ -29,6 +29,7 @@ import org.ietf.jgss.*;
 import sun.security.jgss.spi.*;
 import java.util.*;
 import com.sun.security.jgss.*;
+import sun.security.jgss.spnego.SpNegoCredElement;
 
 public class GSSCredentialImpl implements ExtendedGSSCredential {
 
@@ -87,6 +88,7 @@ public class GSSCredentialImpl implements ExtendedGSSCredential {
             throw new GSSException(GSSException.NO_CRED);
     }
 
+    // Wrap a mech cred into a GSS cred
     public GSSCredentialImpl(GSSManagerImpl gssManager,
                       GSSCredentialSpi mechElement) throws GSSException {
 
@@ -103,6 +105,11 @@ public class GSSCredentialImpl implements ExtendedGSSCredential {
                                         usage);
         tempCred = mechElement;
         hashtable.put(key, tempCred);
+        // More mechs that can use this cred, say, SPNEGO
+        if (!GSSUtil.isSpNegoMech(mechElement.getMechanism())) {
+            key = new SearchKey(GSSUtil.GSS_SPNEGO_MECH_OID, usage);
+            hashtable.put(key, new SpNegoCredElement(mechElement));
+        }
     }
 
     void init(GSSManagerImpl gssManager) {

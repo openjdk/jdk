@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<project basedir=".." name="nashorn-IDE">
+    <property file="nbproject/nbjdk.properties"/>
+    <property location="${netbeans.user}/build.properties" name="user.properties.file"/>
+    <property file="${user.properties.file}"/>
+    <import file="jdk.xml"/>
+    <import file="${basedir}/build-init.xml"/>
+    <!-- TODO: edit the following target according to your needs -->
+    <!-- (more info: http://www.netbeans.org/kb/articles/freeform-config.html#runsingle) -->
+    <target depends="-jdk-init, init" name="debug-selected-file-in-src">
+        <fail unless="debug.class">Must set property 'debug.class'</fail>
+        <ant antfile="build.xml" inheritall="false" target="jar"/>
+        <nbjpdastart addressproperty="jpda.address" name="nashorn" transport="dt_socket">
+            <classpath path="${run.test.classpath}"/>
+        </nbjpdastart>
+        <java classname="${debug.class}" fork="false">
+            <classpath path="${run.test.classpath}"/>
+            <jvmarg line="${boot.class.path}"/>
+            <jvmarg value="-Xdebug"/>
+            <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+            <jvmarg line="${run.test.jvmargs}"/>
+            <arg value="${debug.class}"/>
+        </java>
+    </target>
+    <!-- TODO: edit the following target according to your needs -->
+    <!-- (more info: http://www.netbeans.org/kb/articles/freeform-config.html#runsingle) -->
+    <target depends="-jdk-init, init" name="run-selected-file-in-src">
+        <fail unless="run.class">Must set property 'run.class'</fail>
+        <ant antfile="build.xml" inheritall="false" target="jar"/>
+        <java classname="${run.class}" failonerror="true" fork="false">
+            <classpath path="${run.test.classpath}"/>
+            <jvmarg line="${boot.class.path}"/>
+            <jvmarg line="${run.test.jvmargs}"/>
+            <arg value="${run.class}"/>
+        </java>
+    </target>
+</project>

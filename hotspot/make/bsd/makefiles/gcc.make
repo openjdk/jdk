@@ -168,12 +168,12 @@ endif
 # conversions which might affect the values. To avoid that, we need to turn
 # it off explicitly. 
 ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
-ACCEPTABLE_WARNINGS = -Wpointer-arith -Wsign-compare
+WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wundef
 else
-ACCEPTABLE_WARNINGS = -Wpointer-arith -Wconversion -Wsign-compare
+WARNING_FLAGS = -Wpointer-arith -Wconversion -Wsign-compare -Wundef
 endif
 
-CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(ACCEPTABLE_WARNINGS)
+CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(WARNING_FLAGS)
 # Special cases
 CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@)) 
 # XXXDARWIN: for _dyld_bind_fully_image_containing_address
@@ -227,6 +227,20 @@ endif
 # -DDONT_USE_PRECOMPILED_HEADER will exclude all includes in precompiled.hpp.
 ifeq ($(USE_PRECOMPILED_HEADER),0)
 CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
+endif
+
+ifeq ($(OS_VENDOR), Darwin)
+  # Setting these parameters makes it an error to link to macosx APIs that are 
+  # newer than the given OS version and makes the linked binaries compatible even
+  # if built on a newer version of the OS.
+  # The expected format is X.Y.Z
+  ifeq ($(MACOSX_VERSION_MIN),)
+    MACOSX_VERSION_MIN=10.7.0
+  endif
+  # The macro takes the version with no dots, ex: 1070
+  CFLAGS += -DMAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(MACOSX_VERSION_MIN)) \
+            -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+  LDFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
 endif
 
 #------------------------------------------------------------------------

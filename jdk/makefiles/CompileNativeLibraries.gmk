@@ -464,12 +464,13 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
 	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/windows \
 	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/windows \
 	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/d3d
+    LIBAWT_CFLAGS+=-I$(DXSDK_INCLUDE_PATH)
 else
     LIBAWT_DIRS+=\
 	$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/x11
 endif
 
-LIBAWT_CFLAGS:=-D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES \
+LIBAWT_CFLAGS+=-D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES \
 	$(X_CFLAGS) \
 	$(foreach dir,$(LIBAWT_DIRS),-I$(dir))
 
@@ -1218,7 +1219,7 @@ ifdef OPENJDK
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
                 SRC:=$(JDK_TOPDIR)/src/share/native/sun/java2d/cmm/lcms,\
 		LANG:=C,\
-		OPTIMIZATION:=LOW, \
+		OPTIMIZATION:=HIGHEST, \
 		CFLAGS:=$(filter-out -xc99=%none,$(CFLAGS_JDKLIB)) \
 			$(SHARED_LIBRARY_FLAGS) \
 			-I$(JDK_TOPDIR)/src/share/native/sun/java2d \
@@ -1461,7 +1462,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 		        -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
 		        -I$(JDK_TOPDIR)/src/share/native/sun/java2d \
 			-I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils \
-			-I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/windows, \
+			-I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/windows \
+			-I$(DXSDK_INCLUDE_PATH), \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) $(KERNEL32_LIB) $(LDFLAGS_CXX_JDK) \
 			 advapi32.lib $(WIN_AWT_LIB),\
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
@@ -2663,11 +2665,8 @@ BUILD_LIBRARIES += $(BUILD_LIBJ2PKCS11)
 
 ##########################################################################################
 
-ifndef DISABLE_INTREE_EC
-#
-# TODO Set DISABLE_INTREE_EC in configure if src/share/native/sun/security/ec/impl
-#      is not present
-#
+ifeq ($(ENABLE_INTREE_EC),yes)
+
 BUILD_LIBSUNEC_FLAGS:= -I$(JDK_TOPDIR)/src/share/native/sun/security/ec \
                        -I$(JDK_TOPDIR)/src/share/native/sun/security/ec/impl
 
@@ -2907,7 +2906,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDDS,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB) \
 			$(LIBJSOUND_CFLAGS) \
-			-DUSE_DAUDIO=TRUE, \
+			-DUSE_DAUDIO=TRUE \
+                        -I$(DXSDK_INCLUDE_PATH), \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX) dsound.lib winmm.lib user32.lib ole32.lib,\

@@ -1751,6 +1751,10 @@ class CommandLineFlags {
   manageable(intx, CMSWaitDuration, 2000,                                   \
           "Time in milliseconds that CMS thread waits for young GC")        \
                                                                             \
+  develop(uintx, CMSCheckInterval, 1000,                                    \
+          "Interval in milliseconds that CMS thread checks if it "          \
+          "should start a collection cycle")                                \
+                                                                            \
   product(bool, CMSYield, true,                                             \
           "Yield between steps of concurrent mark & sweep")                 \
                                                                             \
@@ -3640,7 +3644,10 @@ class CommandLineFlags {
           "Enable internal testing APIs")                                   \
                                                                             \
   product(bool, PrintGCCause, true,                                         \
-          "Include GC cause in GC logging")
+          "Include GC cause in GC logging")                                 \
+                                                                            \
+  product(bool, AllowNonVirtualCalls, false,                                \
+          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")
 
 /*
  *  Macros for factoring of globals
