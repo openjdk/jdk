@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -74,22 +74,24 @@ ifeq ($(PLATFORM),macosx)
   UTILS_DEVTOOL_PATH=$(DEVTOOLS_PATH)
 endif
 
-# Utilities
-ifdef CROSS_COMPILE_ARCH
-  AR             = $(COMPILER_PATH)ar
-  AS             = $(COMPILER_PATH)as
-  LD             = $(COMPILER_PATH)ld
-  MCS            = $(COMPILER_PATH)mcs
-  NM             = $(COMPILER_PATH)nm
-  STRIP          = $(COMPILER_PATH)strip
-else
-  AR             = $(UTILS_CCS_BIN_PATH)ar
-  AS             = $(UTILS_CCS_BIN_PATH)as
-  LD             = $(UTILS_CCS_BIN_PATH)ld
-  MCS            = $(UTILS_CCS_BIN_PATH)mcs
-  NM             = $(UTILS_CCS_BIN_PATH)nm
-  STRIP          = $(UTILS_CCS_BIN_PATH)strip
-endif
+ifndef CONFIGURE_BUILD
+  # Utilities
+  ifdef CROSS_COMPILE_ARCH
+    AR             = $(COMPILER_PATH)ar
+    AS             = $(COMPILER_PATH)as
+    LD             = $(COMPILER_PATH)ld
+    MCS            = $(COMPILER_PATH)mcs
+    NM             = $(COMPILER_PATH)nm
+    STRIP          = $(COMPILER_PATH)strip
+  else
+    AR             = $(UTILS_CCS_BIN_PATH)ar
+    AS             = $(UTILS_CCS_BIN_PATH)as
+    LD             = $(UTILS_CCS_BIN_PATH)ld
+    MCS            = $(UTILS_CCS_BIN_PATH)mcs
+    NM             = $(UTILS_CCS_BIN_PATH)nm
+    STRIP          = $(UTILS_CCS_BIN_PATH)strip
+  endif
+endif # CONFIGURE_BUILD
 
 ADB            = $(UTILS_COMMAND_PATH)adb
 BASENAME       = $(UTILS_COMMAND_PATH)basename
