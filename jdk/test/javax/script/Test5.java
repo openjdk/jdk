@@ -48,16 +48,24 @@ public class Test5 {
                 System.out.println("engine scope only");
                 e.put("count", new Integer(1));
 
-                Reader reader = new FileReader(
-                    new File(System.getProperty("test.src", "."), "Test5.js"));
-                engine.eval(reader,ctxt);
+                try (Reader reader = new FileReader(
+                    new File(System.getProperty("test.src", "."), "Test5.js"))) {
+                    engine.eval(reader,ctxt);
+                }
+
                 System.out.println("both scopes");
                 ctxt.setBindings(g, ScriptContext.GLOBAL_SCOPE);
                 e.put("count", new Integer(2));
-                engine.eval(reader,ctxt);
+                try (Reader reader = new FileReader(
+                    new File(System.getProperty("test.src", "."), "Test5.js"))) {
+                    engine.eval(reader,ctxt);
+                }
                 System.out.println("only global");
                 e.put("count", new Integer(3));
-                ctxt.setAttribute("key", null, ScriptContext.ENGINE_SCOPE);
-                engine.eval(reader,ctxt);
+                ctxt.removeAttribute("key", ScriptContext.ENGINE_SCOPE);
+                try (Reader reader = new FileReader(
+                    new File(System.getProperty("test.src", "."), "Test5.js"))) {
+                    engine.eval(reader,ctxt);
+                }
         }
 }

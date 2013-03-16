@@ -1,0 +1,2 @@
+Date.prototype.toGMTString.length = 0
+Mon, 01 Feb 1999

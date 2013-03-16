@@ -1,0 +1,177 @@
+value is 'hello' as expected
+
+
+starting 0
+10
+11
+20
+21
+hello
+
+
+starting 1
+10
+11
+20
+21
+hello
+
+
+starting 2
+10
+11
+hello
+
+
+starting 3
+loop header 0
+continue
+loop header 1
+hello
+loop header 2
+continue
+loop header 3
+hello
+loop header 4
+continue
+loop header 5
+hello
+loop header 6
+continue
+loop header 7
+hello
+loop header 8
+continue
+loop header 9
+hello
+loop header 0
+continue
+loop header 1
+hello
+loop header 2
+continue
+loop header 3
+hello
+loop header 4
+continue
+loop header 5
+hello
+loop header 6
+continue
+loop header 7
+hello
+loop header 8
+continue
+loop header 9
+hello
+loop header 0
+continue
+loop header 1
+hello
+loop header 2
+continue
+loop header 3
+hello
+loop header 4
+continue
+loop header 5
+hello
+loop header 6
+continue
+loop header 7
+hello
+loop header 8
+continue
+loop header 9
+hello
+loop header 0
+continue
+loop header 1
+hello
+loop header 2
+continue
+loop header 3
+hello
+loop header 4
+continue
+loop header 5
+hello
+loop header 6
+continue
+loop header 7
+hello
+loop header 8
+continue
+loop header 9
+hello
+loop header 0
+continue
+loop header 1
+hello
+loop header 2
+continue
+loop header 3
+hello
+loop header 4
+continue
+loop header 5
+hello
+loop header 6
+continue
+loop header 7
+hello
+loop header 8
+continue
+loop header 9
+hello
+
+
+starting 4
+loop header 0
+continue
+loop header 1
+loop header 2
+continue
+loop header 3
+loop header 4
+continue
+loop header 5
+loop header 6
+continue
+loop header 7
+loop header 8
+continue
+loop header 9
+hello
+
+
+starting 5
+loop header 0
+continue
+loop header 0
+continue
+loop header 0
+continue
+loop header 0
+continue
+loop header 0
+continue
+
+
+starting 6
+loop header 0
+break
+
+
+starting 7
+10
+4711
+20
+17
+inner
+4711
+outer
+hello
+hello
+
+

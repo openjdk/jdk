@@ -372,6 +372,7 @@ static void dll_build_name(char* buffer, size_t buflen,
     // Loosley based on os_windows.cpp
 
     char *pathname = (char *)pname;
+    *buffer = '\0';
     while (strlen(pathname) > 0) {
         char *p = strchr(pathname, ';');
         if (p == NULL) {
@@ -382,16 +383,20 @@ static void dll_build_name(char* buffer, size_t buflen,
             continue;
         }
         if (*(p-1) == ':' || *(p-1) == '\\') {
-            (void)_snprintf(buffer, buflen, "%.*s%s.dll", (p - pathname),
+          (void)_snprintf(buffer, buflen, "%.*s%s.dll", (int)(p - pathname),
                             pathname, fname);
         } else {
-            (void)_snprintf(buffer, buflen, "%.*s\\%s.dll", (p - pathname),
+          (void)_snprintf(buffer, buflen, "%.*s\\%s.dll", (int)(p - pathname),
                             pathname, fname);
         }
         if (_access(buffer, 0) == 0) {
             break;
         }
-        pathname = p + 1;
+        if (*p == '\0') {
+            pathname = p;
+        } else {
+            pathname = p + 1;
+        }
         *buffer = '\0';
     }
 }

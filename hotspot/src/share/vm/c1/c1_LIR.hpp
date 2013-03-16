@@ -2375,7 +2375,7 @@ class LIR_OpVisitState: public StackObj {
   // collects all register operands of the instruction
   void visit(LIR_Op* op);
 
-#if ASSERT
+#ifdef ASSERT
   // check that an operation has no operands
   bool no_operands(LIR_Op* op);
 #endif

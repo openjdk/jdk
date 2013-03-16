@@ -464,7 +464,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Records exception and possibly propagates
+     * Records exception and possibly propagates.
      *
      * @return status on exit
      */
@@ -497,7 +497,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Removes exception node and clears status
+     * Removes exception node and clears status.
      */
     private void clearExceptionalCompletion() {
         int h = System.identityHashCode(this);
@@ -635,7 +635,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 throw (Error)ex;
             if (ex instanceof RuntimeException)
                 throw (RuntimeException)ex;
-            throw uncheckedThrowable(ex, RuntimeException.class);
+            ForkJoinTask.<RuntimeException>uncheckedThrow(ex);
         }
     }
 
@@ -645,8 +645,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * unchecked exceptions
      */
     @SuppressWarnings("unchecked") static <T extends Throwable>
-        T uncheckedThrowable(final Throwable t, final Class<T> c) {
-        return (T)t; // rely on vacuous cast
+        void uncheckedThrow(Throwable t) throws T {
+        if (t != null)
+            throw (T)t; // rely on vacuous cast
     }
 
     /**
@@ -681,7 +682,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             ((ForkJoinWorkerThread)t).workQueue.push(this);
         else
-            ForkJoinPool.commonPool.externalPush(this);
+            ForkJoinPool.common.externalPush(this);
         return this;
     }
 
@@ -857,7 +858,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * <p>This method is designed to be invoked by <em>other</em>
      * tasks. To terminate the current task, you can just return or
      * throw an unchecked exception from its computation method, or
-     * invoke {@link #completeExceptionally}.
+     * invoke {@link #completeExceptionally(Throwable)}.
      *
      * @param mayInterruptIfRunning this value has no effect in the
      * default implementation because interrupts are not used to
@@ -1007,8 +1008,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         if (Thread.interrupted())
             throw new InterruptedException();
         // Messy in part because we measure in nanosecs, but wait in millisecs
-        int s; long ns, ms;
-        if ((s = status) >= 0 && (ns = unit.toNanos(timeout)) > 0L) {
+        int s; long ms;
+        long ns = unit.toNanos(timeout);
+        if ((s = status) >= 0 && ns > 0L) {
             long deadline = System.nanoTime() + ns;
             ForkJoinPool p = null;
             ForkJoinPool.WorkQueue w = null;
@@ -1104,7 +1106,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             wt.pool.helpQuiescePool(wt.workQueue);
         }
         else
-            ForkJoinPool.externalHelpQuiescePool();
+            ForkJoinPool.quiesceCommonPool();
     }
 
     /**
@@ -1387,6 +1389,24 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final void setRawResult(Void v) { }
         public final boolean exec() { runnable.run(); return true; }
         public final void run() { invoke(); }
+        private static final long serialVersionUID = 5232453952276885070L;
+    }
+
+    /**
+     * Adaptor for Runnables in which failure forces worker exception
+     */
+    static final class RunnableExecuteAction extends ForkJoinTask<Void> {
+        final Runnable runnable;
+        RunnableExecuteAction(Runnable runnable) {
+            if (runnable == null) throw new NullPointerException();
+            this.runnable = runnable;
+        }
+        public final Void getRawResult() { return null; }
+        public final void setRawResult(Void v) { }
+        public final boolean exec() { runnable.run(); return true; }
+        void internalPropagateException(Throwable ex) {
+            rethrow(ex); // rethrow outside exec() catches.
+        }
         private static final long serialVersionUID = 5232453952276885070L;
     }
 

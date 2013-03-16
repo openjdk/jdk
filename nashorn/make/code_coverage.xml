@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<project name="code-coverage" default="generate-code-coverage-report" basedir="..">
+
+  <!-- CODE COVERAGE -->
+  <target name="init-cc-enabled" if="${cc.enabled}">
+
+    <echo message="initialize [${jcov}] java coverage"/>
+
+
+    <property name="cc.report.dir" value="${cc.dir}/CC_${jcov}_report"/>
+    <property name="cc.merged.xml" value="${cc.dir}/CC_${jcov}_result-merged.xml"/>
+
+    <condition property="run.test.cc.jvmargs" value="${cc.dynamic.args}">
+      <equals arg1="${jcov}" arg2="dynamic" trim="true"/>
+    </condition>
+
+    <mkdir dir="${cc.dir}"/>
+
+    <!-- info -->
+    <echo message="jcov=${jcov}"/>
+    <echo message="cc.generate.template=${cc.generate.template}"/>
+    <echo message="cc.instrument=${cc.instrument}"/>
+    <echo message="run.test.cc.jvmargs=${run.test.cc.jvmargs}"/>
+    <echo message="cc.report.dir=${cc.report.dir}"/>
+    <echo message="cc.merged.xml=${cc.merged.xml}"/>
+  </target>
+
+  <target name="init-cc-disabled" unless="${cc.enabled}">
+    <property name="run.test.cc.jvmargs" value=""/>
+  </target>
+
+  <target name="init-cc" depends="init-cc-disabled, init-cc-enabled">
+    <property name="run.test.cc.jvmargs" value=""/>
+  </target>
+
+  <target name="init-cc-cleanup" if="${cc.enabled}">
+    <delete dir="${cc.dir}" failonerror="false" />
+  </target>
+
+  <target name="check-merging-files" depends="init">
+	<resourcecount property="cc.xmls">
+  		<filelist dir="${cc.dir}" files="*.xml" />
+	</resourcecount>	
+    <condition property="nothing-to-merge" value="true">
+      <equals arg1="${cc.xmls}" arg2="1" trim="true"/>
+    </condition>
+  </target>
+
+  <target name="fix-merging-files" depends="check-merging-files" if="${nothing-to-merge}">
+	<echo message="making pre-merge workaround"/>
+	<move todir="${cc.dir}" includeemptydirs="false">
+		<fileset dir="${cc.dir}">
+			<include name="*.xml"/>
+		</fileset>
+		<mapper type="glob" from="*.xml" to="CC_${jcov}_result-merged.xml"/>
+	</move>
+  </target>
+ 
+  <target name="merge-code-coverage" depends="fix-merging-files" unless="${nothing-to-merge}">
+	<echo message="merging files"/>
+    <fileset dir="${cc.dir}" id="cc.xmls">
+      <include name="**/*${jcov}*.xml"/>
+      <include name="**/CC_template.xml"/>
+    </fileset>
+
+    <pathconvert pathsep=" " property="cc.all.xmls" refid="cc.xmls"/>
+
+    <java classname="com.sun.tdk.jcov.Merger">
+      <arg value="-verbose"/>
+      <arg value="-output"/>
+      <arg value="${cc.merged.xml}"/>
+      <arg value="-exclude"/>
+      <arg value="com\.oracle\.nashorn\.runtime\.ScriptRuntime*"/>
+      <arg line="${cc.all.xmls}"/>
+      <classpath>
+        <pathelement location="${jcov.jar}"/>
+      </classpath>
+    </java>
+
+  </target>
+
+  <target name="generate-code-coverage-report" depends="merge-code-coverage">
+    <java classname="com.sun.tdk.jcov.RepGen">
+      <arg value="-verbose"/>
+<!--      <arg line ="-exclude_list CC.report.exclude"/> -->
+      <arg line="-output ${cc.report.dir}"/>
+      <arg value="${cc.merged.xml}"/>
+      <classpath>
+        <pathelement location="${jcov.jar}"/>
+      </classpath>
+    </java>
+  </target>
+
+
+</project>

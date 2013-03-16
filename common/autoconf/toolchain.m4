@@ -176,6 +176,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
 [
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+  TOOLCHAIN_SETUP_DXSDK
 fi
 
 AC_SUBST(MSVCR_DLL)
@@ -248,30 +249,38 @@ fi
 
 ### Locate C compiler (CC)
 
-# gcc is almost always present, but on Windows we
-# prefer cl.exe and on Solaris we prefer CC.
-# Thus test for them in this order.
-if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-  # Do not probe for cc on MacOSX.
-  COMPILER_CHECK_LIST="cl gcc"
+# On windows, only cl.exe is supported.
+# On Solaris, cc is preferred to gcc.
+# Elsewhere, gcc is preferred to cc.
+
+if test "x$CC" != x; then
+  COMPILER_CHECK_LIST="$CC"
+elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  COMPILER_CHECK_LIST="cl"
+elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+  COMPILER_CHECK_LIST="cc gcc"
 else
-  COMPILER_CHECK_LIST="cl cc gcc"
+  COMPILER_CHECK_LIST="gcc cc"
 fi
 
 TOOLCHAIN_FIND_COMPILER([CC],[C],[$COMPILER_CHECK_LIST])
-# Now that we have resolved CC ourself, let autoconf have it's go at it
+# Now that we have resolved CC ourself, let autoconf have its go at it
 AC_PROG_CC([$CC])
 
 ### Locate C++ compiler (CXX)
 
-if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-  # Do not probe for CC on MacOSX.
-  COMPILER_CHECK_LIST="cl g++"
+if test "x$CXX" != x; then
+  COMPILER_CHECK_LIST="$CXX"
+elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  COMPILER_CHECK_LIST="cl"
+elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+  COMPILER_CHECK_LIST="CC g++"
 else
-  COMPILER_CHECK_LIST="cl CC g++"
+  COMPILER_CHECK_LIST="g++ CC"
 fi
+
 TOOLCHAIN_FIND_COMPILER([CXX],[C++],[$COMPILER_CHECK_LIST])
-# Now that we have resolved CXX ourself, let autoconf have it's go at it
+# Now that we have resolved CXX ourself, let autoconf have its go at it
 AC_PROG_CXX([$CXX])
 
 ### Locate other tools

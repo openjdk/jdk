@@ -125,6 +125,11 @@ class ChunkedInputStream extends InputStream implements Hurryable {
      */
     private boolean closed;
 
+    /*
+     * Maximum chunk header size of 2KB + 2 bytes for CRLF
+     */
+    private final static int MAX_CHUNK_HEADER_SIZE = 2050;
+
     /**
      * State to indicate that next field should be :-
      *  chunk-size [ chunk-extension ] CRLF
@@ -290,6 +295,10 @@ class ChunkedInputStream extends InputStream implements Hurryable {
                             break;
                         }
                         pos++;
+                        if ((pos - rawPos) >= MAX_CHUNK_HEADER_SIZE) {
+                            error = true;
+                            throw new IOException("Chunk header too long");
+                        }
                     }
                     if (pos >= rawCount) {
                         return;

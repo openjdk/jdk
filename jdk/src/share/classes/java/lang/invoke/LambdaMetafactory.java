@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,13 @@ package java.lang.invoke;
  * method, and the static types of the captured lambda arguments, and link a call site which, when invoked,
  * produces the lambda object.
  *
- * <p>Two pieces of information are needed about the functional interface: the SAM method and the type of the SAM
- * method in the functional interface. The type can be different when parameterized types are used. For example,
- * consider
- * <code>interface I&lt;T&gt; { int m(T x); }</code> if this SAM type is used in a lambda
- * <code>I&lt;Byte&gt; v = ...</code>, we need both the actual SAM method which has the signature
- * <code>(Object)int</code> and the functional interface type of the method, which has signature
- * <code>(Byte)int</code>.  The latter is the instantiated erased functional interface method type, or
- * simply <I>instantiated method type</I>.
+ * <p>When parameterized types are used, the instantiated type of the functional interface method may be different
+ * from that in the functional interface. For example, consider
+ * <code>interface I&lt;T&gt; { int m(T x); }</code> if this functional interface type is used in a lambda
+ * <code>I&lt;Byte&gt; v = ...</code>, we need both the actual functional interface method which has the signature
+ * <code>(Object)int</code> and the erased instantiated type of the functional interface method (or simply
+ * <I>instantiated method type</I>), which has signature
+ * <code>(Byte)int</code>.
  *
  * <p>While functional interfaces only have a single abstract method from the language perspective (concrete
  * methods in Object are and default methods may be present), at the bytecode level they may actually have multiple
@@ -138,11 +137,25 @@ package java.lang.invoke;
  *     </tr>
  * </table>
  *
+ * The default bootstrap ({@link #metaFactory}) represents the common cases and uses an optimized protocol.
+ * Alternate bootstraps (e.g., {@link #altMetaFactory}) exist to support uncommon cases such as serialization
+ * or additional marker superinterfaces.
  *
  */
 public class LambdaMetafactory {
 
+    /** Flag for alternate metafactories indicating the lambda object is must to be serializable */
+    public static final int FLAG_SERIALIZABLE = 1 << 0;
+
     /**
+     * Flag for alternate metafactories indicating the lambda object implements other marker interfaces
+     * besides Serializable
+     */
+    public static final int FLAG_MARKERS = 1 << 1;
+
+    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+
+/**
      * Standard meta-factory for conversion of lambda expressions or method references to functional interfaces.
      *
      * @param caller Stacked automatically by VM; represents a lookup context with the accessibility privileges
@@ -158,7 +171,8 @@ public class LambdaMetafactory {
      * @param implMethod The implementation method which should be called (with suitable adaptation of argument
      *                   types, return types, and adjustment for captured arguments) when methods of the resulting
      *                   functional interface instance are invoked.
-     * @param instantiatedMethodType The signature of the SAM method from the functional interface's perspective
+     * @param instantiatedMethodType The signature of the primary functional interface method after type variables
+     *                               are substituted with their instantiation from the capture site
      * @return a CallSite, which, when invoked, will return an instance of the functional interface
      * @throws ReflectiveOperationException
      * @throws LambdaConversionException If any of the meta-factory protocol invariants are violated
@@ -171,7 +185,72 @@ public class LambdaMetafactory {
                                        MethodType instantiatedMethodType)
                    throws ReflectiveOperationException, LambdaConversionException {
         AbstractValidatingLambdaMetafactory mf;
-        mf = new InnerClassLambdaMetafactory(caller, invokedType, samMethod, implMethod, instantiatedMethodType);
+        mf = new InnerClassLambdaMetafactory(caller, invokedType, samMethod, implMethod, instantiatedMethodType,
+                0, EMPTY_CLASS_ARRAY);
+        mf.validateMetafactoryArgs();
+        return mf.buildCallSite();
+    }
+
+    /**
+     * Alternate meta-factory for conversion of lambda expressions or method references to functional interfaces,
+     * which supports serialization and other uncommon options.
+     *
+     * The declared argument list for this method is:
+     *
+     *  CallSite altMetaFactory(MethodHandles.Lookup caller,
+     *                          String invokedName,
+     *                          MethodType invokedType,
+     *                          Object... args)
+     *
+     * but it behaves as if the argument list is:
+     *
+     *  CallSite altMetaFactory(MethodHandles.Lookup caller,
+     *                          String invokedName,
+     *                          MethodType invokedType,
+     *                          MethodHandle samMethod
+     *                          MethodHandle implMethod,
+     *                          MethodType instantiatedMethodType,
+     *                          int flags,
+     *                          int markerInterfaceCount, // IF flags has MARKERS set
+     *                          Class... markerInterfaces // IF flags has MARKERS set
+     *                          )
+     *
+     *
+     * @param caller Stacked automatically by VM; represents a lookup context with the accessibility privileges
+     *               of the caller.
+     * @param invokedName Stacked automatically by VM; the name of the invoked method as it appears at the call site.
+     *                    Currently unused.
+     * @param invokedType Stacked automatically by VM; the signature of the invoked method, which includes thefu
+     *                    expected static type of the returned lambda object, and the static types of the captured
+     *                    arguments for the lambda.  In the event that the implementation method is an instance method,
+     *                    the first argument in the invocation signature will correspond to the receiver.
+     * @param  args       argument to pass, flags, marker interface count, and marker interfaces as described above
+     * @return a CallSite, which, when invoked, will return an instance of the functional interface
+     * @throws ReflectiveOperationException
+     * @throws LambdaConversionException If any of the meta-factory protocol invariants are violated
+     */
+    public static CallSite altMetaFactory(MethodHandles.Lookup caller,
+                                          String invokedName,
+                                          MethodType invokedType,
+                                          Object... args)
+            throws ReflectiveOperationException, LambdaConversionException {
+        MethodHandle samMethod = (MethodHandle)args[0];
+        MethodHandle implMethod = (MethodHandle)args[1];
+        MethodType instantiatedMethodType = (MethodType)args[2];
+        int flags = (Integer) args[3];
+        Class<?>[] markerInterfaces;
+        int argIndex = 4;
+        if ((flags & FLAG_MARKERS) != 0) {
+            int markerCount = (Integer) args[argIndex++];
+            markerInterfaces = new Class<?>[markerCount];
+            System.arraycopy(args, argIndex, markerInterfaces, 0, markerCount);
+            argIndex += markerCount;
+        }
+        else
+            markerInterfaces = EMPTY_CLASS_ARRAY;
+        AbstractValidatingLambdaMetafactory mf;
+        mf = new InnerClassLambdaMetafactory(caller, invokedType, samMethod, implMethod, instantiatedMethodType,
+                                             flags, markerInterfaces);
         mf.validateMetafactoryArgs();
         return mf.buildCallSite();
     }

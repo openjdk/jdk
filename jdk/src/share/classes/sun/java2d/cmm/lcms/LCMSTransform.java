@@ -161,13 +161,18 @@ public class LCMSTransform implements ColorTransform {
     }
 
     public void colorConvert(BufferedImage src, BufferedImage dst) {
-        if (LCMSImageLayout.isSupported(src) &&
-            LCMSImageLayout.isSupported(dst))
-        {
-            doTransform(new LCMSImageLayout(src), new LCMSImageLayout(dst));
-            return;
-        }
         LCMSImageLayout srcIL, dstIL;
+
+        dstIL = LCMSImageLayout.createImageLayout(dst);
+
+        if (dstIL != null) {
+            srcIL = LCMSImageLayout.createImageLayout(src);
+            if (srcIL != null) {
+                doTransform(srcIL, dstIL);
+                return;
+            }
+        }
+
         Raster srcRas = src.getRaster();
         WritableRaster dstRas = dst.getRaster();
         ColorModel srcCM = src.getColorModel();
@@ -439,6 +444,14 @@ public class LCMSTransform implements ColorTransform {
     public void colorConvert(Raster src, WritableRaster dst) {
 
         LCMSImageLayout srcIL, dstIL;
+        dstIL = LCMSImageLayout.createImageLayout(dst);
+        if (dstIL != null) {
+            srcIL = LCMSImageLayout.createImageLayout(src);
+            if (srcIL != null) {
+                doTransform(srcIL, dstIL);
+                return;
+            }
+        }
         // Can't pass src and dst directly to CMM, so process per scanline
         SampleModel srcSM = src.getSampleModel();
         SampleModel dstSM = dst.getSampleModel();
