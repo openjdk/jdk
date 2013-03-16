@@ -238,7 +238,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     return this;
   ctl = in(MemNode::Control);
   // Don't bother trying to transform a dead node
-  if( ctl && ctl->is_top() )  return NodeSentinel;
+  if (ctl && ctl->is_top())  return NodeSentinel;
 
   PhaseIterGVN *igvn = phase->is_IterGVN();
   // Wait if control on the worklist.
@@ -262,8 +262,8 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   }
   // Ignore if memory is dead, or self-loop
   Node *mem = in(MemNode::Memory);
-  if( phase->type( mem ) == Type::TOP ) return NodeSentinel; // caller will return NULL
-  assert( mem != this, "dead loop in MemNode::Ideal" );
+  if (phase->type( mem ) == Type::TOP) return NodeSentinel; // caller will return NULL
+  assert(mem != this, "dead loop in MemNode::Ideal");
 
   if (can_reshape && igvn != NULL && igvn->_worklist.member(mem)) {
     // This memory slice may be dead.
@@ -273,12 +273,12 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   }
 
   Node *address = in(MemNode::Address);
-  const Type *t_adr = phase->type( address );
-  if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
+  const Type *t_adr = phase->type(address);
+  if (t_adr == Type::TOP)              return NodeSentinel; // caller will return NULL
 
-  if( can_reshape && igvn != NULL &&
+  if (can_reshape && igvn != NULL &&
       (igvn->_worklist.member(address) ||
-       igvn->_worklist.size() > 0 && (phase->type(address) != adr_type())) ) {
+       igvn->_worklist.size() > 0 && (t_adr != adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
     phase->is_IterGVN()->_worklist.push(this);
@@ -288,7 +288,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   // Do NOT remove or optimize the next lines: ensure a new alias index
   // is allocated for an oop pointer type before Escape Analysis.
   // Note: C++ will not remove it since the call has side effect.
-  if ( t_adr->isa_oopptr() ) {
+  if (t_adr->isa_oopptr()) {
     int alias_idx = phase->C->get_alias_index(t_adr->is_ptr());
   }
 
@@ -296,6 +296,26 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   Node* base = NULL;
   if (address->is_AddP())
     base = address->in(AddPNode::Base);
+  if (base != NULL && phase->type(base)->higher_equal(TypePtr::NULL_PTR) &&
+      !t_adr->isa_rawptr()) {
+    // Note: raw address has TOP base and top->higher_equal(TypePtr::NULL_PTR) is true.
+    Compile* C = phase->C;
+    tty->cr();
+    tty->print_cr("===== NULL+offs not RAW address =====");
+    if (C->is_dead_node(this->_idx))    tty->print_cr("'this' is dead");
+    if ((ctl != NULL) && C->is_dead_node(ctl->_idx)) tty->print_cr("'ctl' is dead");
+    if (C->is_dead_node(mem->_idx))     tty->print_cr("'mem' is dead");
+    if (C->is_dead_node(address->_idx)) tty->print_cr("'address' is dead");
+    if (C->is_dead_node(base->_idx))    tty->print_cr("'base' is dead");
+    tty->cr();
+    base->dump(1);
+    tty->cr();
+    this->dump(2);
+    tty->print("this->adr_type():     "); adr_type()->dump(); tty->cr();
+    tty->print("phase->type(address): "); t_adr->dump(); tty->cr();
+    tty->print("phase->type(base):    "); phase->type(address)->dump(); tty->cr();
+    tty->cr();
+  }
   assert(base == NULL || t_adr->isa_rawptr() ||
         !phase->type(base)->higher_equal(TypePtr::NULL_PTR), "NULL+offs not RAW address?");
 #endif
