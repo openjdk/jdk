@@ -135,7 +135,7 @@ Java_sun_lwawt_macosx_CRobot_initRobot
 JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CRobot_mouseEvent
 (JNIEnv *env, jobject peer,
- jint screenIndex, jint mouseLastX, jint mouseLastY, jint buttonsState,
+ jint displayID, jint mouseLastX, jint mouseLastY, jint buttonsState,
  jboolean isButtonsDownState, jboolean isMouseMove)
 {
     JNF_COCOA_ENTER(env);
@@ -149,8 +149,6 @@ Java_sun_lwawt_macosx_CRobot_mouseEvent
 
     CGError err = kCGErrorSuccess;
 
-    CGDirectDisplayID displayID =
-    FindCGDirectDisplayIDForScreenIndex(screenIndex);
     CGRect globalDeviceBounds = CGDisplayBounds(displayID);
 
     // Set unknown mouse location, if needed.

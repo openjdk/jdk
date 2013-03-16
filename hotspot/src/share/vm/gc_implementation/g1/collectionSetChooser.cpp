@@ -146,43 +146,6 @@ void CollectionSetChooser::sort_regions() {
   verify();
 }
 
-uint CollectionSetChooser::calc_min_old_cset_length() {
-  // The min old CSet region bound is based on the maximum desired
-  // number of mixed GCs after a cycle. I.e., even if some old regions
-  // look expensive, we should add them to the CSet anyway to make
-  // sure we go through the available old regions in no more than the
-  // maximum desired number of mixed GCs.
-  //
-  // The calculation is based on the number of marked regions we added
-  // to the CSet chooser in the first place, not how many remain, so
-  // that the result is the same during all mixed GCs that follow a cycle.
-
-  const size_t region_num = (size_t) _length;
-  const size_t gc_num = (size_t) G1MixedGCCountTarget;
-  size_t result = region_num / gc_num;
-  // emulate ceiling
-  if (result * gc_num < region_num) {
-    result += 1;
-  }
-  return (uint) result;
-}
-
-uint CollectionSetChooser::calc_max_old_cset_length() {
-  // The max old CSet region bound is based on the threshold expressed
-  // as a percentage of the heap size. I.e., it should bound the
-  // number of old regions added to the CSet irrespective of how many
-  // of them are available.
-
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  const size_t region_num = g1h->n_regions();
-  const size_t perc = (size_t) G1OldCSetRegionThresholdPercent;
-  size_t result = region_num * perc / 100;
-  // emulate ceiling
-  if (100 * result < region_num * perc) {
-    result += 1;
-  }
-  return (uint) result;
-}
 
 void CollectionSetChooser::add_region(HeapRegion* hr) {
   assert(!hr->isHumongous(),

@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 6431242
- * @run main/othervm -server -XX:+PrintCompilation Test
+ * @run main Test
  */
 
 public class Test{

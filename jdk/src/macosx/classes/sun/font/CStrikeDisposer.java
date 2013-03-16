@@ -85,4 +85,6 @@ class CStrikeDisposer extends FontStrikeDisposer {
     }
 
     private native void freeNativeScalerContext(long pContext);
+
+    protected static native void removeGlyphInfoFromCache(long glyphInfo);
 }

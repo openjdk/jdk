@@ -218,6 +218,23 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
         return peer;
     }
 
+    private LWLightweightFramePeer createDelegatedLwPeer(LightweightFrame target,
+                                                         PlatformComponent platformComponent,
+                                                         PlatformWindow platformWindow)
+    {
+        LWLightweightFramePeer peer = new LWLightweightFramePeer(target, platformComponent, platformWindow);
+        targetCreatedPeer(target, peer);
+        peer.initialize();
+        return peer;
+    }
+
+    @Override
+    public FramePeer createLightweightFrame(LightweightFrame target) {
+        PlatformComponent platformComponent = createLwPlatformComponent();
+        PlatformWindow platformWindow = createPlatformWindow(LWWindowPeer.PeerType.LW_FRAME);
+        return createDelegatedLwPeer(target, platformComponent, platformWindow);
+    }
+
     @Override
     public WindowPeer createWindow(Window target) {
         PlatformComponent platformComponent = createPlatformComponent();
@@ -501,6 +518,8 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     protected abstract PlatformWindow createPlatformWindow(LWWindowPeer.PeerType peerType);
 
     protected abstract PlatformComponent createPlatformComponent();
+
+    protected abstract PlatformComponent createLwPlatformComponent();
 
     protected abstract FileDialogPeer createFileDialogPeer(FileDialog target);
 
