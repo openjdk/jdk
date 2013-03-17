@@ -38,10 +38,6 @@ public final class JdkFinder {
         }
 
         binPath += File.separatorChar + "bin" + File.separatorChar + executable;
-        File toolFile = new File(binPath);
-        if (!toolFile.exists()) {
-            throw new RuntimeException(binPath + " does not exist");
-        }
 
         return binPath;
     }

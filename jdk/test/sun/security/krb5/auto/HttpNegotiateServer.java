@@ -55,6 +55,7 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.Config;
+import java.util.Base64;
 
 /**
  * Basic JGSS/krb5 test with 3 parties: client, server, backend server. Each
@@ -341,12 +342,11 @@ public class HttpNegotiateServer {
                     exch.getHttpContext().getAttributes().put("GSSContext", c);
                     return new com.sun.net.httpserver.Authenticator.Retry(err);
                 } else {                            // Later requests
-                    byte[] token = new sun.misc.BASE64Decoder()
-                            .decodeBuffer(auth.split(" ")[1]);
+                    byte[] token = Base64.getMimeDecoder().decode(auth.split(" ")[1]);
                     token = c.acceptSecContext(token, 0, token.length);
                     Headers map = exch.getResponseHeaders();
-                    map.set (reqHdr, scheme + " " + new sun.misc.BASE64Encoder()
-                            .encode(token).replaceAll("\\s", ""));
+                    map.set (reqHdr, scheme + " " + Base64.getMimeEncoder()
+                            .encodeToString(token).replaceAll("\\s", ""));
                     if (c.isEstablished()) {
                         return new com.sun.net.httpserver.Authenticator.Success(
                                 new HttpPrincipal(c.getSrcName().toString(), ""));

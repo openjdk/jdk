@@ -171,7 +171,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
               sampleModel);
         }
         this.bandOffset = this.dataOffsets[0];
-        verify(false);
+        verify();
     }
 
     /**
@@ -760,33 +760,6 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
      */
     public WritableRaster createCompatibleWritableRaster() {
         return createCompatibleWritableRaster(width,height);
-    }
-
-    /**
-     * Verify that the layout parameters are consistent with
-     * the data.  If strictCheck
-     * is false, this method will check for ArrayIndexOutOfBounds conditions.  If
-     * strictCheck is true, this method will check for additional error
-     * conditions such as line wraparound (width of a line greater than
-     * the scanline stride).
-     * @return   String   Error string, if the layout is incompatible with
-     *                    the data.  Otherwise returns null.
-     */
-    private void verify (boolean strictCheck) {
-        int maxSize = 0;
-        int size;
-
-        for (int i=0; i < numDataElements; i++) {
-            size = (height-1)*scanlineStride + (width-1)*pixelStride +
-                dataOffsets[i];
-            if (size > maxSize) {
-                maxSize = size;
-            }
-        }
-        if (data.length < maxSize) {
-            throw new RasterFormatException("Data array too small (should be "+
-                                          maxSize+" )");
-        }
     }
 
     public String toString() {

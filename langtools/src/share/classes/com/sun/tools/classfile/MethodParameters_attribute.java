@@ -73,7 +73,7 @@ public class MethodParameters_attribute extends Attribute {
     public static class Entry {
         Entry(ClassReader cr) throws IOException {
             name_index = cr.readUnsignedShort();
-            flags = cr.readInt();
+            flags = cr.readUnsignedShort();
         }
 
         public static int length() {

@@ -63,7 +63,7 @@ public class TestLambdaFeature extends JavadocTester {
             "<dl>" + NL + "<dt>Functional Interface:</dt>" + NL +
             "<dd>This is a functional interface and can therefore be used as " +
             "the assignment target for a lambda expression or method " +
-            "reference. </dd>" + NL + "</dl>"}
+            "reference.</dd>" + NL + "</dl>"}
     };
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + FS + "pkg" + FS + "A.html",

@@ -89,6 +89,7 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketCrea
     rv = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &opt, sizeof(opt));
     if (rv == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "Socket creation failed");
+        closesocket(fd);
         return -1;
     }
 

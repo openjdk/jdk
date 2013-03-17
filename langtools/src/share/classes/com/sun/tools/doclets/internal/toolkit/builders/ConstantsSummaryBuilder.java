@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      */
     private boolean hasConstantField (ClassDoc classDoc) {
         VisibleMemberMap visibleMemberMapFields = new VisibleMemberMap(classDoc,
-            VisibleMemberMap.FIELDS, configuration.nodeprecated);
+            VisibleMemberMap.FIELDS, configuration);
         List<?> fields = visibleMemberMapFields.getLeafClassMembers(configuration);
         for (Iterator<?> iter = fields.iterator(); iter.hasNext(); ) {
             FieldDoc field = (FieldDoc) iter.next();
@@ -323,9 +323,9 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         public ConstantFieldBuilder(ClassDoc classdoc) {
             this.classdoc = classdoc;
             visibleMemberMapFields = new VisibleMemberMap(classdoc,
-                VisibleMemberMap.FIELDS, configuration.nodeprecated);
+                VisibleMemberMap.FIELDS, configuration);
             visibleMemberMapEnumConst = new VisibleMemberMap(classdoc,
-                VisibleMemberMap.ENUM_CONSTANTS, configuration.nodeprecated);
+                VisibleMemberMap.ENUM_CONSTANTS, configuration);
         }
 
         /**
