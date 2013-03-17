@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,18 @@ public class BsdVtblAccess extends BasicVtblAccess {
   public BsdVtblAccess(SymbolLookup symbolLookup,
                          String[] dllNames) {
     super(symbolLookup, dllNames);
-
-    if (symbolLookup.lookup("libjvm.so", "__vt_10JavaThread") != null ||
-        symbolLookup.lookup("libjvm_g.so", "__vt_10JavaThread") != null) {
+    boolean oldVT = false;
+    boolean isDarwin = dllNames[0].lastIndexOf(".dylib") != -1;
+    String vtJavaThread = isDarwin ? "_vt_10JavaThread" : "__vt_10JavaThread";
+    for (String dllName : dllNames) {
+       if (symbolLookup.lookup(dllName, vtJavaThread) != null) {
+         oldVT = true;
+         break;
+       }
+    }
+    if (oldVT) {
        // old C++ ABI
-       vt = "__vt_";
+       vt = isDarwin ? "_vt_" :  "__vt_";
     } else {
        // new C++ ABI
        vt = "_ZTV";
