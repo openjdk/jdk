@@ -66,11 +66,14 @@ public final class MethodFinder extends AbstractFinder<Method> {
         Signature signature = new Signature(type, name, args);
 
         Method method = CACHE.get(signature);
-        if (method != null) {
+        boolean cached = method != null;
+        if (cached && isPackageAccessible(method.getDeclaringClass())) {
             return method;
         }
         method = findAccessibleMethod(new MethodFinder(name, args).find(type.getMethods()));
-        CACHE.put(signature, method);
+        if (!cached) {
+            CACHE.put(signature, method);
+        }
         return method;
     }
 

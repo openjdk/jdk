@@ -500,7 +500,10 @@ public class CStrike extends FontStrike {
                 final Iterator<Long> i = generalCache.values().iterator();
                 while (i.hasNext()) {
                     final long longValue = i.next().longValue();
-                    if (longValue != -1 && longValue != 0) StrikeCache.freeLongPointer(longValue);
+                    if (longValue != -1 && longValue != 0) {
+                        removeGlyphInfoFromCache(longValue);
+                        StrikeCache.freeLongPointer(longValue);
+                    }
                 }
             }
 
@@ -512,7 +515,10 @@ public class CStrike extends FontStrike {
         private static void disposeLongArray(final long[] longArray) {
             for (int i = 0; i < longArray.length; i++) {
                 final long ptr = longArray[i];
-                if (ptr != 0 && ptr != -1) StrikeCache.freeLongPointer(ptr); // free's the native struct pointer
+                if (ptr != 0 && ptr != -1) {
+                    removeGlyphInfoFromCache(ptr);
+                    StrikeCache.freeLongPointer(ptr); // free's the native struct pointer
+                }
             }
         }
 

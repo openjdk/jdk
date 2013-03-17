@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,10 +109,6 @@ public class PropertyDescriptor extends FeatureDescriptor {
         if (writeMethodName != null && getWriteMethod() == null) {
             throw new IntrospectionException("Method not found: " + writeMethodName);
         }
-        boundInitialization(beanClass);
-    }
-
-    private void boundInitialization(Class<?> beanClass) {
         // If this class or one of its base classes allow PropertyChangeListener,
         // then we assume that any properties we discover are "bound".
         // See Introspector.getTargetPropertyInfo() method.
@@ -163,7 +159,6 @@ public class PropertyDescriptor extends FeatureDescriptor {
         setReadMethod(read);
         setWriteMethod(write);
         this.baseName = base;
-        boundInitialization(bean);
     }
 
     /**

@@ -24,14 +24,14 @@
  */
 package java.util.function;
 
+
 /**
- * Apply a function to the input object yielding an appropriate result object. A
+ * Apply a function to the input argument, yielding an appropriate result.  A
  * function may variously provide a mapping between types, object instances or
  * keys and values or any other form of transformation upon the input.
  *
- * @param <T> the type of input objects to the {@code apply} operation
- * @param <R> the type of result objects from the {@code apply} operation. May
- * be the same type as {@code <T>}.
+ * @param <T> the type of the input to the {@code apply} operation.
+ * @param <R> the type of the result of the {@code apply} operation.
  *
  * @since 1.8
  */
@@ -39,7 +39,7 @@ package java.util.function;
 public interface Function<T, R> {
 
     /**
-     * Yield an appropriate result object for the input object.
+     * Compute the result of applying the function to the input argument
      *
      * @param t the input object
      * @return the function result

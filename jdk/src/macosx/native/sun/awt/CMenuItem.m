@@ -386,7 +386,7 @@ JNF_COCOA_ENTER(env);
         args = [[NSMutableArray alloc] initWithObjects:[NSValue valueWithBytes:&cPeerObjGlobal objCType:@encode(jobject)], [NSNumber numberWithBool:NO],  nil];
     }
 
-    [ThreadUtilities performOnMainThread:@selector(_createMenuItem_OnAppKitThread:) onObject:[CMenuItem alloc] withObject:args waitUntilDone:YES awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(_createMenuItem_OnAppKitThread:) on:[CMenuItem alloc] withObject:args waitUntilDone:YES];
 
     aCMenuItem = (CMenuItem *)[args objectAtIndex: 0];
 

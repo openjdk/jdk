@@ -25,29 +25,91 @@
 
 package sun.java2d.cmm.lcms;
 
-import java.awt.color.ColorSpace;
 import java.awt.color.ICC_Profile;
-import java.awt.color.CMMException;
+import java.util.Arrays;
+import java.util.HashMap;
 import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
-import sun.java2d.cmm.lcms.LCMS;
-import sun.java2d.cmm.lcms.LCMSTransform;
 
 public class LCMS implements PCMM {
 
     /* methods invoked from ICC_Profile */
-    public native long loadProfile(byte[] data);
+    @Override
+    public long loadProfile(byte[] data) {
+        long id = loadProfileNative(data);
 
-    public native void freeProfile(long profileID);
+        if (id != 0L) {
+            if (profiles == null) {
+                profiles = new HashMap<>();
+            }
+            profiles.put(id, new TagCache(id));
+        }
+        return id;
+    }
+
+    private native long loadProfileNative(byte[] data);
+
+    @Override
+    public void freeProfile(long profileID) {
+        TagCache c = profiles.remove(profileID);
+        if (c != null) {
+            c.clear();
+        }
+        if (profiles.isEmpty()) {
+            profiles = null;
+        }
+        freeProfileNative(profileID);
+    }
+
+    private native void freeProfileNative(long profileID);
 
     public native synchronized int getProfileSize(long profileID);
 
     public native synchronized void getProfileData(long profileID, byte[] data);
 
-    public native synchronized int getTagSize(long profileID, int tagSignature);
-    public native synchronized void getTagData(long profileID, int tagSignature,
-                                               byte[] data);
-    public native synchronized void setTagData(long profileID, int tagSignature,
+    @Override
+    public synchronized int getTagSize(long profileID, int tagSignature) {
+        TagCache cache = profiles.get(profileID);
+
+        if (cache ==  null) {
+            cache = new TagCache(profileID);
+            profiles.put(profileID, cache);
+        }
+
+        TagData t = cache.getTag(tagSignature);
+        return t == null ? 0 : t.getSize();
+    }
+
+    private static native byte[] getTagNative(long profileID, int signature);
+
+    @Override
+    public synchronized void getTagData(long profileID, int tagSignature,
+                                               byte[] data)
+    {
+        TagCache cache = profiles.get(profileID);
+
+        if (cache ==  null) {
+            cache = new TagCache(profileID);
+            profiles.put(profileID, cache);
+        }
+
+        TagData t = cache.getTag(tagSignature);
+        if (t != null) {
+            t.copyDataTo(data);
+        }
+    }
+
+    @Override
+    public synchronized void setTagData(long profileID, int tagSignature, byte[] data) {
+        TagCache cache = profiles.get(profileID);
+
+        if (cache != null) {
+            cache.clear();
+        }
+        setTagDataNative(profileID, tagSignature, data);
+    }
+
+    private native synchronized void setTagDataNative(long profileID, int tagSignature,
                                                byte[] data);
 
     public static native long getProfileID(ICC_Profile profile);
@@ -103,4 +165,59 @@ public class LCMS implements PCMM {
 
         initLCMS(LCMSTransform.class, LCMSImageLayout.class, ICC_Profile.class);
     }
+
+    private static class TagData {
+        private int signature;
+        private byte[] data;
+
+        TagData(int sig, byte[] data) {
+            this.signature = sig;
+            this.data = data;
+        }
+
+        int getSize() {
+            return data.length;
+        }
+
+        byte[] getData() {
+            return Arrays.copyOf(data, data.length);
+        }
+
+        void copyDataTo(byte[] dst) {
+            System.arraycopy(data, 0, dst, 0, data.length);
+        }
+
+        int getSignature() {
+            return signature;
+        }
+    }
+
+    private static class TagCache  {
+        private long profileID;
+        private HashMap<Integer, TagData> tags;
+
+        TagCache(long id) {
+            profileID = id;
+
+            tags = new HashMap<>();
+        }
+
+        TagData getTag(int sig) {
+            TagData t = tags.get(sig);
+            if (t == null) {
+                byte[] tagData = getTagNative(profileID, sig);
+                if (tagData != null) {
+                    t = new TagData(sig, tagData);
+                    tags.put(sig, t);
+                }
+            }
+            return t;
+        }
+
+        void clear() {
+            tags.clear();
+        }
+    }
+
+    private static HashMap<Long, TagCache> profiles;
 }

@@ -1219,7 +1219,7 @@ ifdef OPENJDK
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
                 SRC:=$(JDK_TOPDIR)/src/share/native/sun/java2d/cmm/lcms,\
 		LANG:=C,\
-		OPTIMIZATION:=LOW, \
+		OPTIMIZATION:=HIGHEST, \
 		CFLAGS:=$(filter-out -xc99=%none,$(CFLAGS_JDKLIB)) \
 			$(SHARED_LIBRARY_FLAGS) \
 			-I$(JDK_TOPDIR)/src/share/native/sun/java2d \
@@ -2665,11 +2665,8 @@ BUILD_LIBRARIES += $(BUILD_LIBJ2PKCS11)
 
 ##########################################################################################
 
-ifndef DISABLE_INTREE_EC
-#
-# TODO Set DISABLE_INTREE_EC in configure if src/share/native/sun/security/ec/impl
-#      is not present
-#
+ifeq ($(ENABLE_INTREE_EC),yes)
+
 BUILD_LIBSUNEC_FLAGS:= -I$(JDK_TOPDIR)/src/share/native/sun/security/ec \
                        -I$(JDK_TOPDIR)/src/share/native/sun/security/ec/impl
 

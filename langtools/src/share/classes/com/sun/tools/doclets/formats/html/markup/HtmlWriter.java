@@ -148,6 +148,8 @@ public class HtmlWriter {
 
     public final Content fieldDetailsLabel;
 
+    public final Content propertyDetailsLabel;
+
     public final Content constructorDetailsLabel;
 
     public final Content enumConstantsDetailsLabel;
@@ -226,6 +228,7 @@ public class HtmlWriter {
         methodDetailsLabel = getResource("doclet.Method_Detail");
         annotationTypeDetailsLabel = getResource("doclet.Annotation_Type_Member_Detail");
         fieldDetailsLabel = getResource("doclet.Field_Detail");
+        propertyDetailsLabel = getResource("doclet.Property_Detail");
         constructorDetailsLabel = getResource("doclet.Constructor_Detail");
         enumConstantsDetailsLabel = getResource("doclet.Enum_Constant_Detail");
         specifiedByLabel = getResource("doclet.Specified_By");

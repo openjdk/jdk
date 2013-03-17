@@ -44,6 +44,7 @@
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -57,10 +58,12 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
+#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/elfFile.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
 
@@ -1796,9 +1799,93 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   // in case of error it checks if .dll/.so was built for the
   // same architecture as Hotspot is running on
 
+
+// Remember the stack's state. The Linux dynamic linker will change
+// the stack to 'executable' at most once, so we must safepoint only once.
+bool os::Linux::_stack_is_executable = false;
+
+// VM operation that loads a library.  This is necessary if stack protection
+// of the Java stacks can be lost during loading the library.  If we
+// do not stop the Java threads, they can stack overflow before the stacks
+// are protected again.
+class VM_LinuxDllLoad: public VM_Operation {
+ private:
+  const char *_filename;
+  void *_lib;
+ public:
+  VM_LinuxDllLoad(const char *fn) :
+    _filename(fn), _lib(NULL) {}
+  VMOp_Type type() const { return VMOp_LinuxDllLoad; }
+  void doit() {
+    _lib = os::Linux::dll_load_inner(_filename);
+    os::Linux::_stack_is_executable = true;
+  }
+  void* loaded_library() { return _lib; }
+};
+
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
 {
-  void * result= ::dlopen(filename, RTLD_LAZY);
+  void * result = NULL;
+  bool load_attempted = false;
+
+  // Check whether the library to load might change execution rights
+  // of the stack. If they are changed, the protection of the stack
+  // guard pages will be lost. We need a safepoint to fix this.
+  //
+  // See Linux man page execstack(8) for more info.
+  if (os::uses_stack_guard_pages() && !os::Linux::_stack_is_executable) {
+    ElfFile ef(filename);
+    if (!ef.specifies_noexecstack()) {
+      if (!is_init_completed()) {
+        os::Linux::_stack_is_executable = true;
+        // This is OK - No Java threads have been created yet, and hence no
+        // stack guard pages to fix.
+        //
+        // This should happen only when you are building JDK7 using a very
+        // old version of JDK6 (e.g., with JPRT) and running test_gamma.
+        //
+        // Dynamic loader will make all stacks executable after
+        // this function returns, and will not do that again.
+        assert(Threads::first() == NULL, "no Java threads should exist yet.");
+      } else {
+        warning("You have loaded library %s which might have disabled stack guard. "
+                "The VM will try to fix the stack guard now.\n"
+                "It's highly recommended that you fix the library with "
+                "'execstack -c <libfile>', or link it with '-z noexecstack'.",
+                filename);
+
+        assert(Thread::current()->is_Java_thread(), "must be Java thread");
+        JavaThread *jt = JavaThread::current();
+        if (jt->thread_state() != _thread_in_native) {
+          // This happens when a compiler thread tries to load a hsdis-<arch>.so file
+          // that requires ExecStack. Cannot enter safe point. Let's give up.
+          warning("Unable to fix stack guard. Giving up.");
+        } else {
+          if (!LoadExecStackDllInVMThread) {
+            // This is for the case where the DLL has an static
+            // constructor function that executes JNI code. We cannot
+            // load such DLLs in the VMThread.
+            result = ::dlopen(filename, RTLD_LAZY);
+          }
+
+          ThreadInVMfromNative tiv(jt);
+          debug_only(VMNativeEntryWrapper vew;)
+
+          VM_LinuxDllLoad op(filename);
+          VMThread::execute(&op);
+          if (LoadExecStackDllInVMThread) {
+            result = op.loaded_library();
+          }
+          load_attempted = true;
+        }
+      }
+    }
+  }
+
+  if (!load_attempted) {
+    result = ::dlopen(filename, RTLD_LAZY);
+  }
+
   if (result != NULL) {
     // Successful loading
     return result;
@@ -1950,6 +2037,38 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   }
 
   return NULL;
+}
+
+void * os::Linux::dll_load_inner(const char *filename) {
+  void * result = NULL;
+  if (LoadExecStackDllInVMThread) {
+    result = ::dlopen(filename, RTLD_LAZY);
+  }
+
+  // Since 7019808, libjvm.so is linked with -noexecstack. If the VM loads a
+  // library that requires an executable stack, or which does not have this
+  // stack attribute set, dlopen changes the stack attribute to executable. The
+  // read protection of the guard pages gets lost.
+  //
+  // Need to check _stack_is_executable again as multiple VM_LinuxDllLoad
+  // may have been queued at the same time.
+
+  if (!_stack_is_executable) {
+    JavaThread *jt = Threads::first();
+
+    while (jt) {
+      if (!jt->stack_guard_zone_unused() &&        // Stack not yet fully initialized
+          jt->stack_yellow_zone_enabled()) {       // No pending stack overflow exceptions
+        if (!os::guard_memory((char *) jt->stack_red_zone_base() - jt->stack_red_zone_size(),
+                              jt->stack_yellow_zone_size() + jt->stack_red_zone_size())) {
+          warning("Attempt to reguard stack yellow zone failed.");
+        }
+      }
+      jt = jt->next();
+    }
+  }
+
+  return result;
 }
 
 /*
@@ -3094,13 +3213,24 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
     numa_make_global(addr, bytes);
   }
 
+  // The memory is committed
+  address pc = CALLER_PC;
+  MemTracker::record_virtual_memory_reserve((address)addr, bytes, pc);
+  MemTracker::record_virtual_memory_commit((address)addr, bytes, pc);
+
   return addr;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
   // detaching the SHM segment will also delete it, see reserve_memory_special()
   int rslt = shmdt(base);
-  return rslt == 0;
+  if (rslt == 0) {
+    MemTracker::record_virtual_memory_uncommit((address)base, bytes);
+    MemTracker::record_virtual_memory_release((address)base, bytes);
+    return true;
+  } else {
+   return false;
+  }
 }
 
 size_t os::large_page_size() {

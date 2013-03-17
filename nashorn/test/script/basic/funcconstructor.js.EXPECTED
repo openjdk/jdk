@@ -1,0 +1,10 @@
+anon func
+225
+function (x) {
+print('anon func'); return x*x;
+}
+syntax error? true
+SyntaxError: <function>:2:13 Missing close quote
+print('hello)
+             ^
+done
