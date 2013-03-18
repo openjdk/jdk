@@ -4262,8 +4262,13 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   if (!VerifyOops) return;
 
   // Pass register number to verify_oop_subroutine
-  char* b = new char[strlen(s) + 50];
-  sprintf(b, "verify_oop: %s: %s", reg->name(), s);
+  const char* b = NULL;
+  {
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("verify_oop: %s: %s", reg->name(), s);
+    b = code_string(ss.as_string());
+  }
   BLOCK_COMMENT("verify_oop {");
 #ifdef _LP64
   push(rscratch1);                    // save r10, trashed by movptr()
@@ -4297,9 +4302,14 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
   { Label L;
     testptr(tmp, tmp);
     if (WizardMode) {
+      const char* buf = NULL;
+      {
+        ResourceMark rm;
+        stringStream ss;
+        ss.print("DelayedValue="INTPTR_FORMAT, delayed_value_addr[1]);
+        buf = code_string(ss.as_string());
+      }
       jcc(Assembler::notZero, L);
-      char* buf = new char[40];
-      sprintf(buf, "DelayedValue="INTPTR_FORMAT, delayed_value_addr[1]);
       STOP(buf);
     } else {
       jccb(Assembler::notZero, L);
@@ -4343,9 +4353,13 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
 
   // Address adjust(addr.base(), addr.index(), addr.scale(), addr.disp() + BytesPerWord);
   // Pass register number to verify_oop_subroutine
-  char* b = new char[strlen(s) + 50];
-  sprintf(b, "verify_oop_addr: %s", s);
-
+  const char* b = NULL;
+  {
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("verify_oop_addr: %s", s);
+    b = code_string(ss.as_string());
+  }
 #ifdef _LP64
   push(rscratch1);                    // save r10, trashed by movptr()
 #endif
