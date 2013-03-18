@@ -166,7 +166,7 @@ class CMBitMap : public CMBitMapRO {
 class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   VirtualSpace _virtual_space;   // Underlying backing store for actual stack
   ConcurrentMark* _cm;
-  oop*   _base;        // bottom of stack
+  oop* _base;        // bottom of stack
   jint _index;       // one more than last occupied index
   jint _capacity;    // max #elements
   jint _saved_index; // value of _index saved at start of GC
@@ -1146,7 +1146,9 @@ public:
   // trying not to exceed the given duration. However, it might exit
   // prematurely, according to some conditions (i.e. SATB buffers are
   // available for processing).
-  void do_marking_step(double target_ms, bool do_stealing, bool do_termination);
+  void do_marking_step(double target_ms,
+                       bool do_termination,
+                       bool is_serial);
 
   // These two calls start and stop the timer
   void record_start_time() {
