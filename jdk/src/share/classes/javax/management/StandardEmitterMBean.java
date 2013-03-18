@@ -258,6 +258,11 @@ public class StandardEmitterMBean extends StandardMBean
     }
 
     public MBeanNotificationInfo[] getNotificationInfo() {
+        // this getter might get called from the super constructor
+        // when the notificationInfo has not been properly set yet
+        if (notificationInfo == null) {
+            return NO_NOTIFICATION_INFO;
+        }
         if (notificationInfo.length == 0) {
             return notificationInfo;
         } else {
