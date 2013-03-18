@@ -283,6 +283,68 @@ public class ScriptEngineTest {
         }
     }
 
+    public interface Foo {
+        public void bar();
+    }
+
+    public interface Foo2 extends Foo {
+        public void bar2();
+    }
+
+    @Test
+    public void getInterfaceMissingTest() {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("nashorn");
+
+        // don't define any function.
+        try {
+            engine.eval("");
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+
+        Runnable runnable = ((Invocable)engine).getInterface(Runnable.class);
+        if (runnable != null) {
+            fail("runnable is not null!");
+        }
+
+        // now define "run"
+        try {
+            engine.eval("function run() { print('this is run function'); }");
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+        runnable = ((Invocable)engine).getInterface(Runnable.class);
+        // should not return null now!
+        runnable.run();
+
+        // define only one method of "Foo2"
+        try {
+            engine.eval("function bar() { print('bar function'); }");
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+
+        Foo2 foo2 = ((Invocable)engine).getInterface(Foo2.class);
+        if (foo2 != null) {
+            throw new RuntimeException("foo2 is not null!");
+        }
+
+        // now define other method of "Foo2"
+        try {
+            engine.eval("function bar2() { print('bar2 function'); }");
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+        foo2 = ((Invocable)engine).getInterface(Foo2.class);
+        foo2.bar();
+        foo2.bar2();
+    }
+
     @Test
     public void accessGlobalTest() {
         final ScriptEngineManager m = new ScriptEngineManager();
