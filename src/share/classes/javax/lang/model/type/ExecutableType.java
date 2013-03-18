@@ -78,14 +78,6 @@ public interface ExecutableType extends TypeMirror {
     List<? extends TypeMirror> getParameterTypes();
 
     /**
-     * Returns the type of this executable's receiver parameter.
-     *
-     * @return the type of this executable's receiver parameter
-     * TODO: null if none specified or always a valid value?
-     */
-    TypeMirror getReceiverType();
-
-    /**
      * Returns the exceptions and other throwables listed in this
      * executable's {@code throws} clause.
      *

@@ -246,6 +246,10 @@ public class Type implements PrimitiveType {
         return this;
     }
 
+    public boolean isAnnotated() {
+        return false;
+    }
+
     /**
      * If this is an annotated type, return the underlying type.
      * Otherwise, return the type itself.
@@ -1539,7 +1543,12 @@ public class Type implements PrimitiveType {
     }
 
     public static class AnnotatedType extends Type
-            implements javax.lang.model.type.AnnotatedType {
+            implements
+                javax.lang.model.type.ArrayType,
+                javax.lang.model.type.DeclaredType,
+                javax.lang.model.type.PrimitiveType,
+                javax.lang.model.type.TypeVariable,
+                javax.lang.model.type.WildcardType {
         /** The type annotations on this type.
          */
         public List<Attribute.TypeCompound> typeAnnotations;
@@ -1552,7 +1561,7 @@ public class Type implements PrimitiveType {
             super(underlyingType.tag, underlyingType.tsym);
             this.typeAnnotations = List.nil();
             this.underlyingType = underlyingType;
-            Assert.check(underlyingType.getKind() != TypeKind.ANNOTATED,
+            Assert.check(!underlyingType.isAnnotated(),
                     "Can't annotate already annotated type: " + underlyingType);
         }
 
@@ -1561,24 +1570,24 @@ public class Type implements PrimitiveType {
             super(underlyingType.tag, underlyingType.tsym);
             this.typeAnnotations = typeAnnotations;
             this.underlyingType = underlyingType;
-            Assert.check(underlyingType.getKind() != TypeKind.ANNOTATED,
+            Assert.check(!underlyingType.isAnnotated(),
                     "Can't annotate already annotated type: " + underlyingType +
                     "; adding: " + typeAnnotations);
         }
 
         @Override
+        public boolean isAnnotated() {
+            return true;
+        }
+
+        @Override
         public TypeKind getKind() {
-            return TypeKind.ANNOTATED;
+            return underlyingType.getKind();
         }
 
         @Override
         public List<? extends AnnotationMirror> getAnnotations() {
             return typeAnnotations;
-        }
-
-        @Override
-        public TypeMirror getUnderlyingType() {
-            return underlyingType;
         }
 
         @Override
@@ -1593,7 +1602,7 @@ public class Type implements PrimitiveType {
 
         @Override
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-            return v.visitAnnotated(this, p);
+            return underlyingType.accept(v, p);
         }
 
         @Override
