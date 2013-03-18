@@ -3362,7 +3362,7 @@ public class Attr extends JCTree.Visitor {
                         Type normOuter = site;
                         if (normOuter.hasTag(CLASS)) {
                             normOuter = types.asEnclosingSuper(site, ownOuter.tsym);
-                            if (site.getKind() == TypeKind.ANNOTATED) {
+                            if (site.isAnnotated()) {
                                 // Propagate any type annotations.
                                 // TODO: should asEnclosingSuper do this?
                                 // Note that the type annotations in site will be updated

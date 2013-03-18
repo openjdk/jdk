@@ -205,7 +205,7 @@ public abstract class ExecutableMemberDocImpl
         if (recvtype == null) {
             return new AnnotationDesc[0];
         }
-        if (recvtype.getKind() != TypeKind.ANNOTATED) {
+        if (!recvtype.isAnnotated()) {
             return new AnnotationDesc[0];
         }
         List<? extends Compound> typeAnnos = ((com.sun.tools.javac.code.Type.AnnotatedType)recvtype).typeAnnotations;
