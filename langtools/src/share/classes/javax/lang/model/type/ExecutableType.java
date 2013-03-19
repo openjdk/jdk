@@ -85,7 +85,7 @@ public interface ExecutableType extends TypeMirror {
      *
      * An executable which is an instance method, or a constructor of an
      * inner class, has a receiver type derived from the {@linkplain
-     * #getEnclosingElement declaring type}.
+     * ExecutableElement#getEnclosingElement declaring type}.
      *
      * An executable which is a static method, or a constructor of a
      * non-inner class, or an initializer (static or instance), has no
