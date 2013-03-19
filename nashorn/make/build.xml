@@ -124,7 +124,7 @@
     <echo message="release=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
   </target>
 
-  <target name="jar" depends="compile, run-nasgen" description="Creates nashorn.jar">
+  <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar">
     <jar jarfile="${dist.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
       <fileset dir="${build.classes.dir}"/>
       <manifest>
