@@ -4279,7 +4279,7 @@ public class Attr extends JCTree.Visitor {
             validateAnnotatedType(errtree, type);
             if (type.tsym != null &&
                     type.tsym.isStatic() &&
-                    type.getAnnotations().nonEmpty()) {
+                    type.getAnnotationMirrors().nonEmpty()) {
                     // Enclosing static classes cannot have type annotations.
                 log.error(errtree.pos(), "cant.annotate.static.class");
             }

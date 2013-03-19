@@ -25,6 +25,9 @@
 
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.model.JavacAnnoConstructs;
+import com.sun.tools.javac.model.JavacTypes;
+import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -258,6 +261,23 @@ public class Type implements PrimitiveType {
         return this;
     }
 
+    @Override
+    public List<? extends Attribute.TypeCompound> getAnnotationMirrors() {
+        return List.nil();
+    }
+
+    @Override
+    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
+        return null;
+    }
+
+    @Override
+    public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
+        @SuppressWarnings("unchecked")
+        A[] tmp = (A[]) java.lang.reflect.Array.newInstance(annotationType, 0);
+        return tmp;
+    }
+
     /** Return the base types of a list of types.
      */
     public static List<Type> baseTypes(List<Type> ts) {
@@ -354,8 +374,8 @@ public class Type implements PrimitiveType {
         }
         if (args.head.unannotatedType().tag == ARRAY) {
             buf.append(((ArrayType)args.head.unannotatedType()).elemtype);
-            if (args.head.getAnnotations().nonEmpty()) {
-                buf.append(args.head.getAnnotations());
+            if (args.head.getAnnotationMirrors().nonEmpty()) {
+                buf.append(args.head.getAnnotationMirrors());
             }
             buf.append("...");
         } else {
@@ -366,7 +386,6 @@ public class Type implements PrimitiveType {
 
     /** Access methods.
      */
-    public List<? extends AnnotationMirror> getAnnotations() { return List.nil(); }
     public List<Type>        getTypeArguments()  { return List.nil(); }
     public Type              getEnclosingType()  { return null; }
     public List<Type>        getParameterTypes() { return List.nil(); }
@@ -1581,13 +1600,23 @@ public class Type implements PrimitiveType {
         }
 
         @Override
-        public TypeKind getKind() {
-            return underlyingType.getKind();
+        public List<? extends Attribute.TypeCompound> getAnnotationMirrors() {
+            return typeAnnotations;
         }
 
         @Override
-        public List<? extends AnnotationMirror> getAnnotations() {
-            return typeAnnotations;
+        public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
+            return JavacAnnoConstructs.getAnnotation(this, annotationType);
+        }
+
+        @Override
+        public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
+            return JavacAnnoConstructs.getAnnotationsByType(this, annotationType);
+        }
+
+        @Override
+        public TypeKind getKind() {
+            return underlyingType.getKind();
         }
 
         @Override
