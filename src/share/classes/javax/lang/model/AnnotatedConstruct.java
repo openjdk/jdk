@@ -25,16 +25,17 @@
 
 package javax.lang.model;
 
-import java.lang.annotation.Annotation;
+import java.lang.annotation.*;
 import java.util.List;
 import javax.lang.model.element.*;
+import javax.lang.model.type.*;
 
 /**
  * Represent a construct that can have annotations.
  *
- * When annotations are on an {@linkplain element.Element element},
- * the are on a <em>declaration</em>.  When annotations are on a {@linkplain
- * type.TypeMirror type}, they are on a <em>use</em> of a type.
+ * When annotations are on an {@linkplain Element element},
+ * they are on a <em>declaration</em>.  When annotations are on a {@linkplain
+ * TypeMirror type}, they are on a <em>use</em> of a type.
  *
  * @since 1.8
  */
