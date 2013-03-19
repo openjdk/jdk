@@ -3753,7 +3753,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1363617192
+DATE_WHEN_GENERATED=1363706268
 
 ###############################################################################
 #
@@ -29830,7 +29830,7 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 _ACEOF
  X11_A_OK=yes
 else
-  X11_A_OK=no
+  X11_A_OK=no; break
 fi
 
 done
