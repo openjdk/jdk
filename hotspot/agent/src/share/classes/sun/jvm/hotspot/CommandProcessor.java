@@ -24,36 +24,81 @@
 
 package sun.jvm.hotspot;
 
-import java.io.*;
-import java.math.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import sun.jvm.hotspot.types.Type;
-import sun.jvm.hotspot.types.Field;
-import sun.jvm.hotspot.HotSpotTypeDataBase;
-import sun.jvm.hotspot.types.basic.BasicType;
-import sun.jvm.hotspot.types.basic.BasicTypeDataBase;
-import sun.jvm.hotspot.types.CIntegerType;
-import sun.jvm.hotspot.code.*;
-import sun.jvm.hotspot.compiler.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.interpreter.*;
-import sun.jvm.hotspot.memory.*;
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.opto.*;
-import sun.jvm.hotspot.ci.*;
-import sun.jvm.hotspot.asm.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.utilities.*;
-import sun.jvm.hotspot.utilities.soql.*;
-import sun.jvm.hotspot.ui.classbrowser.*;
-import sun.jvm.hotspot.ui.tree.*;
-import sun.jvm.hotspot.tools.*;
+import sun.jvm.hotspot.ci.ciEnv;
+import sun.jvm.hotspot.code.CodeBlob;
+import sun.jvm.hotspot.code.CodeCacheVisitor;
+import sun.jvm.hotspot.code.NMethod;
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.OopHandle;
+import sun.jvm.hotspot.memory.SymbolTable;
+import sun.jvm.hotspot.memory.SystemDictionary;
+import sun.jvm.hotspot.memory.Universe;
+import sun.jvm.hotspot.oops.DefaultHeapVisitor;
+import sun.jvm.hotspot.oops.HeapVisitor;
+import sun.jvm.hotspot.oops.InstanceKlass;
+import sun.jvm.hotspot.oops.Klass;
+import sun.jvm.hotspot.oops.Metadata;
+import sun.jvm.hotspot.oops.Method;
+import sun.jvm.hotspot.oops.MethodData;
+import sun.jvm.hotspot.oops.Oop;
+import sun.jvm.hotspot.oops.RawHeapVisitor;
+import sun.jvm.hotspot.oops.Symbol;
+import sun.jvm.hotspot.oops.UnknownOopException;
+import sun.jvm.hotspot.opto.Compile;
+import sun.jvm.hotspot.opto.InlineTree;
+import sun.jvm.hotspot.runtime.CompiledVFrame;
+import sun.jvm.hotspot.runtime.CompilerThread;
+import sun.jvm.hotspot.runtime.JavaThread;
+import sun.jvm.hotspot.runtime.JavaVFrame;
+import sun.jvm.hotspot.runtime.Threads;
+import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.tools.ObjectHistogram;
+import sun.jvm.hotspot.tools.PMap;
+import sun.jvm.hotspot.tools.PStack;
 import sun.jvm.hotspot.tools.StackTrace;
 import sun.jvm.hotspot.tools.jcore.ClassDump;
 import sun.jvm.hotspot.tools.jcore.ClassFilter;
+import sun.jvm.hotspot.types.CIntegerType;
+import sun.jvm.hotspot.types.Field;
+import sun.jvm.hotspot.types.Type;
+import sun.jvm.hotspot.types.basic.BasicType;
+import sun.jvm.hotspot.ui.classbrowser.HTMLGenerator;
+import sun.jvm.hotspot.ui.tree.CTypeTreeNodeAdapter;
+import sun.jvm.hotspot.ui.tree.OopTreeNodeAdapter;
+import sun.jvm.hotspot.ui.tree.SimpleTreeNode;
+import sun.jvm.hotspot.utilities.AddressOps;
+import sun.jvm.hotspot.utilities.Assert;
+import sun.jvm.hotspot.utilities.HeapProgressThunk;
+import sun.jvm.hotspot.utilities.LivenessPathElement;
+import sun.jvm.hotspot.utilities.MethodArray;
+import sun.jvm.hotspot.utilities.ObjectReader;
+import sun.jvm.hotspot.utilities.PointerFinder;
+import sun.jvm.hotspot.utilities.PointerLocation;
+import sun.jvm.hotspot.utilities.ReversePtrs;
+import sun.jvm.hotspot.utilities.ReversePtrsAnalysis;
+import sun.jvm.hotspot.utilities.RobustOopDeterminator;
+import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
+import sun.jvm.hotspot.utilities.soql.JSJavaFactory;
+import sun.jvm.hotspot.utilities.soql.JSJavaFactoryImpl;
+import sun.jvm.hotspot.utilities.soql.JSJavaScriptEngine;
 
 public class CommandProcessor {
     public abstract static class DebuggerInterface {
@@ -1132,6 +1177,10 @@ public class CommandProcessor {
                     Klass klass = null;
                     if (t.countTokens() == 1) {
                         klass = SystemDictionaryHelper.findInstanceKlass(t.nextToken());
+                        if (klass == null) {
+                            out.println("No such type.");
+                            return;
+                        }
                     }
                     while (base != null && base.lessThan(end)) {
                         long step = stride;
