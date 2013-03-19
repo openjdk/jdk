@@ -491,9 +491,12 @@ protected:
   // structures are initialised to a sensible and predictable state.
   void set_non_marking_state();
 
+  // Called to indicate how many threads are currently active.
+  void set_concurrency(uint active_tasks);
+
   // It should be called to indicate which phase we're in (concurrent
   // mark or remark) and how many threads are currently active.
-  void set_phase(uint active_tasks, bool concurrent);
+  void set_concurrency_and_phase(uint active_tasks, bool concurrent);
 
   // prints all gathered CM-related statistics
   void print_stats();

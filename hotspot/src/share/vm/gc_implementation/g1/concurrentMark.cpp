@@ -784,7 +784,7 @@ void ConcurrentMark::reset_marking_state(bool clear_overflow) {
   }
 }
 
-void ConcurrentMark::set_phase(uint active_tasks, bool concurrent) {
+void ConcurrentMark::set_concurrency(uint active_tasks) {
   assert(active_tasks <= _max_worker_id, "we should not have more");
 
   _active_tasks = active_tasks;
@@ -793,6 +793,10 @@ void ConcurrentMark::set_phase(uint active_tasks, bool concurrent) {
   _terminator   = ParallelTaskTerminator((int) active_tasks, _task_queues);
   _first_overflow_barrier_sync.set_n_workers((int) active_tasks);
   _second_overflow_barrier_sync.set_n_workers((int) active_tasks);
+}
+
+void ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
+  set_concurrency(active_tasks);
 
   _concurrent = concurrent;
   // We propagate this to all tasks, not just the active ones.
@@ -806,7 +810,9 @@ void ConcurrentMark::set_phase(uint active_tasks, bool concurrent) {
     // false before we start remark. At this point we should also be
     // in a STW phase.
     assert(!concurrent_marking_in_progress(), "invariant");
-    assert(_finger == _heap_end, "only way to get here");
+    assert(_finger == _heap_end,
+           err_msg("only way to get here: _finger: "PTR_FORMAT", _heap_end: "PTR_FORMAT,
+                   _finger, _heap_end));
     update_g1_committed(true);
   }
 }
@@ -974,20 +980,28 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
     gclog_or_tty->print_cr("[%u] leaving first barrier", worker_id);
   }
 
-  // let the task associated with with worker 0 do this
-  if (worker_id == 0) {
-    // task 0 is responsible for clearing the global data structures
-    // We should be here because of an overflow. During STW we should
-    // not clear the overflow flag since we rely on it being true when
-    // we exit this method to abort the pause and restart concurent
-    // marking.
-    reset_marking_state(concurrent() /* clear_overflow */);
-    force_overflow()->update();
+  // If we're executing the concurrent phase of marking, reset the marking
+  // state; otherwise the marking state is reset after reference processing,
+  // during the remark pause.
+  // If we reset here as a result of an overflow during the remark we will
+  // see assertion failures from any subsequent set_concurrency_and_phase()
+  // calls.
+  if (concurrent()) {
+    // let the task associated with with worker 0 do this
+    if (worker_id == 0) {
+      // task 0 is responsible for clearing the global data structures
+      // We should be here because of an overflow. During STW we should
+      // not clear the overflow flag since we rely on it being true when
+      // we exit this method to abort the pause and restart concurent
+      // marking.
+      reset_marking_state(true /* clear_overflow */);
+      force_overflow()->update();
 
-    if (G1Log::fine()) {
-      gclog_or_tty->date_stamp(PrintGCDateStamps);
-      gclog_or_tty->stamp(PrintGCTimeStamps);
-      gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
+      if (G1Log::fine()) {
+        gclog_or_tty->date_stamp(PrintGCDateStamps);
+        gclog_or_tty->stamp(PrintGCTimeStamps);
+        gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
+      }
     }
   }
 
@@ -1007,7 +1021,7 @@ void ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
   if (concurrent()) {
     ConcurrentGCThread::stsJoin();
   }
-  // at this point everything should be re-initialised and ready to go
+  // at this point everything should be re-initialized and ready to go
 
   if (verbose_low()) {
     gclog_or_tty->print_cr("[%u] leaving second barrier", worker_id);
@@ -1222,8 +1236,8 @@ void ConcurrentMark::markFromRoots() {
 
   uint active_workers = MAX2(1U, parallel_marking_threads());
 
-  // Parallel task terminator is set in "set_phase()"
-  set_phase(active_workers, true /* concurrent */);
+  // Parallel task terminator is set in "set_concurrency_and_phase()"
+  set_concurrency_and_phase(active_workers, true /* concurrent */);
 
   CMConcurrentMarkingTask markingTask(this, cmThread());
   if (use_parallel_marking_threads()) {
@@ -2349,9 +2363,11 @@ void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
 
   G1CMRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm);
 
-  // We need to reset the phase for each task execution so that
-  // the termination protocol of CMTask::do_marking_step works.
-  _cm->set_phase(_active_workers, false /* concurrent */);
+  // We need to reset the concurrency level before each
+  // proxy task execution, so that the termination protocol
+  // and overflow handling in CMTask::do_marking_step() knows
+  // how many workers to wait for.
+  _cm->set_concurrency(_active_workers);
   _g1h->set_par_threads(_active_workers);
   _workers->run_task(&proc_task_proxy);
   _g1h->set_par_threads(0);
@@ -2377,12 +2393,29 @@ void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
 
   G1CMRefEnqueueTaskProxy enq_task_proxy(enq_task);
 
+  // Not strictly necessary but...
+  //
+  // We need to reset the concurrency level before each
+  // proxy task execution, so that the termination protocol
+  // and overflow handling in CMTask::do_marking_step() knows
+  // how many workers to wait for.
+  _cm->set_concurrency(_active_workers);
   _g1h->set_par_threads(_active_workers);
   _workers->run_task(&enq_task_proxy);
   _g1h->set_par_threads(0);
 }
 
 void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
+  if (has_overflown()) {
+    // Skip processing the discovered references if we have
+    // overflown the global marking stack. Reference objects
+    // only get discovered once so it is OK to not
+    // de-populate the discovered reference lists. We could have,
+    // but the only benefit would be that, when marking restarts,
+    // less reference objects are discovered.
+    return;
+  }
+
   ResourceMark rm;
   HandleMark   hm;
 
@@ -2437,6 +2470,10 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     G1CMRefProcTaskExecutor par_task_executor(g1h, this,
                                               g1h->workers(), active_workers);
     AbstractRefProcTaskExecutor* executor = (processing_is_mt ? &par_task_executor : NULL);
+
+    // Set the concurrency level. The phase was already set prior to
+    // executing the remark task.
+    set_concurrency(active_workers);
 
     // Set the degree of MT processing here.  If the discovery was done MT,
     // the number of threads involved during discovery could differ from
@@ -2527,7 +2564,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
       active_workers = (uint) ParallelGCThreads;
       g1h->workers()->set_active_workers(active_workers);
     }
-    set_phase(active_workers, false /* concurrent */);
+    set_concurrency_and_phase(active_workers, false /* concurrent */);
     // Leave _parallel_marking_threads at it's
     // value originally calculated in the ConcurrentMark
     // constructor and pass values of the active workers
@@ -2543,7 +2580,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   } else {
     G1CollectedHeap::StrongRootsScope srs(g1h);
     uint active_workers = 1;
-    set_phase(active_workers, false /* concurrent */);
+    set_concurrency_and_phase(active_workers, false /* concurrent */);
 
     // Note - if there's no work gang then the VMThread will be
     // the thread to execute the remark - serially. We have
@@ -3923,7 +3960,7 @@ void CMTask::print_stats() {
       (2) When a global overflow (on the global stack) has been
       triggered. Before the task aborts, it will actually sync up with
       the other tasks to ensure that all the marking data structures
-      (local queues, stacks, fingers etc.)  are re-initialised so that
+      (local queues, stacks, fingers etc.)  are re-initialized so that
       when do_marking_step() completes, the marking phase can
       immediately restart.
 
@@ -4371,7 +4408,8 @@ void CMTask::do_marking_step(double time_target_ms,
         // ...and enter the second barrier.
         _cm->enter_second_sync_barrier(_worker_id);
       }
-      // At this point everything has bee re-initialised and we're
+      // At this point, if we're during the concurrent phase of
+      // marking, everything has been re-initialized and we're
       // ready to restart.
     }
 
