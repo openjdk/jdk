@@ -178,6 +178,7 @@ FULL_JRE_LIB_FILES := \
     cmm/sRGB.pf \
     ext/cldrdata.jar \
     ext/dnsns.jar \
+    ext/nashorn.jar \
     ext/sunec.jar \
     ext/sunpkcs11.jar \
     ext/zipfs.jar \
@@ -251,6 +252,7 @@ FULL_JRE_JAR_FILES := \
     charsets.jar \
     ext/cldrdata.jar \
     ext/dnsns.jar \
+    ext/nashorn.jar \
     ext/sunec.jar \
     ext/sunpkcs11.jar \
     ext/zipfs.jar
