@@ -2905,6 +2905,10 @@ class CommandLineFlags {
           "if non-zero, start verifying C heap after Nth call to "          \
           "malloc/realloc/free")                                            \
                                                                             \
+  diagnostic(uintx, MallocMaxTestWords,     0,                              \
+          "if non-zero, max # of Words that malloc/realloc can allocate "   \
+          "(for testing only)")                                             \
+                                                                            \
   product(intx, TypeProfileWidth,     2,                                    \
           "number of receiver types to record in call/cast profile")        \
                                                                             \
