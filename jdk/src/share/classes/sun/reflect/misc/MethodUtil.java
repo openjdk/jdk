@@ -46,8 +46,28 @@ import sun.misc.IOUtils;
 
 
 class Trampoline {
+    static {
+        if (Trampoline.class.getClassLoader() == null) {
+            throw new Error(
+                "Trampoline must not be defined by the bootstrap classloader");
+        }
+    }
+
+    private static void ensureInvocableMethod(Method m)
+        throws InvocationTargetException
+    {
+        Class<?> clazz = m.getDeclaringClass();
+        if (clazz.equals(AccessController.class) ||
+            clazz.equals(Method.class) ||
+            clazz.getName().startsWith("java.lang.invoke."))
+            throw new InvocationTargetException(
+                new UnsupportedOperationException("invocation not supported"));
+    }
+
     private static Object invoke(Method m, Object obj, Object[] params)
-        throws InvocationTargetException, IllegalAccessException {
+        throws InvocationTargetException, IllegalAccessException
+    {
+        ensureInvocableMethod(m);
         return m.invoke(obj, params);
     }
 }
@@ -251,16 +271,6 @@ public final class MethodUtil extends SecureClassLoader {
      */
     public static Object invoke(Method m, Object obj, Object[] params)
         throws InvocationTargetException, IllegalAccessException {
-        if (m.getDeclaringClass().equals(AccessController.class) ||
-           (m.getDeclaringClass().equals(java.lang.invoke.MethodHandles.class)
-            && m.getName().equals("lookup")) ||
-           (m.getDeclaringClass().equals(java.lang.invoke.MethodHandles.Lookup.class)
-            && (m.getName().startsWith("find") ||
-                m.getName().startsWith("bind") ||
-                m.getName().startsWith("unreflect"))) ||
-            m.getDeclaringClass().equals(Method.class))
-            throw new InvocationTargetException(
-                new UnsupportedOperationException("invocation not supported"));
         try {
             return bounce.invoke(null, new Object[] {m, obj, params});
         } catch (InvocationTargetException ie) {
@@ -293,10 +303,10 @@ public final class MethodUtil extends SecureClassLoader {
                             Method.class, Object.class, Object[].class
                         };
                         Method b = t.getDeclaredMethod("invoke", types);
-                    ((AccessibleObject)b).setAccessible(true);
-                    return b;
-                }
-            });
+                        b.setAccessible(true);
+                        return b;
+                    }
+                });
         } catch (Exception e) {
             throw new InternalError("bouncer cannot be found", e);
         }
