@@ -1289,12 +1289,22 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   if (has_overflown()) {
     // Oops.  We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
-    // Clear the marking state because we will be restarting
-    // marking due to overflowing the global mark stack.
-    reset_marking_state();
     if (G1TraceMarkStackOverflow) {
       gclog_or_tty->print_cr("\nRemark led to restart for overflow.");
     }
+
+    // Verify the heap w.r.t. the previous marking bitmap.
+    if (VerifyDuringGC) {
+      HandleMark hm;  // handle scope
+      gclog_or_tty->print(" VerifyDuringGC:(overflow)");
+      Universe::heap()->prepare_for_verify();
+      Universe::verify(/* silent */ false,
+                       /* option */ VerifyOption_G1UsePrevMarking);
+    }
+
+    // Clear the marking state because we will be restarting
+    // marking due to overflowing the global mark stack.
+    reset_marking_state();
   } else {
     // Aggregate the per-task counting data that we have accumulated
     // while marking.
@@ -2593,7 +2603,11 @@ void ConcurrentMark::checkpointRootsFinalWork() {
     remarkTask.work(0);
   }
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  guarantee(satb_mq_set.completed_buffers_num() == 0, "invariant");
+  guarantee(has_overflown() ||
+            satb_mq_set.completed_buffers_num() == 0,
+            err_msg("Invariant: has_overflown = %s, num buffers = %d",
+                    BOOL_TO_STR(has_overflown()),
+                    satb_mq_set.completed_buffers_num()));
 
   print_stats();
 }
