@@ -311,9 +311,9 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
             }
             if (args.head.unannotatedType().getKind() == TypeKind.ARRAY) {
                 buf.append(visit(((ArrayType) args.head.unannotatedType()).elemtype, locale));
-                if (args.head.getAnnotations().nonEmpty()) {
+                if (args.head.getAnnotationMirrors().nonEmpty()) {
                     buf.append(' ');
-                    buf.append(args.head.getAnnotations());
+                    buf.append(args.head.getAnnotationMirrors());
                     buf.append(' ');
                 }
                 buf.append("...");
