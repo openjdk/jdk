@@ -117,8 +117,6 @@ public abstract class SunToolkit extends Toolkit
     }
 
     public SunToolkit() {
-        // 7122796: Always create an EQ for the main AppContext
-        initEQ(AppContext.getMainAppContext());
     }
 
     public boolean useBufferPerWindow() {
@@ -281,11 +279,14 @@ public abstract class SunToolkit extends Toolkit
      */
     public static AppContext createNewAppContext() {
         ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
+        return createNewAppContext(threadGroup);
+    }
+
+    static final AppContext createNewAppContext(ThreadGroup threadGroup) {
         // Create appContext before initialization of EventQueue, so all
         // the calls to AppContext.getAppContext() from EventQueue ctor
         // return correct values
         AppContext appContext = new AppContext(threadGroup);
-
         initEQ(appContext);
 
         return appContext;

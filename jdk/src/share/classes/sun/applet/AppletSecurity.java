@@ -52,7 +52,6 @@ import sun.security.util.SecurityConstants;
  */
 public
 class AppletSecurity extends AWTSecurityManager {
-    private AppContext mainAppContext;
 
     //URLClassLoader.acc
     private static Field facc = null;
@@ -77,7 +76,6 @@ class AppletSecurity extends AWTSecurityManager {
      */
     public AppletSecurity() {
         reset();
-        mainAppContext = AppContext.getAppContext();
     }
 
     // Cache to store known restricted packages
@@ -312,7 +310,7 @@ class AppletSecurity extends AWTSecurityManager {
         AppContext appContext = AppContext.getAppContext();
         AppletClassLoader appletClassLoader = currentAppletClassLoader();
 
-        if ((appContext == mainAppContext) && (appletClassLoader != null)) {
+        if (AppContext.isMainContext(appContext) && (appletClassLoader != null)) {
             // If we're about to allow access to the main EventQueue,
             // and anything untrusted is on the class context stack,
             // disallow access.
