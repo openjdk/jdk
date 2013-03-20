@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * Implementation for the jdeps tool for static class dependency analysis.
  */
 class JdepsTask {
-    class BadArgs extends Exception {
+    static class BadArgs extends Exception {
         static final long serialVersionUID = 8765093759964640721L;
         BadArgs(String key, Object... args) {
             super(JdepsTask.getMessage(key, args));
@@ -119,7 +119,7 @@ class JdepsTask {
                 } else if ("class".equals(arg)) {
                     task.options.verbose = Analyzer.Type.CLASS;
                 } else {
-                    throw task.new BadArgs("err.invalid.arg.for.option", opt);
+                    throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
             }
         },
@@ -142,7 +142,7 @@ class JdepsTask {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.showProfile = true;
                 if (Profiles.getProfileCount() == 0) {
-                    throw task.new BadArgs("err.option.unsupported", opt, getMessage("err.profiles.msg"));
+                    throw new BadArgs("err.option.unsupported", opt, getMessage("err.profiles.msg"));
                 }
             }
         },
@@ -156,7 +156,7 @@ class JdepsTask {
                 try {
                     task.options.depth = Integer.parseInt(arg);
                 } catch (NumberFormatException e) {
-                    throw task.new BadArgs("err.invalid.arg.for.option", opt);
+                    throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
             }
         },
@@ -515,7 +515,6 @@ class JdepsTask {
         boolean help;
         boolean version;
         boolean fullVersion;
-        boolean showFlags;
         boolean showProfile;
         boolean showSummary;
         boolean wildcard;
