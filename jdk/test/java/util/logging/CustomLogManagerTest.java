@@ -29,7 +29,7 @@ import sun.util.logging.PlatformLogger;
 
 /*
  * @test
- * @bug 8005615
+ * @bug 8005615 8006104
  * @summary Add loggers to custom log manager
  *
  * @compile -XDignore.symbol.file CustomLogManagerTest.java CustomLogManager.java
