@@ -185,14 +185,15 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         int optionValue = 0;
 
         switch(opt) {
-            case TCP_NODELAY :
-            case SO_OOBINLINE :
             case SO_REUSEADDR :
                 if (exclusiveBind) {
                     // SO_REUSEADDR emulated when using exclusive bind
                     isReuseAddress = on;
                     return;
                 }
+                // intentional fallthrough
+            case TCP_NODELAY :
+            case SO_OOBINLINE :
             case SO_KEEPALIVE :
                 optionValue = on ? 1 : 0;
                 break;
