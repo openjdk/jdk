@@ -25,20 +25,18 @@
 
 package com.sun.tools.doclint;
 
-import com.sun.source.doctree.LiteralTree;
-import java.util.regex.Matcher;
-import com.sun.source.doctree.LinkTree;
-import java.net.URI;
-import java.util.regex.Pattern;
 import java.io.IOException;
-import com.sun.tools.javac.tree.DocPretty;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -52,12 +50,15 @@ import javax.tools.Diagnostic.Kind;
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.AuthorTree;
 import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.doctree.DocRootTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.InheritDocTree;
+import com.sun.source.doctree.LinkTree;
+import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
@@ -67,11 +68,12 @@ import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
+import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.TreePath;
 import com.sun.tools.doclint.HtmlTag.AttrKind;
-import java.net.URISyntaxException;
+import com.sun.tools.javac.tree.DocPretty;
 import static com.sun.tools.doclint.Messages.Group.*;
 
 
@@ -95,6 +97,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
     public enum Flag {
         TABLE_HAS_CAPTION,
         HAS_ELEMENT,
+        HAS_INLINE_TAG,
         HAS_TEXT,
         REPORTED_BAD_INLINE
     }
@@ -418,7 +421,8 @@ public class Checker extends DocTreeScanner<Void, Void> {
                     }
                     if (t.flags.contains(HtmlTag.Flag.EXPECT_CONTENT)
                             && !top.flags.contains(Flag.HAS_TEXT)
-                            && !top.flags.contains(Flag.HAS_ELEMENT)) {
+                            && !top.flags.contains(Flag.HAS_ELEMENT)
+                            && !top.flags.contains(Flag.HAS_INLINE_TAG)) {
                         env.messages.warning(HTML, tree, "dc.tag.empty", treeName);
                     }
                     tagStack.pop();
@@ -571,7 +575,14 @@ public class Checker extends DocTreeScanner<Void, Void> {
     }
 
     @Override
+    public Void visitDocRoot(DocRootTree tree, Void ignore) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
+        return super.visitDocRoot(tree, ignore);
+    }
+
+    @Override
     public Void visitInheritDoc(InheritDocTree tree, Void ignore) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
         // TODO: verify on overridden method
         foundInheritDoc = true;
         return super.visitInheritDoc(tree, ignore);
@@ -579,6 +590,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
 
     @Override
     public Void visitLink(LinkTree tree, Void ignore) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
         // simulate inline context on tag stack
         HtmlTag t = (tree.getKind() == DocTree.Kind.LINK)
                 ? HtmlTag.CODE : HtmlTag.SPAN;
@@ -592,6 +604,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
 
     @Override
     public Void visitLiteral(LiteralTree tree, Void ignore) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
         if (tree.getKind() == DocTree.Kind.CODE) {
             for (TagStackItem tsi: tagStack) {
                 if (tsi.tag == HtmlTag.CODE) {
@@ -743,6 +756,12 @@ public class Checker extends DocTreeScanner<Void, Void> {
             if (isCheckedException(tl) && !foundThrows.contains(tl))
                 reportMissing("dc.missing.throws", tl);
         }
+    }
+
+    @Override
+    public Void visitValue(ValueTree tree, Void ignore) {
+        markEnclosingTag(Flag.HAS_INLINE_TAG);
+        return super.visitValue(tree, ignore);
     }
 
     @Override
