@@ -245,7 +245,7 @@ void AbsSeq::dump_on(outputStream* s) {
 
 void NumberSeq::dump_on(outputStream* s) {
   AbsSeq::dump_on(s);
-  s->print_cr("\t\t _last = %7.3f, _maximum = %7.3f");
+  s->print_cr("\t\t _last = %7.3f, _maximum = %7.3f", _last, _maximum);
 }
 
 void TruncatedSeq::dump_on(outputStream* s) {

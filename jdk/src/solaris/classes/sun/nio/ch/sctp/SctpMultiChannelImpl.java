@@ -889,13 +889,20 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                                      boolean unordered,
                                      int ppid)
             throws IOException {
+        InetAddress addr = null;     // no preferred address
+        int port = 0;
+        if (target != null) {
+            InetSocketAddress isa = Net.checkAddress(target);
+            addr = isa.getAddress();
+            port = isa.getPort();
+        }
         int pos = bb.position();
         int lim = bb.limit();
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        int written = send0(fd, ((DirectBuffer)bb).address() + pos,
-                            rem, target, assocId, streamNumber, unordered, ppid);
+        int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
+                            port, assocId, streamNumber, unordered, ppid);
         if (written > 0)
             bb.position(pos + written);
         return written;
@@ -976,13 +983,14 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     private static int send0(int fd,
                              long address,
                              int length,
-                             SocketAddress target,
+                             InetAddress addr,
+                             int port,
                              int assocId,
                              int streamNumber,
                              boolean unordered,
                              int ppid)
             throws IOException {
-        return SctpChannelImpl.send0(fd, address, length, target, assocId,
+        return SctpChannelImpl.send0(fd, address, length, addr, port, assocId,
                 streamNumber, unordered, ppid);
     }
 

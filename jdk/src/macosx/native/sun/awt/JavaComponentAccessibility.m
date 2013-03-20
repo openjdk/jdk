@@ -1113,18 +1113,10 @@ static NSObject *sAttributeNamesLOCK = nil;
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     id value = nil;
 
-    // This code frequently gets called indirectly by Java when VoiceOver is active.
-    // Basically, we just have to know when we going to be a bad state, and do something "special".
-    // Note that while NSApplication isn't technically correct, we post a focus changed notification
-    // (which will call this method, but with the correct codepath) shortly afterwards. See +postFocusChanged.
-    if (sInPerformFromJava) {
-        return [NSApplication sharedApplication];
-    } else {
-        jobject focused = JNFCallStaticObjectMethod(env, jm_getFocusOwner, fComponent); // AWT_THREADING Safe (AWTRunLoop)
-        if (focused != NULL) {
-            if (JNFIsInstanceOf(env, focused, &sjc_Accessible)) {
-                value = [JavaComponentAccessibility createWithAccessible:focused withEnv:env withView:fView];
-            }
+    jobject focused = JNFCallStaticObjectMethod(env, jm_getFocusOwner, fComponent); // AWT_THREADING Safe (AWTRunLoop)
+    if (focused != NULL) {
+        if (JNFIsInstanceOf(env, focused, &sjc_Accessible)) {
+            value = [JavaComponentAccessibility createWithAccessible:focused withEnv:env withView:fView];
         }
     }
 
@@ -1149,7 +1141,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessibility_focusChanged
 {
 
 JNF_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postFocusChanged:) onObject:[JavaComponentAccessibility class] withObject:nil waitUntilDone:NO awtMode:NO];
+    [ThreadUtilities performOnMainThread:@selector(postFocusChanged:) on:[JavaComponentAccessibility class] withObject:nil waitUntilDone:NO];
 JNF_COCOA_EXIT(env);
 }
 
@@ -1164,7 +1156,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_valueChanged
 (JNIEnv *env, jclass jklass, jlong element)
 {
 JNF_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postValueChanged) onObject:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO awtMode:NO];
+    [ThreadUtilities performOnMainThread:@selector(postValueChanged) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
 JNF_COCOA_EXIT(env);
 }
 
@@ -1177,7 +1169,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectionChanged
 (JNIEnv *env, jclass jklass, jlong element)
 {
 JNF_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postSelectionChanged) onObject:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO awtMode:NO];
+    [ThreadUtilities performOnMainThread:@selector(postSelectionChanged) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
 JNF_COCOA_EXIT(env);
 }
 
@@ -1191,7 +1183,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_unregisterFromCocoaAXSy
 (JNIEnv *env, jclass jklass, jlong element)
 {
 JNF_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(unregisterFromCocoaAXSystem) onObject:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO awtMode:NO];
+    [ThreadUtilities performOnMainThread:@selector(unregisterFromCocoaAXSystem) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
 JNF_COCOA_EXIT(env);
 }
 

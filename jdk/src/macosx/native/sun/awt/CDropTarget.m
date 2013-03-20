@@ -390,8 +390,7 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
 
     // Release dragging data if any when Java's AWT event thread is all finished.
     // Make sure dragging data is released on the native event thread.
-    [ThreadUtilities performOnMainThread:@selector(safeReleaseDraggingData:) onObject:self
-                              withObject:draggingSequenceNumberID waitUntilDone:NO awtMode:NO];
+    [ThreadUtilities performOnMainThread:@selector(safeReleaseDraggingData:) on:self withObject:draggingSequenceNumberID waitUntilDone:NO];
 }
 
 - (jint)currentJavaActions {
