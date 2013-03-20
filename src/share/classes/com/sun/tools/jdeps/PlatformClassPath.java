@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ class PlatformClassPath {
     private static List<Archive> init() {
         List<Archive> result = new ArrayList<Archive>();
         String javaHome = System.getProperty("java.home");
-        List<File> files = new ArrayList<File>();
         File jre = new File(javaHome, "jre");
         File lib = new File(javaHome, "lib");
 
