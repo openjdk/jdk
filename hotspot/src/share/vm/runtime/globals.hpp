@@ -3573,8 +3573,9 @@ class CommandLineFlags {
   product(uintx, SharedMiscCodeSize,    120*K,                              \
           "Size of the shared miscellaneous code area (in bytes)")          \
                                                                             \
-  product(uintx, SharedDummyBlockSize, 0,                                   \
-          "Size of dummy block used to shift heap addresses (in bytes)")    \
+  product(uintx, SharedBaseAddress, LP64_ONLY(32*G)                         \
+          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
+          "Address to allocate shared memory region for class data")        \
                                                                             \
   diagnostic(bool, EnableInvokeDynamic, true,                               \
           "support JSR 292 (method handles, invokedynamic, "                \
