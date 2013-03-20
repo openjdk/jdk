@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.io.IOException;
  *  deletion without notice.</b>
  */
 public class Descriptor {
-    public class InvalidDescriptor extends DescriptorException {
+    public static class InvalidDescriptor extends DescriptorException {
         private static final long serialVersionUID = 1L;
         InvalidDescriptor(String desc) {
             this.desc = desc;
