@@ -44,8 +44,6 @@ extern jint* gButtonDownMasks;
 + (void) eventCountPlusPlus;
 @end
 
-CGDirectDisplayID FindCGDirectDisplayIDForScreenIndex(jint screenIndex);
-
 /*
  * Utility Macros
  */

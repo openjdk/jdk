@@ -76,8 +76,6 @@ $(eval $(call SetupArchive,BUILD_DNS_JAR,,\
 $(IMAGES_OUTPUTDIR)/lib/tzdb.jar: $(JDK_OUTPUTDIR)/lib/tzdb.jar
 	$(install-file)
 
-JARS += $(IMAGES_OUTPUTDIR)/lib/tzdb.jar 
-
 ##########################################################################################
 
 LOCALEDATA_INCLUDE_LOCALES := ar be bg ca cs da de el es et fi fr ga hi hr hu in is it \
@@ -1119,8 +1117,6 @@ endif
 # Import nashorn.jar from nashorn dist dir.
 $(IMAGES_OUTPUTDIR)/lib/ext/nashorn.jar: $(NASHORN_DIST)/nashorn.jar
 	$(install-file)
-
-JARS += $(IMAGES_OUTPUTDIR)/lib/ext/nashorn.jar
 
 ##########################################################################################
 

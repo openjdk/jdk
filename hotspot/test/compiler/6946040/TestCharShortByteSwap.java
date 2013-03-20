@@ -26,7 +26,7 @@
  * @test
  * @bug 6946040
  * @summary Tests Character/Short.reverseBytes and their intrinsics implementation in the server compiler
- * @run main/othervm -Xbatch -server -XX:CompileOnly=.testChar,.testShort TestCharShortByteSwap
+ * @run main/othervm -Xbatch -XX:CompileOnly=.testChar,.testShort TestCharShortByteSwap
  */
 
 // This test must run without any command line arguments.

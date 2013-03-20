@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pwd.h>
+
 JNIEXPORT void JNICALL
 Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
                                                 (JNIEnv *env, jobject obj) {
@@ -39,13 +40,23 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
     char pwd_buf[1024];
     struct passwd pwd;
     jsize numSuppGroups = getgroups(0, NULL);
-    gid_t *groups = (gid_t *)calloc(numSuppGroups, sizeof(gid_t));
-
     jfieldID fid;
     jstring jstr;
     jlongArray jgroups;
     jlong *jgroupsAsArray;
-    jclass cls = (*env)->GetObjectClass(env, obj);
+    gid_t *groups;
+    jclass cls;
+
+    groups = (gid_t *)calloc(numSuppGroups, sizeof(gid_t));
+
+    if (groups == NULL) {
+        jclass cls = (*env)->FindClass(env,"java/lang/OutOfMemoryError");
+        if(cls != 0)
+            (*env)->ThrowNew(env, cls, NULL);
+        return;
+    }
+
+    cls = (*env)->GetObjectClass(env, obj);
 
     memset(pwd_buf, 0, sizeof(pwd_buf));
     if (getpwuid_r(getuid(), &pwd, pwd_buf, sizeof(pwd_buf)) != NULL &&

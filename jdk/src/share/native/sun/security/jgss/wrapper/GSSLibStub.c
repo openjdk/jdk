@@ -27,8 +27,22 @@
 #include "NativeUtil.h"
 #include "NativeFunc.h"
 #include "jlong.h"
+#include <jni.h>
 
-/* Constants for indicating what type of info is needed for inqueries */
+/* Throws a Java Exception by name */
+
+void throwByName(JNIEnv *env, const char *name, const char *msg) {
+    jclass cls = (*env)->FindClass(env, name);
+
+    if (cls != 0) /* Otherwise an exception has already been thrown */
+        (*env)->ThrowNew(env, cls, msg);
+}
+
+void throwOutOfMemoryError(JNIEnv *env, const char *message) {
+    throwByName(env, "java/lang/OutOfMemoryError", message);
+}
+
+/* Constants for indicating what type of info is needed for inquiries */
 const int TYPE_CRED_NAME = 10;
 const int TYPE_CRED_TIME = 11;
 const int TYPE_CRED_USAGE = 12;
@@ -117,7 +131,14 @@ gss_channel_bindings_t getGSSCB(JNIEnv *env, jobject jcb) {
   if (jcb == NULL) {
     return GSS_C_NO_CHANNEL_BINDINGS;
   }
+
   cb = malloc(sizeof(struct gss_channel_bindings_struct));
+
+  if (cb == NULL) {
+    throwOutOfMemoryError(env,NULL);
+    return NULL;
+  }
+
   /* set up initiator address */
   jinetAddr =
     (*env)->CallObjectMethod(env, jcb,
@@ -301,12 +322,15 @@ Java_sun_security_jgss_wrapper_GSSLibStub_importName(JNIEnv *env,
   gss_buffer_desc nameVal;
   gss_OID nameType;
   gss_name_t nameHdl;
+  nameHdl = GSS_C_NO_NAME;
 
   debug(env, "[GSSLibStub_importName]");
 
   initGSSBuffer(env, jnameVal, &nameVal);
   nameType = newGSSOID(env, jnameType);
-  nameHdl = GSS_C_NO_NAME;
+  if ((*env)->ExceptionCheck(env)) {
+    return jlong_zero;
+  }
 
   /* gss_import_name(...) => GSS_S_BAD_NAMETYPE, GSS_S_BAD_NAME,
      GSS_S_BAD_MECH */
@@ -509,15 +533,18 @@ Java_sun_security_jgss_wrapper_GSSLibStub_acquireCred(JNIEnv *env,
   gss_cred_usage_t credUsage;
   gss_name_t nameHdl;
   gss_cred_id_t credHdl;
+  credHdl = GSS_C_NO_CREDENTIAL;
 
   debug(env, "[GSSLibStub_acquireCred]");
 
 
   mech = (gss_OID) jlong_to_ptr((*env)->GetLongField(env, jobj, FID_GSSLibStub_pMech));
   mechs = newGSSOIDSet(env, mech);
+  if ((*env)->ExceptionCheck(env)) {
+    return jlong_zero;
+  }
   credUsage = (gss_cred_usage_t) usage;
   nameHdl = (gss_name_t) jlong_to_ptr(pName);
-  credHdl = GSS_C_NO_CREDENTIAL;
 
   sprintf(debugBuf, "[GSSLibStub_acquireCred] pName=%ld, usage=%d",
     (long) pName, usage);
@@ -628,7 +655,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_getCredName(JNIEnv *env,
 
   /* return immediately if an exception has occurred */
   if ((*env)->ExceptionCheck(env)) {
-    return 0;
+    return jlong_zero;
   }
 
   sprintf(debugBuf, "[GSSLibStub_getCredName] pName=%ld", (long) nameHdl);
@@ -795,6 +822,10 @@ Java_sun_security_jgss_wrapper_GSSLibStub_initContext(JNIEnv *env,
   time = getGSSTime((*env)->GetIntField(env, jcontextSpi,
                                         FID_NativeGSSContext_lifetime));
   cb = getGSSCB(env, jcb);
+  if ((*env)->ExceptionCheck(env)) {
+    return NULL;
+  }
+
   initGSSBuffer(env, jinToken, &inToken);
 
   sprintf(debugBuf,
@@ -895,6 +926,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_acceptContext(JNIEnv *env,
   credHdl = (gss_cred_id_t) jlong_to_ptr(pCred);
   initGSSBuffer(env, jinToken, &inToken);
   cb = getGSSCB(env, jcb);
+  if ((*env)->ExceptionCheck(env)) {
+    return NULL;
+  }
   srcName = GSS_C_NO_NAME;
   delCred = GSS_C_NO_CREDENTIAL;
   setTarget = (credHdl == GSS_C_NO_CREDENTIAL);
@@ -1130,7 +1164,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_getContextName(JNIEnv *env,
   checkStatus(env, jobj, major, minor, "[GSSLibStub_inquireContextAll]");
   /* return immediately if an exception has occurred */
   if ((*env)->ExceptionCheck(env)) {
-    return ptr_to_jlong(NULL);
+    return jlong_zero;
   }
 
   sprintf(debugBuf, "[GSSLibStub_getContextName] pName=%ld", (long) nameHdl);

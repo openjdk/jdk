@@ -27,6 +27,7 @@ package sun.awt.windows;
 
 import sun.awt.*;
 import java.awt.*;
+import java.awt.event.InvocationEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.image.*;
 import sun.awt.image.ByteInterleavedRaster;
@@ -226,17 +227,19 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     }
 
     @SuppressWarnings("deprecation")
-    public void synthesizeWindowActivation(final boolean doActivate) {
-        if (!doActivate || EventQueue.isDispatchThread()) {
-            ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(doActivate);
+    public void synthesizeWindowActivation(final boolean activate) {
+        if (!activate || EventQueue.isDispatchThread()) {
+            ((WFramePeer)getPeer()).emulateActivation(activate);
         } else {
             // To avoid focus concurrence b/w IE and EmbeddedFrame
             // activation is postponed by means of posting it to EDT.
-            EventQueue.invokeLater(new Runnable() {
-                    public void run() {
-                        ((WEmbeddedFramePeer)getPeer()).synthesizeWmActivate(true);
-                    }
-                });
+            Runnable r = new Runnable() {
+                public void run() {
+                    ((WFramePeer)getPeer()).emulateActivation(true);
+                }
+            };
+            WToolkit.postEvent(WToolkit.targetToAppContext(this),
+                               new InvocationEvent(this, r));
         }
     }
 

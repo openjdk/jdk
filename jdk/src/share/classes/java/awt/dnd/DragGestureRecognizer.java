@@ -297,7 +297,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * @return the initial event that triggered the drag gesture
      */
 
-    public InputEvent getTriggerEvent() { return events.isEmpty() ? null : (InputEvent)events.get(0); }
+    public InputEvent getTriggerEvent() { return events.isEmpty() ? null : events.get(0); }
 
     /**
      * Reset the Recognizer, if its currently recognizing a gesture, ignore
