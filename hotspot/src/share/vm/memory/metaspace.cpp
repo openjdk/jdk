@@ -1100,24 +1100,23 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t word_size) {
 }
 
 bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
+  // If the user wants a limit, impose one.
+  if (!FLAG_IS_DEFAULT(MaxMetaspaceSize) &&
+      MetaspaceAux::reserved_in_bytes() >= MaxMetaspaceSize) {
+    return false;
+  }
 
   // Class virtual space should always be expanded.  Call GC for the other
   // metadata virtual space.
   if (vsl == Metaspace::class_space_list()) return true;
-
-  // If the user wants a limit, impose one.
-  size_t max_metaspace_size_words = MaxMetaspaceSize / BytesPerWord;
-  size_t metaspace_size_words = MetaspaceSize / BytesPerWord;
-  if (!FLAG_IS_DEFAULT(MaxMetaspaceSize) &&
-      vsl->capacity_words_sum() >= max_metaspace_size_words) {
-    return false;
-  }
 
   // If this is part of an allocation after a GC, expand
   // unconditionally.
   if(MetaspaceGC::expand_after_GC()) {
     return true;
   }
+
+  size_t metaspace_size_words = MetaspaceSize / BytesPerWord;
 
   // If the capacity is below the minimum capacity, allow the
   // expansion.  Also set the high-water-mark (capacity_until_GC)
