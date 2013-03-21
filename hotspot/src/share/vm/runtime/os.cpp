@@ -577,15 +577,15 @@ void verify_block(void* memblock) {
 // condition without really running the system out of memory.
 //
 static u_char* testMalloc(size_t alloc_size) {
+  assert(MallocMaxTestWords > 0, "sanity check");
 
-  if (MallocMaxTestWords > 0 &&
-      (cur_malloc_words + (alloc_size / BytesPerWord)) > MallocMaxTestWords) {
+  if ((cur_malloc_words + (alloc_size / BytesPerWord)) > MallocMaxTestWords) {
     return NULL;
   }
 
   u_char* ptr = (u_char*)::malloc(alloc_size);
 
-  if (MallocMaxTestWords > 0 && (ptr != NULL)) {
+  if (ptr != NULL) {
     Atomic::add(((jint) (alloc_size / BytesPerWord)),
                 (volatile jint *) &cur_malloc_words);
   }
