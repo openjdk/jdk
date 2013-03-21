@@ -30,7 +30,6 @@ import java.util.List;
 
 import javax.lang.model.element.ExecutableElement;
 
-
 /**
  * Represents the type of an executable.  An <i>executable</i>
  * is a method, constructor, or initializer.
