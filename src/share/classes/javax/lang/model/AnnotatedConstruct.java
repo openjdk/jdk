@@ -31,29 +31,64 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 
 /**
- * Represent a construct that can have annotations.
+ * Represents a construct that can be annotated.
  *
- * When annotations are on an {@linkplain Element element},
- * they are on a <em>declaration</em>.  When annotations are on a {@linkplain
- * TypeMirror type}, they are on a <em>use</em> of a type.
+ * A construct is either an {@linkplain
+ * javax.lang.model.element.Element element} or a {@linkplain
+ * javax.lang.model.type.TypeMirror type}.  Annotations on an element
+ * are on a <em>declaration</em>, whereas annotations on a type are on
+ * a specific <em>use</em> of a type name.
+ *
+ * The terms <em>directly present</em> and <em>present</em> are used
+ * throughout this interface to describe precisely which annotations
+ * are returned by methods:
+ *
+ * <p>An annotation <i>A</i> is <em>directly present</em> on a
+ * construct <i>E</i> if <i>E</i> is annotated, and:
+ *
+ * <ul>
+ *
+ * <li> for an invocation of {@code getAnnotation(Class<T>)} or
+ * {@code getAnnotationMirrors()}, <i>E</i>'s annotations contain <i>A</i>.
+ *
+ * <li> for an invocation of getAnnotationsByType(Class<T>),
+ * <i>E</i>'s annotations either contain <i>A</i> or, if the type of
+ * <i>A</i> is repeatable, contain exactly one annotation whose value
+ * element contains <i>A</i> and whose type is the containing
+ * annotation type of <i>A</i>'s type.
+ *
+ * </ul>
+ *
+ * <p>An annotation A is <em>present</em> on a construct E if either:
+ *
+ * <ul>
+ *  <li> <i>A</i> is <em>directly present</em> on <i>E</i>; or
+ *
+ *  <li> <i>A</i> is not <em>directly present</em> on <i>E</i>, and
+ *  <i>E</i> is an element representing a class, and <i>A</i>'s type
+ *  is inheritable, and <i>A</i> is <em>present</em> on the element
+ *  representing the superclass of <i>E</i>.
+ *
+ * </ul>
  *
  * @since 1.8
+ * @jls 9.6 Annotation Types
+ * @jls 9.6.3.3 @Inherited
  */
 public interface AnnotatedConstruct {
     /**
-     * Returns the annotations that are directly present on this
-     * element or type use.
+     * Returns the annotations that are <em>directly present</em> on
+     * this construct.
      *
-     * @return the annotations directly present on this element or type use;
-     *          an empty list if there are none
+     * @return the annotations <em>directly present</em> on this
+     * construct; an empty list if there are none
      */
     List<? extends AnnotationMirror> getAnnotationMirrors();
 
     /**
-     * Returns this element's or type use's annotation for the
-     * specified type if such an annotation is present, else {@code
-     * null}.  The annotation may be either inherited or directly
-     * present on this element.
+     * Returns this construct's annotation of the
+     * specified type if such an annotation is <em>present</em>, else {@code
+     * null}.
      *
      * <p> The annotation returned by this method could contain an element
      * whose value is of type {@code Class}.
@@ -94,18 +129,19 @@ public interface AnnotatedConstruct {
      * @see IncompleteAnnotationException
      * @see MirroredTypeException
      * @see MirroredTypesException
+     * @jls 9.6.1 Annotation Type Elements
      */
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     /**
-     * Returns annotations that are <em>present</em> on this element or type use.
+     * Returns annotations that are <em>present</em> on this construct.
      *
-     * If there are no annotations <em>present</em> on this element or type use,
+     * If there are no annotations <em>present</em> on this construct,
      * the return value is an array of length 0.
      *
      * The difference between this method and {@link #getAnnotation(Class)}
      * is that this method detects if its argument is a <em>repeatable
-     * annotation type</em> (JLS 9.6), and if so, attempts to find one or more
+     * annotation type</em>, and if so, attempts to find one or more
      * annotations of that type by "looking through" a container annotation.
      *
      * <p> The annotations returned by this method could contain an element
@@ -147,6 +183,8 @@ public interface AnnotatedConstruct {
      * @see IncompleteAnnotationException
      * @see MirroredTypeException
      * @see MirroredTypesException
+     * @jls 9.6 Annotation Types
+     * @jls 9.6.1 Annotation Type Elements
      */
     <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);
 }
