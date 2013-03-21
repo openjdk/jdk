@@ -33,10 +33,10 @@ import com.oracle.java.testlibrary.*;
 public class FlagWithInvalidValue {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:ObjectAlignmentInBytes=v", "-version");
+        "-XX:MaxRAMFraction=v", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Improperly specified VM option 'ObjectAlignmentInBytes=v'");
+    output.shouldContain("Improperly specified VM option 'MaxRAMFraction=v'");
     output.shouldHaveExitValue(1);
   }
 }
