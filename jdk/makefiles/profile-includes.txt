@@ -27,6 +27,7 @@ PROFILE_1_JRE_BIN_FILES := \
     keytool$(EXE_SUFFIX)
 
 PROFILE_1_JRE_LIB_FILES := \
+    $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)j2pkcs11$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)java$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)jsig.diz \
@@ -34,6 +35,7 @@ PROFILE_1_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)nio$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)npt$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)npt.diz \
+    $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)sunec$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)verify$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)verify.diz \
@@ -61,7 +63,9 @@ PROFILE_1_JRE_LIB_FILES := \
     currency.data \
     ext/localedata.jar \
     ext/meta-index \
+    ext/sunec.jar \
     ext/sunjce_provider.jar \
+    ext/sunpkcs11.jar \
     jce.jar \
     jsse.jar \
     logging.properties \
@@ -88,7 +92,9 @@ PROFILE_1_JRE_OTHER_FILES := \
 
 PROFILE_1_JRE_JAR_FILES := \
     ext/localedata.jar \
+    ext/sunec.jar \
     ext/sunjce_provider.jar \
+    ext/sunpkcs11.jar \
     jce.jar \
     jsse.jar \
     resources.jar \
@@ -158,7 +164,6 @@ FULL_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)dt_socket$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)dt_socket.diz \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)fontmanager$(SHARED_LIBRARY_SUFFIX) \
-    $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)j2pkcs11$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)jawt$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)jdwp$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)jpeg$(SHARED_LIBRARY_SUFFIX) \
@@ -167,7 +172,6 @@ FULL_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)kcms$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)mlib_image$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)splashscreen$(SHARED_LIBRARY_SUFFIX) \
-    $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)sunec$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)t2k$(SHARED_LIBRARY_SUFFIX) \
     alt-rt.jar \
     charsets.jar \
@@ -179,8 +183,6 @@ FULL_JRE_LIB_FILES := \
     ext/cldrdata.jar \
     ext/dnsns.jar \
     ext/nashorn.jar \
-    ext/sunec.jar \
-    ext/sunpkcs11.jar \
     ext/zipfs.jar \
     flavormap.properties \
     fontconfig.RedHat.5.bfc \
@@ -253,8 +255,6 @@ FULL_JRE_JAR_FILES := \
     ext/cldrdata.jar \
     ext/dnsns.jar \
     ext/nashorn.jar \
-    ext/sunec.jar \
-    ext/sunpkcs11.jar \
     ext/zipfs.jar
 
 
