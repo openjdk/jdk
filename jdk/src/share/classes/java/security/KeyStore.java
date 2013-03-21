@@ -2093,7 +2093,7 @@ public class KeyStore {
                              oldException);
                     }
                     try {
-                        return AccessController.doPrivileged(action);
+                        return AccessController.doPrivileged(action, context);
                     } catch (PrivilegedActionException e) {
                         Throwable cause = e.getCause();
                         throw new KeyStoreException
