@@ -46,7 +46,7 @@ public class HttpClient extends NetworkClient {
     // whether this httpclient comes from the cache
     protected boolean cachedHttpClient = false;
 
-    private boolean inCache;
+    protected boolean inCache;
 
     // Http requests we send
     MessageHeader requests;
