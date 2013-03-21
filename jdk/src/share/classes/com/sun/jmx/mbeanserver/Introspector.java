@@ -378,13 +378,19 @@ public class Introspector {
         for (Annotation a : annots) {
             Class<? extends Annotation> c = a.annotationType();
             Method[] elements = c.getMethods();
+            boolean packageAccess = false;
             for (Method element : elements) {
                 DescriptorKey key = element.getAnnotation(DescriptorKey.class);
                 if (key != null) {
                     String name = key.value();
                     Object value;
                     try {
-                        value = element.invoke(a);
+                        // Avoid checking access more than once per annotation
+                        if (!packageAccess) {
+                            ReflectUtil.checkPackageAccess(c);
+                            packageAccess = true;
+                        }
+                        value = MethodUtil.invoke(element, a, null);
                     } catch (RuntimeException e) {
                         // we don't expect this - except for possibly
                         // security exceptions?
