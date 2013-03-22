@@ -1019,14 +1019,14 @@ public class LambdaToMethod extends TreeTranslator {
             } else if (refSym.enclClass().isInterface()) {
                 return ClassFile.REF_invokeInterface;
             } else {
-                return ClassFile.REF_invokeVirtual;
+                return (refSym.flags() & PRIVATE) != 0 ?
+                        ClassFile.REF_invokeSpecial :
+                        ClassFile.REF_invokeVirtual;
             }
         }
     }
 
-    // </editor-fold>
-
-    // <editor-fold defaultstate="collapsed" desc="Lambda/reference analyzer">\
+    // <editor-fold defaultstate="collapsed" desc="Lambda/reference analyzer">
     /**
      * This visitor collects information about translation of a lambda expression.
      * More specifically, it keeps track of the enclosing contexts and captured locals
@@ -1635,16 +1635,16 @@ public class LambdaToMethod extends TreeTranslator {
              * Translate a symbol of a given kind into something suitable for the
              * synthetic lambda body
              */
-            Symbol translate(String name, final Symbol sym, LambdaSymbolKind skind) {
+            Symbol translate(Name name, final Symbol sym, LambdaSymbolKind skind) {
                 switch (skind) {
                     case CAPTURED_THIS:
                         return sym;  // self represented
                     case TYPE_VAR:
                         // Just erase the type var
-                        return new VarSymbol(sym.flags(), names.fromString(name),
+                        return new VarSymbol(sym.flags(), name,
                                 types.erasure(sym.type), sym.owner);
                     case CAPTURED_VAR:
-                        return new VarSymbol(SYNTHETIC | FINAL, names.fromString(name), types.erasure(sym.type), translatedSym) {
+                        return new VarSymbol(SYNTHETIC | FINAL, name, types.erasure(sym.type), translatedSym) {
                             @Override
                             public Symbol baseSymbol() {
                                 //keep mapping with original captured symbol
@@ -1658,27 +1658,27 @@ public class LambdaToMethod extends TreeTranslator {
 
             void addSymbol(Symbol sym, LambdaSymbolKind skind) {
                 Map<Symbol, Symbol> transMap = null;
-                String preferredName;
+                Name preferredName;
                 switch (skind) {
                     case CAPTURED_THIS:
                         transMap = capturedThis;
-                        preferredName = "encl$" + capturedThis.size();
+                        preferredName = names.fromString("encl$" + capturedThis.size());
                         break;
                     case CAPTURED_VAR:
                         transMap = capturedLocals;
-                        preferredName = "cap$" + capturedLocals.size();
+                        preferredName = names.fromString("cap$" + capturedLocals.size());
                         break;
                     case LOCAL_VAR:
                         transMap = lambdaLocals;
-                        preferredName = sym.name.toString();
+                        preferredName = sym.name;
                         break;
                     case PARAM:
                         transMap = lambdaParams;
-                        preferredName = sym.name.toString();
+                        preferredName = sym.name;
                         break;
                     case TYPE_VAR:
                         transMap = typeVars;
-                        preferredName = sym.name.toString();
+                        preferredName = sym.name;
                         break;
                     default: throw new AssertionError();
                 }
