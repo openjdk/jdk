@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -383,7 +382,7 @@ public final class Compiler {
 
         functionNode.accept(new NodeVisitor() {
             @Override
-            public Node enter(final FunctionNode node) {
+            public Node enterFunctionNode(final FunctionNode node) {
                 if (node.isLazy()) {
                     return null;
                 }

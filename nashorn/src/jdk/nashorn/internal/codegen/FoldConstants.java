@@ -31,12 +31,12 @@ import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
@@ -54,7 +54,7 @@ final class FoldConstants extends NodeVisitor {
     }
 
     @Override
-    public Node leave(final UnaryNode unaryNode) {
+    public Node leaveUnaryNode(final UnaryNode unaryNode) {
         final LiteralNode<?> literalNode = new UnaryNodeConstantEvaluator(unaryNode).eval();
         if (literalNode != null) {
             LOG.info("Unary constant folded " + unaryNode + " to " + literalNode);
@@ -64,7 +64,7 @@ final class FoldConstants extends NodeVisitor {
     }
 
     @Override
-    public Node leave(final BinaryNode binaryNode) {
+    public Node leaveBinaryNode(final BinaryNode binaryNode) {
         final LiteralNode<?> literalNode = new BinaryNodeConstantEvaluator(binaryNode).eval();
         if (literalNode != null) {
             LOG.info("Binary constant folded " + binaryNode + " to " + literalNode);
@@ -74,7 +74,7 @@ final class FoldConstants extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final FunctionNode functionNode) {
+    public Node enterFunctionNode(final FunctionNode functionNode) {
         if (functionNode.isLazy()) {
             return null;
         }
@@ -82,13 +82,13 @@ final class FoldConstants extends NodeVisitor {
     }
 
     @Override
-    public Node leave(final FunctionNode functionNode) {
+    public Node leaveFunctionNode(final FunctionNode functionNode) {
         functionNode.setState(CompilationState.CONSTANT_FOLDED);
         return functionNode;
     }
 
     @Override
-    public Node leave(final IfNode ifNode) {
+    public Node leaveIfNode(final IfNode ifNode) {
         final Node test = ifNode.getTest();
         if (test instanceof LiteralNode) {
             final Block shortCut = ((LiteralNode<?>)test).isTrue() ? ifNode.getPass() : ifNode.getFail();
@@ -101,7 +101,7 @@ final class FoldConstants extends NodeVisitor {
     }
 
     @Override
-    public Node leave(final TernaryNode ternaryNode) {
+    public Node leaveTernaryNode(final TernaryNode ternaryNode) {
         final Node test = ternaryNode.lhs();
         if (test instanceof LiteralNode) {
             return ((LiteralNode<?>)test).isTrue() ? ternaryNode.rhs() : ternaryNode.third();

@@ -88,7 +88,7 @@ public class PropertyNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterPropertyNode(this) != null) {
             key = (PropertyKey)((Node)key).accept(visitor);
 
             if (value != null) {
@@ -103,7 +103,7 @@ public class PropertyNode extends Node {
                 setter = setter.accept(visitor);
             }
 
-            return visitor.leave(this);
+            return visitor.leavePropertyNode(this);
         }
 
         return this;

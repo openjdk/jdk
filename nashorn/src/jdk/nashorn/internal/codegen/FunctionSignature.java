@@ -155,7 +155,7 @@ public final class FunctionSignature {
             true,
             functionNode.needsCallee(),
             functionNode.getReturnType(),
-            (functionNode.isVarArg() && !functionNode.isScript()) ?
+            (functionNode.isVarArg() && !functionNode.isProgram()) ?
                 null :
                 functionNode.getParameters());
     }
