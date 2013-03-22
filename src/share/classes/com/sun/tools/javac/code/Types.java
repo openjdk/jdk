@@ -1178,6 +1178,17 @@ public class Types {
             protected boolean containsTypes(List<Type> ts1, List<Type> ts2) {
                 return isSameTypes(ts1, ts2, true);
             }
+
+            @Override
+            public Boolean visitWildcardType(WildcardType t, Type s) {
+                if (!s.hasTag(WILDCARD)) {
+                    return false;
+                } else {
+                    WildcardType t2 = (WildcardType)s;
+                    return t.kind == t2.kind &&
+                            isSameType(t.type, t2.type, true);
+                }
+            }
         };
     // </editor-fold>
 
