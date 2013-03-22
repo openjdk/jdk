@@ -288,6 +288,12 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 # 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
 sun/security/krb5/auto/MaxRetries.java                          solaris-sparcv9
 
+# 8006690: sun/security/krb5/auto/BadKdc1.java fails intermittently
+sun/security/krb5/auto/BadKdc1.java                             solaris-sparcv9
+sun/security/krb5/auto/BadKdc2.java                             solaris-sparcv9
+sun/security/krb5/auto/BadKdc3.java                             solaris-sparcv9
+sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
+
 # 7194428
 sun/security/mscapi/ShortRSAKey1024.sh                          windows-all
 
