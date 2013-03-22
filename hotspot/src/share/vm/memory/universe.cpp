@@ -1108,6 +1108,7 @@ bool universe_post_init() {
 
   // Initialize performance counters for metaspaces
   MetaspaceCounters::initialize_performance_counters();
+  MemoryService::add_metaspace_memory_pools();
 
   GC_locker::unlock();  // allow gc after bootstrapping
 
