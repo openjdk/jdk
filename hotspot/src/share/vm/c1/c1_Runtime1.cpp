@@ -1330,6 +1330,50 @@ JRT_LEAF(int, Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj))
   return (k != NULL && obj != NULL && obj->is_a(k)) ? 1 : 0;
 JRT_END
 
+JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
+  ResourceMark rm;
+
+  assert(!TieredCompilation, "incompatible with tiered compilation");
+
+  RegisterMap reg_map(thread, false);
+  frame runtime_frame = thread->last_frame();
+  frame caller_frame = runtime_frame.sender(&reg_map);
+
+  nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
+  assert (nm != NULL, "no more nmethod?");
+  nm->make_not_entrant();
+
+  methodHandle m(nm->method());
+  MethodData* mdo = m->method_data();
+
+  if (mdo == NULL && !HAS_PENDING_EXCEPTION) {
+    // Build an MDO.  Ignore errors like OutOfMemory;
+    // that simply means we won't have an MDO to update.
+    Method::build_interpreter_method_data(m, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+      CLEAR_PENDING_EXCEPTION;
+    }
+    mdo = m->method_data();
+  }
+
+  if (mdo != NULL) {
+    mdo->inc_trap_count(Deoptimization::Reason_none);
+  }
+
+  if (TracePredicateFailedTraps) {
+    stringStream ss1, ss2;
+    vframeStream vfst(thread);
+    methodHandle inlinee = methodHandle(vfst.method());
+    inlinee->print_short_name(&ss1);
+    m->print_short_name(&ss2);
+    tty->print_cr("Predicate failed trap in method %s at bci %d inlined in %s at pc %x", ss1.as_string(), vfst.bci(), ss2.as_string(), caller_frame.pc());
+  }
+
+
+  Deoptimization::deoptimize_frame(thread, caller_frame.id());
+
+JRT_END
 
 #ifndef PRODUCT
 void Runtime1::print_statistics() {

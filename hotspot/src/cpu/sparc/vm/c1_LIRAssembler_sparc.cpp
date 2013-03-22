@@ -3361,6 +3361,45 @@ void LIR_Assembler::get_thread(LIR_Opr result_reg) {
   __ mov(G2_thread, result_reg->as_register());
 }
 
+#ifdef ASSERT
+// emit run-time assertion
+void LIR_Assembler::emit_assert(LIR_OpAssert* op) {
+  assert(op->code() == lir_assert, "must be");
+
+  if (op->in_opr1()->is_valid()) {
+    assert(op->in_opr2()->is_valid(), "both operands must be valid");
+    comp_op(op->condition(), op->in_opr1(), op->in_opr2(), op);
+  } else {
+    assert(op->in_opr2()->is_illegal(), "both operands must be illegal");
+    assert(op->condition() == lir_cond_always, "no other conditions allowed");
+  }
+
+  Label ok;
+  if (op->condition() != lir_cond_always) {
+    Assembler::Condition acond;
+    switch (op->condition()) {
+      case lir_cond_equal:        acond = Assembler::equal;                break;
+      case lir_cond_notEqual:     acond = Assembler::notEqual;             break;
+      case lir_cond_less:         acond = Assembler::less;                 break;
+      case lir_cond_lessEqual:    acond = Assembler::lessEqual;            break;
+      case lir_cond_greaterEqual: acond = Assembler::greaterEqual;         break;
+      case lir_cond_greater:      acond = Assembler::greater;              break;
+      case lir_cond_aboveEqual:   acond = Assembler::greaterEqualUnsigned; break;
+      case lir_cond_belowEqual:   acond = Assembler::lessEqualUnsigned;    break;
+      default:                         ShouldNotReachHere();
+    };
+    __ br(acond, false, Assembler::pt, ok);
+    __ delayed()->nop();
+  }
+  if (op->halt()) {
+    const char* str = __ code_string(op->msg());
+    __ stop(str);
+  } else {
+    breakpoint();
+  }
+  __ bind(ok);
+}
+#endif
 
 void LIR_Assembler::peephole(LIR_List* lir) {
   LIR_OpList* inst = lir->instructions_list();
