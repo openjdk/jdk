@@ -145,12 +145,9 @@ address* Relocation::pd_address_in_code() {
   assert(which == Assembler::disp32_operand ||
          which == Assembler::call32_operand ||
          which == Assembler::imm_operand, "format unpacks ok");
-  if (which != Assembler::imm_operand) {
-    // The "address" in the code is a displacement can't return it as
-    // and address* since it is really a jint*
-    ShouldNotReachHere();
-    return NULL;
-  }
+  // The "address" in the code is a displacement can't return it as
+  // and address* since it is really a jint*
+  guarantee(which == Assembler::imm_operand, "must be immediate operand");
 #else
   assert(which == Assembler::disp32_operand || which == Assembler::imm_operand, "format unpacks ok");
 #endif // AMD64

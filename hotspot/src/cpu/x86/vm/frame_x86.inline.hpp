@@ -295,14 +295,18 @@ inline bool frame::volatile_across_calls(Register reg) {
   return true;
 }
 
+inline oop frame::saved_oop_result(RegisterMap* map) const {
+  oop* result_adr = (oop *)map->location(rax->as_VMReg());
+  guarantee(result_adr != NULL, "bad register save location");
 
-
-inline oop frame::saved_oop_result(RegisterMap* map) const       {
-  return *((oop*) map->location(rax->as_VMReg()));
+  return (*result_adr);
 }
 
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
-  *((oop*) map->location(rax->as_VMReg())) = obj;
+  oop* result_adr = (oop *)map->location(rax->as_VMReg());
+  guarantee(result_adr != NULL, "bad register save location");
+
+  *result_adr = obj;
 }
 
 #endif // CPU_X86_VM_FRAME_X86_INLINE_HPP
