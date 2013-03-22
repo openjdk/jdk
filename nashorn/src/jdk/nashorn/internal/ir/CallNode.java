@@ -37,7 +37,7 @@ import jdk.nashorn.internal.runtime.Source;
  * IR representation for a function call.
  *
  */
-public class CallNode extends Node implements TypeOverride {
+public class CallNode extends Node implements TypeOverride<CallNode> {
 
     private Type type;
 
@@ -176,13 +176,13 @@ public class CallNode extends Node implements TypeOverride {
         if (hasCallSiteType()) {
             return type;
         }
-        assert !function.getType().isUnknown();
-        return function.getType();
+        return function instanceof FunctionNode ? ((FunctionNode)function).getReturnType() : Type.OBJECT;
     }
 
     @Override
-    public void setType(final Type type) {
+    public CallNode setType(final Type type) {
         this.type = type;
+        return this;
     }
 
     private boolean hasCallSiteType() {
@@ -208,14 +208,14 @@ public class CallNode extends Node implements TypeOverride {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterCallNode(this) != null) {
             function = function.accept(visitor);
 
             for (int i = 0, count = args.size(); i < count; i++) {
                 args.set(i, args.get(i).accept(visitor));
             }
 
-            return visitor.leave(this);
+            return visitor.leaveCallNode(this);
         }
 
         return this;

@@ -25,14 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import static jdk.nashorn.internal.ir.Symbol.IS_GLOBAL;
-import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
-import static jdk.nashorn.internal.ir.Symbol.IS_LET;
-import static jdk.nashorn.internal.ir.Symbol.IS_PARAM;
-import static jdk.nashorn.internal.ir.Symbol.IS_SCOPE;
-import static jdk.nashorn.internal.ir.Symbol.IS_VAR;
-import static jdk.nashorn.internal.ir.Symbol.KINDMASK;
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,9 +32,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import jdk.nashorn.internal.codegen.Frame;
 import jdk.nashorn.internal.codegen.Label;
-import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -51,14 +43,6 @@ import jdk.nashorn.internal.runtime.Source;
  * basis for script body.
  */
 public class Block extends Node {
-    /** Parent context */
-    @Reference
-    private Block parent;
-
-    /** Owning function - a FunctionNode has itself as function */
-    @Reference
-    protected FunctionNode function;
-
     /** List of statements */
     protected List<Node> statements;
 
@@ -83,14 +67,10 @@ public class Block extends Node {
      * @param source   source code
      * @param token    token
      * @param finish   finish
-     * @param parent   reference to parent block
-     * @param function function node this block is in
      */
-    public Block(final Source source, final long token, final int finish, final Block parent, final FunctionNode function) {
+    public Block(final Source source, final long token, final int finish) {
         super(source, token, finish);
 
-        this.parent     = parent;
-        this.function   = function;
         this.statements = new ArrayList<>();
         this.symbols    = new HashMap<>();
         this.entryLabel = new Label("block_entry");
@@ -106,8 +86,6 @@ public class Block extends Node {
     protected Block(final Block block, final CopyState cs) {
         super(block);
 
-        this.parent     = block.parent;
-        this.function   = block.function;
         this.statements = new ArrayList<>();
         for (final Node statement : block.getStatements()) {
             statements.add(cs.existingOrCopy(statement));
@@ -122,55 +100,7 @@ public class Block extends Node {
 
     @Override
     protected Node copy(final CopyState cs) {
-        return fixBlockChain(new Block(this, cs));
-    }
-
-    /**
-     * Whenever a clone that contains a hierarchy of blocks is created,
-     * this function has to be called to ensure that the parents point
-     * to the correct parent blocks or two different ASTs would not
-     * be completely separated.
-     *
-     * @return the argument
-     */
-    static Block fixBlockChain(final Block root) {
-        root.accept(new NodeVisitor() {
-            private Block        parent   = root.getParent();
-            private final FunctionNode function = root.getFunction();
-
-            @Override
-            public Node enter(final Block block) {
-                assert block.getFunction() == function;
-                block.setParent(parent);
-                parent = block;
-
-                return block;
-            }
-
-            @Override
-            public Node leave(final Block block) {
-                parent = block.getParent();
-
-                return block;
-            }
-
-            @Override
-            public Node enter(final FunctionNode functionNode) {
-                assert functionNode.getFunction() == function;
-
-                return enter((Block)functionNode);
-            }
-
-            @Override
-            public Node leave(final FunctionNode functionNode) {
-                assert functionNode.getFunction() == function;
-
-                return leave((Block)functionNode);
-            }
-
-        });
-
-        return root;
+        return new Block(this, cs);
     }
 
     /**
@@ -188,17 +118,12 @@ public class Block extends Node {
     }
 
     /**
-     * Prepend a statement to the statement list
+     * Prepend statements to the statement list
      *
-     * @param statement Statement node to add
+     * @param prepended statement to add
      */
-    public void prependStatement(final Node statement) {
-        if (statement != null) {
-            final List<Node> newStatements = new ArrayList<>();
-            newStatements.add(statement);
-            newStatements.addAll(statements);
-            setStatements(newStatements);
-        }
+    public void prependStatements(final List<Node> prepended) {
+        statements.addAll(0, prepended);
     }
 
     /**
@@ -208,39 +133,6 @@ public class Block extends Node {
      */
     public void addStatements(final List<Node> statementList) {
         statements.addAll(statementList);
-    }
-
-    /**
-     * Add a new function to the function list.
-     *
-     * @param functionNode Function node to add.
-     */
-    public void addFunction(final FunctionNode functionNode) {
-        assert parent != null : "Parent context missing.";
-
-        parent.addFunction(functionNode);
-    }
-
-    /**
-     * Add a list of functions to the function list.
-     *
-     * @param functionNodes Function nodes to add.
-     */
-    public void addFunctions(final List<FunctionNode> functionNodes) {
-        assert parent != null : "Parent context missing.";
-
-        parent.addFunctions(functionNodes);
-    }
-
-    /**
-     * Set the function list to a new one
-     *
-     * @param functionNodes the nodes to set
-     */
-    public void setFunctions(final List<FunctionNode> functionNodes) {
-        assert parent != null : "Parent context missing.";
-
-        parent.setFunctions(functionNodes);
     }
 
     /**
@@ -257,13 +149,9 @@ public class Block extends Node {
         try {
             // Ignore parent to avoid recursion.
 
-            if (visitor.enter(this) != null) {
-                for (int i = 0, count = statements.size(); i < count; i++) {
-                    final Node statement = statements.get(i);
-                    statements.set(i, statement.accept(visitor));
-                }
-
-                return visitor.leave(this);
+            if (visitor.enterBlock(this) != null) {
+                visitStatements(visitor);
+                return visitor.leaveBlock(this);
             }
         } finally {
             visitor.setCurrentBlock(saveBlock);
@@ -281,51 +169,13 @@ public class Block extends Node {
     }
 
     /**
-     * Search for symbol.
-     *
-     * @param name Symbol name.
-     *
-     * @return Found symbol or null if not found.
+     * Retrieves an existing symbol defined in the current block.
+     * @param name the name of the symbol
+     * @return an existing symbol with the specified name defined in the current block, or null if this block doesn't
+     * define a symbol with this name.
      */
-    public Symbol findSymbol(final String name) {
-        // Search up block chain to locate symbol.
-
-        for (Block block = this; block != null; block = block.getParent()) {
-            // Find name.
-            final Symbol symbol = block.symbols.get(name);
-            // If found then we are good.
-            if (symbol != null) {
-                return symbol;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Search for symbol in current function.
-     *
-     * @param name Symbol name.
-     *
-     * @return Found symbol or null if not found.
-     */
-    public Symbol findLocalSymbol(final String name) {
-        // Search up block chain to locate symbol.
-        for (Block block = this; block != null; block = block.getParent()) {
-            // Find name.
-            final Symbol symbol = block.symbols.get(name);
-            // If found then we are good.
-            if (symbol != null) {
-                return symbol;
-            }
-
-            // If searched function then we are done.
-            if (block == block.function) {
-                break;
-            }
-        }
-
-        // Not found.
-        return null;
+    public Symbol getExistingSymbol(final String name) {
+        return symbols.get(name);
     }
 
     /**
@@ -336,122 +186,6 @@ public class Block extends Node {
      */
     public boolean isCatchBlock() {
         return statements.size() == 1 && statements.get(0) instanceof CatchNode;
-    }
-
-    /**
-     * Test to see if a symbol is local to the function.
-     *
-     * @param symbol Symbol to test.
-     * @return True if a local symbol.
-     */
-    public boolean isLocal(final Symbol symbol) {
-        // some temp symbols have no block, so can be assumed local
-        final Block block = symbol.getBlock();
-        return block == null || block.getFunction() == function;
-    }
-
-    /**
-     * Declare the definition of a new symbol.
-     *
-     * @param name         Name of symbol.
-     * @param symbolFlags  Symbol flags.
-     * @param node         Defining Node.
-     *
-     * @return Symbol for given name or null for redefinition.
-     */
-    public Symbol defineSymbol(final String name, final int symbolFlags, final Node node) {
-        int    flags  = symbolFlags;
-        Symbol symbol = findSymbol(name); // Locate symbol.
-
-        if ((flags & KINDMASK) == IS_GLOBAL) {
-            flags |= IS_SCOPE;
-        }
-
-        if (symbol != null) {
-            // Symbol was already defined. Check if it needs to be redefined.
-            if ((flags & KINDMASK) == IS_PARAM) {
-                if (!function.isLocal(symbol)) {
-                    // Not defined in this function. Create a new definition.
-                    symbol = null;
-                } else if (symbol.isParam()) {
-                    // Duplicate parameter. Null return will force an error.
-                    assert false : "duplicate parameter";
-                    return null;
-                }
-            } else if ((flags & KINDMASK) == IS_VAR) {
-                if ((flags & IS_INTERNAL) == IS_INTERNAL || (flags & Symbol.IS_LET) == Symbol.IS_LET) {
-                    assert !((flags & IS_LET) == IS_LET && symbol.getBlock() == this) : "duplicate let variable in block";
-                    // Always create a new definition.
-                    symbol = null;
-                } else {
-                    // Not defined in this function. Create a new definition.
-                    if (!function.isLocal(symbol) || symbol.less(IS_VAR)) {
-                        symbol = null;
-                    }
-                }
-            }
-        }
-
-        if (symbol == null) {
-            // If not found, then create a new one.
-            Block symbolBlock;
-
-            // Determine where to create it.
-            if ((flags & Symbol.KINDMASK) == IS_VAR && ((flags & IS_INTERNAL) == IS_INTERNAL || (flags & IS_LET) == IS_LET)) {
-                symbolBlock = this;
-            } else {
-                symbolBlock = getFunction();
-            }
-
-            // Create and add to appropriate block.
-            symbol = new Symbol(name, flags, node, symbolBlock);
-            symbolBlock.putSymbol(name, symbol);
-
-            if ((flags & Symbol.KINDMASK) != IS_GLOBAL) {
-                symbolBlock.getFrame().addSymbol(symbol);
-                symbol.setNeedsSlot(true);
-            }
-        } else if (symbol.less(flags)) {
-            symbol.setFlags(flags);
-        }
-
-        if (node != null) {
-            node.setSymbol(symbol);
-        }
-
-        return symbol;
-    }
-
-    /**
-     * Declare the use of a symbol.
-     *
-     * @param name Name of symbol.
-     * @param node Using node
-     *
-     * @return Symbol for given name.
-     */
-    public Symbol useSymbol(final String name, final Node node) {
-        Symbol symbol = findSymbol(name);
-
-        if (symbol == null) {
-            // If not found, declare as a free var.
-            symbol = defineSymbol(name, IS_GLOBAL, node);
-        } else {
-            node.setSymbol(symbol);
-        }
-
-        return symbol;
-    }
-
-    /**
-     * Add parent name to the builder.
-     *
-     * @param sb String bulder.
-     */
-    public void addParentName(final StringBuilder sb) {
-        if (parent != null) {
-            parent.addParentName(sb);
-        }
     }
 
     @Override
@@ -512,40 +246,12 @@ public class Block extends Node {
     }
 
     /**
-     * Get the FunctionNode for this block, i.e. the function it
-     * belongs to
-     *
-     * @return the function node
-     */
-    public FunctionNode getFunction() {
-        return function;
-    }
-
-    /**
      * Reset the frame for this block
      *
      * @param frame  the new frame
      */
     public void setFrame(final Frame frame) {
         this.frame = frame;
-    }
-
-    /**
-     * Get the parent block
-     *
-     * @return parent block, or null if none exists
-     */
-    public Block getParent() {
-        return parent;
-    }
-
-    /**
-     * Set the parent block
-     *
-     * @param parent the new parent block
-     */
-    public void setParent(final Block parent) {
-        this.parent = parent;
     }
 
     /**
@@ -557,6 +263,15 @@ public class Block extends Node {
         return Collections.unmodifiableList(statements);
     }
 
+    /**
+     * Applies the specified visitor to all statements in the block.
+     * @param visitor the visitor.
+     */
+    public void visitStatements(NodeVisitor visitor) {
+        for (ListIterator<Node> stmts = statements.listIterator(); stmts.hasNext();) {
+            stmts.set(stmts.next().accept(visitor));
+        }
+    }
     /**
      * Reset the statement list for this block
      *
@@ -592,4 +307,29 @@ public class Block extends Node {
         needsScope = true;
     }
 
+    /**
+     * Marks this block as using a specified scoped symbol. The block and its parent blocks up to but not
+     * including the block defining the symbol will be marked as needing parent scope. The block defining the symbol
+     * will be marked as one that needs to have its own scope.
+     * @param symbol the symbol being used.
+     * @param ancestors the iterator over block's containing lexical context
+     */
+    public void setUsesScopeSymbol(final Symbol symbol, Iterator<Block> ancestors) {
+        if(symbol.getBlock() == this) {
+            setNeedsScope();
+        } else {
+            setUsesParentScopeSymbol(symbol, ancestors);
+        }
+    }
+
+    /**
+     * Invoked when this block uses a scope symbol defined in one of its ancestors.
+     * @param symbol the scope symbol being used
+     * @param ancestors iterator over ancestor blocks
+     */
+    void setUsesParentScopeSymbol(final Symbol symbol, Iterator<Block> ancestors) {
+        if(ancestors.hasNext()) {
+            ancestors.next().setUsesScopeSymbol(symbol, ancestors);
+        }
+    }
 }

@@ -72,12 +72,12 @@ public class ObjectNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterObjectNode(this) != null) {
             for (int i = 0, count = elements.size(); i < count; i++) {
                 elements.set(i, elements.get(i).accept(visitor));
             }
 
-            return visitor.leave(this);
+            return visitor.leaveObjectNode(this);
         }
 
         return this;

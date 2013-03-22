@@ -14,16 +14,16 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ReferenceNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
+import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
+import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.Timing;
@@ -65,17 +65,17 @@ enum CompilationPhase {
             outermostFunctionNode.accept(new NodeVisitor() {
                 // self references are done with invokestatic and thus cannot have trampolines - never lazy
                 @Override
-                public Node enter(final CallNode node) {
+                public Node enterCallNode(final CallNode node) {
                     final Node callee = node.getFunction();
-                    if (callee instanceof ReferenceNode) {
-                        neverLazy.add(((ReferenceNode)callee).getReference());
+                    if (callee instanceof FunctionNode) {
+                        neverLazy.add(((FunctionNode)callee));
                         return null;
                     }
                     return node;
                 }
 
                 @Override
-                public Node enter(final FunctionNode node) {
+                public Node enterFunctionNode(final FunctionNode node) {
                     if (node == outermostFunctionNode) {
                         return node;
                     }
@@ -94,15 +94,24 @@ enum CompilationPhase {
                 lazy.remove(node);
             }
 
-            for (final FunctionNode node : lazy) {
-                Compiler.LOG.fine("Marking " + node.getName() + " as lazy");
-                node.setIsLazy(true);
-                final FunctionNode parent = node.findParentFunction();
-                if (parent != null) {
-                    Compiler.LOG.fine("Marking " + parent.getName() + " as having lazy children - it needs scope for all variables");
-                    parent.setHasLazyChildren();
+            outermostFunctionNode.accept(new NodeOperatorVisitor() {
+                private final LexicalContext lexicalContext = new LexicalContext();
+                @Override
+                public Node enterFunctionNode(FunctionNode functionNode) {
+                    lexicalContext.push(functionNode);
+                    if(lazy.contains(functionNode)) {
+                        Compiler.LOG.fine("Marking " + functionNode.getName() + " as lazy");
+                        functionNode.setIsLazy(true);
+                        lexicalContext.getParentFunction(functionNode).setHasLazyChildren();
+                    }
+                    return functionNode;
                 }
-            }
+                @Override
+                public Node leaveFunctionNode(FunctionNode functionNode) {
+                    lexicalContext.pop(functionNode);
+                    return functionNode;
+                }
+            });
         }
 
         @Override
@@ -241,6 +250,16 @@ enum CompilationPhase {
                 final CodeGenerator codegen = new CodeGenerator(compiler);
                 fn.accept(codegen);
                 codegen.generateScopeCalls();
+                fn.accept(new NodeOperatorVisitor() {
+                    @Override
+                    public Node enterFunctionNode(FunctionNode functionNode) {
+                        if(functionNode.isLazy()) {
+                            functionNode.resetResolved();
+                            return null;
+                        }
+                        return fn;
+                    }
+                });
 
             } catch (final VerifyError e) {
                 if (env._verify_code || env._print_code) {

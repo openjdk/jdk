@@ -41,6 +41,7 @@ import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LabelNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
@@ -49,6 +50,7 @@ import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.WhileNode;
+import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.Source;
@@ -69,6 +71,8 @@ final class Splitter extends NodeVisitor {
 
     /** Cache for calculated block weights. */
     private final Map<Node, Long> weightCache = new HashMap<>();
+
+    private final LexicalContext lexicalContext = new LexicalContext();
 
     /** Weight threshold for when to start a split. */
     public static final long SPLIT_THRESHOLD = Options.getIntProperty("nashorn.compiler.splitter.threshold", 32 * 1024);
@@ -112,7 +116,7 @@ final class Splitter extends NodeVisitor {
             }
 
             if (weight >= SPLIT_THRESHOLD) {
-                weight = splitBlock(functionNode);
+                weight = splitBlock(functionNode, functionNode);
             }
 
             if (functionNode.isSplit()) {
@@ -132,9 +136,20 @@ final class Splitter extends NodeVisitor {
         }
 
         // Recursively split nested functions
-        for (final FunctionNode function : functionNode.getFunctions()) {
-            new Splitter(compiler, function, outermostCompileUnit).split();
-        }
+        functionNode.accept(new NodeOperatorVisitor() {
+            @Override
+            public Node enterFunctionNode(FunctionNode function) {
+                if(function == functionNode) {
+                    // Don't process outermost function (it was already processed) but descend into it to find nested
+                    // functions.
+                    return function;
+                }
+                // Process a nested function
+                new Splitter(compiler, function, outermostCompileUnit).split();
+                // Don't descend into a a nested function; Splitter.split() has taken care of nested-in-nested functions.
+                return null;
+            }
+        });
 
         functionNode.setState(CompilationState.SPLIT);
     }
@@ -155,7 +170,7 @@ final class Splitter extends NodeVisitor {
      *
      * @return new weight for the resulting block.
      */
-    private long splitBlock(final Block block) {
+    private long splitBlock(final Block block, final FunctionNode function) {
         functionNode.setIsSplit();
 
         final List<Node> splits = new ArrayList<>();
@@ -167,7 +182,7 @@ final class Splitter extends NodeVisitor {
 
             if (statementsWeight + weight >= SPLIT_THRESHOLD || statement.isTerminal()) {
                 if (!statements.isEmpty()) {
-                    splits.add(createBlockSplitNode(block, statements, statementsWeight));
+                    splits.add(createBlockSplitNode(block, function, statements, statementsWeight));
                     statements = new ArrayList<>();
                     statementsWeight = 0;
                 }
@@ -183,7 +198,7 @@ final class Splitter extends NodeVisitor {
         }
 
         if (!statements.isEmpty()) {
-            splits.add(createBlockSplitNode(block, statements, statementsWeight));
+            splits.add(createBlockSplitNode(block, function, statements, statementsWeight));
         }
 
         block.setStatements(splits);
@@ -199,13 +214,13 @@ final class Splitter extends NodeVisitor {
      *
      * @return New split node.
      */
-    private SplitNode createBlockSplitNode(final Block parent, final List<Node> statements, final long weight) {
+    private SplitNode createBlockSplitNode(final Block parent, final FunctionNode function, final List<Node> statements, final long weight) {
         final Source source = parent.getSource();
         final long   token  = parent.getToken();
         final int    finish = parent.getFinish();
-        final String name   = parent.getFunction().uniqueName(SPLIT_PREFIX.tag());
+        final String name   = function.uniqueName(SPLIT_PREFIX.tag());
 
-        final Block newBlock = new Block(source, token, finish, parent, functionNode);
+        final Block newBlock = new Block(source, token, finish);
         newBlock.setFrame(new Frame(parent.getFrame()));
         newBlock.setStatements(statements);
 
@@ -217,15 +232,17 @@ final class Splitter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final Block block) {
+    public Node enterBlock(final Block block) {
         if (block.isCatchBlock()) {
             return null;
         }
+        lexicalContext.push(block);
 
         final long weight = WeighNodes.weigh(block, weightCache);
 
         if (weight < SPLIT_THRESHOLD) {
             weightCache.put(block, weight);
+            lexicalContext.pop(block);
             return null;
         }
 
@@ -233,23 +250,24 @@ final class Splitter extends NodeVisitor {
     }
 
     @Override
-    public Node leave(final Block block) {
+    public Node leaveBlock(final Block block) {
         assert !block.isCatchBlock();
 
         // Block was heavier than SLIT_THRESHOLD in enter, but a sub-block may have
         // been split already, so weigh again before splitting.
         long weight = WeighNodes.weigh(block, weightCache);
         if (weight >= SPLIT_THRESHOLD) {
-            weight = splitBlock(block);
+            weight = splitBlock(block, lexicalContext.getFunction(block));
         }
         weightCache.put(block, weight);
 
+        lexicalContext.pop(block);
         return block;
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public Node leave(final LiteralNode literal) {
+    public Node leaveLiteralNode(final LiteralNode literal) {
         long weight = WeighNodes.weigh(literal);
 
         if (weight < SPLIT_THRESHOLD) {
@@ -294,17 +312,12 @@ final class Splitter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final FunctionNode node) {
-        if (node.isLazy()) {
-            return null;
+    public Node enterFunctionNode(final FunctionNode node) {
+        if(node == functionNode && !node.isLazy()) {
+            lexicalContext.push(node);
+            node.visitStatements(this);
+            lexicalContext.pop(node);
         }
-
-        final List<Node> statements = node.getStatements();
-
-        for (final Node statement : statements) {
-            statement.accept(this);
-        }
-
         return null;
     }
 
@@ -321,38 +334,38 @@ final class Splitter extends NodeVisitor {
         }
 
         @Override
-        public Node enter(final LabelNode labelNode) {
+        public Node enterLabelNode(final LabelNode labelNode) {
             registerJumpTarget(labelNode.getBreakNode());
             registerJumpTarget(labelNode.getContinueNode());
             return labelNode;
         }
 
         @Override
-        public Node enter(final WhileNode whileNode) {
+        public Node enterWhileNode(final WhileNode whileNode) {
             registerJumpTarget(whileNode);
             return whileNode;
         }
 
         @Override
-        public Node enter(final DoWhileNode doWhileNode) {
+        public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
             registerJumpTarget(doWhileNode);
             return doWhileNode;
         }
 
         @Override
-        public Node enter(final ForNode forNode) {
+        public Node enterForNode(final ForNode forNode) {
             registerJumpTarget(forNode);
             return forNode;
         }
 
         @Override
-        public Node enter(final SwitchNode switchNode) {
+        public Node enterSwitchNode(final SwitchNode switchNode) {
             registerJumpTarget(switchNode);
             return switchNode;
         }
 
         @Override
-        public Node enter(final ReturnNode returnNode) {
+        public Node enterReturnNode(final ReturnNode returnNode) {
             for (final SplitNode split : splitStack) {
                 split.setHasReturn(true);
             }
@@ -360,25 +373,25 @@ final class Splitter extends NodeVisitor {
         }
 
         @Override
-        public Node enter(final ContinueNode continueNode) {
+        public Node enterContinueNode(final ContinueNode continueNode) {
             searchJumpTarget(continueNode.getTargetNode(), continueNode.getTargetLabel());
             return continueNode;
         }
 
         @Override
-        public Node enter(final BreakNode breakNode) {
+        public Node enterBreakNode(final BreakNode breakNode) {
             searchJumpTarget(breakNode.getTargetNode(), breakNode.getTargetLabel());
             return breakNode;
         }
 
         @Override
-        public Node enter(final SplitNode splitNode) {
+        public Node enterSplitNode(final SplitNode splitNode) {
             splitStack.addFirst(splitNode);
             return splitNode;
         }
 
         @Override
-        public Node leave(final SplitNode splitNode) {
+        public Node leaveSplitNode(final SplitNode splitNode) {
             assert splitNode == splitStack.peekFirst();
             splitStack.removeFirst();
             return splitNode;

@@ -37,8 +37,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
-import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -52,11 +52,12 @@ import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
-import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LabeledNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
@@ -69,7 +70,6 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
@@ -103,6 +103,8 @@ final class Lower extends NodeOperatorVisitor {
 
     private List<Node> statements;
 
+    private LexicalContext lexicalContext = new LexicalContext();
+
     /**
      * Constructor.
      *
@@ -114,14 +116,15 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enter(final Block block) {
+    public Node enterBlock(final Block block) {
         final Node       savedLastStatement = lastStatement;
         final List<Node> savedStatements    = statements;
-
+        lexicalContext.push(block);
         try {
             this.statements = new ArrayList<>();
+            NodeVisitor visitor = this;
             for (final Node statement : block.getStatements()) {
-                statement.accept(this);
+                statement.accept(visitor);
                 /*
                  * This is slightly unsound, for example if we have a loop with
                  * a guarded statement like if (x) continue in the body and the
@@ -133,7 +136,7 @@ final class Lower extends NodeOperatorVisitor {
                  */
                 if (lastStatement != null && lastStatement.isTerminal()) {
                     copyTerminal(block, lastStatement);
-                    break;
+                    visitor = new DeadCodeVarDeclarationVisitor();
                 }
             }
             block.setStatements(statements);
@@ -141,18 +144,19 @@ final class Lower extends NodeOperatorVisitor {
         } finally {
             this.statements = savedStatements;
             this.lastStatement = savedLastStatement;
+            lexicalContext.pop(block);
         }
 
         return null;
     }
 
     @Override
-    public Node enter(final BreakNode breakNode) {
+    public Node enterBreakNode(final BreakNode breakNode) {
         return enterBreakOrContinue(breakNode);
     }
 
     @Override
-    public Node enter(final CallNode callNode) {
+    public Node enterCallNode(final CallNode callNode) {
         final Node function = markerFunction(callNode.getFunction());
         callNode.setFunction(function);
         checkEval(callNode); //check if this is an eval call and store the information
@@ -160,44 +164,44 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final CaseNode caseNode) {
+    public Node leaveCaseNode(final CaseNode caseNode) {
         caseNode.copyTerminalFlags(caseNode.getBody());
         return caseNode;
     }
 
     @Override
-    public Node leave(final CatchNode catchNode) {
+    public Node leaveCatchNode(final CatchNode catchNode) {
         catchNode.copyTerminalFlags(catchNode.getBody());
         addStatement(catchNode);
         return catchNode;
     }
 
     @Override
-    public Node enter(final ContinueNode continueNode) {
+    public Node enterContinueNode(final ContinueNode continueNode) {
         return enterBreakOrContinue(continueNode);
     }
 
     @Override
-    public Node enter(final DoWhileNode doWhileNode) {
-        return enter((WhileNode)doWhileNode);
+    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
+        return enterWhileNode(doWhileNode);
     }
 
     @Override
-    public Node leave(final DoWhileNode doWhileNode) {
-        return leave((WhileNode)doWhileNode);
+    public Node leaveDoWhileNode(final DoWhileNode doWhileNode) {
+        return leaveWhileNode(doWhileNode);
     }
 
     @Override
-    public Node enter(final EmptyNode emptyNode) {
+    public Node enterEmptyNode(final EmptyNode emptyNode) {
         return null;
     }
 
     @Override
-    public Node leave(final ExecuteNode executeNode) {
+    public Node leaveExecuteNode(final ExecuteNode executeNode) {
         final Node expr = executeNode.getExpression();
 
-        if (getCurrentFunctionNode().isScript()) {
-            if (!(expr instanceof Block)) {
+        if (getCurrentFunctionNode().isProgram()) {
+            if (!(expr instanceof Block) || expr instanceof FunctionNode) { // it's not a block, but can be a function
                 if (!isInternalExpression(expr) && !isEvalResultAssignment(expr)) {
                     executeNode.setExpression(new BinaryNode(executeNode.getSource(), Token.recast(executeNode.getToken(), TokenType.ASSIGN),
                             getCurrentFunctionNode().getResultNode(),
@@ -213,13 +217,13 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enter(final ForNode forNode) {
+    public Node enterForNode(final ForNode forNode) {
         nest(forNode);
         return forNode;
     }
 
     @Override
-    public Node leave(final ForNode forNode) {
+    public Node leaveForNode(final ForNode forNode) {
         final Node  test = forNode.getTest();
         final Block body = forNode.getBody();
 
@@ -247,17 +251,15 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enter(final FunctionNode functionNode) {
+    public Node enterFunctionNode(final FunctionNode functionNode) {
         LOG.info("START FunctionNode: " + functionNode.getName());
 
         if (functionNode.isLazy()) {
             LOG.info("LAZY: " + functionNode.getName());
             return null;
         }
-
+        lexicalContext.push(functionNode);
         initFunctionNode(functionNode);
-
-        Node initialEvalResult = LiteralNode.newInstance(functionNode, ScriptRuntime.UNDEFINED);
 
         nest(functionNode);
 
@@ -272,60 +274,40 @@ final class Lower extends NodeOperatorVisitor {
         statements    = new ArrayList<>();
         lastStatement = null;
 
-        // for initial eval result is the last declared function
-        for (final FunctionNode nestedFunction : functionNode.getFunctions()) {
-            final IdentNode ident = nestedFunction.getIdent();
-            if (ident != null && nestedFunction.isStatement()) {
-                initialEvalResult = new IdentNode(ident);
-            }
-        }
-
         if (functionNode.needsSelfSymbol()) {
             //function needs to start with var funcIdent = __callee_;
             statements.add(functionNode.getSelfSymbolInit().accept(this));
         }
 
+        NodeVisitor visitor = this;
         try {
-            // Every nested function needs a definition in the outer function with its name. Add these.
-            for (final FunctionNode nestedFunction : functionNode.getFunctions()) {
-                final VarNode varNode = nestedFunction.getFunctionVarNode();
-                if (varNode != null) {
-                    final LineNumberNode lineNumberNode = nestedFunction.getFunctionVarLineNumberNode();
-                    if (lineNumberNode != null) {
-                        lineNumberNode.accept(this);
-                    }
-                    varNode.accept(this);
-                    varNode.setIsFunctionVarNode();
-                }
-            }
-
-            if (functionNode.isScript()) {
-                new ExecuteNode(functionNode.getSource(), functionNode.getFirstToken(), functionNode.getFinish(), initialEvalResult).accept(this);
-            }
-
             //do the statements - this fills the block with code
+            boolean needsInitialEvalResult = functionNode.isProgram();
             for (final Node statement : functionNode.getStatements()) {
-                statement.accept(this);
+                // If this function is a program, then insert an assignment to the initial eval result after all
+                // function declarations.
+                if(needsInitialEvalResult && !(statement instanceof LineNumberNode || (statement instanceof VarNode && ((VarNode)statement).isFunctionDeclaration()))) {
+                    addInitialEvalResult(functionNode);
+                    needsInitialEvalResult = false;
+                }
+                statement.accept(visitor);
                 //If there are unused terminated endpoints in the function, we need
                 // to add a "return undefined" in those places for correct semantics
                 LOG.info("Checking lastStatement="+lastStatement+" for terminal flags");
                 if (lastStatement != null && lastStatement.hasTerminalFlags()) {
                     copyTerminal(functionNode, lastStatement);
-                    break;
+                    assert !needsInitialEvalResult;
+                    visitor = new DeadCodeVarDeclarationVisitor();
                 }
             }
-
+            if(needsInitialEvalResult) {
+                addInitialEvalResult(functionNode);
+            }
             functionNode.setStatements(statements);
 
             if (!functionNode.isTerminal()) {
                 guaranteeReturn(functionNode);
             }
-
-            //lower all nested functions
-            for (final FunctionNode nestedFunction : functionNode.getFunctions()) {
-                nestedFunction.accept(this);
-            }
-
         } finally {
             statements    = savedStatements;
             lastStatement = savedLastStatement;
@@ -333,19 +315,67 @@ final class Lower extends NodeOperatorVisitor {
 
         LOG.info("END FunctionNode: " + functionNode.getName());
         unnest(functionNode);
+        lexicalContext.pop(functionNode);
 
         functionNode.setState(CompilationState.LOWERED);
 
         return null;
     }
 
+    /**
+     * This visitor is used to go over statements after a terminal statement. Those statements are dead code, but the
+     * var declarations in them still have the effect of declaring a local variable on the function level. Therefore,
+     * they aren't really dead code and must be preserved. Note that they're only preserved as no-op declarations; their
+     * initializers are wiped out as those are, in fact, dead code.
+     */
+    private class DeadCodeVarDeclarationVisitor extends NodeOperatorVisitor {
+        DeadCodeVarDeclarationVisitor() {
+        }
+
+        @Override
+        public Node enterVarNode(VarNode varNode) {
+            // Can't ever see a function declaration, as this visitor is only ever used after a terminal statement was
+            // encountered, and all function declarations precede any terminal statements.
+            assert !varNode.isFunctionDeclaration();
+            if(varNode.getInit() == null) {
+                // No initializer, just pass it to Lower.
+                return varNode.accept(Lower.this);
+            }
+            // Wipe out the initializer and then pass it to Lower.
+            return varNode.setInit(null).accept(Lower.this);
+        }
+    }
+
+    private void addInitialEvalResult(final FunctionNode functionNode) {
+        new ExecuteNode(functionNode.getSource(), functionNode.getFirstToken(), functionNode.getFinish(),
+                getInitialEvalResult(functionNode)).accept(this);
+    }
+
+    /**
+     * Result of initial result of evaluating a particular program, which is either the last function it declares, or
+     * undefined if it doesn't declare any functions.
+     * @param program
+     * @return the initial result of evaluating the program
+     */
+    private static Node getInitialEvalResult(final FunctionNode program) {
+        IdentNode lastFnName = null;
+        for (final FunctionNode fn : program.getDeclaredFunctions()) {
+            assert fn.isDeclared();
+            final IdentNode fnName = fn.getIdent();
+            if(fnName != null) {
+                lastFnName = fnName;
+            }
+        }
+        return lastFnName != null ? new IdentNode(lastFnName) : LiteralNode.newInstance(program, ScriptRuntime.UNDEFINED);
+    }
+
     @Override
-    public Node enter(final IfNode ifNode) {
+    public Node enterIfNode(final IfNode ifNode) {
         return nest(ifNode);
     }
 
     @Override
-    public Node leave(final IfNode ifNode) {
+    public Node leaveIfNode(final IfNode ifNode) {
         final Node pass = ifNode.getPass();
         final Node fail = ifNode.getFail();
 
@@ -360,7 +390,7 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enter(LabelNode labelNode) {
+    public Node enterLabelNode(LabelNode labelNode) {
         final Block body = labelNode.getBody();
         body.accept(this);
         copyTerminal(labelNode, body);
@@ -369,13 +399,13 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node enter(final LineNumberNode lineNumberNode) {
+    public Node enterLineNumberNode(final LineNumberNode lineNumberNode) {
         addStatement(lineNumberNode, false); // don't put it in lastStatement cache
         return null;
     }
 
     @Override
-    public Node enter(final ReturnNode returnNode) {
+    public Node enterReturnNode(final ReturnNode returnNode) {
         final TryNode tryNode = returnNode.getTryChain();
         final Node    expr    = returnNode.getExpression();
 
@@ -413,19 +443,19 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final ReturnNode returnNode) {
+    public Node leaveReturnNode(final ReturnNode returnNode) {
         addStatement(returnNode); //ReturnNodes are always terminal, marked as such in constructor
         return returnNode;
     }
 
     @Override
-    public Node enter(final SwitchNode switchNode) {
+    public Node enterSwitchNode(final SwitchNode switchNode) {
         nest(switchNode);
         return switchNode;
     }
 
     @Override
-    public Node leave(final SwitchNode switchNode) {
+    public Node leaveSwitchNode(final SwitchNode switchNode) {
         unnest(switchNode);
 
         final List<CaseNode> cases       = switchNode.getCases();
@@ -446,13 +476,13 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final ThrowNode throwNode) {
+    public Node leaveThrowNode(final ThrowNode throwNode) {
         addStatement(throwNode); //ThrowNodes are always terminal, marked as such in constructor
         return throwNode;
     }
 
     @Override
-    public Node enter(final TryNode tryNode) {
+    public Node enterTryNode(final TryNode tryNode) {
         final Block  finallyBody = tryNode.getFinallyBody();
         final long   token       = tryNode.getToken();
         final int    finish      = tryNode.getFinish();
@@ -538,26 +568,19 @@ final class Lower extends NodeOperatorVisitor {
 
             // set outer tryNode's body to innerTryNode
             final Block outerBody;
-            outerBody = new Block(source, token, finish, tryNode.getBody().getParent(), getCurrentFunctionNode());
+            outerBody = new Block(source, token, finish);
             outerBody.setStatements(new ArrayList<Node>(Arrays.asList(innerTryNode)));
             tryNode.setBody(outerBody);
             tryNode.setCatchBlocks(null);
-
-            // now before we go on, we have to fix the block parents
-            // (we repair the block tree after the insertion so that all references are intact)
-            innerTryNode.getBody().setParent(tryNode.getBody());
-            for (final Block block : innerTryNode.getCatchBlocks()) {
-                block.setParent(tryNode.getBody());
-            }
         }
 
         // create a catch-all that inlines finally and rethrows
 
-        final Block catchBlock      = new Block(source, token, finish, getCurrentBlock(), getCurrentFunctionNode());
+        final Block catchBlock      = new Block(source, token, finish);
         //this catch block should get define symbol
 
-        final Block catchBody       = new Block(source, token, finish, catchBlock, getCurrentFunctionNode());
-        final Node  catchAllFinally = finallyBody.clone();
+        final Block catchBody       = new Block(source, token, finish);
+        final Node  catchAllFinally = finallyBody.copy();
 
         catchBody.addStatement(new ExecuteNode(source, finallyBody.getToken(), finallyBody.getFinish(), catchAllFinally));
         setTerminal(catchBody, true);
@@ -584,7 +607,7 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final TryNode tryNode) {
+    public Node leaveTryNode(final TryNode tryNode) {
         final Block finallyBody   = tryNode.getFinallyBody();
 
         boolean allTerminal = tryNode.getBody().isTerminal() && (finallyBody == null || finallyBody.isTerminal());
@@ -608,18 +631,18 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final VarNode varNode) {
+    public Node leaveVarNode(final VarNode varNode) {
         addStatement(varNode);
         return varNode;
     }
 
     @Override
-    public Node enter(final WhileNode whileNode) {
+    public Node enterWhileNode(final WhileNode whileNode) {
         return nest(whileNode);
     }
 
     @Override
-    public Node leave(final WhileNode whileNode) {
+    public Node leaveWhileNode(final WhileNode whileNode) {
         final Node test = whileNode.getTest();
 
         if (test == null) {
@@ -653,7 +676,7 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final WithNode withNode) {
+    public Node leaveWithNode(final WithNode withNode) {
         if (withNode.getBody().isTerminal()) {
             setTerminal(withNode,  true);
         }
@@ -682,28 +705,10 @@ final class Lower extends NodeOperatorVisitor {
      */
     private static Node markerFunction(final Node function) {
         if (function instanceof IdentNode) {
-            return new IdentNode((IdentNode)function) {
-                @Override
-                public boolean isFunction() {
-                    return true;
-                }
-            };
-        } else if (function instanceof AccessNode) {
-            return new AccessNode((AccessNode)function) {
-                @Override
-                public boolean isFunction() {
-                    return true;
-                }
-            };
-        } else if (function instanceof IndexNode) {
-            return new IndexNode((IndexNode)function) {
-                @Override
-                public boolean isFunction() {
-                    return true;
-                }
-            };
+            return ((IdentNode)function).setIsFunction();
+        } else if (function instanceof BaseNode) {
+            return ((BaseNode)function).setIsFunction();
         }
-
         return function;
     }
 
@@ -746,7 +751,7 @@ final class Lower extends NodeOperatorVisitor {
             if (args.size() >= 1 && EVAL.tag().equals(callee.getName())) {
                 final CallNode.EvalArgs evalArgs =
                     new CallNode.EvalArgs(
-                        args.get(0).clone().accept(this), //clone as we use this for the "is eval case". original evaluated separately for "is not eval case"
+                        args.get(0).copy().accept(this), //clone as we use this for the "is eval case". original evaluated separately for "is not eval case"
                         getCurrentFunctionNode().getThisNode(),
                         evalLocation(callee),
                         getCurrentFunctionNode().isStrictMode());
@@ -773,13 +778,13 @@ final class Lower extends NodeOperatorVisitor {
 
         loopBody.accept(new NodeVisitor() {
             @Override
-            public Node leave(final BreakNode node) {
+            public Node leaveBreakNode(final BreakNode node) {
                 escapes.add(node);
                 return node;
             }
 
             @Override
-            public Node leave(final ContinueNode node) {
+            public Node leaveContinueNode(final ContinueNode node) {
                 // all inner loops have been popped.
                 if (nesting.contains(node.getTargetNode())) {
                     escapes.add(node);
@@ -794,7 +799,7 @@ final class Lower extends NodeOperatorVisitor {
     private void guaranteeReturn(final FunctionNode functionNode) {
         Node resultNode;
 
-        if (functionNode.isScript()) {
+        if (functionNode.isProgram()) {
             resultNode = functionNode.getResultNode(); // the eval result, symbol assigned in Attr
         } else {
             if (lastStatement != null && lastStatement.isTerminal() || lastStatement instanceof ReturnNode) {
@@ -859,18 +864,15 @@ final class Lower extends NodeOperatorVisitor {
      * @return true if try block is inside the target, false otherwise.
      */
     private boolean isNestedTry(final TryNode tryNode, final Block target) {
-        for (Block current = getCurrentBlock(); current != target; current = current.getParent()) {
-            if (tryNode.getBody() == current) {
+        for(Iterator<Block> blocks = lexicalContext.getBlocks(getCurrentBlock()); blocks.hasNext();) {
+            final Block block = blocks.next();
+            if(block == target) {
+                return false;
+            }
+            if(tryNode.isChildBlock(block)) {
                 return true;
             }
-
-            for (final Block catchBlock : tryNode.getCatchBlocks()) {
-                if (catchBlock == current) {
-                    return true;
-                }
-            }
         }
-
         return false;
     }
 
@@ -899,7 +901,7 @@ final class Lower extends NodeOperatorVisitor {
                 continue;
             }
 
-            finallyBody = (Block)finallyBody.clone();
+            finallyBody = (Block)finallyBody.copy();
             final boolean hasTerminalFlags = finallyBody.hasTerminalFlags();
 
             new ExecuteNode(finallyBody.getSource(), finallyBody.getToken(), finallyBody.getFinish(), finallyBody).accept(this);
@@ -974,6 +976,3 @@ final class Lower extends NodeOperatorVisitor {
     }
 
 }
-
-
-

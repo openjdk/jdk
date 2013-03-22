@@ -41,7 +41,7 @@ import jdk.nashorn.internal.runtime.Source;
  */
 public class UnaryNode extends Node implements Assignment<Node> {
     /** Right hand side argument. */
-    protected Node rhs;
+    private Node rhs;
 
     /**
      * Constructor
@@ -104,6 +104,11 @@ public class UnaryNode extends Node implements Assignment<Node> {
     }
 
     @Override
+    public Node setAssignmentDest(Node n) {
+        return setRHS(n);
+    }
+
+    @Override
     public Node getAssignmentSource() {
         return getAssignmentDest();
     }
@@ -132,9 +137,8 @@ public class UnaryNode extends Node implements Assignment<Node> {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            rhs = rhs.accept(visitor);
-            return visitor.leave(this);
+        if (visitor.enterUnaryNode(this) != null) {
+            return visitor.leaveUnaryNode(setRHS(rhs.accept(visitor)));
         }
 
         return this;
@@ -212,10 +216,12 @@ public class UnaryNode extends Node implements Assignment<Node> {
      * @see BinaryNode
      *
      * @param rhs right hand side or expression node
+     * @return a node equivalent to this one except for the requested change.
      */
-    public void setRHS(final Node rhs) {
-        this.rhs = rhs;
+    public UnaryNode setRHS(final Node rhs) {
+        if(this.rhs == rhs) return this;
+        final UnaryNode n = (UnaryNode)clone();
+        n.rhs = rhs;
+        return n;
     }
-
-
 }

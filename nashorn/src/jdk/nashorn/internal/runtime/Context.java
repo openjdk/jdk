@@ -27,9 +27,9 @@ package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.RUN_SCRIPT;
 import static jdk.nashorn.internal.codegen.CompilerConstants.STRICT_MODE;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.io.File;
 import java.io.IOException;

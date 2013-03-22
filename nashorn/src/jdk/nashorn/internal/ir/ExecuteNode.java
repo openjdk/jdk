@@ -85,9 +85,9 @@ public class ExecuteNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterExecuteNode(this) != null) {
             setExpression(expression.accept(visitor));
-            return visitor.leave(this);
+            return visitor.leaveExecuteNode(this);
         }
 
         return this;

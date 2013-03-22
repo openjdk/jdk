@@ -84,7 +84,7 @@ public class CatchNode extends Node {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterCatchNode(this) != null) {
             exception = (IdentNode)exception.accept(visitor);
 
             if (exceptionCondition != null) {
@@ -92,7 +92,7 @@ public class CatchNode extends Node {
             }
 
             body = (Block)body.accept(visitor);
-            return visitor.leave(this);
+            return visitor.leaveCatchNode(this);
         }
 
         return this;
