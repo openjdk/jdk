@@ -156,6 +156,11 @@ class CodeCache : AllStatic {
   static address  low_bound()                    { return (address) _heap->low_boundary(); }
   static address  high_bound()                   { return (address) _heap->high_boundary(); }
 
+  static bool has_space(int size) {
+    // Always leave some room in the CodeCache for I2C/C2I adapters
+    return largest_free_block() > (CodeCacheMinimumFreeSpace + size);
+  }
+
   // Profiling
   static address first_address();                // first address used for CodeBlobs
   static address last_address();                 // last  address used for CodeBlobs
