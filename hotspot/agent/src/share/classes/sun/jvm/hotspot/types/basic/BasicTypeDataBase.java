@@ -24,10 +24,15 @@
 
 package sun.jvm.hotspot.types.basic;
 
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.types.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.MachineDescription;
 import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.types.Type;
+import sun.jvm.hotspot.types.TypeDataBase;
 
 /** <P> This is a basic implementation of the TypeDataBase interface.
     It allows an external type database builder to add types to be
@@ -150,7 +155,7 @@ public class BasicTypeDataBase implements TypeDataBase {
     return VM.getVM().getOopSize();
   }
 
-  static HashMap typeToVtbl = new HashMap();
+  HashMap typeToVtbl = new HashMap();
 
   private Address vtblForType(Type type) {
     Address vtblAddr = (Address)typeToVtbl.get(type);
