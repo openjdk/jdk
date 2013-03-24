@@ -2515,7 +2515,7 @@ class CommandLineFlags {
           "disable locking assertions (for speed)")                         \
                                                                             \
   product(bool, RangeCheckElimination, true,                                \
-          "Split loop iterations to eliminate range checks")                \
+          "Eliminate range checks")                                         \
                                                                             \
   develop_pd(bool, UncommonNullCast,                                        \
           "track occurrences of null in casts; adjust compiler tactics")    \
