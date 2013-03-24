@@ -1722,7 +1722,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass,
   int i;
   for (i = 0; i < methods_length; i++) {
     methodHandle method(THREAD, methods->at(i));
-    if (!method->is_initializer()) {
+    if (!method->is_initializer() && !method->is_overpass()) {
       if (!publicOnly || method->is_public()) {
         ++num_methods;
       }
@@ -1736,7 +1736,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass,
   int out_idx = 0;
   for (i = 0; i < methods_length; i++) {
     methodHandle method(THREAD, methods->at(i));
-    if (!method->is_initializer()) {
+    if (!method->is_initializer() && !method->is_overpass()) {
       if (!publicOnly || method->is_public()) {
         oop m = Reflection::new_method(method, UseNewReflection, false, CHECK_NULL);
         result->obj_at_put(out_idx, m);

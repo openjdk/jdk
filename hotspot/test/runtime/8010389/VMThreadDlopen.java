@@ -21,22 +21,24 @@
  * questions.
  */
 
+import java.io.File;
+
 /*
  * @test
- * @bug 8006298
- * @summary Setting a flag to an invalid value should print a useful error message
- * @library /testlibrary
+ * @key regression
+ * @bug 8010389
+ * @run main/othervm -Djava.library.path=. VMThreadDlopen
  */
 
-import com.oracle.java.testlibrary.*;
-
-public class FlagWithInvalidValue {
-  public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:MaxRAMFraction=v", "-version");
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Improperly specified VM option 'MaxRAMFraction=v'");
-    output.shouldHaveExitValue(1);
-  }
+public class VMThreadDlopen {
+    public static void main(String[] args) throws Exception {
+        File file = new File("libbroken.so");
+        file.createNewFile();
+        try {
+            System.loadLibrary("broken");
+        } catch (UnsatisfiedLinkError e) {
+            e.printStackTrace();
+            // expected
+        }
+    }
 }

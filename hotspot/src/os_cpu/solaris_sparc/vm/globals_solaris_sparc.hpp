@@ -33,7 +33,7 @@
 define_pd_global(uintx, JVMInvokeMethodSlack,    12288);
 define_pd_global(intx, CompilerThreadStackSize,  0);
 
-// Used on 64 bit platforms for UseCompressedOops base address or CDS
+// Used on 64 bit platforms for UseCompressedOops base address
 #ifdef _LP64
 define_pd_global(uintx, HeapBaseMinAddress,      CONST64(4)*G);
 #else
