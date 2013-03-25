@@ -259,13 +259,29 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     @Property(name = "Packages", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object packages;
 
+    /** Nashorn extension: Java access - global.com */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public volatile Object com;
+
+    /** Nashorn extension: Java access - global.edu */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public volatile Object edu;
+
     /** Nashorn extension: Java access - global.java */
     @Property(attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object java;
 
+    /** Nashorn extension: Java access - global.javafx */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public volatile Object javafx;
+
     /** Nashorn extension: Java access - global.javax */
     @Property(attributes = Attribute.NOT_ENUMERABLE)
-    public Object javax;
+    public volatile Object javax;
+
+    /** Nashorn extension: Java access - global.org */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public volatile Object org;
 
     /** Nashorn extension: Java access - global.javaImporter */
     @Property(name = "JavaImporter", attributes = Attribute.NOT_ENUMERABLE)
@@ -320,8 +336,12 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private ScriptFunction builtinTypeError;
     private ScriptFunction builtinURIError;
     private ScriptObject   builtinPackages;
+    private ScriptObject   builtinCom;
+    private ScriptObject   builtinEdu;
     private ScriptObject   builtinJava;
+    private ScriptObject   builtinJavafx;
     private ScriptObject   builtinJavax;
+    private ScriptObject   builtinOrg;
     private ScriptObject   builtinJavaImporter;
     private ScriptObject   builtinJavaApi;
     private ScriptObject   builtinArrayBuffer;
@@ -1482,8 +1502,12 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private void initJavaAccess() {
         final ScriptObject objectProto = getObjectPrototype();
         this.builtinPackages = new NativeJavaPackage("", objectProto);
+        this.builtinCom = new NativeJavaPackage("com", objectProto);
+        this.builtinEdu = new NativeJavaPackage("edu", objectProto);
         this.builtinJava = new NativeJavaPackage("java", objectProto);
+        this.builtinJavafx = new NativeJavaPackage("javafx", objectProto);
         this.builtinJavax = new NativeJavaPackage("javax", objectProto);
+        this.builtinOrg = new NativeJavaPackage("org", objectProto);
         this.builtinJavaImporter = initConstructor("JavaImporter");
         this.builtinJavaApi = initConstructor("Java");
     }
@@ -1566,8 +1590,12 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.function          = this.builtinFunction;
         this.jsadapter         = this.builtinJSAdapter;
         this.json              = this.builtinJSON;
+        this.com               = this.builtinCom;
+        this.edu               = this.builtinEdu;
         this.java              = this.builtinJava;
+        this.javafx            = this.builtinJavafx;
         this.javax             = this.builtinJavax;
+        this.org               = this.builtinOrg;
         this.javaImporter      = this.builtinJavaImporter;
         this.javaApi           = this.builtinJavaApi;
         this.math              = this.builtinMath;
