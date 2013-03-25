@@ -22,58 +22,47 @@
  */
 
 /**
- * NASHORN-258 : Broken slot assignments to non constant members of multidimensional arrays in OP=
+ * JDK-8010710 - slot/scope problem with temporary expressions
+ * as array index in self modifying assigns
  *
  * @test
- * @run
+ * @run 
  */
+function zero() {
+    return 0;
+}
 
-function test3(a) {
-    for (i = 0; i < a.length ; i++) {
-	for (j = 0; j < a[i].length ; j++) {
-	    for (k = 0; k < a[i][j].length ; k++) {
-		a[i][j][k] *= 8;
-	    }
-	}
+//try complex self modifying assignment and force slots to temporary value index operators
+var a = [1, 2, 3, 4, 5];
+var b = [a, a];
+print(b[zero() + 1][2 + a[0]] += 10);
+
+//repro for NASHORN-258 that never made it
+function AddRoundKey() {        
+    var r=0;  
+    state[r][1] &= 17;    
+}
+
+var srcFiles = [];
+for(i=0;i<100;i++) {
+    srcFiles.push('dummy');
+}
+var added = '';
+
+//this broke the javafx build system. verify it works
+function bouncingBall() {
+    for (j=0; j<100; j++) {
+	added += srcFiles[j];
     }
 }
+bouncingBall();
+print(added);
 
-function test3local(a) {
-    for (var i = 0; i < a.length ; i++) {
-	for (var j = 0; j < a[i].length ; j++) {
-	    for (var k = 0; k < a[i][j].length ; k++) {
-		a[i][j][k] *= 8;
-	    }
-	}
+//this is how they should have done it for speed, that works always, verify this too
+function bouncingBall2() {
+    for (var k=0; k<100; k++) {
+	added += srcFiles[k];
     }
 }
-
-var array = [ [[1,1,1],[1,1,1],[1,1,1]],
-	      [[1,1,1],[1,1,1],[1,1,1]],
-	      [[1,1,1],[1,1,1],[1,1,1]] ];
-	      
-test3(array);
-print(array);
-
-test3local(array);
-print(array);
-
-function outer() {
-    
-    var array2 = [ [[1,1,1],[1,1,1],[1,1,1]],
-		   [[1,1,1],[1,1,1],[1,1,1]],
-		   [[1,1,1],[1,1,1],[1,1,1]] ];
-    
-    var f =  function inner() {
-	for (var i = 0; i < array2.length ; i++) {
-	    for (var j = 0; j < array2[i].length ; j++) {
-		array2[i][j][2] *= 8;
-	    }
-	}	
-    };
-
-    f();
-    print(array2);
-}
-
-outer();
+bouncingBall2();
+print(added);

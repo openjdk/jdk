@@ -577,7 +577,7 @@ final class Attr extends NodeOperatorVisitor {
 
     @Override
     public Node leaveIndexNode(final IndexNode indexNode) {
-        newTemporary(Type.OBJECT, indexNode); //TORO
+        newTemporary(Type.OBJECT, indexNode); //TODO
         return indexNode;
     }
 
@@ -1470,8 +1470,13 @@ final class Attr extends NodeOperatorVisitor {
         assignmentDest.accept(new NodeVisitor() {
             @Override
             public Node leaveIndexNode(final IndexNode indexNode) {
+                assert indexNode.getSymbol().isTemp();
                 final Node index = indexNode.getIndex();
-                index.getSymbol().setNeedsSlot(!index.getSymbol().isConstant());
+                //only temps can be set as needing slots. the others will self resolve
+                //it is illegal to take a scope var and force it to be a slot, that breaks
+                if (index.getSymbol().isTemp() && !index.getSymbol().isConstant()) {
+                     index.getSymbol().setNeedsSlot(true);
+                }
                 return indexNode;
             }
         });
