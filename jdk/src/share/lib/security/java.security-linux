@@ -185,7 +185,7 @@ package.definition=sun.,\
                    com.sun.org.glassfish.gmbal.,\
 		   jdk.internal.,\
 		   jdk.nashorn.internal.,\
-		   jdk.nashorn.tools
+		   jdk.nashorn.tools.
 
 #
 # Determines whether this properties file can be appended to
