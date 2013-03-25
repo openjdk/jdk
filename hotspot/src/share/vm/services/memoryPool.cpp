@@ -26,12 +26,15 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 MemoryPool::MemoryPool(const char* name,
@@ -255,4 +258,35 @@ MemoryUsage CodeHeapPool::get_memory_usage() {
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
+}
+
+MetaspacePoolBase::MetaspacePoolBase(const char *name,
+                                     Metaspace::MetadataType md_type,
+                                     size_t max_size) :
+    _md_type(md_type),
+    MemoryPool(name, NonHeap, MetaspaceAux::capacity_in_bytes(_md_type), max_size,
+               true, false) { }
+
+size_t MetaspacePoolBase::used_in_bytes() {
+  return MetaspaceAux::used_in_bytes(_md_type);
+}
+
+MemoryUsage MetaspacePoolBase::get_memory_usage() {
+  size_t used = MetaspaceAux::used_in_bytes(_md_type);
+  size_t committed = align_size_down_(MetaspaceAux::capacity_in_bytes(_md_type), os::vm_page_size());
+  return MemoryUsage(initial_size(), used, committed, max_size());
+}
+
+ClassMetaspacePool::ClassMetaspacePool() :
+    MetaspacePoolBase("Class Metaspace", Metaspace::ClassType, calculate_max_size()) { }
+
+size_t ClassMetaspacePool::calculate_max_size() {
+  return UseCompressedKlassPointers ? ClassMetaspaceSize : _undefined_max_size;
+}
+
+MetaspacePool::MetaspacePool() :
+    MetaspacePoolBase("Metaspace", Metaspace::NonClassType, calculate_max_size()) { }
+
+size_t MetaspacePool::calculate_max_size() {
+  return FLAG_IS_CMDLINE(MaxMetaspaceSize) ? MaxMetaspaceSize : _undefined_max_size;
 }
