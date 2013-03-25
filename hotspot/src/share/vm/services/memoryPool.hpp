@@ -28,6 +28,7 @@
 #include "gc_implementation/shared/mutableSpace.hpp"
 #include "memory/defNewGeneration.hpp"
 #include "memory/heap.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/space.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/macros.hpp"
@@ -220,6 +221,31 @@ public:
   CodeHeapPool(CodeHeap* codeHeap, const char* name, bool support_usage_threshold);
   MemoryUsage get_memory_usage();
   size_t used_in_bytes()            { return _codeHeap->allocated_capacity(); }
+};
+
+class MetaspacePoolBase : public MemoryPool {
+private:
+  Metaspace::MetadataType _md_type;
+protected:
+  static const size_t _undefined_max_size = (size_t) -1;
+public:
+  MetaspacePoolBase(const char *name, Metaspace::MetadataType md_type, size_t max_size);
+  MemoryUsage get_memory_usage();
+  size_t used_in_bytes();
+};
+
+class ClassMetaspacePool : public MetaspacePoolBase {
+private:
+  size_t calculate_max_size();
+public:
+  ClassMetaspacePool();
+};
+
+class MetaspacePool : public MetaspacePoolBase {
+private:
+  size_t calculate_max_size();
+public:
+  MetaspacePool();
 };
 
 #endif // SHARE_VM_SERVICES_MEMORYPOOL_HPP

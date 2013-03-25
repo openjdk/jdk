@@ -157,16 +157,16 @@ class Metaspace : public CHeapObj<mtClass> {
 
 class MetaspaceAux : AllStatic {
 
+  static size_t free_chunks_total(Metaspace::MetadataType mdtype);
+  static size_t free_chunks_total_in_bytes(Metaspace::MetadataType mdtype);
+
+ public:
   // Statistics for class space and data space in metaspace.
   static size_t used_in_bytes(Metaspace::MetadataType mdtype);
   static size_t free_in_bytes(Metaspace::MetadataType mdtype);
   static size_t capacity_in_bytes(Metaspace::MetadataType mdtype);
   static size_t reserved_in_bytes(Metaspace::MetadataType mdtype);
 
-  static size_t free_chunks_total(Metaspace::MetadataType mdtype);
-  static size_t free_chunks_total_in_bytes(Metaspace::MetadataType mdtype);
-
- public:
   // Total of space allocated to metadata in all Metaspaces
   static size_t used_in_bytes() {
     return used_in_bytes(Metaspace::ClassType) +
