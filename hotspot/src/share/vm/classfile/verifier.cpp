@@ -61,8 +61,9 @@
 # include "bytes_ppc.hpp"
 #endif
 
-#define NOFAILOVER_MAJOR_VERSION                  51
-#define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION  52
+#define NOFAILOVER_MAJOR_VERSION                       51
+#define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
+#define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION       52
 
 // Access to external entry for VerifyClassCodes - old byte code verifier
 
@@ -2027,16 +2028,19 @@ void ClassVerifier::verify_switch(
   address bcp = bcs->bcp();
   address aligned_bcp = (address) round_to((intptr_t)(bcp + 1), jintSize);
 
-  // 4639449 & 4647081: padding bytes must be 0
-  u2 padding_offset = 1;
-  while ((bcp + padding_offset) < aligned_bcp) {
-    if(*(bcp + padding_offset) != 0) {
-      verify_error(ErrorContext::bad_code(bci),
-                   "Nonzero padding byte in lookswitch or tableswitch");
-      return;
+  if (_klass->major_version() < NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION) {
+    // 4639449 & 4647081: padding bytes must be 0
+    u2 padding_offset = 1;
+    while ((bcp + padding_offset) < aligned_bcp) {
+      if(*(bcp + padding_offset) != 0) {
+        verify_error(ErrorContext::bad_code(bci),
+                     "Nonzero padding byte in lookswitch or tableswitch");
+        return;
+      }
+      padding_offset++;
     }
-    padding_offset++;
   }
+
   int default_offset = (int) Bytes::get_Java_u4(aligned_bcp);
   int keys, delta;
   current_frame->pop_stack(
