@@ -398,7 +398,9 @@ Java_java_lang_ClassLoader_00024NativeLibrary_load
         if (cause) {
             (*env)->ExceptionClear(env);
             (*env)->Throw(env, cause);
-            JVM_UnloadLibrary(handle);
+            if (!isBuiltin) {
+                JVM_UnloadLibrary(handle);
+            }
             goto done;
         }
 
@@ -409,7 +411,9 @@ Java_java_lang_ClassLoader_00024NativeLibrary_load
                          "unsupported JNI version 0x%08X required by %s",
                          jniVersion, cname);
             JNU_ThrowByName(env, "java/lang/UnsatisfiedLinkError", msg);
-            JVM_UnloadLibrary(handle);
+            if (!isBuiltin) {
+                JVM_UnloadLibrary(handle);
+            }
             goto done;
         }
         (*env)->SetIntField(env, this, jniVersionID, jniVersion);
@@ -458,7 +462,9 @@ Java_java_lang_ClassLoader_00024NativeLibrary_unload
         (*env)->GetJavaVM(env, &jvm);
         (*JNI_OnUnload)(jvm, NULL);
     }
-    JVM_UnloadLibrary(handle);
+    if (!isBuiltin) {
+        JVM_UnloadLibrary(handle);
+    }
     JNU_ReleaseStringPlatformChars(env, name, cname);
 }
 
