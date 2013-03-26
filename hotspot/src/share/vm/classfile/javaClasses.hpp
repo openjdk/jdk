@@ -1050,15 +1050,16 @@ class java_lang_invoke_MemberName: AllStatic {
 
   // Relevant integer codes (keep these in synch. with MethodHandleNatives.Constants):
   enum {
-    MN_IS_METHOD           = 0x00010000, // method (not constructor)
-    MN_IS_CONSTRUCTOR      = 0x00020000, // constructor
-    MN_IS_FIELD            = 0x00040000, // field
-    MN_IS_TYPE             = 0x00080000, // nested type
+    MN_IS_METHOD            = 0x00010000, // method (not constructor)
+    MN_IS_CONSTRUCTOR       = 0x00020000, // constructor
+    MN_IS_FIELD             = 0x00040000, // field
+    MN_IS_TYPE              = 0x00080000, // nested type
+    MN_CALLER_SENSITIVE     = 0x00100000, // @CallerSensitive annotation detected
     MN_REFERENCE_KIND_SHIFT = 24, // refKind
-    MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
+    MN_REFERENCE_KIND_MASK  = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
     // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
-    MN_SEARCH_SUPERCLASSES = 0x00100000, // walk super classes
-    MN_SEARCH_INTERFACES   = 0x00200000  // walk implemented interfaces
+    MN_SEARCH_SUPERCLASSES  = 0x00100000, // walk super classes
+    MN_SEARCH_INTERFACES    = 0x00200000  // walk implemented interfaces
   };
 
   // Accessors for code generation:
