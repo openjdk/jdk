@@ -679,9 +679,6 @@ class CommandLineFlags {
   product(bool, UseCompilerSafepoints, true,                                \
           "Stop at safepoints in compiled code")                            \
                                                                             \
-  product(bool, UseSplitVerifier, true,                                     \
-          "use split verifier with StackMapTable attributes")               \
-                                                                            \
   product(bool, FailOverToOldVerifier, true,                                \
           "fail over to old verifier when split verifier fails")            \
                                                                             \
