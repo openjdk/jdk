@@ -32,11 +32,13 @@ import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.util.Collections;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle.Control;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -45,6 +47,7 @@ import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.TimeZoneNameProvider;
+import sun.util.spi.CalendarProvider;
 
 /**
  * LocaleProviderAdapter implementation for the Mac OS X locale data
@@ -94,16 +97,55 @@ public class HostLocaleProviderAdapterImpl {
 
     private static final Set<Locale> supportedLocaleSet;
     static {
-        Set<Locale> tmpSet = new HashSet<Locale>();
+        Set<Locale> tmpSet = new HashSet<>();
         // Assuming the default locales do not include any extensions, so
         // no stripping is needed here.
-        Locale l = Locale.forLanguageTag(getDefaultLocale(CAT_FORMAT).replaceAll("_","-"));
+        Locale l = convertMacOSXLocaleToJavaLocale(getDefaultLocale(CAT_FORMAT));
         tmpSet.addAll(Control.getNoFallbackControl(Control.FORMAT_DEFAULT).getCandidateLocales("", l));
-        l = Locale.forLanguageTag(getDefaultLocale(CAT_DISPLAY).replaceAll("_","-"));
+        l = convertMacOSXLocaleToJavaLocale(getDefaultLocale(CAT_DISPLAY));
         tmpSet.addAll(Control.getNoFallbackControl(Control.FORMAT_DEFAULT).getCandidateLocales("", l));
         supportedLocaleSet = Collections.unmodifiableSet(tmpSet);
     }
     private final static Locale[] supportedLocale = supportedLocaleSet.toArray(new Locale[0]);
+
+    @SuppressWarnings("fallthrough")
+    private static Locale convertMacOSXLocaleToJavaLocale(String macosxloc) {
+        // MacOSX may return ICU notation, here is the quote from CFLocale doc:
+        // "The corresponding value is a CFString containing the POSIX locale
+        // identifier as used by ICU, such as "ja_JP". If you have a variant
+        // locale or a different currency or calendar, it can be as complex as
+        // "en_US_POSIX@calendar=japanese;currency=EUR" or
+        // "az_Cyrl_AZ@calendar=buddhist;currency=JPY".
+        String[] tmp = macosxloc.split("@");
+        String langTag = tmp[0].replace('_', '-');
+        if (tmp.length > 1) {
+            String[] ext = tmp[1].split(";");
+            for (String keyval : ext) {
+                // We are only interested in "calendar" value for now.
+                if (keyval.startsWith("calendar=")) {
+                    String calid = keyval.substring(keyval.indexOf('=')+1);
+                    switch (calid) {
+                        case "gregorian":
+                            langTag += "-u-ca-gregory";
+                            break;
+                        case "japanese":
+                            // Tweak for ja_JP_JP
+                            if (tmp[0].equals("ja_JP")) {
+                                return JRELocaleConstants.JA_JP_JP;
+                            }
+
+                            // fall through
+
+                        default:
+                            langTag += "-u-ca-" + calid;
+                            break;
+                    }
+                }
+            }
+        }
+
+        return Locale.forLanguageTag(langTag);
+    }
 
     public static DateFormatProvider getDateFormatProvider() {
         return new DateFormatProvider() {
@@ -170,9 +212,8 @@ public class HostLocaleProviderAdapterImpl {
                 if (isSupportedLocale(Locale.getDefault(Locale.Category.FORMAT))) {
                     return supportedLocale;
                 }
-
-                        return new Locale[0];
-                    }
+                return new Locale[0];
+            }
 
             @Override
             public boolean isSupportedLocale(Locale locale) {
@@ -362,6 +403,30 @@ public class HostLocaleProviderAdapterImpl {
         };
     }
 
+    public static CalendarProvider getCalendarProvider() {
+        return new CalendarProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return getSupportedCalendarLocales();
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                return isSupportedCalendarLocale(locale);
+            }
+
+            @Override
+            public Calendar getInstance(TimeZone zone, Locale locale) {
+                return new Calendar.Builder()
+                             .setLocale(locale)
+                             .setCalendarType(getCalendarID(locale.toLanguageTag()))
+                             .setTimeZone(zone)
+                             .setInstant(System.currentTimeMillis())
+                             .build();
+            }
+        };
+    }
+
     public static CurrencyNameProvider getCurrencyNameProvider() {
         return new CurrencyNameProvider() {
             @Override
@@ -455,23 +520,20 @@ public class HostLocaleProviderAdapterImpl {
     }
 
     private static boolean isSupportedCalendarLocale(Locale locale) {
-        // special case for ja_JP_JP
-        if (JRELocaleConstants.JA_JP_JP.equals(locale)) {
-            return isJapaneseCalendar();
-        }
-
         Locale base = locale.stripExtensions();
         if (!supportedLocaleSet.contains(base)) {
             return false;
         }
 
-        String caltype = locale.getUnicodeLocaleType("ca");
-        if (caltype == null) {
-            return true;
-        }
+        String requestedCalType = locale.getUnicodeLocaleType("ca");
+        String nativeCalType =
+            getCalendarID(locale.toLanguageTag()).replaceFirst("gregorian", "gregory");
 
-        return caltype.replaceFirst("gregory", "gregorian").equals(
-                getCalendarID(locale.toLanguageTag()));
+        if (requestedCalType == null) {
+            return Calendar.getAvailableCalendarTypes().contains(nativeCalType);
+        } else {
+            return requestedCalType.equals(nativeCalType);
+        }
     }
 
     private static boolean isJapaneseCalendar() {
@@ -479,18 +541,15 @@ public class HostLocaleProviderAdapterImpl {
     }
 
     private static Locale getCalendarLocale(Locale locale) {
-        Locale.Builder lb = new Locale.Builder().setLocale(locale);
-        String calid = getCalendarID(locale.toLanguageTag());
-        switch (calid) {
-            case "gregorian":
-                calid = "gregory";
-                // FALL THROUGH!
-            case "japanese":
-            case "buddhist":
-                lb.setUnicodeLocaleKeyword("ca", calid);
-                return lb.build();
-            default:
-                return locale;
+        String nativeCalType = getCalendarID(locale.toLanguageTag())
+                     .replaceFirst("gregorian", "gregory");
+        if (Calendar.getAvailableCalendarTypes().contains(nativeCalType)) {
+            return new Locale.Builder()
+                           .setLocale(locale)
+                           .setUnicodeLocaleKeyword("ca", nativeCalType)
+                           .build();
+        } else {
+            return locale;
         }
     }
 

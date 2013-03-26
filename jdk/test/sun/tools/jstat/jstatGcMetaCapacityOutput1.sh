@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 # @test
 # @bug 4990825
-# @run shell jstatGcPermCapacityOutput1.sh
-# @summary Test that output of 'jstat -gcpermcapcaity 0' has expected line counts
+# @run shell jstatGcMetaCapacityOutput1.sh
+# @summary Test that output of 'jstat -gcmetacapacity 0' has expected line counts
 
 . ${TESTSRC-.}/../../jvmstat/testlibrary/utils.sh
 
@@ -33,4 +33,4 @@ verify_os
 
 JSTAT="${TESTJAVA}/bin/jstat"
 
-${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcpermcapacity 0 2>&1 | awk -f ${TESTSRC}/gcPermCapacityOutput1.awk
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcmetacapacity 0 2>&1 | awk -f ${TESTSRC}/gcMetaCapacityOutput1.awk

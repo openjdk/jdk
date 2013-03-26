@@ -27,6 +27,8 @@
 package com.sun.security.auth.module;
 
 import java.io.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -429,8 +431,14 @@ public class Krb5LoginModule implements LoginModule {
 
     private static final String NAME = "javax.security.auth.login.name";
     private static final String PWD = "javax.security.auth.login.password";
-    static final java.util.ResourceBundle rb =
-        java.util.ResourceBundle.getBundle("sun.security.util.AuthResources");
+    private static final ResourceBundle rb = AccessController.doPrivileged(
+            new PrivilegedAction<ResourceBundle>() {
+                public ResourceBundle run() {
+                    return ResourceBundle.getBundle(
+                            "sun.security.util.AuthResources");
+                }
+            }
+    );
 
     /**
      * Initialize this <code>LoginModule</code>.
