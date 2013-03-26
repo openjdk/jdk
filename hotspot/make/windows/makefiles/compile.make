@@ -221,13 +221,6 @@ LD_FLAGS = /SAFESEH $(LD_FLAGS)
 !endif
 !endif
 
-# Compile for space above time.
-!if "$(Variant)" == "kernel"
-PRODUCT_OPT_OPTION   = /O1 /Oy-
-FASTDEBUG_OPT_OPTION = /O1 /Oy-
-DEBUG_OPT_OPTION     = /Od
-!endif
-
 # If NO_OPTIMIZATIONS is defined in the environment, turn everything off
 !ifdef NO_OPTIMIZATIONS
 PRODUCT_OPT_OPTION   = $(DEBUG_OPT_OPTION)
