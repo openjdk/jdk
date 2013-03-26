@@ -135,6 +135,7 @@ SUNWprivate_1.1 {
                 JVM_GetEnclosingMethodInfo;
                 JVM_GetFieldAnnotations;
                 JVM_GetFieldIxModifiers;
+                JVM_GetFieldTypeAnnotations;
                 JVM_GetHostName;
                 JVM_GetInheritedAccessControlContext;
                 JVM_GetInterfaceVersion;
@@ -156,6 +157,7 @@ SUNWprivate_1.1 {
                 JVM_GetMethodIxSignatureUTF;
                 JVM_GetMethodParameterAnnotations;
                 JVM_GetMethodParameters;
+                JVM_GetMethodTypeAnnotations;
                 JVM_GetPrimitiveArrayElement;
                 JVM_GetProtectionDomain;
                 JVM_GetSockName;
