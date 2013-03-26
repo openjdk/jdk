@@ -1178,6 +1178,17 @@ public class Types {
             protected boolean containsTypes(List<Type> ts1, List<Type> ts2) {
                 return isSameTypes(ts1, ts2, true);
             }
+
+            @Override
+            public Boolean visitWildcardType(WildcardType t, Type s) {
+                if (!s.hasTag(WILDCARD)) {
+                    return false;
+                } else {
+                    WildcardType t2 = (WildcardType)s;
+                    return t.kind == t2.kind &&
+                            isSameType(t.type, t2.type, true);
+                }
+            }
         };
     // </editor-fold>
 
@@ -1418,23 +1429,10 @@ public class Types {
                     }
                 }
 
-                if (t.isCompound()) {
-                    Warner oldWarner = warnStack.head;
-                    warnStack.head = noWarnings;
-                    if (!visit(supertype(t), s))
-                        return false;
-                    for (Type intf : interfaces(t)) {
-                        if (!visit(intf, s))
-                            return false;
-                    }
-                    if (warnStack.head.hasLint(LintCategory.UNCHECKED))
-                        oldWarner.warn(LintCategory.UNCHECKED);
-                    return true;
-                }
-
-                if (s.isCompound()) {
-                    // call recursively to reuse the above code
-                    return visitClassType((ClassType)s, t);
+                if (t.isCompound() || s.isCompound()) {
+                    return !t.isCompound() ?
+                            visitIntersectionType((IntersectionClassType)s, t, true) :
+                            visitIntersectionType((IntersectionClassType)t, s, false);
                 }
 
                 if (s.tag == CLASS || s.tag == ARRAY) {
@@ -1510,6 +1508,18 @@ public class Types {
                     }
                 }
                 return false;
+            }
+
+            boolean visitIntersectionType(IntersectionClassType ict, Type s, boolean reverse) {
+                Warner warn = noWarnings;
+                for (Type c : ict.getComponents()) {
+                    warn.clear();
+                    if (reverse ? !isCastable(s, c, warn) : !isCastable(c, s, warn))
+                        return false;
+                }
+                if (warn.hasLint(LintCategory.UNCHECKED))
+                    warnStack.head.warn(LintCategory.UNCHECKED);
+                return true;
             }
 
             @Override
@@ -2091,7 +2101,7 @@ public class Types {
             @Override
             public Type visitAnnotatedType(AnnotatedType t, Boolean recurse) {
                 Type erased = erasure(t.underlyingType, recurse);
-                if (erased.getKind() == TypeKind.ANNOTATED) {
+                if (erased.isAnnotated()) {
                     // This can only happen when the underlying type is a
                     // type variable and the upper bound of it is annotated.
                     // The annotation on the type variable overrides the one
@@ -3889,11 +3899,18 @@ public class Types {
     }
 
     private boolean giveWarning(Type from, Type to) {
-        Type subFrom = asSub(from, to.tsym);
-        return to.isParameterized() &&
-                (!(isUnbounded(to) ||
-                isSubtype(from, to) ||
-                ((subFrom != null) && containsType(to.allparams(), subFrom.allparams()))));
+        List<Type> bounds = to.isCompound() ?
+                ((IntersectionClassType)to).getComponents() : List.of(to);
+        for (Type b : bounds) {
+            Type subFrom = asSub(from, b.tsym);
+            if (b.isParameterized() &&
+                    (!(isUnbounded(b) ||
+                    isSubtype(from, b) ||
+                    ((subFrom != null) && containsType(b.allparams(), subFrom.allparams()))))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<Type> superClosure(Type t, Type s) {

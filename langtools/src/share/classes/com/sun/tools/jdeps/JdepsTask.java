@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * Implementation for the jdeps tool for static class dependency analysis.
  */
 class JdepsTask {
-    class BadArgs extends Exception {
+    static class BadArgs extends Exception {
         static final long serialVersionUID = 8765093759964640721L;
         BadArgs(String key, Object... args) {
             super(JdepsTask.getMessage(key, args));
@@ -119,7 +119,7 @@ class JdepsTask {
                 } else if ("class".equals(arg)) {
                     task.options.verbose = Analyzer.Type.CLASS;
                 } else {
-                    throw task.new BadArgs("err.invalid.arg.for.option", opt);
+                    throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
             }
         },
@@ -139,8 +139,11 @@ class JdepsTask {
             }
         },
         new Option(false, "-P", "--profile") {
-            void process(JdepsTask task, String opt, String arg) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.showProfile = true;
+                if (Profiles.getProfileCount() == 0) {
+                    throw new BadArgs("err.option.unsupported", opt, getMessage("err.profiles.msg"));
+                }
             }
         },
         new Option(false, "-R", "--recursive") {
@@ -153,7 +156,7 @@ class JdepsTask {
                 try {
                     task.options.depth = Integer.parseInt(arg);
                 } catch (NumberFormatException e) {
-                    throw task.new BadArgs("err.invalid.arg.for.option", opt);
+                    throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
             }
         },
@@ -382,9 +385,9 @@ class JdepsTask {
 
     private void printSummary(final PrintWriter out, final Analyzer analyzer) {
         Analyzer.Visitor visitor = new Analyzer.Visitor() {
-            public void visit(String origin, String profile) {
+            public void visit(String origin, String target, String profile) {
                 if (options.showProfile) {
-                    out.format("%-30s -> %s%n", origin, profile);
+                    out.format("%-30s -> %s%n", origin, target);
                 }
             }
             public void visit(Archive origin, Archive target) {
@@ -399,17 +402,15 @@ class JdepsTask {
     private void printDependencies(final PrintWriter out, final Analyzer analyzer) {
         Analyzer.Visitor visitor = new Analyzer.Visitor() {
             private String pkg = "";
-            public void visit(String origin, String target) {
+            public void visit(String origin, String target, String profile) {
                 if (!origin.equals(pkg)) {
                     pkg = origin;
-                    out.format("   %s (%s)%n", origin, analyzer.getArchiveName(origin));
+                    out.format("   %s (%s)%n", origin, analyzer.getArchive(origin).getFileName());
                 }
-                Archive source = analyzer.getArchive(target);
-                String profile = options.showProfile ? analyzer.getProfile(target) : "";
                 out.format("      -> %-50s %s%n", target,
-                           PlatformClassPath.contains(source)
+                           (options.showProfile && !profile.isEmpty())
                                ? profile
-                               : analyzer.getArchiveName(target));
+                               : analyzer.getArchiveName(target, profile));
             }
             public void visit(Archive origin, Archive target) {
                 out.format("%s -> %s%n", origin, target);
@@ -514,7 +515,6 @@ class JdepsTask {
         boolean help;
         boolean version;
         boolean fullVersion;
-        boolean showFlags;
         boolean showProfile;
         boolean showSummary;
         boolean wildcard;

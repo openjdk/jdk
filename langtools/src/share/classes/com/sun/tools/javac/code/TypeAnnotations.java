@@ -233,7 +233,7 @@ public class TypeAnnotations {
                 Type.ArrayType arType;
                 {
                     Type touse = type;
-                    if (type.getKind() == TypeKind.ANNOTATED) {
+                    if (type.isAnnotated()) {
                         Type.AnnotatedType atype = (Type.AnnotatedType)type;
                         toreturn = new Type.AnnotatedType(atype.underlyingType);
                         ((Type.AnnotatedType)toreturn).typeAnnotations = atype.typeAnnotations;
@@ -252,7 +252,7 @@ public class TypeAnnotations {
                 ListBuffer<TypePathEntry> depth = ListBuffer.lb();
                 depth = depth.append(TypePathEntry.ARRAY);
                 while (arType.elemtype.hasTag(TypeTag.ARRAY)) {
-                    if (arType.elemtype.getKind() == TypeKind.ANNOTATED) {
+                    if (arType.elemtype.isAnnotated()) {
                         Type.AnnotatedType aelemtype = (Type.AnnotatedType) arType.elemtype;
                         Type.AnnotatedType newAT = new Type.AnnotatedType(aelemtype.underlyingType);
                         tomodify.elemtype = newAT;

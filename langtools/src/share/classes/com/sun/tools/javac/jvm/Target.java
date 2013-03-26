@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,17 +47,6 @@ public enum Target {
 
     /** J2SE1.4 = Merlin. */
     JDK1_4("1.4", 48, 0),
-
-    /** Support for the JSR14 prototype compiler (targeting 1.4 VMs
-     *  augmented with a few support classes).  This is a transitional
-     *  option that will not be supported in the product.  */
-    JSR14("jsr14", 48, 0),
-
-    /** The following are undocumented transitional targets that we
-     *  had used to test VM fixes in update releases.  We do not
-     *  promise to retain support for them.  */
-    JDK1_4_1("1.4.1", 48, 0),
-    JDK1_4_2("1.4.2", 48, 0),
 
     /** Tiger. */
     JDK1_5("1.5", 49, 0),
@@ -175,23 +164,23 @@ public enum Target {
         return compareTo(JDK1_5) >= 0;
     }
 
-    /** Beginning in -target 1.4.2, we make synthetic variables
+    /** Beginning in -target 1.5, we make synthetic variables
      *  package-private instead of private.  This is to prevent the
      *  necessity of access methods, which effectively relax the
      *  protection of the field but bloat the class files and affect
      *  execution.
      */
     public boolean usePrivateSyntheticFields() {
-        return compareTo(JDK1_4_2) < 0;
+        return compareTo(JDK1_5) < 0;
     }
 
     /** Sometimes we need to create a field to cache a value like a
-     *  class literal of the assertions flag.  In -target 1.4.2 and
+     *  class literal of the assertions flag.  In -target 1.5 and
      *  later we create a new synthetic class for this instead of
      *  using the outermost class.  See 4401576.
      */
     public boolean useInnerCacheClass() {
-        return compareTo(JDK1_4_2) >= 0;
+        return compareTo(JDK1_5) >= 0;
     }
 
     /** Return true if cldc-style stack maps need to be generated. */
@@ -276,7 +265,7 @@ public enum Target {
      *  See 4468823
      */
     public boolean classLiteralsNoInit() {
-        return compareTo(JDK1_4_2) >= 0;
+        return compareTo(JDK1_5) >= 0;
     }
 
     /** Although we may not have support for class literals, when we
@@ -300,22 +289,10 @@ public enum Target {
         return compareTo(JDK1_5) >= 0;
     }
 
-    /** For bootstrapping javac only, we do without java.lang.Enum if
-     *  necessary.
-     */
-    public boolean compilerBootstrap(Symbol c) {
-        return
-            this == JSR14 &&
-            (c.flags() & Flags.ENUM) != 0 &&
-            c.flatName().toString().startsWith("com.sun.tools.")
-            // && !Target.class.getSuperclass().getName().equals("java.lang.Enum")
-            ;
-    }
-
     /** In J2SE1.5.0, we introduced the "EnclosingMethod" attribute
      *  for improved reflection support.
      */
     public boolean hasEnclosingMethodAttribute() {
-        return compareTo(JDK1_5) >= 0 || this == JSR14;
+        return compareTo(JDK1_5) >= 0;
     }
 }
