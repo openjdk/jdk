@@ -103,6 +103,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.security.auth.Subject;
+import sun.reflect.misc.ReflectUtil;
 import sun.rmi.server.UnicastRef2;
 import sun.rmi.transport.LiveRef;
 
@@ -2002,7 +2003,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         @Override
         protected Class<?> resolveClass(ObjectStreamClass classDesc)
                 throws IOException, ClassNotFoundException {
-            return Class.forName(classDesc.getName(), false, loader);
+            String name = classDesc.getName();
+            ReflectUtil.checkPackageAccess(name);
+            return Class.forName(name, false, loader);
         }
 
         private final ClassLoader loader;
