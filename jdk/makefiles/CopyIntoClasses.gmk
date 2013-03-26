@@ -59,15 +59,6 @@ COPY_FILES += \
 COPY_FILES += \
   $(JDK_TOPDIR)/src/share/classes/sun/jvmstat/perfdata/resources/aliasmap
 
-# Servicetag resources
-SERVICETAG_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/com/sun/servicetag/resources
-COPY_FILES += \
-  $(SERVICETAG_RESOURCES_DIR)/product_registration.xsd \
-  $(SERVICETAG_RESOURCES_DIR)/register.html \
-  $(SERVICETAG_RESOURCES_DIR)/register_ja.html \
-  $(SERVICETAG_RESOURCES_DIR)/register_zh_CN.html \
-  $(wildcard  $(SERVICETAG_RESOURCES_DIR)/javase_*.properties)
-
 # JConsole resources
 JCONSOLE_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/resources
 COPY_FILES += \
