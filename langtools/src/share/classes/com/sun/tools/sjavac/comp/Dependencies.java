@@ -108,7 +108,7 @@ public class Dependencies {
         return new_deps;
     }
 
-    class CompareNames implements Comparator<Name> {
+    static class CompareNames implements Comparator<Name> {
          public int compare(Name a, Name b) {
              return a.toString().compareTo(b.toString());
          }
