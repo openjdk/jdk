@@ -222,7 +222,6 @@ FULL_JRE_LIB_FILES := \
     oblique-fonts/fonts.dir \
     psfont.properties.ja \
     psfontj2d.properties \
-    servicetag/jdk_header.png \
     sound.properties
 
 FULL_JRE_OTHER_FILES := \

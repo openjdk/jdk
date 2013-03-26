@@ -866,8 +866,7 @@ EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf.windows  \
 # This is an interim solution until the ct.sym is replaced
 # with a new module system (being discussed for JDK 8).
 #
-EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
-                        com.oracle.net \
+EXPORTED_PRIVATE_PKGS = com.oracle.net \
                         com.oracle.nio
 
 $(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(IMAGES_OUTPUTDIR)/lib/rt.jar

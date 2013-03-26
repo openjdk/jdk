@@ -81,17 +81,6 @@ endif
 ##########################################################################################
 
 LIBDIR = $(JDK_OUTPUTDIR)/lib
-SERVICETAG_LIBDIR = $(LIBDIR)/servicetag
-
-$(SERVICETAG_LIBDIR)/jdk_header.png: $(JDK_TOPDIR)/src/share/classes/com/sun/servicetag/resources/jdk_header.png
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
-	$(CHMOD) 444 $@
-
-COPY_FILES += $(SERVICETAG_LIBDIR)/jdk_header.png
-
-##########################################################################################
 
 MGMT_LIBDIR = $(LIBDIR)/management
 MGMT_LIB_SRC = $(JDK_TOPDIR)/src/share/lib/management

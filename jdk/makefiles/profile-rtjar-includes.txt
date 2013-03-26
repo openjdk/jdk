@@ -186,7 +186,6 @@ FULL_JRE_RTJAR_INCLUDE_PACKAGES := \
     com/sun/media/sound \
     com/sun/org/glassfish \
     com/sun/org/omg \
-    com/sun/servicetag \
     com/sun/swing \
     com/sun/xml/internal/bind \
     com/sun/xml/internal/fastinfoset \
