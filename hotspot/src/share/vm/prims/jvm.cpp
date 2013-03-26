@@ -1457,7 +1457,7 @@ JVM_END
 JVM_ENTRY(jbyteArray, JVM_GetClassAnnotations(JNIEnv *env, jclass cls))
   assert (cls != NULL, "illegal class");
   JVMWrapper("JVM_GetClassAnnotations");
-  ResourceMark rm(THREAD);
+
   // Return null for arrays and primitives
   if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
@@ -1470,20 +1470,15 @@ JVM_ENTRY(jbyteArray, JVM_GetClassAnnotations(JNIEnv *env, jclass cls))
 JVM_END
 
 
-JVM_ENTRY(jbyteArray, JVM_GetFieldAnnotations(JNIEnv *env, jobject field))
-  assert(field != NULL, "illegal field");
-  JVMWrapper("JVM_GetFieldAnnotations");
-
+static bool jvm_get_field_common(jobject field, fieldDescriptor& fd, TRAPS) {
   // some of this code was adapted from from jni_FromReflectedField
 
-  // field is a handle to a java.lang.reflect.Field object
   oop reflected = JNIHandles::resolve_non_null(field);
   oop mirror    = java_lang_reflect_Field::clazz(reflected);
   Klass* k    = java_lang_Class::as_Klass(mirror);
   int slot      = java_lang_reflect_Field::slot(reflected);
   int modifiers = java_lang_reflect_Field::modifiers(reflected);
 
-  fieldDescriptor fd;
   KlassHandle kh(THREAD, k);
   intptr_t offset = InstanceKlass::cast(kh())->field_offset(slot);
 
@@ -1491,15 +1486,28 @@ JVM_ENTRY(jbyteArray, JVM_GetFieldAnnotations(JNIEnv *env, jobject field))
     // for static fields we only look in the current class
     if (!InstanceKlass::cast(kh())->find_local_field_from_offset(offset, true, &fd)) {
       assert(false, "cannot find static field");
-      return NULL;  // robustness
+      return false;
     }
   } else {
     // for instance fields we start with the current class and work
     // our way up through the superclass chain
     if (!InstanceKlass::cast(kh())->find_field_from_offset(offset, false, &fd)) {
       assert(false, "cannot find instance field");
-      return NULL;  // robustness
+      return false;
     }
+  }
+  return true;
+}
+
+JVM_ENTRY(jbyteArray, JVM_GetFieldAnnotations(JNIEnv *env, jobject field))
+  // field is a handle to a java.lang.reflect.Field object
+  assert(field != NULL, "illegal field");
+  JVMWrapper("JVM_GetFieldAnnotations");
+
+  fieldDescriptor fd;
+  bool gotFd = jvm_get_field_common(field, fd, CHECK_NULL);
+  if (!gotFd) {
+    return NULL;
   }
 
   return (jbyteArray) JNIHandles::make_local(env, Annotations::make_java_array(fd.annotations(), THREAD));
@@ -1525,12 +1533,8 @@ static Method* jvm_get_method_common(jobject method) {
   Klass* k = java_lang_Class::as_Klass(mirror);
 
   Method* m = InstanceKlass::cast(k)->method_with_idnum(slot);
-  if (m == NULL) {
-    assert(false, "cannot find method");
-    return NULL;  // robustness
-  }
-
-  return m;
+  assert(m != NULL, "cannot find method");
+  return m;  // caller has to deal with NULL in product mode
 }
 
 
@@ -1539,6 +1543,10 @@ JVM_ENTRY(jbyteArray, JVM_GetMethodAnnotations(JNIEnv *env, jobject method))
 
   // method is a handle to a java.lang.reflect.Method object
   Method* m = jvm_get_method_common(method);
+  if (m == NULL) {
+    return NULL;
+  }
+
   return (jbyteArray) JNIHandles::make_local(env,
     Annotations::make_java_array(m->annotations(), THREAD));
 JVM_END
@@ -1549,6 +1557,10 @@ JVM_ENTRY(jbyteArray, JVM_GetMethodDefaultAnnotationValue(JNIEnv *env, jobject m
 
   // method is a handle to a java.lang.reflect.Method object
   Method* m = jvm_get_method_common(method);
+  if (m == NULL) {
+    return NULL;
+  }
+
   return (jbyteArray) JNIHandles::make_local(env,
     Annotations::make_java_array(m->annotation_default(), THREAD));
 JVM_END
@@ -1559,6 +1571,10 @@ JVM_ENTRY(jbyteArray, JVM_GetMethodParameterAnnotations(JNIEnv *env, jobject met
 
   // method is a handle to a java.lang.reflect.Method object
   Method* m = jvm_get_method_common(method);
+  if (m == NULL) {
+    return NULL;
+  }
+
   return (jbyteArray) JNIHandles::make_local(env,
     Annotations::make_java_array(m->parameter_annotations(), THREAD));
 JVM_END
@@ -1581,6 +1597,38 @@ JVM_ENTRY(jbyteArray, JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls))
     }
   }
   return NULL;
+JVM_END
+
+JVM_ENTRY(jbyteArray, JVM_GetMethodTypeAnnotations(JNIEnv *env, jobject method))
+  assert (method != NULL, "illegal method");
+  JVMWrapper("JVM_GetMethodTypeAnnotations");
+
+  // method is a handle to a java.lang.reflect.Method object
+  Method* m = jvm_get_method_common(method);
+  if (m == NULL) {
+    return NULL;
+  }
+
+  AnnotationArray* type_annotations = m->type_annotations();
+  if (type_annotations != NULL) {
+    typeArrayOop a = Annotations::make_java_array(type_annotations, CHECK_NULL);
+    return (jbyteArray) JNIHandles::make_local(env, a);
+  }
+
+  return NULL;
+JVM_END
+
+JVM_ENTRY(jbyteArray, JVM_GetFieldTypeAnnotations(JNIEnv *env, jobject field))
+  assert (field != NULL, "illegal field");
+  JVMWrapper("JVM_GetFieldTypeAnnotations");
+
+  fieldDescriptor fd;
+  bool gotFd = jvm_get_field_common(field, fd, CHECK_NULL);
+  if (!gotFd) {
+    return NULL;
+  }
+
+  return (jbyteArray) JNIHandles::make_local(env, Annotations::make_java_array(fd.type_annotations(), THREAD));
 JVM_END
 
 static void bounds_check(constantPoolHandle cp, jint index, TRAPS) {
