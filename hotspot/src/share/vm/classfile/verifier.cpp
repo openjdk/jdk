@@ -127,8 +127,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     if (TraceClassInitialization) {
       tty->print_cr("Start class verification for: %s", klassName);
     }
-    if (UseSplitVerifier &&
-        klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
+    if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
       ClassVerifier split_verifier(klass, THREAD);
       split_verifier.verify_class(THREAD);
       exception_name = split_verifier.result();
