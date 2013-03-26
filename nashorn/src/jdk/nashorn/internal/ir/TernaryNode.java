@@ -77,11 +77,11 @@ public class TernaryNode extends BinaryNode {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            lhs = lhs.accept(visitor);
-            rhs = rhs.accept(visitor);
-            third = third.accept(visitor);
-            return visitor.leave(this);
+        if (visitor.enterTernaryNode(this) != null) {
+            final Node newLhs = lhs().accept(visitor);
+            final Node newRhs = rhs().accept(visitor);
+            final Node newThird = third.accept(visitor);
+            return visitor.leaveTernaryNode((TernaryNode)setThird(newThird).setLHS(newLhs).setRHS(newRhs));
         }
 
         return this;
@@ -133,8 +133,12 @@ public class TernaryNode extends BinaryNode {
     /**
      * Reset the "third" node for this ternary expression, i.e. "z" in x ? y : z
      * @param third a node
+     * @return a node equivalent to this one except for the requested change.
      */
-    public void setThird(final Node third) {
-        this.third = third;
+    public TernaryNode setThird(final Node third) {
+        if(this.third == third) return this;
+        final TernaryNode n = (TernaryNode)clone();
+        n.third = third;
+        return n;
     }
 }

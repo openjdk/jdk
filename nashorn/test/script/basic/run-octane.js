@@ -31,7 +31,8 @@ var tests = [
     "crypto.js", 
     "deltablue.js", 
     "earley-boyer.js", 
-    "gbemu.js",	     
+    "gbemu.js",
+    "mandreel.js",
     "navier-stokes.js", 
     "pdfjs.js",
     "raytrace.js",
@@ -49,6 +50,12 @@ var ignoreTeardown = [
     { name: "gbemu.js" },
 ];
 
+
+//TODO mandreel can be compiled as a test, but not run multiple times unless modified to not have global state
+var compileOnly = {
+    "mandreel.js" : true
+};
+
 var dir = (typeof(__DIR__) == 'undefined') ? "test/script/basic/" : __DIR__;
 
 // TODO: why is this path hard coded when it's defined in project properties?
@@ -61,6 +68,10 @@ var numberOfIterations = 5;
 
 function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+function should_compile_only(name) {
+    return (typeof compile_only !== 'undefined') || compileOnly[name] === true;
 }
 
 function run_one_benchmark(arg, iters) {
@@ -77,14 +88,18 @@ function run_one_benchmark(arg, iters) {
     }
     file_name = file[file.length - 1];
 
-    if (typeof compile_only !== 'undefined') {
+    var compile_and_return = should_compile_only(file_name);
+    if (compile_and_return) {
+	if (typeof compile_only === 'undefined') { //for a run, skip compile onlies, don't even compile them
+	    return;
+	}
 	print("Compiling... " + file_name);
     }
 
     load(path + 'base.js');
     load(arg);
     
-    if (typeof compile_only !== 'undefined') {
+    if (compile_and_return) {
 	print("Compiled OK: " + file_name);
 	print("");
 	return;
@@ -164,7 +179,7 @@ function run_one_benchmark(arg, iters) {
 
 function run_suite(tests, iters) {
     for (var idx = 0; idx < tests.length; idx++) {
-	run_one_benchmark(tests[idx], iters, false);
+	run_one_benchmark(tests[idx], iters);
     }
 }
 

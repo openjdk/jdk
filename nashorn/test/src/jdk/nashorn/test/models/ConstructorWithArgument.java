@@ -23,14 +23,18 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public class DessertToppingFloorWaxDriver {
-    public void decorateDessert(DessertTopping dt) {
-        dt.pourOnDessert();
+public abstract class ConstructorWithArgument {
+    private final String token;
+
+    protected ConstructorWithArgument(String token) {
+        this.token = token;
     }
 
-    public void waxFloor(FloorWax fw) {
-        fw.shineUpTheFloor();
+    public String getToken() {
+        return token;
     }
+
+    protected abstract void doSomething();
 }

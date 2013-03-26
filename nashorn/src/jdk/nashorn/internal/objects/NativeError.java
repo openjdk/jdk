@@ -317,7 +317,7 @@ public final class NativeError extends ScriptObject {
             return name;
         }
         // Step 10 : return name + ": " + msg
-        return (String)name + ": " + (String)msg;
+        return name + ": " + msg;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

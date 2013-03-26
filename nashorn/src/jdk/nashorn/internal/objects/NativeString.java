@@ -122,6 +122,19 @@ public final class NativeString extends ScriptObject {
         return value.length();
     }
 
+    // This is to support length as method call as well.
+    @Override
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
+        final String name = desc.getNameToken(2);
+
+        // if str.length(), then let the bean linker handle it
+        if ("length".equals(name) && "getMethod".equals(operator)) {
+            return null;
+        }
+
+        return super.findGetMethod(desc, request, operator);
+    }
+
     // This is to provide array-like access to string characters without creating a NativeString wrapper.
     @Override
     protected GuardedInvocation findGetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) {

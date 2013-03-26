@@ -27,7 +27,7 @@
  */
 
 function model(n) {
-  return Java.type("jdk.nashorn.internal.test.models." + n)
+  return Java.type("jdk.nashorn.test.models." + n)
 }
 
 // Can't extend a final class  

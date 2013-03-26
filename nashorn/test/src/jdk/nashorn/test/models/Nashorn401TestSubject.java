@@ -23,22 +23,35 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public class OverrideObject {
-    @Override
-    public int hashCode() {
-        return 5;
+public class Nashorn401TestSubject {
+    public String method2(int arg) {
+        return "int method 2";
     }
 
-    @Override
-    public String toString() {
-        return "override-object";
+    public String method2(double arg) {
+        return "double method 2";
     }
 
-    @Override
-    public boolean equals(Object o) {
-        // TODO: add a FindBugs annotation to ignore EQ_ALWAYS_FALSE here. This is just a test.
-        return false;
+    public String method2(String arg) {
+        return "string method 2";
     }
+
+    public String method3(double arg) {
+        return "double method 3: " + arg;
+    }
+
+    public String method3(int arg) {
+        return "int method 3: " + arg;
+    }
+
+    public String method4(Double arg) {
+        return "double method 4: " + arg;
+    }
+
+    public String method4(int arg) {
+        return "int method 4: " + arg;
+    }
+
 }

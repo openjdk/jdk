@@ -35,7 +35,7 @@ import jdk.nashorn.internal.runtime.Source;
  */
 public class BinaryNode extends UnaryNode {
     /** Left hand side argument. */
-    protected Node lhs;
+    private Node lhs;
 
     /**
      * Constructor
@@ -140,6 +140,11 @@ public class BinaryNode extends UnaryNode {
     }
 
     @Override
+    public Node setAssignmentDest(Node n) {
+        return setLHS(n);
+    }
+
+    @Override
     public Node getAssignmentSource() {
         return rhs();
     }
@@ -163,10 +168,9 @@ public class BinaryNode extends UnaryNode {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            lhs = lhs.accept(visitor);
-            rhs = rhs.accept(visitor);
-            return visitor.leave(this);
+        if (visitor.enterBinaryNode(this) != null) {
+            // TODO: good cause for a separate visitMembers: we could delegate to UnaryNode.visitMembers
+            return visitor.leaveBinaryNode((BinaryNode)setLHS(lhs.accept(visitor)).setRHS(rhs().accept(visitor)));
         }
 
         return this;
@@ -229,8 +233,12 @@ public class BinaryNode extends UnaryNode {
     /**
      * Set the left hand side expression for this node
      * @param lhs new left hand side expression
+     * @return a node equivalent to this one except for the requested change.
      */
-    public void setLHS(final Node lhs) {
-        this.lhs = lhs;
+    public BinaryNode setLHS(final Node lhs) {
+        if(this.lhs == lhs) return this;
+        final BinaryNode n = (BinaryNode)clone();
+        n.lhs = lhs;
+        return n;
     }
 }

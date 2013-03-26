@@ -47,7 +47,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
-import jdk.nashorn.internal.runtime.Version;
 import netscape.javascript.JSObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -129,7 +128,6 @@ public class ScriptEngineTest {
         assertEquals(fac.getParameter(ScriptEngine.NAME), "javascript");
         assertEquals(fac.getLanguageVersion(), "ECMA - 262 Edition 5.1");
         assertEquals(fac.getEngineName(), "Oracle Nashorn");
-        assertEquals(fac.getEngineVersion(), Version.version());
         assertEquals(fac.getOutputStatement("context"), "print(context)");
         assertEquals(fac.getProgram("print('hello')", "print('world')"), "print('hello');print('world');");
         assertEquals(fac.getParameter(ScriptEngine.NAME), "javascript");
@@ -285,6 +283,68 @@ public class ScriptEngineTest {
         }
     }
 
+    public interface Foo {
+        public void bar();
+    }
+
+    public interface Foo2 extends Foo {
+        public void bar2();
+    }
+
+    @Test
+    public void getInterfaceMissingTest() {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("nashorn");
+
+        // don't define any function.
+        try {
+            engine.eval("");
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+
+        Runnable runnable = ((Invocable)engine).getInterface(Runnable.class);
+        if (runnable != null) {
+            fail("runnable is not null!");
+        }
+
+        // now define "run"
+        try {
+            engine.eval("function run() { print('this is run function'); }");
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+        runnable = ((Invocable)engine).getInterface(Runnable.class);
+        // should not return null now!
+        runnable.run();
+
+        // define only one method of "Foo2"
+        try {
+            engine.eval("function bar() { print('bar function'); }");
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+
+        Foo2 foo2 = ((Invocable)engine).getInterface(Foo2.class);
+        if (foo2 != null) {
+            throw new RuntimeException("foo2 is not null!");
+        }
+
+        // now define other method of "Foo2"
+        try {
+            engine.eval("function bar2() { print('bar2 function'); }");
+        } catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+        }
+        foo2 = ((Invocable)engine).getInterface(Foo2.class);
+        foo2.bar();
+        foo2.bar2();
+    }
+
     @Test
     public void accessGlobalTest() {
         final ScriptEngineManager m = new ScriptEngineManager();
@@ -308,27 +368,6 @@ public class ScriptEngineTest {
             e.put("y", "foo");
             e.eval("print(y)");
         } catch (final ScriptException exp) {
-            exp.printStackTrace();
-            fail(exp.getMessage());
-        }
-    }
-
-    public static void alert(final Object msg) {
-        System.out.println(msg);
-    }
-
-    @Test
-    public void exposeMethodTest() {
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-
-        try {
-            final Method alert = ScriptEngineTest.class.getMethod("alert", Object.class);
-            // expose a Method object as global var.
-            e.put("alert", alert);
-            // call the global var.
-            e.eval("alert.invoke(null, 'alert! alert!!')");
-        } catch (final NoSuchMethodException | SecurityException | ScriptException exp) {
             exp.printStackTrace();
             fail(exp.getMessage());
         }
@@ -590,13 +629,6 @@ public class ScriptEngineTest {
             exp.printStackTrace();
             fail(exp.getMessage());
         }
-    }
-
-    @Test
-    public void versionTest() {
-        final ScriptEngineManager m = new ScriptEngineManager();
-        final ScriptEngine e = m.getEngineByName("nashorn");
-        assertEquals(e.getFactory().getEngineVersion(), Version.version());
     }
 
     @Test
@@ -873,27 +905,5 @@ public class ScriptEngineTest {
             se.printStackTrace();
             fail(se.getMessage());
         }
-    }
-
-    @Test
-    public void factoryOptionsTest() {
-        final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
-            if (fac instanceof NashornScriptEngineFactory) {
-                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
-                // specify --no-syntax-extensions flag
-                final String[] options = new String[] { "--no-syntax-extensions" };
-                final ScriptEngine e = nfac.getScriptEngine(options);
-                try {
-                    // try nashorn specific extension
-                    e.eval("var f = funtion(x) 2*x;");
-                    fail("should have thrown exception!");
-                } catch (final ScriptException se) {
-                }
-                return;
-            }
-        }
-
-        fail("Cannot find nashorn factory!");
     }
 }

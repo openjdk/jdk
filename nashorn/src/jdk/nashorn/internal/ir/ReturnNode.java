@@ -100,12 +100,12 @@ public class ReturnNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterReturnNode(this) != null) {
             if (expression != null) {
                 expression = expression.accept(visitor);
             }
 
-            return visitor.leave(this);
+            return visitor.leaveReturnNode(this);
         }
 
         return this;
