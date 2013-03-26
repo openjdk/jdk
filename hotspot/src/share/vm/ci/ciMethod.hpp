@@ -166,8 +166,9 @@ class ciMethod : public ciMetadata {
   // Code size for inlining decisions.
   int code_size_for_inlining();
 
-  bool force_inline() { return get_Method()->force_inline(); }
-  bool dont_inline()  { return get_Method()->dont_inline();  }
+  bool caller_sensitive() { return get_Method()->caller_sensitive(); }
+  bool force_inline()     { return get_Method()->force_inline();     }
+  bool dont_inline()      { return get_Method()->dont_inline();      }
 
   int comp_level();
   int highest_osr_comp_level();
@@ -263,6 +264,9 @@ class ciMethod : public ciMetadata {
   bool ensure_method_data();  // make sure it exists in the VM also
   int instructions_size();
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
+
+  // Stack walking support
+  bool is_ignored_by_security_stack_walk() const;
 
   // JSR 292 support
   bool is_method_handle_intrinsic()  const;
