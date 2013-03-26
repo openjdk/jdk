@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,12 @@
 #include "jni_util.h"
 
 /*
- * Prototypes for functions in io_util_md.c called from io_util,
+ * Macros to use the right data type for file descriptors
+ */
+#define FD jlong
+
+/*
+ * Prototypes for functions in io_util_md.c called from io_util.c,
  * FileDescriptor.c, FileInputStream.c, FileOutputStream.c
  */
 WCHAR* pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE);
@@ -35,26 +40,20 @@ WCHAR* fileToNTPath(JNIEnv *env, jobject file, jfieldID id);
 WCHAR* getPrefixed(const WCHAR* path, int pathlen);
 WCHAR* currentDir(int di);
 int currentDirLength(const WCHAR* path, int pathlen);
-void fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags);
-int handleAvailable(jlong fd, jlong *pbytes);
-JNIEXPORT int handleSync(jlong fd);
-int handleSetLength(jlong fd, jlong length);
-JNIEXPORT jint handleRead(jlong fd, void *buf, jint len);
-JNIEXPORT jint handleWrite(jlong fd, const void *buf, jint len);
-JNIEXPORT jint handleAppend(jlong fd, const void *buf, jint len);
+int handleAvailable(FD fd, jlong *pbytes);
+int handleSync(FD fd);
+int handleSetLength(FD fd, jlong length);
+JNIEXPORT jint handleRead(FD fd, void *buf, jint len);
+jint handleWrite(FD fd, const void *buf, jint len);
+jint handleAppend(FD fd, const void *buf, jint len);
 jint handleClose(JNIEnv *env, jobject this, jfieldID fid);
-jlong handleLseek(jlong fd, jlong offset, jint whence);
+jlong handleLseek(FD fd, jlong offset, jint whence);
 
 /*
  * Returns an opaque handle to file named by "path".  If an error occurs,
  * returns -1 and an exception is pending.
  */
-jlong winFileHandleOpen(JNIEnv *env, jstring path, int flags);
-
-/*
- * Macros to use the right data type for file descriptors
- */
-#define FD jlong
+FD winFileHandleOpen(JNIEnv *env, jstring path, int flags);
 
 /*
  * Macros to set/get fd from the java.io.FileDescriptor.

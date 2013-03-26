@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,4 +136,36 @@ char* nativeGetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy) 
     }
     else
         return NULL;
+}
+
+void* getProcessHandle() {
+    return (void*)GetModuleHandle(NULL);
+}
+
+/*
+ * Windows symbols can be simple like JNI_OnLoad or __stdcall format
+ * like _JNI_OnLoad@8. We need to handle both.
+ */
+void buildJniFunctionName(const char *sym, const char *cname,
+                          char *jniEntryName) {
+    if (cname != NULL) {
+        char *p = strrchr(sym, '@');
+        if (p != NULL && p != sym) {
+            // sym == _JNI_OnLoad@8
+            strncpy(jniEntryName, sym, (p - sym));
+            jniEntryName[(p-sym)] = '\0';
+            // jniEntryName == _JNI_OnLoad
+            strcat(jniEntryName, "_");
+            strcat(jniEntryName, cname);
+            strcat(jniEntryName, p);
+            //jniEntryName == _JNI_OnLoad_cname@8
+        } else {
+            strcpy(jniEntryName, sym);
+            strcat(jniEntryName, "_");
+            strcat(jniEntryName, cname);
+        }
+    } else {
+        strcpy(jniEntryName, sym);
+    }
+    return;
 }

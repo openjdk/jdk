@@ -134,7 +134,7 @@ public class LanguageTag {
     }
 
     /*
-     * BNF in RFC5464
+     * BNF in RFC5646
      *
      * Language-Tag  = langtag             ; normal language tags
      *               / privateuse          ; private use tag
