@@ -28,7 +28,7 @@
  * @run
  */
 var l = new java.util.ArrayList();
-print("l.class.name=" + l.class.name) // Has "class" property like any POJO
+print("l.class.name=" + Java.typeName(l.class)) // Has "class" property like any POJO
 
 l.add("foo")
 l.add("bar")

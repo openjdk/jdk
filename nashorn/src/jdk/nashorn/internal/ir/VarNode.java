@@ -38,8 +38,8 @@ public class VarNode extends Node implements Assignment<IdentNode> {
     /** Initialization expression. */
     private Node init;
 
-    /** Is this a function var node */
-    private boolean isFunctionVarNode;
+    /** Is this a var statement (as opposed to a "var" in a for loop statement) */
+    private final boolean isStatement;
 
     /**
      * Constructor
@@ -51,20 +51,34 @@ public class VarNode extends Node implements Assignment<IdentNode> {
      * @param init   init node or null if just a declaration
      */
     public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init) {
+        this(source, token, finish, name, init, true);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param source the source
+     * @param token  token
+     * @param finish finish
+     * @param name   name of variable
+     * @param init   init node or null if just a declaration
+     * @param isStatement if this is a var statement (true), or a for-loop initializer (false)
+     */
+    public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init, boolean isStatement) {
         super(source, token, finish);
 
-        this.name  = name;
+        this.name  = init == null ? name : name.setIsInitializedHere();
         this.init  = init;
-        if (init != null) {
-            this.name.setIsInitializedHere();
-        }
+        this.isStatement = isStatement;
     }
+
 
     private VarNode(final VarNode varNode, final CopyState cs) {
         super(varNode);
 
         this.name = (IdentNode)cs.existingOrCopy(varNode.name);
         this.init = cs.existingOrCopy(varNode.init);
+        this.isStatement = varNode.isStatement;
     }
 
     @Override
@@ -80,6 +94,11 @@ public class VarNode extends Node implements Assignment<IdentNode> {
     @Override
     public IdentNode getAssignmentDest() {
         return isAssignment() ? name : null;
+    }
+
+    @Override
+    public Node setAssignmentDest(IdentNode n) {
+        return setName(n);
     }
 
     @Override
@@ -127,16 +146,19 @@ public class VarNode extends Node implements Assignment<IdentNode> {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            name = (IdentNode)name.accept(visitor);
-
-            if (init != null) {
-                init = init.accept(visitor);
+        if (visitor.enterVarNode(this) != null) {
+            final IdentNode newName = (IdentNode)name.accept(visitor);
+            final Node newInit = init == null ? null : init.accept(visitor);
+            final VarNode newThis;
+            if(name != newName || init != newInit) {
+                newThis = (VarNode)clone();
+                newThis.init = newInit;
+                newThis.name = newInit == null ? newName : newName.setIsInitializedHere();
+            } else {
+                newThis = this;
             }
-
-            return visitor.leave(this);
+            return visitor.leaveVarNode(newThis);
         }
-
         return this;
     }
 
@@ -162,9 +184,13 @@ public class VarNode extends Node implements Assignment<IdentNode> {
     /**
      * Reset the initialization expression
      * @param init new initialization expression
+     * @return a node equivalent to this one except for the requested change.
      */
-    public void setInit(final Node init) {
-        this.init = init;
+    public VarNode setInit(final Node init) {
+        if(this.init == init) return this;
+        final VarNode n = (VarNode)clone();
+        n.init = init;
+        return n;
     }
 
     /**
@@ -179,30 +205,26 @@ public class VarNode extends Node implements Assignment<IdentNode> {
      * Reset the identifier for this VarNode
      * @param name new IdentNode representing the variable being set or declared
      */
-    public void setName(final IdentNode name) {
-        this.name = name;
+    private VarNode setName(final IdentNode name) {
+        if(this.name == name) return this;
+        final VarNode n = (VarNode)clone();
+        n.name = name;
+        return n;
     }
 
     /**
-     * Check if this is a virtual assignment of a function node. Function nodes declared
-     * with a name are hoisted to the top of the scope and appear as symbols too. This is
-     * implemented by representing them as virtual VarNode assignments added to the code
-     * during lowering
-     *
-     * @see FunctionNode
-     *
-     * @return true if this is a virtual function declaration
+     * Returns true if this is a var statement (as opposed to a var initializer in a for loop).
+     * @return true if this is a var statement (as opposed to a var initializer in a for loop).
      */
-    public boolean isFunctionVarNode() {
-        return isFunctionVarNode;
+    public boolean isStatement() {
+        return isStatement;
     }
 
     /**
-     * Flag this var node as a virtual function var node assignment as described in
-     * {@link VarNode#isFunctionVarNode()}
+     * Returns true if this is a function declaration.
+     * @return true if this is a function declaration.
      */
-    public void setIsFunctionVarNode() {
-        this.isFunctionVarNode = true;
+    public boolean isFunctionDeclaration() {
+        return init instanceof FunctionNode && ((FunctionNode)init).isDeclared();
     }
-
 }

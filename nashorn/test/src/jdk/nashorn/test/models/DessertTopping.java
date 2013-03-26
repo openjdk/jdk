@@ -23,8 +23,8 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public final class FinalClass {
-    //empty
+public interface DessertTopping {
+    public String pourOnDessert();
 }

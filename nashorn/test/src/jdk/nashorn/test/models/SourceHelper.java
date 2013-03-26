@@ -23,8 +23,33 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public interface DessertTopping {
-    public String pourOnDessert();
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.net.URL;
+import jdk.nashorn.internal.runtime.Source;
+
+/**
+ * Helper class to facilitate script access of nashorn Source class.
+ */
+public final class SourceHelper {
+    private SourceHelper() {}
+
+    public static String baseURL(final URL url) {
+        return Source.baseURL(url);
+    }
+
+    public static String readFully(final File file) throws IOException {
+        return new String(Source.readFully(file));
+    }
+
+    public static String readFully(final URL url) throws IOException {
+        return new Source(url.toString(), url).getString();
+    }
+
+    public static String readFully(final Reader reader) throws IOException {
+        return new String(Source.readFully(reader));
+    }
 }

@@ -23,9 +23,12 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public interface OverloadedSam {
-    public void sam(String s);
-    public void sam(String s1, String s2);
+public abstract class Toothpaste {
+    public void applyToBrush() {
+        applyToBrushImpl();
+    }
+
+    protected abstract void applyToBrushImpl();
 }
