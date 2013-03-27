@@ -517,9 +517,9 @@ cmsNAMEDCOLORLIST* CMSEXPORT cmsAllocNamedColorList(cmsContext ContextID, cmsUIn
     while (v -> Allocated < n)
         GrowNamedColorList(v);
 
-    strncpy(v ->Prefix, Prefix, sizeof(v ->Prefix));
-    strncpy(v ->Suffix, Suffix, sizeof(v ->Suffix));
-    v->Prefix[32] = v->Suffix[32] = 0;
+    strncpy(v ->Prefix, Prefix, sizeof(v ->Prefix) - 1);
+    strncpy(v ->Suffix, Suffix, sizeof(v ->Suffix) - 1);
+    v->Prefix[sizeof(v ->Prefix) - 1] = v->Suffix[sizeof(v ->Suffix) - 1] = 0;
 
     v -> ColorantCount = ColorantCount;
 
@@ -577,9 +577,10 @@ cmsBool  CMSEXPORT cmsAppendNamedColor(cmsNAMEDCOLORLIST* NamedColorList,
     if (Name != NULL) {
 
         strncpy(NamedColorList ->List[NamedColorList ->nColors].Name, Name,
-                    sizeof(NamedColorList ->List[NamedColorList ->nColors].Name));
+                    sizeof(NamedColorList ->List[NamedColorList ->nColors].Name) - 1);
 
-        NamedColorList ->List[NamedColorList ->nColors].Name[cmsMAX_PATH-1] = 0;
+        NamedColorList ->List[NamedColorList ->nColors].
+            Name[sizeof(NamedColorList ->List[NamedColorList ->nColors].Name) - 1] = 0;
 
     }
     else
