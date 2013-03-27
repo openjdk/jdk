@@ -184,7 +184,7 @@ class os: AllStatic {
   }
   static julong available_memory();
   static julong physical_memory();
-  static julong allocatable_physical_memory(julong size);
+  static bool has_allocatable_memory_limit(julong* limit);
   static bool is_server_class_machine();
 
   // number of CPUs
