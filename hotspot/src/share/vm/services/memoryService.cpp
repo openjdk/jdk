@@ -60,11 +60,9 @@ GrowableArray<MemoryPool*>* MemoryService::_pools_list =
 GrowableArray<MemoryManager*>* MemoryService::_managers_list =
   new (ResourceObj::C_HEAP, mtInternal) GrowableArray<MemoryManager*>(init_managers_list_size, true);
 
-GCMemoryManager* MemoryService::_minor_gc_manager     = NULL;
-GCMemoryManager* MemoryService::_major_gc_manager     = NULL;
-MemoryPool*      MemoryService::_code_heap_pool       = NULL;
-MemoryPool*      MemoryService::_metaspace_pool       = NULL;
-MemoryPool*      MemoryService::_class_metaspace_pool = NULL;
+GCMemoryManager* MemoryService::_minor_gc_manager = NULL;
+GCMemoryManager* MemoryService::_major_gc_manager = NULL;
+MemoryPool*      MemoryService::_code_heap_pool   = NULL;
 
 class GcThreadCountClosure: public ThreadClosure {
  private:
@@ -398,19 +396,6 @@ void MemoryService::add_code_heap_memory_pool(CodeHeap* heap) {
   mgr->add_pool(_code_heap_pool);
 
   _pools_list->append(_code_heap_pool);
-  _managers_list->append(mgr);
-}
-
-void MemoryService::add_metaspace_memory_pools() {
-  _metaspace_pool = new MetaspacePool();
-  _class_metaspace_pool = new ClassMetaspacePool();
-
-  MemoryManager* mgr = MemoryManager::get_metaspace_memory_manager();
-  mgr->add_pool(_metaspace_pool);
-  mgr->add_pool(_class_metaspace_pool);
-
-  _pools_list->append(_metaspace_pool);
-  _pools_list->append(_class_metaspace_pool);
   _managers_list->append(mgr);
 }
 
