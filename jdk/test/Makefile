@@ -514,7 +514,7 @@ jdk_other: $(call TestDirs, \
 	  java/sql javax/sql \
           javax/smartcardio \
 	  javax/xml/soap \
-	  javax/xml/ws com/sun/internal/ws \
+	  javax/xml/ws com/sun/internal/ws com/sun/org/glassfish \
 	  jdk/asm \
 	  com/sun/org/apache/xerces \
           com/sun/corba \
