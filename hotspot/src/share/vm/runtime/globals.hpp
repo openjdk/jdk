@@ -1962,6 +1962,10 @@ class CommandLineFlags {
   product(uintx, InitialRAMFraction, 64,                                    \
           "Fraction (1/n) of real memory used for initial heap size")       \
                                                                             \
+  develop(uintx, MaxVirtMemFraction, 2,                                     \
+          "Maximum fraction (1/n) of virtual memory used for ergonomically" \
+          "determining maximum heap size")                                  \
+                                                                            \
   product(bool, UseAutoGCSelectPolicy, false,                               \
           "Use automatic collection selection policy")                      \
                                                                             \

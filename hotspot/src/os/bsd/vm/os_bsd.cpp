@@ -167,20 +167,6 @@ julong os::physical_memory() {
   return Bsd::physical_memory();
 }
 
-julong os::allocatable_physical_memory(julong size) {
-#ifdef _LP64
-  return size;
-#else
-  julong result = MIN2(size, (julong)3800*M);
-   if (!is_allocatable(result)) {
-     // See comments under solaris for alignment considerations
-     julong reasonable_size = (julong)2*G - 2 * os::vm_page_size();
-     result =  MIN2(size, reasonable_size);
-   }
-   return result;
-#endif // _LP64
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // environment support
 

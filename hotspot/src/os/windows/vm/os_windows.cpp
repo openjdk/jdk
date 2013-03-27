@@ -686,12 +686,17 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
-julong os::allocatable_physical_memory(julong size) {
+bool os::has_allocatable_memory_limit(julong* limit) {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
 #ifdef _LP64
-  return size;
+  *limit = (julong)ms.ullAvailVirtual;
+  return true;
 #else
   // Limit to 1400m because of the 2gb address space wall
-  return MIN2(size, (julong)1400*M);
+  *limit = MIN2((julong)1400*M, (julong)ms.ullAvailVirtual);
+  return true;
 #endif
 }
 
