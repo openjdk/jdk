@@ -2185,10 +2185,9 @@ Symbol* SystemDictionary::find_resolution_error(constantPoolHandle pool, int whi
 // Make sure all class components (including arrays) in the given
 // signature will be resolved to the same class in both loaders.
 // Returns the name of the type that failed a loader constraint check, or
-// NULL if no constraint failed. The returned C string needs cleaning up
-// with a ResourceMark in the caller.  No exception except OOME is thrown.
+// NULL if no constraint failed.  No exception except OOME is thrown.
 // Arrays are not added to the loader constraint table, their elements are.
-char* SystemDictionary::check_signature_loaders(Symbol* signature,
+Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
                                                Handle loader1, Handle loader2,
                                                bool is_method, TRAPS)  {
   // Nothing to do if loaders are the same.
@@ -2196,14 +2195,12 @@ char* SystemDictionary::check_signature_loaders(Symbol* signature,
     return NULL;
   }
 
-  ResourceMark rm(THREAD);
   SignatureStream sig_strm(signature, is_method);
   while (!sig_strm.is_done()) {
     if (sig_strm.is_object()) {
-      Symbol* s = sig_strm.as_symbol(CHECK_NULL);
-      Symbol*  sig  = s;
+      Symbol* sig = sig_strm.as_symbol(CHECK_NULL);
       if (!add_loader_constraint(sig, loader1, loader2, THREAD)) {
-        return sig->as_C_string();
+        return sig;
       }
     }
     sig_strm.next();

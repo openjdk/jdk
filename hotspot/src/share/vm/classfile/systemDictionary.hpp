@@ -483,8 +483,8 @@ public:
   // Check class loader constraints
   static bool add_loader_constraint(Symbol* name, Handle loader1,
                                     Handle loader2, TRAPS);
-  static char* check_signature_loaders(Symbol* signature, Handle loader1,
-                                       Handle loader2, bool is_method, TRAPS);
+  static Symbol* check_signature_loaders(Symbol* signature, Handle loader1,
+                                         Handle loader2, bool is_method, TRAPS);
 
   // JSR 292
   // find a java.lang.invoke.MethodHandle.invoke* method for a given signature
