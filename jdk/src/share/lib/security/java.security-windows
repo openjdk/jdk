@@ -170,7 +170,8 @@ package.access=sun.,\
                com.sun.org.apache.xml.internal.serializer.utils.,\
                com.sun.org.apache.xml.internal.utils.,\
                com.sun.org.glassfish.,\
-	       jdk.internal.
+               jdk.internal.\
+               com.sun.java.accessibility.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -206,7 +207,8 @@ package.definition=sun.,\
                    com.sun.org.apache.xml.internal.serializer.utils.,\
                    com.sun.org.apache.xml.internal.utils.,\
                    com.sun.org.glassfish.,\
-		   jdk.internal.
+                   jdk.internal.\
+                   com.sun.java.accessibility.
 
 #
 # Determines whether this properties file can be appended to
