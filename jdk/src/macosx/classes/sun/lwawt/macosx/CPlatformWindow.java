@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import com.apple.laf.*;
 import com.apple.laf.ClientPropertyApplicator.Property;
 import com.sun.awt.AWTUtilities;
 
-public final class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
+public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
     private native long nativeCreateNSWindow(long nsViewPtr, long styleBits, double x, double y, double w, double h);
     private static native void nativeSetNSWindowStyleBits(long nsWindowPtr, int mask, int data);
     private static native void nativeSetNSWindowMenuBar(long nsWindowPtr, long menuBarPtr);
@@ -200,9 +200,9 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
 
     private Window target;
     private LWWindowPeer peer;
-    private CPlatformView contentView;
-    private CPlatformWindow owner;
-    private boolean visible = false; // visibility status from native perspective
+    protected CPlatformView contentView;
+    protected CPlatformWindow owner;
+    protected boolean visible = false; // visibility status from native perspective
     private boolean undecorated; // initialized in getInitialStyleBits()
     private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
     private CPlatformResponder responder;
@@ -226,19 +226,12 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
 
         final int styleBits = getInitialStyleBits();
 
-        // TODO: handle these misc properties
-        final long parentNSWindowPtr = (owner != null ? owner.getNSWindowPtr() : 0);
-        String warningString = target.getWarningString();
-
-        responder = new CPlatformResponder(peer, false);
-        contentView = new CPlatformView();
+        responder = createPlatformResponder();
+        contentView = createContentView();
         contentView.initialize(peer, responder);
 
         final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(), styleBits, 0, 0, 0, 0);
         setPtr(nativeWindowPtr);
-
-        // TODO: implement on top of JObjC bridged class
-    //    NSWindow window = JObjC.getInstance().AppKit().NSWindow().getInstance(nativeWindowPtr, JObjCRuntime.getInstance());
 
         if (target instanceof javax.swing.RootPaneContainer) {
             final javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer)target).getRootPane();
@@ -253,7 +246,15 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         validateSurface();
     }
 
-    private int getInitialStyleBits() {
+    protected CPlatformResponder createPlatformResponder() {
+        return new CPlatformResponder(peer, false);
+    }
+
+    protected CPlatformView createContentView() {
+        return new CPlatformView();
+    }
+
+    protected int getInitialStyleBits() {
         // defaults style bits
         int styleBits = DECORATED | HAS_SHADOW | CLOSEABLE | MINIMIZABLE | ZOOMABLE | RESIZABLE;
 
@@ -452,7 +453,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     }
 
     private void maximize() {
-        if (isMaximized()) {
+        if (peer == null || isMaximized()) {
             return;
         }
         if (!undecorated) {
@@ -487,7 +488,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         }
     }
 
-    private boolean isVisible() {
+    public boolean isVisible() {
         return this.visible;
     }
 
@@ -519,7 +520,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         updateFocusabilityForAutoRequestFocus(false);
 
         // Actually show or hide the window
-        LWWindowPeer blocker = peer.getBlocker();
+        LWWindowPeer blocker = (peer == null)? null : peer.getBlocker();
         if (blocker == null || !visible) {
             // If it ain't blocked, or is being hidden, go regular way
             if (visible) {
@@ -711,7 +712,8 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     @Override
     public void setOpaque(boolean isOpaque) {
         CWrapper.NSWindow.setOpaque(getNSWindowPtr(), isOpaque);
-        if (!isOpaque && !peer.isTextured()) {
+        boolean isTextured = (peer == null)? false : peer.isTextured();
+        if (!isOpaque && !isTextured) {
             long clearColor = CWrapper.NSColor.clearColor();
             CWrapper.NSWindow.setBackgroundColor(getNSWindowPtr(), clearColor);
         }
@@ -751,8 +753,13 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     }
 
     @Override
+    public boolean isFullScreenMode() {
+        return isFullScreenMode;
+    }
+
+    @Override
     public void setWindowState(int windowState) {
-        if (!peer.isVisible()) {
+        if (peer == null || !peer.isVisible()) {
             // setVisible() applies the state
             return;
         }
@@ -875,7 +882,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
         responder.handleWindowFocusEvent(gained, oppositePeer);
     }
 
-    private void deliverMoveResizeEvent(int x, int y, int width, int height,
+    protected void deliverMoveResizeEvent(int x, int y, int width, int height,
                                         boolean byUser) {
         // when the content view enters the full-screen mode, the native
         // move/resize notifications contain a bounds smaller than
@@ -887,7 +894,11 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
 
         final Rectangle oldB = nativeBounds;
         nativeBounds = new Rectangle(x, y, width, height);
-        peer.notifyReshape(x, y, width, height);
+
+        if (peer != null) {
+            peer.notifyReshape(x, y, width, height);
+        }
+
         if ((byUser && !oldB.getSize().equals(nativeBounds.getSize()))
             || isFullScreenAnimationOn) {
             flushBuffers();
@@ -895,21 +906,29 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     }
 
     private void deliverWindowClosingEvent() {
-        if (peer.getBlocker() == null)  {
-            peer.postEvent(new WindowEvent(target, WindowEvent.WINDOW_CLOSING));
+        if (peer != null) {
+            if (peer.getBlocker() == null)  {
+                peer.postEvent(new WindowEvent(target, WindowEvent.WINDOW_CLOSING));
+            }
         }
     }
 
     private void deliverIconify(final boolean iconify) {
-        peer.notifyIconify(iconify);
+        if (peer != null) {
+            peer.notifyIconify(iconify);
+        }
     }
 
     private void deliverZoom(final boolean isZoomed) {
-        peer.notifyZoom(isZoomed);
+        if (peer != null) {
+            peer.notifyZoom(isZoomed);
+        }
     }
 
     private void deliverNCMouseDown() {
-        peer.notifyNCMouseDown();
+        if (peer != null) {
+            peer.notifyNCMouseDown();
+        }
     }
 
     /*
@@ -917,6 +936,10 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
      * may become natively focusable window.
      */
     private boolean isNativelyFocusableWindow() {
+        if (peer == null) {
+            return false;
+        }
+
         return !peer.isSimpleWindow() && target.getFocusableWindowState();
     }
 
@@ -931,7 +954,7 @@ public final class CPlatformWindow extends CFRetainedResource implements Platfor
     }
 
     private boolean checkBlocking() {
-        LWWindowPeer blocker = peer.getBlocker();
+        LWWindowPeer blocker = (peer == null)? null : peer.getBlocker();
         if (blocker == null) {
             return false;
         }

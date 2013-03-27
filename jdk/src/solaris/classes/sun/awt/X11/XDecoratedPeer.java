@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.WindowEvent;
 
+import sun.awt.IconInfo;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.AWTAccessor;
@@ -106,7 +107,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         focusProxy = createFocusProxy();
     }
 
-    void setIconHints(java.util.List<XIconInfo> icons) {
+    void setIconHints(java.util.List<IconInfo> icons) {
         if (!XWM.getWM().setNetWMIcon(this, icons)) {
             if (icons.size() > 0) {
                 if (iconWindow == null) {

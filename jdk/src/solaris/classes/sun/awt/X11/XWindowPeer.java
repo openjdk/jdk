@@ -30,8 +30,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
 
-import java.awt.image.BufferedImage;
-
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
 
@@ -55,6 +53,7 @@ import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
+import sun.awt.IconInfo;
 
 import sun.java2d.pipe.Region;
 
@@ -292,7 +291,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         Window target = (Window)this.target;
         java.util.List<Image> iconImages = ((Window)target).getIconImages();
         XWindowPeer ownerPeer = getOwnerPeer();
-        winAttr.icons = new ArrayList<XIconInfo>();
+        winAttr.icons = new ArrayList<IconInfo>();
         if (iconImages.size() != 0) {
             //read icon images from target
             winAttr.iconsInherited = false;
@@ -304,9 +303,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     }
                     continue;
                 }
-                XIconInfo iconInfo;
+                IconInfo iconInfo;
                 try {
-                    iconInfo = new XIconInfo(image);
+                    iconInfo = new IconInfo(image);
                 } catch (Exception e){
                     if (log.isLoggable(PlatformLogger.FINEST)) {
                         log.finest("XWindowPeer.updateIconImages: Perhaps the image passed into Java is broken. Skipping this icon.");
@@ -344,12 +343,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      * It does scale some of these icons to appropriate size
      * if it's necessary.
      */
-    static java.util.List<XIconInfo> normalizeIconImages(java.util.List<XIconInfo> icons) {
-        java.util.List<XIconInfo> result = new ArrayList<XIconInfo>();
+    static java.util.List<IconInfo> normalizeIconImages(java.util.List<IconInfo> icons) {
+        java.util.List<IconInfo> result = new ArrayList<IconInfo>();
         int totalLength = 0;
         boolean haveLargeIcon = false;
 
-        for (XIconInfo icon : icons) {
+        for (IconInfo icon : icons) {
             int width = icon.getWidth();
             int height = icon.getHeight();
             int length = icon.getRawLength();
@@ -390,16 +389,16 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     /*
      * Dumps each icon from the list
      */
-    static void dumpIcons(java.util.List<XIconInfo> icons) {
+    static void dumpIcons(java.util.List<IconInfo> icons) {
         if (iconLog.isLoggable(PlatformLogger.FINEST)) {
             iconLog.finest(">>> Sizes of icon images:");
-            for (Iterator<XIconInfo> i = icons.iterator(); i.hasNext(); ) {
+            for (Iterator<IconInfo> i = icons.iterator(); i.hasNext(); ) {
                 iconLog.finest("    {0}", i.next());
             }
         }
     }
 
-    public void recursivelySetIcon(java.util.List<XIconInfo> icons) {
+    public void recursivelySetIcon(java.util.List<IconInfo> icons) {
         dumpIcons(winAttr.icons);
         setIconHints(icons);
         Window target = (Window)this.target;
@@ -416,28 +415,28 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
-    java.util.List<XIconInfo> getIconInfo() {
+    java.util.List<IconInfo> getIconInfo() {
         return winAttr.icons;
     }
-    void setIconHints(java.util.List<XIconInfo> icons) {
+    void setIconHints(java.util.List<IconInfo> icons) {
         //This does nothing for XWindowPeer,
         //It's overriden in XDecoratedPeer
     }
 
-    private static ArrayList<XIconInfo> defaultIconInfo;
-    protected synchronized static java.util.List<XIconInfo> getDefaultIconInfo() {
+    private static ArrayList<IconInfo> defaultIconInfo;
+    protected synchronized static java.util.List<IconInfo> getDefaultIconInfo() {
         if (defaultIconInfo == null) {
-            defaultIconInfo = new ArrayList<XIconInfo>();
+            defaultIconInfo = new ArrayList<IconInfo>();
             if (XlibWrapper.dataModel == 32) {
-                defaultIconInfo.add(new XIconInfo(XAWTIcon32_java_icon16_png.java_icon16_png));
-                defaultIconInfo.add(new XIconInfo(XAWTIcon32_java_icon24_png.java_icon24_png));
-                defaultIconInfo.add(new XIconInfo(XAWTIcon32_java_icon32_png.java_icon32_png));
-                defaultIconInfo.add(new XIconInfo(XAWTIcon32_java_icon48_png.java_icon48_png));
+                defaultIconInfo.add(new IconInfo(sun.awt.AWTIcon32_java_icon16_png.java_icon16_png));
+                defaultIconInfo.add(new IconInfo(sun.awt.AWTIcon32_java_icon24_png.java_icon24_png));
+                defaultIconInfo.add(new IconInfo(sun.awt.AWTIcon32_java_icon32_png.java_icon32_png));
+                defaultIconInfo.add(new IconInfo(sun.awt.AWTIcon32_java_icon48_png.java_icon48_png));
             } else {
-                defaultIconInfo.add(new XIconInfo(XAWTIcon64_java_icon16_png.java_icon16_png));
-                defaultIconInfo.add(new XIconInfo(XAWTIcon64_java_icon24_png.java_icon24_png));
-                defaultIconInfo.add(new XIconInfo(XAWTIcon64_java_icon32_png.java_icon32_png));
-                defaultIconInfo.add(new XIconInfo(XAWTIcon64_java_icon48_png.java_icon48_png));
+                defaultIconInfo.add(new IconInfo(sun.awt.AWTIcon64_java_icon16_png.java_icon16_png));
+                defaultIconInfo.add(new IconInfo(sun.awt.AWTIcon64_java_icon24_png.java_icon24_png));
+                defaultIconInfo.add(new IconInfo(sun.awt.AWTIcon64_java_icon32_png.java_icon32_png));
+                defaultIconInfo.add(new IconInfo(sun.awt.AWTIcon64_java_icon48_png.java_icon48_png));
             }
         }
         return defaultIconInfo;

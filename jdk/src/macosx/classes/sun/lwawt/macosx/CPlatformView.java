@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,14 +58,18 @@ public class CPlatformView extends CFRetainedResource {
         this.responder = responder;
 
         if (!LWCToolkit.getSunAwtDisableCALayers()) {
-            this.windowLayer = new CGLLayer(peer);
+            this.windowLayer = createCGLayer();
         }
         setPtr(nativeCreateView(0, 0, 0, 0, getWindowLayerPtr()));
     }
 
+    public CGLLayer createCGLayer() {
+        return new CGLLayer(peer);
+    }
+
     public long getAWTView() {
         return ptr;
-        }
+    }
 
     public boolean isOpaque() {
         return !peer.isTranslucent();
@@ -96,6 +100,10 @@ public class CPlatformView extends CFRetainedResource {
         CWrapper.NSView.exitFullScreenMode(ptr);
     }
 
+    public void setToolTip(String msg) {
+        CWrapper.NSView.setToolTip(ptr, msg);
+    }
+
     // ----------------------------------------------------------------------
     // PAINTING METHODS
     // ----------------------------------------------------------------------
@@ -104,7 +112,7 @@ public class CPlatformView extends CFRetainedResource {
             surfaceData = windowLayer.replaceSurfaceData();
         } else {
             if (surfaceData == null) {
-                CGraphicsConfig graphicsConfig = (CGraphicsConfig)peer.getGraphicsConfiguration();
+                CGraphicsConfig graphicsConfig = (CGraphicsConfig)getGraphicsConfiguration();
                 surfaceData = graphicsConfig.createSurfaceData(this);
             } else {
                 validateSurface();
