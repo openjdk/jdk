@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.lwawt.macosx;
 
+import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.lwawt.macosx.event.NSEvent;
 
@@ -338,6 +339,9 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         dialog.setContentPane(op);
 
         dialog.addWindowListener(handler);
+
+        // suppress security warning for untrusted windows
+        AWTAccessor.getWindowAccessor().setTrayIconWindow(dialog, true);
 
         dialog.pack();
 
