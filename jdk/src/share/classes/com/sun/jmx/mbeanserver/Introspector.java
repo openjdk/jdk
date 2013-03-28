@@ -228,6 +228,11 @@ public class Introspector {
         MXBeanIntrospector.getInstance().getAnalyzer(interfaceClass);
     }
 
+    public static void testComplianceMBeanInterface(Class<?> interfaceClass)
+            throws NotCompliantMBeanException{
+        StandardMBeanIntrospector.getInstance().getAnalyzer(interfaceClass);
+    }
+
     /**
      * Basic method for testing if a given class is a JMX compliant
      * Standard MBean.  This method is only called by the legacy code
