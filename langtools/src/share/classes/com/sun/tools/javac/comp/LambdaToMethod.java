@@ -1315,6 +1315,7 @@ public class LambdaToMethod extends TreeTranslator {
             // the generated lambda method will not have type yet, but the
             // enclosing method's name will have been generated with this same
             // method, so it will be unique and never be overloaded.
+            Assert.check(owner.type != null || directlyEnclosingLambda() != null);
             if (owner.type != null) {
                 int methTypeHash = methodSig(owner.type).hashCode();
                 buf.append(Integer.toHexString(methTypeHash));
