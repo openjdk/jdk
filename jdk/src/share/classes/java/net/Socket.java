@@ -682,11 +682,18 @@ class Socket implements java.io.Closeable {
 
     /**
      * Gets the local address to which the socket is bound.
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * the {@link InetAddress#getLoopbackAddress loopback} address is returned.
      *
-     * @return the local address to which the socket is bound, or
-     *         the {@link InetAddress#isAnyLocalAddress wildcard} address
-     *         if the socket is closed or not bound yet.
+     * @return the local address to which the socket is bound,
+     *         the loopback address if denied by the security manager, or
+     *         the wildcard address if the socket is closed or not bound yet.
      * @since   JDK1.1
+     *
+     * @see SecurityManager#checkConnect
      */
     public InetAddress getLocalAddress() {
         // This is for backward compatibility
@@ -695,9 +702,14 @@ class Socket implements java.io.Closeable {
         InetAddress in = null;
         try {
             in = (InetAddress) getImpl().getOption(SocketOptions.SO_BINDADDR);
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+                sm.checkConnect(in.getHostAddress(), -1);
             if (in.isAnyLocalAddress()) {
                 in = InetAddress.anyLocalAddress();
             }
+        } catch (SecurityException e) {
+            in = InetAddress.getLoopbackAddress();
         } catch (Exception e) {
             in = InetAddress.anyLocalAddress(); // "0.0.0.0"
         }
@@ -770,8 +782,7 @@ class Socket implements java.io.Closeable {
     }
 
     /**
-     * Returns the address of the endpoint this socket is bound to, or
-     * <code>null</code> if it is not bound yet.
+     * Returns the address of the endpoint this socket is bound to.
      * <p>
      * If a socket bound to an endpoint represented by an
      * <code>InetSocketAddress </code> is {@link #close closed},
@@ -780,12 +791,23 @@ class Socket implements java.io.Closeable {
      * <code>InetSocketAddress</code>'s address is the
      * {@link InetAddress#isAnyLocalAddress wildcard} address
      * and its port is the local port that it was bound to.
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * a {@code SocketAddress} representing the
+     * {@link InetAddress#getLoopbackAddress loopback} address and the local
+     * port to which this socket is bound is returned.
      *
-     * @return a <code>SocketAddress</code> representing the local endpoint of this
-     *         socket, or <code>null</code> if it is not bound yet.
+     * @return a {@code SocketAddress} representing the local endpoint of
+     *         this socket, or a {@code SocketAddress} representing the
+     *         loopback address if denied by the security manager, or
+     *         {@code null} if the socket is not bound yet.
+     *
      * @see #getLocalAddress()
      * @see #getLocalPort()
      * @see #bind(SocketAddress)
+     * @see SecurityManager#checkConnect
      * @since 1.4
      */
 

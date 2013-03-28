@@ -83,8 +83,8 @@ class SocketChannelImpl
     private int state = ST_UNINITIALIZED;
 
     // Binding
-    private SocketAddress localAddress;
-    private SocketAddress remoteAddress;
+    private InetSocketAddress localAddress;
+    private InetSocketAddress remoteAddress;
 
     // Input/Output open
     private boolean isInputOpen = true;
@@ -146,7 +146,7 @@ class SocketChannelImpl
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
-            return localAddress;
+            return  Net.getRevealedLocalAddress(localAddress);
         }
     }
 
@@ -547,7 +547,7 @@ class SocketChannelImpl
         IOUtil.configureBlocking(fd, block);
     }
 
-    public SocketAddress localAddress() {
+    public InetSocketAddress localAddress() {
         synchronized (stateLock) {
             return localAddress;
         }
@@ -974,6 +974,7 @@ class SocketChannelImpl
         return fdVal;
     }
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append(this.getClass().getSuperclass().getName());
@@ -997,9 +998,10 @@ class SocketChannelImpl
                         sb.append(" oshut");
                     break;
                 }
-                if (localAddress() != null) {
+                InetSocketAddress addr = localAddress();
+                if (addr != null) {
                     sb.append(" local=");
-                    sb.append(localAddress().toString());
+                    sb.append(Net.getRevealedLocalAddressAsString(addr));
                 }
                 if (remoteAddress() != null) {
                     sb.append(" remote=");

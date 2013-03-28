@@ -200,7 +200,13 @@ public class NetworkClient {
     protected InetAddress getLocalAddress() throws IOException {
         if (serverSocket == null)
             throw new IOException("not connected");
-        return serverSocket.getLocalAddress();
+        return  AccessController.doPrivileged(
+                        new PrivilegedAction<InetAddress>() {
+                            public InetAddress run() {
+                                return serverSocket.getLocalAddress();
+
+                            }
+                        });
     }
 
     /** Close an open connection to the server. */
