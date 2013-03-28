@@ -384,18 +384,6 @@ public class LambdaToMethod extends TreeTranslator {
                 Symbol translatedSym = lambdaContext.getSymbolMap(CAPTURED_VAR).get(tree.sym);
                 result = make.Ident(translatedSym).setType(tree.type);
             } else {
-                if (tree.sym.owner.kind == Kinds.TYP) {
-                    for (Map.Entry<Symbol, Symbol> encl_entry : lambdaContext.getSymbolMap(CAPTURED_THIS).entrySet()) {
-                        if (tree.sym.isMemberOf((ClassSymbol) encl_entry.getKey(), types)) {
-                            JCExpression enclRef = make.Ident(encl_entry.getValue());
-                            result = tree.sym.name == names._this
-                                    ? enclRef.setType(tree.type)
-                                    : make.Select(enclRef, tree.sym).setType(tree.type);
-                            result = tree;
-                            return;
-                        }
-                    }
-                }
                 //access to untranslated symbols (i.e. compile-time constants,
                 //members defined inside the lambda body, etc.) )
                 super.visitIdent(tree);
