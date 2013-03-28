@@ -3325,6 +3325,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
   check_deprecated_gcs();
   check_deprecated_gc_flags();
+  if (AssumeMP && !UseSerialGC) {
+    if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
+      warning("If the number of processors is expected to increase from one, then"
+              " you should configure the number of parallel GC threads appropriately"
+              " using -XX:ParallelGCThreads=N");
+    }
+  }
 #else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
