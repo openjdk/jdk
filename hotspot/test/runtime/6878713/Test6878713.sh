@@ -34,57 +34,20 @@
 ## @summary Verifier heap corruption, relating to backward jsrs
 ## @run shell Test6878713.sh
 ##
-
+## some tests require path to find test source dir
 if [ "${TESTSRC}" = "" ]
-then TESTSRC=.
-fi
-
-if [ "${TESTJAVA}" = "" ]
 then
-  PARENT=`dirname \`which java\``
-  TESTJAVA=`dirname ${PARENT}`
-  echo "TESTJAVA not set, selecting " ${TESTJAVA}
-  echo "If this is incorrect, try setting the variable manually."
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
 fi
-
-if [ "${TESTCLASSES}" = "" ]
-then
-  echo "TESTCLASSES not set.  Test cannot execute.  Failed."
-  exit 1
-fi
-
-# set platform-dependent variables
-OS=`uname -s`
-case "$OS" in
-  SunOS | Linux | Darwin )
-    NULL=/dev/null
-    PS=":"
-    FS="/"
-    ;;
-  Windows_* )
-    NULL=NUL
-    PS=";"
-    FS="\\"
-    ;;
-  CYGWIN_* )
-    NULL=/dev/null
-    PS=";"
-    FS="/"
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
-
-CLASSPATH=.${PS}${TESTCLASSES} ; export CLASSPATH
-
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -version
+echo "TESTSRC=${TESTSRC}"
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 TARGET_CLASS=OOMCrashClass1960_2
 
 echo "INFO: extracting the target class."
-${TESTJAVA}${FS}bin${FS}jar xvf \
+${COMPILEJAVA}${FS}bin${FS}jar xvf \
     ${TESTSRC}${FS}testcase.jar ${TARGET_CLASS}.class
 
 # remove any hs_err_pid that might exist here
