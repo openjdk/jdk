@@ -854,7 +854,8 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
   assert(!isHumongous(word_size), "we do not allow humongous TLABs");
 
   unsigned int dummy_gc_count_before;
-  return attempt_allocation(word_size, &dummy_gc_count_before);
+  int dummy_gclocker_retry_count = 0;
+  return attempt_allocation(word_size, &dummy_gc_count_before, &dummy_gclocker_retry_count);
 }
 
 HeapWord*
@@ -863,14 +864,14 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   assert_heap_not_locked_and_not_at_safepoint();
 
   // Loop until the allocation is satisified, or unsatisfied after GC.
-  for (int try_count = 1; /* we'll return */; try_count += 1) {
+  for (int try_count = 1, gclocker_retry_count = 0; /* we'll return */; try_count += 1) {
     unsigned int gc_count_before;
 
     HeapWord* result = NULL;
     if (!isHumongous(word_size)) {
-      result = attempt_allocation(word_size, &gc_count_before);
+      result = attempt_allocation(word_size, &gc_count_before, &gclocker_retry_count);
     } else {
-      result = attempt_allocation_humongous(word_size, &gc_count_before);
+      result = attempt_allocation_humongous(word_size, &gc_count_before, &gclocker_retry_count);
     }
     if (result != NULL) {
       return result;
@@ -894,6 +895,9 @@ G1CollectedHeap::mem_allocate(size_t word_size,
       }
       return result;
     } else {
+      if (gclocker_retry_count > GCLockerRetryAllocationCount) {
+        return NULL;
+      }
       assert(op.result() == NULL,
              "the result should be NULL if the VM op did not succeed");
     }
@@ -910,7 +914,8 @@ G1CollectedHeap::mem_allocate(size_t word_size,
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
-                                           unsigned int *gc_count_before_ret) {
+                                           unsigned int *gc_count_before_ret,
+                                           int* gclocker_retry_count_ret) {
   // Make sure you read the note in attempt_allocation_humongous().
 
   assert_heap_not_locked_and_not_at_safepoint();
@@ -986,10 +991,16 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
         return NULL;
       }
     } else {
+      if (*gclocker_retry_count_ret > GCLockerRetryAllocationCount) {
+        MutexLockerEx x(Heap_lock);
+        *gc_count_before_ret = total_collections();
+        return NULL;
+      }
       // The GCLocker is either active or the GCLocker initiated
       // GC has not yet been performed. Stall until it is and
       // then retry the allocation.
       GC_locker::stall_until_clear();
+      (*gclocker_retry_count_ret) += 1;
     }
 
     // We can reach here if we were unsuccessul in scheduling a
@@ -1019,7 +1030,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
-                                          unsigned int * gc_count_before_ret) {
+                                          unsigned int * gc_count_before_ret,
+                                          int* gclocker_retry_count_ret) {
   // The structure of this method has a lot of similarities to
   // attempt_allocation_slow(). The reason these two were not merged
   // into a single one is that such a method would require several "if
@@ -1104,10 +1116,16 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
         return NULL;
       }
     } else {
+      if (*gclocker_retry_count_ret > GCLockerRetryAllocationCount) {
+        MutexLockerEx x(Heap_lock);
+        *gc_count_before_ret = total_collections();
+        return NULL;
+      }
       // The GCLocker is either active or the GCLocker initiated
       // GC has not yet been performed. Stall until it is and
       // then retry the allocation.
       GC_locker::stall_until_clear();
+      (*gclocker_retry_count_ret) += 1;
     }
 
     // We can reach here if we were unsuccessul in scheduling a
