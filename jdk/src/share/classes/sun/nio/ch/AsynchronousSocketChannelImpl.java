@@ -53,8 +53,8 @@ abstract class AsynchronousSocketChannelImpl
     // protects state, localAddress, and remoteAddress
     protected final Object stateLock = new Object();
 
-    protected volatile SocketAddress localAddress = null;
-    protected volatile SocketAddress remoteAddress = null;
+    protected volatile InetSocketAddress localAddress = null;
+    protected volatile InetSocketAddress remoteAddress = null;
 
     // State, increases monotonically
     static final int ST_UNINITIALIZED = -1;
@@ -442,7 +442,7 @@ abstract class AsynchronousSocketChannelImpl
     public final SocketAddress getLocalAddress() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-        return localAddress;
+         return Net.getRevealedLocalAddress(localAddress);
     }
 
     @Override
@@ -582,7 +582,8 @@ abstract class AsynchronousSocketChannelImpl
                 }
                 if (localAddress != null) {
                     sb.append(" local=");
-                    sb.append(localAddress.toString());
+                    sb.append(
+                            Net.getRevealedLocalAddressAsString(localAddress));
                 }
                 if (remoteAddress != null) {
                     sb.append(" remote=");

@@ -51,7 +51,7 @@ abstract class AsynchronousServerSocketChannelImpl
     protected final FileDescriptor fd;
 
     // the local address to which the channel's socket is bound
-    protected volatile SocketAddress localAddress = null;
+    protected volatile InetSocketAddress localAddress = null;
 
     // need this lock to set local address
     private final Object stateLock = new Object();
@@ -173,7 +173,7 @@ abstract class AsynchronousServerSocketChannelImpl
     public final SocketAddress getLocalAddress() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-        return localAddress;
+        return Net.getRevealedLocalAddress(localAddress);
     }
 
     @Override
@@ -251,7 +251,7 @@ abstract class AsynchronousServerSocketChannelImpl
             if (localAddress == null) {
                 sb.append("unbound");
             } else {
-                sb.append(localAddress.toString());
+                sb.append(Net.getRevealedLocalAddressAsString(localAddress));
             }
         }
         sb.append(']');

@@ -241,7 +241,7 @@ class UnixAsynchronousSocketChannelImpl
         synchronized (stateLock) {
             state = ST_CONNECTED;
             localAddress = Net.localAddress(fd);
-            remoteAddress = pendingRemote;
+            remoteAddress = (InetSocketAddress)pendingRemote;
         }
     }
 

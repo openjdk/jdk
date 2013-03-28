@@ -31,6 +31,7 @@ import java.nio.channels.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 
 
 public class Net {
@@ -180,6 +181,34 @@ public class Net {
         throws IOException
     {
         translateException(x, false);
+    }
+
+    /**
+     * Returns the local address after performing a SecurityManager#checkConnect.
+     */
+    static InetSocketAddress getRevealedLocalAddress(InetSocketAddress addr) {
+        SecurityManager sm = System.getSecurityManager();
+        if (addr == null || sm == null)
+            return addr;
+
+        try{
+            sm.checkConnect(addr.getAddress().getHostAddress(), -1);
+            // Security check passed
+        } catch (SecurityException e) {
+            // Return loopback address only if security check fails
+            addr = getLoopbackAddress(addr.getPort());
+        }
+        return addr;
+    }
+
+    static String getRevealedLocalAddressAsString(InetSocketAddress addr) {
+        return System.getSecurityManager() == null ? addr.toString() :
+                getLoopbackAddress(addr.getPort()).toString();
+    }
+
+    private static InetSocketAddress getLoopbackAddress(int port) {
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(),
+                                     port);
     }
 
     /**

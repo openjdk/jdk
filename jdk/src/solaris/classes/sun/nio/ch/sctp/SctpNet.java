@@ -94,16 +94,42 @@ public class SctpNet {
 
     static Set<SocketAddress> getLocalAddresses(int fd)
             throws IOException {
-        HashSet<SocketAddress> set = null;
+        Set<SocketAddress> set = null;
         SocketAddress[] saa = getLocalAddresses0(fd);
 
         if (saa != null) {
-            set = new HashSet<SocketAddress>(saa.length);
-            for (SocketAddress sa : saa)
-                set.add(sa);
+            set = getRevealedLocalAddressSet(saa);
         }
 
         return set;
+    }
+
+    private static Set<SocketAddress> getRevealedLocalAddressSet(
+            SocketAddress[] saa)
+    {
+         SecurityManager sm = System.getSecurityManager();
+         Set<SocketAddress> set = new HashSet<>(saa.length);
+         for (SocketAddress sa : saa) {
+             set.add(getRevealedLocalAddress(sa, sm));
+         }
+         return set;
+    }
+
+    private static SocketAddress getRevealedLocalAddress(SocketAddress sa,
+                                                         SecurityManager sm)
+    {
+        if (sm == null || sa == null)
+            return sa;
+        InetSocketAddress ia = (InetSocketAddress)sa;
+        try{
+            sm.checkConnect(ia.getAddress().getHostAddress(), -1);
+            // Security check passed
+        } catch (SecurityException e) {
+            // Return loopback address
+            return new InetSocketAddress(InetAddress.getLoopbackAddress(),
+                                         ia.getPort());
+        }
+        return sa;
     }
 
     static Set<SocketAddress> getRemoteAddresses(int fd, int assocId)

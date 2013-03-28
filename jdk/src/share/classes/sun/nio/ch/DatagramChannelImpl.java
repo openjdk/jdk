@@ -85,8 +85,8 @@ class DatagramChannelImpl
     private int state = ST_UNINITIALIZED;
 
     // Binding
-    private SocketAddress localAddress;
-    private SocketAddress remoteAddress;
+    private InetSocketAddress localAddress;
+    private InetSocketAddress remoteAddress;
 
     // Our socket adaptor, if any
     private DatagramSocket socket;
@@ -168,7 +168,8 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
-            return localAddress;
+            // Perform security check before returning address
+            return Net.getRevealedLocalAddress(localAddress);
         }
     }
 
@@ -721,6 +722,7 @@ class DatagramChannelImpl
         }
     }
 
+    @Override
     public DatagramChannel connect(SocketAddress sa) throws IOException {
         int localPort = 0;
 
@@ -742,7 +744,7 @@ class DatagramChannelImpl
 
                     // Connection succeeded; disallow further invocation
                     state = ST_CONNECTED;
-                    remoteAddress = sa;
+                    remoteAddress = isa;
                     sender = isa;
                     cachedSenderInetAddress = isa.getAddress();
                     cachedSenderPort = isa.getPort();
@@ -761,7 +763,7 @@ class DatagramChannelImpl
                 synchronized (stateLock) {
                     if (!isConnected() || !isOpen())
                         return this;
-                    InetSocketAddress isa = (InetSocketAddress)remoteAddress;
+                    InetSocketAddress isa = remoteAddress;
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null)
                         sm.checkConnect(isa.getAddress().getHostAddress(),
