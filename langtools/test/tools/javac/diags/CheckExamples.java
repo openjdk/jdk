@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
  */
 
 import java.io.*;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 /**
@@ -53,7 +55,27 @@ public class CheckExamples {
      * Standard entry point.
      */
     public static void main(String... args) throws Exception {
-        new CheckExamples().run();
+        boolean jtreg = (System.getProperty("test.src") != null);
+        Path tmpDir;
+        boolean deleteOnExit;
+        if (jtreg) {
+            // use standard jtreg scratch directory: the current directory
+            tmpDir = Paths.get(System.getProperty("user.dir"));
+            deleteOnExit = false;
+        } else {
+            tmpDir = Files.createTempDirectory(Paths.get(System.getProperty("java.io.tmpdir")),
+                    CheckExamples.class.getName());
+            deleteOnExit = true;
+        }
+        Example.setTempDir(tmpDir.toFile());
+
+        try {
+            new CheckExamples().run();
+        } finally {
+            if (deleteOnExit) {
+                clean(tmpDir);
+            }
+        }
     }
 
     /**
@@ -189,6 +211,25 @@ public class CheckExamples {
     }
 
     int errors;
+
+    /**
+     * Clean the contents of a directory.
+     */
+    static void clean(Path dir) throws IOException {
+        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return super.visitFile(file, attrs);
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                if (exc == null) Files.delete(dir);
+                return super.postVisitDirectory(dir, exc);
+            }
+        });
+    }
 
     static class Counts {
         static String[] prefixes = {
