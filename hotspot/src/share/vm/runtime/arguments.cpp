@@ -1170,7 +1170,6 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     set_parnew_gc_flags();
   }
 
-  // MaxHeapSize is aligned down in collectorPolicy
   size_t max_heap = align_size_down(MaxHeapSize,
                                     CardTableRS::ct_max_alignment_constraint());
 
@@ -1208,10 +1207,6 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     }
 
     // Code along this path potentially sets NewSize and OldSize
-
-    assert(max_heap >= InitialHeapSize, "Error");
-    assert(max_heap >= NewSize, "Error");
-
     if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
       tty->print_cr("CMS set min_heap_size: " SIZE_FORMAT
