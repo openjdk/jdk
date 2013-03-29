@@ -110,8 +110,6 @@ VARIANT_TEXT=Server
 !endif
 !elseif "$(Variant)" == "tiered"
 VARIANT_TEXT=Tiered
-!elseif "$(Variant)" == "kernel"
-VARIANT_TEXT=Kernel
 !endif
 
 #########################################################################
@@ -305,9 +303,9 @@ $(variantDir)\local.make: checks
 checks: checkVariant checkWorkSpace checkSA
 
 checkVariant:
-	@ if "$(Variant)"=="" echo Need to specify "Variant=[tiered|compiler2|compiler1|kernel|core]" && false
-	@ if "$(Variant)" NEQ "tiered" if "$(Variant)" NEQ "compiler2" if "$(Variant)" NEQ "compiler1" if "$(Variant)" NEQ "kernel" if "$(Variant)" NEQ "core" \
-          echo Need to specify "Variant=[tiered|compiler2|compiler1|kernel|core]" && false
+	@ if "$(Variant)"=="" echo Need to specify "Variant=[tiered|compiler2|compiler1|core]" && false
+	@ if "$(Variant)" NEQ "tiered" if "$(Variant)" NEQ "compiler2" if "$(Variant)" NEQ "compiler1" if "$(Variant)" NEQ "core" \
+          echo Need to specify "Variant=[tiered|compiler2|compiler1|core]" && false
 
 checkWorkSpace:
 	@ if "$(WorkSpace)"=="" echo Need to specify "WorkSpace=..." && false
