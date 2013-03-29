@@ -679,9 +679,6 @@ class CommandLineFlags {
   product(bool, UseCompilerSafepoints, true,                                \
           "Stop at safepoints in compiled code")                            \
                                                                             \
-  product(bool, UseSplitVerifier, true,                                     \
-          "use split verifier with StackMapTable attributes")               \
-                                                                            \
   product(bool, FailOverToOldVerifier, true,                                \
           "fail over to old verifier when split verifier fails")            \
                                                                             \
@@ -868,6 +865,11 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, PrintNMTStatistics, false,                               \
           "Print native memory tracking summary data if it is on")          \
+                                                                            \
+  diagnostic(bool, AutoShutdownNMT, true,                                   \
+          "Automatically shutdown native memory tracking under stress "     \
+          "situation. When set to false, native memory tracking tries to "  \
+          "stay alive at the expense of JVM performance")                   \
                                                                             \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to hotspot.log or LogFile")   \
@@ -2905,6 +2907,10 @@ class CommandLineFlags {
           "if non-zero, start verifying C heap after Nth call to "          \
           "malloc/realloc/free")                                            \
                                                                             \
+  diagnostic(uintx, MallocMaxTestWords,     0,                              \
+          "if non-zero, max # of Words that malloc/realloc can allocate "   \
+          "(for testing only)")                                             \
+                                                                            \
   product(intx, TypeProfileWidth,     2,                                    \
           "number of receiver types to record in call/cast profile")        \
                                                                             \
@@ -3569,8 +3575,9 @@ class CommandLineFlags {
   product(uintx, SharedMiscCodeSize,    120*K,                              \
           "Size of the shared miscellaneous code area (in bytes)")          \
                                                                             \
-  product(uintx, SharedDummyBlockSize, 0,                                   \
-          "Size of dummy block used to shift heap addresses (in bytes)")    \
+  product(uintx, SharedBaseAddress, LP64_ONLY(32*G)                         \
+          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
+          "Address to allocate shared memory region for class data")        \
                                                                             \
   diagnostic(bool, EnableInvokeDynamic, true,                               \
           "support JSR 292 (method handles, invokedynamic, "                \

@@ -23,50 +23,15 @@
 # 
 # 
 
+## some tests require path to find test source dir
 if [ "${TESTSRC}" = "" ]
 then
-  echo "TESTSRC not set.  Test cannot execute.  Failed."
-  exit 1
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
 fi
 echo "TESTSRC=${TESTSRC}"
-if [ "${TESTJAVA}" = "" ]
-then
-  echo "TESTJAVA not set.  Test cannot execute.  Failed."
-  exit 1
-fi
-echo "TESTJAVA=${TESTJAVA}"
-if [ "${TESTCLASSES}" = "" ]
-then
-  echo "TESTCLASSES not set.  Test cannot execute.  Failed."
-  exit 1
-fi
-echo "TESTCLASSES=${TESTCLASSES}"
-echo "CLASSPATH=${CLASSPATH}"
-
-# set platform-dependent variables
-OS=`uname -s`
-case "$OS" in
-  SunOS | Linux | Darwin )
-    NULL=/dev/null
-    PS=":"
-    FS="/"
-    ;;
-  Windows_* )
-    NULL=NUL
-    PS=";"
-    FS="\\"
-    ;;
-  CYGWIN_* )
-    NULL=/dev/null
-    PS=";"
-    FS="/"
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
-
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Xinternalversion | sed 's/amd64/x86/' | grep "x86" | grep "Server VM" | grep "debug"
 
@@ -88,7 +53,7 @@ else
 fi
 
 cp ${TESTSRC}${FS}TestIntVect.java .
-${TESTJAVA}${FS}bin${FS}javac -d . TestIntVect.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} -d . TestIntVect.java
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+PrintCompilation -XX:+TraceNewVectors TestIntVect > test.out 2>&1
 
