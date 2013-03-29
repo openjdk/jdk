@@ -3288,12 +3288,12 @@ void G1CollectedHeap::verify(bool silent) {
 
 void G1CollectedHeap::verify(bool silent,
                              VerifyOption vo) {
-  if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
+  if (SafepointSynchronize::is_at_safepoint()) {
     if (!silent) { gclog_or_tty->print("Roots "); }
     VerifyRootsClosure rootsCl(vo);
 
     assert(Thread::current()->is_VM_thread(),
-      "Expected to be executed serially by the VM thread at this point");
+           "Expected to be executed serially by the VM thread at this point");
 
     CodeBlobToOopClosure blobsCl(&rootsCl, /*do_marking=*/ false);
     VerifyKlassClosure klassCl(this, &rootsCl);
@@ -3378,7 +3378,8 @@ void G1CollectedHeap::verify(bool silent,
     }
     guarantee(!failures, "there should not have been any failures");
   } else {
-    if (!silent) gclog_or_tty->print("(SKIPPING roots, heapRegions, remset) ");
+    if (!silent)
+      gclog_or_tty->print("(SKIPPING roots, heapRegionSets, heapRegions, remset) ");
   }
 }
 
