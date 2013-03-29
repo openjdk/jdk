@@ -1170,6 +1170,8 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
     newm->set_stackmap_data(stackmap_data);
   }
 
+  // copy annotations over to new method
+  newcm->copy_annotations_from(cm);
   return newm;
 }
 
