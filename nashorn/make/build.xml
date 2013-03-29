@@ -56,7 +56,7 @@
   <target name="init" depends="init-conditions, init-cc">
 
 	<!-- extends jvm args -->
-	<property name="run.test.jvmargs">${run.test.jvmargs.main}  ${run.test.cc.jvmargs}</property>
+	<property name="run.test.jvmargs" value="${run.test.jvmargs.main}  ${run.test.cc.jvmargs}"/>
 	<property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main}  ${run.test.cc.jvmargs}" />
 
     <echo message="run.test.jvmargs=${run.test.jvmargs}"/>
