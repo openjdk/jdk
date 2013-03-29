@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -34,18 +33,13 @@ import java.io.ByteArrayInputStream;
 import java.io.SequenceInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.lang.IllegalArgumentException;
 import java.io.OutputStream;
-import java.util.Vector;
 
-import javax.sound.midi.MidiFileFormat;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MetaMessage;
-import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
@@ -59,7 +53,7 @@ import javax.sound.midi.spi.MidiFileWriter;
  * @author Kara Kytle
  * @author Jan Borgersen
  */
-public class StandardMidiFileWriter extends MidiFileWriter {
+public final class StandardMidiFileWriter extends MidiFileWriter {
 
     private static final int MThd_MAGIC = 0x4d546864;  // 'MThd'
     private static final int MTrk_MAGIC = 0x4d54726b;  // 'MTrk'

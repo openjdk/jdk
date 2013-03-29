@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.media.sound;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.StringTokenizer;
 
 
@@ -35,7 +37,7 @@ import java.util.StringTokenizer;
  * @author Kara Kytle
  * @author Florian Bomers
  */
-class Platform {
+final class Platform {
 
 
     // STATIC FINAL CHARACTERISTICS
@@ -157,7 +159,13 @@ class Platform {
 
         try {
             // load the main library
-            JSSecurityManager.loadLibrary(libNameMain);
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    System.loadLibrary(libNameMain);
+                    return null;
+                }
+            });
             // just for the heck of it...
             loadedLibs |= LIB_MAIN;
         } catch (SecurityException e) {
@@ -171,9 +179,16 @@ class Platform {
         // the string is the libraries, separated by white space
         StringTokenizer st = new StringTokenizer(extraLibs);
         while (st.hasMoreTokens()) {
-            String lib = st.nextToken();
+            final String lib = st.nextToken();
             try {
-                JSSecurityManager.loadLibrary(lib);
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    @Override
+                    public Void run() {
+                        System.loadLibrary(lib);
+                        return null;
+                    }
+                });
+
                 if (lib.equals(libNameALSA)) {
                     loadedLibs |= LIB_ALSA;
                     if (Printer.debug) Printer.debug("Loaded ALSA lib successfully.");

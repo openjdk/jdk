@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.audio;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.util.Enumeration;
@@ -44,8 +43,8 @@ import java.util.Enumeration;
  * @see AudioPlayer
  * @author Arthur van Hoff
  */
-public
-    class AudioStreamSequence extends SequenceInputStream {
+public final class AudioStreamSequence extends SequenceInputStream {
+
         Enumeration e;
         InputStream in;
 

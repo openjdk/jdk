@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.sound.sampled.AudioInputStream;
  *
  * @author Karl Helgason
  */
-public class SoftJitterCorrector extends AudioInputStream {
+public final class SoftJitterCorrector extends AudioInputStream {
 
     private static class JitterStream extends InputStream {
 
@@ -48,7 +48,7 @@ public class SoftJitterCorrector extends AudioInputStream {
         int writepos = 0;
         int readpos = 0;
         byte[][] buffers;
-        Object buffers_mutex = new Object();
+        private final Object buffers_mutex = new Object();
 
         // Adapative Drift Statistics
         int w_count = 1000;
@@ -112,7 +112,7 @@ public class SoftJitterCorrector extends AudioInputStream {
             }
         }
 
-        public JitterStream(AudioInputStream s, int buffersize,
+        JitterStream(AudioInputStream s, int buffersize,
                 int smallbuffersize) {
             this.w_count = 10 * (buffersize / smallbuffersize);
             if (w_count < 100)

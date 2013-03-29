@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,15 @@ import javax.sound.midi.Patch;
  *
  * @author Karl Helgason
  */
-public class DLSInstrument extends ModelInstrument {
+public final class DLSInstrument extends ModelInstrument {
 
-    protected int preset = 0;
-    protected int bank = 0;
-    protected boolean druminstrument = false;
-    protected byte[] guid = null;
-    protected DLSInfo info = new DLSInfo();
-    protected List<DLSRegion> regions = new ArrayList<DLSRegion>();
-    protected List<DLSModulator> modulators = new ArrayList<DLSModulator>();
+    int preset = 0;
+    int bank = 0;
+    boolean druminstrument = false;
+    byte[] guid = null;
+    DLSInfo info = new DLSInfo();
+    List<DLSRegion> regions = new ArrayList<DLSRegion>();
+    List<DLSModulator> modulators = new ArrayList<DLSModulator>();
 
     public DLSInstrument() {
         super(null, null, null, null);

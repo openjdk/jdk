@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,12 @@
 
 package com.sun.media.sound;
 
-import java.io.InputStream;
 import java.io.IOException;
-
 import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 
 
 /**
@@ -40,7 +38,7 @@ import javax.sound.sampled.AudioInputStream;
  *
  * @author Jan Borgersen
  */
-public class PCMtoPCMCodec extends SunCodec {
+public final class PCMtoPCMCodec extends SunCodec {
 
 
     private static final AudioFormat.Encoding[] inputEncodings = {
@@ -356,7 +354,7 @@ public class PCMtoPCMCodec extends SunCodec {
         private final int PCM_UNSIGNED_BE2SIGNED_LE             = 7;
         private final int PCM_SIGNED_BE2UNSIGNED_LE             = 8;
 
-        private int sampleSizeInBytes = 0;
+        private final int sampleSizeInBytes;
         private int conversionType = 0;
 
 

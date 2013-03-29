@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import javax.sound.sampled.*;
  *
  * @author Florian Bomers
  */
-class DirectAudioDevice extends AbstractMixer {
+final class DirectAudioDevice extends AbstractMixer {
 
     // CONSTANTS
     private static final int CLIP_BUFFER_TIME = 1000; // in milliseconds
@@ -335,8 +335,8 @@ class DirectAudioDevice extends AbstractMixer {
      * but isFormatSupported() also returns true
      * for formats with wrong endianness.
      */
-    private static class DirectDLI extends DataLine.Info {
-        AudioFormat[] hardwareFormats;
+    private static final class DirectDLI extends DataLine.Info {
+        final AudioFormat[] hardwareFormats;
 
         private DirectDLI(Class clazz, AudioFormat[] formatArray,
                           AudioFormat[] hardwareFormatArray,
@@ -370,12 +370,12 @@ class DirectAudioDevice extends AbstractMixer {
      * Private inner class as base class for direct lines
      */
     private static class DirectDL extends AbstractDataLine implements EventDispatcher.LineMonitor {
-        protected int mixerIndex;
-        protected int deviceID;
+        protected final int mixerIndex;
+        protected final int deviceID;
         protected long id;
         protected int waitTime;
         protected volatile boolean flushing = false;
-        protected boolean isSource;         // true for SourceDataLine, false for TargetDataLine
+        protected final boolean isSource;         // true for SourceDataLine, false for TargetDataLine
         protected volatile long bytePosition;
         protected volatile boolean doIO = false;     // true in between start() and stop() calls
         protected volatile boolean stoppedWritten = false; // true if a write occured in stopped state
@@ -387,10 +387,10 @@ class DirectAudioDevice extends AbstractMixer {
         protected int softwareConversionSize = 0;
         protected AudioFormat hardwareFormat;
 
-        private Gain gainControl = new Gain();
-        private Mute muteControl = new Mute();
-        private Balance balanceControl = new Balance();
-        private Pan panControl = new Pan();
+        private final Gain gainControl = new Gain();
+        private final Mute muteControl = new Mute();
+        private final Balance balanceControl = new Balance();
+        private final Pan panControl = new Pan();
         private float leftGain, rightGain;
         protected volatile boolean noService = false; // do not run the nService method
 
@@ -829,7 +829,7 @@ class DirectAudioDevice extends AbstractMixer {
 
         /////////////////// CONTROLS /////////////////////////////
 
-        protected class Gain extends FloatControl {
+        protected final class Gain extends FloatControl {
 
             private float linearGain = 1.0f;
 
@@ -862,7 +862,7 @@ class DirectAudioDevice extends AbstractMixer {
         } // class Gain
 
 
-        private class Mute extends BooleanControl {
+        private final class Mute extends BooleanControl {
 
             private Mute() {
                 super(BooleanControl.Type.MUTE, false, "True", "False");
@@ -874,7 +874,7 @@ class DirectAudioDevice extends AbstractMixer {
             }
         }  // class Mute
 
-        private class Balance extends FloatControl {
+        private final class Balance extends FloatControl {
 
             private Balance() {
                 super(FloatControl.Type.BALANCE, -1.0f, 1.0f, (1.0f / 128.0f), -1, 0.0f,
@@ -893,7 +893,7 @@ class DirectAudioDevice extends AbstractMixer {
 
         } // class Balance
 
-        private class Pan extends FloatControl {
+        private final class Pan extends FloatControl {
 
             private Pan() {
                 super(FloatControl.Type.PAN, -1.0f, 1.0f, (1.0f / 128.0f), -1, 0.0f,
@@ -918,7 +918,8 @@ class DirectAudioDevice extends AbstractMixer {
     /**
      * Private inner class representing a SourceDataLine
      */
-    private static class DirectSDL extends DirectDL implements SourceDataLine {
+    private static final class DirectSDL extends DirectDL
+            implements SourceDataLine {
 
         // CONSTRUCTOR
         private DirectSDL(DataLine.Info info,
@@ -934,7 +935,8 @@ class DirectAudioDevice extends AbstractMixer {
     /**
      * Private inner class representing a TargetDataLine
      */
-    private static class DirectTDL extends DirectDL implements TargetDataLine {
+    private static final class DirectTDL extends DirectDL
+            implements TargetDataLine {
 
         // CONSTRUCTOR
         private DirectTDL(DataLine.Info info,
@@ -1012,7 +1014,9 @@ class DirectAudioDevice extends AbstractMixer {
      * Private inner class representing a Clip
      * This clip is realized in software only
      */
-    private static class DirectClip extends DirectDL implements Clip,  Runnable, AutoClosingClip {
+    private static final class DirectClip extends DirectDL
+            implements Clip, Runnable, AutoClosingClip {
+
         private Thread thread;
         private byte[] audioData = null;
         private int frameSize;         // size of one frame in bytes
@@ -1045,7 +1049,7 @@ class DirectAudioDevice extends AbstractMixer {
 
             byte[] newData = new byte[bufferSize];
             System.arraycopy(data, offset, newData, 0, bufferSize);
-            open(format, data, bufferSize / format.getFrameSize());
+            open(format, newData, bufferSize / format.getFrameSize());
         }
 
         // this method does not copy the data array
@@ -1443,7 +1447,7 @@ class DirectAudioDevice extends AbstractMixer {
      * which allows retrieval of the internal array
      */
     private static class DirectBAOS extends ByteArrayOutputStream {
-        public DirectBAOS() {
+        DirectBAOS() {
             super();
         }
 

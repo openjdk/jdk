@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import javax.sound.sampled.spi.AudioFileWriter;
  *
  * @author Karl Helgason
  */
-public class WaveFloatFileWriter extends AudioFileWriter {
+public final class WaveFloatFileWriter extends AudioFileWriter {
 
     public Type[] getAudioFileTypes() {
         return new Type[] { Type.WAVE };
@@ -86,9 +86,9 @@ public class WaveFloatFileWriter extends AudioFileWriter {
     }
 
     private static class NoCloseOutputStream extends OutputStream {
-        OutputStream out;
+        final OutputStream out;
 
-        public NoCloseOutputStream(OutputStream out) {
+        NoCloseOutputStream(OutputStream out) {
             this.out = out;
         }
 

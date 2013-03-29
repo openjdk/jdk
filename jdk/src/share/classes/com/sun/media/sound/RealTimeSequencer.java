@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
 
 package com.sun.media.sound;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import javax.sound.midi.*;
 
@@ -46,7 +45,8 @@ import javax.sound.midi.*;
 /* TODO:
  * - rename PlayThread to PlayEngine (because isn't a thread)
  */
-class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoConnectSequencer {
+final class RealTimeSequencer extends AbstractMidiDevice
+        implements Sequencer, AutoConnectSequencer {
 
     // STATIC VARIABLES
 
@@ -58,7 +58,8 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
      * Event Dispatcher thread. Should be using a shared event
      * dispatcher instance with a factory in EventDispatcher
      */
-    private static final EventDispatcher eventDispatcher;
+    private static final Map<ThreadGroup, EventDispatcher> dispatchers =
+            new WeakHashMap<>();
 
     /**
      * All RealTimeSequencers share this info object.
@@ -66,11 +67,11 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     static final RealTimeSequencerInfo info = new RealTimeSequencerInfo();
 
 
-    private static Sequencer.SyncMode[] masterSyncModes = { Sequencer.SyncMode.INTERNAL_CLOCK };
-    private static Sequencer.SyncMode[] slaveSyncModes  = { Sequencer.SyncMode.NO_SYNC };
+    private static final Sequencer.SyncMode[] masterSyncModes = { Sequencer.SyncMode.INTERNAL_CLOCK };
+    private static final Sequencer.SyncMode[] slaveSyncModes  = { Sequencer.SyncMode.NO_SYNC };
 
-    private static Sequencer.SyncMode masterSyncMode    = Sequencer.SyncMode.INTERNAL_CLOCK;
-    private static Sequencer.SyncMode slaveSyncMode     = Sequencer.SyncMode.NO_SYNC;
+    private static final Sequencer.SyncMode masterSyncMode    = Sequencer.SyncMode.INTERNAL_CLOCK;
+    private static final Sequencer.SyncMode slaveSyncMode     = Sequencer.SyncMode.NO_SYNC;
 
 
     /**
@@ -100,7 +101,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     private boolean[] trackSolo = null;
 
     /** tempo cache for getMicrosecondPosition */
-    private MidiUtils.TempoCache tempoCache = new MidiUtils.TempoCache();
+    private final MidiUtils.TempoCache tempoCache = new MidiUtils.TempoCache();
 
     /**
      * True if the sequence is running.
@@ -121,7 +122,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     /**
      * List of tracks to which we're recording
      */
-    private List recordingTracks = new ArrayList();
+    private final List recordingTracks = new ArrayList();
 
 
     private long loopStart = 0;
@@ -132,13 +133,13 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     /**
      * Meta event listeners
      */
-    private ArrayList metaEventListeners = new ArrayList();
+    private final ArrayList metaEventListeners = new ArrayList();
 
 
     /**
      * Control change listeners
      */
-    private ArrayList controllerEventListeners = new ArrayList();
+    private final ArrayList controllerEventListeners = new ArrayList();
 
 
     /** automatic connection support */
@@ -151,16 +152,9 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     Receiver autoConnectedReceiver = null;
 
 
-    static {
-        // create and start the global event thread
-        eventDispatcher = new EventDispatcher();
-        eventDispatcher.start();
-    }
-
-
     /* ****************************** CONSTRUCTOR ****************************** */
 
-    protected RealTimeSequencer() throws MidiUnavailableException {
+    RealTimeSequencer() throws MidiUnavailableException {
         super(info);
 
         if (Printer.trace) Printer.trace(">> RealTimeSequencer CONSTRUCTOR");
@@ -574,7 +568,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
         return returnedModes;
     }
 
-    protected int getTrackCount() {
+    int getTrackCount() {
         Sequence seq = getSequence();
         if (seq != null) {
             // $$fb wish there was a nicer way to get the number of tracks...
@@ -872,7 +866,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
         if (Printer.trace) Printer.trace("<< RealTimeSequencer: implClose() completed");
     }
 
-    protected void implStart() {
+    void implStart() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: implStart()");
 
         if (playThread == null) {
@@ -889,7 +883,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     }
 
 
-    protected void implStop() {
+    void implStop() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: implStop()");
 
         if (playThread == null) {
@@ -905,22 +899,36 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
         if (Printer.trace) Printer.trace("<< RealTimeSequencer: implStop() completed");
     }
 
+    private static EventDispatcher getEventDispatcher() {
+        // create and start the global event thread
+        //TODO  need a way to stop this thread when the engine is done
+        final ThreadGroup tg = Thread.currentThread().getThreadGroup();
+        synchronized (dispatchers) {
+            EventDispatcher eventDispatcher = dispatchers.get(tg);
+            if (eventDispatcher == null) {
+                eventDispatcher = new EventDispatcher();
+                dispatchers.put(tg, eventDispatcher);
+                eventDispatcher.start();
+            }
+            return eventDispatcher;
+        }
+    }
 
     /**
      * Send midi player events.
      * must not be synchronized on "this"
      */
-    protected void sendMetaEvents(MidiMessage message) {
+    void sendMetaEvents(MidiMessage message) {
         if (metaEventListeners.size() == 0) return;
 
         //if (Printer.debug) Printer.debug("sending a meta event");
-        eventDispatcher.sendAudioEvents(message, metaEventListeners);
+        getEventDispatcher().sendAudioEvents(message, metaEventListeners);
     }
 
     /**
      * Send midi player events.
      */
-    protected void sendControllerEvents(MidiMessage message) {
+    void sendControllerEvents(MidiMessage message) {
         int size = controllerEventListeners.size();
         if (size == 0) return;
 
@@ -942,7 +950,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
                 }
             }
         }
-        eventDispatcher.sendAudioEvents(message, sendToListeners);
+        getEventDispatcher().sendAudioEvents(message, sendToListeners);
     }
 
 
@@ -1024,7 +1032,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     }
 
 
-    class SequencerReceiver extends AbstractReceiver {
+    final class SequencerReceiver extends AbstractReceiver {
 
         void implSend(MidiMessage message, long timeStamp) {
             if (recording) {
@@ -1092,7 +1100,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
         //       easier to deal with than turning all the
         //       ints into objects to use a Vector
         int []  controllers;
-        ControllerEventListener listener;
+        final ControllerEventListener listener;
 
         private ControllerListElement(ControllerEventListener listener, int[] controllers) {
 
@@ -1197,7 +1205,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
     static class RecordingTrack {
 
-        private Track track;
+        private final Track track;
         private int channel;
 
         RecordingTrack(Track track, int channel) {
@@ -1237,15 +1245,15 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     }
 
 
-    class PlayThread implements Runnable {
+    final class PlayThread implements Runnable {
         private Thread thread;
-        private Object lock = new Object();
+        private final Object lock = new Object();
 
         /** true if playback is interrupted (in close) */
         boolean interrupted = false;
         boolean isPumping = false;
 
-        private DataPump dataPump = new DataPump();
+        private final DataPump dataPump = new DataPump();
 
 
         PlayThread() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,13 @@ import javax.sound.midi.ShortMessage;
  *
  * @author Karl Helgason
  */
-public class SoftReceiver implements MidiDeviceReceiver {
+public final class SoftReceiver implements MidiDeviceReceiver {
 
-    protected boolean open = true;
-    private Object control_mutex;
-    private SoftSynthesizer synth;
-    protected TreeMap<Long, Object> midimessages;
-    protected SoftMainMixer mainmixer;
+    boolean open = true;
+    private final Object control_mutex;
+    private final SoftSynthesizer synth;
+    TreeMap<Long, Object> midimessages;
+    SoftMainMixer mainmixer;
 
     public SoftReceiver(SoftSynthesizer synth) {
         this.control_mutex = synth.control_mutex;

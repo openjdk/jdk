@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import javax.sound.sampled.spi.AudioFileReader;
  *
  * @author Karl Helgason
  */
-public class SoftMidiAudioFileReader extends AudioFileReader {
+public final class SoftMidiAudioFileReader extends AudioFileReader {
 
     public static final Type MIDI = new Type("MIDI", "mid");
     private static AudioFormat format = new AudioFormat(44100, 16, 2, true, false);

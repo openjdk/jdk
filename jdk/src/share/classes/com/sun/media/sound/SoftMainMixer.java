@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javax.sound.sampled.AudioSystem;
  *
  * @author Karl Helgason
  */
-public class SoftMainMixer {
+public final class SoftMainMixer {
 
     // A private class thats contains a ModelChannelMixer and it's private buffers.
     // This becomes necessary when we want to have separate delay buffers for each channel mixer.
@@ -67,13 +67,13 @@ public class SoftMainMixer {
     public final static int CHANNEL_RIGHT_DRY = 11;
     public final static int CHANNEL_SCRATCH1 = 12;
     public final static int CHANNEL_SCRATCH2 = 13;
-    protected boolean active_sensing_on = false;
+    boolean active_sensing_on = false;
     private long msec_last_activity = -1;
     private boolean pusher_silent = false;
     private int pusher_silent_count = 0;
     private long sample_pos = 0;
-    protected boolean readfully = true;
-    private Object control_mutex;
+    boolean readfully = true;
+    private final Object control_mutex;
     private SoftSynthesizer synth;
     private float samplerate = 44100;
     private int nrofchannels = 2;
@@ -84,7 +84,7 @@ public class SoftMainMixer {
     private SoftAudioProcessor agc;
     private long msec_buffer_len = 0;
     private int buffer_len = 0;
-    protected TreeMap<Long, Object> midimessages = new TreeMap<Long, Object>();
+    TreeMap<Long, Object> midimessages = new TreeMap<Long, Object>();
     private int delay_midievent = 0;
     private int max_delay_midievent = 0;
     double last_volume_left = 1.0;
@@ -97,7 +97,7 @@ public class SoftMainMixer {
     private Set<SoftChannelMixerContainer> registeredMixers = null;
     private Set<ModelChannelMixer> stoppedMixers = null;
     private SoftChannelMixerContainer[] cur_registeredMixers = null;
-    protected SoftControl co_master = new SoftControl() {
+    SoftControl co_master = new SoftControl() {
 
         double[] balance = co_master_balance;
         double[] volume = co_master_volume;
@@ -438,7 +438,7 @@ public class SoftMainMixer {
         delay_midievent = 0;
     }
 
-    protected void processAudioBuffers() {
+    void processAudioBuffers() {
 
         if(synth.weakstream != null && synth.weakstream.silent_samples != 0)
         {
@@ -859,16 +859,16 @@ public class SoftMainMixer {
 
         InputStream in = new InputStream() {
 
-            private SoftAudioBuffer[] buffers = SoftMainMixer.this.buffers;
-            private int nrofchannels
+            private final SoftAudioBuffer[] buffers = SoftMainMixer.this.buffers;
+            private final int nrofchannels
                     = SoftMainMixer.this.synth.getFormat().getChannels();
-            private int buffersize = buffers[0].getSize();
-            private byte[] bbuffer = new byte[buffersize
+            private final int buffersize = buffers[0].getSize();
+            private final byte[] bbuffer = new byte[buffersize
                     * (SoftMainMixer.this.synth.getFormat()
                         .getSampleSizeInBits() / 8)
                     * nrofchannels];
             private int bbuffer_pos = 0;
-            private byte[] single = new byte[1];
+            private final byte[] single = new byte[1];
 
             public void fillBuffer() {
                 /*

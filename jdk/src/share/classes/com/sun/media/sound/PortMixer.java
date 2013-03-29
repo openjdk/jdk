@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import javax.sound.sampled.FloatControl;
  *
  * @author Florian Bomers
  */
-class PortMixer extends AbstractMixer {
+final class PortMixer extends AbstractMixer {
 
     // CONSTANTS
     private static final int SRC_UNKNOWN      = 0x01;
@@ -228,8 +228,10 @@ class PortMixer extends AbstractMixer {
     /**
      * Private inner class representing a Port for the PortMixer.
      */
-    private static class PortMixerPort extends AbstractLine implements Port {
-        private int portIndex;
+    private static final class PortMixerPort extends AbstractLine
+            implements Port {
+
+        private final int portIndex;
         private long id;
 
         // CONSTRUCTOR
@@ -342,9 +344,9 @@ class PortMixer extends AbstractMixer {
     /**
      * Private inner class representing a BooleanControl for PortMixerPort
      */
-    private static class BoolCtrl extends BooleanControl {
+    private static final class BoolCtrl extends BooleanControl {
         // the handle to the native control function
-        private long controlID;
+        private final long controlID;
         private boolean closed = false;
 
         private static BooleanControl.Type createType(String name) {
@@ -386,7 +388,7 @@ class PortMixer extends AbstractMixer {
         /**
          * inner class for custom types
          */
-        private static class BCT extends BooleanControl.Type {
+        private static final class BCT extends BooleanControl.Type {
             private BCT(String name) {
                 super(name);
             }
@@ -396,7 +398,7 @@ class PortMixer extends AbstractMixer {
     /**
      * Private inner class representing a CompoundControl for PortMixerPort
      */
-    private static class CompCtrl extends CompoundControl {
+    private static final class CompCtrl extends CompoundControl {
         private CompCtrl(String name, Control[] controls) {
             super(new CCT(name), controls);
         }
@@ -404,7 +406,7 @@ class PortMixer extends AbstractMixer {
         /**
          * inner class for custom compound control types
          */
-        private static class CCT extends CompoundControl.Type {
+        private static final class CCT extends CompoundControl.Type {
             private CCT(String name) {
                 super(name);
             }
@@ -414,9 +416,9 @@ class PortMixer extends AbstractMixer {
     /**
      * Private inner class representing a BooleanControl for PortMixerPort
      */
-    private static class FloatCtrl extends FloatControl {
+    private static final class FloatCtrl extends FloatControl {
         // the handle to the native control function
-        private long controlID;
+        private final long controlID;
         private boolean closed = false;
 
         // predefined float control types. See also Ports.h
@@ -462,7 +464,7 @@ class PortMixer extends AbstractMixer {
         /**
          * inner class for custom types
          */
-        private static class FCT extends FloatControl.Type {
+        private static final class FCT extends FloatControl.Type {
             private FCT(String name) {
                 super(name);
             }
@@ -472,7 +474,7 @@ class PortMixer extends AbstractMixer {
     /**
      * Private inner class representing a port info
      */
-    private static class PortInfo extends Port.Info {
+    private static final class PortInfo extends Port.Info {
         private PortInfo(String name, boolean isSource) {
             super(Port.class, name, isSource);
         }

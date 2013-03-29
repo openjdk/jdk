@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,19 +42,19 @@ import javax.sound.sampled.spi.FormatConversionProvider;
  *
  * @author Karl Helgason
  */
-public class AudioFloatFormatConverter extends FormatConversionProvider {
+public final class AudioFloatFormatConverter extends FormatConversionProvider {
 
     private static class AudioFloatFormatConverterInputStream extends
             InputStream {
-        private AudioFloatConverter converter;
+        private final AudioFloatConverter converter;
 
-        private AudioFloatInputStream stream;
+        private final AudioFloatInputStream stream;
 
         private float[] readfloatbuffer;
 
-        private int fsize = 0;
+        private final int fsize;
 
-        public AudioFloatFormatConverterInputStream(AudioFormat targetFormat,
+        AudioFloatFormatConverterInputStream(AudioFormat targetFormat,
                 AudioFloatInputStream stream) {
             this.stream = stream;
             converter = AudioFloatConverter.getConverter(targetFormat);
@@ -116,17 +116,17 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
     private static class AudioFloatInputStreamChannelMixer extends
             AudioFloatInputStream {
 
-        private int targetChannels;
+        private final int targetChannels;
 
-        private int sourceChannels;
+        private final int sourceChannels;
 
-        private AudioFloatInputStream ais;
+        private final AudioFloatInputStream ais;
 
-        private AudioFormat targetFormat;
+        private final AudioFormat targetFormat;
 
         private float[] conversion_buffer;
 
-        public AudioFloatInputStreamChannelMixer(AudioFloatInputStream ais,
+        AudioFloatInputStreamChannelMixer(AudioFloatInputStream ais,
                 int targetChannels) {
             this.sourceChannels = ais.getFormat().getChannels();
             this.targetChannels = targetChannels;
@@ -226,37 +226,37 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
     private static class AudioFloatInputStreamResampler extends
             AudioFloatInputStream {
 
-        private AudioFloatInputStream ais;
+        private final AudioFloatInputStream ais;
 
-        private AudioFormat targetFormat;
+        private final AudioFormat targetFormat;
 
         private float[] skipbuffer;
 
         private SoftAbstractResampler resampler;
 
-        private float[] pitch = new float[1];
+        private final float[] pitch = new float[1];
 
-        private float[] ibuffer2;
+        private final float[] ibuffer2;
 
-        private float[][] ibuffer;
+        private final float[][] ibuffer;
 
         private float ibuffer_index = 0;
 
         private int ibuffer_len = 0;
 
-        private int nrofchannels = 0;
+        private final int nrofchannels;
 
         private float[][] cbuffer;
 
-        private int buffer_len = 512;
+        private final int buffer_len = 512;
 
-        private int pad;
+        private final int pad;
 
-        private int pad2;
+        private final int pad2;
 
-        private float[] ix = new float[1];
+        private final float[] ix = new float[1];
 
-        private int[] ox = new int[1];
+        private final int[] ox = new int[1];
 
         private float[][] mark_ibuffer = null;
 
@@ -264,7 +264,7 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
 
         private int mark_ibuffer_len = 0;
 
-        public AudioFloatInputStreamResampler(AudioFloatInputStream ais,
+        AudioFloatInputStreamResampler(AudioFloatInputStream ais,
                 AudioFormat format) {
             this.ais = ais;
             AudioFormat sourceFormat = ais.getFormat();
@@ -468,8 +468,9 @@ public class AudioFloatFormatConverter extends FormatConversionProvider {
 
     }
 
-    private Encoding[] formats = { Encoding.PCM_SIGNED, Encoding.PCM_UNSIGNED,
-            Encoding.PCM_FLOAT };
+    private final Encoding[] formats = {Encoding.PCM_SIGNED,
+                                        Encoding.PCM_UNSIGNED,
+                                        Encoding.PCM_FLOAT};
 
     public AudioInputStream getAudioInputStream(Encoding targetEncoding,
             AudioInputStream sourceStream) {

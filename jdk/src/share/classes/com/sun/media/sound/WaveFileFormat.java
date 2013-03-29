@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,8 @@
 
 package com.sun.media.sound;
 
-import java.util.Vector;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.IOException;
-import java.lang.IllegalArgumentException;
-
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.SequenceInputStream;
-
 import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
 
 
 /**
@@ -51,12 +35,12 @@ import javax.sound.sampled.AudioSystem;
  * @author Jan Borgersen
  */
 
-class WaveFileFormat extends AudioFileFormat {
+final class WaveFileFormat extends AudioFileFormat {
 
     /**
      * Wave format type.
      */
-    private int waveType;
+    private final int waveType;
 
     //$$fb 2001-07-13: added management of header size in this class
     //$$fb 2002-04-16: Fix for 4636355: RIFF audio headers could be _more_ spec compliant

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@ import javax.sound.sampled.SourceDataLine;
  *
  * @author Karl Helgason
  */
-public class SoftAudioPusher implements Runnable {
+public final class SoftAudioPusher implements Runnable {
 
     private volatile boolean active = false;
     private SourceDataLine sourceDataLine = null;
     private Thread audiothread;
-    private AudioInputStream ais;
-    private byte[] buffer;
+    private final AudioInputStream ais;
+    private final byte[] buffer;
 
     public SoftAudioPusher(SourceDataLine sourceDataLine, AudioInputStream ais,
             int workbuffersizer) {
