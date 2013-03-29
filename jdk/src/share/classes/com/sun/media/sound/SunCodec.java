@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.io.InputStream;
-
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 
@@ -48,14 +46,14 @@ import javax.sound.sampled.spi.FormatConversionProvider;
  */
 abstract class SunCodec extends FormatConversionProvider {
 
-    AudioFormat.Encoding[] inputEncodings;
-    AudioFormat.Encoding[] outputEncodings;
+    private final AudioFormat.Encoding[] inputEncodings;
+    private final AudioFormat.Encoding[] outputEncodings;
 
     /**
      * Constructs a new codec object.
      */
-    protected SunCodec(AudioFormat.Encoding[] inputEncodings, AudioFormat.Encoding[] outputEncodings) {
-
+    SunCodec(final AudioFormat.Encoding[] inputEncodings,
+             final AudioFormat.Encoding[] outputEncodings) {
         this.inputEncodings = inputEncodings;
         this.outputEncodings = outputEncodings;
     }
@@ -63,16 +61,14 @@ abstract class SunCodec extends FormatConversionProvider {
 
     /**
      */
-    public AudioFormat.Encoding[] getSourceEncodings() {
-
+    public final AudioFormat.Encoding[] getSourceEncodings() {
         AudioFormat.Encoding[] encodings = new AudioFormat.Encoding[inputEncodings.length];
         System.arraycopy(inputEncodings, 0, encodings, 0, inputEncodings.length);
         return encodings;
     }
     /**
      */
-    public AudioFormat.Encoding[] getTargetEncodings() {
-
+    public final AudioFormat.Encoding[] getTargetEncodings() {
         AudioFormat.Encoding[] encodings = new AudioFormat.Encoding[outputEncodings.length];
         System.arraycopy(outputEncodings, 0, encodings, 0, outputEncodings.length);
         return encodings;

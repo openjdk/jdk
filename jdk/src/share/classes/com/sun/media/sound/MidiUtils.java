@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,17 @@ import java.util.ArrayList;
  *
  * @author Florian Bomers
  */
-public class MidiUtils {
+public final class MidiUtils {
 
     public final static int DEFAULT_TEMPO_MPQ = 500000; // 120bpm
     public final static int META_END_OF_TRACK_TYPE = 0x2F;
     public final static int META_TEMPO_TYPE = 0x51;
 
+    /**
+     * Suppresses default constructor, ensuring non-instantiability.
+     */
+    private MidiUtils() {
+    }
 
     /** return true if the passed message is Meta End Of Track */
     public static boolean isMetaEndOfTrack(MidiMessage midiMsg) {
@@ -262,7 +267,7 @@ public class MidiUtils {
     }
 
 
-    public static class TempoCache {
+    public static final class TempoCache {
         long[] ticks;
         int[] tempos; // in MPQ
         // index in ticks/tempos at the snapshot

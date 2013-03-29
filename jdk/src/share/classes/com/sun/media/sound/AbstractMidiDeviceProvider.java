@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.sound.midi.spi.MidiDeviceProvider;
  */
 public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
 
-    private static boolean enabled;
+    private static final boolean enabled;
 
     /**
      * Create objects representing all MIDI output devices on the system.
@@ -52,7 +52,7 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
     }
 
 
-    synchronized void readDeviceInfos() {
+    final synchronized void readDeviceInfos() {
         Info[] infos = getInfoCache();
         MidiDevice[] devices = getDeviceCache();
         if (!enabled) {
@@ -118,7 +118,7 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
     }
 
 
-    public MidiDevice.Info[] getDeviceInfo() {
+    public final MidiDevice.Info[] getDeviceInfo() {
         readDeviceInfos();
         Info[] infos = getInfoCache();
         MidiDevice.Info[] localArray = new MidiDevice.Info[infos.length];
@@ -127,7 +127,7 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
     }
 
 
-    public MidiDevice getDevice(MidiDevice.Info info) {
+    public final MidiDevice getDevice(MidiDevice.Info info) {
         if (info instanceof Info) {
             readDeviceInfos();
             MidiDevice[] devices = getDeviceCache();
@@ -164,7 +164,7 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
             this.index = index;
         }
 
-        boolean equalStrings(Info info) {
+        final boolean equalStrings(Info info) {
             return      (info != null
                          && getName().equals(info.getName())
                          && getVendor().equals(info.getVendor())
@@ -172,11 +172,11 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
                          && getVersion().equals(info.getVersion()));
         }
 
-        int getIndex() {
+        final int getIndex() {
             return index;
         }
 
-        void setIndex(int index) {
+        final void setIndex(int index) {
             this.index = index;
         }
 

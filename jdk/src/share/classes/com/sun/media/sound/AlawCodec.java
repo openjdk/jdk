@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,12 @@
 
 package com.sun.media.sound;
 
-import java.io.InputStream;
 import java.io.IOException;
-
 import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 
 
 /**
@@ -40,12 +38,12 @@ import javax.sound.sampled.AudioInputStream;
  *
  * @author Kara Kytle
  */
-public class AlawCodec extends SunCodec {
+public final class AlawCodec extends SunCodec {
 
     /* Tables used for A-law decoding */
 
-    final static byte ALAW_TABH[] = new byte[256];
-    final static byte ALAW_TABL[] = new byte[256];
+    private static final byte[] ALAW_TABH = new byte[256];
+    private static final byte[] ALAW_TABL = new byte[256];
 
     private static final AudioFormat.Encoding[] alawEncodings = { AudioFormat.Encoding.ALAW, AudioFormat.Encoding.PCM_SIGNED };
 
@@ -256,7 +254,7 @@ public class AlawCodec extends SunCodec {
     }
 
 
-    class AlawCodecStream extends AudioInputStream {
+    final class AlawCodecStream extends AudioInputStream {
 
         // tempBuffer required only for encoding (when encode is true)
         private static final int tempBufferSize = 64;

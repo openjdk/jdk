@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package com.sun.media.sound;
  *
  * @author Karl Helgason
  */
-public class SoftEnvelopeGenerator implements SoftProcess {
+public final class SoftEnvelopeGenerator implements SoftProcess {
 
     public final static int EG_OFF = 0;
     public final static int EG_DELAY = 1;
@@ -42,23 +42,23 @@ public class SoftEnvelopeGenerator implements SoftProcess {
     public final static int EG_END = 8;
     int max_count = 10;
     int used_count = 0;
-    private int[] stage = new int[max_count];
-    private int[] stage_ix = new int[max_count];
-    private double[] stage_v = new double[max_count];
-    private int[] stage_count = new int[max_count];
-    private double[][] on = new double[max_count][1];
-    private double[][] active = new double[max_count][1];
-    private double[][] out = new double[max_count][1];
-    private double[][] delay = new double[max_count][1];
-    private double[][] attack = new double[max_count][1];
-    private double[][] hold = new double[max_count][1];
-    private double[][] decay = new double[max_count][1];
-    private double[][] sustain = new double[max_count][1];
-    private double[][] release = new double[max_count][1];
-    private double[][] shutdown = new double[max_count][1];
-    private double[][] release2 = new double[max_count][1];
-    private double[][] attack2 = new double[max_count][1];
-    private double[][] decay2 = new double[max_count][1];
+    private final int[] stage = new int[max_count];
+    private final int[] stage_ix = new int[max_count];
+    private final double[] stage_v = new double[max_count];
+    private final int[] stage_count = new int[max_count];
+    private final double[][] on = new double[max_count][1];
+    private final double[][] active = new double[max_count][1];
+    private final double[][] out = new double[max_count][1];
+    private final double[][] delay = new double[max_count][1];
+    private final double[][] attack = new double[max_count][1];
+    private final double[][] hold = new double[max_count][1];
+    private final double[][] decay = new double[max_count][1];
+    private final double[][] sustain = new double[max_count][1];
+    private final double[][] release = new double[max_count][1];
+    private final double[][] shutdown = new double[max_count][1];
+    private final double[][] release2 = new double[max_count][1];
+    private final double[][] attack2 = new double[max_count][1];
+    private final double[][] decay2 = new double[max_count][1];
     private double control_time = 0;
 
     public void reset() {

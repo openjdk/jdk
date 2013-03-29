@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import javax.sound.sampled.LineUnavailableException;
  *
  * @author Karl Helgason
  */
-public class SoftMixingClip extends SoftMixingDataLine implements Clip {
+public final class SoftMixingClip extends SoftMixingDataLine implements Clip {
 
     private AudioFormat format;
 
@@ -50,7 +50,7 @@ public class SoftMixingClip extends SoftMixingDataLine implements Clip {
 
     private byte[] data;
 
-    private InputStream datastream = new InputStream() {
+    private final InputStream datastream = new InputStream() {
 
         public int read() throws IOException {
             byte[] b = new byte[1];
@@ -162,7 +162,7 @@ public class SoftMixingClip extends SoftMixingDataLine implements Clip {
 
     private AudioFloatInputStream afis;
 
-    protected SoftMixingClip(SoftMixingMixer mixer, DataLine.Info info) {
+    SoftMixingClip(SoftMixingMixer mixer, DataLine.Info info) {
         super(mixer, info);
     }
 

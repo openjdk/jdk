@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@ import javax.sound.sampled.spi.MixerProvider;
  *
  * @author Karl Helgason
  */
-public class SoftMixingMixerProvider extends MixerProvider {
+public final class SoftMixingMixerProvider extends MixerProvider {
 
     static SoftMixingMixer globalmixer = null;
 
     static Thread lockthread = null;
 
-    protected final static Object mutex = new Object();
+    static final Object mutex = new Object();
 
     public Mixer getMixer(Info info) {
         if (!(info == null || info == SoftMixingMixer.info)) {

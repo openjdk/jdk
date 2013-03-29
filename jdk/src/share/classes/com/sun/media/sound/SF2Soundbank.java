@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,40 +50,40 @@ import javax.sound.midi.SoundbankResource;
  *
  * @author Karl Helgason
  */
-public class SF2Soundbank implements Soundbank {
+public final class SF2Soundbank implements Soundbank {
 
     // version of the Sound Font RIFF file
-    protected int major = 2;
-    protected int minor = 1;
+    int major = 2;
+    int minor = 1;
     // target Sound Engine
-    protected String targetEngine = "EMU8000";
+    String targetEngine = "EMU8000";
     // Sound Font Bank Name
-    protected String name = "untitled";
+    String name = "untitled";
     // Sound ROM Name
-    protected String romName = null;
+    String romName = null;
     // Sound ROM Version
-    protected int romVersionMajor = -1;
-    protected int romVersionMinor = -1;
+    int romVersionMajor = -1;
+    int romVersionMinor = -1;
     // Date of Creation of the Bank
-    protected String creationDate = null;
+    String creationDate = null;
     // Sound Designers and Engineers for the Bank
-    protected String engineers = null;
+    String engineers = null;
     // Product for which the Bank was intended
-    protected String product = null;
+    String product = null;
     // Copyright message
-    protected String copyright = null;
+    String copyright = null;
     // Comments
-    protected String comments = null;
+    String comments = null;
     // The SoundFont tools used to create and alter the bank
-    protected String tools = null;
+    String tools = null;
     // The Sample Data loaded from the SoundFont
     private ModelByteBuffer sampleData = null;
     private ModelByteBuffer sampleData24 = null;
     private File sampleFile = null;
     private boolean largeFormat = false;
-    private List<SF2Instrument> instruments = new ArrayList<SF2Instrument>();
-    private List<SF2Layer> layers = new ArrayList<SF2Layer>();
-    private List<SF2Sample> samples = new ArrayList<SF2Sample>();
+    private final List<SF2Instrument> instruments = new ArrayList<SF2Instrument>();
+    private final List<SF2Layer> layers = new ArrayList<SF2Layer>();
+    private final List<SF2Sample> samples = new ArrayList<SF2Sample>();
 
     public SF2Soundbank() {
     }

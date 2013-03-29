@@ -27,7 +27,6 @@ package com.sun.media.sound;
 
 import java.io.File;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.IOException;
 import java.io.DataInputStream;
 import java.net.URL;
@@ -52,7 +51,7 @@ abstract class SunFileReader extends AudioFileReader {
     /**
      * Constructs a new SunFileReader object.
      */
-    public SunFileReader() {
+    SunFileReader() {
     }
 
 
@@ -167,7 +166,7 @@ abstract class SunFileReader extends AudioFileReader {
      * @return 32 bits swapped value.
      * @exception IOException
      */
-    protected int rllong(DataInputStream dis) throws IOException {
+    final int rllong(DataInputStream dis) throws IOException {
 
         int b1, b2, b3, b4 ;
         int i = 0;
@@ -190,7 +189,7 @@ abstract class SunFileReader extends AudioFileReader {
      * @param int
      * @return 32 bits swapped value
      */
-    protected int big2little(int i) {
+    final int big2little(int i) {
 
         int b1, b2, b3, b4 ;
 
@@ -211,7 +210,7 @@ abstract class SunFileReader extends AudioFileReader {
      * @return the swapped value.
      * @exception IOException
      */
-    protected short rlshort(DataInputStream dis)  throws IOException {
+    final short rlshort(DataInputStream dis)  throws IOException {
 
         short s=0;
         short high, low;
@@ -232,7 +231,7 @@ abstract class SunFileReader extends AudioFileReader {
      * @param int
      * @return 16 bits swapped value
      */
-    protected short big2littleShort(short i) {
+    final short big2littleShort(short i) {
 
         short high, low;
 
@@ -244,16 +243,14 @@ abstract class SunFileReader extends AudioFileReader {
         return i;
     }
 
-
-        /** Calculates the frame size for PCM frames.
-         * Note that this method is appropriate for non-packed samples.
-         * For instance, 12 bit, 2 channels will return 4 bytes, not 3.
-         * @param sampleSizeInBits the size of a single sample in bits
-         * @param channels the number of channels
-         * @return the size of a PCM frame in bytes.
-         */
-        protected static int calculatePCMFrameSize(int sampleSizeInBits,
-                                                                                        int channels) {
-                return ((sampleSizeInBits + 7) / 8) * channels;
-        }
+    /** Calculates the frame size for PCM frames.
+     * Note that this method is appropriate for non-packed samples.
+     * For instance, 12 bit, 2 channels will return 4 bytes, not 3.
+     * @param sampleSizeInBits the size of a single sample in bits
+     * @param channels the number of channels
+     * @return the size of a PCM frame in bytes.
+     */
+    static final int calculatePCMFrameSize(int sampleSizeInBits, int channels) {
+        return ((sampleSizeInBits + 7) / 8) * channels;
+    }
 }

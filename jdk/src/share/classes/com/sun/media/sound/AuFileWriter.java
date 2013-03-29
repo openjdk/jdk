@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,27 +49,17 @@ import javax.sound.sampled.AudioSystem;
  *
  * @author Jan Borgersen
  */
-public class AuFileWriter extends SunFileWriter {
+public final class AuFileWriter extends SunFileWriter {
 
     //$$fb value for length field if length is not known
     public final static int UNKNOWN_SIZE=-1;
 
     /**
-     * AU type
-     */
-    private static final AudioFileFormat.Type auTypes[] = {
-        AudioFileFormat.Type.AU
-    };
-
-
-    /**
      * Constructs a new AuFileWriter object.
      */
     public AuFileWriter() {
-        super(auTypes);
+        super(new AudioFileFormat.Type[]{AudioFileFormat.Type.AU});
     }
-
-
 
     public AudioFileFormat.Type[] getAudioFileTypes(AudioInputStream stream) {
 

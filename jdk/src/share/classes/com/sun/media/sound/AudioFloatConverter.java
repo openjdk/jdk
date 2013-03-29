@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public abstract class AudioFloatConverter {
 
     private static class AudioFloatLSBFilter extends AudioFloatConverter {
 
-        private AudioFloatConverter converter;
+        private final AudioFloatConverter converter;
 
         final private int offset;
 
@@ -61,8 +61,7 @@ public abstract class AudioFloatConverter {
 
         private byte[] mask_buffer;
 
-        public AudioFloatLSBFilter(AudioFloatConverter converter,
-                AudioFormat format) {
+        AudioFloatLSBFilter(AudioFloatConverter converter, AudioFormat format) {
             int bits = format.getSampleSizeInBits();
             boolean bigEndian = format.isBigEndian();
             this.converter = converter;
@@ -740,7 +739,7 @@ public abstract class AudioFloatConverter {
 
         final int xbytes;
 
-        public AudioFloatConversion32xSL(int xbytes) {
+        AudioFloatConversion32xSL(int xbytes) {
             this.xbytes = xbytes;
         }
 
@@ -781,7 +780,7 @@ public abstract class AudioFloatConverter {
 
         final int xbytes;
 
-        public AudioFloatConversion32xSB(int xbytes) {
+        AudioFloatConversion32xSB(int xbytes) {
             this.xbytes = xbytes;
         }
 
@@ -823,7 +822,7 @@ public abstract class AudioFloatConverter {
 
         final int xbytes;
 
-        public AudioFloatConversion32xUL(int xbytes) {
+        AudioFloatConversion32xUL(int xbytes) {
             this.xbytes = xbytes;
         }
 
@@ -866,7 +865,7 @@ public abstract class AudioFloatConverter {
 
         final int xbytes;
 
-        public AudioFloatConversion32xUB(int xbytes) {
+        AudioFloatConversion32xUB(int xbytes) {
             this.xbytes = xbytes;
         }
 
@@ -1008,49 +1007,51 @@ public abstract class AudioFloatConverter {
 
     private AudioFormat format;
 
-    public AudioFormat getFormat() {
+    public final AudioFormat getFormat() {
         return format;
     }
 
     public abstract float[] toFloatArray(byte[] in_buff, int in_offset,
             float[] out_buff, int out_offset, int out_len);
 
-    public float[] toFloatArray(byte[] in_buff, float[] out_buff,
+    public final float[] toFloatArray(byte[] in_buff, float[] out_buff,
             int out_offset, int out_len) {
         return toFloatArray(in_buff, 0, out_buff, out_offset, out_len);
     }
 
-    public float[] toFloatArray(byte[] in_buff, int in_offset,
+    public final float[] toFloatArray(byte[] in_buff, int in_offset,
             float[] out_buff, int out_len) {
         return toFloatArray(in_buff, in_offset, out_buff, 0, out_len);
     }
 
-    public float[] toFloatArray(byte[] in_buff, float[] out_buff, int out_len) {
+    public final float[] toFloatArray(byte[] in_buff, float[] out_buff,
+                                      int out_len) {
         return toFloatArray(in_buff, 0, out_buff, 0, out_len);
     }
 
-    public float[] toFloatArray(byte[] in_buff, float[] out_buff) {
+    public final float[] toFloatArray(byte[] in_buff, float[] out_buff) {
         return toFloatArray(in_buff, 0, out_buff, 0, out_buff.length);
     }
 
     public abstract byte[] toByteArray(float[] in_buff, int in_offset,
             int in_len, byte[] out_buff, int out_offset);
 
-    public byte[] toByteArray(float[] in_buff, int in_len, byte[] out_buff,
-            int out_offset) {
+    public final byte[] toByteArray(float[] in_buff, int in_len,
+                                    byte[] out_buff, int out_offset) {
         return toByteArray(in_buff, 0, in_len, out_buff, out_offset);
     }
 
-    public byte[] toByteArray(float[] in_buff, int in_offset, int in_len,
-            byte[] out_buff) {
+    public final byte[] toByteArray(float[] in_buff, int in_offset, int in_len,
+                                    byte[] out_buff) {
         return toByteArray(in_buff, in_offset, in_len, out_buff, 0);
     }
 
-    public byte[] toByteArray(float[] in_buff, int in_len, byte[] out_buff) {
+    public final byte[] toByteArray(float[] in_buff, int in_len,
+                                    byte[] out_buff) {
         return toByteArray(in_buff, 0, in_len, out_buff, 0);
     }
 
-    public byte[] toByteArray(float[] in_buff, byte[] out_buff) {
+    public final byte[] toByteArray(float[] in_buff, byte[] out_buff) {
         return toByteArray(in_buff, 0, in_buff.length, out_buff, 0);
     }
 }
