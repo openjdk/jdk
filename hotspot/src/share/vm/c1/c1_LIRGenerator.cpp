@@ -1872,8 +1872,6 @@ void LIRGenerator::do_NIOCheckIndex(Intrinsic* x) {
 
 
 void LIRGenerator::do_ArrayLength(ArrayLength* x) {
-  if (x->use_count() == 0 && !x->can_trap()) return;
-
   LIRItem array(x->array(), this);
   array.load_item();
   LIR_Opr reg = rlock_result(x);

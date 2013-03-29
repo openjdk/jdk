@@ -645,7 +645,7 @@ Instruction* RangeCheckEliminator::predicate_add_cmp_with_const(Instruction* lef
   return predicate_add(left, left_const, cond, const_instr, state, insert_position);
 }
 
-// Insert deoptimization, returns true if sucessful or false if range check should not be removed
+// Insert deoptimization
 void RangeCheckEliminator::insert_deoptimization(ValueStack *state, Instruction *insert_position, Instruction *array_instr, Instruction *length_instr, Instruction *lower_instr, int lower, Instruction *upper_instr, int upper, AccessIndexed *ai) {
   assert(is_ok_for_deoptimization(insert_position, array_instr, length_instr, lower_instr, lower, upper_instr, upper), "should have been tested before");
   bool upper_check = !(upper_instr && upper_instr->as_ArrayLength() && upper_instr->as_ArrayLength()->array() == array_instr);
@@ -669,6 +669,9 @@ void RangeCheckEliminator::insert_deoptimization(ValueStack *state, Instruction 
     }
   }
 
+  // No upper check required -> skip
+  if (!upper_check) return;
+
   // We need to know length of array
   if (!length_instr) {
     // Load length if necessary
@@ -679,9 +682,6 @@ void RangeCheckEliminator::insert_deoptimization(ValueStack *state, Instruction 
     insert_position = insert_position->insert_after(length);
     length_instr = length;
   }
-
-  // No upper check required -> skip
-  if (!upper_check) return;
 
   if (!upper_instr) {
     // Compare for geq array.length
@@ -777,7 +777,7 @@ void RangeCheckEliminator::process_access_indexed(BlockBegin *loop_header, Block
     tty->fill_to(block->dominator_depth()*2)
   );
   TRACE_RANGE_CHECK_ELIMINATION(
-    tty->print_cr("Access indexed: index=%d length=%d", ai->index()->id(), ai->length()->id())
+    tty->print_cr("Access indexed: index=%d length=%d", ai->index()->id(), (ai->length() != NULL ? ai->length()->id() :-1 ))
   );
 
   if (ai->check_flag(Instruction::NeedsRangeCheckFlag)) {
