@@ -146,6 +146,17 @@ bool SystemDictionary::is_parallelDefine(Handle class_loader) {
    }
    return false;
 }
+
+/**
+ * Returns true if the passed class loader is the extension class loader.
+ */
+bool SystemDictionary::is_ext_class_loader(Handle class_loader) {
+  if (class_loader.is_null()) {
+    return false;
+  }
+  return (class_loader->klass()->name() == vmSymbols::sun_misc_Launcher_ExtClassLoader());
+}
+
 // ----------------------------------------------------------------------------
 // Resolving of classes
 
