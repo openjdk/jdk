@@ -30,6 +30,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/bytecode.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/fieldStreams.hpp"
@@ -665,8 +666,51 @@ JVM_END
 
 JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env, int depth))
   JVMWrapper("JVM_GetCallerClass");
-  Klass* k = thread->security_get_caller_class(depth);
-  return (k == NULL) ? NULL : (jclass) JNIHandles::make_local(env, k->java_mirror());
+
+  // Pre-JDK 8 and early builds of JDK 8 don't have a CallerSensitive annotation.
+  if (SystemDictionary::reflect_CallerSensitive_klass() == NULL) {
+    Klass* k = thread->security_get_caller_class(depth);
+    return (k == NULL) ? NULL : (jclass) JNIHandles::make_local(env, k->java_mirror());
+  } else {
+    // Basic handshaking with Java_sun_reflect_Reflection_getCallerClass
+    assert(depth == -1, "wrong handshake depth");
+  }
+
+  // Getting the class of the caller frame.
+  //
+  // The call stack at this point looks something like this:
+  //
+  // [0] [ @CallerSensitive public sun.reflect.Reflection.getCallerClass ]
+  // [1] [ @CallerSensitive API.method                                   ]
+  // [.] [ (skipped intermediate frames)                                 ]
+  // [n] [ caller                                                        ]
+  vframeStream vfst(thread);
+  // Cf. LibraryCallKit::inline_native_Reflection_getCallerClass
+  for (int n = 0; !vfst.at_end(); vfst.security_next(), n++) {
+    Method* m = vfst.method();
+    assert(m != NULL, "sanity");
+    switch (n) {
+    case 0:
+      // This must only be called from Reflection.getCallerClass
+      if (m->intrinsic_id() != vmIntrinsics::_getCallerClass) {
+        THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVM_GetCallerClass must only be called from Reflection.getCallerClass");
+      }
+      // fall-through
+    case 1:
+      // Frame 0 and 1 must be caller sensitive.
+      if (!m->caller_sensitive()) {
+        THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), err_msg("CallerSensitive annotation expected at frame %d", n));
+      }
+      break;
+    default:
+      if (!m->is_ignored_by_security_stack_walk()) {
+        // We have reached the desired frame; return the holder class.
+        return (jclass) JNIHandles::make_local(env, m->method_holder()->java_mirror());
+      }
+      break;
+    }
+  }
+  return NULL;
 JVM_END
 
 
@@ -3208,11 +3252,24 @@ JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
   KlassLink* first = NULL;
   KlassLink* last  = NULL;
   int depth = 0;
+  vframeStream vfst(thread);
 
-  for(vframeStream vfst(thread); !vfst.at_end(); vfst.security_get_caller_frame(1)) {
+  if (SystemDictionary::reflect_CallerSensitive_klass() != NULL) {
+    // This must only be called from SecurityManager.getClassContext
+    Method* m = vfst.method();
+    if (!(m->method_holder() == SystemDictionary::SecurityManager_klass() &&
+          m->name()          == vmSymbols::getClassContext_name() &&
+          m->signature()     == vmSymbols::void_class_array_signature())) {
+      THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVM_GetClassContext must only be called from SecurityManager.getClassContext");
+    }
+  }
+
+  // Collect method holders
+  for (; !vfst.at_end(); vfst.security_next()) {
+    Method* m = vfst.method();
     // Native frames are not returned
-    if (!vfst.method()->is_native()) {
-      Klass* holder = vfst.method()->method_holder();
+    if (!m->is_ignored_by_security_stack_walk() && !m->is_native()) {
+      Klass* holder = m->method_holder();
       assert(holder->is_klass(), "just checking");
       depth++;
       KlassLink* l = new KlassLink(KlassHandle(thread, holder));
