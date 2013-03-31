@@ -253,6 +253,7 @@ public class Introspector {
             throws NotCompliantMBeanException {
         if (mbeanInterface == null)
             mbeanInterface = getStandardMBeanInterface(baseClass);
+        ReflectUtil.checkPackageAccess(mbeanInterface);
         MBeanIntrospector<?> introspector = StandardMBeanIntrospector.getInstance();
         return getClassMBeanInfo(introspector, baseClass, mbeanInterface);
     }
