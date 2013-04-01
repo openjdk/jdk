@@ -816,13 +816,28 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
             // We didn't go as far as Klass::restore_unshareable_info(),
             // so nothing to clean up.
           } else {
-            MutexLocker mu(SystemDictionary_lock, THREAD);
-            Klass* kk = find_class(name, ik->class_loader_data());
+            Klass *kk;
+            {
+              MutexLocker mu(SystemDictionary_lock, THREAD);
+              kk = find_class(name, ik->class_loader_data());
+            }
             if (kk != NULL) {
               // No clean up is needed if the shared class has been entered
               // into system dictionary, as load_shared_class() won't be called
               // again.
             } else {
+              // This must be done outside of the SystemDictionary_lock to
+              // avoid deadlock.
+              //
+              // Note that Klass::restore_unshareable_info (called via
+              // load_instance_class above) is also called outside
+              // of SystemDictionary_lock. Other threads are blocked from
+              // loading this class because they are waiting on the
+              // SystemDictionary_lock until this thread removes
+              // the placeholder below.
+              //
+              // This need to be re-thought when parallel-capable non-boot
+              // classloaders are supported by CDS (today they're not).
               clean_up_shared_class(ik, class_loader, THREAD);
             }
           }
