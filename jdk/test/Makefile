@@ -336,7 +336,7 @@ all: jdk_default
 	@$(ECHO) "Testing completed successfully"
 
 # Prep for output
-prep: clean
+prep:
 	@$(MKDIR) -p $(ABS_TEST_OUTPUT_DIR)
 	@$(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`
 
