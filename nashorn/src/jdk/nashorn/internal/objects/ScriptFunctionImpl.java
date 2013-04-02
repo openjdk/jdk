@@ -133,6 +133,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
             // use "getter" so that [[ThrowTypeError]] function's arity is 0 - as specified in step 10 of section 13.2.3
             final ScriptFunctionImpl func = new ScriptFunctionImpl("TypeErrorThrower", Lookup.TYPE_ERROR_THROWER_GETTER, null, null, false, false, false);
             func.setPrototype(UNDEFINED);
+            func.preventExtensions();
             typeErrorThrower = func;
         }
 
