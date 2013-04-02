@@ -125,10 +125,13 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // function object representing TypeErrorThrower
     private static ScriptFunction typeErrorThrower;
 
+    /*
+     * ECMA section 13.2.3 The [[ThrowTypeError]] Function Object
+     */
     static synchronized ScriptFunction getTypeErrorThrower() {
         if (typeErrorThrower == null) {
-            //name handle
-            final ScriptFunctionImpl func = new ScriptFunctionImpl("TypeErrorThrower", Lookup.TYPE_ERROR_THROWER_SETTER, null, null, false, false, false);
+            // use "getter" so that [[ThrowTypeError]] function's arity is 0 - as specified in step 10 of section 13.2.3
+            final ScriptFunctionImpl func = new ScriptFunctionImpl("TypeErrorThrower", Lookup.TYPE_ERROR_THROWER_GETTER, null, null, false, false, false);
             func.setPrototype(UNDEFINED);
             typeErrorThrower = func;
         }
