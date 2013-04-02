@@ -169,6 +169,8 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
                    the only non-final methods in Object that are not
                    handled above are finalize and clone, and these
                    are not overridden in generated proxies.  */
+                // this plain Method.invoke is called only if the declaring class
+                // is Object and so it's safe.
                 return method.invoke(this, args);
             }
         }
