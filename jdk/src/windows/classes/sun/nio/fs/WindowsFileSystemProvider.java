@@ -38,6 +38,7 @@ import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
+import static sun.nio.fs.WindowsSecurity.*;
 import static sun.nio.fs.WindowsConstants.*;
 
 public class WindowsFileSystemProvider
@@ -289,67 +290,29 @@ public class WindowsFileSystemProvider
     }
 
     /**
-     * Returns buffer with SID_AND_ATTRIBUTES structure representing the user
-     * associated with the current thread access token.
-     * FIXME - this should be cached.
+     * Checks the file security against desired access.
      */
-    private static NativeBuffer getUserInfo(WindowsPath file) throws IOException {
-        try {
-            long hToken = WindowsSecurity.processTokenWithQueryAccess;
-            int size = GetTokenInformation(hToken, TokenUser, 0L, 0);
-            assert size > 0;
-
-            NativeBuffer buffer = NativeBuffers.getNativeBuffer(size);
-            try {
-                int newsize = GetTokenInformation(hToken, TokenUser,
-                                                  buffer.address(), size);
-                if (newsize != size)
-                    throw new AssertionError();
-                return buffer;
-            } catch (WindowsException x) {
-                buffer.release();
-                throw x;
-            }
-        } catch (WindowsException x) {
-            throw new IOException(x.getMessage());
-        }
-    }
-
-    /**
-     * Reads the file ACL and return the effective access as ACCESS_MASK
-     */
-    private static int getEffectiveAccess(WindowsPath file) throws IOException {
-        // read security descriptor continaing ACL (symlinks are followed)
+    private static boolean hasDesiredAccess(WindowsPath file, int rights) throws IOException {
+        // read security descriptor containing ACL (symlinks are followed)
+        boolean hasRights = false;
         String target = WindowsLinkSupport.getFinalPath(file, true);
         NativeBuffer aclBuffer = WindowsAclFileAttributeView
-            .getFileSecurity(target, DACL_SECURITY_INFORMATION);
-
-        // retrieves DACL from security descriptor
-        long pAcl = GetSecurityDescriptorDacl(aclBuffer.address());
-
-        // Use GetEffectiveRightsFromAcl to get effective access to file
+            .getFileSecurity(target,
+                DACL_SECURITY_INFORMATION
+                | OWNER_SECURITY_INFORMATION
+                | GROUP_SECURITY_INFORMATION);
         try {
-            NativeBuffer userBuffer = getUserInfo(file);
-            try {
-                try {
-                    // SID_AND_ATTRIBUTES->pSid
-                    long pSid = unsafe.getAddress(userBuffer.address());
-                    long pTrustee = BuildTrusteeWithSid(pSid);
-                    try {
-                        return GetEffectiveRightsFromAcl(pAcl, pTrustee);
-                    } finally {
-                        LocalFree(pTrustee);
-                    }
-                } catch (WindowsException x) {
-                    throw new IOException("Unable to get effective rights from ACL: " +
-                        x.getMessage());
-                }
-            } finally {
-                userBuffer.release();
-            }
+            hasRights = checkAccessMask(aclBuffer.address(), rights,
+                FILE_GENERIC_READ,
+                FILE_GENERIC_WRITE,
+                FILE_GENERIC_EXECUTE,
+                FILE_ALL_ACCESS);
+        } catch (WindowsException exc) {
+            exc.rethrowAsIOException(file);
         } finally {
             aclBuffer.release();
         }
+        return hasRights;
     }
 
     /**
@@ -416,10 +379,10 @@ public class WindowsFileSystemProvider
             mask |= FILE_EXECUTE;
         }
 
-        if ((getEffectiveAccess(file) & mask) == 0)
+        if (!hasDesiredAccess(file, mask))
             throw new AccessDeniedException(
                 file.getPathForExceptionMessage(), null,
-                "Effective permissions does not allow requested access");
+                "Permissions does not allow requested access");
 
         // for write access we neeed to check if the DOS readonly attribute
         // and if the volume is read-only
@@ -438,7 +401,6 @@ public class WindowsFileSystemProvider
                 throw new AccessDeniedException(
                     file.getPathForExceptionMessage(), null, "Read-only file system");
             }
-            return;
         }
     }
 
