@@ -379,8 +379,8 @@ public class ClassWriter extends BasicWriter {
 
         indent(+1);
 
-        if (options.showInternalSignatures)
-            println("Signature: " + getValue(f.descriptor));
+        if (options.showDescriptors)
+            println("descriptor: " + getValue(f.descriptor));
 
         if (options.verbose && !options.compat)
             writeList("flags: ", flags.getFieldFlags(), "\n");
@@ -475,8 +475,8 @@ public class ClassWriter extends BasicWriter {
 
         indent(+1);
 
-        if (options.showInternalSignatures) {
-            println("Signature: " + getValue(m.descriptor));
+        if (options.showDescriptors) {
+            println("descriptor: " + getValue(m.descriptor));
         }
 
         if (options.verbose && !options.compat) {
@@ -520,7 +520,7 @@ public class ClassWriter extends BasicWriter {
         setPendingNewline(
                 options.showDisassembled ||
                 options.showAllAttrs ||
-                options.showInternalSignatures ||
+                options.showDescriptors ||
                 options.showLineAndLocalVariableTables ||
                 options.verbose);
     }

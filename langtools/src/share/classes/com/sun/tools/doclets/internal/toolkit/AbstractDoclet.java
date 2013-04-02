@@ -80,6 +80,9 @@ public abstract class AbstractDoclet {
         }
         try {
             doclet.startGeneration(root);
+        } catch (Configuration.Fault f) {
+            root.printError(f.getMessage());
+            return false;
         } catch (Exception exc) {
             exc.printStackTrace();
             return false;
@@ -110,7 +113,7 @@ public abstract class AbstractDoclet {
      *
      * @see com.sun.javadoc.RootDoc
      */
-    private void startGeneration(RootDoc root) throws Exception {
+    private void startGeneration(RootDoc root) throws Configuration.Fault, Exception {
         if (root.classes().length == 0) {
             configuration.message.
                 error("doclet.No_Public_Classes_To_Document");

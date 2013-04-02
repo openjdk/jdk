@@ -263,7 +263,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
         int prev, next;
         do {
             prev = getRaw(offset);
-            next = updateFunction.operateAsInt(prev);
+            next = updateFunction.applyAsInt(prev);
         } while (!compareAndSetRaw(offset, prev, next));
         return prev;
     }
@@ -284,7 +284,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
         int prev, next;
         do {
             prev = getRaw(offset);
-            next = updateFunction.operateAsInt(prev);
+            next = updateFunction.applyAsInt(prev);
         } while (!compareAndSetRaw(offset, prev, next));
         return next;
     }
@@ -310,7 +310,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
         int prev, next;
         do {
             prev = getRaw(offset);
-            next = accumulatorFunction.operateAsInt(prev, x);
+            next = accumulatorFunction.applyAsInt(prev, x);
         } while (!compareAndSetRaw(offset, prev, next));
         return prev;
     }
@@ -336,7 +336,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
         int prev, next;
         do {
             prev = getRaw(offset);
-            next = accumulatorFunction.operateAsInt(prev, x);
+            next = accumulatorFunction.applyAsInt(prev, x);
         } while (!compareAndSetRaw(offset, prev, next));
         return next;
     }

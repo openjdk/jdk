@@ -567,10 +567,9 @@ JNIEXPORT void JNICALL Java_com_apple_eawt__1AppEventHandler_nativeRegisterForNo
 {
 JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(_registerForNotification:)
-                                onObject:[ApplicationDelegate class]
+                                      on:[ApplicationDelegate class]
                               withObject:[NSNumber numberWithInt:notificationType]
-                           waitUntilDone:NO
-                                 awtMode:NO]; // AWT_THREADING Safe (non-blocking)
+                           waitUntilDone:NO]; // AWT_THREADING Safe (non-blocking)
 JNF_COCOA_EXIT(env);
 }
 

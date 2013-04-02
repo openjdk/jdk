@@ -99,8 +99,8 @@ struct band {
 
   int    getByte()  { assert(ix == null); return vs[0].getByte(); }
   int    getInt()   { assert(ix == null); return vs[0].getInt(); }
-  entry* getRefN()  { assert(ix != null); return getRefCommon(ix, true); }
-  entry* getRef()   { assert(ix != null); return getRefCommon(ix, false); }
+  entry* getRefN()  { return getRefCommon(ix, true); }
+  entry* getRef()   { return getRefCommon(ix, false); }
   entry* getRefUsing(cpindex* ix2)
                     { assert(ix == null); return getRefCommon(ix2, true); }
   entry* getRefCommon(cpindex* ix, bool nullOK);
@@ -214,7 +214,7 @@ enum band_number {
     e_method_metadata_bands,
     e_method_MethodParameters_NB,
     e_method_MethodParameters_name_RUN,
-    e_method_MethodParameters_flag_I,
+    e_method_MethodParameters_flag_FH,
     e_method_attr_bands,
 
     e_class_flags_hi,
@@ -393,7 +393,7 @@ enum band_number {
 #define method_Signature_RS all_bands[e_method_Signature_RS]
 #define method_MethodParameters_NB all_bands[e_method_MethodParameters_NB]
 #define method_MethodParameters_name_RUN all_bands[e_method_MethodParameters_name_RUN]
-#define method_MethodParameters_flag_I all_bands[e_method_MethodParameters_flag_I]
+#define method_MethodParameters_flag_FH all_bands[e_method_MethodParameters_flag_FH]
 #define method_attr_bands all_bands[e_method_attr_bands]
 #define class_flags_hi all_bands[e_class_flags_hi]
 #define class_flags_lo all_bands[e_class_flags_lo]

@@ -112,6 +112,12 @@ public class HtmlConstants {
             new Comment("=========== FIELD SUMMARY ===========");
 
     /**
+     * Marker to identify start of properties summary.
+     */
+    public static final Content START_OF_PROPERTY_SUMMARY =
+            new Comment("=========== PROPERTY SUMMARY ===========");
+
+    /**
      * Marker to identify start of method summary.
      */
     public static final Content START_OF_METHOD_SUMMARY =
@@ -134,6 +140,12 @@ public class HtmlConstants {
      */
     public static final Content START_OF_FIELD_DETAILS =
             new Comment("============ FIELD DETAIL ===========");
+
+    /**
+     * Marker to identify start of property details.
+     */
+    public static final Content START_OF_PROPERTY_DETAILS =
+            new Comment("============ PROPERTY DETAIL ===========");
 
     /**
      * Marker to identify start of constructor details.

@@ -35,7 +35,7 @@ import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.DerValue;
 import sun.security.util.Cache;
-import sun.misc.BASE64Decoder;
+import java.util.Base64;
 import sun.security.pkcs.ParsingException;
 
 /**
@@ -512,7 +512,7 @@ public class X509Factory extends CertificateFactorySpi {
                     hyphen = 0;
                     last = next;
                 }
-                if (hyphen == 5 && (last==-1 || last=='\r' || last=='\n')) {
+                if (hyphen == 5 && (last == -1 || last == '\r' || last == '\n')) {
                     break;
                 }
             }
@@ -575,8 +575,7 @@ public class X509Factory extends CertificateFactorySpi {
 
             checkHeaderFooter(header.toString(), footer.toString());
 
-            BASE64Decoder decoder = new BASE64Decoder();
-            return decoder.decodeBuffer(new String(data, 0, pos));
+            return Base64.getMimeDecoder().decode(new String(data, 0, pos));
         }
     }
 

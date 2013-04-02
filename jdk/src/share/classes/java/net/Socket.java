@@ -117,8 +117,10 @@ class Socket implements java.io.Closeable {
         if (proxy == null) {
             throw new IllegalArgumentException("Invalid Proxy");
         }
-        Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : sun.net.ApplicationProxy.create(proxy);
-        if (p.type() == Proxy.Type.SOCKS) {
+        Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY
+                                          : sun.net.ApplicationProxy.create(proxy);
+        Proxy.Type type = p.type();
+        if (type == Proxy.Type.SOCKS || type == Proxy.Type.HTTP) {
             SecurityManager security = System.getSecurityManager();
             InetSocketAddress epoint = (InetSocketAddress) p.address();
             if (epoint.getAddress() != null) {
@@ -133,7 +135,8 @@ class Socket implements java.io.Closeable {
                     security.checkConnect(epoint.getAddress().getHostAddress(),
                                   epoint.getPort());
             }
-            impl = new SocksSocketImpl(p);
+            impl = type == Proxy.Type.SOCKS ? new SocksSocketImpl(p)
+                                            : new HttpConnectSocketImpl(p);
             impl.setSocket(this);
         } else {
             if (p == Proxy.NO_PROXY) {

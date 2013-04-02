@@ -27,11 +27,13 @@
 #import "java_awt_geom_PathIterator.h"
 #import "sun_awt_SunHints.h"
 #import "sun_font_CStrike.h"
+#import "sun_font_CStrikeDisposer.h"
 #import "CGGlyphImages.h"
 #import "CGGlyphOutlines.h"
 #import "AWTStrike.h"
 #import "CoreTextSupport.h"
 //#import "jni_util.h"
+#include "fontscalerdefs.h"
 
 /* Use THIS_FILE when it is available. */
 #ifndef THIS_FILE
@@ -422,4 +424,20 @@ cleanup:
 JNF_COCOA_EXIT(env);
 
     return metrics;
+}
+
+extern void AccelGlyphCache_RemoveAllInfos(GlyphInfo* glyph);
+/*
+ * Class:     sun_font_CStrikeDisposer
+ * Method:    removeGlyphInfoFromCache
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_sun_font_CStrikeDisposer_removeGlyphInfoFromCache
+(JNIEnv *env, jclass cls, jlong glyphInfo)
+{
+    JNF_COCOA_ENTER(env);
+
+    AccelGlyphCache_RemoveAllCellInfos((GlyphInfo*)jlong_to_ptr(glyphInfo));
+
+    JNF_COCOA_EXIT(env);
 }

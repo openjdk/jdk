@@ -186,7 +186,8 @@ class AbstractInterpreter: AllStatic {
                                     int caller_actual_parameters,
                                     int callee_params,
                                     int callee_locals,
-                                    bool is_top_frame) {
+                                    bool is_top_frame,
+                                    bool is_bottom_frame) {
     return layout_activation(method,
                              temps,
                              popframe_args,
@@ -196,7 +197,8 @@ class AbstractInterpreter: AllStatic {
                              callee_locals,
                              (frame*)NULL,
                              (frame*)NULL,
-                             is_top_frame);
+                             is_top_frame,
+                             is_bottom_frame);
   }
 
   static int       layout_activation(Method* method,
@@ -208,7 +210,8 @@ class AbstractInterpreter: AllStatic {
                                      int callee_locals,
                                      frame* caller,
                                      frame* interpreter_frame,
-                                     bool is_top_frame);
+                                     bool is_top_frame,
+                                     bool is_bottom_frame);
 
   // Runtime support
   static bool       is_not_reached(                       methodHandle method, int bci);

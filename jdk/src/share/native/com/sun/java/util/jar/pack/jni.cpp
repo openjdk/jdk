@@ -50,6 +50,7 @@ static jfieldID  unpackerPtrFID;
 static jmethodID currentInstMID;
 static jmethodID readInputMID;
 static jclass    NIclazz;
+static jmethodID getUnpackerPtrMID;
 
 static char* dbg = null;
 
@@ -60,8 +61,8 @@ static jlong read_input_via_jni(unpacker* self,
 
 static unpacker* get_unpacker(JNIEnv *env, jobject pObj, bool noCreate=false) {
   unpacker* uPtr;
-  uPtr = (unpacker*)jlong2ptr(env->GetLongField(pObj, unpackerPtrFID));
-  //fprintf(stderr, "get_unpacker(%p) uPtr=%p\n", pObj, uPtr);
+  jlong p = env->CallLongMethod(pObj, getUnpackerPtrMID);
+  uPtr = (unpacker*)jlong2ptr(p);
   if (uPtr == null) {
     if (noCreate)  return null;
     uPtr = new unpacker();
@@ -94,11 +95,15 @@ static unpacker* get_unpacker() {
   if (env == null)
     return null;
   jobject pObj = env->CallStaticObjectMethod(NIclazz, currentInstMID);
-  //fprintf(stderr, "get_unpacker() pObj=%p\n", pObj);
-  if (pObj == null)
-    return null;
-  // Got pObj and env; now do it the easy way.
-  return get_unpacker(env, pObj);
+  //fprintf(stderr, "get_unpacker0() pObj=%p\n", pObj);
+  if (pObj != null) {
+    // Got pObj and env; now do it the easy way.
+    return get_unpacker(env, pObj);
+  }
+  // this should really not happen, if it does something is seriously
+  // wrong throw an exception
+  THROW_IOE(ERROR_INTERNAL);
+  return null;
 }
 
 static void free_unpacker(JNIEnv *env, jobject pObj, unpacker* uPtr) {
@@ -127,18 +132,23 @@ static jlong read_input_via_jni(unpacker* self,
 
 JNIEXPORT void JNICALL
 Java_com_sun_java_util_jar_pack_NativeUnpack_initIDs(JNIEnv *env, jclass clazz) {
+#ifndef PRODUCT
   dbg = getenv("DEBUG_ATTACH");
   while( dbg != null) { sleep(10); }
+#endif
   NIclazz = (jclass) env->NewGlobalRef(clazz);
   unpackerPtrFID = env->GetFieldID(clazz, "unpackerPtr", "J");
   currentInstMID = env->GetStaticMethodID(clazz, "currentInstance",
                                           "()Ljava/lang/Object;");
   readInputMID = env->GetMethodID(clazz, "readInputFn",
                                   "(Ljava/nio/ByteBuffer;J)J");
+  getUnpackerPtrMID = env->GetMethodID(clazz, "getUnpackerPtr", "()J");
+
   if (unpackerPtrFID == null ||
       currentInstMID == null ||
       readInputMID == null ||
-      NIclazz == null) {
+      NIclazz == null ||
+      getUnpackerPtrMID == null) {
     THROW_IOE("cannot init class members");
   }
 }
@@ -146,8 +156,13 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_initIDs(JNIEnv *env, jclass clazz) 
 JNIEXPORT jlong JNICALL
 Java_com_sun_java_util_jar_pack_NativeUnpack_start(JNIEnv *env, jobject pObj,
                                    jobject pBuf, jlong offset) {
-  unpacker* uPtr = get_unpacker(env, pObj);
-
+  // try to get the unpacker pointer the hard way first, we do this to ensure
+  // valid object pointers and env is intact, if not now is good time to bail.
+  unpacker* uPtr = get_unpacker();
+  //fprintf(stderr, "start(%p) uPtr=%p initializing\n", pObj, uPtr);
+  if (uPtr == null) {
+      return -1;
+  }
   // redirect our io to the default log file or whatever.
   uPtr->redirect_stdio();
 
@@ -163,7 +178,12 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_start(JNIEnv *env, jobject pObj,
     else
       { buf = (char*)buf + (size_t)offset; buflen -= (size_t)offset; }
   }
-
+  // before we start off we make sure there is no other error by the time we
+  // get here
+  if (uPtr->aborting()) {
+    THROW_IOE(uPtr->get_abort_message());
+    return 0;
+  }
   uPtr->start(buf, buflen);
   if (uPtr->aborting()) {
     THROW_IOE(uPtr->get_abort_message());
@@ -230,11 +250,14 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject
 
   // We have fetched all the files.
   // Now swallow up any remaining input.
-  if (uPtr->input_remaining() == 0)
+  if (uPtr->input_remaining() == 0) {
     return null;
-  else
-    return env->NewDirectByteBuffer(uPtr->input_scan(),
-                                    uPtr->input_remaining());
+  } else {
+    bytes remaining_bytes;
+    remaining_bytes.malloc(uPtr->input_remaining());
+    remaining_bytes.copyFrom(uPtr->input_scan(), uPtr->input_remaining());
+    return env->NewDirectByteBuffer(remaining_bytes.ptr, remaining_bytes.len);
+  }
 }
 
 JNIEXPORT jlong JNICALL

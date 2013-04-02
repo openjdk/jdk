@@ -609,6 +609,7 @@ define create-info-file
 	$(call info-file-item, "OS_NAME",      "$(REQUIRED_OS_NAME)")
 	$(call info-file-item, "OS_VERSION",   "$(REQUIRED_OS_VERSION)")
 	$(call info-file-item, "OS_ARCH",      "$(OPENJDK_TARGET_CPU_LEGACY)")
+	if [ -n "$(JDK_ARCH_ABI_PROP_NAME)" ]; then $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"); fi
 	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
 endef
 

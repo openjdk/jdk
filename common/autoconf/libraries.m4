@@ -182,7 +182,7 @@ CFLAGS="$CFLAGS $X_CFLAGS"
 # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
 AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h],
                  [X11_A_OK=yes],
-                 [X11_A_OK=no],
+                 [X11_A_OK=no; break],
                  [ # include <X11/Xlib.h>
                    # include <X11/Xutil.h>
                  ])

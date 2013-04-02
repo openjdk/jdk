@@ -147,7 +147,8 @@ class InstanceKlass: public Klass {
                 AccessFlags access_flags,
                 bool is_anonymous);
  public:
-  static Klass* allocate_instance_klass(ClassLoaderData* loader_data,
+  static InstanceKlass* allocate_instance_klass(
+                                          ClassLoaderData* loader_data,
                                           int vtable_len,
                                           int itable_len,
                                           int static_field_size,
@@ -266,8 +267,9 @@ class InstanceKlass: public Klass {
   u1              _init_state;                    // state of class
   u1              _reference_type;                // reference type
 
-
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
+
+  NOT_PRODUCT(int _verify_count;)  // to avoid redundant verifies
 
   // Method array.
   Array<Method*>* _methods;
@@ -356,16 +358,19 @@ class InstanceKlass: public Klass {
   // method ordering
   Array<int>* method_ordering() const     { return _method_ordering; }
   void set_method_ordering(Array<int>* m) { _method_ordering = m; }
+  void copy_method_ordering(intArray* m, TRAPS);
 
   // interfaces
   Array<Klass*>* local_interfaces() const          { return _local_interfaces; }
   void set_local_interfaces(Array<Klass*>* a)      {
     guarantee(_local_interfaces == NULL || a == NULL, "Just checking");
     _local_interfaces = a; }
+
   Array<Klass*>* transitive_interfaces() const     { return _transitive_interfaces; }
   void set_transitive_interfaces(Array<Klass*>* a) {
     guarantee(_transitive_interfaces == NULL || a == NULL, "Just checking");
-    _transitive_interfaces = a; }
+    _transitive_interfaces = a;
+  }
 
  private:
   friend class fieldDescriptor;
@@ -381,10 +386,9 @@ class InstanceKlass: public Klass {
   int java_fields_count() const           { return (int)_java_fields_count; }
 
   Array<u2>* fields() const            { return _fields; }
-
   void set_fields(Array<u2>* f, u2 java_fields_count) {
     guarantee(_fields == NULL || f == NULL, "Just checking");
-    _fields =  f;
+    _fields = f;
     _java_fields_count = java_fields_count;
   }
 
@@ -588,7 +592,7 @@ class InstanceKlass: public Klass {
 
   // symbol unloading support (refcount already added)
   Symbol* array_name()                     { return _array_name; }
-  void set_array_name(Symbol* name)        { assert(_array_name == NULL, "name already created"); _array_name = name; }
+  void set_array_name(Symbol* name)        { assert(_array_name == NULL  || name == NULL, "name already created"); _array_name = name; }
 
   // nonstatic oop-map blocks
   static int nonstatic_oop_map_size(unsigned int oop_map_count) {
@@ -914,8 +918,15 @@ class InstanceKlass: public Klass {
   void clean_method_data(BoolObjectClosure* is_alive);
 
   // Explicit metaspace deallocation of fields
-  // For RedefineClasses, we need to deallocate instanceKlasses
+  // For RedefineClasses and class file parsing errors, we need to deallocate
+  // instanceKlasses and the metadata they point to.
   void deallocate_contents(ClassLoaderData* loader_data);
+  static void deallocate_methods(ClassLoaderData* loader_data,
+                                 Array<Method*>* methods);
+  void static deallocate_interfaces(ClassLoaderData* loader_data,
+                                    Klass* super_klass,
+                                    Array<Klass*>* local_interfaces,
+                                    Array<Klass*>* transitive_interfaces);
 
   // The constant pool is on stack if any of the methods are executing or
   // referenced by handles.

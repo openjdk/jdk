@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 
 #include <stdint.h>
 
-// interface to manage ELF symbol tables
+// interface to manage ELF or MachO symbol tables
 
 struct symtab;
 
-// build symbol table for a given ELF file descriptor
+// build symbol table for a given ELF or MachO file escriptor
 struct symtab* build_symtab(int fd);
 
 // destroy the symbol table
