@@ -526,13 +526,11 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @param newMap   {@link PropertyMap} associated with prototype.
      */
     private void addToProtoHistory(final ScriptObject newProto, final PropertyMap newMap) {
-        if (!properties.isEmpty()) {
-            if (protoHistory == null) {
-                protoHistory = new WeakHashMap<>();
-            }
-
-            protoHistory.put(newProto, new WeakReference<>(newMap));
+        if (protoHistory == null) {
+            protoHistory = new WeakHashMap<>();
         }
+
+        protoHistory.put(newProto, new WeakReference<>(newMap));
     }
 
     /**
@@ -542,13 +540,11 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @param newMap   Modified {@link PropertyMap}.
      */
     private void addToHistory(final Property property, final PropertyMap newMap) {
-        if (!properties.isEmpty()) {
-            if (history == null) {
-                history = new LinkedHashMap<>();
-            }
-
-            history.put(property, newMap);
+        if (history == null) {
+            history = new LinkedHashMap<>();
         }
+
+        history.put(property, newMap);
     }
 
     /**
