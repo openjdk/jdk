@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,11 @@ public class ArrayList<E> extends AbstractList<E>
     private static final long serialVersionUID = 8683452581122892189L;
 
     /**
+     * Shared empty array instance used for empty instances.
+     */
+    private static final Object EMPTY_ELEMENTDATA[] = new Object[0];
+
+    /**
      * The array buffer into which the elements of the ArrayList are stored.
      * The capacity of the ArrayList is the length of this array buffer.
      */
@@ -136,7 +141,8 @@ public class ArrayList<E> extends AbstractList<E>
      * Constructs an empty list with an initial capacity of ten.
      */
     public ArrayList() {
-        this(10);
+        super();
+        this.elementData = EMPTY_ELEMENTDATA;
     }
 
     /**
@@ -162,8 +168,7 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public void trimToSize() {
         modCount++;
-        int oldCapacity = elementData.length;
-        if (size < oldCapacity) {
+        if (size < elementData.length) {
             elementData = Arrays.copyOf(elementData, size);
         }
     }
@@ -177,11 +182,20 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public void ensureCapacity(int minCapacity) {
         if (minCapacity > 0)
-            ensureCapacityInternal(minCapacity);
+            ensureExplicitCapacity(minCapacity);
     }
 
     private void ensureCapacityInternal(int minCapacity) {
+        if(elementData == EMPTY_ELEMENTDATA) {
+            minCapacity = Math.max(10, minCapacity);
+        }
+
+        ensureExplicitCapacity(minCapacity);
+    }
+
+    private void ensureExplicitCapacity(int minCapacity) {
         modCount++;
+
         // overflow-conscious code
         if (minCapacity - elementData.length > 0)
             grow(minCapacity);
@@ -506,8 +520,7 @@ public class ArrayList<E> extends AbstractList<E>
         modCount++;
 
         // Let gc do its work
-        for (int i = 0; i < size; i++)
-            elementData[i] = null;
+        Arrays.fill(elementData, null);
 
         size = 0;
     }
@@ -588,8 +601,8 @@ public class ArrayList<E> extends AbstractList<E>
 
         // Let gc do its work
         int newSize = size - (toIndex-fromIndex);
-        while (size != newSize)
-            elementData[--size] = null;
+        Arrays.fill(elementData, newSize, size, null);
+        size = newSize;
     }
 
     /**
@@ -677,8 +690,8 @@ public class ArrayList<E> extends AbstractList<E>
                 w += size - r;
             }
             if (w != size) {
-                for (int i = w; i < size; i++)
-                    elementData[i] = null;
+                // Let gc do its work
+                Arrays.fill(elementData, w, size, null);
                 modCount += size - w;
                 size = w;
                 modified = true;
@@ -702,7 +715,7 @@ public class ArrayList<E> extends AbstractList<E>
         s.defaultWriteObject();
 
         // Write out array length
-        s.writeInt(elementData.length);
+        s.writeInt((elementData == EMPTY_ELEMENTDATA) ? 10 : elementData.length);
 
         // Write out all elements in the proper order.
         for (int i=0; i<size; i++)
@@ -711,7 +724,6 @@ public class ArrayList<E> extends AbstractList<E>
         if (modCount != expectedModCount) {
             throw new ConcurrentModificationException();
         }
-
     }
 
     /**
@@ -723,10 +735,16 @@ public class ArrayList<E> extends AbstractList<E>
         // Read in size, and any hidden stuff
         s.defaultReadObject();
 
-        // Read in array length and allocate array
-        int arrayLength = s.readInt();
-        Object[] a = elementData = new Object[arrayLength];
+        // Read in array length
+        int initialCapacity = s.readInt();
+        elementData = EMPTY_ELEMENTDATA;
 
+        if((size > 0) || (initialCapacity != 10)) {
+            // allocate array based upon size.
+            ensureCapacityInternal(size);
+        }
+
+        Object[] a = elementData;
         // Read in all elements in the proper order.
         for (int i=0; i<size; i++)
             a[i] = s.readObject();
