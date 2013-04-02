@@ -22,28 +22,24 @@
 # questions.
 # 
 # 
-
+## some tests require path to find test source dir
 if [ "${TESTSRC}" = "" ]
 then
-  echo "TESTSRC not set.  Test cannot execute.  Failed."
-  exit 1
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
 fi
 echo "TESTSRC=${TESTSRC}"
-if [ "${TESTJAVA}" = "" ]
-then
-  echo "TESTJAVA not set.  Test cannot execute.  Failed."
-  exit 1
-fi
-echo "TESTJAVA=${TESTJAVA}"
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 set -x
 
-${TESTJAVA}/bin/jar xf ${TESTJAVA}/jre/lib/javaws.jar
-${TESTJAVA}/bin/jar cf foo.jar *
+${COMPILEJAVA}/bin/jar xf ${COMPILEJAVA}/jre/lib/javaws.jar
+${COMPILEJAVA}/bin/jar cf foo.jar *
 cp ${TESTSRC}/Test7068051.java ./
-${TESTJAVA}/bin/jar -uf0 foo.jar Test7068051.java
+${COMPILEJAVA}/bin/jar -uf0 foo.jar Test7068051.java
 
-${TESTJAVA}/bin/javac -d . Test7068051.java
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test7068051.java
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} -showversion -Xbatch Test7068051 foo.jar
 

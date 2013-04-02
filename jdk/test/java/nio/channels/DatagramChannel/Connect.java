@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 4313882 7183800
  * @summary Test DatagramChannel's send and receive methods
  * @author Mike McCloskey
  */
@@ -88,6 +89,9 @@ public class Connect {
                 bb.put("hello".getBytes());
                 bb.flip();
                 InetAddress address = InetAddress.getLocalHost();
+                if (address.isLoopbackAddress()) {
+                    address = InetAddress.getLoopbackAddress();
+                }
                 InetSocketAddress isa = new InetSocketAddress(address, port);
                 dc.connect(isa);
                 dc.write(bb);

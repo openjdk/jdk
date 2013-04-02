@@ -564,12 +564,6 @@ public abstract class WinGammaPlatform {
         allConfigs.add(new CoreFastDebugConfig());
         allConfigs.add(new CoreProductConfig());
 
-        if (platform.equals("Win32")) {
-            allConfigs.add(new KernelDebugConfig());
-            allConfigs.add(new KernelFastDebugConfig());
-            allConfigs.add(new KernelProductConfig());
-        }
-
         return allConfigs;
     }
 

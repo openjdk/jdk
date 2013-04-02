@@ -29,27 +29,13 @@
 #
 
 if [ "${TESTSRC}" = "" ]
-  then TESTSRC=.
-fi
-
-if [ "${TESTJAVA}" = "" ]
 then
-  PARENT=`dirname \`which java\``
-  TESTJAVA=`dirname ${PARENT}`
-  printf "TESTJAVA not set, selecting " ${TESTJAVA}
-  printf "  If this is incorrect, try setting the variable manually.\n"
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
 fi
-
-# set platform-dependent variables
-OS=`uname -s`
-case "$OS" in
-  Windows_* )
-    FS="\\"
-    ;;
-  * )
-    FS="/"
-    ;;
-esac
+echo "TESTSRC=${TESTSRC}"
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 JAVA=${TESTJAVA}${FS}bin${FS}java
 

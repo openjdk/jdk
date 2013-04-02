@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ public class StackMapWriter extends InstructionDetailWriter {
 
     }
 
-    class StackMap {
+    static class StackMap {
         StackMap(verification_type_info[] locals, verification_type_info[] stack) {
             this.locals = locals;
             this.stack = stack;
@@ -279,7 +279,7 @@ public class StackMapWriter extends InstructionDetailWriter {
         private final verification_type_info[] stack;
     }
 
-    class CustomVerificationTypeInfo extends verification_type_info {
+    static class CustomVerificationTypeInfo extends verification_type_info {
         public CustomVerificationTypeInfo(String text) {
             super(-1);
             this.text = text;

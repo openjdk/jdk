@@ -762,6 +762,7 @@ void GenerateOopMap::copy_state(CellTypeState *dst, CellTypeState *src) {
 // monitor matching is purely informational and doesn't say anything
 // about the correctness of the code.
 void GenerateOopMap::merge_state_into_bb(BasicBlock *bb) {
+  guarantee(bb != NULL, "null basicblock");
   assert(bb->is_alive(), "merging state into a dead basicblock");
 
   if (_stack_top == bb->_stack_top) {
@@ -1189,6 +1190,7 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
 
       if (start_pc <= bci && bci < end_pc) {
         BasicBlock *excBB = get_basic_block_at(handler_pc);
+        guarantee(excBB != NULL, "no basic block for exception");
         CellTypeState *excStk = excBB->stack();
         CellTypeState *cOpStck = stack();
         CellTypeState cOpStck_0 = cOpStck[0];
@@ -1803,6 +1805,7 @@ void GenerateOopMap::do_monitorexit(int bci) {
     // possibility that this bytecode will throw an
     // exception.
     BasicBlock* bb = get_basic_block_containing(bci);
+    guarantee(bb != NULL, "no basic block for bci");
     bb->set_changed(true);
     bb->_monitor_top = bad_monitors;
 
@@ -2190,6 +2193,7 @@ void GenerateOopMap::result_for_basicblock(int bci) {
 
   // Find basicblock and report results
   BasicBlock* bb = get_basic_block_containing(bci);
+  guarantee(bb != NULL, "no basic block for bci");
   assert(bb->is_reachable(), "getting result from unreachable basicblock");
   bb->set_changed(true);
   interp_bb(bb);

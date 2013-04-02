@@ -611,7 +611,12 @@ JNIEXPORT jint JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterIm
 
 int getLocaleInfoWrapper(const jchar *langtag, LCTYPE type, LPWSTR data, int buflen) {
     if (pGetLocaleInfoEx) {
-        return pGetLocaleInfoEx((LPWSTR)langtag, type, data, buflen);
+        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+            // defaults to "en"
+            return pGetLocaleInfoEx(L"en", type, data, buflen);
+        } else {
+            return pGetLocaleInfoEx((LPWSTR)langtag, type, data, buflen);
+        }
     } else {
         // If we ever wanted to support WinXP, we will need extra module from
         // MS...
@@ -622,7 +627,12 @@ int getLocaleInfoWrapper(const jchar *langtag, LCTYPE type, LPWSTR data, int buf
 
 int getCalendarInfoWrapper(const jchar *langtag, CALID id, LPCWSTR reserved, CALTYPE type, LPWSTR data, int buflen, LPDWORD val) {
     if (pGetCalendarInfoEx) {
-        return pGetCalendarInfoEx((LPWSTR)langtag, id, reserved, type, data, buflen, val);
+        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+            // defaults to "en"
+            return pGetCalendarInfoEx(L"en", id, reserved, type, data, buflen, val);
+        } else {
+            return pGetCalendarInfoEx((LPWSTR)langtag, id, reserved, type, data, buflen, val);
+        }
     } else {
         // If we ever wanted to support WinXP, we will need extra module from
         // MS...

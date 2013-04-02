@@ -179,7 +179,6 @@ class MyScanner extends Scanner {
 
         @Override
         public Scanner newScanner(CharSequence input, boolean keepDocComments) {
-            assert !keepDocComments;
             if (input instanceof CharBuffer) {
                 return new MyScanner(this, (CharBuffer)input, test);
             } else {
@@ -190,7 +189,6 @@ class MyScanner extends Scanner {
 
         @Override
         public Scanner newScanner(char[] input, int inputLength, boolean keepDocComments) {
-            assert !keepDocComments;
             return new MyScanner(this, input, inputLength, test);
         }
 

@@ -38,7 +38,7 @@ import javax.tools.StandardLocation;
  *
  * <p>Plug-ins are located via a {@link ServiceLoader},
  * using the same class path as annotation processors (i.e.
- * {@link StandardLocation#PROCESSOR_PATH PROCESSOR_PATH} or
+ * {@link StandardLocation#ANNOTATION_PROCESSOR_PATH ANNOTATION_PROCESSOR_PATH} or
  * {@code -processorpath}).
  *
  * <p>It is expected that a typical plug-in will simply register a
