@@ -373,6 +373,17 @@ public class Code {
         Assert.check(alive || state.stacksize == 0);
     }
 
+    /** Emit a ldc (or ldc_w) instruction, taking into account operand size
+    */
+    public void emitLdc(int od) {
+        if (od <= 255) {
+            emitop1(ldc1, od);
+        }
+        else {
+            emitop2(ldc2, od);
+        }
+    }
+
     /** Emit a multinewarray instruction.
      */
     public void emitMultianewarray(int ndims, int type, Type arrayType) {

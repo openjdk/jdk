@@ -2227,7 +2227,7 @@ public class Gen extends JCTree.Visitor {
 
         if (tree.name == names._class) {
             Assert.check(target.hasClassLiterals());
-            code.emitop2(ldc2, makeRef(tree.pos(), tree.selected.type));
+            code.emitLdc(makeRef(tree.pos(), tree.selected.type));
             result = items.makeStackItem(pt);
             return;
        }
