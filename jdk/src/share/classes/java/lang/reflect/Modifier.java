@@ -390,6 +390,12 @@ class Modifier {
         Modifier.VOLATILE;
 
     /**
+     *
+     */
+    static final int ACCESS_MODIFIERS =
+        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
+
+    /**
      * Return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a class.
      * @return an {@code int} value OR-ing together the source language
