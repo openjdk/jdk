@@ -44,6 +44,8 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
     }
 
     public static void main(String[] args) throws Exception {
+        // to prevent inlining #method into #compile()
+        WHITE_BOX.setDontInlineMethod(METHOD, true);
         new IsMethodCompilableTest().runTest();
     }
 
@@ -58,8 +60,6 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
                     "Warning: test is not applicable if PerMethodRecompilationCutoff == Inf");
             return;
         }
-        // to prevent inlining #method into #compile()
-        WHITE_BOX.setDontInlineMethod(METHOD, true);
         boolean madeNotCompilable = false;
 
         for (long i = 0; i < PER_METHOD_RECOMPILATION_CUTOFF; ++i) {

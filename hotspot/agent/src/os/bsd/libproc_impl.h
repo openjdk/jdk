@@ -30,6 +30,60 @@
 #include "libproc.h"
 #include "symtab.h"
 
+#ifdef __APPLE__
+#include <inttypes.h>     // for PRIx64, 32, ...
+#include <pthread.h>
+#include <mach-o/loader.h>
+#include <mach-o/nlist.h>
+#include <mach-o/fat.h>
+
+#ifndef register_t
+#define register_t uint64_t
+#endif
+
+/*** registers copied from bsd/amd64 */
+typedef struct reg {
+  register_t      r_r15;
+  register_t      r_r14;
+  register_t      r_r13;
+  register_t      r_r12;
+  register_t      r_r11;
+  register_t      r_r10;
+  register_t      r_r9;
+  register_t      r_r8;
+  register_t      r_rdi;
+  register_t      r_rsi;
+  register_t      r_rbp;
+  register_t      r_rbx;
+  register_t      r_rdx;
+  register_t      r_rcx;
+  register_t      r_rax;
+  uint32_t        r_trapno;      // not used
+  uint16_t        r_fs;
+  uint16_t        r_gs;
+  uint32_t        r_err;         // not used
+  uint16_t        r_es;          // not used
+  uint16_t        r_ds;          // not used
+  register_t      r_rip;
+  register_t      r_cs;
+  register_t      r_rflags;
+  register_t      r_rsp;
+  register_t      r_ss;          // not used
+} reg;
+
+// convenient defs
+typedef struct mach_header_64 mach_header_64;
+typedef struct load_command load_command;
+typedef struct segment_command_64 segment_command_64;
+typedef struct thread_command thread_command;
+typedef struct dylib_command dylib_command;
+typedef struct symtab_command symtab_command;
+typedef struct nlist_64 nlist_64;
+#else
+#include <thread_db.h>
+#include "salibelf.h"
+#endif //  __APPLE__
+
 // data structures in this file mimic those of Solaris 8.0 - libproc's Pcontrol.h
 
 #define BUF_SIZE     (PATH_MAX + NAME_MAX + 1)
@@ -44,12 +98,12 @@ typedef struct lib_info {
 } lib_info;
 
 // list of threads
-typedef struct thread_info {
-   lwpid_t                  lwp_id;
-   pthread_t                pthread_id; // not used cores, always -1
+typedef struct sa_thread_info {
+   lwpid_t                  lwp_id;     // same as pthread_t
+   pthread_t                pthread_id; //
    struct reg               regs;       // not for process, core uses for caching regset
-   struct thread_info*      next;
-} thread_info;
+   struct sa_thread_info*   next;
+} sa_thread_info;
 
 // list of virtual memory maps
 typedef struct map_info {
@@ -91,6 +145,7 @@ struct core_data {
    // part of the class sharing workaround
    map_info*          class_share_maps;// class share maps in a linked list
    map_info**         map_array; // sorted (by vaddr) array of map_info pointers
+   char               exec_path[4096];  // file name java
 };
 
 struct ps_prochandle {
@@ -100,12 +155,11 @@ struct ps_prochandle {
    lib_info*          libs;      // head of lib list
    lib_info*          lib_tail;  // tail of lib list - to append at the end
    int                num_threads;
-   thread_info*       threads;   // head of thread list
+   sa_thread_info*    threads;   // head of thread list
    struct core_data*  core;      // data only used for core dumps, NULL for process
 };
 
 int pathmap_open(const char* name);
-
 void print_debug(const char* format,...);
 void print_error(const char* format,...);
 bool is_debug();
@@ -122,10 +176,45 @@ lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t 
 lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
                           uintptr_t base);
 
-// adds a new thread to threads list, returns NULL on failure
-thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwpid_t lwp_id);
-
+sa_thread_info* add_thread_info(struct ps_prochandle* ph, pthread_t pthread_id, lwpid_t lwp_id);
 // a test for ELF signature without using libelf
-bool is_elf_file(int fd);
 
+#ifdef __APPLE__
+// a test for Mach-O signature
+bool is_macho_file(int fd);
+// skip fat head to get image start offset of cpu_type_t
+// return false if any error happens, else value in offset.
+bool get_arch_off(int fd, cpu_type_t cputype, off_t *offset);
+#else
+bool is_elf_file(int fd);
+#endif // __APPLE__
+
+lwpid_t get_lwp_id(struct ps_prochandle* ph, int index);
+bool set_lwp_id(struct ps_prochandle* ph, int index, lwpid_t lwpid);
+bool get_nth_lwp_regs(struct ps_prochandle* ph, int index, struct reg* regs);
+
+// ps_pglobal_lookup() looks up the symbol sym_name in the symbol table
+// of the load object object_name in the target process identified by ph.
+// It returns the symbol's value as an address in the target process in
+// *sym_addr.
+
+ps_err_e ps_pglobal_lookup(struct ps_prochandle *ph, const char *object_name,
+                    const char *sym_name, psaddr_t *sym_addr);
+
+// read "size" bytes info "buf" from address "addr"
+ps_err_e ps_pread(struct ps_prochandle *ph, psaddr_t  addr,
+                  void *buf, size_t size);
+
+// write "size" bytes of data to debuggee at address "addr"
+ps_err_e ps_pwrite(struct ps_prochandle *ph, psaddr_t addr,
+                   const void *buf, size_t size);
+
+// fill in ptrace_lwpinfo for lid
+ps_err_e ps_linfo(struct ps_prochandle *ph, lwpid_t lwp_id, void *linfo);
+
+// needed for when libthread_db is compiled with TD_DEBUG defined
+void ps_plog (const char *format, ...);
+
+// untility, tells the position in file
+off_t ltell(int fd);
 #endif //_LIBPROC_IMPL_H_

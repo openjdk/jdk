@@ -523,6 +523,14 @@ JVM_GetMethodParameterAnnotations(JNIEnv *env, jobject method);
 JNIEXPORT jbyteArray JNICALL
 JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls);
 
+// field is a handle to a java.lang.reflect.Field object
+JNIEXPORT jbyteArray JNICALL
+JVM_GetFieldTypeAnnotations(JNIEnv *env, jobject field);
+
+// method is a handle to a java.lang.reflect.Method object
+JNIEXPORT jbyteArray JNICALL
+JVM_GetMethodTypeAnnotations(JNIEnv *env, jobject method);
+
 /*
  * New (JDK 1.4) reflection implementation
  */

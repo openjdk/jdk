@@ -32,8 +32,6 @@
 
 #include <winscard.h>
 
-#include <jni_util.h>
-
 #include "sun_security_smartcardio_PlatformPCSC.h"
 
 #include "pcsc_md.h"
@@ -76,7 +74,6 @@ void throwIOException(JNIEnv *env, const char *msg)
 {
     throwByName(env, "java/io/IOException", msg);
 }
-
 
 void *findFunction(JNIEnv *env, void *hModule, char *functionName) {
     void *fAddress = dlsym(hModule, functionName);

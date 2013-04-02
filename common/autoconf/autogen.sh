@@ -43,14 +43,24 @@ fi
 
 custom_hook=$custom_script_dir/custom-hook.m4
 
-if test "x`which autoconf 2> /dev/null`" = x; then
+AUTOCONF=$(which autoconf 2> /dev/null);
+AUTOCONF_267=$(which autoconf-2.67 2> /dev/null);
+
+echo "Autoconf found: ${AUTOCONF}"
+echo "Autoconf-2.67 found: ${AUTOCONF_267}"
+
+if test "x${AUTOCONF}" = x; then
   echo You need autoconf installed to be able to regenerate the configure script
   echo Error: Cannot find autoconf 1>&2
   exit 1
 fi
 
-echo Generating generated-configure.sh
-cat $script_dir/configure.ac  | sed -e "s|@DATE_WHEN_GENERATED@|$TIMESTAMP|" | autoconf -W all -I$script_dir - > $script_dir/generated-configure.sh
+if test "x${AUTOCONF_267}" != x; then
+  AUTOCONF=${AUTOCONF_267};
+fi
+
+echo Generating generated-configure.sh with ${AUTOCONF}
+cat $script_dir/configure.ac  | sed -e "s|@DATE_WHEN_GENERATED@|$TIMESTAMP|" | ${AUTOCONF} -W all -I$script_dir - > $script_dir/generated-configure.sh
 rm -rf autom4te.cache
 
 if test -e $custom_hook; then
@@ -58,7 +68,7 @@ if test -e $custom_hook; then
   # We have custom sources available; also generate configure script
   # with custom hooks compiled in.
   cat $script_dir/configure.ac | sed -e "s|@DATE_WHEN_GENERATED@|$TIMESTAMP|" | \
-    sed -e "s|#CUSTOM_AUTOCONF_INCLUDE|m4_include([$custom_hook])|" | autoconf -W all -I$script_dir - > $custom_script_dir/generated-configure.sh
+    sed -e "s|#CUSTOM_AUTOCONF_INCLUDE|m4_include([$custom_hook])|" | ${AUTOCONF} -W all -I$script_dir - > $custom_script_dir/generated-configure.sh
   rm -rf autom4te.cache
 else
   echo No custom hook found:  $custom_hook

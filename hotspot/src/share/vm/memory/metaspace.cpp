@@ -334,27 +334,19 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 
   // byte_size is the size of the associated virtualspace.
 VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(0) {
-  // This allocates memory with mmap.  For DumpSharedspaces, allocate the
-  // space at low memory so that other shared images don't conflict.
-  // This is the same address as memory needed for UseCompressedOops but
-  // compressed oops don't work with CDS (offsets in metadata are wrong), so
-  // borrow the same address.
+  // align up to vm allocation granularity
+  byte_size = align_size_up(byte_size, os::vm_allocation_granularity());
+
+  // This allocates memory with mmap.  For DumpSharedspaces, try to reserve
+  // configurable address, generally at the top of the Java heap so other
+  // memory addresses don't conflict.
   if (DumpSharedSpaces) {
-    char* shared_base = (char*)HeapBaseMinAddress;
+    char* shared_base = (char*)SharedBaseAddress;
     _rs = ReservedSpace(byte_size, 0, false, shared_base, 0);
     if (_rs.is_reserved()) {
-      assert(_rs.base() == shared_base, "should match");
+      assert(shared_base == 0 || _rs.base() == shared_base, "should match");
     } else {
-      // If we are dumping the heap, then allocate a wasted block of address
-      // space in order to push the heap to a lower address.  This extra
-      // address range allows for other (or larger) libraries to be loaded
-      // without them occupying the space required for the shared spaces.
-      uintx reserved = 0;
-      uintx block_size = 64*1024*1024;
-      while (reserved < SharedDummyBlockSize) {
-        char* dummy = os::reserve_memory(block_size);
-        reserved += block_size;
-      }
+      // Get a mmap region anywhere if the SharedBaseAddress fails.
       _rs = ReservedSpace(byte_size);
     }
     MetaspaceShared::set_shared_rs(&_rs);
@@ -1100,24 +1092,23 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t word_size) {
 }
 
 bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
+  // If the user wants a limit, impose one.
+  if (!FLAG_IS_DEFAULT(MaxMetaspaceSize) &&
+      MetaspaceAux::reserved_in_bytes() >= MaxMetaspaceSize) {
+    return false;
+  }
 
   // Class virtual space should always be expanded.  Call GC for the other
   // metadata virtual space.
   if (vsl == Metaspace::class_space_list()) return true;
-
-  // If the user wants a limit, impose one.
-  size_t max_metaspace_size_words = MaxMetaspaceSize / BytesPerWord;
-  size_t metaspace_size_words = MetaspaceSize / BytesPerWord;
-  if (!FLAG_IS_DEFAULT(MaxMetaspaceSize) &&
-      vsl->capacity_words_sum() >= max_metaspace_size_words) {
-    return false;
-  }
 
   // If this is part of an allocation after a GC, expand
   // unconditionally.
   if(MetaspaceGC::expand_after_GC()) {
     return true;
   }
+
+  size_t metaspace_size_words = MetaspaceSize / BytesPerWord;
 
   // If the capacity is below the minimum capacity, allow the
   // expansion.  Also set the high-water-mark (capacity_until_GC)
@@ -1308,8 +1299,7 @@ void MetaspaceGC::compute_new_size() {
       gclog_or_tty->print_cr("  metaspace HWM: %.1fK", new_capacity_until_GC / (double) K);
     }
   }
-  assert(vsl->used_bytes_sum() == used_after_gc &&
-         used_after_gc <= vsl->capacity_bytes_sum(),
+  assert(used_after_gc <= vsl->capacity_bytes_sum(),
          "sanity check");
 
 }
@@ -1969,6 +1959,9 @@ void SpaceManager::initialize() {
 }
 
 SpaceManager::~SpaceManager() {
+  // This call this->_lock which can't be done while holding expand_lock()
+  const size_t in_use_before = sum_capacity_in_chunks_in_use();
+
   MutexLockerEx fcl(SpaceManager::expand_lock(),
                     Mutex::_no_safepoint_check_flag);
 
@@ -1986,7 +1979,7 @@ SpaceManager::~SpaceManager() {
 
   // Have to update before the chunks_in_use lists are emptied
   // below.
-  chunk_manager->inc_free_chunks_total(sum_capacity_in_chunks_in_use(),
+  chunk_manager->inc_free_chunks_total(in_use_before,
                                        sum_count_in_chunks_in_use());
 
   // Add all the chunks in use by this space manager
