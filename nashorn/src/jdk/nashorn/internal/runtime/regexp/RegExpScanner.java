@@ -182,8 +182,6 @@ final class RegExpScanner extends Scanner {
      * @return Committed token
      */
     private boolean commit(final int n) {
-        final int startIn = position;
-
         switch (n) {
         case 1:
             sb.append(ch0);

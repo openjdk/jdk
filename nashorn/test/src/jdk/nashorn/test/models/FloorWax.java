@@ -23,22 +23,8 @@
  * questions.
  */
 
-package jdk.nashorn.internal.ir.annotations;
+package jdk.nashorn.test.models;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-/**
- * Signifies a parent of a node, i.e. node that should not be traversed if we
- * go down the AST. In automatic parsing this can be handled by @Reference
- * annotations instead, as all parents are references.
- * <p>
- * TODO The use case is automating and creating one implementation of something like
- * Node.getParent()
- *
- * @see jdk.nashorn.internal.ir.Node
- */
-@Retention(value=RetentionPolicy.RUNTIME)
-public @interface ParentNode {
-    // EMPTY
+public interface FloorWax {
+    public String shineUpTheFloor();
 }

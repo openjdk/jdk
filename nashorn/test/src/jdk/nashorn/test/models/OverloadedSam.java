@@ -23,8 +23,9 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-class NonPublicClass {
-    public NonPublicClass() { }
+public interface OverloadedSam {
+    public void sam(String s);
+    public void sam(String s1, String s2);
 }

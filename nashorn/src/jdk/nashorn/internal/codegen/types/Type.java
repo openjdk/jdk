@@ -647,21 +647,20 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     private static void swap(final MethodVisitor method, final Type above, final Type below) {
-        final MethodVisitor mv = method;
         if (below.isCategory2()) {
             if (above.isCategory2()) {
-                mv.visitInsn(DUP2_X2);
-                mv.visitInsn(POP2);
+                method.visitInsn(DUP2_X2);
+                method.visitInsn(POP2);
             } else {
-                mv.visitInsn(DUP_X2);
-                mv.visitInsn(POP);
+                method.visitInsn(DUP_X2);
+                method.visitInsn(POP);
             }
         } else {
             if (above.isCategory2()) {
-                mv.visitInsn(DUP2_X1);
-                mv.visitInsn(POP2);
+                method.visitInsn(DUP2_X1);
+                method.visitInsn(POP2);
             } else {
-                mv.visitInsn(SWAP);
+                method.visitInsn(SWAP);
             }
         }
 

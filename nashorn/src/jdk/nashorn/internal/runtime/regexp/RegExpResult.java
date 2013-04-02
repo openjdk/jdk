@@ -80,11 +80,11 @@ public final class RegExpResult {
 
     /**
      * Get the group with the given index or the empty string if group index is not valid.
-     * @param index the group index
+     * @param groupIndex the group index
      * @return the group or ""
      */
-    public Object getGroup(int index) {
-        return index >= 0 && index < groups.length ? groups[index] : "";
+    public Object getGroup(final int groupIndex) {
+        return groupIndex >= 0 && groupIndex < groups.length ? groups[groupIndex] : "";
     }
 
     /**
