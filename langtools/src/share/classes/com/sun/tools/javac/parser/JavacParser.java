@@ -2867,7 +2867,7 @@ public class JavacParser implements Parser {
      *                          | Identifier "=" AnnotationValue
      */
     JCExpression annotationFieldValue() {
-        if (token.kind == IDENTIFIER) {
+        if (LAX_IDENTIFIER.accepts(token.kind)) {
             mode = EXPR;
             JCExpression t1 = term1();
             if (t1.hasTag(IDENT) && token.kind == EQ) {

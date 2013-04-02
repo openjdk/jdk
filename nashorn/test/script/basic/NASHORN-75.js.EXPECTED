@@ -1,0 +1,3 @@
+TypeError: [RegExp /a|b/g] is not a function
+TypeError: [String hello] is not a function
+TypeError: [object Object] is not a function

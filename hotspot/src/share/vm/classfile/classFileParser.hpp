@@ -34,6 +34,7 @@
 #include "classfile/symbolTable.hpp"
 
 class FieldAllocationCount;
+class FieldLayoutInfo;
 
 
 // Parser for for .class files
@@ -47,6 +48,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   u2   _major_version;
   u2   _minor_version;
   Symbol* _class_name;
+  ClassLoaderData* _loader_data;
   KlassHandle _host_klass;
   GrowableArray<Handle>* _cp_patches; // overrides for CP entries
 
@@ -58,33 +60,59 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
 
   // class attributes parsed before the instance klass is created:
   bool       _synthetic_flag;
+  int        _sde_length;
+  char*      _sde_buffer;
   Symbol*    _sourcefile;
   Symbol*    _generic_signature;
-  char*      _sde_buffer;
-  int        _sde_length;
-  Array<u2>* _inner_classes;
+
+  // Metadata created before the instance klass is created.  Must be deallocated
+  // if not transferred to the InstanceKlass upon successful class loading
+  // in which case these pointers have been set to NULL.
+  instanceKlassHandle _super_klass;
+  ConstantPool*    _cp;
+  Array<u2>*       _fields;
+  Array<Method*>*  _methods;
+  Array<u2>*       _inner_classes;
+  Array<Klass*>*   _local_interfaces;
+  Array<Klass*>*   _transitive_interfaces;
   AnnotationArray* _annotations;
   AnnotationArray* _type_annotations;
+  Array<AnnotationArray*>* _fields_annotations;
+  Array<AnnotationArray*>* _fields_type_annotations;
+  InstanceKlass*   _klass;  // InstanceKlass once created.
 
   void set_class_synthetic_flag(bool x)           { _synthetic_flag = x; }
   void set_class_sourcefile(Symbol* x)            { _sourcefile = x; }
   void set_class_generic_signature(Symbol* x)     { _generic_signature = x; }
   void set_class_sde_buffer(char* x, int len)     { _sde_buffer = x; _sde_length = len; }
-  void set_class_inner_classes(Array<u2>* x)      { _inner_classes = x; }
-  void set_class_annotations(AnnotationArray* x)  { _annotations = x; }
-  void set_class_type_annotations(AnnotationArray* x)  { _type_annotations = x; }
-  void init_parsed_class_attributes() {
+
+  void init_parsed_class_attributes(ClassLoaderData* loader_data) {
+    _loader_data = loader_data;
     _synthetic_flag = false;
     _sourcefile = NULL;
     _generic_signature = NULL;
     _sde_buffer = NULL;
     _sde_length = 0;
-    _annotations = _type_annotations = NULL;
     // initialize the other flags too:
     _has_finalizer = _has_empty_finalizer = _has_vanilla_constructor = false;
     _max_bootstrap_specifier_index = -1;
+    clear_class_metadata();
+    _klass = NULL;
   }
   void apply_parsed_class_attributes(instanceKlassHandle k);  // update k
+  void apply_parsed_class_metadata(instanceKlassHandle k, int fields_count, TRAPS);
+  void clear_class_metadata() {
+    // metadata created before the instance klass is created.  Must be
+    // deallocated if classfile parsing returns an error.
+    _cp = NULL;
+    _fields = NULL;
+    _methods = NULL;
+    _inner_classes = NULL;
+    _local_interfaces = NULL;
+    _transitive_interfaces = NULL;
+    _annotations = _type_annotations = NULL;
+    _fields_annotations = _fields_type_annotations = NULL;
+  }
 
   class AnnotationCollector {
   public:
@@ -124,11 +152,27 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     void set_contended(bool contended) { set_annotation(_sun_misc_Contended); }
     bool is_contended() { return has_annotation(_sun_misc_Contended); }
   };
+
+  // This class also doubles as a holder for metadata cleanup.
   class FieldAnnotationCollector: public AnnotationCollector {
+    ClassLoaderData* _loader_data;
+    AnnotationArray* _field_annotations;
+    AnnotationArray* _field_type_annotations;
   public:
-    FieldAnnotationCollector() : AnnotationCollector(_in_field) { }
+    FieldAnnotationCollector(ClassLoaderData* loader_data) :
+                                 AnnotationCollector(_in_field),
+                                 _loader_data(loader_data),
+                                 _field_annotations(NULL),
+                                 _field_type_annotations(NULL) {}
     void apply_to(FieldInfo* f);
+    ~FieldAnnotationCollector();
+    AnnotationArray* field_annotations()      { return _field_annotations; }
+    AnnotationArray* field_type_annotations() { return _field_type_annotations; }
+
+    void set_field_annotations(AnnotationArray* a)      { _field_annotations = a; }
+    void set_field_type_annotations(AnnotationArray* a) { _field_type_annotations = a; }
   };
+
   class MethodAnnotationCollector: public AnnotationCollector {
   public:
     MethodAnnotationCollector() : AnnotationCollector(_in_method) { }
@@ -152,38 +196,30 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void set_stream(ClassFileStream* st)             { _stream = st; }
 
   // Constant pool parsing
-  void parse_constant_pool_entries(ClassLoaderData* loader_data,
-                                   constantPoolHandle cp, int length, TRAPS);
+  void parse_constant_pool_entries(int length, TRAPS);
 
-  constantPoolHandle parse_constant_pool(ClassLoaderData* loader_data, TRAPS);
+  constantPoolHandle parse_constant_pool(TRAPS);
 
   // Interface parsing
-  Array<Klass*>* parse_interfaces(constantPoolHandle cp,
-                                  int length,
-                                  ClassLoaderData* loader_data,
+  Array<Klass*>* parse_interfaces(int length,
                                   Handle protection_domain,
                                   Symbol* class_name,
                                   bool* has_default_methods,
                                   TRAPS);
   void record_defined_class_dependencies(instanceKlassHandle defined_klass, TRAPS);
 
+  instanceKlassHandle parse_super_class(int super_class_index, TRAPS);
   // Field parsing
-  void parse_field_attributes(ClassLoaderData* loader_data,
-                              constantPoolHandle cp, u2 attributes_count,
+  void parse_field_attributes(u2 attributes_count,
                               bool is_static, u2 signature_index,
                               u2* constantvalue_index_addr,
                               bool* is_synthetic_addr,
                               u2* generic_signature_index_addr,
-                              AnnotationArray** field_annotations,
-                              AnnotationArray** field_type_annotations,
                               FieldAnnotationCollector* parsed_annotations,
                               TRAPS);
-  Array<u2>* parse_fields(ClassLoaderData* loader_data,
-                          Symbol* class_name,
-                          constantPoolHandle cp, bool is_interface,
+  Array<u2>* parse_fields(Symbol* class_name,
+                          bool is_interface,
                           FieldAllocationCount *fac,
-                          Array<AnnotationArray*>** fields_annotations,
-                          Array<AnnotationArray*>** fields_type_annotations,
                           u2* java_fields_count_ptr, TRAPS);
 
   void print_field_layout(Symbol* name,
@@ -195,65 +231,52 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                           int static_fields_end);
 
   // Method parsing
-  methodHandle parse_method(ClassLoaderData* loader_data,
-                            constantPoolHandle cp,
-                            bool is_interface,
+  methodHandle parse_method(bool is_interface,
                             AccessFlags* promoted_flags,
                             TRAPS);
-  Array<Method*>* parse_methods(ClassLoaderData* loader_data,
-                                constantPoolHandle cp,
-                                bool is_interface,
+  Array<Method*>* parse_methods(bool is_interface,
                                 AccessFlags* promoted_flags,
                                 bool* has_final_method,
                                 bool* has_default_method,
                                 TRAPS);
-  Array<int>* sort_methods(ClassLoaderData* loader_data,
-                           Array<Method*>* methods,
-                           TRAPS);
-  u2* parse_exception_table(ClassLoaderData* loader_data,
-                            u4 code_length, u4 exception_table_length,
-                            constantPoolHandle cp, TRAPS);
+  intArray* sort_methods(Array<Method*>* methods);
+
+  u2* parse_exception_table(u4 code_length, u4 exception_table_length,
+                            TRAPS);
   void parse_linenumber_table(
       u4 code_attribute_length, u4 code_length,
       CompressedLineNumberWriteStream** write_stream, TRAPS);
   u2* parse_localvariable_table(u4 code_length, u2 max_locals, u4 code_attribute_length,
-                                constantPoolHandle cp, u2* localvariable_table_length,
+                                u2* localvariable_table_length,
                                 bool isLVTT, TRAPS);
   u2* parse_checked_exceptions(u2* checked_exceptions_length, u4 method_attribute_length,
-                               constantPoolHandle cp, TRAPS);
+                               TRAPS);
   void parse_type_array(u2 array_length, u4 code_length, u4* u1_index, u4* u2_index,
-                        u1* u1_array, u2* u2_array, constantPoolHandle cp, TRAPS);
-  Array<u1>* parse_stackmap_table(ClassLoaderData* loader_data, u4 code_attribute_length, TRAPS);
+                        u1* u1_array, u2* u2_array, TRAPS);
+  u1* parse_stackmap_table(u4 code_attribute_length, TRAPS);
 
   // Classfile attribute parsing
-  void parse_classfile_sourcefile_attribute(constantPoolHandle cp, TRAPS);
-  void parse_classfile_source_debug_extension_attribute(constantPoolHandle cp,
-                                                        int length, TRAPS);
-  u2   parse_classfile_inner_classes_attribute(ClassLoaderData* loader_data,
-                                               u1* inner_classes_attribute_start,
+  void parse_classfile_sourcefile_attribute(TRAPS);
+  void parse_classfile_source_debug_extension_attribute(int length, TRAPS);
+  u2   parse_classfile_inner_classes_attribute(u1* inner_classes_attribute_start,
                                                bool parsed_enclosingmethod_attribute,
                                                u2 enclosing_method_class_index,
                                                u2 enclosing_method_method_index,
-                                               constantPoolHandle cp,
                                                TRAPS);
-  void parse_classfile_attributes(ClassLoaderData* loader_data,
-                                  constantPoolHandle cp,
-                                  ClassAnnotationCollector* parsed_annotations,
+  void parse_classfile_attributes(ClassAnnotationCollector* parsed_annotations,
                                   TRAPS);
-  void parse_classfile_synthetic_attribute(constantPoolHandle cp, TRAPS);
-  void parse_classfile_signature_attribute(constantPoolHandle cp, TRAPS);
-  void parse_classfile_bootstrap_methods_attribute(ClassLoaderData* loader_data, constantPoolHandle cp, u4 attribute_length, TRAPS);
+  void parse_classfile_synthetic_attribute(TRAPS);
+  void parse_classfile_signature_attribute(TRAPS);
+  void parse_classfile_bootstrap_methods_attribute(u4 attribute_length, TRAPS);
 
   // Annotations handling
-  AnnotationArray* assemble_annotations(ClassLoaderData* loader_data,
-                                        u1* runtime_visible_annotations,
+  AnnotationArray* assemble_annotations(u1* runtime_visible_annotations,
                                         int runtime_visible_annotations_length,
                                         u1* runtime_invisible_annotations,
                                         int runtime_invisible_annotations_length, TRAPS);
   int skip_annotation(u1* buffer, int limit, int index);
   int skip_annotation_value(u1* buffer, int limit, int index);
-  void parse_annotations(ClassLoaderData* loader_data,
-                         u1* buffer, int limit, constantPoolHandle cp,
+  void parse_annotations(u1* buffer, int limit,
                          /* Results (currently, only one result is supported): */
                          AnnotationCollector* result,
                          TRAPS);
@@ -267,8 +290,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                      int* nonstatic_oop_offsets,
                      unsigned int* nonstatic_oop_counts);
   void set_precomputed_flags(instanceKlassHandle k);
-  Array<Klass*>* compute_transitive_interfaces(ClassLoaderData* loader_data,
-                                               instanceKlassHandle super,
+  Array<Klass*>* compute_transitive_interfaces(instanceKlassHandle super,
                                                Array<Klass*>* local_ifs, TRAPS);
 
   // Format checker methods
@@ -318,7 +340,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   bool is_supported_version(u2 major, u2 minor);
   bool has_illegal_visibility(jint flags);
 
-  void verify_constantvalue(int constantvalue_index, int signature_index, constantPoolHandle cp, TRAPS);
+  void verify_constantvalue(int constantvalue_index, int signature_index, TRAPS);
   void verify_legal_utf8(const unsigned char* buffer, int length, TRAPS);
   void verify_legal_class_name(Symbol* name, TRAPS);
   void verify_legal_field_name(Symbol* name, TRAPS);
@@ -359,10 +381,17 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // In older versions of the VM, Klass*s cannot sneak into early phases of
   // constant pool construction, but in later versions they can.
   // %%% Let's phase out the old is_klass_reference.
-  bool is_klass_reference(constantPoolHandle cp, int index) {
-    return (EnableInvokeDynamic
-            ? cp->tag_at(index).is_klass_or_reference()
-            : cp->tag_at(index).is_klass_reference());
+  bool valid_klass_reference_at(int index) {
+    return _cp->is_within_bounds(index) &&
+         (EnableInvokeDynamic
+            ? _cp->tag_at(index).is_klass_or_reference()
+            : _cp->tag_at(index).is_klass_reference());
+  }
+
+  // Checks that the cpool index is in range and is a utf8
+  bool valid_symbol_at(int cpool_index) {
+    return (_cp->is_within_bounds(cpool_index) &&
+            _cp->tag_at(cpool_index).is_utf8());
   }
 
   void copy_localvariable_table(ConstMethod* cm, int lvt_cnt,
@@ -373,8 +402,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                 u2** localvariable_type_table_start,
                                 TRAPS);
 
-  void copy_method_annotations(ClassLoaderData* loader_data,
-                               ConstMethod* cm,
+  void copy_method_annotations(ConstMethod* cm,
                                u1* runtime_visible_annotations,
                                int runtime_visible_annotations_length,
                                u1* runtime_invisible_annotations,
@@ -391,9 +419,15 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                int annotation_default_length,
                                TRAPS);
 
+  // lays out fields in class and returns the total oopmap count
+  void layout_fields(Handle class_loader, FieldAllocationCount* fac,
+                     ClassAnnotationCollector* parsed_annotations,
+                     FieldLayoutInfo* info, TRAPS);
+
  public:
   // Constructor
   ClassFileParser(ClassFileStream* st) { set_stream(st); }
+  ~ClassFileParser();
 
   // Parse .class file and return new Klass*. The Klass* is not hooked up
   // to the system dictionary or any other structures, so a .class file can

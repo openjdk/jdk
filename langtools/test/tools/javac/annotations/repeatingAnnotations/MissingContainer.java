@@ -1,6 +1,6 @@
 /**
  * @test    /nodynamiccopyright/
- * @bug     7169362
+ * @bug     7169362 8001114
  * @author  sogoel
  * @summary ContainerAnnotation does not have FooContainer.class specified
  * @compile/fail/ref=MissingContainer.out -XDrawDiagnostics MissingContainer.java

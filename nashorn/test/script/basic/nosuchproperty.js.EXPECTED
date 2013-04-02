@@ -1,0 +1,4 @@
+obj.__noSuchProperty__ for foo
+new obj.__noSuchProperty__ for foo
+proto.__noSuchProperty__ for foo
+new proto.__noSuchProperty__ for foo

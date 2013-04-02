@@ -43,6 +43,7 @@ typedef Elf64_Addr      Elf_Addr;
 
 typedef Elf64_Ehdr      Elf_Ehdr;
 typedef Elf64_Shdr      Elf_Shdr;
+typedef Elf64_Phdr      Elf_Phdr;
 typedef Elf64_Sym       Elf_Sym;
 
 #if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
@@ -59,6 +60,7 @@ typedef Elf32_Addr      Elf_Addr;
 
 typedef Elf32_Ehdr      Elf_Ehdr;
 typedef Elf32_Shdr      Elf_Shdr;
+typedef Elf32_Phdr      Elf_Phdr;
 typedef Elf32_Sym       Elf_Sym;
 
 #if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
@@ -122,6 +124,14 @@ class ElfFile: public CHeapObj<mtInternal> {
 protected:
    ElfFile*  next() const { return m_next; }
    void set_next(ElfFile* file) { m_next = file; }
+
+ public:
+  // Returns true if the elf file is marked NOT to require an executable stack,
+  // or if the file could not be opened.
+  // Returns false if the elf file requires an executable stack, the stack flag
+  // is not set at all, or if the file can not be read.
+  // On systems other than linux it always returns false.
+  bool specifies_noexecstack() NOT_LINUX({ return false; });
 
  protected:
     ElfFile*         m_next;

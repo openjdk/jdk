@@ -4193,6 +4193,7 @@ const TypeOopPtr* TypeKlassPtr::as_instance_type() const {
   bool    xk = klass_is_exact();
   //return TypeInstPtr::make(TypePtr::NotNull, k, xk, NULL, 0);
   const TypeOopPtr* toop = TypeOopPtr::make_from_klass_raw(k);
+  guarantee(toop != NULL, "need type for given klass");
   toop = toop->cast_to_ptr_type(TypePtr::NotNull)->is_oopptr();
   return toop->cast_to_exactness(xk)->is_oopptr();
 }

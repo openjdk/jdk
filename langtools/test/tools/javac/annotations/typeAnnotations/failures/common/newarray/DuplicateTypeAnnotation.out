@@ -1,3 +1,2 @@
-DuplicateTypeAnnotation.java:11:29: compiler.err.duplicate.annotation.missing.container: A, java.lang.annotation.Repeatable
 DuplicateTypeAnnotation.java:11:32: compiler.err.duplicate.annotation.missing.container: A, java.lang.annotation.Repeatable
-2 errors
+1 error

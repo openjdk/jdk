@@ -33,12 +33,14 @@ CORBA_TOPDIR="$SRC_ROOT/corba"
 JAXP_TOPDIR="$SRC_ROOT/jaxp"
 JAXWS_TOPDIR="$SRC_ROOT/jaxws"
 HOTSPOT_TOPDIR="$SRC_ROOT/hotspot"
+NASHORN_TOPDIR="$SRC_ROOT/nashorn"
 JDK_TOPDIR="$SRC_ROOT/jdk"
 AC_SUBST(LANGTOOLS_TOPDIR)
 AC_SUBST(CORBA_TOPDIR)
 AC_SUBST(JAXP_TOPDIR)
 AC_SUBST(JAXWS_TOPDIR)
 AC_SUBST(HOTSPOT_TOPDIR)
+AC_SUBST(NASHORN_TOPDIR)
 AC_SUBST(JDK_TOPDIR)
 ])
 
@@ -233,7 +235,18 @@ if test "x$with_override_hotspot" != x; then
     fi
     AC_MSG_CHECKING([if hotspot should be overridden])
     AC_MSG_RESULT([yes with $HOTSPOT_TOPDIR])
-fi    
+fi
+if test "x$with_override_nashorn" != x; then
+    CURDIR="$PWD"
+    cd "$with_override_nashorn"
+    NASHORN_TOPDIR="`pwd`"
+    cd "$CURDIR"
+    if ! test -f $NASHORN_TOPDIR/makefiles/BuildNashorn.gmk; then
+        AC_MSG_ERROR([You have to override nashorn with a full nashorn repo!])
+    fi
+    AC_MSG_CHECKING([if nashorn should be overridden])
+    AC_MSG_RESULT([yes with $NASHORN_TOPDIR])
+fi
 if test "x$with_override_jdk" != x; then
     CURDIR="$PWD"
     cd "$with_override_jdk"

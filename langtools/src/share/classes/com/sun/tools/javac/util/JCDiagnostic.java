@@ -347,7 +347,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         MANDATORY,
         RESOLVE_ERROR,
         SYNTAX,
-        RECOVERABLE
+        RECOVERABLE,
+        NON_DEFERRABLE,
     }
 
     private final DiagnosticType type;
@@ -482,6 +483,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
     public long getEndPosition() {
         return getIntEndPosition();
+    }
+
+    public DiagnosticPosition getDiagnosticPosition() {
+        return position;
     }
 
     /**
