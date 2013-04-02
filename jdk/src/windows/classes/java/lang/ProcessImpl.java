@@ -234,7 +234,7 @@ final class ProcessImpl extends Process {
         return stderr_stream;
     }
 
-    public void finalize() {
+    protected void finalize() {
         closeHandle(handle);
     }
 
