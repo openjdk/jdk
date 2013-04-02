@@ -343,10 +343,16 @@ public final class Method extends Executable {
      * {@code public}, {@code protected} or {@code private} first,
      * and then other modifiers in the following order:
      * {@code abstract}, {@code static}, {@code final},
-     * {@code synchronized}, {@code native}, {@code strictfp}.
+     * {@code synchronized}, {@code native}, {@code strictfp},
+     * {@code default}.
+     *
+     * @return a string describing this {@code Method}
+     *
+     * @jls 8.4.3 Method Modifiers
      */
     public String toString() {
         return sharedToString(Modifier.methodModifiers(),
+                              isDefault(),
                               parameterTypes,
                               exceptionTypes);
     }
@@ -389,16 +395,19 @@ public final class Method extends Executable {
      * {@code public}, {@code protected} or {@code private} first,
      * and then other modifiers in the following order:
      * {@code abstract}, {@code static}, {@code final},
-     * {@code synchronized}, {@code native}, {@code strictfp}.
+     * {@code synchronized}, {@code native}, {@code strictfp},
+     * {@code default}.
      *
      * @return a string describing this {@code Method},
      * include type parameters
      *
      * @since 1.5
+     *
+     * @jls 8.4.3 Method Modifiers
      */
     @Override
     public String toGenericString() {
-        return sharedToGenericString(Modifier.methodModifiers());
+        return sharedToGenericString(Modifier.methodModifiers(), isDefault());
     }
 
     @Override

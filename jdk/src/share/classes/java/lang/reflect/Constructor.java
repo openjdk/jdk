@@ -284,9 +284,13 @@ public final class Constructor<T> extends Executable {
      * modifiers {@code public}, {@code protected} or
      * {@code private}.  Only one of these may appear, or none if the
      * constructor has default (package) access.
+     *
+     * @return a string describing this {@code Constructor}
+     * @jls 8.8.3. Constructor Modifiers
      */
     public String toString() {
         return sharedToString(Modifier.constructorModifiers(),
+                              false,
                               parameterTypes,
                               exceptionTypes);
     }
@@ -328,10 +332,11 @@ public final class Constructor<T> extends Executable {
      * include type parameters
      *
      * @since 1.5
+     * @jls 8.8.3. Constructor Modifiers
      */
     @Override
     public String toGenericString() {
-        return sharedToGenericString(Modifier.constructorModifiers());
+        return sharedToGenericString(Modifier.constructorModifiers(), false);
     }
 
     @Override
