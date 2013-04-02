@@ -722,6 +722,56 @@ public class Util {
     }
 
     /**
+     * A convenience method to get property name from the name of the
+     * getter or setter method.
+     * @param name name of the getter or setter method.
+     * @return the name of the property of the given setter of getter.
+     */
+    public static String propertyNameFromMethodName(String name) {
+        String propertyName = null;
+        if (name.startsWith("get") || name.startsWith("set")) {
+            propertyName = name.substring(3);
+        } else if (name.startsWith("is")) {
+            propertyName = name.substring(2);
+        }
+        if ((propertyName == null) || propertyName.isEmpty()){
+            return "";
+        }
+        return propertyName.substring(0, 1).toLowerCase()
+                + propertyName.substring(1);
+    }
+
+    /**
+     * In case of JavaFX mode on, filters out classes that are private,
+     * package private or having the @treatAsPrivate annotation. Those are not
+     * documented in JavaFX mode.
+     *
+     * @param classes array of classes to be filtered.
+     * @param javafx set to true if in JavaFX mode.
+     * @return list of filtered classes.
+     */
+    public static ClassDoc[] filterOutPrivateClasses(final ClassDoc[] classes,
+                                                     boolean javafx) {
+        if (!javafx) {
+            return classes;
+        }
+        final List<ClassDoc> filteredOutClasses =
+                new ArrayList<ClassDoc>(classes.length);
+        for (ClassDoc classDoc : classes) {
+            if (classDoc.isPrivate() || classDoc.isPackagePrivate()) {
+                continue;
+            }
+            Tag[] aspTags = classDoc.tags("treatAsPrivate");
+            if (aspTags != null && aspTags.length > 0) {
+                continue;
+            }
+            filteredOutClasses.add(classDoc);
+        }
+
+        return filteredOutClasses.toArray(new ClassDoc[0]);
+    }
+
+    /**
      * Test whether the given FieldDoc is one of the declaration annotation ElementTypes
      * defined in Java 5.
      * Instead of testing for one of the new enum constants added in Java 8, test for

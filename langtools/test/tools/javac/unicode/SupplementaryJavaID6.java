@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,20 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 4914724 4973116 5014511
+ * @summary Ensure that a supplementary character can be used as part/whole of a
+ * class name on platforms that have Unicode aware filesystems.
+ * @run main SupplementaryJavaID6
+ */
+
 public class SupplementaryJavaID6 {
     public static void main(String[] s) {
-        new SupplementaryJavaID6();
+        new SupplementaryJavaID6().test();
     }
 
-    public SupplementaryJavaID6() {
+    void test() {
         \ud801\udc00 instance = new \ud801\udc00();
         instance.\ud801\udc01();
     }

@@ -101,8 +101,8 @@ Stub* StubQueue::stub_containing(address pc) const {
 
 Stub* StubQueue::request_committed(int code_size) {
   Stub* s = request(code_size);
-  CodeComments comments;
-  if (s != NULL) commit(code_size, comments);
+  CodeStrings strings;
+  if (s != NULL) commit(code_size, strings);
   return s;
 }
 
@@ -119,8 +119,8 @@ Stub* StubQueue::request(int requested_code_size) {
       assert(_buffer_limit == _buffer_size, "buffer must be fully usable");
       if (_queue_end + requested_size <= _buffer_size) {
         // code fits in at the end => nothing to do
-        CodeComments comments;
-        stub_initialize(s, requested_size, comments);
+        CodeStrings strings;
+        stub_initialize(s, requested_size, strings);
         return s;
       } else {
         // stub doesn't fit in at the queue end
@@ -137,8 +137,8 @@ Stub* StubQueue::request(int requested_code_size) {
     // Queue: |XXX|.......|XXXXXXX|.......|
     //        ^0  ^end    ^begin  ^limit  ^size
     s = current_stub();
-    CodeComments comments;
-    stub_initialize(s, requested_size, comments);
+    CodeStrings strings;
+    stub_initialize(s, requested_size, strings);
     return s;
   }
   // Not enough space left
@@ -147,12 +147,12 @@ Stub* StubQueue::request(int requested_code_size) {
 }
 
 
-void StubQueue::commit(int committed_code_size, CodeComments& comments) {
+void StubQueue::commit(int committed_code_size, CodeStrings& strings) {
   assert(committed_code_size > 0, "committed_code_size must be > 0");
   int committed_size = round_to(stub_code_size_to_size(committed_code_size), CodeEntryAlignment);
   Stub* s = current_stub();
   assert(committed_size <= stub_size(s), "committed size must not exceed requested size");
-  stub_initialize(s, committed_size, comments);
+  stub_initialize(s, committed_size, strings);
   _queue_end += committed_size;
   _number_of_stubs++;
   if (_mutex != NULL) _mutex->unlock();

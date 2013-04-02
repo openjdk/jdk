@@ -163,6 +163,12 @@ public class Lower extends TreeTranslator {
      */
     JCTree outermostMemberDef;
 
+    /** A map from local variable symbols to their translation (as per LambdaToMethod).
+     * This is required when a capturing local class is created from a lambda (in which
+     * case the captured symbols should be replaced with the translated lambda symbols).
+     */
+    Map<Symbol, Symbol> lambdaTranslationMap = null;
+
     /** A navigator class for assembling a mapping from local class symbols
      *  to class definition trees.
      *  There is only one case; all other cases simply traverse down the tree.
@@ -206,10 +212,51 @@ public class Lower extends TreeTranslator {
     Map<ClassSymbol,List<VarSymbol>> freevarCache;
 
     /** A navigator class for collecting the free variables accessed
-     *  from a local class.
-     *  There is only one case; all other cases simply traverse down the tree.
+     *  from a local class. There is only one case; all other cases simply
+     *  traverse down the tree. This class doesn't deal with the specific
+     *  of Lower - it's an abstract visitor that is meant to be reused in
+     *  order to share the local variable capture logic.
      */
-    class FreeVarCollector extends TreeScanner {
+    abstract class BasicFreeVarCollector extends TreeScanner {
+
+        /** Add all free variables of class c to fvs list
+         *  unless they are already there.
+         */
+        abstract void addFreeVars(ClassSymbol c);
+
+        /** If tree refers to a variable in owner of local class, add it to
+         *  free variables list.
+         */
+        public void visitIdent(JCIdent tree) {
+            visitSymbol(tree.sym);
+        }
+        // where
+        abstract void visitSymbol(Symbol _sym);
+
+        /** If tree refers to a class instance creation expression
+         *  add all free variables of the freshly created class.
+         */
+        public void visitNewClass(JCNewClass tree) {
+            ClassSymbol c = (ClassSymbol)tree.constructor.owner;
+            addFreeVars(c);
+            super.visitNewClass(tree);
+        }
+
+        /** If tree refers to a superclass constructor call,
+         *  add all free variables of the superclass.
+         */
+        public void visitApply(JCMethodInvocation tree) {
+            if (TreeInfo.name(tree.meth) == names._super) {
+                addFreeVars((ClassSymbol) TreeInfo.symbol(tree.meth).owner);
+            }
+            super.visitApply(tree);
+        }
+    }
+
+    /**
+     * Lower-specific subclass of {@code BasicFreeVarCollector}.
+     */
+    class FreeVarCollector extends BasicFreeVarCollector {
 
         /** The owner of the local class.
          */
@@ -238,10 +285,8 @@ public class Lower extends TreeTranslator {
             fvs = fvs.prepend(v);
         }
 
-        /** Add all free variables of class c to fvs list
-         *  unless they are already there.
-         */
-        private void addFreeVars(ClassSymbol c) {
+        @Override
+        void addFreeVars(ClassSymbol c) {
             List<VarSymbol> fvs = freevarCache.get(c);
             if (fvs != null) {
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
@@ -250,15 +295,8 @@ public class Lower extends TreeTranslator {
             }
         }
 
-        /** If tree refers to a variable in owner of local class, add it to
-         *  free variables list.
-         */
-        public void visitIdent(JCIdent tree) {
-            result = tree;
-            visitSymbol(tree.sym);
-        }
-        // where
-        private void visitSymbol(Symbol _sym) {
+        @Override
+        void visitSymbol(Symbol _sym) {
             Symbol sym = _sym;
             if (sym.kind == VAR || sym.kind == MTH) {
                 while (sym != null && sym.owner != owner)
@@ -281,7 +319,6 @@ public class Lower extends TreeTranslator {
          */
         public void visitNewClass(JCNewClass tree) {
             ClassSymbol c = (ClassSymbol)tree.constructor.owner;
-            addFreeVars(c);
             if (tree.encl == null &&
                 c.hasOuterInstance() &&
                 outerThisStack.head != null)
@@ -306,7 +343,6 @@ public class Lower extends TreeTranslator {
          */
         public void visitApply(JCMethodInvocation tree) {
             if (TreeInfo.name(tree.meth) == names._super) {
-                addFreeVars((ClassSymbol) TreeInfo.symbol(tree.meth).owner);
                 Symbol constructor = TreeInfo.symbol(tree.meth);
                 ClassSymbol c = (ClassSymbol)constructor.owner;
                 if (c.hasOuterInstance() &&
@@ -1170,6 +1206,14 @@ public class Lower extends TreeTranslator {
                         return make.at(tree.pos).Select(
                             accessBase(tree.pos(), sym), sym).setType(tree.type);
                     }
+                }
+            } else if (sym.owner.kind == MTH && lambdaTranslationMap != null) {
+                //sym is a local variable - check the lambda translation map to
+                //see if sym has been translated to something else in the current
+                //scope (by LambdaToMethod)
+                Symbol translatedSym = lambdaTranslationMap.get(sym);
+                if (translatedSym != null) {
+                    tree = make.at(tree.pos).Ident(translatedSym);
                 }
             }
         }
@@ -2725,10 +2769,30 @@ public class Lower extends TreeTranslator {
 
             outerThisStack = prevOuterThisStack;
         } else {
-            super.visitMethodDef(tree);
+            Map<Symbol, Symbol> prevLambdaTranslationMap =
+                    lambdaTranslationMap;
+            try {
+                lambdaTranslationMap = (tree.sym.flags() & SYNTHETIC) != 0 &&
+                        tree.sym.name.startsWith(names.lambda) ?
+                        makeTranslationMap(tree) : null;
+                super.visitMethodDef(tree);
+            } finally {
+                lambdaTranslationMap = prevLambdaTranslationMap;
+            }
         }
         result = tree;
     }
+    //where
+        private Map<Symbol, Symbol> makeTranslationMap(JCMethodDecl tree) {
+            Map<Symbol, Symbol> translationMap = new HashMap<Symbol,Symbol>();
+            for (JCVariableDecl vd : tree.params) {
+                Symbol p = vd.sym;
+                if (p != p.baseSymbol()) {
+                    translationMap.put(p.baseSymbol(), p);
+                }
+            }
+            return translationMap;
+        }
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         // No need to retain type annotations any longer.
@@ -3094,38 +3158,59 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitAssignop(final JCAssignOp tree) {
+        JCTree lhsAccess = access(TreeInfo.skipParens(tree.lhs));
         final boolean boxingReq = !tree.lhs.type.isPrimitive() &&
             tree.operator.type.getReturnType().isPrimitive();
 
-        // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
-        // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
-        // (but without recomputing x)
-        JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
-                public JCTree build(final JCTree lhs) {
-                    JCTree.Tag newTag = tree.getTag().noAssignOp();
-                    // Erasure (TransTypes) can change the type of
-                    // tree.lhs.  However, we can still get the
-                    // unerased type of tree.lhs as it is stored
-                    // in tree.type in Attr.
-                    Symbol newOperator = rs.resolveBinaryOperator(tree.pos(),
-                                                                  newTag,
-                                                                  attrEnv,
-                                                                  tree.type,
-                                                                  tree.rhs.type);
-                    JCExpression expr = (JCExpression)lhs;
-                    if (expr.type != tree.type)
-                        expr = make.TypeCast(tree.type, expr);
-                    JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
-                    opResult.operator = newOperator;
-                    opResult.type = newOperator.type.getReturnType();
-                    JCExpression newRhs = boxingReq ?
-                            make.TypeCast(types.unboxedType(tree.type),
-                                                      opResult) :
+        if (boxingReq || lhsAccess.hasTag(APPLY)) {
+            // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
+            // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
+            // (but without recomputing x)
+            JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
+                    public JCTree build(final JCTree lhs) {
+                        JCTree.Tag newTag = tree.getTag().noAssignOp();
+                        // Erasure (TransTypes) can change the type of
+                        // tree.lhs.  However, we can still get the
+                        // unerased type of tree.lhs as it is stored
+                        // in tree.type in Attr.
+                        Symbol newOperator = rs.resolveBinaryOperator(tree.pos(),
+                                                                      newTag,
+                                                                      attrEnv,
+                                                                      tree.type,
+                                                                      tree.rhs.type);
+                        JCExpression expr = (JCExpression)lhs;
+                        if (expr.type != tree.type)
+                            expr = make.TypeCast(tree.type, expr);
+                        JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
+                        opResult.operator = newOperator;
+                        opResult.type = newOperator.type.getReturnType();
+                        JCExpression newRhs = boxingReq ?
+                            make.TypeCast(types.unboxedType(tree.type), opResult) :
                             opResult;
-                    return make.Assign((JCExpression)lhs, newRhs).setType(tree.type);
-                }
-            });
-        result = translate(newTree);
+                        return make.Assign((JCExpression)lhs, newRhs).setType(tree.type);
+                    }
+                });
+            result = translate(newTree);
+            return;
+        }
+        tree.lhs = translate(tree.lhs, tree);
+        tree.rhs = translate(tree.rhs, tree.operator.type.getParameterTypes().tail.head);
+
+        // If translated left hand side is an Apply, we are
+        // seeing an access method invocation. In this case, append
+        // right hand side as last argument of the access method.
+        if (tree.lhs.hasTag(APPLY)) {
+            JCMethodInvocation app = (JCMethodInvocation)tree.lhs;
+            // if operation is a += on strings,
+            // make sure to convert argument to string
+            JCExpression rhs = (((OperatorSymbol)tree.operator).opcode == string_add)
+              ? makeString(tree.rhs)
+              : tree.rhs;
+            app.args = List.of(rhs).prependList(app.args);
+            result = app;
+        } else {
+            result = tree;
+        }
     }
 
     /** Lower a tree of the form e++ or e-- where e is an object type */
@@ -3722,8 +3807,16 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitTry(JCTry tree) {
+        /* special case of try without catchers and with finally emtpy.
+         * Don't give it a try, translate only the body.
+         */
         if (tree.resources.isEmpty()) {
-            super.visitTry(tree);
+            if (tree.catchers.isEmpty() &&
+                tree.finalizer.getStatements().isEmpty()) {
+                result = translate(tree.body);
+            } else {
+                super.visitTry(tree);
+            }
         } else {
             result = makeTwrTry(tree);
         }
