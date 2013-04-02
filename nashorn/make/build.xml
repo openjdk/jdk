@@ -139,6 +139,31 @@
       </manifest>
     </jar>
   </target>
+  
+  <target name="build-fxshell" depends="jar">
+    <description>Builds the javafx shell.</description>
+    <mkdir dir="${fxshell.classes.dir}"/>
+    <javac srcdir="${fxshell.dir}"
+           destdir="${fxshell.classes.dir}"
+           classpath="${dist.jar}:${javac.classpath}"
+           debug="${javac.debug}"
+           encoding="${javac.encoding}"
+           includeantruntime="false">
+    </javac>
+    <jar jarfile="${fxshell.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
+      <fileset dir="${fxshell.classes.dir}"/>
+      <manifest>
+        <attribute name="Archiver-Version" value="n/a"/>
+        <attribute name="Build-Jdk" value="${java.runtime.version}"/>
+        <attribute name="Built-By" value="n/a"/>
+        <attribute name="Created-By" value="Ant jar task"/>
+        <section name="jdk/nashorn/">
+          <attribute name="Implementation-Title" value="Oracle Nashorn FXShell"/>
+          <attribute name="Implementation-Version" value="${nashorn.version}"/>
+        </section>
+      </manifest>
+    </jar>
+  </target>
 
   <target name="javadoc" depends="prepare">
     <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" windowtitle="${nashorn.product.name} ${nashorn.version}" additionalparam="-quiet" failonerror="true">
