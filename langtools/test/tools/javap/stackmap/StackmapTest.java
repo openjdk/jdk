@@ -84,10 +84,11 @@ public class StackmapTest {
                 new ToolBox.JavaToolArgs()
                 .setAllArgs("-v", "Test.class");
         String out = ToolBox.javap(javapParams);
-        List<String> grepResult = ToolBox.grep("frame_type", out);
-        grepResult.addAll(ToolBox.grep("offset_delta", out));
-        grepResult.addAll(ToolBox.grep("stack = ", out));
-        grepResult.addAll(ToolBox.grep("locals = ", out));
+        List<String> grepResult = ToolBox.grep("frame_type", out,
+                ToolBox.lineSeparator);
+        grepResult.addAll(ToolBox.grep("offset_delta", out, ToolBox.lineSeparator));
+        grepResult.addAll(ToolBox.grep("stack = ", out, ToolBox.lineSeparator));
+        grepResult.addAll(ToolBox.grep("locals = ", out, ToolBox.lineSeparator));
         List<String> goldenList = Arrays.asList(goldenOut.split("\n"));
 
 //        diff -w "${OUTFILE}" "${TESTSRC}${FS}T6271292.out"

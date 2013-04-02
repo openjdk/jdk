@@ -135,13 +135,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     protected Content getFrameDetails() {
         HtmlTree frameset = HtmlTree.FRAMESET("20%,80%", null, "Documentation frame",
                 "top.loadFrames()");
-        if (configuration.showProfiles) {
-            HtmlTree leftFrameset = HtmlTree.FRAMESET(null, "30%,70%", "Left frames",
-                "top.loadFrames()");
-            addAllProfilesFrameTag(leftFrameset);
-            addAllClassesFrameTag(leftFrameset);
-            frameset.addContent(leftFrameset);
-        } else if (noOfPackages <= 1) {
+        if (noOfPackages <= 1) {
             addAllClassesFrameTag(frameset);
         } else if (noOfPackages > 1) {
             HtmlTree leftFrameset = HtmlTree.FRAMESET(null, "30%,70%", "Left frames",
@@ -153,17 +147,6 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         addClassFrameTag(frameset);
         addFrameWarning(frameset);
         return frameset;
-    }
-
-    /**
-     * Add the FRAME tag for the frame that lists all profiles.
-     *
-     * @param contentTree the content tree to which the information will be added
-     */
-    private void addAllProfilesFrameTag(Content contentTree) {
-        HtmlTree frame = HtmlTree.FRAME(DocPaths.PROFILE_OVERVIEW_FRAME.getPath(),
-                "profileListFrame", configuration.getText("doclet.All_Profiles"));
-        contentTree.addContent(frame);
     }
 
     /**

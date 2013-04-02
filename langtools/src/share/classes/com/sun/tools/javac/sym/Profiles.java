@@ -149,12 +149,13 @@ public abstract class Profiles {
         }
 
         final static Map<String, Package> packages = new TreeMap<String, Package>();
-        int maxProfile;
+
+        final int maxProfile = 4;  // Three compact profiles plus full JRE
 
         MakefileProfiles(Properties p) {
-            int profile = 1;
-            while (true) {
-                String inclPackages = p.getProperty("PROFILE_" + profile + "_RTJAR_INCLUDE_PACKAGES");
+            for (int profile = 1; profile <= maxProfile; profile++) {
+                String prefix = (profile < maxProfile ? "PROFILE_" + profile : "FULL_JRE");
+                String inclPackages = p.getProperty(prefix + "_RTJAR_INCLUDE_PACKAGES");
                 if (inclPackages == null)
                     break;
                 for (String pkg: inclPackages.substring(1).trim().split("\\s+")) {
@@ -162,22 +163,20 @@ public abstract class Profiles {
                         pkg = pkg.substring(0, pkg.length() - 1);
                     includePackage(profile, pkg);
                 }
-                String inclTypes =  p.getProperty("PROFILE_" + profile + "_RTJAR_INCLUDE_TYPES");
+                String inclTypes =  p.getProperty(prefix + "_RTJAR_INCLUDE_TYPES");
                 if (inclTypes != null) {
                     for (String type: inclTypes.replace("$$", "$").split("\\s+")) {
                         if (type.endsWith(".class"))
                             includeType(profile, type.substring(0, type.length() - 6));
                     }
                 }
-                String exclTypes =  p.getProperty("PROFILE_" + profile + "_RTJAR_EXCLUDE_TYPES");
+                String exclTypes =  p.getProperty(prefix + "_RTJAR_EXCLUDE_TYPES");
                 if (exclTypes != null) {
                     for (String type: exclTypes.replace("$$", "$").split("\\s+")) {
                         if (type.endsWith(".class"))
                             excludeType(profile, type.substring(0, type.length() - 6));
                     }
                 }
-                maxProfile = profile;
-                profile++;
             }
         }
 

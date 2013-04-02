@@ -34,9 +34,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import com.sun.tools.javac.util.ArrayUtils;
 
-//original test: test/tools/javac/4846262/Test.sh
 public class CheckEBCDICLocaleTest {
 
     private static final String TestSrc =
@@ -46,11 +44,11 @@ public class CheckEBCDICLocaleTest {
         "    }\n" +
         "}";
 
-    private static final String TestOut =
-        "output/Test.java:3: error: not a statement\n" +
+    private static final String TestOutTemplate =
+        "output%1$sTest.java:3: error: not a statement\n" +
         "        abcdefg\n" +
         "        ^\n" +
-        "output/Test.java:3: error: ';' expected\n" +
+        "output%1$sTest.java:3: error: ';' expected\n" +
         "        abcdefg\n" +
         "               ^\n" +
         "2 errors\n";
@@ -62,38 +60,37 @@ public class CheckEBCDICLocaleTest {
     public void test() throws Exception {
         String native2asciiBinary = Paths.get(
                 System.getProperty("test.jdk"),"bin", "native2ascii").toString();
-        String testVMOpts = System.getProperty("test.tool.vm.opts");
-        String[] mainArgs = ToolBox.getJavacBin();
 
         ToolBox.createJavaFileFromSource(TestSrc);
         Files.createDirectory(Paths.get("output"));
 
-//"${TESTJAVA}${FS}bin${FS}native2ascii" ${TESTTOOLVMOPTS} -reverse -encoding IBM1047 ${TESTSRC}${FS}Test.java Test.java
         ToolBox.AnyToolArgs nativeCmdParams =
                 new ToolBox.AnyToolArgs()
-                .setAllArgs(native2asciiBinary, testVMOpts,
-                    "-reverse", "-encoding", "IBM1047",
-                    "Test.java", "output/Test.java");
+                .appendArgs(native2asciiBinary)
+                .appendArgs(ToolBox.testToolVMOpts)
+                .appendArgs("-reverse", "-encoding", "IBM1047", "Test.java",
+                "output/Test.java");
         ToolBox.executeCommand(nativeCmdParams);
 
-//"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -J-Duser.language=en -J-Duser.region=US -J-Dfile.encoding=IBM1047 Test.java 2>Test.tmp
         ToolBox.AnyToolArgs javacParams =
                 new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .setAllArgs(ArrayUtils.concatOpen(mainArgs, "-J-Duser.language=en",
+                .appendArgs(ToolBox.javacBinary)
+                .appendArgs(ToolBox.testToolVMOpts)
+                .appendArgs("-J-Duser.language=en",
                 "-J-Duser.region=US", "-J-Dfile.encoding=IBM1047",
-                "output/Test.java"))
+                "output/Test.java")
                 .setErrOutput(new File("Test.tmp"));
         ToolBox.executeCommand(javacParams);
 
-//"${TESTJAVA}${FS}bin${FS}native2ascii" ${TESTTOOLVMOPTS} -encoding IBM1047 Test.tmp Test.out
-        nativeCmdParams.setAllArgs(native2asciiBinary, "-encoding", "IBM1047",
-                    "Test.tmp", "Test.out");
+        nativeCmdParams = new ToolBox.AnyToolArgs()
+                .appendArgs(native2asciiBinary)
+                .appendArgs(ToolBox.testToolVMOpts)
+                .appendArgs("-encoding", "IBM1047", "Test.tmp", "Test.out");
         ToolBox.executeCommand(nativeCmdParams);
 
-//diff ${DIFFOPTS} -c "${TESTSRC}${FS}Test.out" Test.out
+        String goldenFile = String.format(TestOutTemplate, File.separator);
         ToolBox.compareLines(Paths.get("Test.out"),
-                Arrays.asList(TestOut.split("\n")), null);
-
+                Arrays.asList(goldenFile.split("\n")), null, true);
     }
 
 }
