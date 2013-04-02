@@ -50,14 +50,17 @@ public class LinksTest {
 //      cp ${TESTSRC}/b/B.java tmp
         ToolBox.writeFile(Paths.get("tmp", "B.java"), BSrc);
 
+        try {
 //        ln -s `pwd`/tmp "${TESTCLASSES}/a"
-        Files.createSymbolicLink(Paths.get("a"), Paths.get("tmp"));
-//
-////"${TESTJAVA}/bin/javac" ${TESTTOOLVMOPTS} -sourcepath "${TESTCLASSES}" -d "${TESTCLASSES}/classes" "${TESTSRC}/T.java" 2>&1
-        ToolBox.JavaToolArgs javacArgs =
-                new ToolBox.JavaToolArgs()
-                .setOptions("-sourcepath", ".", "-d", ".").setSources(TSrc);
-        ToolBox.javac(javacArgs);
+            Files.createSymbolicLink(Paths.get("a"), Paths.get("tmp"));
+            ////"${TESTJAVA}/bin/javac" ${TESTTOOLVMOPTS} -sourcepath "${TESTCLASSES}" -d "${TESTCLASSES}/classes" "${TESTSRC}/T.java" 2>&1
+            ToolBox.JavaToolArgs javacArgs =
+                    new ToolBox.JavaToolArgs()
+                    .setOptions("-sourcepath", ".", "-d", ".").setSources(TSrc);
+            ToolBox.javac(javacArgs);
+        } catch (UnsupportedOperationException e) {
+            System.err.println("Symbolic links not supported on this system. The test can't finish");
+        }
     }
 
 }

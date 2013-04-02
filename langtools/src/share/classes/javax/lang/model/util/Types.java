@@ -59,6 +59,13 @@ public interface Types {
     /**
      * Tests whether two {@code TypeMirror} objects represent the same type.
      *
+     * <p>Since annotations are only meta-data associated with a type,
+     * the set of annotations on either argument is <em>not</em> taken
+     * into account when computing whether or not two {@code
+     * TypeMirror} objects are the same type. In particular, two
+     * {@code TypeMirror} objects can have different annotations and
+     * still be considered the same.
+     *
      * <p>Caveat: if either of the arguments to this method represents a
      * wildcard, this method will return false.  As a consequence, a wildcard
      * is not the same type as itself.  This might be surprising at first,
@@ -301,116 +308,4 @@ public interface Types {
      *          for the given type
      */
     TypeMirror asMemberOf(DeclaredType containing, Element element);
-
-    /**
-     * Returns the annotations targeting the type.
-     *
-     * @param type the targeted type
-     * @return the type annotations targeting the type
-     */
-    List<? extends AnnotationMirror> typeAnnotationsOf(TypeMirror type);
-
-    /**
-     * Returns the type's annotation for the specified type if
-     * such an annotation is present, else {@code null}.  The
-     * annotation has to be directly present on this
-     * element.
-     *
-     * <p> The annotation returned by this method could contain an element
-     * whose value is of type {@code Class}.
-     * This value cannot be returned directly:  information necessary to
-     * locate and load a class (such as the class loader to use) is
-     * not available, and the class might not be loadable at all.
-     * Attempting to read a {@code Class} object by invoking the relevant
-     * method on the returned annotation
-     * will result in a {@link MirroredTypeException},
-     * from which the corresponding {@link TypeMirror} may be extracted.
-     * Similarly, attempting to read a {@code Class[]}-valued element
-     * will result in a {@link MirroredTypesException}.
-     *
-     * <blockquote>
-     * <i>Note:</i> This method is unlike others in this and related
-     * interfaces.  It operates on runtime reflective information &mdash;
-     * representations of annotation types currently loaded into the
-     * VM &mdash; rather than on the representations defined by and used
-     * throughout these interfaces.  Consequently, calling methods on
-     * the returned annotation object can throw many of the exceptions
-     * that can be thrown when calling methods on an annotation object
-     * returned by core reflection.  This method is intended for
-     * callers that are written to operate on a known, fixed set of
-     * annotation types.
-     * </blockquote>
-     *
-     * @param <A>   the annotation type
-     * @param type  the targeted type
-     * @param annotationType  the {@code Class} object corresponding to
-     *          the annotation type
-     * @return the type's annotation for the specified annotation
-     *         type if present on the type, else {@code null}
-     *
-     * @see Element#getAnnotationMirrors()
-     * @see EnumConstantNotPresentException
-     * @see AnnotationTypeMismatchException
-     * @see IncompleteAnnotationException
-     * @see MirroredTypeException
-     * @see MirroredTypesException
-     */
-    <A extends Annotation> A typeAnnotationOf(TypeMirror type, Class<A> annotationType);
-
-    /**
-     * Returns the annotations targeting the method receiver type.
-     *
-     * @param type the targeted type
-     * @return the receiver type of the executable type
-     */
-    TypeMirror receiverTypeOf(ExecutableType type);
-
-    /**
-     * Returns the type's annotation for the specified executable type
-     * receiver if such an annotation is present, else {@code null}.  The
-     * annotation has to be directly present on this
-     * element.
-     *
-     * <p> The annotation returned by this method could contain an element
-     * whose value is of type {@code Class}.
-     * This value cannot be returned directly:  information necessary to
-     * locate and load a class (such as the class loader to use) is
-     * not available, and the class might not be loadable at all.
-     * Attempting to read a {@code Class} object by invoking the relevant
-     * method on the returned annotation
-     * will result in a {@link MirroredTypeException},
-     * from which the corresponding {@link TypeMirror} may be extracted.
-     * Similarly, attempting to read a {@code Class[]}-valued element
-     * will result in a {@link MirroredTypesException}.
-     *
-     * <blockquote>
-     * <i>Note:</i> This method is unlike others in this and related
-     * interfaces.  It operates on runtime reflective information &mdash;
-     * representations of annotation types currently loaded into the
-     * VM &mdash; rather than on the representations defined by and used
-     * throughout these interfaces.  Consequently, calling methods on
-     * the returned annotation object can throw many of the exceptions
-     * that can be thrown when calling methods on an annotation object
-     * returned by core reflection.  This method is intended for
-     * callers that are written to operate on a known, fixed set of
-     * annotation types.
-     * </blockquote>
-     *
-     * @param <A>   the annotation type
-     * @param type  the method type
-     * @param annotationType  the {@code Class} object corresponding to
-     *          the annotation type
-     * @return the type's annotation for the specified annotation
-     *         type if present on the type, else {@code null}
-     *
-     * @see Element#getAnnotationMirrors()
-     * @see EnumConstantNotPresentException
-     * @see AnnotationTypeMismatchException
-     * @see IncompleteAnnotationException
-     * @see MirroredTypeException
-     * @see MirroredTypesException
-     */
-    // TODO: no longer needed?
-    // <A extends Annotation> A receiverTypeAnnotationOf(ExecutableType type, Class<A> annotationType);
-
 }
