@@ -97,12 +97,12 @@ findTransportOnLoad(void *handle)
 
 /* Load transport library (directory=="" means do system search) */
 static void *
-loadTransportLibrary(char *libdir, char *name)
+loadTransportLibrary(const char *libdir, const char *name)
 {
     void *handle;
     char libname[MAXPATHLEN+2];
     char buf[MAXPATHLEN*2+100];
-    char *plibdir;
+    const char *plibdir;
 
     /* Convert libdir from UTF-8 to platform encoding */
     plibdir = NULL;
@@ -131,12 +131,12 @@ loadTransportLibrary(char *libdir, char *name)
  * JDK 1.2 javai.c v1.61
  */
 static jdwpError
-loadTransport(char *name, jdwpTransportEnv **transportPtr)
+loadTransport(const char *name, jdwpTransportEnv **transportPtr)
 {
     JNIEnv                 *env;
     jdwpTransport_OnLoad_t  onLoad;
     void                   *handle;
-    char                   *libdir;
+    const char             *libdir;
 
     /* Make sure library name is not empty */
     if (name == NULL) {
