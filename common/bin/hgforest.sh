@@ -51,7 +51,7 @@ if [ "#!" = "$has_hash_bang" ] ; then
    bpython="`basename "$python"`"
 fi
 
-if [ -x "$python" -a ! -d "$python" -a  "`${python} --version 2>&1 | cut -f 1 -d " "`" == "Python" ] ; then
+if [ -x "$python" -a ! -d "$python" -a  "`${python} -V 2>&1 | cut -f 1 -d " "`" == "Python" ] ; then
   hg="${python} -u ${whichhg}"
 else
   echo Cannot find python from hg launcher. Running plain hg, which probably has buffered stdout.
