@@ -133,6 +133,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
             // use "getter" so that [[ThrowTypeError]] function's arity is 0 - as specified in step 10 of section 13.2.3
             final ScriptFunctionImpl func = new ScriptFunctionImpl("TypeErrorThrower", Lookup.TYPE_ERROR_THROWER_GETTER, null, null, false, false, false);
             func.setPrototype(UNDEFINED);
+            // Non-constructor built-in functions do not have "prototype" property
+            func.deleteOwnProperty(func.getMap().findProperty("prototype"));
             func.preventExtensions();
             typeErrorThrower = func;
         }
@@ -156,7 +158,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     private static PropertyMap createBoundFunctionMap(final PropertyMap strictModeMap) {
-        // Bond function map is same as strict function map, but additionally lacks the "prototype" property, see
+        // Bound function map is same as strict function map, but additionally lacks the "prototype" property, see
         // ECMAScript 5.1 section 15.3.4.5
         return strictModeMap.deleteProperty(strictModeMap.findProperty("prototype"));
     }
@@ -186,6 +188,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
     static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle, final MethodHandle[] specs) {
         final ScriptFunctionImpl func = new ScriptFunctionImpl(name, methodHandle, null, specs, false, true, false);
         func.setPrototype(UNDEFINED);
+        // Non-constructor built-in functions do not have "prototype" property
+        func.deleteOwnProperty(func.getMap().findProperty("prototype"));
 
         return func;
     }
