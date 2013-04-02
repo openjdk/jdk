@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.builders;
 
 import java.util.*;
+import java.text.MessageFormat;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -82,7 +83,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                     new VisibleMemberMap(
                     classDoc,
                     i,
-                    configuration.nodeprecated);
+                    configuration);
         }
     }
 
@@ -254,6 +255,17 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * Build the summary for the fields.
+     */
+    public void buildPropertiesSummary(XMLNode node, Content memberSummaryTree) {
+        MemberSummaryWriter writer =
+                memberSummaryWriters[VisibleMemberMap.PROPERTIES];
+        VisibleMemberMap visibleMemberMap =
+                visibleMemberMaps[VisibleMemberMap.PROPERTIES];
+        addSummary(writer, visibleMemberMap, true, memberSummaryTree);
+    }
+
+    /**
      * Build the summary for the nested classes.
      *
      * @param node the XML element that specifies which components to document
@@ -311,6 +323,11 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
             List<Content> tableContents = new LinkedList<Content>();
             for (int i = 0; i < members.size(); i++) {
                 ProgramElementDoc member = members.get(i);
+                final ProgramElementDoc propertyDoc =
+                            visibleMemberMap.getPropertyMemberDoc(member);
+                if (propertyDoc != null) {
+                    processProperty(visibleMemberMap, member, propertyDoc);
+                }
                 Tag[] firstSentenceTags = member.firstSentenceTags();
                 if (member instanceof MethodDoc && firstSentenceTags.length == 0) {
                     //Inherit comments from overriden or implemented method if
@@ -327,6 +344,106 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
             }
             summaryTreeList.add(writer.getSummaryTableTree(classDoc, tableContents));
         }
+    }
+
+    /**
+     * Process the property method, property setter and/or property getter
+     * comment text so that it contains the documentation from
+     * the property field. The method adds the leading sentence,
+     * copied documentation including the defaultValue tag and
+     * the see tags if the appropriate property getter and setter are
+     * available.
+     *
+     * @param visibleMemberMap the members information.
+     * @param member the member which is to be augmented.
+     * @param propertyDoc the original property documentation.
+     */
+    private void processProperty(VisibleMemberMap visibleMemberMap,
+                                 ProgramElementDoc member,
+                                 ProgramElementDoc propertyDoc) {
+        StringBuilder commentTextBuilder = new StringBuilder();
+        final boolean isSetter = isSetter(member);
+        final boolean isGetter = isGetter(member);
+        if (isGetter || isSetter) {
+            //add "[GS]ets the value of the property PROPERTY_NAME."
+            if (isSetter) {
+                commentTextBuilder.append(
+                        MessageFormat.format(
+                                configuration.getText("doclet.PropertySetterWithName"),
+                                Util.propertyNameFromMethodName(member.name())));
+            }
+            if (isGetter) {
+                commentTextBuilder.append(
+                        MessageFormat.format(
+                                configuration.getText("doclet.PropertyGetterWithName"),
+                                Util.propertyNameFromMethodName(member.name())));
+            }
+            if (propertyDoc.commentText() != null
+                        && !propertyDoc.commentText().isEmpty()) {
+                commentTextBuilder.append(" \n @propertyDescription ");
+            }
+        }
+        commentTextBuilder.append(propertyDoc.commentText());
+
+        Tag[] tags = propertyDoc.tags("@defaultValue");
+        if (tags != null) {
+            for (Tag tag: tags) {
+                commentTextBuilder.append("\n")
+                                  .append(tag.name())
+                                  .append(" ")
+                                  .append(tag.text());
+            }
+        }
+
+        //add @see tags
+        if (!isGetter && !isSetter) {
+            MethodDoc getter = (MethodDoc) visibleMemberMap.getGetterForProperty(member);
+            MethodDoc setter = (MethodDoc) visibleMemberMap.getSetterForProperty(member);
+
+            if ((null != getter)
+                    && (commentTextBuilder.indexOf("@see #" + getter.name()) == -1)) {
+                commentTextBuilder.append("\n @see #")
+                                  .append(getter.name())
+                                  .append("() ");
+            }
+
+            if ((null != setter)
+                    && (commentTextBuilder.indexOf("@see #" + setter.name()) == -1)) {
+                String typeName = setter.parameters()[0].typeName();
+                // Removal of type parameters and package information.
+                typeName = typeName.split("<")[0];
+                if (typeName.contains(".")) {
+                    typeName = typeName.substring(typeName.lastIndexOf(".") + 1);
+                }
+                commentTextBuilder.append("\n @see #").append(setter.name());
+
+                if (setter.parameters()[0].type().asTypeVariable() == null) {
+                    commentTextBuilder.append("(").append(typeName).append(")");
+                }
+                commentTextBuilder.append(" \n");
+            }
+        }
+        member.setRawCommentText(commentTextBuilder.toString());
+    }
+    /**
+     * Test whether the method is a getter.
+     * @param ped property method documentation. Needs to be either property
+     * method, property getter, or property setter.
+     * @return true if the given documentation belongs to a getter.
+     */
+    private boolean isGetter(ProgramElementDoc ped) {
+        final String pedName = ped.name();
+        return pedName.startsWith("get") || pedName.startsWith("is");
+    }
+
+    /**
+     * Test whether the method is a setter.
+     * @param ped property method documentation. Needs to be either property
+     * method, property getter, or property setter.
+     * @return true if the given documentation belongs to a setter.
+     */
+    private boolean isSetter(ProgramElementDoc ped) {
+        return ped.name().startsWith("set");
     }
 
     /**

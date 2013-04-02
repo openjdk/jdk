@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,6 +176,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                         ? packageDoc.interfaces()
                         : configuration.classDocCatalog.interfaces(
                                 Util.getPackageName(packageDoc));
+        interfaces = Util.filterOutPrivateClasses(interfaces, configuration.javafx);
         if (interfaces.length > 0) {
             packageWriter.addClassesSummary(
                     interfaces,
@@ -205,6 +206,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                         ? packageDoc.ordinaryClasses()
                         : configuration.classDocCatalog.ordinaryClasses(
                                 Util.getPackageName(packageDoc));
+        classes = Util.filterOutPrivateClasses(classes, configuration.javafx);
         if (classes.length > 0) {
             packageWriter.addClassesSummary(
                     classes,
@@ -234,6 +236,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                         ? packageDoc.enums()
                         : configuration.classDocCatalog.enums(
                                 Util.getPackageName(packageDoc));
+        enums = Util.filterOutPrivateClasses(enums, configuration.javafx);
         if (enums.length > 0) {
             packageWriter.addClassesSummary(
                     enums,
@@ -263,6 +266,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                         ? packageDoc.exceptions()
                         : configuration.classDocCatalog.exceptions(
                                 Util.getPackageName(packageDoc));
+        exceptions = Util.filterOutPrivateClasses(exceptions, configuration.javafx);
         if (exceptions.length > 0) {
             packageWriter.addClassesSummary(
                     exceptions,
@@ -292,6 +296,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                         ? packageDoc.errors()
                         : configuration.classDocCatalog.errors(
                                 Util.getPackageName(packageDoc));
+        errors = Util.filterOutPrivateClasses(errors, configuration.javafx);
         if (errors.length > 0) {
             packageWriter.addClassesSummary(
                     errors,
@@ -321,6 +326,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                         ? packageDoc.annotationTypes()
                         : configuration.classDocCatalog.annotationTypes(
                                 Util.getPackageName(packageDoc));
+        annotationTypes = Util.filterOutPrivateClasses(annotationTypes, configuration.javafx);
         if (annotationTypes.length > 0) {
             packageWriter.addClassesSummary(
                     annotationTypes,

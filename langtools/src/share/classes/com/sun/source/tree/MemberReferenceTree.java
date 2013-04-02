@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,14 @@ import javax.lang.model.element.Name;
  *
  * @since 1.8
  */
+@jdk.Supported
 public interface MemberReferenceTree extends ExpressionTree {
 
     /**
      * There are two kinds of member references: (i) method references and
      * (ii) constructor references
      */
+    @jdk.Supported
     public enum ReferenceMode {
         /** enum constant for method references */
         INVOKE,

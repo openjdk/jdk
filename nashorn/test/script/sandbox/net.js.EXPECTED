@@ -1,0 +1,1 @@
+java.security.AccessControlException: access denied ("java.net.SocketPermission" "www.acme.com:80" "connect,resolve")

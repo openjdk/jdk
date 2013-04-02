@@ -1,0 +1,7 @@
+T6939780.java:20:33: compiler.warn.diamond.redundant.args: T6939780.Foo<java.lang.Number>, T6939780.Foo<java.lang.Number>
+T6939780.java:21:28: compiler.warn.diamond.redundant.args: T6939780.Foo<java.lang.Number>, T6939780.Foo<java.lang.Number>
+T6939780.java:22:28: compiler.warn.diamond.redundant.args.1: T6939780.Foo<java.lang.Integer>, T6939780.Foo<java.lang.Number>
+T6939780.java:29:19: compiler.warn.diamond.redundant.args: T6939780.Foo<java.lang.Number>, T6939780.Foo<java.lang.Number>
+T6939780.java:30:19: compiler.warn.diamond.redundant.args: T6939780.Foo<java.lang.Number>, T6939780.Foo<java.lang.Number>
+T6939780.java:31:19: compiler.warn.diamond.redundant.args.1: T6939780.Foo<java.lang.Integer>, T6939780.Foo<java.lang.Number>
+6 warnings

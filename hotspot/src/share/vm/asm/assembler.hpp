@@ -336,6 +336,8 @@ class AbstractAssembler : public ResourceObj  {
   // along with the disassembly when printing nmethods.  Currently
   // only supported in the instruction section of the code buffer.
   void block_comment(const char* comment);
+  // Copy str to a buffer that has the same lifetime as the CodeBuffer
+  const char* code_string(const char* str);
 
   // Label functions
   void bind(Label& L); // binds an unbound label L to the current code position

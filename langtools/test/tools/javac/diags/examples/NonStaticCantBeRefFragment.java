@@ -21,9 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req
 // key: compiler.misc.non-static.cant.be.ref
-// key: compiler.misc.invalid.mref
+// key: compiler.err.invalid.mref
 
 class NonStaticCantBeRefFragment {
 

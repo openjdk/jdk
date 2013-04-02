@@ -108,11 +108,11 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
         return build_int_from_shorts(_shorts[low_packed_offset], _shorts[high_packed_offset]) >> FIELDINFO_TAG_SIZE;
 #ifndef PRODUCT
       case FIELDINFO_TAG_TYPE_PLAIN:
-        ShouldNotReachHere2("Asking offset for the plain type field");
+        fatal("Asking offset for the plain type field");
       case FIELDINFO_TAG_TYPE_CONTENDED:
-        ShouldNotReachHere2("Asking offset for the contended type field");
+        fatal("Asking offset for the contended type field");
       case FIELDINFO_TAG_BLANK:
-        ShouldNotReachHere2("Asking offset for the blank field");
+        fatal("Asking offset for the blank field");
 #endif
     }
     ShouldNotReachHere();
@@ -128,9 +128,9 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
         return true;
 #ifndef PRODUCT
       case FIELDINFO_TAG_OFFSET:
-        ShouldNotReachHere2("Asking contended flag for the field with offset");
+        fatal("Asking contended flag for the field with offset");
       case FIELDINFO_TAG_BLANK:
-        ShouldNotReachHere2("Asking contended flag for the blank field");
+        fatal("Asking contended flag for the blank field");
 #endif
     }
     ShouldNotReachHere();
@@ -146,9 +146,9 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
         return _shorts[high_packed_offset];
 #ifndef PRODUCT
       case FIELDINFO_TAG_OFFSET:
-        ShouldNotReachHere2("Asking the contended group for the field with offset");
+        fatal("Asking the contended group for the field with offset");
       case FIELDINFO_TAG_BLANK:
-        ShouldNotReachHere2("Asking the contended group for the blank field");
+        fatal("Asking the contended group for the blank field");
 #endif
     }
     ShouldNotReachHere();
@@ -163,9 +163,9 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
         return (lo >> FIELDINFO_TAG_SIZE);
 #ifndef PRODUCT
       case FIELDINFO_TAG_OFFSET:
-        ShouldNotReachHere2("Asking the field type for field with offset");
+        fatal("Asking the field type for field with offset");
       case FIELDINFO_TAG_BLANK:
-        ShouldNotReachHere2("Asking the field type for the blank field");
+        fatal("Asking the field type for the blank field");
 #endif
     }
     ShouldNotReachHere();
@@ -211,7 +211,7 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
       case FIELDINFO_TAG_TYPE_PLAIN:
       case FIELDINFO_TAG_TYPE_CONTENDED:
       case FIELDINFO_TAG_OFFSET:
-        ShouldNotReachHere2("Setting the field type with overwriting");
+        fatal("Setting the field type with overwriting");
 #endif
     }
     ShouldNotReachHere();
@@ -226,11 +226,11 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
         return;
 #ifndef PRODUCT
       case FIELDINFO_TAG_TYPE_CONTENDED:
-        ShouldNotReachHere2("Overwriting contended group");
+        fatal("Overwriting contended group");
       case FIELDINFO_TAG_BLANK:
-        ShouldNotReachHere2("Setting contended group for the blank field");
+        fatal("Setting contended group for the blank field");
       case FIELDINFO_TAG_OFFSET:
-        ShouldNotReachHere2("Setting contended group for field with offset");
+        fatal("Setting contended group for field with offset");
 #endif
     }
     ShouldNotReachHere();

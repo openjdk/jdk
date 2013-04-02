@@ -302,7 +302,7 @@ ifneq ($(OSNAME),windows)
 endif
 
 # Required make macro settings for all platforms
-MAKE_ARGS += JAVA_HOME=$(ABS_BOOTDIR)
+MAKE_ARGS += BOOTDIR=$(ABS_BOOTDIR)
 MAKE_ARGS += OUTPUTDIR=$(ABS_OUTPUTDIR)
 MAKE_ARGS += GAMMADIR=$(ABS_GAMMADIR)
 MAKE_ARGS += MAKE_VERBOSE=$(MAKE_VERBOSE)
@@ -336,9 +336,6 @@ EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jvmticmlr.h
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jni.h
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/$(JDK_INCLUDE_SUBDIR)/jni_md.h
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jmm.h
-
-# By default, run Queens test after building
-TEST_IN_BUILD ?= true
 
 ifndef JAVASE_EMBEDDED
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jfr.h
