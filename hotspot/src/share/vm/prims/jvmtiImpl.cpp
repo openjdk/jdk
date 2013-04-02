@@ -890,7 +890,7 @@ void JvmtiSuspendControl::print() {
 
   tty->print("Suspended Threads: [");
   for (JavaThread *thread = Threads::first(); thread != NULL; thread = thread->next()) {
-#if JVMTI_TRACE
+#ifdef JVMTI_TRACE
     const char *name   = JvmtiTrace::safe_get_thread_name(thread);
 #else
     const char *name   = "";

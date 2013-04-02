@@ -112,12 +112,19 @@ public:
   char*  region_base(int i)           { return _header._space[i]._base; }
   struct FileMapHeader* header()      { return &_header; }
 
-  static void set_current_info(FileMapInfo* info)  { _current_info = info; }
-  static FileMapInfo* current_info()  { return _current_info; }
+  static void set_current_info(FileMapInfo* info) {
+    CDS_ONLY(_current_info = info;)
+  }
+
+  static FileMapInfo* current_info() {
+    CDS_ONLY(return _current_info;)
+    NOT_CDS(return NULL;)
+  }
+
   static void assert_mark(bool check);
 
   // File manipulation.
-  bool  initialize();
+  bool  initialize() NOT_CDS_RETURN_(false);
   bool  open_for_read();
   void  open_for_write();
   void  write_header();
@@ -141,7 +148,7 @@ public:
   void fail_continue(const char *msg, ...);
 
   // Return true if given address is in the mapped shared space.
-  bool is_in_shared_space(const void* p);
+  bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
 };
 
 #endif // SHARE_VM_MEMORY_FILEMAP_HPP

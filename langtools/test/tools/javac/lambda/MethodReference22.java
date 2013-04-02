@@ -48,19 +48,19 @@ class MethodReference22 {
     }
 
     static void test2() {
-        SAM2 s1 = MethodReference22::m1; //ok
-        call2(MethodReference22::m1); //ok
-        SAM2 s2 = MethodReference22::m2; //ok
-        call2(MethodReference22::m2); //ok
-        SAM2 s3 = MethodReference22::m3; //fail
-        call2(MethodReference22::m3); //fail
-        SAM2 s4 = MethodReference22::m4; //fail
-        call2(MethodReference22::m4); //fail
+        SAM2 s1 = MethodReference22::m1; //ambiguous
+        call2(MethodReference22::m1); //ambiguous
+        SAM2 s2 = MethodReference22::m2; //ambiguous
+        call2(MethodReference22::m2); //ambiguous
+        SAM2 s3 = MethodReference22::m3; //ambiguous
+        call2(MethodReference22::m3); //ambiguous
+        SAM2 s4 = MethodReference22::m4; //ambiguous
+        call2(MethodReference22::m4); //ambiguous
     }
 
     static void test3() {
-        call3(MethodReference22::m1); //ok
-        call3(MethodReference22::m2); //ambiguous
+        call3(MethodReference22::m1); //fail
+        call3(MethodReference22::m2); //ok
         call3(MethodReference22::m3); //ok
         call3(MethodReference22::m4); //fail
     }

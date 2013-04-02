@@ -26,6 +26,9 @@
 #include "NativeUtil.h"
 #include "NativeFunc.h"
 #include "jlong.h"
+#include <jni.h>
+
+extern void throwOutOfMemoryError(JNIEnv *env, const char *message);
 
 const int JAVA_DUPLICATE_TOKEN_CODE = 19; /* DUPLICATE_TOKEN */
 const int JAVA_OLD_TOKEN_CODE = 20; /* OLD_TOKEN */
@@ -615,8 +618,17 @@ gss_OID newGSSOID(JNIEnv *env, jobject jOid) {
       (*env)->Throw(env, gssEx);
     }
     cOid = malloc(sizeof(struct gss_OID_desc_struct));
+    if (cOid == NULL) {
+      throwOutOfMemoryError(env,NULL);
+      return GSS_C_NO_OID;
+    }
     cOid->length = (*env)->GetArrayLength(env, jbytes) - 2;
     cOid->elements = malloc(cOid->length);
+    if (cOid->elements == NULL) {
+      throwOutOfMemoryError(env,NULL);
+      free(cOid);
+      return GSS_C_NO_OID;
+    }
     (*env)->GetByteArrayRegion(env, jbytes, 2, cOid->length,
                                cOid->elements);
     (*env)->DeleteLocalRef(env, jbytes);

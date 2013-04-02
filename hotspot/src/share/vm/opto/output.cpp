@@ -2518,6 +2518,7 @@ void Scheduling::DoScheduling() {
     // Schedule the remaining instructions in the block
     while ( _available.size() > 0 ) {
       Node *n = ChooseNodeToBundle();
+      guarantee(n != NULL, "no nodes available");
       AddNodeToBundle(n,bb);
     }
 

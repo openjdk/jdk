@@ -35,6 +35,8 @@ public abstract class CompilerWhiteBoxTest {
     protected static final Method METHOD = getMethod("method");
     protected static final int COMPILE_THRESHOLD
             = Integer.parseInt(getVMOption("CompileThreshold", "10000"));
+    protected static final boolean BACKGROUND_COMPILATION
+            = Boolean.valueOf(getVMOption("BackgroundCompilation", "true"));
 
     protected static Method getMethod(String name) {
         try {
@@ -45,11 +47,16 @@ public abstract class CompilerWhiteBoxTest {
         }
     }
 
-    protected static String getVMOption(String name, String defaultValue) {
+    protected static String getVMOption(String name) {
         String result;
         HotSpotDiagnosticMXBean diagnostic
                 = ManagementFactoryHelper.getDiagnosticMXBean();
         result = diagnostic.getVMOption(name).getValue();
+        return result;
+    }
+
+    protected static String getVMOption(String name, String defaultValue) {
+        String result = getVMOption(name);
         return result == null ? defaultValue : result;
     }
 
@@ -66,6 +73,7 @@ public abstract class CompilerWhiteBoxTest {
         } catch (Exception e) {
             System.out.printf("on exception '%s':", e.getMessage());
             printInfo(METHOD);
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
         System.out.println("at test's end:");
@@ -100,6 +108,9 @@ public abstract class CompilerWhiteBoxTest {
 
     protected static void waitBackgroundCompilation(Method method)
             throws InterruptedException {
+        if (!BACKGROUND_COMPILATION) {
+            return;
+        }
         final Object obj = new Object();
         synchronized (obj) {
             for (int i = 0; i < 10; ++i) {
@@ -129,12 +140,13 @@ public abstract class CompilerWhiteBoxTest {
 
     protected final int compile() {
         int result = 0;
-        for (int i = 0; i < COMPILE_THRESHOLD; ++i) {
+        int count = Math.max(COMPILE_THRESHOLD, 150000);
+        for (int i = 0; i < count; ++i) {
             result += method();
         }
+        System.out.println("method was invoked " + count + " times");
         return result;
     }
-
 
     protected int method() {
         return 42;

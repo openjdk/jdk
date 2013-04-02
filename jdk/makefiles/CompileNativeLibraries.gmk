@@ -1960,8 +1960,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO,\
 				        -lsendfile -ljava -lnet -lc,\
 		LDFLAGS_SUFFIX_windows:=jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
 					$(JDK_OUTPUTDIR)/objs/libnet/net.lib \
-                                        $(JDK_OUTPUTDIR)/objs/libjava/io_util.obj \
-		                        $(JDK_OUTPUTDIR)/objs/libjava/FileDescriptor_md.obj \
 					advapi32.lib,\
 		LDFLAGS_SUFFIX_macosx:=-ljava -lnet -pthread -framework CoreFoundation,\
 		LDFLAGS_SUFFIX:=,\
@@ -2666,11 +2664,8 @@ BUILD_LIBRARIES += $(BUILD_LIBJ2PKCS11)
 
 ##########################################################################################
 
-ifndef DISABLE_INTREE_EC
-#
-# TODO Set DISABLE_INTREE_EC in configure if src/share/native/sun/security/ec/impl
-#      is not present
-#
+ifeq ($(ENABLE_INTREE_EC),yes)
+
 BUILD_LIBSUNEC_FLAGS:= -I$(JDK_TOPDIR)/src/share/native/sun/security/ec \
                        -I$(JDK_TOPDIR)/src/share/native/sun/security/ec/impl
 

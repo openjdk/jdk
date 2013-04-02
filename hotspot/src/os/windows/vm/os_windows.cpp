@@ -60,6 +60,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
+#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
@@ -2836,7 +2837,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
                                 PAGE_READWRITE);
   // If reservation failed, return NULL
   if (p_buf == NULL) return NULL;
-
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -2898,6 +2899,11 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
       if (next_alloc_addr > p_buf) {
         // Some memory was committed so release it.
         size_t bytes_to_release = bytes - bytes_remaining;
+        // NMT has yet to record any individual blocks, so it
+        // need to create a dummy 'reserve' record to match
+        // the release.
+        MemTracker::record_virtual_memory_reserve((address)p_buf,
+          bytes_to_release, CALLER_PC);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -2909,10 +2915,19 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
 #endif
       return NULL;
     }
+
     bytes_remaining -= bytes_to_rq;
     next_alloc_addr += bytes_to_rq;
     count++;
   }
+  // Although the memory is allocated individually, it is returned as one.
+  // NMT records it as one block.
+  address pc = CALLER_PC;
+  MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, pc);
+  if ((flags & MEM_COMMIT) != 0) {
+    MemTracker::record_virtual_memory_commit((address)p_buf, bytes, pc);
+  }
+
   // made it this far, success
   return p_buf;
 }
@@ -3099,11 +3114,20 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
     char * res = (char *)VirtualAlloc(NULL, bytes, flag, prot);
+    if (res != NULL) {
+      address pc = CALLER_PC;
+      MemTracker::record_virtual_memory_reserve((address)res, bytes, pc);
+      MemTracker::record_virtual_memory_commit((address)res, bytes, pc);
+    }
+
     return res;
   }
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
+  assert(base != NULL, "Sanity check");
+  // Memory allocated via reserve_memory_special() is committed
+  MemTracker::record_virtual_memory_uncommit((address)base, bytes);
   return release_memory(base, bytes);
 }
 

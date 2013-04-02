@@ -140,6 +140,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         new Option(false, "-v", "-verbose", "-all") {
             void process(JavapTask task, String opt, String arg) {
                 task.options.verbose = true;
+                task.options.showDescriptors = true;
                 task.options.showFlags = true;
                 task.options.showAllAttrs = true;
             }
@@ -190,7 +191,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         new Option(false, "-s") {
             void process(JavapTask task, String opt, String arg) {
-                task.options.showInternalSignatures = true;
+                task.options.showDescriptors = true;
             }
         },
 

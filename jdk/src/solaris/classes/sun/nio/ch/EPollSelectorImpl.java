@@ -53,26 +53,24 @@ class EPollSelectorImpl
     private volatile boolean closed = false;
 
     // Lock for interrupt triggering and clearing
-    private Object interruptLock = new Object();
+    private final Object interruptLock = new Object();
     private boolean interruptTriggered = false;
 
     /**
      * Package private constructor called by factory method in
      * the abstract superclass Selector.
      */
-    EPollSelectorImpl(SelectorProvider sp) {
+    EPollSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
         long pipeFds = IOUtil.makePipe(false);
         fd0 = (int) (pipeFds >>> 32);
         fd1 = (int) pipeFds;
         pollWrapper = new EPollArrayWrapper();
         pollWrapper.initInterrupt(fd0, fd1);
-        fdToKey = new HashMap<Integer,SelectionKeyImpl>();
+        fdToKey = new HashMap<>();
     }
 
-    protected int doSelect(long timeout)
-        throws IOException
-    {
+    protected int doSelect(long timeout) throws IOException {
         if (closed)
             throw new ClosedSelectorException();
         processDeregisterQueue();
@@ -161,8 +159,9 @@ class EPollSelectorImpl
         if (closed)
             throw new ClosedSelectorException();
         SelChImpl ch = ski.channel;
-        fdToKey.put(Integer.valueOf(ch.getFDVal()), ski);
-        pollWrapper.add(ch);
+        int fd = Integer.valueOf(ch.getFDVal());
+        fdToKey.put(fd, ski);
+        pollWrapper.add(fd);
         keys.add(ski);
     }
 
@@ -171,7 +170,7 @@ class EPollSelectorImpl
         SelChImpl ch = ski.channel;
         int fd = ch.getFDVal();
         fdToKey.remove(Integer.valueOf(fd));
-        pollWrapper.release(ch);
+        pollWrapper.remove(fd);
         ski.setIndex(-1);
         keys.remove(ski);
         selectedKeys.remove(ski);
@@ -181,10 +180,11 @@ class EPollSelectorImpl
             ((SelChImpl)selch).kill();
     }
 
-    public void putEventOps(SelectionKeyImpl sk, int ops) {
+    public void putEventOps(SelectionKeyImpl ski, int ops) {
         if (closed)
             throw new ClosedSelectorException();
-        pollWrapper.setInterest(sk.channel, ops);
+        SelChImpl ch = ski.channel;
+        pollWrapper.setInterest(ch.getFDVal(), ops);
     }
 
     public Selector wakeup() {
@@ -200,5 +200,4 @@ class EPollSelectorImpl
     static {
         Util.load();
     }
-
 }

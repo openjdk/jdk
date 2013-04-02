@@ -1,0 +1,57 @@
+aaaa bbbb cccc
+aaaa bbbb
+aaaa bbbb cccc dddd
+aaaa bbbb cccc
+aaaa bbbb undefined
+aaaa bbbb cccc
+aaaa bbbb cccc
+true
+aaaa bbbb cccc
+aaaa
+bbbb
+cccc
+function varFunc(a, b, c) {
+    print(a, b, c);
+    print(Object.getPrototypeOf(arguments) === Object.prototype);
+    print(arguments[0], arguments[1], arguments[2]);
+
+    for (var i in arguments) {
+        print(arguments[i]);
+    }
+
+    print(arguments.callee);
+}
+aaaa bbbb undefined
+true
+aaaa bbbb undefined
+aaaa
+bbbb
+function varFunc(a, b, c) {
+    print(a, b, c);
+    print(Object.getPrototypeOf(arguments) === Object.prototype);
+    print(arguments[0], arguments[1], arguments[2]);
+
+    for (var i in arguments) {
+        print(arguments[i]);
+    }
+
+    print(arguments.callee);
+}
+aaaa bbbb cccc
+true
+aaaa bbbb cccc
+aaaa
+bbbb
+cccc
+dddd
+function varFunc(a, b, c) {
+    print(a, b, c);
+    print(Object.getPrototypeOf(arguments) === Object.prototype);
+    print(arguments[0], arguments[1], arguments[2]);
+
+    for (var i in arguments) {
+        print(arguments[i]);
+    }
+
+    print(arguments.callee);
+}

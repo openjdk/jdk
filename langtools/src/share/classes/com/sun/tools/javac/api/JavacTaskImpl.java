@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,17 +121,21 @@ public class JavacTaskImpl extends BasicJavacTask {
         return result.toList();
     }
 
-    public Boolean call() {
+    public Main.Result doCall() {
         if (!used.getAndSet(true)) {
             initContext();
             notYetEntered = new HashMap<JavaFileObject, JCCompilationUnit>();
             compilerMain.setAPIMode(true);
             result = compilerMain.compile(args, classNames, context, fileObjects, processors);
             cleanup();
-            return result.isOK();
+            return result;
         } else {
             throw new IllegalStateException("multiple calls to method 'call'");
         }
+    }
+
+    public Boolean call() {
+        return doCall().isOK();
     }
 
     public void setProcessors(Iterable<? extends Processor> processors) {

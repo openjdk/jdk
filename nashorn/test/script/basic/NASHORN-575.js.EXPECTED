@@ -1,0 +1,18 @@
+SyntaxError: Invalid JSON: <json>:1:0 Expected json literal but found /
+// foo
+^
+SyntaxError: Invalid JSON: <json>:1:0 Expected json literal but found /
+/* foo */
+^
+SyntaxError: Invalid JSON: <json>:1:0 Expected json literal but found /
+/foo/
+^
+SyntaxError: Invalid JSON: <json>:1:15 Expected , or } but found /
+{"foo" : "bar" // foo }
+               ^
+SyntaxError: Invalid JSON: <json>:1:15 Expected , or } but found /
+{"foo" : "bar" /* foo */ }
+               ^
+SyntaxError: Invalid JSON: <json>:1:9 Expected json literal but found /
+{"foo" : /foo/}
+         ^

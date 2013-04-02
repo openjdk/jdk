@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,14 @@ import java.util.List;
  *   (x,y)-> { return x + y; }
  * }</pre>
  */
+@jdk.Supported
 public interface LambdaExpressionTree extends ExpressionTree {
 
     /**
      * Lambda expressions come in two forms: (i) expression lambdas, whose body
      * is an expression, and (ii) statement lambdas, whose body is a block
      */
+    @jdk.Supported
     public enum BodyKind {
         /** enum constant for expression lambdas */
         EXPRESSION,

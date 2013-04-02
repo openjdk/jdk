@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,38 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+
+#ifdef __APPLE__
+typedef enum ps_err_e {
+  PS_OK, PS_ERR, PS_BADPID, PS_BADLID,
+  PS_BADADDR, PS_NOSYM, PS_NOFREGS
+} ps_err_e;
+
+#ifndef psaddr_t
+#define psaddr_t uintptr_t
+#endif
+
+#ifndef bool
+typedef int bool;
+#define true  1
+#define false 0
+#endif  // bool
+
+#ifndef lwpid_t
+#define lwpid_t uintptr_t
+#endif
+
+#include <mach/thread_status.h>
+#else   // __APPLE__
+#include <elf.h>
+#include <link.h>
 #include <machine/reg.h>
 #include <proc_service.h>
-
 #if defined(sparc) || defined(sparcv9)
 /*
   If _LP64 is defined ptrace.h should be taken from /usr/include/asm-sparc64
@@ -43,6 +72,14 @@
 #endif
 
 #endif //sparc or sparcv9
+
+// This C bool type must be int for compatibility with BSD calls and
+// it would be a mistake to equivalence it to C++ bool on many platforms
+typedef int bool;
+#define true  1
+#define false 0
+
+#endif // __APPLE__
 
 /************************************************************************************
 
@@ -72,13 +109,7 @@ combination of ptrace and /proc calls.
 
 *************************************************************************************/
 
-// This C bool type must be int for compatibility with BSD calls and
-// it would be a mistake to equivalence it to C++ bool on many platforms
-
-typedef int bool;
-#define true  1
-#define false 0
-
+struct reg;
 struct ps_prochandle;
 
 // attach to a process

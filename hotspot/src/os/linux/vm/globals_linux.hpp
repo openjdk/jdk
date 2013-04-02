@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@
                                                                         \
   product(bool, UseHugeTLBFS, false,                                    \
           "Use MAP_HUGETLB for large pages")                            \
+                                                                        \
+  product(bool, LoadExecStackDllInVMThread, true,                       \
+          "Load DLLs with executable-stack attribute in the VM Thread") \
                                                                         \
   product(bool, UseSHM, false,                                          \
           "Use SYSV shared memory for large pages")
