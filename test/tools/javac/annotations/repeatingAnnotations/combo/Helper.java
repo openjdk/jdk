@@ -146,6 +146,7 @@ public class Helper {
     public static final String template =
             "/*PACKAGE*/\n"
             + "//pkg test;\n\n"
+            + "/*ANNODATA*/\n" // import statements, declaration of Foo/FooContainer
             + "/*TYPE*/ //class\n"
             + "class #ClassName {\n"
             + "  /*FIELD*/ //instance var\n"

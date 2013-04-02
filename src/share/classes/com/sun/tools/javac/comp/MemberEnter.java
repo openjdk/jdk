@@ -473,44 +473,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                       null, //make.Block(0, Tree.emptyList.prepend(make.Return(make.Ident(names._null)))),
                       null);
         memberEnter(valueOf, env);
-
-        // the remaining members are for bootstrapping only
-        if (!target.compilerBootstrap(tree.sym)) return;
-
-        // public final int ordinal() { return ???; }
-        JCMethodDecl ordinal = make.at(tree.pos).
-            MethodDef(make.Modifiers(Flags.PUBLIC|Flags.FINAL),
-                      names.ordinal,
-                      make.Type(syms.intType),
-                      List.<JCTypeParameter>nil(),
-                      List.<JCVariableDecl>nil(),
-                      List.<JCExpression>nil(),
-                      null,
-                      null);
-        memberEnter(ordinal, env);
-
-        // public final String name() { return ???; }
-        JCMethodDecl name = make.
-            MethodDef(make.Modifiers(Flags.PUBLIC|Flags.FINAL),
-                      names._name,
-                      make.Type(syms.stringType),
-                      List.<JCTypeParameter>nil(),
-                      List.<JCVariableDecl>nil(),
-                      List.<JCExpression>nil(),
-                      null,
-                      null);
-        memberEnter(name, env);
-
-        // public int compareTo(E other) { return ???; }
-        MethodSymbol compareTo = new
-            MethodSymbol(Flags.PUBLIC,
-                         names.compareTo,
-                         new MethodType(List.of(tree.sym.type),
-                                        syms.intType,
-                                        List.<Type>nil(),
-                                        syms.methodClass),
-                         tree.sym);
-        memberEnter(make.MethodDef(compareTo, null), env);
     }
 
     public void visitTopLevel(JCCompilationUnit tree) {
@@ -936,7 +898,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             Type supertype =
                 (tree.extending != null)
                 ? attr.attribBase(tree.extending, baseEnv, true, false, true)
-                : ((tree.mods.flags & Flags.ENUM) != 0 && !target.compilerBootstrap(c))
+                : ((tree.mods.flags & Flags.ENUM) != 0)
                 ? attr.attribBase(enumBase(tree.pos, c), baseEnv,
                                   true, false, false)
                 : (c.fullname == names.java_lang_Object)
@@ -949,16 +911,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             ListBuffer<Type> all_interfaces = null; // lazy init
             Set<Type> interfaceSet = new HashSet<Type>();
             List<JCExpression> interfaceTrees = tree.implementing;
-            if ((tree.mods.flags & Flags.ENUM) != 0 && target.compilerBootstrap(c)) {
-                // add interface Comparable<T>
-                interfaceTrees =
-                    interfaceTrees.prepend(make.Type(new ClassType(syms.comparableType.getEnclosingType(),
-                                                                   List.of(c.type),
-                                                                   syms.comparableType.tsym)));
-                // add interface Serializable
-                interfaceTrees =
-                    interfaceTrees.prepend(make.Type(syms.serializableType));
-            }
             for (JCExpression iface : interfaceTrees) {
                 Type i = attr.attribBase(iface, baseEnv, false, true, true);
                 if (i.hasTag(CLASS)) {
@@ -1401,8 +1353,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (c.type != syms.objectType)
             stats = stats.prepend(SuperCall(make, typarams, params, based));
         if ((c.flags() & ENUM) != 0 &&
-            (types.supertype(c.type).tsym == syms.enumSym ||
-             target.compilerBootstrap(c))) {
+            (types.supertype(c.type).tsym == syms.enumSym)) {
             // constructors of true enums are private
             flags = (flags & ~AccessFlags) | PRIVATE | GENERATEDCONSTR;
         } else

@@ -409,5 +409,3 @@ public class MessageInfo {
     }
 
 }
-
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 4249112 4785453
  * @summary Verify that implicit member modifiers are set correctly.
  *
- * @compile/ref=MemberModifiers.out  -source 1.4 -target 1.4.2 -Xlint:-options -XDdumpmodifiers=cfm MemberModifiers.java
+ * @compile/ref=MemberModifiers.out  -source 1.4 -target 1.5 -Xlint:-options -XDdumpmodifiers=cfm MemberModifiers.java
  */
 
 // Currently, we check only that members of final classes are not final.

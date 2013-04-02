@@ -1019,14 +1019,14 @@ public class LambdaToMethod extends TreeTranslator {
             } else if (refSym.enclClass().isInterface()) {
                 return ClassFile.REF_invokeInterface;
             } else {
-                return ClassFile.REF_invokeVirtual;
+                return (refSym.flags() & PRIVATE) != 0 ?
+                        ClassFile.REF_invokeSpecial :
+                        ClassFile.REF_invokeVirtual;
             }
         }
     }
 
-    // </editor-fold>
-
-    // <editor-fold defaultstate="collapsed" desc="Lambda/reference analyzer">\
+    // <editor-fold defaultstate="collapsed" desc="Lambda/reference analyzer">
     /**
      * This visitor collects information about translation of a lambda expression.
      * More specifically, it keeps track of the enclosing contexts and captured locals
@@ -1293,9 +1293,16 @@ public class LambdaToMethod extends TreeTranslator {
             return names.lambda.append(names.fromString("" + lambdaCount++));
         }
 
+        /**
+         * For a serializable lambda, generate a name which maximizes name
+         * stability across deserialization.
+         * @param owner
+         * @return Name to use for the synthetic lambda method name
+         */
         private Name serializedLambdaName(Symbol owner) {
             StringBuilder buf = new StringBuilder();
             buf.append(names.lambda);
+            // Append the name of the method enclosing the lambda.
             String methodName = owner.name.toString();
             if (methodName.equals("<clinit>"))
                 methodName = "static";
@@ -1303,9 +1310,18 @@ public class LambdaToMethod extends TreeTranslator {
                 methodName = "new";
             buf.append(methodName);
             buf.append('$');
-            int methTypeHash = methodSig(owner.type).hashCode();
-            buf.append(Integer.toHexString(methTypeHash));
+            // Append a hash of the enclosing method signature to differentiate
+            // overloaded enclosing methods.  For lambdas enclosed in lambdas,
+            // the generated lambda method will not have type yet, but the
+            // enclosing method's name will have been generated with this same
+            // method, so it will be unique and never be overloaded.
+            if (owner.type != null) {
+                int methTypeHash = methodSig(owner.type).hashCode();
+                buf.append(Integer.toHexString(methTypeHash));
+            }
             buf.append('$');
+            // The above appended name components may not be unique, append a
+            // count based on the above name components.
             String temp = buf.toString();
             Integer count = serializableLambdaCounts.get(temp);
             if (count == null) {
@@ -1619,16 +1635,16 @@ public class LambdaToMethod extends TreeTranslator {
              * Translate a symbol of a given kind into something suitable for the
              * synthetic lambda body
              */
-            Symbol translate(String name, final Symbol sym, LambdaSymbolKind skind) {
+            Symbol translate(Name name, final Symbol sym, LambdaSymbolKind skind) {
                 switch (skind) {
                     case CAPTURED_THIS:
                         return sym;  // self represented
                     case TYPE_VAR:
                         // Just erase the type var
-                        return new VarSymbol(sym.flags(), names.fromString(name),
+                        return new VarSymbol(sym.flags(), name,
                                 types.erasure(sym.type), sym.owner);
                     case CAPTURED_VAR:
-                        return new VarSymbol(SYNTHETIC | FINAL, names.fromString(name), types.erasure(sym.type), translatedSym) {
+                        return new VarSymbol(SYNTHETIC | FINAL, name, types.erasure(sym.type), translatedSym) {
                             @Override
                             public Symbol baseSymbol() {
                                 //keep mapping with original captured symbol
@@ -1642,27 +1658,27 @@ public class LambdaToMethod extends TreeTranslator {
 
             void addSymbol(Symbol sym, LambdaSymbolKind skind) {
                 Map<Symbol, Symbol> transMap = null;
-                String preferredName;
+                Name preferredName;
                 switch (skind) {
                     case CAPTURED_THIS:
                         transMap = capturedThis;
-                        preferredName = "encl$" + capturedThis.size();
+                        preferredName = names.fromString("encl$" + capturedThis.size());
                         break;
                     case CAPTURED_VAR:
                         transMap = capturedLocals;
-                        preferredName = "cap$" + capturedLocals.size();
+                        preferredName = names.fromString("cap$" + capturedLocals.size());
                         break;
                     case LOCAL_VAR:
                         transMap = lambdaLocals;
-                        preferredName = sym.name.toString();
+                        preferredName = sym.name;
                         break;
                     case PARAM:
                         transMap = lambdaParams;
-                        preferredName = sym.name.toString();
+                        preferredName = sym.name;
                         break;
                     case TYPE_VAR:
                         transMap = typeVars;
-                        preferredName = sym.name.toString();
+                        preferredName = sym.name;
                         break;
                     default: throw new AssertionError();
                 }

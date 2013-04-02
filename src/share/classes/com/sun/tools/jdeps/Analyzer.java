@@ -91,9 +91,11 @@ public class Analyzer {
                             result.requiredArchives.add(source);
                         }
                         // either a profile name or the archive name
-                        String tname = getProfile(target);
-                        if (tname.isEmpty()){
-                            tname = source.toString();
+                        String tname = result.getTargetProfile(target);
+                        if (tname.isEmpty()) {
+                            tname = PlatformClassPath.contains(source)
+                                        ? "JDK internal API (" + source.getFileName() + ")"
+                                        : source.toString();
                         }
                         if (!result.targetNames.contains(tname)) {
                             result.targetNames.add(tname);
@@ -110,7 +112,7 @@ public class Analyzer {
          * a fully-qualified classname, a package name, a profile or
          * archive name depending on the Analyzer's type.
          */
-        void visit(String origin, String target);
+        void visit(String origin, String target, String profile);
         /**
          * Visits the source archive to its destination archive of
          * a recorded dependency.
@@ -124,7 +126,7 @@ public class Analyzer {
                 v.visit(r.archive, a);
             }
             for (String name : r.targetNames) {
-                v.visit(r.archive.getFileName(), name);
+                v.visit(r.archive.getFileName(), name, name);
             }
         }
     }
@@ -138,7 +140,7 @@ public class Analyzer {
                 for (String target : r.deps.get(origin)) {
                     // filter intra-dependency unless in verbose mode
                     if (type == Type.VERBOSE || getArchive(origin) != getArchive(target)) {
-                        v.visit(origin, target);
+                        v.visit(origin, target, r.getTargetProfile(target));
                     }
                 }
             }
@@ -149,21 +151,16 @@ public class Analyzer {
         return map.containsKey(name) ? map.get(name) : NOT_FOUND;
     }
 
-    public String getArchiveName(String name) {
-        return getArchive(name).getFileName();
-    }
-
-    public String getProfile(String name) {
-        String pn = type == Type.CLASS ? packageOf(name) : name;
-        Archive source = map.get(name);
-        if (source != null && PlatformClassPath.contains(source)) {
-            String profile = PlatformClassPath.getProfileName(pn);
-            if (profile.isEmpty()) {
-                return "JDK internal API (" + source.getFileName() + ")";
-            }
-            return profile;
-        }
-        return "";
+    /**
+     * Returns the file name of the archive for non-JRE class or
+     * internal JRE classes.  It returns empty string for SE API.
+     */
+    public String getArchiveName(String target, String profile) {
+        Archive source = getArchive(target);
+        String name = source.getFileName();
+        if (PlatformClassPath.contains(source))
+            return profile.isEmpty() ? "JDK internal API (" + name + ")" : "";
+        return name;
     }
 
     private abstract class ArchiveDeps implements Archive.Visitor {
@@ -200,6 +197,8 @@ public class Analyzer {
         }
 
         public abstract void visit(Location o, Location t);
+        public abstract String getTargetProfile(String target);
+
     }
 
     private class ClassVisitor extends ArchiveDeps {
@@ -212,6 +211,10 @@ public class Analyzer {
         public void visit(Location o, Location t) {
             add(o.getClassName(), t.getClassName());
         }
+        public String getTargetProfile(String target) {
+            int i = target.lastIndexOf('.');
+            return (i > 0) ? Profiles.getProfileName(target.substring(0, i)) : "";
+        }
     }
 
     private class PackageVisitor extends ArchiveDeps {
@@ -221,19 +224,15 @@ public class Analyzer {
         public void visit(Location o, Location t) {
             add(packageOf(o), packageOf(t));
         }
-
         public void visit(Location l) {
             add(packageOf(l));
         }
-
         private String packageOf(Location loc) {
             String pkg = loc.getPackageName();
             return pkg.isEmpty() ? "<unnamed>" : pkg;
         }
-    }
-
-    private static String packageOf(String cn) {
-        int i = cn.lastIndexOf('.');
-        return (i > 0) ? cn.substring(0, i) : "<unnamed>";
+        public String getTargetProfile(String target) {
+            return Profiles.getProfileName(target);
+        }
     }
 }
