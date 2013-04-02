@@ -28,8 +28,8 @@
  * @run
  */
 
-print(java.lang.System.in.class.name);
+print(Java.typeName(java.lang.System.in.class));
 var prop = "in";
-print(java.lang.System[prop].class.name);
-print(java.lang.System["in"].class.name);
+print(Java.typeName(java.lang.System[prop].class));
+print(Java.typeName(java.lang.System["in"].class));
 

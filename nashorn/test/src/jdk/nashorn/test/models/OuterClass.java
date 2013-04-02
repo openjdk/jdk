@@ -23,18 +23,43 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-public abstract class ConstructorWithArgument {
-    private final String token;
+public class OuterClass {
+    private final String value;
 
-    protected ConstructorWithArgument(String token) {
-        this.token = token;
+    public OuterClass(String value) {
+        this.value = value;
     }
 
-    public String getToken() {
-        return token;
+    public static class InnerStaticClass {
+        private final String value;
+
+        public InnerStaticClass(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return "InnerStaticClass[value=" + value + "]";
+        }
     }
 
-    protected abstract void doSomething();
+    public class InnerNonStaticClass {
+        private final String value;
+
+        public InnerNonStaticClass(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return "InnerNonStaticClass[value=" + value + ", outer=" + OuterClass.this + "]";
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "OuterClass[value=" + value + "]";
+    }
 }

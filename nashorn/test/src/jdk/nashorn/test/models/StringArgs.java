@@ -23,20 +23,17 @@
  * questions.
  */
 
-package jdk.nashorn.internal.ir.annotations;
+package jdk.nashorn.test.models;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 
-/**
- * This is a child node, a real node, not a reference, to an IR node that should
- * be traversed.
- * <p>
- * TODO Currently not in use.  Would make e.g. accept methods simple and unified
- * @see jdk.nashorn.internal.ir.Node
- */
-@Retention(value=RetentionPolicy.RUNTIME)
-public @interface ChildNode {
-    /** order of traversal compared to other children */
-    public int order() default -1;
+public class StringArgs {
+
+    public static void checkString(List<?> list) {
+        for (Object s : list) {
+            if (!(s instanceof String)) {
+                throw new AssertionError("Not a String: " + s);
+            }
+        }
+    }
 }

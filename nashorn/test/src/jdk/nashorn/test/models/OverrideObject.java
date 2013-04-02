@@ -23,17 +23,22 @@
  * questions.
  */
 
-package jdk.nashorn.internal.test.models;
+package jdk.nashorn.test.models;
 
-import java.util.List;
+public class OverrideObject {
+    @Override
+    public int hashCode() {
+        return 5;
+    }
 
-public class StringArgs {
+    @Override
+    public String toString() {
+        return "override-object";
+    }
 
-    public static void checkString(List<?> list) {
-        for (Object s : list) {
-            if (!(s instanceof String)) {
-                throw new AssertionError("Not a String: " + s);
-            }
-        }
+    @Override
+    public boolean equals(Object o) {
+        // TODO: add a FindBugs annotation to ignore EQ_ALWAYS_FALSE here. This is just a test.
+        return false;
     }
 }
