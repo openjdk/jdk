@@ -372,7 +372,7 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
   // other reserved memory (like the code cache).
   ReservedSpace rs(size, alignment, false, requested_addr);
   if (!rs.is_reserved()) {
-    fail_continue(err_msg("Unable to reserved shared space at required address " INTPTR_FORMAT, requested_addr));
+    fail_continue(err_msg("Unable to reserve shared space at required address " INTPTR_FORMAT, requested_addr));
     return rs;
   }
   // the reserved virtual memory is for mapping class data sharing archive

@@ -159,6 +159,8 @@ package.access=sun.,\
                com.sun.org.glassfish.external.,\
                com.sun.org.glassfish.gmbal.,\
 	       jdk.internal.,\
+	       jdk.nashorn.internal.,\
+	       jdk.nashorn.tools.,\
                apple.
 
 #
@@ -184,6 +186,8 @@ package.definition=sun.,\
                    com.sun.org.glassfish.external.,\
                    com.sun.org.glassfish.gmbal.,\
 		   jdk.internal.,\
+		   jdk.nashorn.internal.,\
+		   jdk.nashorn.tools.,\
                    apple.
 
 #

@@ -42,7 +42,6 @@ import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ReferenceNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SplitNode;
@@ -138,34 +137,19 @@ public final class PrintVisitor extends NodeVisitor {
      * Visits.
      */
     @Override
-    public Node enter(final AccessNode accessNode) {
+    public Node enterAccessNode(final AccessNode accessNode) {
         accessNode.toString(sb);
         return null;
     }
 
     @Override
-    public Node enter(final Block block) {
+    public Node enterBlock(final Block block) {
         sb.append(' ');
         sb.append('{');
 
         indent += TABWIDTH;
 
         final boolean isFunction = block instanceof FunctionNode;
-
-        if (isFunction) {
-            final FunctionNode       function  = (FunctionNode)block;
-            final List<FunctionNode> functions = function.getFunctions();
-
-            for (final FunctionNode f : functions) {
-                sb.append(EOLN);
-                indent();
-                f.accept(this);
-            }
-
-            if (!functions.isEmpty()) {
-                sb.append(EOLN);
-            }
-        }
 
         final List<Node> statements = block.getStatements();
 
@@ -224,25 +208,25 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final BreakNode breakNode) {
+    public Node enterBreakNode(final BreakNode breakNode) {
         breakNode.toString(sb);
         return null;
     }
 
     @Override
-    public Node enter(final CallNode callNode) {
+    public Node enterCallNode(final CallNode callNode) {
         callNode.toString(sb);
         return null;
     }
 
     @Override
-    public Node enter(final ContinueNode continueNode) {
+    public Node enterContinueNode(final ContinueNode continueNode) {
         continueNode.toString(sb);
         return null;
     }
 
     @Override
-    public Node enter(final DoWhileNode doWhileNode) {
+    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
         sb.append("do");
         doWhileNode.getBody().accept(this);
         sb.append(' ');
@@ -252,7 +236,7 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final ExecuteNode executeNode) {
+    public Node enterExecuteNode(final ExecuteNode executeNode) {
         final Node expression = executeNode.getExpression();
 
         if (expression instanceof UnaryNode) {
@@ -265,7 +249,7 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final ForNode forNode) {
+    public Node enterForNode(final ForNode forNode) {
         forNode.toString(sb);
         forNode.getBody().accept(this);
 
@@ -273,15 +257,15 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final FunctionNode functionNode) {
+    public Node enterFunctionNode(final FunctionNode functionNode) {
         functionNode.toString(sb);
-        enter((Block)functionNode);
+        enterBlock(functionNode);
 
         return null;
     }
 
     @Override
-    public Node enter(final IfNode ifNode) {
+    public Node enterIfNode(final IfNode ifNode) {
         ifNode.toString(sb);
         ifNode.getPass().accept(this);
 
@@ -296,13 +280,13 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final IndexNode indexNode) {
+    public Node enterIndexNode(final IndexNode indexNode) {
         indexNode.toString(sb);
         return null;
     }
 
     @Override
-    public Node enter(final LabelNode labeledNode) {
+    public Node enterLabelNode(final LabelNode labeledNode) {
         indent -= TABWIDTH;
         indent();
         indent += TABWIDTH;
@@ -313,7 +297,7 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final LineNumberNode lineNumberNode) {
+    public Node enterLineNumberNode(final LineNumberNode lineNumberNode) {
         if (printLineNumbers) {
             lineNumberNode.toString(sb);
         }
@@ -323,25 +307,19 @@ public final class PrintVisitor extends NodeVisitor {
 
 
     @Override
-    public Node enter(final ReferenceNode referenceNode) {
-        referenceNode.toString(sb);
-        return null;
-    }
-
-    @Override
-    public Node enter(final ReturnNode returnNode) {
+    public Node enterReturnNode(final ReturnNode returnNode) {
         returnNode.toString(sb);
         return null;
     }
 
     @Override
-    public Node enter(final RuntimeNode runtimeNode) {
+    public Node enterRuntimeNode(final RuntimeNode runtimeNode) {
         runtimeNode.toString(sb);
         return null;
     }
 
     @Override
-    public Node enter(final SplitNode splitNode) {
+    public Node enterSplitNode(final SplitNode splitNode) {
         splitNode.toString(sb);
         sb.append(EOLN);
         indent += TABWIDTH;
@@ -350,7 +328,7 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node leave(final SplitNode splitNode) {
+    public Node leaveSplitNode(final SplitNode splitNode) {
         sb.append("</split>");
         sb.append(EOLN);
         indent -= TABWIDTH;
@@ -359,7 +337,7 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final SwitchNode switchNode) {
+    public Node enterSwitchNode(final SwitchNode switchNode) {
         switchNode.toString(sb);
         sb.append(" {");
 
@@ -383,13 +361,13 @@ public final class PrintVisitor extends NodeVisitor {
    }
 
     @Override
-    public Node enter(final ThrowNode throwNode) {
+    public Node enterThrowNode(final ThrowNode throwNode) {
         throwNode.toString(sb);
         return null;
     }
 
     @Override
-    public Node enter(final TryNode tryNode) {
+    public Node enterTryNode(final TryNode tryNode) {
         tryNode.toString(sb);
         tryNode.getBody().accept(this);
 
@@ -412,13 +390,19 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final VarNode varNode) {
-        varNode.toString(sb);
+    public Node enterVarNode(final VarNode varNode) {
+        sb.append("var ");
+        varNode.getName().toString(sb);
+        final Node init = varNode.getInit();
+        if(init != null) {
+            sb.append(" = ");
+            init.accept(this);
+        }
         return null;
     }
 
     @Override
-    public Node enter(final WhileNode whileNode) {
+    public Node enterWhileNode(final WhileNode whileNode) {
         whileNode.toString(sb);
         whileNode.getBody().accept(this);
 
@@ -426,7 +410,7 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final WithNode withNode) {
+    public Node enterWithNode(final WithNode withNode) {
         withNode.toString(sb);
         withNode.getBody().accept(this);
 

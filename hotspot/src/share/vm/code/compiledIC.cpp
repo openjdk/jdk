@@ -552,7 +552,7 @@ bool CompiledStaticCall::is_call_to_interpreted() const {
 
 void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) {
   address stub=find_stub();
-  assert(stub!=NULL, "stub not found");
+  guarantee(stub != NULL, "stub not found");
 
   if (TraceICs) {
     ResourceMark rm;

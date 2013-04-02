@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #define GTK_STOCK_CANCEL           "gtk-cancel"
 #define GTK_STOCK_SAVE             "gtk-save"
 #define GTK_STOCK_OPEN             "gtk-open"
+#define GDK_CURRENT_TIME           0L
 
 typedef enum _WidgetType
 {
@@ -280,6 +281,7 @@ struct _GSList
 typedef void GdkColormap;
 typedef void GdkDrawable;
 typedef void GdkGC;
+typedef void GdkScreen;
 typedef void GdkPixbuf;
 typedef void GdkPixmap;
 typedef void GdkWindow;
@@ -664,6 +666,15 @@ gchar* (*fp_gtk_check_version)(guint required_major, guint required_minor,
 gboolean gtk2_load();
 
 /*
+ * Loads fp_gtk_show_uri function pointer. This initialization is
+ * separated because the function is required only
+ * for java.awt.Desktop API. The function relies on initialization in
+ * gtk2_load, so it must be invoked only after a successful gtk2_load
+ * invocation
+ */
+gboolean gtk2_show_uri_load();
+
+/*
  * Unload the gtk2 library.  If the library is already unloaded this method has
  * no effect and returns success.
  * Returns FALSE on failure and TRUE on success.
@@ -794,5 +805,8 @@ void (*fp_g_thread_init)(GThreadFunctions *vtable);
 void (*fp_gdk_threads_init)(void);
 void (*fp_gdk_threads_enter)(void);
 void (*fp_gdk_threads_leave)(void);
+
+gboolean (*fp_gtk_show_uri)(GdkScreen *screen, const gchar *uri,
+    guint32 timestamp, GError **error);
 
 #endif /* !_GTK2_INTERFACE_H */

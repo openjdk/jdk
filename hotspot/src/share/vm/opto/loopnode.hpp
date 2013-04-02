@@ -603,7 +603,10 @@ class PhaseIdealLoop : public PhaseTransform {
   }
 
 public:
-  bool has_node( Node* n ) const { return _nodes[n->_idx] != NULL; }
+  bool has_node( Node* n ) const {
+    guarantee(n != NULL, "No Node.");
+    return _nodes[n->_idx] != NULL;
+  }
   // check if transform created new nodes that need _ctrl recorded
   Node *get_late_ctrl( Node *n, Node *early );
   Node *get_early_ctrl( Node *n );
@@ -737,7 +740,8 @@ private:
     return n;
   }
   uint dom_depth(Node* d) const {
-    assert(d->_idx < _idom_size, "");
+    guarantee(d != NULL, "Null dominator info.");
+    guarantee(d->_idx < _idom_size, "");
     return _dom_depth[d->_idx];
   }
   void set_idom(Node* d, Node* n, uint dom_depth);

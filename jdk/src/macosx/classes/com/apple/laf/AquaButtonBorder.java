@@ -83,14 +83,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
         painter.state.set(state);
         painter.state.set((state != State.DISABLED && state != State.INACTIVE) && b.isFocusPainted() && isFocused(b) ? Focused.YES : Focused.NO);
 
+        // Full border size of the component.
+        // g.setColor(new Color(0, 255, 0, 70));
+        // g.drawRect(x, y, width - 1, height - 1);
+
         final Insets subInsets = sizeVariant.insets;
         x += subInsets.left;
         y += subInsets.top;
         width -= (subInsets.left + subInsets.right);
         height -= (subInsets.top + subInsets.bottom);
 
-//        g.setColor(Color.magenta);
-//        g.drawRect(x, y, width - 1, height - 1);
+        // Where the native border should start to paint.
+        // g.setColor(new Color(255, 0, 255, 70));
+        // g.drawRect(x, y, width - 1, height - 1);
 
         doButtonPaint(b, model, g, x, y, width, height);
     }
