@@ -44,6 +44,7 @@ public class CompilerTest {
     private static final boolean VERBOSE  = Boolean.valueOf(System.getProperty("compilertest.verbose"));
     private static final boolean TEST262  = Boolean.valueOf(System.getProperty("compilertest.test262"));
     private static final String TEST_BASIC_DIR  = System.getProperty("test.basic.dir");
+    private static final String TEST_NODE_DIR  = System.getProperty("test.node.dir");
     private static final String TEST262_SUITE_DIR = System.getProperty("test262.suite.dir");
 
     interface TestFilter {
@@ -81,21 +82,22 @@ public class CompilerTest {
     @Test
     public void compileAllTests() {
         if (TEST262) {
-            compileTestSet(TEST262_SUITE_DIR, new TestFilter() {
+            compileTestSet(new File(TEST262_SUITE_DIR), new TestFilter() {
                 @Override
                 public boolean exclude(final File file, final String content) {
                     return content.indexOf("@negative") != -1;
                 }
             });
         }
-        compileTestSet(TEST_BASIC_DIR, null);
+        compileTestSet(new File(TEST_BASIC_DIR), null);
+        compileTestSet(new File(TEST_NODE_DIR, "node"), null);
+        compileTestSet(new File(TEST_NODE_DIR, "src"), null);
     }
 
-    private void compileTestSet(final String testSet, final TestFilter filter) {
+    private void compileTestSet(final File testSetDir, final TestFilter filter) {
         passed = 0;
         failed = 0;
         skipped = 0;
-        final File testSetDir = new File(testSet);
         if (! testSetDir.isDirectory()) {
             log("WARNING: " + testSetDir + " not found or not a directory");
             return;
@@ -103,7 +105,7 @@ public class CompilerTest {
         log(testSetDir.getAbsolutePath());
         compileJSDirectory(testSetDir, filter);
 
-        log(testSet + " compile done!");
+        log(testSetDir + " compile done!");
         log("compile ok: " + passed);
         log("compile failed: " + failed);
         log("compile skipped: " + skipped);

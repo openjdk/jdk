@@ -29,6 +29,16 @@
  */
 
 function test3(a) {
+    for (i = 0; i < a.length ; i++) {
+	for (j = 0; j < a[i].length ; j++) {
+	    for (k = 0; k < a[i][j].length ; k++) {
+		a[i][j][k] *= 8;
+	    }
+	}
+    }
+}
+
+function test3local(a) {
     for (var i = 0; i < a.length ; i++) {
 	for (var j = 0; j < a[i].length ; j++) {
 	    for (var k = 0; k < a[i][j].length ; k++) {
@@ -45,6 +55,8 @@ var array = [ [[1,1,1],[1,1,1],[1,1,1]],
 test3(array);
 print(array);
 
+test3local(array);
+print(array);
 
 function outer() {
     

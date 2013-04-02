@@ -33,17 +33,17 @@ import com.oracle.java.testlibrary.*;
 public class BooleanFlagWithInvalidValue {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UseLargePages=8", "-version");
+        "-XX:+PrintWarnings=8", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Improperly specified VM option 'UseLargePages=8'");
+    output.shouldContain("Improperly specified VM option 'PrintWarnings=8'");
     output.shouldHaveExitValue(1);
 
     pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:-UseLargePages=8", "-version");
+        "-XX:-PrintWarnings=8", "-version");
 
     output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Improperly specified VM option 'UseLargePages=8'");
+    output.shouldContain("Improperly specified VM option 'PrintWarnings=8'");
     output.shouldHaveExitValue(1);
   }
 }

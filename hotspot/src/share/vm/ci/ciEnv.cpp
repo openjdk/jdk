@@ -802,6 +802,7 @@ ciInstanceKlass* ciEnv::get_instance_klass_for_declared_method_holder(ciKlass* m
   // require checks to make sure the expected type was found.  Given that this
   // only occurs for clone() the more extensive fix seems like overkill so
   // instead we simply smear the array type into Object.
+  guarantee(method_holder != NULL, "no method holder");
   if (method_holder->is_instance_klass()) {
     return method_holder->as_instance_klass();
   } else if (method_holder->is_array_klass()) {

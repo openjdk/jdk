@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,8 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jvm.h"
 #include "jni_util.h"
-#include "jlong.h"
+#include "jdk_util.h"
 
 #include "java_lang_Float.h"
 #include "java_lang_Double.h"
@@ -88,7 +86,7 @@ Java_java_io_ObjectOutputStream_floatsToBytes(JNIEnv *env,
     srcend = srcpos + nfloats;
     for ( ; srcpos < srcend; srcpos++) {
         fval = (float) floats[srcpos];
-        if (JVM_IsNaN(fval)) {          /* collapse NaNs */
+        if (ISNANF(fval)) {          /* collapse NaNs */
             ival = 0x7fc00000;
         } else {
             u.f = fval;
@@ -160,7 +158,7 @@ Java_java_io_ObjectOutputStream_doublesToBytes(JNIEnv *env,
     srcend = srcpos + ndoubles;
     for ( ; srcpos < srcend; srcpos++) {
         dval = doubles[srcpos];
-        if (JVM_IsNaN((double) dval)) {         /* collapse NaNs */
+        if (ISNAND((double) dval)) {         /* collapse NaNs */
             lval = jint_to_jlong(0x7ff80000);
             lval = jlong_shl(lval, 32);
         } else {
