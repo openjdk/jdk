@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,13 @@ import static java.lang.annotation.ElementType.*;
  * suppress a warning in a particular method, you should annotate that
  * method rather than its class.
  *
- * @since 1.5
  * @author Josh Bloch
+ * @since 1.5
+ * @jls 4.8 Raw Types
+ * @jls 4.12.2 Variables of Reference Type
+ * @jls 5.1.9 Unchecked Conversion
+ * @jls 5.5.2 Checked Casts and Unchecked Casts
+ * @jls 9.6.3.5 @SuppressWarnings
  */
 @Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE})
 @Retention(RetentionPolicy.SOURCE)
@@ -56,9 +61,11 @@ public @interface SuppressWarnings {
      * free to emit a warning if an annotation contains an unrecognized
      * warning name.
      *
-     * <p>Compiler vendors should document the warning names they support in
-     * conjunction with this annotation type. They are encouraged to cooperate
-     * to ensure that the same names work across multiple compilers.
+     * <p> The string {@code "unchecked"} is used to suppress
+     * unchecked warnings. Compiler vendors should document the
+     * additional warning names they support in conjunction with this
+     * annotation type. They are encouraged to cooperate to ensure
+     * that the same names work across multiple compilers.
      */
     String[] value();
 }

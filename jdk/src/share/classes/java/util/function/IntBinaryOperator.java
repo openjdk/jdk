@@ -26,7 +26,10 @@ package java.util.function;
 
 /**
  * An operation on two {@code int} operands yielding an {@code int} result.
+ * This is the primitive type specialization of {@link BinaryOperator} for
+ * {@code int}.
  *
+ * @see BinaryOperator
  * @since 1.8
  */
 @FunctionalInterface
@@ -41,5 +44,5 @@ public interface IntBinaryOperator {
      * @param right  the right operand value
      * @return the result of the operation
      */
-    public int operateAsInt(int left, int right);
+    public int applyAsInt(int left, int right);
 }

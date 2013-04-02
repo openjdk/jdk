@@ -297,6 +297,13 @@ public class Context {
     }
 
     /**
+     * Returns the cred inside, if there is one
+     */
+    public GSSCredential cred() {
+        return cred;
+    }
+
+    /**
      * Disposes the GSSContext within
      * @throws org.ietf.jgss.GSSException
      */

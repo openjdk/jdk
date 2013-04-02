@@ -77,22 +77,19 @@ Method* Method::allocate(ClassLoaderData* loader_data,
   return new (loader_data, size, false, THREAD) Method(cm, access_flags, size);
 }
 
-Method::Method(ConstMethod* xconst,
-                             AccessFlags access_flags, int size) {
+Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
   No_Safepoint_Verifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
   set_method_size(size);
-  set_name_index(0);
-  set_signature_index(0);
 #ifdef CC_INTERP
   set_result_index(T_VOID);
 #endif
-  set_constants(NULL);
-  set_max_stack(0);
-  set_max_locals(0);
   set_intrinsic_id(vmIntrinsics::_none);
   set_jfr_towrite(false);
+  set_force_inline(false);
+  set_hidden(false);
+  set_dont_inline(false);
   set_method_data(NULL);
   set_interpreter_throwout_count(0);
   set_vtable_index(Method::garbage_vtable_index);
@@ -801,7 +798,15 @@ void Method::unlink_method() {
   backedge_counter()->reset();
   _adapter = NULL;
   _from_compiled_entry = NULL;
-  assert(_method_data == NULL, "unexpected method data?");
+
+  // In case of DumpSharedSpaces, _method_data should always be NULL.
+  //
+  // During runtime (!DumpSharedSpaces), when we are cleaning a
+  // shared class that failed to load, this->link_method() may
+  // have already been called (before an exception happened), so
+  // this->_method_data may not be NULL.
+  assert(!DumpSharedSpaces || _method_data == NULL, "unexpected method data?");
+
   set_method_data(NULL);
   set_interpreter_throwout_count(0);
   set_interpreter_invocation_count(0);

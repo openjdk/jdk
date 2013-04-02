@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.util;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -56,11 +57,12 @@ public class VisibleMemberMap {
     public static final int METHODS         = 4;
     public static final int ANNOTATION_TYPE_MEMBER_OPTIONAL = 5;
     public static final int ANNOTATION_TYPE_MEMBER_REQUIRED = 6;
+    public static final int PROPERTIES      = 7;
 
     /**
      * The total number of member types is {@value}.
      */
-    public static final int NUM_MEMBER_TYPES = 7;
+    public static final int NUM_MEMBER_TYPES = 8;
 
     public static final String STARTLEVEL = "start";
 
@@ -93,23 +95,34 @@ public class VisibleMemberMap {
     private final int kind;
 
     /**
-     * Deprected members should be excluded or not?
+     * The configuration this VisibleMemberMap was created with.
      */
-    private final boolean nodepr;
+    private final Configuration configuration;
+
+    private static final Map<ClassDoc, ProgramElementDoc[]> propertiesCache =
+            new HashMap<ClassDoc, ProgramElementDoc[]>();
+    private static final Map<ProgramElementDoc, ProgramElementDoc> classPropertiesMap =
+            new HashMap<ProgramElementDoc, ProgramElementDoc>();
+    private static final Map<ProgramElementDoc, GetterSetter> getterSetterMap =
+            new HashMap<ProgramElementDoc, GetterSetter>();
 
     /**
      * Construct a VisibleMemberMap of the given type for the given
-     * class.  If nodepr is true, exclude the deprecated members from
-     * the map.
+     * class.
      *
      * @param classdoc the class whose members are being mapped.
      * @param kind the kind of member that is being mapped.
-     * @param nodepr if true, exclude the deprecated members from the map.
+     * @param configuration the configuration to use to construct this
+     * VisibleMemberMap. If the field configuration.nodeprecated is true the
+     * deprecated members are excluded from the map. If the field
+     * configuration.javafx is true the JavaFX features are used.
      */
-    public VisibleMemberMap(ClassDoc classdoc, int kind, boolean nodepr) {
+    public VisibleMemberMap(ClassDoc classdoc,
+                            int kind,
+                            Configuration configuration) {
         this.classdoc = classdoc;
-        this.nodepr = nodepr;
         this.kind = kind;
+        this.configuration = configuration;
         new ClassMembers(classdoc, STARTLEVEL).build();
     }
 
@@ -121,6 +134,33 @@ public class VisibleMemberMap {
     public List<ClassDoc> getVisibleClassesList() {
         sort(visibleClasses);
         return visibleClasses;
+    }
+
+    /**
+     * Returns the property field documentation belonging to the given member.
+     * @param ped the member for which the property documentation is needed.
+     * @return the property field documentation, null if there is none.
+     */
+    public ProgramElementDoc getPropertyMemberDoc(ProgramElementDoc ped) {
+        return classPropertiesMap.get(ped);
+    }
+
+    /**
+     * Returns the getter documentation belonging to the given property method.
+     * @param propertyMethod the method for which the getter is needed.
+     * @return the getter documentation, null if there is none.
+     */
+    public ProgramElementDoc getGetterForProperty(ProgramElementDoc propertyMethod) {
+        return getterSetterMap.get(propertyMethod).getGetter();
+    }
+
+    /**
+     * Returns the setter documentation belonging to the given property method.
+     * @param propertyMethod the method for which the setter is needed.
+     * @return the setter documentation, null if there is none.
+     */
+    public ProgramElementDoc getSetterForProperty(ProgramElementDoc propertyMethod) {
+        return getterSetterMap.get(propertyMethod).getSetter();
     }
 
     /**
@@ -334,8 +374,9 @@ public class VisibleMemberMap {
                 ProgramElementDoc pgmelem = cdmembers.get(i);
                 if (!found(members, pgmelem) &&
                     memberIsVisible(pgmelem) &&
-                    !isOverridden(pgmelem, level)) {
-                    incllist.add(pgmelem);
+                    !isOverridden(pgmelem, level) &&
+                    !isTreatedAsPrivate(pgmelem)) {
+                        incllist.add(pgmelem);
                 }
             }
             if (incllist.size() > 0) {
@@ -343,6 +384,16 @@ public class VisibleMemberMap {
             }
             members.addAll(incllist);
             fillMemberLevelMap(getClassMembers(fromClass, false), level);
+        }
+
+        private boolean isTreatedAsPrivate(ProgramElementDoc pgmelem) {
+            if (!configuration.javafx) {
+                return false;
+            }
+
+            Tag[] aspTags = pgmelem.tags("@treatAsPrivate");
+            boolean result = (aspTags != null) && (aspTags.length > 0);
+            return result;
         }
 
         /**
@@ -406,11 +457,16 @@ public class VisibleMemberMap {
                     break;
                 case METHODS:
                     members = cd.methods(filter);
+                    checkOnPropertiesTags((MethodDoc[])members);
+                    break;
+                case PROPERTIES:
+                    members = properties(cd, filter);
                     break;
                 default:
                     members = new ProgramElementDoc[0];
             }
-            if (nodepr) {
+            // Deprected members should be excluded or not?
+            if (configuration.nodeprecated) {
                 return Util.excludeDeprecatedMembersAsList(members);
             }
             return Arrays.asList(members);
@@ -471,6 +527,206 @@ public class VisibleMemberMap {
                 }
             }
             return false;
+        }
+
+        private ProgramElementDoc[] properties(final ClassDoc cd, final boolean filter) {
+            final MethodDoc[] allMethods = cd.methods(filter);
+            final FieldDoc[] allFields = cd.fields(false);
+
+            if (propertiesCache.containsKey(cd)) {
+                return propertiesCache.get(cd);
+            }
+
+            final List<MethodDoc> result = new ArrayList<MethodDoc>();
+
+            for (final MethodDoc propertyMethod : allMethods) {
+
+                if (!isPropertyMethod(propertyMethod)) {
+                    continue;
+                }
+
+                final MethodDoc getter = getterForField(allMethods, propertyMethod);
+                final MethodDoc setter = setterForField(allMethods, propertyMethod);
+                final FieldDoc field = fieldForProperty(allFields, propertyMethod);
+
+                addToPropertiesMap(setter, getter, propertyMethod, field);
+                getterSetterMap.put(propertyMethod, new GetterSetter(getter, setter));
+                result.add(propertyMethod);
+            }
+            final ProgramElementDoc[] resultAray =
+                    result.toArray(new ProgramElementDoc[result.size()]);
+            propertiesCache.put(cd, resultAray);
+            return resultAray;
+        }
+
+        private void addToPropertiesMap(MethodDoc setter,
+                                        MethodDoc getter,
+                                        MethodDoc propertyMethod,
+                                        FieldDoc field) {
+            if ((field == null)
+                    || (field.getRawCommentText() == null)
+                    || field.getRawCommentText().length() == 0) {
+                addToPropertiesMap(setter, propertyMethod);
+                addToPropertiesMap(getter, propertyMethod);
+                addToPropertiesMap(propertyMethod, propertyMethod);
+            } else {
+                addToPropertiesMap(getter, field);
+                addToPropertiesMap(setter, field);
+                addToPropertiesMap(propertyMethod, field);
+            }
+        }
+
+        private void addToPropertiesMap(ProgramElementDoc propertyMethod,
+                                        ProgramElementDoc commentSource) {
+            if (null == propertyMethod || null == commentSource) {
+                return;
+            }
+            final String methodRawCommentText = propertyMethod.getRawCommentText();
+
+            /* The second condition is required for the property buckets. In
+             * this case the comment is at the property method (not at the field)
+             * and it needs to be listed in the map.
+             */
+            if ((null == methodRawCommentText || 0 == methodRawCommentText.length())
+                    || propertyMethod.equals(commentSource)) {
+                classPropertiesMap.put(propertyMethod, commentSource);
+            }
+        }
+
+        private MethodDoc getterForField(MethodDoc[] methods,
+                                         MethodDoc propertyMethod) {
+            final String propertyMethodName = propertyMethod.name();
+            final String fieldName =
+                    propertyMethodName.substring(0,
+                            propertyMethodName.lastIndexOf("Property"));
+            final String fieldNameUppercased =
+                    "" + Character.toUpperCase(fieldName.charAt(0))
+                                            + fieldName.substring(1);
+            final String getterNamePattern;
+            final String fieldTypeName = propertyMethod.returnType().toString();
+            if ("boolean".equals(fieldTypeName)
+                    || fieldTypeName.endsWith("BooleanProperty")) {
+                getterNamePattern = "(is|get)" + fieldNameUppercased;
+            } else {
+                getterNamePattern = "get" + fieldNameUppercased;
+            }
+
+            for (MethodDoc methodDoc : methods) {
+                if (Pattern.matches(getterNamePattern, methodDoc.name())) {
+                    if (0 == methodDoc.parameters().length
+                            && (methodDoc.isPublic() || methodDoc.isProtected())) {
+                        return methodDoc;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private MethodDoc setterForField(MethodDoc[] methods,
+                                         MethodDoc propertyMethod) {
+            final String propertyMethodName = propertyMethod.name();
+            final String fieldName =
+                    propertyMethodName.substring(0,
+                            propertyMethodName.lastIndexOf("Property"));
+            final String fieldNameUppercased =
+                    "" + Character.toUpperCase(fieldName.charAt(0))
+                                             + fieldName.substring(1);
+            final String setter = "set" + fieldNameUppercased;
+
+            for (MethodDoc methodDoc : methods) {
+                if (setter.equals(methodDoc.name())) {
+                    if (1 == methodDoc.parameters().length
+                            && "void".equals(methodDoc.returnType().simpleTypeName())
+                            && (methodDoc.isPublic() || methodDoc.isProtected())) {
+                        return methodDoc;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private FieldDoc fieldForProperty(FieldDoc[] fields, MethodDoc property) {
+
+            for (FieldDoc field : fields) {
+                final String fieldName = field.name();
+                final String propertyName = fieldName + "Property";
+                if (propertyName.equals(property.name())) {
+                    return field;
+                }
+            }
+            return null;
+        }
+
+        // properties aren't named setA* or getA*
+        private final Pattern pattern = Pattern.compile("[sg]et\\p{Upper}.*");
+        private boolean isPropertyMethod(MethodDoc method) {
+            if (!method.name().endsWith("Property")) {
+                return false;
+            }
+
+            if (! memberIsVisible(method)) {
+                return false;
+            }
+
+            if (pattern.matcher(method.name()).matches()) {
+                return false;
+            }
+
+            return 0 == method.parameters().length
+                    && !"void".equals(method.returnType().simpleTypeName());
+        }
+
+        private void checkOnPropertiesTags(MethodDoc[] members) {
+            for (MethodDoc methodDoc: members) {
+                if (methodDoc.isIncluded()) {
+                    for (Tag tag: methodDoc.tags()) {
+                        String tagName = tag.name();
+                        if (tagName.equals("@propertySetter")
+                                || tagName.equals("@propertyGetter")
+                                || tagName.equals("@propertyDescription")) {
+                            if (!isPropertyGetterOrSetter(members, methodDoc)) {
+                                configuration.message.warning(tag.position(),
+                                        "doclet.javafx_tag_misuse");
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        private boolean isPropertyGetterOrSetter(MethodDoc[] members,
+                                                 MethodDoc methodDoc) {
+            boolean found = false;
+            String propertyName = Util.propertyNameFromMethodName(methodDoc.name());
+            if (!propertyName.isEmpty()) {
+                String propertyMethodName = propertyName + "Property";
+                for (MethodDoc member: members) {
+                    if (member.name().equals(propertyMethodName)) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            return found;
+        }
+    }
+
+    private class GetterSetter {
+        private final ProgramElementDoc getter;
+        private final ProgramElementDoc setter;
+
+        public GetterSetter(ProgramElementDoc getter, ProgramElementDoc setter) {
+            this.getter = getter;
+            this.setter = setter;
+        }
+
+        public ProgramElementDoc getGetter() {
+            return getter;
+        }
+
+        public ProgramElementDoc getSetter() {
+            return setter;
         }
     }
 

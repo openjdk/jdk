@@ -84,15 +84,13 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   const int length = _cp_cache_map.length();
   ClassLoaderData* loader_data = _pool->pool_holder()->class_loader_data();
   ConstantPoolCache* cache =
-      ConstantPoolCache::allocate(loader_data, length, CHECK);
+      ConstantPoolCache::allocate(loader_data, length, _cp_cache_map,
+                                  _invokedynamic_references_map, CHECK);
 
   // initialize object cache in constant pool
   _pool->initialize_resolved_references(loader_data, _resolved_references_map,
                                         _resolved_reference_limit,
                                         CHECK);
-
-  No_Safepoint_Verifier nsv;
-  cache->initialize(_cp_cache_map, _invokedynamic_references_map);
   _pool->set_cache(cache);
   cache->set_constant_pool(_pool());
 }

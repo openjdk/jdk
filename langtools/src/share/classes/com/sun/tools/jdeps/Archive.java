@@ -24,43 +24,32 @@
  */
 package com.sun.tools.jdeps;
 
-import com.sun.tools.classfile.Dependency;
 import com.sun.tools.classfile.Dependency.Location;
 import java.io.File;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * Represents the source of the class files.
  */
 public class Archive {
-    private static Map<String,Archive> archiveForClass = new HashMap<String,Archive>();
-    public static Archive find(Location loc) {
-        return archiveForClass.get(loc.getName());
-    }
-
     private final File file;
     private final String filename;
-    private final DependencyRecorder recorder;
     private final ClassFileReader reader;
+    private final Map<Location, Set<Location>> deps
+        = new HashMap<Location, Set<Location>>();
+
     public Archive(String name) {
         this.file = null;
         this.filename = name;
-        this.recorder = new DependencyRecorder();
         this.reader = null;
     }
 
     public Archive(File f, ClassFileReader reader) {
         this.file = f;
         this.filename = f.getName();
-        this.recorder = new DependencyRecorder();
         this.reader = reader;
     }
 
@@ -72,102 +61,37 @@ public class Archive {
         return filename;
     }
 
-    public void addClass(String classFileName) {
-        Archive a = archiveForClass.get(classFileName);
-        assert(a == null || a == this); // ## issue warning?
-        if (!archiveForClass.containsKey(classFileName)) {
-            archiveForClass.put(classFileName, this);
+    public void addClass(Location origin) {
+        Set<Location> set = deps.get(origin);
+        if (set == null) {
+            set = new HashSet<Location>();
+            deps.put(origin, set);
         }
     }
-
-    public void addDependency(Dependency d) {
-        recorder.addDependency(d);
+    public void addClass(Location origin, Location target) {
+        Set<Location> set = deps.get(origin);
+        if (set == null) {
+            set = new HashSet<Location>();
+            deps.put(origin, set);
+        }
+        set.add(target);
     }
 
-    /**
-     * Returns a sorted map of a class to its dependencies.
-     */
-    public SortedMap<Location, SortedSet<Location>> getDependencies() {
-        DependencyRecorder.Filter filter = new DependencyRecorder.Filter() {
-            public boolean accept(Location origin, Location target) {
-                 return (archiveForClass.get(origin.getName()) !=
-                            archiveForClass.get(target.getName()));
-        }};
-
-        SortedMap<Location, SortedSet<Location>> result =
-            new TreeMap<Location, SortedSet<Location>>(locationComparator);
-        for (Map.Entry<Location, Set<Location>> e : recorder.dependencies().entrySet()) {
-            Location o = e.getKey();
-            for (Location t : e.getValue()) {
-                if (filter.accept(o, t)) {
-                    SortedSet<Location> odeps = result.get(o);
-                    if (odeps == null) {
-                        odeps = new TreeSet<Location>(locationComparator);
-                        result.put(o, odeps);
-                    }
-                    odeps.add(t);
-                }
+    public void visit(Visitor v) {
+        for (Map.Entry<Location,Set<Location>> e: deps.entrySet()) {
+            v.visit(e.getKey());
+            for (Location target : e.getValue()) {
+                v.visit(e.getKey(), target);
             }
         }
-        return result;
-    }
-
-    /**
-     * Returns the set of archives this archive requires.
-     */
-    public Set<Archive> getRequiredArchives() {
-        SortedSet<Archive> deps = new TreeSet<Archive>(new Comparator<Archive>() {
-            public int compare(Archive a1, Archive a2) {
-                return a1.toString().compareTo(a2.toString());
-            }
-        });
-
-        for (Map.Entry<Location, Set<Location>> e : recorder.dependencies().entrySet()) {
-            Location o = e.getKey();
-            Archive origin = Archive.find(o);
-            for (Location t : e.getValue()) {
-                Archive target = Archive.find(t);
-                assert(origin != null && target != null);
-                if (origin != target) {
-                    if (!deps.contains(target)) {
-                        deps.add(target);
-                    }
-                }
-            }
-        }
-        return deps;
     }
 
     public String toString() {
         return file != null ? file.getPath() : filename;
     }
 
-    private static class DependencyRecorder {
-        static interface Filter {
-            boolean accept(Location origin, Location target);
-        }
-
-        public void addDependency(Dependency d) {
-            Set<Location> odeps = map.get(d.getOrigin());
-            if (odeps == null) {
-                odeps = new HashSet<Location>();
-                map.put(d.getOrigin(), odeps);
-            }
-            odeps.add(d.getTarget());
-        }
-
-        public Map<Location, Set<Location>> dependencies() {
-            return map;
-        }
-
-        private final Map<Location, Set<Location>> map =
-            new HashMap<Location, Set<Location>>();
+    interface Visitor {
+        void visit(Location loc);
+        void visit(Location origin, Location target);
     }
-
-    private static Comparator<Location> locationComparator =
-        new Comparator<Location>() {
-            public int compare(Location o1, Location o2) {
-                return o1.toString().compareTo(o2.toString());
-            }
-        };
 }

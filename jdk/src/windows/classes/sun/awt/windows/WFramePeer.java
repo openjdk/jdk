@@ -200,4 +200,11 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     public Rectangle getBoundsPrivate() {
         return getBounds();
     }
+
+    // TODO: implement it in peers. WLightweightFramePeer may implement lw version.
+    public void emulateActivation(boolean activate) {
+        synthesizeWmActivate(activate);
+    }
+
+    private native void synthesizeWmActivate(boolean activate);
 }

@@ -612,6 +612,7 @@ SJAVAC_SERVER_JAVA
 JOBS
 MEMORY_SIZE
 NUM_CORES
+ENABLE_INTREE_EC
 SALIB_NAME
 HOTSPOT_MAKE_ARGS
 FIXPATH
@@ -3752,7 +3753,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1363150186
+DATE_WHEN_GENERATED=1363706268
 
 ###############################################################################
 #
@@ -10782,6 +10783,12 @@ if test "x$enable_unlimited_crypto" = "xyes"; then
 else
     UNLIMITED_CRYPTO=false
 fi
+
+
+###############################################################################
+#
+# Enable or disable the elliptic curve crypto implementation
+#
 
 
 ###############################################################################
@@ -29823,7 +29830,7 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 _ACEOF
  X11_A_OK=yes
 else
-  X11_A_OK=no
+  X11_A_OK=no; break
 fi
 
 done
@@ -31689,6 +31696,22 @@ HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
 SALIB_NAME="${LIBRARY_PREFIX}saproc${SHARED_LIBRARY_SUFFIX}"
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
+fi
+
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if elliptic curve crypto implementation is present" >&5
+$as_echo_n "checking if elliptic curve crypto implementation is present... " >&6; }
+
+if test -d "${SRC_ROOT}/jdk/src/share/native/sun/security/ec/impl"; then
+    ENABLE_INTREE_EC=yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+    ENABLE_INTREE_EC=no
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 

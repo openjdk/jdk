@@ -228,6 +228,19 @@ public class BuilderFactory {
     }
 
     /**
+     * Return an instance of the property builder for the given class.
+     *
+     * @return an instance of the field builder for the given class.
+     */
+    public AbstractBuilder getPropertyBuilder(ClassWriter classWriter) throws Exception {
+        final PropertyWriter propertyWriter =
+                writerFactory.getPropertyWriter(classWriter);
+        return PropertyBuilder.getInstance(context,
+                                           classWriter.getClassDoc(),
+                                           propertyWriter);
+    }
+
+    /**
      * Return an instance of the constructor builder for the given class.
      *
      * @return an instance of the constructor builder for the given class.

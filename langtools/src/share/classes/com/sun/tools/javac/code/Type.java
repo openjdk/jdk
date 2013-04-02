@@ -1367,7 +1367,7 @@ public class Type implements PrimitiveType {
             for (Type b : prevBounds) {
                 //check for redundancy - use strict version of isSameType on tvars
                 //(as the standard version will lead to false positives w.r.t. clones ivars)
-                if (types.isSameType(b, bound2, true)) return;
+                if (types.isSameType(b, bound2, true) || bound == qtype) return;
             }
             bounds.put(ib, prevBounds.prepend(bound2));
             notifyChange(EnumSet.of(ib));

@@ -70,7 +70,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.Arrays;
-import java.util.function.Block;
+import java.util.function.Consumer;
 
 /**
  * A reader for Hijrah Deviation files.
@@ -126,13 +126,13 @@ final class HijrahDeviationReader {
      * @param typeId the name of the calendar
      * @param calendarType the calendar type
      * @return {@code true} if the file was read and each entry accepted by the
-     * Block; else {@code false} no configuration was done
+     * Consumer; else {@code false} no configuration was done
      *
      * @throws IOException for zip/jar file handling exception.
      * @throws ParseException if the format of the configuration file is wrong.
      */
     static boolean readDeviation(String typeId, String calendarType,
-            Block<HijrahChronology.Deviation> block) throws IOException, ParseException {
+            Consumer<HijrahChronology.Deviation> consumer) throws IOException, ParseException {
         InputStream is = getConfigFileInputStream(typeId);
         if (is != null) {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
@@ -142,7 +142,7 @@ final class HijrahDeviationReader {
                     num++;
                     HijrahChronology.Deviation entry = parseLine(line, num);
                     if (entry != null) {
-                        block.accept(entry);
+                        consumer.accept(entry);
                     }
                 }
             }

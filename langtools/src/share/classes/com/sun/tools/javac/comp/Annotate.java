@@ -384,10 +384,16 @@ public class Annotate {
         Assert.check(!annotations.isEmpty() &&
                      !annotations.tail.isEmpty()); // i.e. size() > 1
 
+        int count = 0;
         for (List<T> al = annotations;
              !al.isEmpty();
              al = al.tail)
         {
+            count++;
+
+            // There must be more than a single anno in the annotation list
+            Assert.check(count > 1 || !al.tail.isEmpty());
+
             T currentAnno = al.head;
 
             origAnnoType = currentAnno.type;
@@ -395,7 +401,9 @@ public class Annotate {
                 arrayOfOrigAnnoType = types.makeArrayType(origAnnoType);
             }
 
-            Type currentContainerType = getContainingType(currentAnno, ctx.pos.get(currentAnno));
+            // Only report errors if this isn't the first occurrence I.E. count > 1
+            boolean reportError = count > 1;
+            Type currentContainerType = getContainingType(currentAnno, ctx.pos.get(currentAnno), reportError);
             if (currentContainerType == null) {
                 continue;
             }
@@ -464,7 +472,8 @@ public class Annotate {
 
     /** Fetches the actual Type that should be the containing annotation. */
     private Type getContainingType(Attribute.Compound currentAnno,
-            DiagnosticPosition pos)
+            DiagnosticPosition pos,
+            boolean reportError)
     {
         Type origAnnoType = currentAnno.type;
         TypeSymbol origAnnoDecl = origAnnoType.tsym;
@@ -473,7 +482,8 @@ public class Annotate {
         // annotation's declaration, or null if it has none
         Attribute.Compound ca = origAnnoDecl.attribute(syms.repeatableType.tsym);
         if (ca == null) { // has no Repeatable annotation
-            log.error(pos, "duplicate.annotation.missing.container", origAnnoType, syms.repeatableType);
+            if (reportError)
+                log.error(pos, "duplicate.annotation.missing.container", origAnnoType, syms.repeatableType);
             return null;
         }
 

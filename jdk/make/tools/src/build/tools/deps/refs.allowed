@@ -33,8 +33,3 @@ sun.security.krb5.Realm=sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,comp
 #
 java.beans.PropertyChangeListener=java.util.logging.LogManager,sun.org.mozilla.javascript.internal.Context,compact1,compact2,compact3
 java.beans.PropertyChangeEvent=sun.org.mozilla.javascript.internal.Context,compact3
-
-# JFR traces even in builds with JFR disabled
-com.oracle.jrockit.jfr.FlightRecorder: com.sun.management.MissionControl, compact3
-com.oracle.jrockit.jfr.management.FlightRecorderMBean: com.sun.management.MissionControl, compact3
-

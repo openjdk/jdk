@@ -35,7 +35,7 @@ import sun.lwawt.PlatformWindow;
  * On OSX {@code CPlatformComponent} stores pointer to the native CAlayer which
  * can be used from JAWT.
  */
-final class CPlatformComponent extends CFRetainedResource
+class CPlatformComponent extends CFRetainedResource
         implements PlatformComponent {
 
     private volatile PlatformWindow platformWindow;

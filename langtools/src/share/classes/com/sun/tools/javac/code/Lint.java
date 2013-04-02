@@ -26,10 +26,7 @@
 package com.sun.tools.javac.code;
 
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import javax.lang.model.element.Modifier;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;

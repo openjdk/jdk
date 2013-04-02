@@ -587,7 +587,8 @@ public class GregorianCalendar extends Calendar {
 
     /**
      * Constructs a default <code>GregorianCalendar</code> using the current time
-     * in the default time zone with the default locale.
+     * in the default time zone with the default
+     * {@link Locale.Category#FORMAT FORMAT} locale.
      */
     public GregorianCalendar() {
         this(TimeZone.getDefaultRef(), Locale.getDefault(Locale.Category.FORMAT));
@@ -596,7 +597,8 @@ public class GregorianCalendar extends Calendar {
 
     /**
      * Constructs a <code>GregorianCalendar</code> based on the current time
-     * in the given time zone with the default locale.
+     * in the given time zone with the default
+     * {@link Locale.Category#FORMAT FORMAT} locale.
      *
      * @param zone the given time zone.
      */

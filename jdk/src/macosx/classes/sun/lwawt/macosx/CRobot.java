@@ -65,7 +65,7 @@ class CRobot implements RobotPeer {
         mouseLastX = x;
         mouseLastY = y;
 
-        mouseEvent(fDevice.getCoreGraphicsScreen(), mouseLastX, mouseLastY,
+        mouseEvent(fDevice.getCGDisplayID(), mouseLastX, mouseLastY,
                    mouseButtonsState, true, true);
     }
 
@@ -79,7 +79,7 @@ class CRobot implements RobotPeer {
     public void mousePress(int buttons) {
         mouseButtonsState |= buttons;
 
-        mouseEvent(fDevice.getCoreGraphicsScreen(), mouseLastX, mouseLastY,
+        mouseEvent(fDevice.getCGDisplayID(), mouseLastX, mouseLastY,
                    buttons, true, false);
     }
 
@@ -93,7 +93,7 @@ class CRobot implements RobotPeer {
     public void mouseRelease(int buttons) {
         mouseButtonsState &= ~buttons;
 
-        mouseEvent(fDevice.getCoreGraphicsScreen(), mouseLastX, mouseLastY,
+        mouseEvent(fDevice.getCGDisplayID(), mouseLastX, mouseLastY,
                    buttons, false, false);
     }
 
@@ -163,7 +163,7 @@ class CRobot implements RobotPeer {
     }
 
     private native void initRobot();
-    private native void mouseEvent(int screen, int lastX, int lastY,
+    private native void mouseEvent(int displayID, int lastX, int lastY,
                                    int buttonsState,
                                    boolean isButtonsDownState,
                                    boolean isMouseMove);
