@@ -754,8 +754,9 @@ public final class NativeArray extends ScriptObject {
         final Object       obj                 = Global.toObject(self);
         final ScriptObject sobj                = (ScriptObject)obj;
         final long         len                 = JSType.toUint32(sobj.getLength());
-        final long         relativeStartUint32 = JSType.toUint32(start);
-        final long         relativeStart       = JSType.toInteger(start);
+        final double       startNum            = JSType.toNumber(start);
+        final long         relativeStartUint32 = JSType.toUint32(startNum);
+        final long         relativeStart       = JSType.toInteger(startNum);
 
         long k = relativeStart < 0 ?
                 Math.max(len + relativeStart, 0) :
@@ -763,8 +764,9 @@ public final class NativeArray extends ScriptObject {
                     Math.max(relativeStartUint32, relativeStart),
                     len);
 
-        final long relativeEndUint32 = end == ScriptRuntime.UNDEFINED ? len : JSType.toUint32(end);
-        final long relativeEnd       = end == ScriptRuntime.UNDEFINED ? len : JSType.toInteger(end);
+        final double endNum = (end == ScriptRuntime.UNDEFINED)? Double.NaN : JSType.toNumber(end);
+        final long relativeEndUint32 = (end == ScriptRuntime.UNDEFINED)? len : JSType.toUint32(endNum);
+        final long relativeEnd       = (end == ScriptRuntime.UNDEFINED)? len : JSType.toInteger(endNum);
 
         final long finale = relativeEnd < 0 ?
                 Math.max(len + relativeEnd, 0) :
@@ -895,8 +897,9 @@ public final class NativeArray extends ScriptObject {
         final ScriptObject sobj                = (ScriptObject)obj;
         final boolean      strict              = Global.isStrict();
         final long         len                 = JSType.toUint32(sobj.getLength());
-        final long         relativeStartUint32 = JSType.toUint32(start);
-        final long         relativeStart       = JSType.toInteger(start);
+        final double       startNum            = JSType.toNumber(start);
+        final long         relativeStartUint32 = JSType.toUint32(startNum);
+        final long         relativeStart       = JSType.toInteger(startNum);
 
         //TODO: workaround overflow of relativeStart for start > Integer.MAX_VALUE
         final long actualStart = relativeStart < 0 ?
