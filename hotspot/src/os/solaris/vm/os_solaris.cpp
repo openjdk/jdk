@@ -1903,6 +1903,9 @@ bool os::dll_build_name(char* buffer, size_t buflen,
   } else if (strchr(pname, *os::path_separator()) != NULL) {
     int n;
     char** pelements = split_path(pname, &n);
+    if (pelements == NULL) {
+        return false;
+    }
     for (int i = 0 ; i < n ; i++) {
       // really shouldn't be NULL but what the heck, check can't hurt
       if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
