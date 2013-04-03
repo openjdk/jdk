@@ -303,9 +303,7 @@ public class HostLocaleProviderAdapterImpl {
                     dfs.setNaN(getNaN(langTag, dfs.getNaN()));
                     dfs.setPercent(getPercent(langTag, dfs.getPercent()));
                     dfs.setPerMill(getPerMill(langTag, dfs.getPerMill()));
-                    if (isNativeDigit(langTag)) {
-                        dfs.setZeroDigit(getZeroDigit(langTag, dfs.getZeroDigit()));
-                    }
+                    dfs.setZeroDigit(getZeroDigit(langTag, dfs.getZeroDigit()));
                     ref = new SoftReference<>(dfs);
                     decimalFormatSymbolsCache.put(locale, ref);
                 }
@@ -420,9 +418,13 @@ public class HostLocaleProviderAdapterImpl {
             return false;
         }
 
+        int calid = getCalendarID(locale.toLanguageTag());
+        if (calid <= 0 || calid >= calIDToLDML.length) {
+            return false;
+        }
+
         String requestedCalType = locale.getUnicodeLocaleType("ca");
-        String nativeCalType =
-                calIDToLDML[getCalendarID(locale.toLanguageTag())]
+        String nativeCalType = calIDToLDML[calid]
                 .replaceFirst("_.*", ""); // remove locale part.
 
         if (requestedCalType == null) {
