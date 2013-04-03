@@ -76,7 +76,7 @@ public class ForNode extends WhileNode {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterForNode(this) != null) {
             if (init != null) {
                 init = init.accept(visitor);
             }
@@ -91,7 +91,7 @@ public class ForNode extends WhileNode {
 
             body = (Block)body.accept(visitor);
 
-            return visitor.leave(this);
+            return visitor.leaveForNode(this);
         }
 
         return this;

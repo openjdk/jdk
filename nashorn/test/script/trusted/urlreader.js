@@ -9,7 +9,7 @@ var URLReader = Java.type("jdk.nashorn.api.scripting.URLReader");
 var URL = Java.type("java.net.URL");
 var File = Java.type("java.io.File");
 var JString = Java.type("java.lang.String");
-var Source = Java.type("jdk.nashorn.internal.runtime.Source");
+var SourceHelper = Java.type("jdk.nashorn.test.models.SourceHelper");
 
 var url = new File(__FILE__).toURI().toURL();
 var reader = new URLReader(url);
@@ -19,9 +19,9 @@ var reader = new URLReader(url);
 
 // check URL read
 // read URL content by directly reading from URL
-var str = new Source(url.toString(), url).getString();
+var str = SourceHelper.readFully(url);
 // read URL content via URLReader
-var content = new JString(Source.readFully(reader));
+var content = new JString(SourceHelper.readFully(reader));
 
 // assert that the content is same
 Assert.assertEquals(str, content);

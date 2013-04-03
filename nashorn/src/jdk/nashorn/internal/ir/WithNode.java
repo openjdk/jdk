@@ -73,10 +73,10 @@ public class WithNode extends Node {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterWithNode(this) != null) {
             expression = expression.accept(visitor);
             body = (Block)body.accept(visitor);
-            return visitor.leave(this);
+            return visitor.leaveWithNode(this);
         }
 
         return this;

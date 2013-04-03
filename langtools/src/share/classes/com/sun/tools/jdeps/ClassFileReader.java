@@ -59,6 +59,13 @@ public class ClassFileReader {
         }
     }
 
+    /**
+     * Returns a ClassFileReader instance of a given JarFile.
+     */
+    public static ClassFileReader newInstance(Path path, JarFile jf) throws IOException {
+        return new JarFileReader(path, jf);
+    }
+
     protected final Path path;
     protected final String baseFileName;
     private ClassFileReader(Path path) {
@@ -228,8 +235,11 @@ public class ClassFileReader {
     private static class JarFileReader extends ClassFileReader {
         final JarFile jarfile;
         JarFileReader(Path path) throws IOException {
+            this(path, new JarFile(path.toFile()));
+        }
+        JarFileReader(Path path, JarFile jf) throws IOException {
             super(path);
-            this.jarfile = new JarFile(path.toFile());
+            this.jarfile = jf;
         }
 
         public ClassFile getClassFile(String name) throws IOException {

@@ -81,10 +81,10 @@ public class LabelNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterLabelNode(this) != null) {
             label = (IdentNode)label.accept(visitor);
             body  = (Block)body.accept(visitor);
-            return visitor.leave(this);
+            return visitor.leaveLabelNode(this);
         }
 
         return this;

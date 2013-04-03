@@ -195,6 +195,14 @@ public class ClassEmitter implements Emitter {
     }
 
     /**
+     * Returns the name of the compile unit class name.
+     * @return the name of the compile unit class name.
+     */
+    String getUnitClassName() {
+        return unitClassName;
+    }
+
+    /**
      * Convert a binary name to a package/class name.
      *
      * @param name Binary name.
@@ -244,7 +252,7 @@ public class ClassEmitter implements Emitter {
             // $getMap - get the ith entry from the constants table and cast to PropertyMap.
             final MethodEmitter getMapMethod = method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), GET_MAP.tag(), PropertyMap.class, int.class);
             getMapMethod.begin();
-            getMapMethod.loadConstants(unitClassName)
+            getMapMethod.loadConstants()
                         .load(Type.INT, 0)
                         .arrayload()
                         .checkcast(PropertyMap.class)
@@ -254,7 +262,7 @@ public class ClassEmitter implements Emitter {
             // $setMap - overwrite an existing map.
             final MethodEmitter setMapMethod = method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), SET_MAP.tag(), void.class, int.class, PropertyMap.class);
             setMapMethod.begin();
-            setMapMethod.loadConstants(unitClassName)
+            setMapMethod.loadConstants()
                         .load(Type.INT, 0)
                         .load(Type.OBJECT, 1)
                         .arraystore();
