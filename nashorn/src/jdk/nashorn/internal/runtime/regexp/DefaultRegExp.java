@@ -95,14 +95,14 @@ public class DefaultRegExp extends RegExp {
             return null; // never matches or similar, e.g. a[]
         }
 
-        RegExpMatcher matcher = this.matcher;
+        RegExpMatcher currentMatcher = this.matcher;
 
-        if (matcher == null || matcher.getInput() != str) {
-            matcher = new DefaultMatcher(str);
-            this.matcher = matcher;
+        if (currentMatcher == null || matcher.getInput() != str) {
+            currentMatcher = new DefaultMatcher(str);
+            this.matcher  = currentMatcher;
         }
 
-        return matcher;
+        return currentMatcher;
     }
 
     class DefaultMatcher implements RegExpMatcher {

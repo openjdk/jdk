@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.Source;
  * IR representation of a property access (period operator.)
  *
  */
-public class AccessNode extends BaseNode implements TypeOverride {
+public class AccessNode extends BaseNode implements TypeOverride<AccessNode> {
     /** Property ident. */
     private IdentNode property;
 
@@ -56,9 +56,7 @@ public class AccessNode extends BaseNode implements TypeOverride {
         super(source, token, finish, base);
 
         this.start    = base.getStart();
-        this.property = property;
-
-        this.property.setIsPropertyName();
+        this.property = property.setIsPropertyName();
     }
 
     /**
@@ -106,10 +104,10 @@ public class AccessNode extends BaseNode implements TypeOverride {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterAccessNode(this) != null) {
             base = base.accept(visitor);
             property = (IdentNode)property.accept(visitor);
-            return visitor.leave(this);
+            return visitor.leaveAccessNode(this);
         }
 
         return this;
@@ -150,13 +148,14 @@ public class AccessNode extends BaseNode implements TypeOverride {
     }
 
     @Override
-    public void setType(final Type type) {
+    public AccessNode setType(final Type type) {
         if (DEBUG_FIELDS && !Type.areEquivalent(getSymbol().getSymbolType(), type)) {
             ObjectClassGenerator.LOG.info(getClass().getName() + " " + this + " => " + type + " instead of " + getType());
         }
-        property.setType(type);
+        property = property.setType(type);
         getSymbol().setTypeOverride(type); //always a temp so this is fine.
         hasCallSiteType = true;
+        return this;
     }
 
     @Override

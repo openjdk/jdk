@@ -32,7 +32,6 @@
 
 import java.nio.file.Paths;
 
-//original test: test/tools/javah/6257087/foo.sh
 public class T6257087 {
 
     private static final String fooBarGoldenFile =
@@ -59,17 +58,13 @@ public class T6257087 {
         "#endif";
 
     public static void main(String[] args) throws Exception {
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d "${TC}" "${TS}${FS}foo.java"
-
-//        "${TESTJAVA}${FS}bin${FS}javah" ${TESTTOOLVMOPTS} -classpath "${TC}" -d "${TC}" foo
         ToolBox.JavaToolArgs javahArgs =
                 new ToolBox.JavaToolArgs()
                 .setAllArgs("-cp", System.getProperty("test.classes"), "foo");
         ToolBox.javah(javahArgs);
 
-//        diff ${DIFFOPTS} -c "${TS}${FS}foo_bar.h" "${TC}${FS}foo_bar.h"
         ToolBox.compareLines(Paths.get("foo_bar.h"),
-                ToolBox.splitLines(fooBarGoldenFile), null);
+                ToolBox.splitLines(fooBarGoldenFile, "\n"), null, true);
     }
 
 }

@@ -105,19 +105,46 @@ class WindowsSecurity {
         return new Privilege() {
             @Override
             public void drop() {
-                try {
-                    if (stopImpersontating) {
-                        SetThreadToken(0L, 0L);
-                    } else {
-                        if (needToRevert) {
+                if (token != 0L) {
+                    try {
+                        if (stopImpersontating)
+                            SetThreadToken(0L, 0L);
+                        else if (needToRevert)
                             AdjustTokenPrivileges(token, pLuid, 0);
-                        }
+                    } catch (WindowsException x) {
+                        // should not happen
+                        throw new AssertionError(x);
+                    } finally {
+                        CloseHandle(token);
                     }
-                } catch (WindowsException x) {
-                    // should not happen
-                    throw new AssertionError(x);
                 }
             }
         };
     }
+
+    /**
+     * Check the access right against the securityInfo in the current thread.
+     */
+    static boolean checkAccessMask(long securityInfo, int accessMask,
+        int genericRead, int genericWrite, int genericExecute, int genericAll)
+        throws WindowsException
+    {
+        int privilegies = TOKEN_QUERY;
+        long hToken = OpenThreadToken(GetCurrentThread(), privilegies, false);
+        if (hToken == 0L && processTokenWithDuplicateAccess != 0L)
+            hToken = DuplicateTokenEx(processTokenWithDuplicateAccess,
+                privilegies);
+
+        boolean hasRight = false;
+        if (hToken != 0L) {
+            try {
+                hasRight = AccessCheck(hToken, securityInfo, accessMask,
+                    genericRead, genericWrite, genericExecute, genericAll);
+            } finally {
+                CloseHandle(hToken);
+            }
+        }
+        return hasRight;
+    }
+
 }

@@ -32,7 +32,7 @@
 
 var File = Java.type("java.io.File");
 var FilenameFilter = Java.type("java.io.FilenameFilter");
-var Source = Java.type("jdk.nashorn.internal.runtime.Source")
+var SourceHelper = Java.type("jdk.nashorn.test.models.SourceHelper")
 
 // Filter out non .js files
 var files = new File(__DIR__).listFiles(new FilenameFilter() {
@@ -44,5 +44,5 @@ load("nashorn:parser.js");
 
 // parse each file to make sure it does not result in exception
 for each (var f in files) {
-    parse(new Source(f.toString(), f).getString());
+    parse(SourceHelper.readFully(f));
 }

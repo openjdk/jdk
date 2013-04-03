@@ -48,8 +48,13 @@ public class bug8004298 {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
         SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        UIManager.setLookAndFeel(new WindowsLookAndFeel());
-
+        try {
+            UIManager.setLookAndFeel(new WindowsLookAndFeel());
+        } catch (javax.swing.UnsupportedLookAndFeelException ulafe) {
+            System.out.println(ulafe.getMessage());
+            System.out.println("The test is considered PASSED");
+            return;
+        }
         SwingUtilities.invokeAndWait(new Runnable() {
 
             @Override

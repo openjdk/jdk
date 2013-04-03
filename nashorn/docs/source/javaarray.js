@@ -30,7 +30,8 @@
  */
 
 // create Java String array of 5 elements
-var a = java.lang.reflect.Array.newInstance(java.lang.String.class, 5);
+var StringArray = Java.type("java.lang.String[]");
+var a = new StringArray(5);
 
 // Accessing elements and length access is by usual Java syntax
 a[0] = "scripting is great!";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,25 @@ public interface ExecutableElement extends Element, Parameterizable {
      * or an empty list if there are none
      */
     List<? extends VariableElement> getParameters();
+
+    /**
+     * Returns the receiver type of this executable,
+     * or {@link javax.lang.model.type.NoType NoType} with
+     * kind {@link javax.lang.model.type.TypeKind#NONE NONE}
+     * if the executable has no receiver type.
+     *
+     * An executable which is an instance method, or a constructor of an
+     * inner class, has a receiver type derived from the {@linkplain
+     * #getEnclosingElement declaring type}.
+     *
+     * An executable which is a static method, or a constructor of a
+     * non-inner class, or an initializer (static or instance), has no
+     * receiver type.
+     *
+     * @return the receiver type of this executable
+     * @since 1.8
+     */
+    TypeMirror getReceiverType();
 
     /**
      * Returns {@code true} if this method or constructor accepts a variable

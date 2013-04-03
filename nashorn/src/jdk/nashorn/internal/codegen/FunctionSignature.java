@@ -146,7 +146,7 @@ public final class FunctionSignature {
 
     /**
      * Create a function signature given a function node, using as much
-     * type information for parameters and return types that is availabe
+     * type information for parameters and return types that is available
      *
      * @param functionNode the function node
      */
@@ -155,7 +155,7 @@ public final class FunctionSignature {
             true,
             functionNode.needsCallee(),
             functionNode.getReturnType(),
-            (functionNode.isVarArg() && !functionNode.isScript()) ?
+            (functionNode.isVarArg() && !functionNode.isProgram()) ?
                 null :
                 functionNode.getParameters());
     }
@@ -200,6 +200,14 @@ public final class FunctionSignature {
      */
     public MethodType getMethodType() {
         return methodType;
+    }
+
+    /**
+     * Return the return type for this function signature
+     * @return the return type
+     */
+    public Type getReturnType() {
+        return returnType;
     }
 
     private static Type[] objectArgs(final int nArgs) {
