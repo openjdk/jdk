@@ -30,7 +30,7 @@ pull_extra_base="$2"
 # Python always buffers stdout significantly, thus we will not see any output from hg clone jdk,
 # until a lot of time has passed! By passing -u to python, we get incremental updates
 # on stdout. Much nicer.
-whichhg="`which hg`"
+whichhg="`which hg 2> /dev/null | grep -v '^no hg in'`"
 
 if [ "${whichhg}" = "" ] ; then
   echo Cannot find hg!
@@ -51,7 +51,7 @@ if [ "#!" = "$has_hash_bang" ] ; then
    bpython="`basename "$python"`"
 fi
 
-if [ -x "$python" -a ! -d "$python" -a  "`${python} -V 2>&1 | cut -f 1 -d " "`" == "Python" ] ; then
+if [ -x "$python" -a ! -d "$python" -a "`${python} -V 2>&1 | cut -f 1 -d ' '`" = "Python" ] ; then
   hg="${python} -u ${whichhg}"
 else
   echo Cannot find python from hg launcher. Running plain hg, which probably has buffered stdout.
