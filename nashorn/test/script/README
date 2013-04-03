@@ -1,0 +1,26 @@
+basic:
+
+"basic" language and library tests. These need run only with File read 
+permission to read files under "test/script" or subdirs and property read
+permission to read properties named "nashorn.test.*"
+
+error:
+
+scripts that should result in compile-time error. The expected files check
+for the error message format etc.
+
+currently-failing: 
+
+Tests that fail currently - but should pass eventually.
+These are excluded for now.
+
+sandbox:
+
+Tests to check that sandbox scripts cannot access security sensitive resources.
+Scripts under this directory run with no special permissions other than
+what is given to all "sandbox" scripts.
+
+trusted:
+
+These tests run under AllPermission. Put only those scripts that really need
+AllPermission - say for eg. creating class loader, full reflective access.

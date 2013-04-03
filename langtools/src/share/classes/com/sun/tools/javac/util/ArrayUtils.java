@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,5 +83,19 @@ public class ArrayUtils {
             System.arraycopy(array, 0, result, 0, array.length);
             return result;
         }
+    }
+
+    public static <T> T[] concat(T[] anArr, T[] anotherArr) {
+        int newLength = anArr.length + anotherArr.length;
+        @SuppressWarnings("unchecked")
+        T[] result = (T[]) Array.newInstance(anArr.getClass().getComponentType(), newLength);
+        System.arraycopy(anArr, 0, result, 0, anArr.length);
+        System.arraycopy(anotherArr, 0, result, anArr.length, anotherArr.length);
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T[] concatOpen(T[] anArr, T... anotherArr) {
+        return concat(anArr, anotherArr);
     }
 }

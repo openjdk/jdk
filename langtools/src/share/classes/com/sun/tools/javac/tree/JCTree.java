@@ -1887,6 +1887,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Symbol sym;
         public Type varargsElement;
         public PolyKind refPolyKind;
+        public boolean ownerAccessible;
 
         /**
          * Javac-dependent classification for member references, based

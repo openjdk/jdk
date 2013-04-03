@@ -2151,8 +2151,11 @@ public class Attr extends JCTree.Visitor {
                     ResultInfo findDiamondResult = new ResultInfo(VAL,
                             resultInfo.checkContext.inferenceContext().free(resultInfo.pt) ? Type.noType : pt());
                     Type inferred = deferredAttr.attribSpeculative(tree, env, findDiamondResult).type;
+                    Type polyPt = allowPoly ?
+                            syms.objectType :
+                            clazztype;
                     if (!inferred.isErroneous() &&
-                        types.isAssignable(inferred, pt().hasTag(NONE) ? syms.objectType : pt(), types.noWarnings)) {
+                        types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings)) {
                         String key = types.isSameType(clazztype, inferred) ?
                             "diamond.redundant.args" :
                             "diamond.redundant.args.1";
@@ -2532,8 +2535,7 @@ public class Attr extends JCTree.Visitor {
         try {
             //attribute member reference qualifier - if this is a constructor
             //reference, the expected kind must be a type
-            Type exprType = attribTree(that.expr,
-                    env, new ResultInfo(that.getMode() == ReferenceMode.INVOKE ? VAL | TYP : TYP, Type.noType));
+            Type exprType = attribTree(that.expr, env, memberReferenceQualifierResult(that));
 
             if (that.getMode() == JCMemberReference.ReferenceMode.NEW) {
                 exprType = chk.checkConstructorRefType(that.expr, exprType);
@@ -2622,8 +2624,39 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
+            that.sym = refSym.baseSymbol();
+            that.kind = lookupHelper.referenceKind(that.sym);
+            that.ownerAccessible = rs.isAccessible(localEnv, that.sym.enclClass());
+
+            if (desc.getReturnType() == Type.recoveryType) {
+                // stop here
+                result = that.type = target;
+                return;
+            }
+
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
-                if (refSym.isStatic() && TreeInfo.isStaticSelector(that.expr, names) &&
+
+                if (!that.kind.isUnbound() &&
+                        that.getMode() == ReferenceMode.INVOKE &&
+                        TreeInfo.isStaticSelector(that.expr, names) &&
+                        !that.sym.isStatic()) {
+                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
+                            diags.fragment("non-static.cant.be.ref", Kinds.kindName(refSym), refSym));
+                    result = that.type = types.createErrorType(target);
+                    return;
+                }
+
+                if (that.kind.isUnbound() &&
+                        that.getMode() == ReferenceMode.INVOKE &&
+                        TreeInfo.isStaticSelector(that.expr, names) &&
+                        that.sym.isStatic()) {
+                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
+                            diags.fragment("static.method.in.unbound.lookup", Kinds.kindName(refSym), refSym));
+                    result = that.type = types.createErrorType(target);
+                    return;
+                }
+
+                if (that.sym.isStatic() && TreeInfo.isStaticSelector(that.expr, names) &&
                         exprType.getTypeArguments().nonEmpty()) {
                     //static ref with class type-args
                     log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
@@ -2632,20 +2665,19 @@ public class Attr extends JCTree.Visitor {
                     return;
                 }
 
-                if (refSym.isStatic() && !TreeInfo.isStaticSelector(that.expr, names) &&
-                        !lookupHelper.referenceKind(refSym).isUnbound()) {
+                if (that.sym.isStatic() && !TreeInfo.isStaticSelector(that.expr, names) &&
+                        !that.kind.isUnbound()) {
                     //no static bound mrefs
                     log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
                             diags.fragment("static.bound.mref"));
                     result = that.type = types.createErrorType(target);
                     return;
                 }
-            }
 
-            if (desc.getReturnType() == Type.recoveryType) {
-                // stop here
-                result = that.type = target;
-                return;
+                if (!refSym.isStatic() && that.kind == JCMemberReference.ReferenceKind.SUPER) {
+                    // Check that super-qualified symbols are not abstract (JLS)
+                    rs.checkNonAbstract(that.pos(), that.sym);
+                }
             }
 
             that.sym = refSym.baseSymbol();
@@ -2680,6 +2712,12 @@ public class Attr extends JCTree.Visitor {
             return;
         }
     }
+    //where
+        ResultInfo memberReferenceQualifierResult(JCMemberReference tree) {
+            //if this is a constructor reference, the expected kind must be a type
+            return new ResultInfo(tree.getMode() == ReferenceMode.INVOKE ? VAL | TYP : TYP, Type.noType);
+        }
+
 
     @SuppressWarnings("fallthrough")
     void checkReferenceCompatible(JCMemberReference tree, Type descriptor, Type refType, CheckContext checkContext, boolean speculativeAttr) {
@@ -3558,8 +3596,7 @@ public class Attr extends JCTree.Visitor {
             env.info.defaultSuperCallSite = null;
         }
 
-        if (sym.isStatic() && site.isInterface()) {
-            Assert.check(env.tree.hasTag(APPLY));
+        if (sym.isStatic() && site.isInterface() && env.tree.hasTag(APPLY)) {
             JCMethodInvocation app = (JCMethodInvocation)env.tree;
             if (app.meth.hasTag(SELECT) &&
                     !TreeInfo.isStaticSelector(((JCFieldAccess)app.meth).selected, names)) {
@@ -3979,6 +4016,7 @@ public class Attr extends JCTree.Visitor {
                 attribClassBody(env, c);
 
                 chk.checkDeprecatedAnnotation(env.tree.pos(), c);
+                chk.checkClassOverrideEqualsAndHashIfNeeded(env.tree.pos(), c);
             } finally {
                 env.info.returnResult = prevReturnRes;
                 log.useSource(prev);

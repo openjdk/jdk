@@ -158,7 +158,7 @@ class decode_env {
  private:
   nmethod*      _nm;
   CodeBlob*     _code;
-  CodeComments  _comments;
+  CodeStrings   _strings;
   outputStream* _output;
   address       _start, _end;
 
@@ -198,7 +198,7 @@ class decode_env {
   void print_address(address value);
 
  public:
-  decode_env(CodeBlob* code, outputStream* output, CodeComments c = CodeComments());
+  decode_env(CodeBlob* code, outputStream* output, CodeStrings c = CodeStrings());
 
   address decode_instructions(address start, address end);
 
@@ -242,13 +242,13 @@ class decode_env {
   const char* options() { return _option_buf; }
 };
 
-decode_env::decode_env(CodeBlob* code, outputStream* output, CodeComments c) {
+decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) {
   memset(this, 0, sizeof(*this));
   _output = output ? output : tty;
   _code = code;
   if (code != NULL && code->is_nmethod())
     _nm = (nmethod*) code;
-  _comments.assign(c);
+  _strings.assign(c);
 
   // by default, output pc but not bytes:
   _print_pc       = true;
@@ -370,7 +370,7 @@ void decode_env::print_insn_labels() {
   if (cb != NULL) {
     cb->print_block_comment(st, p);
   }
-  _comments.print_block_comment(st, (intptr_t)(p - _start));
+  _strings.print_block_comment(st, (intptr_t)(p - _start));
   if (_print_pc) {
     st->print("  " PTR_FORMAT ": ", p);
   }
@@ -498,7 +498,7 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   env.decode_instructions(cb->code_begin(), cb->code_end());
 }
 
-void Disassembler::decode(address start, address end, outputStream* st, CodeComments c) {
+void Disassembler::decode(address start, address end, outputStream* st, CodeStrings c) {
   if (!load_library())  return;
   decode_env env(CodeCache::find_blob_unsafe(start), st, c);
   env.decode_instructions(start, end);

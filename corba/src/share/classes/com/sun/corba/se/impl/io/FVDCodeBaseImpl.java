@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class FVDCodeBaseImpl extends _CodeBaseImplBase
             // default to using the current ORB version in case the
             // vhandler is not set
             if (vhandler == null) {
-                vhandler = new ValueHandlerImpl(false);
+                vhandler = ValueHandlerImpl.getInstance(false);
             }
 
             // Util.getCodebase may return null which would
@@ -120,7 +120,7 @@ public class FVDCodeBaseImpl extends _CodeBaseImplBase
                 // default to using the current ORB version in case the
                 // vhandler is not set
                 if (vhandler == null) {
-                    vhandler = new ValueHandlerImpl(false);
+                    vhandler = ValueHandlerImpl.getInstance(false);
                 }
 
                 try{
@@ -161,7 +161,7 @@ public class FVDCodeBaseImpl extends _CodeBaseImplBase
             // default to using the current ORB version in case the
             // vhandler is not set
             if (vhandler == null) {
-                vhandler = new ValueHandlerImpl(false);
+                vhandler = ValueHandlerImpl.getInstance(false);
             }
 
             Stack repIds = new Stack();

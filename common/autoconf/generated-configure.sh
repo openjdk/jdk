@@ -612,6 +612,7 @@ SJAVAC_SERVER_JAVA
 JOBS
 MEMORY_SIZE
 NUM_CORES
+ENABLE_INTREE_EC
 SALIB_NAME
 HOTSPOT_MAKE_ARGS
 FIXPATH
@@ -749,6 +750,7 @@ BUILD_OUTPUT
 OVERRIDE_SRC_ROOT
 ADD_SRC_ROOT
 JDK_TOPDIR
+NASHORN_TOPDIR
 HOTSPOT_TOPDIR
 JAXWS_TOPDIR
 JAXP_TOPDIR
@@ -3751,7 +3753,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1363150186
+DATE_WHEN_GENERATED=1363706268
 
 ###############################################################################
 #
@@ -10785,6 +10787,12 @@ fi
 
 ###############################################################################
 #
+# Enable or disable the elliptic curve crypto implementation
+#
+
+
+###############################################################################
+#
 # Compress jars
 #
 COMPRESS_JARS=false
@@ -15682,7 +15690,9 @@ CORBA_TOPDIR="$SRC_ROOT/corba"
 JAXP_TOPDIR="$SRC_ROOT/jaxp"
 JAXWS_TOPDIR="$SRC_ROOT/jaxws"
 HOTSPOT_TOPDIR="$SRC_ROOT/hotspot"
+NASHORN_TOPDIR="$SRC_ROOT/nashorn"
 JDK_TOPDIR="$SRC_ROOT/jdk"
+
 
 
 
@@ -15921,6 +15931,19 @@ if test "x$with_override_hotspot" != x; then
 $as_echo_n "checking if hotspot should be overridden... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $HOTSPOT_TOPDIR" >&5
 $as_echo "yes with $HOTSPOT_TOPDIR" >&6; }
+fi
+if test "x$with_override_nashorn" != x; then
+    CURDIR="$PWD"
+    cd "$with_override_nashorn"
+    NASHORN_TOPDIR="`pwd`"
+    cd "$CURDIR"
+    if ! test -f $NASHORN_TOPDIR/makefiles/BuildNashorn.gmk; then
+        as_fn_error $? "You have to override nashorn with a full nashorn repo!" "$LINENO" 5
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if nashorn should be overridden" >&5
+$as_echo_n "checking if nashorn should be overridden... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $NASHORN_TOPDIR" >&5
+$as_echo "yes with $NASHORN_TOPDIR" >&6; }
 fi
 if test "x$with_override_jdk" != x; then
     CURDIR="$PWD"
@@ -18534,14 +18557,18 @@ fi
 
 ### Locate C compiler (CC)
 
-# gcc is almost always present, but on Windows we
-# prefer cl.exe and on Solaris we prefer CC.
-# Thus test for them in this order.
-if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-  # Do not probe for cc on MacOSX.
-  COMPILER_CHECK_LIST="cl gcc"
+# On windows, only cl.exe is supported.
+# On Solaris, cc is preferred to gcc.
+# Elsewhere, gcc is preferred to cc.
+
+if test "x$CC" != x; then
+  COMPILER_CHECK_LIST="$CC"
+elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  COMPILER_CHECK_LIST="cl"
+elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+  COMPILER_CHECK_LIST="cc gcc"
 else
-  COMPILER_CHECK_LIST="cl cc gcc"
+  COMPILER_CHECK_LIST="gcc cc"
 fi
 
 
@@ -19505,7 +19532,7 @@ $as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSIO
 $as_echo "$as_me: Using $COMPILER_VENDOR $COMPILER_NAME compiler version $COMPILER_VERSION (located at $COMPILER)" >&6;}
 
 
-# Now that we have resolved CC ourself, let autoconf have it's go at it
+# Now that we have resolved CC ourself, let autoconf have its go at it
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -20107,12 +20134,16 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 ### Locate C++ compiler (CXX)
 
-if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-  # Do not probe for CC on MacOSX.
-  COMPILER_CHECK_LIST="cl g++"
+if test "x$CXX" != x; then
+  COMPILER_CHECK_LIST="$CXX"
+elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  COMPILER_CHECK_LIST="cl"
+elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+  COMPILER_CHECK_LIST="CC g++"
 else
-  COMPILER_CHECK_LIST="cl CC g++"
+  COMPILER_CHECK_LIST="g++ CC"
 fi
+
 
   COMPILER_NAME=C++
 
@@ -21074,7 +21105,7 @@ $as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSIO
 $as_echo "$as_me: Using $COMPILER_VENDOR $COMPILER_NAME compiler version $COMPILER_VERSION (located at $COMPILER)" >&6;}
 
 
-# Now that we have resolved CXX ourself, let autoconf have it's go at it
+# Now that we have resolved CXX ourself, let autoconf have its go at it
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -29799,7 +29830,7 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 _ACEOF
  X11_A_OK=yes
 else
-  X11_A_OK=no
+  X11_A_OK=no; break
 fi
 
 done
@@ -31665,6 +31696,22 @@ HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
 SALIB_NAME="${LIBRARY_PREFIX}saproc${SHARED_LIBRARY_SUFFIX}"
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
+fi
+
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if elliptic curve crypto implementation is present" >&5
+$as_echo_n "checking if elliptic curve crypto implementation is present... " >&6; }
+
+if test -d "${SRC_ROOT}/jdk/src/share/native/sun/security/ec/impl"; then
+    ENABLE_INTREE_EC=yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+    ENABLE_INTREE_EC=no
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 

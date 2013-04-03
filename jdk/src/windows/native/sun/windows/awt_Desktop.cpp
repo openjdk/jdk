@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,17 @@ extern "C" {
  * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
-  (JNIEnv *env, jclass cls, jstring uri_j, jstring verb_j)
+  (JNIEnv *env, jclass cls, jstring fileOrUri_j, jstring verb_j)
 {
-    LPCWSTR uri_c = JNU_GetStringPlatformChars(env, uri_j, JNI_FALSE);
+    LPCWSTR fileOrUri_c = JNU_GetStringPlatformChars(env, fileOrUri_j, JNI_FALSE);
     LPCWSTR verb_c = JNU_GetStringPlatformChars(env, verb_j, JNI_FALSE);
 
     // 6457572: ShellExecute possibly changes FPU control word - saving it here
     unsigned oldcontrol87 = _control87(0, 0);
-    HINSTANCE retval = ::ShellExecute(NULL, verb_c, uri_c, NULL, NULL, SW_SHOWNORMAL);
+    HINSTANCE retval = ::ShellExecute(NULL, verb_c, fileOrUri_c, NULL, NULL, SW_SHOWNORMAL);
     _control87(oldcontrol87, 0xffffffff);
 
-    JNU_ReleaseStringPlatformChars(env, uri_j, uri_c);
+    JNU_ReleaseStringPlatformChars(env, fileOrUri_j, fileOrUri_c);
     JNU_ReleaseStringPlatformChars(env, verb_j, verb_c);
 
     if ((int)retval <= 32) {

@@ -1,0 +1,6 @@
+o.foo => undefined
+TypeError: [object JSAdapter] has no such function "func"
+in __get__: foo
+o.foo => foo
+in __put__: bar
+in __call__: func

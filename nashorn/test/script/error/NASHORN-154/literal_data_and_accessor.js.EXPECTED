@@ -1,0 +1,6 @@
+test/script/error/NASHORN-154/literal_data_and_accessor.js:35:21 Property "foo" already defined
+var obj = { foo: 42, get foo() { return 'hello' } };
+                     ^
+test/script/error/NASHORN-154/literal_data_and_accessor.js:38:22 Property "foo" already defined
+var obj2 = { foo: 42, set foo(x) { } };
+                      ^

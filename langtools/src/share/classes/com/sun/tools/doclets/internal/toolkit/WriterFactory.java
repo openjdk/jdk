@@ -175,6 +175,16 @@ public interface WriterFactory {
             throws Exception;
 
     /**
+     * Return the property writer for a given class.
+     *
+     * @param classWriter the writer for the class being documented.
+     * @return the property writer for the give class.  Return null if this
+     * writer is not supported by the doclet.
+     */
+    public abstract PropertyWriter getPropertyWriter(ClassWriter classWriter)
+            throws Exception;
+
+    /**
      * Return the constructor writer for a given class.
      *
      * @param classWriter the writer for the class being documented.
