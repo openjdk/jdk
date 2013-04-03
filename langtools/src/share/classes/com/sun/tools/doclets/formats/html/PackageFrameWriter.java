@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      */
     protected void addClassKindListing(ClassDoc[] arr, Content labelContent,
             Content contentTree) {
+        arr = Util.filterOutPrivateClasses(arr, configuration.javafx);
         if(arr.length > 0) {
             Arrays.sort(arr);
             boolean printedHeader = false;

@@ -157,9 +157,10 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   } else {
     // Not hot.  Check for medium-sized pre-existing nmethod at cold sites.
     if (callee_method->has_compiled_code() &&
-        callee_method->instructions_size() > inline_small_code_size)
+        callee_method->instructions_size() > inline_small_code_size) {
       set_msg("already compiled into a medium method");
       return false;
+    }
   }
   if (size > max_inline_size) {
     if (max_inline_size > default_max_inline_size) {

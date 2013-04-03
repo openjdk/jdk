@@ -26,6 +26,7 @@
  * @bug      7195131
  * @author   sogoel
  * @summary  Combo test for all possible combinations for Target values
+ * @ignore   8008339 Test TargetAnnoCombo.java is broken
  * @build    Helper
  * @compile  TargetAnnoCombo.java TestCaseGenerator.java
  * @run main TargetAnnoCombo

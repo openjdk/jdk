@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import javax.lang.model.element.Modifier;
  * @author Jonathan Gibbons
  * @since 1.6
  */
+@jdk.Supported
 public interface ModifiersTree extends Tree {
     Set<Modifier> getFlags();
     List<? extends AnnotationTree> getAnnotations();

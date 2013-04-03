@@ -146,16 +146,16 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 Klass::Klass() {
   Klass* k = this;
 
-  { // Preinitialize supertype information.
-    // A later call to initialize_supers() may update these settings:
-    set_super(NULL);
-    for (juint i = 0; i < Klass::primary_super_limit(); i++) {
-      _primary_supers[i] = NULL;
-    }
-    set_secondary_supers(NULL);
-    _primary_supers[0] = k;
-    set_super_check_offset(in_bytes(primary_supers_offset()));
+  // Preinitialize supertype information.
+  // A later call to initialize_supers() may update these settings:
+  set_super(NULL);
+  for (juint i = 0; i < Klass::primary_super_limit(); i++) {
+    _primary_supers[i] = NULL;
   }
+  set_secondary_supers(NULL);
+  set_secondary_super_cache(NULL);
+  _primary_supers[0] = k;
+  set_super_check_offset(in_bytes(primary_supers_offset()));
 
   set_java_mirror(NULL);
   set_modifier_flags(0);
@@ -486,6 +486,12 @@ void Klass::oops_do(OopClosure* cl) {
 }
 
 void Klass::remove_unshareable_info() {
+  if (!DumpSharedSpaces) {
+    // Clean up after OOM during class loading
+    if (class_loader_data() != NULL) {
+      class_loader_data()->remove_class(this);
+    }
+  }
   set_subklass(NULL);
   set_next_sibling(NULL);
   // Clear the java mirror

@@ -1,0 +1,8 @@
+TargetType60.java:54:21: compiler.err.ref.ambiguous: g, kindname.method, g(TargetType60.Sam0), TargetType60, kindname.method, <U>g(TargetType60.Sam1<U>), TargetType60
+TargetType60.java:55:21: compiler.err.ref.ambiguous: g, kindname.method, <U>g(TargetType60.Sam1<U>), TargetType60, kindname.method, <U>g(TargetType60.Sam2<U,java.lang.String>), TargetType60
+TargetType60.java:60:27: compiler.err.ref.ambiguous: u, kindname.method, <U>u(TargetType60.Sam1<U>), TargetType60, kindname.method, <U>u(TargetType60.Sam2<U,java.lang.String>), TargetType60
+TargetType60.java:60:28: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.assignment.exists: U, (compiler.misc.invalid.mref: kindname.method, (compiler.misc.cant.apply.symbol: kindname.method, n1, java.lang.String, TargetType60, kindname.class, TargetType60, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.inconvertible.types: TargetType60, java.lang.String)))))
+TargetType60.java:61:29: compiler.err.invalid.mref: kindname.method, (compiler.misc.non-static.cant.be.ref: kindname.method, n2(TargetType60,java.lang.String))
+TargetType60.java:62:27: compiler.err.ref.ambiguous: u, kindname.method, <U>u(TargetType60.Sam1<U>), TargetType60, kindname.method, <U>u(TargetType60.Sam2<U,java.lang.String>), TargetType60
+TargetType60.java:63:27: compiler.err.ref.ambiguous: u, kindname.method, <U>u(TargetType60.Sam1<U>), TargetType60, kindname.method, <U>u(TargetType60.Sam2<U,java.lang.String>), TargetType60
+7 errors

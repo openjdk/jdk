@@ -532,6 +532,39 @@ $(JDK_IMAGE_DIR)/jre/lib/rt.jar:
 	 $(TAR) -cf - *) | \
 	 ($(CD) $(JDK_IMAGE_DIR) && $(TAR) -xf -)
 
+
+# Testing the built JVM
+RUN_JVM=JAVA_HOME=$(JDK_IMPORT_PATH) $(JDK_IMPORT_PATH)/bin/java -d$(ARCH_DATA_MODEL) -Dsun.java.launcher=gamma
+generic_test:
+	@$(ECHO) "Running with: $(ALTJVM_DIR)"
+	@$(RUN_JVM) -XXaltjvm=$(ALTJVM_DIR) -Xinternalversion
+	@$(RUN_JVM) -XXaltjvm=$(ALTJVM_DIR) -showversion -help
+
+# C2 test targets
+test_product test_optimized test_fastdebug test_jvmg:
+	@$(MAKE) generic_test ALTJVM_DIR="$(C2_DIR)/$(@:test_%=%)"
+
+# C1 test targets
+test_product1 test_optimized1 test_fastdebug1 test_jvmg1:
+  ifeq ($(ARCH_DATA_MODEL), 32)
+	@$(MAKE) generic_test ALTJVM_DIR="$(C1_DIR)/$(@:test_%1=%)"
+  else
+	@$(ECHO) "No compiler1 ($(@:test_%=%)) for ARCH_DATA_MODEL=$(ARCH_DATA_MODEL)"
+  endif
+
+# Zero test targets
+test_productzero test_optimizedzero test_fastdebugzero test_jvmgzero:
+	@$(MAKE) generic_test ALTJVM_DIR="$(ZERO_DIR)/$(@:test_%zero=%)"
+
+# Shark test targets
+test_productshark test_optimizedshark test_fastdebugshark test_jvmgshark:
+	@$(MAKE) generic_test ALTJVM_DIR="$(SHARK_DIR)/$(@:test_%shark=%)"
+
+# Minimal1 test targets
+test_productminimal1 test_optimizedminimal1 test_fastdebugminimal1 test_jvmgminimal1:
+	@$(MAKE) generic_test ALTJVM_DIR="$(MINIMAL1_DIR)/$(@:test_%minimal1=%)"
+
+
 test_jdk:
   ifeq ($(JVM_VARIANT_CLIENT), true)
 	$(JDK_IMAGE_DIR)/bin/java -d$(ARCH_DATA_MODEL) -client -Xinternalversion

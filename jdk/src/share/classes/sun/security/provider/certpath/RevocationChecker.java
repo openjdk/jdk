@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,7 +643,14 @@ class RevocationChecker extends PKIXRevocationChecker {
         OCSPResponse response = null;
         CertId certId = null;
         try {
-            certId = new CertId(issuerCert, currCert.getSerialNumberObject());
+            if (issuerCert != null) {
+                certId = new CertId(issuerCert,
+                                    currCert.getSerialNumberObject());
+            } else {
+                // must be an anchor name and key
+                certId = new CertId(anchor.getCA(), anchor.getCAPublicKey(),
+                                    currCert.getSerialNumberObject());
+            }
 
             // check if there is a cached OCSP response available
             byte[] responseBytes = ocspResponses.get(cert);

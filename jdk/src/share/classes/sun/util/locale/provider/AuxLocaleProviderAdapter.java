@@ -43,6 +43,7 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
+import sun.util.spi.CalendarProvider;
 
 /**
  * An abstract parent class for the
@@ -138,6 +139,14 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
     @Override
     public CalendarNameProvider getCalendarNameProvider() {
         return getLocaleServiceProvider(CalendarNameProvider.class);
+    }
+
+    /**
+     * Getter methods for sun.util.spi.* providers
+     */
+    @Override
+    public CalendarProvider getCalendarProvider() {
+        return getLocaleServiceProvider(CalendarProvider.class);
     }
 
     @Override

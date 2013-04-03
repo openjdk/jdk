@@ -96,7 +96,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         http = HttpsClient.New (getSSLSocketFactory(),
                                 url,
                                 getHostnameVerifier(),
-                                useCache);
+                                useCache, this);
         ((HttpsClient)http).afterConnect();
     }
 
@@ -149,7 +149,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         http = HttpsClient.New (getSSLSocketFactory(),
                                 url,
                                 getHostnameVerifier(),
-                                proxyHost, proxyPort, useCache);
+                                proxyHost, proxyPort, useCache, this);
         connected = true;
     }
 
@@ -189,7 +189,8 @@ public abstract class AbstractDelegateHttpsURLConnection extends
     protected HttpClient getNewHttpClient(URL url, Proxy p, int connectTimeout)
         throws IOException {
         return HttpsClient.New(getSSLSocketFactory(), url,
-                               getHostnameVerifier(), p, true, connectTimeout);
+                               getHostnameVerifier(), p, true, connectTimeout,
+                               this);
     }
 
     // will open new connection
@@ -198,7 +199,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         throws IOException {
         return HttpsClient.New(getSSLSocketFactory(), url,
                                getHostnameVerifier(), p,
-                               useCache, connectTimeout);
+                               useCache, connectTimeout, this);
     }
 
     /**

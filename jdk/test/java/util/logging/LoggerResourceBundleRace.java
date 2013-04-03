@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug     7045594
+ * @bug     7045594 8002070
  * @summary ResourceBundle setting race in Logger.getLogger(name, rbName)
  * @author  Daniel D. Daugherty
  * @build RacingThreadsTest LoggerResourceBundleRace
- * @run main LoggerResourceBundleRace
+ * @run main/othervm LoggerResourceBundleRace
+ *
+ * (In samevm mode, the bundle classes don't end up in the classpath.)
  */
-
 import java.util.ListResourceBundle;
 import java.util.MissingResourceException;
 import java.util.concurrent.atomic.AtomicInteger;

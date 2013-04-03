@@ -34,10 +34,12 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.spi.CalendarDataProvider;
@@ -47,6 +49,7 @@ import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
 import sun.util.resources.LocaleData;
+import sun.util.spi.CalendarProvider;
 
 /**
  * LocaleProviderAdapter implementation for the legacy JRE locale data.
@@ -104,6 +107,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             return (P) getCalendarDataProvider();
         case "CalendarNameProvider":
             return (P) getCalendarNameProvider();
+        case "CalendarProvider":
+            return (P) getCalendarProvider();
         default:
             throw new InternalError("should not come down here");
         }
@@ -121,6 +126,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     private volatile TimeZoneNameProvider timeZoneNameProvider = null;
     private volatile CalendarDataProvider calendarDataProvider = null;
     private volatile CalendarNameProvider calendarNameProvider = null;
+
+    private volatile CalendarProvider calendarProvider = null;
 
     /*
      * Getter methods for java.text.spi.* providers
@@ -281,6 +288,23 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             }
         }
         return calendarNameProvider;
+    }
+
+    /**
+     * Getter methods for sun.util.spi.* providers
+     */
+    @Override
+    public CalendarProvider getCalendarProvider() {
+        if (calendarProvider == null) {
+            CalendarProvider provider = new CalendarProviderImpl(getAdapterType(),
+                                                    getLanguageTagSet("CalendarData"));
+            synchronized (this) {
+                if (calendarProvider == null) {
+                    calendarProvider = provider;
+                }
+            }
+        }
+        return calendarProvider;
     }
 
     @Override

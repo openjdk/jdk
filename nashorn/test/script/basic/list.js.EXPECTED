@@ -1,0 +1,17 @@
+l.class.name=java.util.ArrayList
+l.length=undefined
+l.size()=2
+l[0]=foo
+l[1]=bar
+--for each begin--
+foo
+bar
+--for each end--
+l[0]=foo
+l[1]=a
+l[0.9]=null
+l['blah']=null
+l[size_name]()=2
+java.lang.IndexOutOfBoundsException: Index: 2, Size: 2
+java.lang.IndexOutOfBoundsException: Index: Infinity, Size: 2
+java.lang.IndexOutOfBoundsException: Index: -Infinity, Size: 2

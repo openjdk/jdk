@@ -44,9 +44,6 @@ Java_com_sun_security_auth_module_UnixSystem_getUnixInfo
     char pwd_buf[1024];
     struct passwd *pwd;
     struct passwd resbuf;
-    jsize numSuppGroups = getgroups(0, NULL);
-    gid_t *groups = (gid_t *)calloc(numSuppGroups, sizeof(gid_t));
-
     jfieldID userNameID;
     jfieldID userID;
     jfieldID groupID;
@@ -55,7 +52,20 @@ Java_com_sun_security_auth_module_UnixSystem_getUnixInfo
     jstring jstr;
     jlongArray jgroups;
     jlong *jgroupsAsArray;
-    jclass cls = (*env)->GetObjectClass(env, obj);
+    jsize numSuppGroups;
+    gid_t *groups;
+    jclass cls;
+
+    numSuppGroups = getgroups(0, NULL);
+    groups = (gid_t *)calloc(numSuppGroups, sizeof(gid_t));
+    if (groups == NULL) {
+        jclass cls = (*env)->FindClass(env,"java/lang/OutOfMemoryError");
+        if(cls != 0)
+            (*env)->ThrowNew(env, cls, NULL);
+        return;
+    }
+
+    cls = (*env)->GetObjectClass(env, obj);
 
     memset(pwd_buf, 0, sizeof(pwd_buf));
 

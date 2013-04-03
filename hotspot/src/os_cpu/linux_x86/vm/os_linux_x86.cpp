@@ -305,6 +305,11 @@ JVM_handle_linux_signal(int sig,
           // to handle_unexpected_exception way down below.
           thread->disable_stack_red_zone();
           tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
+
+          // This is a likely cause, but hard to verify. Let's just print
+          // it as a hint.
+          tty->print_raw_cr("Please check if any of your loaded .so files has "
+                            "enabled executable stack (see man page execstack(8))");
         } else {
           // Accessing stack address below sp may cause SEGV if current
           // thread has MAP_GROWSDOWN stack. This should only happen when
@@ -335,7 +340,7 @@ JVM_handle_linux_signal(int sig,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        nmethod* nm = cb->is_nmethod() ? (nmethod*)cb : NULL;
+        nmethod* nm = (cb != NULL && cb->is_nmethod()) ? (nmethod*)cb : NULL;
         if (nm != NULL && nm->has_unsafe_access()) {
           stub = StubRoutines::handler_for_unsafe_access();
         }
