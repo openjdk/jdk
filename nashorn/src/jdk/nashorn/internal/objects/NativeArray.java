@@ -337,8 +337,9 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toString(final Object self) {
-        if (self instanceof ScriptObject) {
-            final ScriptObject sobj = (ScriptObject) self;
+        final Object obj = Global.toObject(self);
+        if (obj instanceof ScriptObject) {
+            final ScriptObject sobj = (ScriptObject)obj;
             try {
                 final Object join = JOIN.getGetter().invokeExact(sobj);
                 if (join instanceof ScriptFunction) {
@@ -573,9 +574,9 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object join(final Object self, final Object separator) {
-        final String           sep  = separator == ScriptRuntime.UNDEFINED ? "," : JSType.toString(separator);
         final StringBuilder    sb   = new StringBuilder();
         final Iterator<Object> iter = arrayLikeIterator(self, true);
+        final String           sep  = separator == ScriptRuntime.UNDEFINED ? "," : JSType.toString(separator);
 
         while (iter.hasNext()) {
             final Object obj = iter.next();
