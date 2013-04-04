@@ -707,25 +707,6 @@ static ciArrayKlass* as_array_klass(ciType* type) {
   }
 }
 
-static Value maxvalue(IfOp* ifop) {
-  switch (ifop->cond()) {
-    case If::eql: return NULL;
-    case If::neq: return NULL;
-    case If::lss: // x <  y ? x : y
-    case If::leq: // x <= y ? x : y
-      if (ifop->x() == ifop->tval() &&
-          ifop->y() == ifop->fval()) return ifop->y();
-      return NULL;
-
-    case If::gtr: // x >  y ? y : x
-    case If::geq: // x >= y ? y : x
-      if (ifop->x() == ifop->tval() &&
-          ifop->y() == ifop->fval()) return ifop->y();
-      return NULL;
-
-  }
-}
-
 static ciType* phi_declared_type(Phi* phi) {
   ciType* t = phi->operand_at(0)->declared_type();
   if (t == NULL) {
