@@ -540,11 +540,13 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @param newMap   Modified {@link PropertyMap}.
      */
     private void addToHistory(final Property property, final PropertyMap newMap) {
-        if (history == null) {
-            history = new LinkedHashMap<>();
-        }
+        if (!properties.isEmpty()) {
+            if (history == null) {
+                history = new LinkedHashMap<>();
+            }
 
-        history.put(property, newMap);
+            history.put(property, newMap);
+        }
     }
 
     /**
