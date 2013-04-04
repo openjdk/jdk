@@ -849,16 +849,25 @@ public final class NativeArray extends ScriptObject {
             final long         len     = JSType.toUint32(sobj.getLength());
 
             if (len > 1) {
-                final Object[] src = new Object[(int) len];
-                for (int i = 0; i < src.length; i++) {
-                    src[i] = sobj.get(i);
+                // Get only non-missing elements. Missing elements go at the end
+                // of the sorted array. So, just don't copy these to sort input.
+
+                final ArrayList<Object> src = new ArrayList<>();
+                for (int i = 0; i < (int)len; i++) {
+                    if (sobj.has(i)) {
+                        src.add(sobj.get(i));
+                    }
                 }
 
-                final Object[] sorted = sort(src, comparefn);
-                assert sorted.length == src.length;
+                final Object[] sorted = sort(src.toArray(), comparefn);
 
                 for (int i = 0; i < sorted.length; i++) {
                     sobj.set(i, sorted[i], strict);
+                }
+
+                // delete missing elements - which are at the end of sorted array
+                for (int j = sorted.length; j < (int)len; j++) {
+                    sobj.delete(j, strict);
                 }
             }
 
