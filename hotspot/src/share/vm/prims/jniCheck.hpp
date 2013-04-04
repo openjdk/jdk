@@ -33,7 +33,7 @@ extern "C" {
   // within IN_VM macro), one to be called when in NATIVE state.
 
   // When in VM state:
-  static void ReportJNIFatalError(JavaThread* thr, const char *msg) {
+  static inline void ReportJNIFatalError(JavaThread* thr, const char *msg) {
     tty->print_cr("FATAL ERROR in native method: %s", msg);
     thr->print_stack();
     os::abort(true);

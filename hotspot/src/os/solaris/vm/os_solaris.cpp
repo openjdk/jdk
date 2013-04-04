@@ -5808,16 +5808,6 @@ int os::loadavg(double loadavg[], int nelem) {
 
 //---------------------------------------------------------------------------------
 
-static address same_page(address x, address y) {
-  intptr_t page_bits = -os::vm_page_size();
-  if ((intptr_t(x) & page_bits) == (intptr_t(y) & page_bits))
-    return x;
-  else if (x > y)
-    return (address)(intptr_t(y) | ~page_bits) + 1;
-  else
-    return (address)(intptr_t(y) & page_bits);
-}
-
 bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
@@ -5843,8 +5833,8 @@ bool os::find(address addr, outputStream* st) {
 
     if (Verbose) {
       // decode some bytes around the PC
-      address begin = same_page(addr-40, addr);
-      address end   = same_page(addr+40, addr);
+      address begin = clamp_address_in_page(addr-40, addr, os::vm_page_size());
+      address end   = clamp_address_in_page(addr+40, addr, os::vm_page_size());
       address       lowest = (address) dlinfo.dli_sname;
       if (!lowest)  lowest = (address) dlinfo.dli_fbase;
       if (begin < lowest)  begin = lowest;
