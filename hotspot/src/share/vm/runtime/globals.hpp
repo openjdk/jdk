@@ -457,6 +457,9 @@ class CommandLineFlags {
   lp64_product(intx, ObjectAlignmentInBytes, 8,                             \
           "Default object alignment in bytes, 8 is minimum")                \
                                                                             \
+  product(bool, AssumeMP, false,                                            \
+          "Instruct the VM to assume multiple processors are available")    \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \

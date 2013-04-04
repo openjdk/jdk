@@ -180,7 +180,7 @@ class os: AllStatic {
   // Interface for detecting multiprocessor system
   static inline bool is_MP() {
     assert(_processor_count > 0, "invalid processor count");
-    return _processor_count > 1;
+    return _processor_count > 1 || AssumeMP;
   }
   static julong available_memory();
   static julong physical_memory();
