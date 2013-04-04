@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,41 +28,39 @@ package sun.java2d.pipe.hw;
 import java.awt.Rectangle;
 import sun.java2d.Surface;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * Abstraction for a hardware accelerated surface.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public interface AccelSurface extends BufferedContextProvider, Surface {
     /**
      * Undefined
      */
-    public static final int UNDEFINED       = 0;
+    @Native public static final int UNDEFINED       = 0;
     /**
      * Window (or window substitute) surface
      */
-    public static final int WINDOW          = 1;
+    @Native public static final int WINDOW          = 1;
     /**
      * Render-To Plain surface (pbuffer for OpenGL, Render Target surface
      * for Direct3D)
      */
-    public static final int RT_PLAIN        = 2;
+    @Native public static final int RT_PLAIN        = 2;
     /**
      * Texture surface
      */
-    public static final int TEXTURE         = 3;
+    @Native public static final int TEXTURE         = 3;
     /**
      * A back-buffer surface (SwapChain surface for Direct3D, backbuffer for
      * OpenGL)
      */
-    public static final int FLIP_BACKBUFFER = 4;
+    @Native public static final int FLIP_BACKBUFFER = 4;
     /**
      * Render-To Texture surface (fbobject for OpenGL, texture with render-to
      * attribute for Direct3D)
      */
-    public static final int RT_TEXTURE      = 5;
+    @Native public static final int RT_TEXTURE      = 5;
 
     /**
      * Returns {@code int} representing surface's type as defined by constants

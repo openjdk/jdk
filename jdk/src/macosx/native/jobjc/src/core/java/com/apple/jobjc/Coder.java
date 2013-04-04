@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,26 +35,26 @@ import com.apple.jobjc.PrimitiveCoder.SCharCoder;
 import com.apple.jobjc.PrimitiveCoder.SIntCoder;
 import com.apple.jobjc.PrimitiveCoder.SLongLongCoder;
 import com.apple.jobjc.PrimitiveCoder.SShortCoder;
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 public abstract class Coder<T> {
     private static native long getNativeFFITypePtrForCode(final int code);
 
-    static final int FFI_VOID        = 0;
-    static final int FFI_PTR        = FFI_VOID+1;
+    @Native static final int FFI_VOID        = 0;
+    @Native static final int FFI_PTR        = FFI_VOID+1;
 
-    static final int FFI_SINT8        = FFI_PTR+1;
-    static final int FFI_UINT8        = FFI_SINT8+1;
-    static final int FFI_SINT16        = FFI_UINT8+1;
-    static final int FFI_UINT16        = FFI_SINT16+1;
-    static final int FFI_SINT32        = FFI_UINT16+1;
-    static final int FFI_UINT32        = FFI_SINT32+1;
-    static final int FFI_SINT64        = FFI_UINT32+1;
-    static final int FFI_UINT64        = FFI_SINT64+1;
+    @Native static final int FFI_SINT8        = FFI_PTR+1;
+    @Native static final int FFI_UINT8        = FFI_SINT8+1;
+    @Native static final int FFI_SINT16        = FFI_UINT8+1;
+    @Native static final int FFI_UINT16        = FFI_SINT16+1;
+    @Native static final int FFI_SINT32        = FFI_UINT16+1;
+    @Native static final int FFI_UINT32        = FFI_SINT32+1;
+    @Native static final int FFI_SINT64        = FFI_UINT32+1;
+    @Native static final int FFI_UINT64        = FFI_SINT64+1;
 
-    static final int FFI_FLOAT        = FFI_UINT64+1;
-    static final int FFI_DOUBLE        = FFI_FLOAT+1;
-    static final int FFI_LONGDOUBLE    = FFI_DOUBLE+1;
+    @Native static final int FFI_FLOAT        = FFI_UINT64+1;
+    @Native static final int FFI_DOUBLE        = FFI_FLOAT+1;
+    @Native static final int FFI_LONGDOUBLE    = FFI_DOUBLE+1;
 
     private static long[] ffiCodesToFFITypePtrs;
     static{
@@ -143,8 +143,6 @@ public abstract class Coder<T> {
 
     //
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class VoidCoder extends Coder<Object>{
         public static final VoidCoder INST = new VoidCoder();
         public VoidCoder(){ super(FFI_VOID, "v", Void.class, void.class); }
@@ -153,8 +151,6 @@ public abstract class Coder<T> {
         @Override public void push(JObjCRuntime runtime, long addr, Object x) { throw new RuntimeException("Trying to push a Void."); }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class UnknownCoder extends Coder<Object> {
         public static final UnknownCoder INST = new UnknownCoder();
         public UnknownCoder(){ super(-1, "?", null, null); }
@@ -163,8 +159,6 @@ public abstract class Coder<T> {
         @Override public Object pop(JObjCRuntime runtime, long addr) { throw new RuntimeException("Coder not implemented"); }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class PrimitivePointerCoder extends Coder<Long> {
         public static final PrimitivePointerCoder INST = new PrimitivePointerCoder();
         public PrimitivePointerCoder(){ super(Coder.FFI_PTR, "^?", Long.class, long.class); }
@@ -194,8 +188,6 @@ public abstract class Coder<T> {
         @Override public void push(JObjCRuntime runtime, long addr, Long x) { push(runtime, addr, (long) x); }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class PointerCoder extends Coder<Pointer> {
         public static final PointerCoder INST = new PointerCoder();
         public PointerCoder(){ super(FFI_PTR, "^?", Pointer.class); }
@@ -209,8 +201,6 @@ public abstract class Coder<T> {
         }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class SELCoder extends Coder<SEL> {
         public static final SELCoder INST = new SELCoder();
         public SELCoder(){ super(FFI_PTR, ":", SEL.class); }
@@ -224,8 +214,6 @@ public abstract class Coder<T> {
         }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static abstract class StructCoder extends Coder<Struct> {
         private final FFIType ffiType;
         final int sizeof;
@@ -267,8 +255,6 @@ public abstract class Coder<T> {
         }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class IDCoder extends Coder<ID>{
         public static final IDCoder INST = new IDCoder();
         public IDCoder(){ super(FFI_PTR, "@", ID.class); }
@@ -287,8 +273,6 @@ public abstract class Coder<T> {
         }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class NSClassCoder extends Coder<NSClass>{
         public static final NSClassCoder INST = new NSClassCoder();
         public NSClassCoder(){ super(FFI_PTR, "#", NSClass.class); }
