@@ -160,7 +160,7 @@ public final class NativeArray extends ScriptObject {
         if ("length".equals(key)) {
             // Step 3a
             if (!desc.has(VALUE)) {
-                return super.defineOwnProperty("length", propertyDesc, reject);
+                return super.defineOwnProperty("length", desc, reject);
             }
 
             // Step 3b
@@ -242,7 +242,7 @@ public final class NativeArray extends ScriptObject {
 
             // Step 4c
             // set the new array element
-            final boolean succeeded = super.defineOwnProperty(key, propertyDesc, false);
+            final boolean succeeded = super.defineOwnProperty(key, desc, false);
 
             // Step 4d
             if (!succeeded) {
@@ -263,7 +263,7 @@ public final class NativeArray extends ScriptObject {
         }
 
         // not an index property
-        return super.defineOwnProperty(key, propertyDesc, reject);
+        return super.defineOwnProperty(key, desc, reject);
     }
 
     /**
@@ -337,8 +337,9 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toString(final Object self) {
-        if (self instanceof ScriptObject) {
-            final ScriptObject sobj = (ScriptObject) self;
+        final Object obj = Global.toObject(self);
+        if (obj instanceof ScriptObject) {
+            final ScriptObject sobj = (ScriptObject)obj;
             try {
                 final Object join = JOIN.getGetter().invokeExact(sobj);
                 if (join instanceof ScriptFunction) {
@@ -573,9 +574,9 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object join(final Object self, final Object separator) {
-        final String           sep  = separator == ScriptRuntime.UNDEFINED ? "," : JSType.toString(separator);
         final StringBuilder    sb   = new StringBuilder();
         final Iterator<Object> iter = arrayLikeIterator(self, true);
+        final String           sep  = separator == ScriptRuntime.UNDEFINED ? "," : JSType.toString(separator);
 
         while (iter.hasNext()) {
             final Object obj = iter.next();
@@ -754,8 +755,9 @@ public final class NativeArray extends ScriptObject {
         final Object       obj                 = Global.toObject(self);
         final ScriptObject sobj                = (ScriptObject)obj;
         final long         len                 = JSType.toUint32(sobj.getLength());
-        final long         relativeStartUint32 = JSType.toUint32(start);
-        final long         relativeStart       = JSType.toInteger(start);
+        final double       startNum            = JSType.toNumber(start);
+        final long         relativeStartUint32 = JSType.toUint32(startNum);
+        final long         relativeStart       = JSType.toInteger(startNum);
 
         long k = relativeStart < 0 ?
                 Math.max(len + relativeStart, 0) :
@@ -763,8 +765,9 @@ public final class NativeArray extends ScriptObject {
                     Math.max(relativeStartUint32, relativeStart),
                     len);
 
-        final long relativeEndUint32 = end == ScriptRuntime.UNDEFINED ? len : JSType.toUint32(end);
-        final long relativeEnd       = end == ScriptRuntime.UNDEFINED ? len : JSType.toInteger(end);
+        final double endNum = (end == ScriptRuntime.UNDEFINED)? Double.NaN : JSType.toNumber(end);
+        final long relativeEndUint32 = (end == ScriptRuntime.UNDEFINED)? len : JSType.toUint32(endNum);
+        final long relativeEnd       = (end == ScriptRuntime.UNDEFINED)? len : JSType.toInteger(endNum);
 
         final long finale = relativeEnd < 0 ?
                 Math.max(len + relativeEnd, 0) :
@@ -895,8 +898,9 @@ public final class NativeArray extends ScriptObject {
         final ScriptObject sobj                = (ScriptObject)obj;
         final boolean      strict              = Global.isStrict();
         final long         len                 = JSType.toUint32(sobj.getLength());
-        final long         relativeStartUint32 = JSType.toUint32(start);
-        final long         relativeStart       = JSType.toInteger(start);
+        final double       startNum            = JSType.toNumber(start);
+        final long         relativeStartUint32 = JSType.toUint32(startNum);
+        final long         relativeStart       = JSType.toInteger(startNum);
 
         //TODO: workaround overflow of relativeStart for start > Integer.MAX_VALUE
         final long actualStart = relativeStart < 0 ?
