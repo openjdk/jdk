@@ -160,7 +160,7 @@ public final class NativeArray extends ScriptObject {
         if ("length".equals(key)) {
             // Step 3a
             if (!desc.has(VALUE)) {
-                return super.defineOwnProperty("length", propertyDesc, reject);
+                return super.defineOwnProperty("length", desc, reject);
             }
 
             // Step 3b
@@ -242,7 +242,7 @@ public final class NativeArray extends ScriptObject {
 
             // Step 4c
             // set the new array element
-            final boolean succeeded = super.defineOwnProperty(key, propertyDesc, false);
+            final boolean succeeded = super.defineOwnProperty(key, desc, false);
 
             // Step 4d
             if (!succeeded) {
@@ -263,7 +263,7 @@ public final class NativeArray extends ScriptObject {
         }
 
         // not an index property
-        return super.defineOwnProperty(key, propertyDesc, reject);
+        return super.defineOwnProperty(key, desc, reject);
     }
 
     /**
