@@ -33,8 +33,10 @@ import static jdk.nashorn.internal.ir.Symbol.IS_TEMP;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
@@ -45,15 +47,17 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Parser;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.UserAccessorProperty;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
  * IR representation for function (or script.)
- *
  */
 public class FunctionNode extends Block {
+
+    private static final Type FUNCTION_TYPE = Type.typeFor(ScriptFunction.class);
 
     /** Function kinds */
     public enum Kind {
@@ -86,7 +90,9 @@ public class FunctionNode extends Block {
         /** method has had its types finalized */
         FINALIZED,
         /** method has been emitted to bytecode */
-        EMITTED
+        EMITTED,
+        /** code installed in a class loader */
+        INSTALLED
     }
 
     /** External function identifier. */
@@ -107,9 +113,6 @@ public class FunctionNode extends Block {
 
     /** List of parameters. */
     private List<IdentNode> parameters;
-
-    /** List of nested functions. */
-    private List<FunctionNode> functions;
 
     /** First token of function. **/
     private long firstToken;
@@ -153,10 +156,6 @@ public class FunctionNode extends Block {
     /** Pending control list. */
     private final Stack<Node> controlStack;
 
-    /** Variable declarations in the function's scope */
-    @Ignore
-    private final List<VarNode> declarations;
-
     /** VarNode for this function statement */
     @Ignore //this is explicit code anyway and should not be traversed after lower
     private VarNode funcVarNode;
@@ -173,37 +172,42 @@ public class FunctionNode extends Block {
     @Ignore
     private final EnumSet<CompilationState> compilationState;
 
+    /** Type hints, e.g based on parameters at call site */
+    private final Map<IdentNode, Type> specializedTypes;
+
     /** Function flags. */
     private int flags;
 
     /** Is anonymous function flag. */
-    private static final int IS_ANONYMOUS                = 0b0000_0000_0000_0001;
-    /** Is statement flag */
-    private static final int IS_STATEMENT                = 0b0000_0000_0000_0010;
+    private static final int IS_ANONYMOUS                = 1 << 0;
+    /** Is the function created in a function declaration (as opposed to a function expression) */
+    private static final int IS_DECLARED                 = 1 << 1;
     /** is this a strict mode function? */
-    private static final int IS_STRICT_MODE              = 0b0000_0000_0000_0100;
+    private static final int IS_STRICT_MODE              = 1 << 2;
     /** Does the function use the "arguments" identifier ? */
-    private static final int USES_ARGUMENTS              = 0b0000_0000_0000_1000;
+    private static final int USES_ARGUMENTS              = 1 << 3;
     /** Are we lowered ? */
-    private static final int IS_LOWERED                  = 0b0000_0000_0001_0000;
+    private static final int IS_LOWERED                  = 1 << 4;
     /** Has this node been split because it was too large? */
-    private static final int IS_SPLIT                    = 0b0000_0000_0010_0000;
+    private static final int IS_SPLIT                    = 1 << 5;
     /** Does the function call eval? */
-    private static final int HAS_EVAL                    = 0b0000_0000_0100_0000;
+    private static final int HAS_EVAL                    = 1 << 6;
     /** Does the function contain a with block ? */
-    private static final int HAS_WITH                    = 0b0000_0000_1000_0000;
+    private static final int HAS_WITH                    = 1 << 7;
     /** Does a descendant function contain a with or eval? */
-    private static final int HAS_DESCENDANT_WITH_OR_EVAL = 0b0000_0001_0000_0000;
+    private static final int HAS_DESCENDANT_WITH_OR_EVAL = 1 << 8;
     /** Does the function define "arguments" identifier as a parameter of nested function name? */
-    private static final int DEFINES_ARGUMENTS           = 0b0000_0010_0000_0000;
+    private static final int DEFINES_ARGUMENTS           = 1 << 9;
     /** Does the function need a self symbol? */
-    private static final int NEEDS_SELF_SYMBOL           = 0b0000_0100_0000_0000;
+    private static final int NEEDS_SELF_SYMBOL           = 1 << 10;
     /** Does this function or any of its descendants use variables from an ancestor function's scope (incl. globals)? */
-    private static final int USES_ANCESTOR_SCOPE         = 0b0000_1000_0000_0000;
+    private static final int USES_ANCESTOR_SCOPE         = 1 << 11;
     /** Is this function lazily compiled? */
-    private static final int IS_LAZY                     = 0b0001_0000_0000_0000;
+    private static final int IS_LAZY                     = 1 << 12;
     /** Does this function have lazy, yet uncompiled children */
-    private static final int HAS_LAZY_CHILDREN           = 0b0010_0000_0000_0000;
+    private static final int HAS_LAZY_CHILDREN           = 1 << 13;
+    /** Does this function have lazy, yet uncompiled children */
+    private static final int IS_PROGRAM                   = 1 << 14;
 
     /** Does this function or any nested functions contain a with or an eval? */
     private static final int HAS_DEEP_WITH_OR_EVAL = HAS_EVAL | HAS_WITH | HAS_DESCENDANT_WITH_OR_EVAL;
@@ -211,19 +215,12 @@ public class FunctionNode extends Block {
     private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_WITH_OR_EVAL | IS_SPLIT | HAS_LAZY_CHILDREN;
     /** Does this function potentially need "arguments"? Note that this is not a full test, as further negative check of REDEFINES_ARGS is needed. */
     private static final int MAYBE_NEEDS_ARGUMENTS = USES_ARGUMENTS | HAS_EVAL;
-    /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep with or eval. */
-    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_WITH_OR_EVAL;
+    /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep with or eval.
+     *  We also pessimistically need a parent scope if we have lazy children that have not yet been compiled */
+    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_WITH_OR_EVAL | HAS_LAZY_CHILDREN;
 
     /** What is the return type of this function? */
     private Type returnType = Type.UNKNOWN;
-
-    /**
-     * Used to keep track of a function's parent blocks.
-     * This is needed when a (finally body) block is cloned than contains inner functions.
-     * Does not include function.getParent().
-     */
-    @Ignore
-    private List<Block> referencingParentBlocks;
 
     /**
      * Constructor
@@ -232,33 +229,25 @@ public class FunctionNode extends Block {
      * @param token     token
      * @param finish    finish
      * @param namespace the namespace
-     * @param parent    the parent block
      * @param ident     the identifier
      * @param name      the name of the function
      */
-    @SuppressWarnings("LeakingThisInConstructor")
-    public FunctionNode(final Source source, final long token, final int finish, final Namespace namespace, final Block parent, final IdentNode ident, final String name) {
-        super(source, token, finish, parent, null);
+    public FunctionNode(final Source source, final long token, final int finish, final Namespace namespace, final IdentNode ident, final String name) {
+        super(source, token, finish);
 
         this.ident             = ident;
         this.name              = name;
         this.kind              = Kind.NORMAL;
         this.parameters        = new ArrayList<>();
-        this.functions         = new ArrayList<>();
         this.firstToken        = token;
         this.lastToken         = token;
         this.namespace         = namespace;
         this.labelStack        = new Stack<>();
         this.controlStack      = new Stack<>();
-        this.declarations      = new ArrayList<>();
-        // my block -> function is this. We added @SuppressWarnings("LeakingThisInConstructor") as NetBeans identifies
-        // it as such a leak - this is a false positive as we're setting this into a field of the object being
-        // constructed, so it can't be seen from other threads.
-        this.function          = this;
         this.compilationState  = EnumSet.of(CompilationState.INITIALIZED);
+        this.specializedTypes  = new HashMap<>();
     }
 
-    @SuppressWarnings("LeakingThisInConstructor")
     private FunctionNode(final FunctionNode functionNode, final CopyState cs) {
         super(functionNode, cs);
 
@@ -268,10 +257,9 @@ public class FunctionNode extends Block {
 
         this.parameters = new ArrayList<>();
         for (final IdentNode param : functionNode.getParameters()) {
-            this.parameters.add((IdentNode) cs.existingOrCopy(param));
+            this.parameters.add((IdentNode)cs.existingOrCopy(param));
         }
 
-        this.functions         = new ArrayList<>();
         this.firstToken        = functionNode.firstToken;
         this.lastToken         = functionNode.lastToken;
         this.namespace         = functionNode.getNamespace();
@@ -283,43 +271,34 @@ public class FunctionNode extends Block {
         this.calleeNode        = (IdentNode)cs.existingOrCopy(functionNode.calleeNode);
         this.labelStack        = new Stack<>();
         this.controlStack      = new Stack<>();
-        this.declarations      = new ArrayList<>();
-
-        for (final VarNode decl : functionNode.getDeclarations()) {
-            declarations.add((VarNode) cs.existingOrCopy(decl)); //TODO same?
-        }
 
         this.flags = functionNode.flags;
 
         this.funcVarNode = (VarNode)cs.existingOrCopy(functionNode.funcVarNode);
         /** VarNode for this function statement */
 
-        // my block -> function is this. We added @SuppressWarnings("LeakingThisInConstructor") as NetBeans identifies
-        // it as such a leak - this is a false positive as we're setting this into a field of the object being
-        // constructed, so it can't be seen from other threads.
-        this.function = this;
-
         this.compilationState = EnumSet.copyOf(functionNode.compilationState);
+        this.specializedTypes = new HashMap<>();
     }
 
     @Override
     protected Node copy(final CopyState cs) {
         // deep clone all parent blocks
-        return fixBlockChain(new FunctionNode(this, cs));
+        return new FunctionNode(this, cs);
     }
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        final FunctionNode saveFunctionNode = visitor.getCurrentFunctionNode();
-        final Block        saveBlock        = visitor.getCurrentBlock();
+        final FunctionNode  saveFunctionNode  = visitor.getCurrentFunctionNode();
+        final Block         saveBlock         = visitor.getCurrentBlock();
+        final MethodEmitter saveMethodEmitter = visitor.getCurrentMethodEmitter();
+        final CompileUnit   saveCompileUnit   = visitor.getCurrentCompileUnit();
 
         visitor.setCurrentFunctionNode(this);
-        visitor.setCurrentCompileUnit(getCompileUnit());
-        visitor.setCurrentMethodEmitter(getMethodEmitter());
         visitor.setCurrentBlock(this);
 
         try {
-            if (visitor.enter(this) != null) {
+            if (visitor.enterFunctionNode(this) != null) {
                 if (ident != null) {
                     ident = (IdentNode)ident.accept(visitor);
                 }
@@ -328,51 +307,25 @@ public class FunctionNode extends Block {
                     parameters.set(i, (IdentNode)parameters.get(i).accept(visitor));
                 }
 
-                for (int i = 0, count = functions.size(); i < count; i++) {
-                    functions.set(i, (FunctionNode)functions.get(i).accept(visitor));
-                }
-
                 for (int i = 0, count = statements.size(); i < count; i++) {
                     statements.set(i, statements.get(i).accept(visitor));
                 }
 
-                return visitor.leave(this);
+                return visitor.leaveFunctionNode(this);
             }
         } finally {
             visitor.setCurrentBlock(saveBlock);
             visitor.setCurrentFunctionNode(saveFunctionNode);
-            visitor.setCurrentCompileUnit(saveFunctionNode != null ? saveFunctionNode.getCompileUnit() : null);
-            visitor.setCurrentMethodEmitter(saveFunctionNode != null ? saveFunctionNode.getMethodEmitter() : null);
+            visitor.setCurrentCompileUnit(saveCompileUnit);
+            visitor.setCurrentMethodEmitter(saveMethodEmitter);
         }
 
         return this;
     }
 
-    /**
-     * Locate the parent function.
-     *
-     * @return Parent function.
-     */
-    public FunctionNode findParentFunction() {
-        return getParent() != null ? getParent().getFunction() : null;
-    }
-
-    /**
-     * Add parent name to the builder.
-     *
-     * @param sb String builder.
-     */
-    @Override
-    public void addParentName(final StringBuilder sb) {
-        if (!isScript()) {
-            sb.append(getName());
-            sb.append("$");
-        }
-    }
-
     @Override
     public boolean needsScope() {
-        return super.needsScope() || isScript();
+        return super.needsScope() || isProgram();
     }
 
     /**
@@ -530,12 +483,18 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Determine if script function.
-     *
-     * @return True if script function.
+     * Returns true if the function is the top-level program.
+     * @return True if this function node represents the top-level program.
      */
-    public boolean isScript() {
-        return getParent() == null;
+    public boolean isProgram() {
+        return (flags & IS_PROGRAM) != 0;
+    }
+
+    /**
+     * Marks the function as representing the top-level program.
+     */
+    public void setProgram() {
+        flags |= IS_PROGRAM;
     }
 
     /**
@@ -575,31 +534,31 @@ public class FunctionNode extends Block {
 
     /**
      * Flag this function as using the {@code with} keyword
+     * @param ancestors the iterator over functions in this functions's containing lexical context
      */
-    public void setHasWith() {
+    public void setHasWith(final Iterator<FunctionNode> ancestors) {
         if(!hasWith()) {
             this.flags |= HAS_WITH;
             // with requires scope in parents.
             // TODO: refine this. with should not force all variables in parents to be in scope, only those that are
             // actually referenced as identifiers by name
-            markParentForWithOrEval();
+            markParentForWithOrEval(ancestors);
         }
     }
 
-    private void markParentForWithOrEval() {
+    private void markParentForWithOrEval(final Iterator<FunctionNode> ancestors) {
         // If this is invoked, then either us or a descendant uses with or eval, meaning we must have our own scope.
         setNeedsScope();
 
-        final FunctionNode parentFunction = findParentFunction();
-        if(parentFunction != null) {
-            parentFunction.setDescendantHasWithOrEval();
+        if(ancestors.hasNext()) {
+            ancestors.next().setDescendantHasWithOrEval(ancestors);
         }
     }
 
-    private void setDescendantHasWithOrEval() {
+    private void setDescendantHasWithOrEval(final Iterator<FunctionNode> ancestors) {
         if((flags & HAS_DESCENDANT_WITH_OR_EVAL) == 0) {
             flags |= HAS_DESCENDANT_WITH_OR_EVAL;
-            markParentForWithOrEval();
+            markParentForWithOrEval(ancestors);
         }
     }
 
@@ -614,11 +573,12 @@ public class FunctionNode extends Block {
 
     /**
      * Flag this function as calling the {@code eval} function
+     * @param ancestors the iterator over functions in this functions's containing lexical context
      */
-    public void setHasEval() {
+    public void setHasEval(final Iterator<FunctionNode> ancestors) {
         if(!hasEval()) {
             this.flags |= HAS_EVAL;
-            markParentForWithOrEval();
+            markParentForWithOrEval(ancestors);
         }
     }
 
@@ -651,11 +611,34 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Get all nested functions
-     * @return list of nested functions in this function
+     * Returns a list of functions declared by this function. Only includes declared functions, and does not include any
+     * function expressions that might occur in its body.
+     * @return a list of functions declared by this function.
      */
-    public List<FunctionNode> getFunctions() {
-        return Collections.unmodifiableList(functions);
+    public List<FunctionNode> getDeclaredFunctions() {
+        // Note that the function does not have a dedicated list of declared functions, but rather relies on the
+        // invariant that all function declarations are at the beginning of the statement list as VarNode with a
+        // FunctionNode marked as statement with its variable initializer. Every VarNode is also preceded by a
+        // LineNumberNode. This invariant is established by the parser and has to be preserved in visitors.
+        final List<FunctionNode> fns = new ArrayList<>();
+        for (final Node stmt : statements) {
+            if(stmt instanceof LineNumberNode) {
+                continue;
+            } else if(stmt instanceof VarNode) {
+                final Node init = ((VarNode)stmt).getInit();
+                if(init instanceof FunctionNode) {
+                    final FunctionNode fn = (FunctionNode)init;
+                    if(fn.isDeclared()) {
+                        fns.add(fn);
+                        continue;
+                    }
+                }
+            }
+            // Node is neither a LineNumberNode, nor a function declaration VarNode. Since all function declarations are
+            // at the start of the function, we've reached the end of function declarations.
+            break;
+        }
+        return fns;
     }
 
     /**
@@ -710,6 +693,7 @@ public class FunctionNode extends Block {
      * Check if this function's generated Java method needs a {@code callee} parameter. Functions that need access to
      * their parent scope, functions that reference themselves, and non-strict functions that need an Arguments object
      * (since it exposes {@code arguments.callee} property) will need to have a callee parameter.
+     *
      * @return true if the function's generated Java method needs a {@code callee} parameter.
      */
     public boolean needsCallee() {
@@ -786,7 +770,7 @@ public class FunctionNode extends Block {
     public boolean needsArguments() {
         // uses "arguments" or calls eval, but it does not redefine "arguments", and finally, it's not a script, since
         // for top-level script, "arguments" is picked up from Context by Global.init() instead.
-        return (flags & MAYBE_NEEDS_ARGUMENTS) != 0 && (flags & DEFINES_ARGUMENTS) == 0 && !isScript();
+        return (flags & MAYBE_NEEDS_ARGUMENTS) != 0 && (flags & DEFINES_ARGUMENTS) == 0 && !isProgram();
     }
 
     /**
@@ -805,7 +789,7 @@ public class FunctionNode extends Block {
      * @return true if the function needs parent scope.
      */
     public boolean needsParentScope() {
-        return (flags & NEEDS_PARENT_SCOPE) != 0 || isScript();
+        return (flags & NEEDS_PARENT_SCOPE) != 0 || isProgram();
     }
 
     /**
@@ -865,7 +849,7 @@ public class FunctionNode extends Block {
      * @return true if all variables should be in scope
      */
     public boolean allVarsInScope() {
-        return isScript() || (flags & HAS_ALL_VARS_IN_SCOPE) != 0;
+        return isProgram() || (flags & HAS_ALL_VARS_IN_SCOPE) != 0;
     }
 
     /**
@@ -919,6 +903,27 @@ public class FunctionNode extends Block {
     }
 
     /**
+     * Get a specialized type for an identity, if one exists
+     * @param node node to check specialized type for
+     * @return null if no specialization exists, otherwise type
+     */
+    public Type getSpecializedType(final IdentNode node) {
+        return specializedTypes.get(node);
+    }
+
+    /**
+     * Set parameter type hints for specialization.
+     * @param types types array of length equal to parameter list size
+     */
+    public void setParameterTypes(final Class<?>[] types) {
+        assert types.length == parameters.size() : "Type vector length doesn't correspond to parameter types";
+        //diff - skip the callee and this etc, they are not explicit params in the parse tree
+        for (int i = 0; i < types.length ; i++) {
+            specializedTypes.put(parameters.get(i), Type.typeFor(types[i]));
+        }
+    }
+
+    /**
      * Get the identifier for the variable in which the function return value
      * should be stored
      * @return an IdentNode representing the return value
@@ -953,19 +958,19 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Check if this function is a statement
-     * @return true if function is a statement
+     * Check if this function is created as a function declaration (as opposed to function expression)
+     * @return true if function is declared.
      */
-    public boolean isStatement() {
-        return (flags & IS_STATEMENT) != 0;
+    public boolean isDeclared() {
+        return (flags & IS_DECLARED) != 0;
     }
 
     /**
-     * Flag this function as a statement
+     * Flag this function as being created as a function declaration (as opposed to a function expression).
      * @see Parser
      */
-    public void setIsStatement() {
-        this.flags |= IS_STATEMENT;
+    public void setIsDeclared() {
+        this.flags |= IS_DECLARED;
     }
 
     /**
@@ -1013,35 +1018,16 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Marks this function as one using any global symbol. The function and all its parent functions will all be marked
-     * as needing parent scope.
-     * @see #needsParentScope()
+     * Marks this function as using any of its ancestors' scopes.
      */
-    public void setUsesGlobalSymbol() {
+    public void setUsesAncestorScope() {
         this.flags |= USES_ANCESTOR_SCOPE;
-        final FunctionNode parentFn = findParentFunction();
-        if(parentFn != null) {
-            parentFn.setUsesGlobalSymbol();
-        }
     }
 
-    /**
-     * Marks this function as using a specified scoped symbol. The function and its parent functions up to but not
-     * including the function defining the symbol will be marked as needing parent scope. The function defining the
-     * symbol will be marked as one that needs to have its own scope.
-     * @param symbol the symbol being used.
-     * @see #needsParentScope()
-     */
-    public void setUsesScopeSymbol(final Symbol symbol) {
-        if(symbol.getBlock() == this) {
-            setNeedsScope();
-        } else {
-            this.flags |= USES_ANCESTOR_SCOPE;
-            final FunctionNode parentFn = findParentFunction();
-            if(parentFn != null) {
-                parentFn.setUsesScopeSymbol(symbol);
-            }
-        }
+    @Override
+    void setUsesParentScopeSymbol(Symbol symbol, Iterator<Block> ancestors) {
+        setUsesAncestorScope();
+        super.setUsesParentScopeSymbol(symbol, ancestors);
     }
 
     /**
@@ -1116,7 +1102,7 @@ public class FunctionNode extends Block {
 
     @Override
     public Type getType() {
-        return getReturnType();
+        return FUNCTION_TYPE;
     }
 
     /**
@@ -1176,56 +1162,6 @@ public class FunctionNode extends Block {
     }
 
     /**
-     * Add a new function to the function list.
-     *
-     * @param functionNode Function node to add.
-     */
-    @Override
-    public void addFunction(final FunctionNode functionNode) {
-        assert functionNode != null;
-        functions.add(functionNode);
-    }
-
-    /**
-     * Add a list of functions to the function list.
-     *
-     * @param functionNodes  Function nodes to add.
-     */
-    @Override
-    public void addFunctions(final List<FunctionNode> functionNodes) {
-        functions.addAll(functionNodes);
-    }
-
-    /**
-     * Set a function list
-     *
-     * @param functionNodes to set
-     */
-    @Override
-    public void setFunctions(final List<FunctionNode> functionNodes) {
-        this.functions = functionNodes;
-    }
-
-    /**
-     * Add a variable declaration that should be visible to the entire function
-     * scope. Parser does this.
-     *
-     * @param varNode a var node
-     */
-    public void addDeclaration(final VarNode varNode) {
-        declarations.add(varNode);
-    }
-
-    /**
-     * Return all variable declarations from this function scope
-     *
-     * @return all VarNodes in scope
-     */
-    public List<VarNode> getDeclarations() {
-        return Collections.unmodifiableList(declarations);
-    }
-
-    /**
      * Get the compile unit used to compile this function
      * @see Compiler
      * @return the compile unit
@@ -1257,33 +1193,5 @@ public class FunctionNode extends Block {
      */
     public void setMethodEmitter(final MethodEmitter method) {
         this.method = method;
-    }
-
-    /**
-     * Each FunctionNode maintains a list of reference to its parent blocks.
-     * Add a parent block to this function.
-     *
-     * @param parentBlock  a block to remember as parent
-     */
-    public void addReferencingParentBlock(final Block parentBlock) {
-        assert parentBlock.getFunction() == function.findParentFunction(); // all parent blocks must be in the same function
-        if (parentBlock != function.getParent()) {
-            if (referencingParentBlocks == null) {
-                referencingParentBlocks = new LinkedList<>();
-            }
-            referencingParentBlocks.add(parentBlock);
-        }
-    }
-
-    /**
-     * Get the known parent blocks to this function
-     *
-     * @return list of parent blocks
-     */
-    public List<Block> getReferencingParentBlocks() {
-        if (referencingParentBlocks == null) {
-            return Collections.emptyList();
-        }
-        return Collections.unmodifiableList(referencingParentBlocks);
     }
 }

@@ -585,11 +585,7 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
                     for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!inferenceContext.inferenceVars().contains(b1) &&
-                                !inferenceContext.inferenceVars().contains(b2) &&
-                                infer.types.asSuper(b2, b1.tsym) != null) {
-                            infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
-                        }
+                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
                     }
                 }
             }
@@ -603,11 +599,7 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
                     for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
-                        if (!inferenceContext.inferenceVars().contains(b1) &&
-                                !inferenceContext.inferenceVars().contains(b2) &&
-                                infer.types.asSuper(b2, b1.tsym) != null) {
-                            infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
-                        }
+                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
                     }
                 }
             }
@@ -621,10 +613,22 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
                     for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!inferenceContext.inferenceVars().contains(b1) &&
-                                !inferenceContext.inferenceVars().contains(b2) &&
-                                infer.types.asSuper(b2, b1.tsym) != null) {
-                            infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
+                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
+                    }
+                }
+            }
+        },
+        /**
+         * Given a bound set containing {@code alpha == S} and {@code alpha == T}
+         * perform {@code S == T} (which could lead to new bounds).
+         */
+        CROSS_EQ_EQ() {
+            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
+                Infer infer = inferenceContext.infer();
+                for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
+                    for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
+                        if (b1 != b2) {
+                            infer.types.isSameType(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
                         }
                     }
                 }

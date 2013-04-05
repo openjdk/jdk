@@ -31,5 +31,7 @@ public class Foo {
     }
 
     public Foo() {
+        // compact3
+        java.lang.management.ManagementFactory.getRuntimeMXBean();
     }
 }
