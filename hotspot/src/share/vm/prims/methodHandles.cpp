@@ -105,14 +105,15 @@ void MethodHandles::set_enabled(bool z) {
 
 // import java_lang_invoke_MemberName.*
 enum {
-  IS_METHOD      = java_lang_invoke_MemberName::MN_IS_METHOD,
-  IS_CONSTRUCTOR = java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR,
-  IS_FIELD       = java_lang_invoke_MemberName::MN_IS_FIELD,
-  IS_TYPE        = java_lang_invoke_MemberName::MN_IS_TYPE,
+  IS_METHOD            = java_lang_invoke_MemberName::MN_IS_METHOD,
+  IS_CONSTRUCTOR       = java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR,
+  IS_FIELD             = java_lang_invoke_MemberName::MN_IS_FIELD,
+  IS_TYPE              = java_lang_invoke_MemberName::MN_IS_TYPE,
+  CALLER_SENSITIVE     = java_lang_invoke_MemberName::MN_CALLER_SENSITIVE,
   REFERENCE_KIND_SHIFT = java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT,
   REFERENCE_KIND_MASK  = java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK,
-  SEARCH_SUPERCLASSES = java_lang_invoke_MemberName::MN_SEARCH_SUPERCLASSES,
-  SEARCH_INTERFACES   = java_lang_invoke_MemberName::MN_SEARCH_INTERFACES,
+  SEARCH_SUPERCLASSES  = java_lang_invoke_MemberName::MN_SEARCH_SUPERCLASSES,
+  SEARCH_INTERFACES    = java_lang_invoke_MemberName::MN_SEARCH_INTERFACES,
   ALL_KINDS      = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE
 };
 
@@ -207,10 +208,15 @@ oop MethodHandles::init_method_MemberName(oop mname_oop, Method* m, bool do_disp
     vmindex = m->vtable_index();
   }
 
-  java_lang_invoke_MemberName::set_flags(mname_oop,    flags);
+  // @CallerSensitive annotation detected
+  if (m->caller_sensitive()) {
+    flags |= CALLER_SENSITIVE;
+  }
+
+  java_lang_invoke_MemberName::set_flags(   mname_oop, flags);
   java_lang_invoke_MemberName::set_vmtarget(mname_oop, m);
-  java_lang_invoke_MemberName::set_vmindex(mname_oop,  vmindex);   // vtable/itable index
-  java_lang_invoke_MemberName::set_clazz(mname_oop,    receiver_limit->java_mirror());
+  java_lang_invoke_MemberName::set_vmindex( mname_oop, vmindex);   // vtable/itable index
+  java_lang_invoke_MemberName::set_clazz(   mname_oop, receiver_limit->java_mirror());
   // Note:  name and type can be lazily computed by resolve_MemberName,
   // if Java code needs them as resolved String and MethodType objects.
   // The clazz must be eagerly stored, because it provides a GC
@@ -940,6 +946,7 @@ JVM_END
     template(java_lang_invoke_MemberName,MN_IS_CONSTRUCTOR) \
     template(java_lang_invoke_MemberName,MN_IS_FIELD) \
     template(java_lang_invoke_MemberName,MN_IS_TYPE) \
+    template(java_lang_invoke_MemberName,MN_CALLER_SENSITIVE) \
     template(java_lang_invoke_MemberName,MN_SEARCH_SUPERCLASSES) \
     template(java_lang_invoke_MemberName,MN_SEARCH_INTERFACES) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_SHIFT) \

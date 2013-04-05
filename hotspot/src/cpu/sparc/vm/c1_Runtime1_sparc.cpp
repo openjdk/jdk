@@ -987,6 +987,25 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 #endif // INCLUDE_ALL_GCS
 
+    case predicate_failed_trap_id:
+      {
+        __ set_info("predicate_failed_trap", dont_gc_arguments);
+        OopMap* oop_map = save_live_registers(sasm);
+
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, predicate_failed_trap));
+
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, oop_map);
+
+        DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
+        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        restore_live_registers(sasm);
+        __ restore();
+        __ br(Assembler::always, false, Assembler::pt, deopt_blob->unpack_with_reexecution(), relocInfo::runtime_call_type);
+        __ delayed()->nop();
+      }
+      break;
+
     default:
       { __ set_info("unimplemented entry", dont_gc_arguments);
         __ save_frame(0);
