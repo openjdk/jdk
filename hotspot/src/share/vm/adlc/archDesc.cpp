@@ -832,6 +832,7 @@ static const char *getRegMask(const char *reg_class_name) {
     int         length  = (int)strlen(rc_name) + (int)strlen(mask) + 5;
     char       *regMask = new char[length];
     sprintf(regMask,"%s%s()", rc_name, mask);
+    delete[] rc_name;
     return regMask;
   }
 }
