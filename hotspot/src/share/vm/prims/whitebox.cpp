@@ -118,45 +118,46 @@ WB_END
 #endif // INCLUDE_ALL_GCS
 
 #ifdef INCLUDE_NMT
-// Keep track of the 3 allocations in NMTAllocTest so we can free them later
-// on and verify that they're not visible anymore
-static void* nmtMtTest1 = NULL, *nmtMtTest2 = NULL, *nmtMtTest3 = NULL;
-
 // Alloc memory using the test memory type so that we can use that to see if
 // NMT picks it up correctly
-WB_ENTRY(jboolean, WB_NMTAllocTest(JNIEnv* env))
-  void *mem;
+WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
+  jlong addr = 0;
 
-  if (!MemTracker::is_on() || MemTracker::shutdown_in_progress()) {
-    return false;
+  if (MemTracker::is_on() && !MemTracker::shutdown_in_progress()) {
+    addr = (jlong)(uintptr_t)os::malloc(size, mtTest);
   }
 
-  // Allocate 2 * 128k + 256k + 1024k and free the 1024k one to make sure we track
-  // everything correctly. Total should be 512k held alive.
-  nmtMtTest1 = os::malloc(128 * 1024, mtTest);
-  mem = os::malloc(1024 * 1024, mtTest);
-  nmtMtTest2 = os::malloc(256 * 1024, mtTest);
-  os::free(mem, mtTest);
-  nmtMtTest3 = os::malloc(128 * 1024, mtTest);
-
-  return true;
+  return addr;
 WB_END
 
 // Free the memory allocated by NMTAllocTest
-WB_ENTRY(jboolean, WB_NMTFreeTestMemory(JNIEnv* env))
+WB_ENTRY(void, WB_NMTFree(JNIEnv* env, jobject o, jlong mem))
+  os::free((void*)(uintptr_t)mem, mtTest);
+WB_END
 
-  if (nmtMtTest1 == NULL || nmtMtTest2 == NULL || nmtMtTest3 == NULL) {
-    return false;
+WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
+  jlong addr = 0;
+
+  if (MemTracker::is_on() && !MemTracker::shutdown_in_progress()) {
+    addr = (jlong)(uintptr_t)os::reserve_memory(size);
+    MemTracker::record_virtual_memory_type((address)addr, mtTest);
   }
 
-  os::free(nmtMtTest1, mtTest);
-  nmtMtTest1 = NULL;
-  os::free(nmtMtTest2, mtTest);
-  nmtMtTest2 = NULL;
-  os::free(nmtMtTest3, mtTest);
-  nmtMtTest3 = NULL;
+  return addr;
+WB_END
 
-  return true;
+
+WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
+  os::commit_memory((char *)(uintptr_t)addr, size);
+  MemTracker::record_virtual_memory_type((address)(uintptr_t)addr, mtTest);
+WB_END
+
+WB_ENTRY(void, WB_NMTUncommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
+  os::uncommit_memory((char *)(uintptr_t)addr, size);
+WB_END
+
+WB_ENTRY(void, WB_NMTReleaseMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
+  os::release_memory((char *)(uintptr_t)addr, size);
 WB_END
 
 // Block until the current generation of NMT data to be merged, used to reliably test the NMT feature
@@ -340,9 +341,13 @@ static JNINativeMethod methods[] = {
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
 #endif // INCLUDE_ALL_GCS
 #ifdef INCLUDE_NMT
-  {CC"NMTAllocTest",       CC"()Z",                   (void*)&WB_NMTAllocTest      },
-  {CC"NMTFreeTestMemory",  CC"()Z",                   (void*)&WB_NMTFreeTestMemory },
-  {CC"NMTWaitForDataMerge",CC"()Z",                   (void*)&WB_NMTWaitForDataMerge},
+  {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
+  {CC"NMTFree",             CC"(J)V",                 (void*)&WB_NMTFree            },
+  {CC"NMTReserveMemory",    CC"(J)J",                 (void*)&WB_NMTReserveMemory   },
+  {CC"NMTCommitMemory",     CC"(JJ)V",                (void*)&WB_NMTCommitMemory    },
+  {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
+  {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
+  {CC"NMTWaitForDataMerge", CC"()Z",                  (void*)&WB_NMTWaitForDataMerge},
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Method;)I",
