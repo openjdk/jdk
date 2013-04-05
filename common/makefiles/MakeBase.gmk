@@ -374,15 +374,24 @@ endef
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
 # On Solaris, if the target is a symlink and exists, cp won't overwrite.
+# Cp has to operate in recursive mode to allow for -P flag, to preserve soft links. If the
+# name of the target file differs from the source file, rename after copy.
 define install-file
 	$(MKDIR) -p $(@D)
 	$(RM) '$@'
 	$(CP) -f -r -P '$<' '$(@D)'
+	if [ "$(@F)" != "$(<F)" ]; then $(MV) '$(@D)/$(<F)' '$@'; fi
 endef
 else ifeq ($(OPENJDK_TARGET_OS),macosx)
+# On mac, extended attributes sometimes creep into the source files, which may later 
+# cause the creation of ._* files which confuses testing. Clear these with xattr if
+# set. Some files get their write permissions removed after being copied to the 
+# output dir. When these are copied again to images, xattr would fail. By only clearing
+# attributes when they are present, failing on this is avoided.
 define install-file
 	$(MKDIR) -p $(@D)
-	$(CP) -fpRP '$<' '$@'
+	$(CP) -fRP '$<' '$@'
+	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
 endef
 else
 define install-file
