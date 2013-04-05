@@ -278,7 +278,7 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
      * upcall from native code
      */
 
-    private void dragEnter(final int targetActions,
+    protected void dragEnter(final int targetActions,
                            final int modifiers,
                            final int x, final int y) {
         postDragSourceDragEvent(targetActions, modifiers, x, y, DISPATCH_ENTER);
@@ -356,10 +356,6 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
 
     public static void setDragDropInProgress(boolean b)
       throws InvalidDnDOperationException {
-        if (dragDropInProgress == b) {
-            throw new InvalidDnDOperationException(getExceptionMessage(b));
-        }
-
         synchronized (SunDragSourceContextPeer.class) {
             if (dragDropInProgress == b) {
                 throw new InvalidDnDOperationException(getExceptionMessage(b));
