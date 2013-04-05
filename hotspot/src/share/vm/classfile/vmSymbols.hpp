@@ -94,6 +94,7 @@
   template(java_lang_SecurityManager,                 "java/lang/SecurityManager")                \
   template(java_security_AccessControlContext,        "java/security/AccessControlContext")       \
   template(java_security_ProtectionDomain,            "java/security/ProtectionDomain")           \
+  template(impliesCreateAccessControlContext_name,    "impliesCreateAccessControlContext")        \
   template(java_io_OutputStream,                      "java/io/OutputStream")                     \
   template(java_io_Reader,                            "java/io/Reader")                           \
   template(java_io_BufferedReader,                    "java/io/BufferedReader")                   \
@@ -346,6 +347,7 @@
   template(contextClassLoader_name,                   "contextClassLoader")                       \
   template(inheritedAccessControlContext_name,        "inheritedAccessControlContext")            \
   template(isPrivileged_name,                         "isPrivileged")                             \
+  template(isAuthorized_name,                         "isAuthorized")                             \
   template(getClassContext_name,                      "getClassContext")                          \
   template(wait_name,                                 "wait")                                     \
   template(checkPackageAccess_name,                   "checkPackageAccess")                       \

@@ -1144,6 +1144,56 @@ JVM_ENTRY(void, JVM_SetProtectionDomain(JNIEnv *env, jclass cls, jobject protect
   }
 JVM_END
 
+static bool is_authorized(Handle context, instanceKlassHandle klass, TRAPS) {
+  // If there is a security manager and protection domain, check the access
+  // in the protection domain, otherwise it is authorized.
+  if (java_lang_System::has_security_manager()) {
+
+    // For bootstrapping, if pd implies method isn't in the JDK, allow
+    // this context to revert to older behavior.
+    // In this case the isAuthorized field in AccessControlContext is also not
+    // present.
+    if (Universe::protection_domain_implies_method() == NULL) {
+      return true;
+    }
+
+    // Whitelist certain access control contexts
+    if (java_security_AccessControlContext::is_authorized(context)) {
+      return true;
+    }
+
+    oop prot = klass->protection_domain();
+    if (prot != NULL) {
+      // Call pd.implies(new SecurityPermission("createAccessControlContext"))
+      // in the new wrapper.
+      methodHandle m(THREAD, Universe::protection_domain_implies_method());
+      Handle h_prot(THREAD, prot);
+      JavaValue result(T_BOOLEAN);
+      JavaCallArguments args(h_prot);
+      JavaCalls::call(&result, m, &args, CHECK_false);
+      return (result.get_jboolean() != 0);
+    }
+  }
+  return true;
+}
+
+// Create an AccessControlContext with a protection domain with null codesource
+// and null permissions - which gives no permissions.
+oop create_dummy_access_control_context(TRAPS) {
+  InstanceKlass* pd_klass = InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass());
+  // new ProtectionDomain(null,null);
+  oop null_protection_domain = pd_klass->allocate_instance(CHECK_NULL);
+  Handle null_pd(THREAD, null_protection_domain);
+
+  // new ProtectionDomain[] {pd};
+  objArrayOop context = oopFactory::new_objArray(pd_klass, 1, CHECK_NULL);
+  context->obj_at_put(0, null_pd());
+
+  // new AccessControlContext(new ProtectionDomain[] {pd})
+  objArrayHandle h_context(THREAD, context);
+  oop result = java_security_AccessControlContext::create(h_context, false, Handle(), CHECK_NULL);
+  return result;
+}
 
 JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, jobject context, jboolean wrapException))
   JVMWrapper("JVM_DoPrivileged");
@@ -1152,8 +1202,29 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
     THROW_MSG_0(vmSymbols::java_lang_NullPointerException(), "Null action");
   }
 
-  // Stack allocated list of privileged stack elements
-  PrivilegedElement pi;
+  // Compute the frame initiating the do privileged operation and setup the privileged stack
+  vframeStream vfst(thread);
+  vfst.security_get_caller_frame(1);
+
+  if (vfst.at_end()) {
+    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "no caller?");
+  }
+
+  Method* method        = vfst.method();
+  instanceKlassHandle klass (THREAD, method->method_holder());
+
+  // Check that action object understands "Object run()"
+  Handle h_context;
+  if (context != NULL) {
+    h_context = Handle(THREAD, JNIHandles::resolve(context));
+    bool authorized = is_authorized(h_context, klass, CHECK_NULL);
+    if (!authorized) {
+      // Create an unprivileged access control object and call it's run function
+      // instead.
+      oop noprivs = create_dummy_access_control_context(CHECK_NULL);
+      h_context = Handle(THREAD, noprivs);
+    }
+  }
 
   // Check that action object understands "Object run()"
   Handle object (THREAD, JNIHandles::resolve(action));
@@ -1167,12 +1238,10 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "No run method");
   }
 
-  // Compute the frame initiating the do privileged operation and setup the privileged stack
-  vframeStream vfst(thread);
-  vfst.security_get_caller_frame(1);
-
+  // Stack allocated list of privileged stack elements
+  PrivilegedElement pi;
   if (!vfst.at_end()) {
-    pi.initialize(&vfst, JNIHandles::resolve(context), thread->privileged_stack_top(), CHECK_NULL);
+    pi.initialize(&vfst, h_context(), thread->privileged_stack_top(), CHECK_NULL);
     thread->set_privileged_stack_top(&pi);
   }
 
