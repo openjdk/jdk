@@ -328,7 +328,7 @@ $(ECHO) $1/$(HGTIP_FILENAME)
 endef
 
 define SetupLogging
-    ifeq ($$(LOG), trace)
+    ifeq ($$(LOG_LEVEL),trace)
         # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
         # For each target executed, will print
         # Building <TARGET> (from <FIRST PREREQUISITE>) (<ALL NEWER PREREQUISITES> newer)
@@ -339,17 +339,17 @@ define SetupLogging
     endif
     # Never remove warning messages; this is just for completeness
     LOG_WARN= 
-    ifneq ($$(findstring $$(LOG),info debug trace),)
+    ifneq ($$(findstring $$(LOG_LEVEL),info debug trace),)
         LOG_INFO=
     else
         LOG_INFO=> /dev/null
     endif
-    ifneq ($$(findstring $$(LOG),debug trace),)
+    ifneq ($$(findstring $$(LOG_LEVEL),debug trace),)
         LOG_DEBUG=
     else
         LOG_DEBUG=> /dev/null
     endif
-    ifneq ($$(findstring $$(LOG),trace),)
+    ifneq ($$(findstring $$(LOG_LEVEL),trace),)
         LOG_TRACE=
     else
         LOG_TRACE=> /dev/null
@@ -362,7 +362,7 @@ $(eval $(call SetupLogging))
 # This is to be called by all SetupFoo macros
 define LogSetupMacroEntry
     $(if $(26),$(error Internal makefile error: Too many arguments to LogSetupMacroEntry, please update MakeBase.gmk))
-    $(if $(findstring $(LOG),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
+    $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
 endef
 
 # Make directory without forking mkdir if not needed
@@ -374,15 +374,24 @@ endef
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
 # On Solaris, if the target is a symlink and exists, cp won't overwrite.
+# Cp has to operate in recursive mode to allow for -P flag, to preserve soft links. If the
+# name of the target file differs from the source file, rename after copy.
 define install-file
 	$(MKDIR) -p $(@D)
 	$(RM) '$@'
 	$(CP) -f -r -P '$<' '$(@D)'
+	if [ "$(@F)" != "$(<F)" ]; then $(MV) '$(@D)/$(<F)' '$@'; fi
 endef
 else ifeq ($(OPENJDK_TARGET_OS),macosx)
+# On mac, extended attributes sometimes creep into the source files, which may later 
+# cause the creation of ._* files which confuses testing. Clear these with xattr if
+# set. Some files get their write permissions removed after being copied to the 
+# output dir. When these are copied again to images, xattr would fail. By only clearing
+# attributes when they are present, failing on this is avoided.
 define install-file
 	$(MKDIR) -p $(@D)
-	$(CP) -fpRP '$<' '$@'
+	$(CP) -fRP '$<' '$@'
+	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
 endef
 else
 define install-file

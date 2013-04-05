@@ -102,7 +102,6 @@ class IdealKit: public StackObj {
   Compile * const C;
   PhaseGVN &_gvn;
   GrowableArray<Node*>* _pending_cvstates; // stack of cvstates
-  GrowableArray<Node*>* _delay_transform;  // delay invoking gvn.transform until drain
   Node* _cvstate;                          // current cvstate (control, memory and variables)
   uint _var_ct;                            // number of variables
   bool _delay_all_transforms;              // flag forcing all transforms to be delayed
@@ -121,7 +120,7 @@ class IdealKit: public StackObj {
   void clear(Node* m);                     // clear a cvstate
   void stop() { clear(_cvstate); }         // clear current cvstate
   Node* delay_transform(Node* n);
-  Node* transform(Node* n);                // gvn.transform or push node on delay list
+  Node* transform(Node* n);                // gvn.transform or skip it
   Node* promote_to_phi(Node* n, Node* reg);// Promote "n" to a phi on region "reg"
   bool was_promoted_to_phi(Node* n, Node* reg) {
     return (n->is_Phi() && n->in(0) == reg);
@@ -146,7 +145,6 @@ class IdealKit: public StackObj {
   IdealKit(GraphKit* gkit, bool delay_all_transforms = false, bool has_declarations = false);
   ~IdealKit() {
     stop();
-    drain_delay_transform();
   }
   void sync_kit(GraphKit* gkit);
 
@@ -173,7 +171,6 @@ class IdealKit: public StackObj {
   void bind(Node* lab);
   void goto_(Node* lab, bool bind = false);
   void declarations_done();
-  void drain_delay_transform();
 
   Node* IfTrue(IfNode* iff)  { return transform(new (C) IfTrueNode(iff)); }
   Node* IfFalse(IfNode* iff) { return transform(new (C) IfFalseNode(iff)); }
@@ -198,7 +195,11 @@ class IdealKit: public StackObj {
   Node* thread()  {  return gvn().transform(new (C) ThreadLocalNode()); }
 
   // Pointers
-  Node* AddP(Node *base, Node *ptr, Node *off) { return transform(new (C) AddPNode(base, ptr, off)); }
+
+  // Raw address should be transformed regardless 'delay_transform' flag
+  // to produce canonical form CastX2P(offset).
+  Node* AddP(Node *base, Node *ptr, Node *off) { return _gvn.transform(new (C) AddPNode(base, ptr, off)); }
+
   Node* CmpP(Node* l, Node* r) { return transform(new (C) CmpPNode(l, r)); }
 #ifdef _LP64
   Node* XorX(Node* l, Node* r) { return transform(new (C) XorLNode(l, r)); }
@@ -208,8 +209,6 @@ class IdealKit: public StackObj {
   Node* URShiftX(Node* l, Node* r) { return transform(new (C) URShiftXNode(l, r)); }
   Node* ConX(jint k) { return (Node*)gvn().MakeConX(k); }
   Node* CastPX(Node* ctl, Node* p) { return transform(new (C) CastP2XNode(ctl, p)); }
-  // Add a fixed offset to a pointer
-  Node* basic_plus_adr(Node* base, Node* ptr, intptr_t offset);
 
   // Memory operations
 
