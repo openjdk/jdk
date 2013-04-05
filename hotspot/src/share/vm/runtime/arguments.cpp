@@ -2006,11 +2006,12 @@ bool Arguments::check_vm_args_consistency() {
   // than just disable the lock verification. This will be fixed under
   // bug 4788986.
   if (UseConcMarkSweepGC && FLSVerifyAllHeapReferences) {
-    if (VerifyGCStartAt == 0) {
+    if (VerifyDuringStartup) {
       warning("Heap verification at start-up disabled "
               "(due to current incompatibility with FLSVerifyAllHeapReferences)");
-      VerifyGCStartAt = 1;      // Disable verification at start-up
+      VerifyDuringStartup = false; // Disable verification at start-up
     }
+
     if (VerifyBeforeExit) {
       warning("Heap verification at shutdown disabled "
               "(due to current incompatibility with FLSVerifyAllHeapReferences)");
