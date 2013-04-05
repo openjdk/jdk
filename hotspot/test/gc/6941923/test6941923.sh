@@ -5,37 +5,24 @@
 ## @author yqi 
 ## @run shell test6941923.sh
 ##
+## some tests require path to find test source dir
+if [ "${TESTSRC}" = "" ]
+then
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
+fi
+echo "TESTSRC=${TESTSRC}"
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 ## skip on windows
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux | Darwin )
-    NULL=/dev/null
-    PS=":"
-    FS="/"
-    ;;
   Windows_* | CYGWIN_* )
     echo "Test skipped for Windows"
     exit 0 
     ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
 esac
-
-if [ "${JAVA_HOME}" = "" ]
-then
-  echo "JAVA_HOME not set"
-  exit 0
-fi
-
-$JAVA_HOME/bin/java ${TESTVMOPTS} -version > $NULL 2>&1
-
-if [ $? != 0 ]; then
-  echo "Wrong JAVA_HOME? JAVA_HOME: $JAVA_HOME"
-  exit $?
-fi
 
 # create a small test case
 testname="Test"
@@ -96,10 +83,10 @@ msgsuccess="succeeded"
 msgfail="failed"
 gclogsize="16K"
 filesize=$((16*1024))
-$JAVA_HOME/bin/javac ${testname}.java > $NULL 2>&1
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${testname}.java > $NULL 2>&1
 
 if [ $? != 0 ]; then
-  echo "$JAVA_HOME/bin/javac ${testname}.java $fail"
+  echo "${COMPILEJAVA}/bin/javac ${testname}.java $fail"
   exit -1
 fi
 
@@ -119,7 +106,7 @@ fi
 
 options="-Xloggc:$logfile -XX:+UseConcMarkSweepGC -XX:+PrintGC -XX:+PrintGCDetails -XX:+UseGCLogFileRotation  -XX:NumberOfGCLogFiles=1 -XX:GCLogFileSize=$gclogsize"
 echo "Test gc log rotation in same file, wait for $tts minutes ...."
-$JAVA_HOME/bin/java ${TESTVMOPTS} $options $testname $tts
+${TESTJAVA}/bin/java $options $testname $tts
 if [ $? != 0 ]; then
   echo "$msgfail"
   exit -1
@@ -148,7 +135,7 @@ fi
 numoffiles=3
 options="-Xloggc:$logfile -XX:+UseConcMarkSweepGC -XX:+PrintGC -XX:+PrintGCDetails -XX:+UseGCLogFileRotation  -XX:NumberOfGCLogFiles=$numoffiles -XX:GCLogFileSize=$gclogsize"
 echo "Test gc log rotation in $numoffiles files, wait for $tts minutes ...."
-$JAVA_HOME/bin/java ${TESTVMOPTS} $options $testname $tts
+${TESTJAVA}/bin/java $options $testname $tts
 if [ $? != 0 ]; then
   echo "$msgfail"
   exit -1

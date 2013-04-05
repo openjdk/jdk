@@ -22,26 +22,15 @@
 # questions.
 # 
 # 
-
+## some tests require path to find test source dir
 if [ "${TESTSRC}" = "" ]
 then
-  echo "TESTSRC not set.  Test cannot execute.  Failed."
-  exit 1
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
 fi
 echo "TESTSRC=${TESTSRC}"
-if [ "${TESTJAVA}" = "" ]
-then
-  echo "TESTJAVA not set.  Test cannot execute.  Failed."
-  exit 1
-fi
-echo "TESTJAVA=${TESTJAVA}"
-if [ "${TESTCLASSES}" = "" ]
-then
-  echo "TESTCLASSES not set.  Test cannot execute.  Failed."
-  exit 1
-fi
-echo "TESTCLASSES=${TESTCLASSES}"
-echo "CLASSPATH=${CLASSPATH}"
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 # Amount of physical memory in megabytes
 MEM=0
@@ -87,7 +76,7 @@ set -x
 cp ${TESTSRC}/Test7005594.java .
 cp ${TESTSRC}/Test7005594.sh .
 
-${TESTJAVA}/bin/javac -d . Test7005594.java
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test7005594.java
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} -Xms1600m -XX:+IgnoreUnrecognizedVMOptions -XX:-ZapUnusedHeapArea -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
 

@@ -28,7 +28,7 @@
  * @run
  */
 
-var t = new Packages.jdk.nashorn.internal.runtime.Nashorn401TestSubject();
+var t = new Packages.jdk.nashorn.test.models.Nashorn401TestSubject();
 
 print(t.method2(10));
 print(t.method2(10.2));
