@@ -3445,7 +3445,6 @@ void GraphKit::sync_kit(IdealKit& ideal) {
 
 void GraphKit::final_sync(IdealKit& ideal) {
   // Final sync IdealKit and graphKit.
-  __ drain_delay_transform();
   sync_kit(ideal);
 }
 
