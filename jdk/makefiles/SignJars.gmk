@@ -79,8 +79,7 @@ check-keystore:
 	fi
 
 $(JCE_OUTPUTDIR)/%: $(IMAGES_OUTPUTDIR)/unsigned/%
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 	$(JARSIGNER) -keystore $(SIGNING_KEYSTORE) \
 	    $@ $(SIGNING_ALIAS) < $(SIGNING_PASSPHRASE)
 	@$(PRINTF) "\nJar codesigning finished.\n"

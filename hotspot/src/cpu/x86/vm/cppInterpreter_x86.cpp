@@ -1299,25 +1299,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(rdx);
 #endif // _LP64
 
-  // Either restore the MXCSR register after returning from the JNI Call
-  // or verify that it wasn't changed.
-  if (VM_Version::supports_sse()) {
-    if (RestoreMXCSROnJNICalls) {
-      __ ldmxcsr(ExternalAddress(StubRoutines::addr_mxcsr_std()));
-    }
-    else if (CheckJNICalls ) {
-      __ call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
-    }
-  }
-
-#ifndef _LP64
-  // Either restore the x87 floating pointer control word after returning
-  // from the JNI call or verify that it wasn't changed.
-  if (CheckJNICalls) {
-    __ call(RuntimeAddress(StubRoutines::x86::verify_fpu_cntrl_wrd_entry()));
-  }
-#endif // _LP64
-
+  // Verify or restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni();
 
   // change thread state
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
