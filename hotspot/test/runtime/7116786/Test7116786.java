@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,9 +338,12 @@ class VerifyErrorCases {
                  "invalid constant pool index in ldc",
                  "Invalid index in ldc"),
 
-        new Case("case58", "verifier.cpp", true, "verify_switch",
+        /* No longer a valid test case for bytecode version >= 51. Nonzero
+         * padding bytes are permitted with lookupswitch and tableswitch
+         * bytecodes as of JVMS 3d edition */
+        new Case("case58", "verifier.cpp", false, "verify_switch",
                  "bad switch padding",
-                 "Nonzero padding byte in lookswitch or tableswitch"),
+                 "Nonzero padding byte in lookupswitch or tableswitch"),
 
         new Case("case59", "verifier.cpp", true, "verify_switch",
                  "tableswitch low is greater than high",

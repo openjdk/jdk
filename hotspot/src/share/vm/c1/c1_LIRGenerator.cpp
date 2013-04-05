@@ -403,6 +403,10 @@ void LIRGenerator::walk(Value instr) {
 CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ignore_xhandler) {
   assert(state != NULL, "state must be defined");
 
+#ifndef PRODUCT
+  state->verify();
+#endif
+
   ValueStack* s = state;
   for_each_state(s) {
     if (s->kind() == ValueStack::EmptyExceptionState) {
@@ -453,7 +457,7 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ig
     }
   }
 
-  return new CodeEmitInfo(state, ignore_xhandler ? NULL : x->exception_handlers());
+  return new CodeEmitInfo(state, ignore_xhandler ? NULL : x->exception_handlers(), x->check_flag(Instruction::DeoptimizeOnException));
 }
 
 
@@ -1792,11 +1796,18 @@ void LIRGenerator::do_LoadField(LoadField* x) {
   }
 #endif
 
+  bool stress_deopt = StressLoopInvariantCodeMotion && info && info->deoptimize_on_exception();
   if (x->needs_null_check() &&
       (needs_patching ||
-       MacroAssembler::needs_explicit_null_check(x->offset()))) {
+       MacroAssembler::needs_explicit_null_check(x->offset()) ||
+       stress_deopt)) {
+    LIR_Opr obj = object.result();
+    if (stress_deopt) {
+      obj = new_register(T_OBJECT);
+      __ move(LIR_OprFact::oopConst(NULL), obj);
+    }
     // emit an explicit null check because the offset is too large
-    __ null_check(object.result(), new CodeEmitInfo(info));
+    __ null_check(obj, new CodeEmitInfo(info));
   }
 
   LIR_Opr reg = rlock_result(x, field_type);
@@ -1873,6 +1884,11 @@ void LIRGenerator::do_ArrayLength(ArrayLength* x) {
     } else {
       info = state_for(nc);
     }
+    if (StressLoopInvariantCodeMotion && info->deoptimize_on_exception()) {
+      LIR_Opr obj = new_register(T_OBJECT);
+      __ move(LIR_OprFact::oopConst(NULL), obj);
+      __ null_check(obj, new CodeEmitInfo(info));
+    }
   }
   __ load(new LIR_Address(array.result(), arrayOopDesc::length_offset_in_bytes(), T_INT), reg, info, lir_patch_none);
 }
@@ -1883,14 +1899,11 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
   LIRItem array(x->array(), this);
   LIRItem index(x->index(), this);
   LIRItem length(this);
-  bool needs_range_check = true;
+  bool needs_range_check = x->compute_needs_range_check();
 
-  if (use_length) {
-    needs_range_check = x->compute_needs_range_check();
-    if (needs_range_check) {
-      length.set_instruction(x->length());
-      length.load_item();
-    }
+  if (use_length && needs_range_check) {
+    length.set_instruction(x->length());
+    length.load_item();
   }
 
   array.load_item();
@@ -1910,13 +1923,20 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     } else {
       null_check_info = range_check_info;
     }
+    if (StressLoopInvariantCodeMotion && null_check_info->deoptimize_on_exception()) {
+      LIR_Opr obj = new_register(T_OBJECT);
+      __ move(LIR_OprFact::oopConst(NULL), obj);
+      __ null_check(obj, new CodeEmitInfo(null_check_info));
+    }
   }
 
   // emit array address setup early so it schedules better
   LIR_Address* array_addr = emit_array_address(array.result(), index.result(), x->elt_type(), false);
 
   if (GenerateRangeChecks && needs_range_check) {
-    if (use_length) {
+    if (StressLoopInvariantCodeMotion && range_check_info->deoptimize_on_exception()) {
+      __ branch(lir_cond_always, T_ILLEGAL, new RangeCheckStub(range_check_info, index.result()));
+    } else if (use_length) {
       // TODO: use a (modified) version of array_range_check that does not require a
       //       constant length to be loaded to a register
       __ cmp(lir_cond_belowEqual, length.result(), index.result());
@@ -2634,7 +2654,7 @@ void LIRGenerator::do_Base(Base* x) {
       LIR_Opr lock = new_register(T_INT);
       __ load_stack_address_monitor(0, lock);
 
-      CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL);
+      CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL, x->check_flag(Instruction::DeoptimizeOnException));
       CodeStub* slow_path = new MonitorEnterStub(obj, lock, info);
 
       // receiver is guaranteed non-NULL so don't need CodeEmitInfo
@@ -2644,7 +2664,7 @@ void LIRGenerator::do_Base(Base* x) {
 
   // increment invocation counters if needed
   if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
-    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL);
+    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL, false);
     increment_invocation_counter(info);
   }
 
@@ -3101,6 +3121,95 @@ void LIRGenerator::do_RuntimeCall(RuntimeCall* x) {
     __ move(result, rlock_result(x));
   }
 }
+
+void LIRGenerator::do_Assert(Assert *x) {
+#ifdef ASSERT
+  ValueTag tag = x->x()->type()->tag();
+  If::Condition cond = x->cond();
+
+  LIRItem xitem(x->x(), this);
+  LIRItem yitem(x->y(), this);
+  LIRItem* xin = &xitem;
+  LIRItem* yin = &yitem;
+
+  assert(tag == intTag, "Only integer assertions are valid!");
+
+  xin->load_item();
+  yin->dont_load_item();
+
+  set_no_result(x);
+
+  LIR_Opr left = xin->result();
+  LIR_Opr right = yin->result();
+
+  __ lir_assert(lir_cond(x->cond()), left, right, x->message(), true);
+#endif
+}
+
+
+void LIRGenerator::do_RangeCheckPredicate(RangeCheckPredicate *x) {
+
+
+  Instruction *a = x->x();
+  Instruction *b = x->y();
+  if (!a || StressRangeCheckElimination) {
+    assert(!b || StressRangeCheckElimination, "B must also be null");
+
+    CodeEmitInfo *info = state_for(x, x->state());
+    CodeStub* stub = new PredicateFailedStub(info);
+
+    __ jump(stub);
+  } else if (a->type()->as_IntConstant() && b->type()->as_IntConstant()) {
+    int a_int = a->type()->as_IntConstant()->value();
+    int b_int = b->type()->as_IntConstant()->value();
+
+    bool ok = false;
+
+    switch(x->cond()) {
+      case Instruction::eql: ok = (a_int == b_int); break;
+      case Instruction::neq: ok = (a_int != b_int); break;
+      case Instruction::lss: ok = (a_int < b_int); break;
+      case Instruction::leq: ok = (a_int <= b_int); break;
+      case Instruction::gtr: ok = (a_int > b_int); break;
+      case Instruction::geq: ok = (a_int >= b_int); break;
+      case Instruction::aeq: ok = ((unsigned int)a_int >= (unsigned int)b_int); break;
+      case Instruction::beq: ok = ((unsigned int)a_int <= (unsigned int)b_int); break;
+      default: ShouldNotReachHere();
+    }
+
+    if (ok) {
+
+      CodeEmitInfo *info = state_for(x, x->state());
+      CodeStub* stub = new PredicateFailedStub(info);
+
+      __ jump(stub);
+    }
+  } else {
+
+    ValueTag tag = x->x()->type()->tag();
+    If::Condition cond = x->cond();
+    LIRItem xitem(x->x(), this);
+    LIRItem yitem(x->y(), this);
+    LIRItem* xin = &xitem;
+    LIRItem* yin = &yitem;
+
+    assert(tag == intTag, "Only integer deoptimizations are valid!");
+
+    xin->load_item();
+    yin->dont_load_item();
+    set_no_result(x);
+
+    LIR_Opr left = xin->result();
+    LIR_Opr right = yin->result();
+
+    CodeEmitInfo *info = state_for(x, x->state());
+    CodeStub* stub = new PredicateFailedStub(info);
+
+    __ cmp(lir_cond(cond), left, right);
+    __ branch(lir_cond(cond), right->type(), stub);
+  }
+}
+
 
 LIR_Opr LIRGenerator::call_runtime(Value arg1, address entry, ValueType* result_type, CodeEmitInfo* info) {
   LIRItemList args(1);
