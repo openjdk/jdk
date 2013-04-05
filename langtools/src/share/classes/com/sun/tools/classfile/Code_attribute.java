@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.NoSuchElementException;
  *  deletion without notice.</b>
  */
 public class Code_attribute extends Attribute {
-    public class InvalidIndex extends AttributeException {
+    public static class InvalidIndex extends AttributeException {
         private static final long serialVersionUID = -8904527774589382802L;
         InvalidIndex(int index) {
             this.index = index;
@@ -143,7 +143,7 @@ public class Code_attribute extends Attribute {
     public final Exception_data[] exception_table;
     public final Attributes attributes;
 
-    public class Exception_data {
+    public static class Exception_data {
         Exception_data(ClassReader cr) throws IOException {
             start_pc = cr.readUnsignedShort();
             end_pc = cr.readUnsignedShort();

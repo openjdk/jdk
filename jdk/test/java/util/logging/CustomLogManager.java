@@ -43,6 +43,20 @@ public class CustomLogManager extends LogManager {
         INSTANCE = this;
     }
 
+    private boolean useParentHandlers(String loggerName) {
+        String s = props.getProperty(loggerName + ".useParentHandlers");
+        if (s == null)
+            return true;   // default is true
+
+        s = s.toLowerCase();
+        if (s.equals("true") || s.equals("1")) {
+           return true;
+        } else if (s.equals("false") || s.equals("0")) {
+           return false;
+        }
+        return true;
+    }
+
     public synchronized boolean addLogger(Logger logger) {
         String name = logger.getName();
         if (namedLoggers.containsKey(name)) {
@@ -56,6 +70,9 @@ public class CustomLogManager extends LogManager {
         // add handlers
         if (props.get(name + ".handlers") != null && logger.getHandlers().length == 0) {
             logger.addHandler(new CustomHandler());
+        }
+        if (!useParentHandlers(name)) {
+            logger.setUseParentHandlers(false);
         }
         // add parent loggers
         int ix = 1;
@@ -72,7 +89,10 @@ public class CustomLogManager extends LogManager {
                 //
                 // The test doesn't set the parent for simplicity.
                 if (!namedLoggers.containsKey(pname)) {
-                    Logger.getLogger(pname);
+                    Logger parent = Logger.getLogger(pname);
+                    if (!useParentHandlers(pname)) {
+                        parent.setUseParentHandlers(false);
+                    }
                 }
             }
             ix = ix2 + 1;
@@ -110,14 +130,16 @@ public class CustomLogManager extends LogManager {
         props.put("CustomLogManager$CustomHandler.level", "WARNING");
         props.put(".handlers", "CustomLogManager$CustomHandler");
         props.put("org.foo.bar.level", "SEVERE");
+        props.put("org.foo.bar.useParentHandlers", "true");
         props.put("org.foo.handlers", "CustomLogManager$CustomHandler");
+        props.put("org.foo.useParentHandlers", "false");
         props.put("org.openjdk.level", "SEVERE");
         props.put("org.openjdk.handlers", "CustomLogManager$CustomHandler");
         props.put("org.openjdk.core.level", "INFO");
+        props.put("org.openjdk.core.useParentHandlers", "false");
 
         return props;
     }
-
     public static void checkLogger(String name) {
         checkLogger(name, null);
     }
@@ -127,10 +149,11 @@ public class CustomLogManager extends LogManager {
         if (logger == null) {
             throw new RuntimeException("Logger \"" + name + "\" not exist");
         }
-        System.out.format("Logger \"%s\" level=%s handlers=%s resourcebundle=%s%n",
+        System.out.format("Logger \"%s\" level=%s handlers=%s resourcebundle=%s useParentHandlers=%s%n",
             name, logger.getLevel(),
             Arrays.toString(logger.getHandlers()),
-            logger.getResourceBundleName());
+            logger.getResourceBundleName(),
+            logger.getUseParentHandlers());
         String rb = logger.getResourceBundleName();
         if (rb != resourceBundleName && (rb == null || rb.equals(resourceBundleName))) {
             throw new RuntimeException("Logger \"" + name +
@@ -149,6 +172,13 @@ public class CustomLogManager extends LogManager {
             (hdl != null && handlers.length != 1)) {
             throw new RuntimeException("Logger \"" + name + "\" unexpected handler: " +
                 Arrays.toString(handlers));
+        }
+
+        String s = INSTANCE.getProperty(name + ".useParentHandlers");
+        boolean uph = (s != null && s.equals("false")) ? false : true;
+        if (logger.getUseParentHandlers() != uph) {
+            throw new RuntimeException("Logger \"" + name + "\" unexpected useParentHandlers: " +
+                logger.getUseParentHandlers());
         }
         checkParents(name);
     }

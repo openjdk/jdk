@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 import com.sun.beans.TypeResolver;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
@@ -199,6 +200,19 @@ public class TestTypeResolver {
         public Annotation[] getDeclaredAnnotations() {
             return null; // not used
         }
+
+        public AnnotatedType[] getAnnotatedBounds() {
+            return null; // not used
+        }
+
+        public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
+            return null; // not used
+        }
+
+        public <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotationClass) {
+            return null; // not used
+        }
+
     }
 
     private static class ClassTypeVariable extends TypeVariableImpl<Class<?>> {

@@ -49,7 +49,6 @@ import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
 import jdk.nashorn.internal.ir.PropertyNode;
-import jdk.nashorn.internal.ir.ReferenceNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SplitNode;
@@ -153,7 +152,7 @@ public abstract class NodeVisitor {
      * @param  accessNode the node
      * @return processed node, null if traversal should end, null if traversal should end
      */
-    public Node enter(final AccessNode accessNode) {
+    public Node enterAccessNode(final AccessNode accessNode) {
         return enterDefault(accessNode);
     }
 
@@ -163,7 +162,7 @@ public abstract class NodeVisitor {
      * @param  accessNode the node
      * @return processed node, null if traversal should end
      */
-    public Node leave(final AccessNode accessNode) {
+    public Node leaveAccessNode(final AccessNode accessNode) {
         return leaveDefault(accessNode);
     }
 
@@ -173,7 +172,7 @@ public abstract class NodeVisitor {
      * @param  block     the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final Block block) {
+    public Node enterBlock(final Block block) {
         return enterDefault(block);
     }
 
@@ -183,7 +182,7 @@ public abstract class NodeVisitor {
      * @param  block the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final Block block) {
+    public Node leaveBlock(final Block block) {
         return leaveDefault(block);
     }
 
@@ -193,7 +192,7 @@ public abstract class NodeVisitor {
      * @param  binaryNode  the node
      * @return processed   node
      */
-    public Node enter(final BinaryNode binaryNode) {
+    public Node enterBinaryNode(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -203,7 +202,7 @@ public abstract class NodeVisitor {
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final BinaryNode binaryNode) {
+    public Node leaveBinaryNode(final BinaryNode binaryNode) {
         return leaveDefault(binaryNode);
     }
 
@@ -213,7 +212,7 @@ public abstract class NodeVisitor {
      * @param  breakNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final BreakNode breakNode) {
+    public Node enterBreakNode(final BreakNode breakNode) {
         return enterDefault(breakNode);
     }
 
@@ -223,7 +222,7 @@ public abstract class NodeVisitor {
      * @param  breakNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final BreakNode breakNode) {
+    public Node leaveBreakNode(final BreakNode breakNode) {
         return leaveDefault(breakNode);
     }
 
@@ -233,7 +232,7 @@ public abstract class NodeVisitor {
      * @param  callNode  the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final CallNode callNode) {
+    public Node enterCallNode(final CallNode callNode) {
         return enterDefault(callNode);
     }
 
@@ -243,7 +242,7 @@ public abstract class NodeVisitor {
      * @param  callNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final CallNode callNode) {
+    public Node leaveCallNode(final CallNode callNode) {
         return leaveDefault(callNode);
     }
 
@@ -253,7 +252,7 @@ public abstract class NodeVisitor {
      * @param  caseNode  the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final CaseNode caseNode) {
+    public Node enterCaseNode(final CaseNode caseNode) {
         return enterDefault(caseNode);
     }
 
@@ -263,7 +262,7 @@ public abstract class NodeVisitor {
      * @param  caseNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final CaseNode caseNode) {
+    public Node leaveCaseNode(final CaseNode caseNode) {
         return leaveDefault(caseNode);
     }
 
@@ -273,7 +272,7 @@ public abstract class NodeVisitor {
      * @param  catchNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final CatchNode catchNode) {
+    public Node enterCatchNode(final CatchNode catchNode) {
         return enterDefault(catchNode);
     }
 
@@ -283,7 +282,7 @@ public abstract class NodeVisitor {
      * @param  catchNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final CatchNode catchNode) {
+    public Node leaveCatchNode(final CatchNode catchNode) {
         return leaveDefault(catchNode);
     }
 
@@ -293,7 +292,7 @@ public abstract class NodeVisitor {
      * @param  continueNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final ContinueNode continueNode) {
+    public Node enterContinueNode(final ContinueNode continueNode) {
         return enterDefault(continueNode);
     }
 
@@ -303,7 +302,7 @@ public abstract class NodeVisitor {
      * @param  continueNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final ContinueNode continueNode) {
+    public Node leaveContinueNode(final ContinueNode continueNode) {
         return leaveDefault(continueNode);
     }
 
@@ -313,7 +312,7 @@ public abstract class NodeVisitor {
      * @param  doWhileNode the node
      * @return processed   node
      */
-    public Node enter(final DoWhileNode doWhileNode) {
+    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
         return enterDefault(doWhileNode);
     }
 
@@ -323,7 +322,7 @@ public abstract class NodeVisitor {
      * @param  doWhileNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final DoWhileNode doWhileNode) {
+    public Node leaveDoWhileNode(final DoWhileNode doWhileNode) {
         return leaveDefault(doWhileNode);
     }
 
@@ -333,7 +332,7 @@ public abstract class NodeVisitor {
      * @param  emptyNode   the node
      * @return processed   node
      */
-    public Node enter(final EmptyNode emptyNode) {
+    public Node enterEmptyNode(final EmptyNode emptyNode) {
         return enterDefault(emptyNode);
     }
 
@@ -343,7 +342,7 @@ public abstract class NodeVisitor {
      * @param  emptyNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final EmptyNode emptyNode) {
+    public Node leaveEmptyNode(final EmptyNode emptyNode) {
         return leaveDefault(emptyNode);
     }
 
@@ -353,7 +352,7 @@ public abstract class NodeVisitor {
      * @param  executeNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final ExecuteNode executeNode) {
+    public Node enterExecuteNode(final ExecuteNode executeNode) {
         return enterDefault(executeNode);
     }
 
@@ -363,7 +362,7 @@ public abstract class NodeVisitor {
      * @param  executeNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final ExecuteNode executeNode) {
+    public Node leaveExecuteNode(final ExecuteNode executeNode) {
         return leaveDefault(executeNode);
     }
 
@@ -373,7 +372,7 @@ public abstract class NodeVisitor {
      * @param  forNode   the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final ForNode forNode) {
+    public Node enterForNode(final ForNode forNode) {
         return enterDefault(forNode);
     }
 
@@ -383,7 +382,7 @@ public abstract class NodeVisitor {
      * @param  forNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final ForNode forNode) {
+    public Node leaveForNode(final ForNode forNode) {
         return leaveDefault(forNode);
     }
 
@@ -393,7 +392,7 @@ public abstract class NodeVisitor {
      * @param  functionNode the node
      * @return processed    node
      */
-    public Node enter(final FunctionNode functionNode) {
+    public Node enterFunctionNode(final FunctionNode functionNode) {
         return enterDefault(functionNode);
     }
 
@@ -403,7 +402,7 @@ public abstract class NodeVisitor {
      * @param  functionNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final FunctionNode functionNode) {
+    public Node leaveFunctionNode(final FunctionNode functionNode) {
         return leaveDefault(functionNode);
     }
 
@@ -413,7 +412,7 @@ public abstract class NodeVisitor {
      * @param  identNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final IdentNode identNode) {
+    public Node enterIdentNode(final IdentNode identNode) {
         return enterDefault(identNode);
     }
 
@@ -423,7 +422,7 @@ public abstract class NodeVisitor {
      * @param  identNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final IdentNode identNode) {
+    public Node leaveIdentNode(final IdentNode identNode) {
         return leaveDefault(identNode);
     }
 
@@ -433,7 +432,7 @@ public abstract class NodeVisitor {
      * @param  ifNode    the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final IfNode ifNode) {
+    public Node enterIfNode(final IfNode ifNode) {
         return enterDefault(ifNode);
     }
 
@@ -443,7 +442,7 @@ public abstract class NodeVisitor {
      * @param  ifNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final IfNode ifNode) {
+    public Node leaveIfNode(final IfNode ifNode) {
         return leaveDefault(ifNode);
     }
 
@@ -453,7 +452,7 @@ public abstract class NodeVisitor {
      * @param  indexNode  the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final IndexNode indexNode) {
+    public Node enterIndexNode(final IndexNode indexNode) {
         return enterDefault(indexNode);
     }
 
@@ -463,7 +462,7 @@ public abstract class NodeVisitor {
      * @param  indexNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final IndexNode indexNode) {
+    public Node leaveIndexNode(final IndexNode indexNode) {
         return leaveDefault(indexNode);
     }
 
@@ -473,7 +472,7 @@ public abstract class NodeVisitor {
      * @param  labelNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final LabelNode labelNode) {
+    public Node enterLabelNode(final LabelNode labelNode) {
         return enterDefault(labelNode);
     }
 
@@ -483,7 +482,7 @@ public abstract class NodeVisitor {
      * @param  labelNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final LabelNode labelNode) {
+    public Node leaveLabelNode(final LabelNode labelNode) {
         return leaveDefault(labelNode);
     }
 
@@ -493,7 +492,7 @@ public abstract class NodeVisitor {
      * @param  lineNumberNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final LineNumberNode lineNumberNode) {
+    public Node enterLineNumberNode(final LineNumberNode lineNumberNode) {
         return enterDefault(lineNumberNode);
     }
 
@@ -503,7 +502,7 @@ public abstract class NodeVisitor {
      * @param  lineNumberNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final LineNumberNode lineNumberNode) {
+    public Node leaveLineNumberNode(final LineNumberNode lineNumberNode) {
         return leaveDefault(lineNumberNode);
     }
 
@@ -513,8 +512,7 @@ public abstract class NodeVisitor {
      * @param  literalNode the node
      * @return processed   node
      */
-    @SuppressWarnings("rawtypes")
-    public Node enter(final LiteralNode literalNode) {
+    public Node enterLiteralNode(final LiteralNode<?> literalNode) {
         return enterDefault(literalNode);
     }
 
@@ -524,8 +522,7 @@ public abstract class NodeVisitor {
      * @param  literalNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    @SuppressWarnings("rawtypes")
-    public Node leave(final LiteralNode literalNode) {
+    public Node leaveLiteralNode(final LiteralNode<?> literalNode) {
         return leaveDefault(literalNode);
     }
 
@@ -535,7 +532,7 @@ public abstract class NodeVisitor {
      * @param  objectNode the node
      * @return processed  node
      */
-    public Node enter(final ObjectNode objectNode) {
+    public Node enterObjectNode(final ObjectNode objectNode) {
         return enterDefault(objectNode);
     }
 
@@ -545,7 +542,7 @@ public abstract class NodeVisitor {
      * @param  objectNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final ObjectNode objectNode) {
+    public Node leaveObjectNode(final ObjectNode objectNode) {
         return leaveDefault(objectNode);
     }
 
@@ -555,7 +552,7 @@ public abstract class NodeVisitor {
      * @param  propertyNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final PropertyNode propertyNode) {
+    public Node enterPropertyNode(final PropertyNode propertyNode) {
         return enterDefault(propertyNode);
     }
 
@@ -565,28 +562,8 @@ public abstract class NodeVisitor {
      * @param  propertyNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final PropertyNode propertyNode) {
+    public Node leavePropertyNode(final PropertyNode propertyNode) {
         return leaveDefault(propertyNode);
-    }
-
-    /**
-     * Callback for entering a ReferenceNode
-     *
-     * @param  referenceNode the node
-     * @return processed node, null if traversal should end
-     */
-    public Node enter(final ReferenceNode referenceNode) {
-        return enterDefault(referenceNode);
-    }
-
-    /**
-     * Callback for leaving a ReferenceNode
-     *
-     * @param  referenceNode the node
-     * @return processed node, which will replace the original one, or the original node
-     */
-    public Node leave(final ReferenceNode referenceNode) {
-        return leaveDefault(referenceNode);
     }
 
     /**
@@ -595,7 +572,7 @@ public abstract class NodeVisitor {
      * @param  returnNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final ReturnNode returnNode) {
+    public Node enterReturnNode(final ReturnNode returnNode) {
         return enterDefault(returnNode);
     }
 
@@ -605,7 +582,7 @@ public abstract class NodeVisitor {
      * @param  returnNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final ReturnNode returnNode) {
+    public Node leaveReturnNode(final ReturnNode returnNode) {
         return leaveDefault(returnNode);
     }
 
@@ -615,7 +592,7 @@ public abstract class NodeVisitor {
      * @param  runtimeNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final RuntimeNode runtimeNode) {
+    public Node enterRuntimeNode(final RuntimeNode runtimeNode) {
         return enterDefault(runtimeNode);
     }
 
@@ -625,7 +602,7 @@ public abstract class NodeVisitor {
      * @param  runtimeNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final RuntimeNode runtimeNode) {
+    public Node leaveRuntimeNode(final RuntimeNode runtimeNode) {
         return leaveDefault(runtimeNode);
     }
 
@@ -635,7 +612,7 @@ public abstract class NodeVisitor {
      * @param  splitNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final SplitNode splitNode) {
+    public Node enterSplitNode(final SplitNode splitNode) {
         return enterDefault(splitNode);
     }
 
@@ -645,7 +622,7 @@ public abstract class NodeVisitor {
      * @param  splitNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final SplitNode splitNode) {
+    public Node leaveSplitNode(final SplitNode splitNode) {
         return leaveDefault(splitNode);
     }
 
@@ -655,7 +632,7 @@ public abstract class NodeVisitor {
      * @param  switchNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final SwitchNode switchNode) {
+    public Node enterSwitchNode(final SwitchNode switchNode) {
         return enterDefault(switchNode);
     }
 
@@ -665,7 +642,7 @@ public abstract class NodeVisitor {
      * @param  switchNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final SwitchNode switchNode) {
+    public Node leaveSwitchNode(final SwitchNode switchNode) {
         return leaveDefault(switchNode);
     }
 
@@ -675,7 +652,7 @@ public abstract class NodeVisitor {
      * @param  ternaryNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final TernaryNode ternaryNode) {
+    public Node enterTernaryNode(final TernaryNode ternaryNode) {
         return enterDefault(ternaryNode);
     }
 
@@ -685,7 +662,7 @@ public abstract class NodeVisitor {
      * @param  ternaryNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final TernaryNode ternaryNode) {
+    public Node leaveTernaryNode(final TernaryNode ternaryNode) {
         return leaveDefault(ternaryNode);
     }
 
@@ -695,7 +672,7 @@ public abstract class NodeVisitor {
      * @param  throwNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final ThrowNode throwNode) {
+    public Node enterThrowNode(final ThrowNode throwNode) {
         return enterDefault(throwNode);
     }
 
@@ -705,7 +682,7 @@ public abstract class NodeVisitor {
      * @param  throwNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final ThrowNode throwNode) {
+    public Node leaveThrowNode(final ThrowNode throwNode) {
         return leaveDefault(throwNode);
     }
 
@@ -715,7 +692,7 @@ public abstract class NodeVisitor {
      * @param  tryNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final TryNode tryNode) {
+    public Node enterTryNode(final TryNode tryNode) {
         return enterDefault(tryNode);
     }
 
@@ -725,7 +702,7 @@ public abstract class NodeVisitor {
      * @param  tryNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final TryNode tryNode) {
+    public Node leaveTryNode(final TryNode tryNode) {
         return leaveDefault(tryNode);
     }
 
@@ -735,7 +712,7 @@ public abstract class NodeVisitor {
      * @param  unaryNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final UnaryNode unaryNode) {
+    public Node enterUnaryNode(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -745,7 +722,7 @@ public abstract class NodeVisitor {
      * @param  unaryNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final UnaryNode unaryNode) {
+    public Node leaveUnaryNode(final UnaryNode unaryNode) {
         return leaveDefault(unaryNode);
     }
 
@@ -755,7 +732,7 @@ public abstract class NodeVisitor {
      * @param  varNode   the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final VarNode varNode) {
+    public Node enterVarNode(final VarNode varNode) {
         return enterDefault(varNode);
     }
 
@@ -765,7 +742,7 @@ public abstract class NodeVisitor {
      * @param  varNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final VarNode varNode) {
+    public Node leaveVarNode(final VarNode varNode) {
         return leaveDefault(varNode);
     }
 
@@ -775,7 +752,7 @@ public abstract class NodeVisitor {
      * @param  whileNode the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final WhileNode whileNode) {
+    public Node enterWhileNode(final WhileNode whileNode) {
         return enterDefault(whileNode);
     }
 
@@ -785,7 +762,7 @@ public abstract class NodeVisitor {
      * @param  whileNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final WhileNode whileNode) {
+    public Node leaveWhileNode(final WhileNode whileNode) {
         return leaveDefault(whileNode);
     }
 
@@ -795,7 +772,7 @@ public abstract class NodeVisitor {
      * @param  withNode  the node
      * @return processed node, null if traversal should end
      */
-    public Node enter(final WithNode withNode) {
+    public Node enterWithNode(final WithNode withNode) {
         return enterDefault(withNode);
     }
 
@@ -805,7 +782,7 @@ public abstract class NodeVisitor {
      * @param  withNode  the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leave(final WithNode withNode) {
+    public Node leaveWithNode(final WithNode withNode) {
         return leaveDefault(withNode);
     }
 

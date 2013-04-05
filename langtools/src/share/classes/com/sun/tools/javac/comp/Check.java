@@ -2779,25 +2779,17 @@ public class Check {
     }
 
     private void validateTarget(Symbol container, Symbol contained, DiagnosticPosition pos) {
-        Attribute.Array containedTarget = getAttributeTargetAttribute(contained);
+        // The set of targets the container is applicable to must be a subset
+        // (with respect to annotation target semantics) of the set of targets
+        // the contained is applicable to. The target sets may be implicit or
+        // explicit.
 
-        // If contained has no Target, we are done
-        if (containedTarget == null) {
-            return;
-        }
-
-        // If contained has Target m1, container must have a Target
-        // annotation, m2, and m2 must be a subset of m1. (This is
-        // trivially true if contained has no target as per above).
-
-        // contained has target, but container has not, error
+        Set<Name> containerTargets;
         Attribute.Array containerTarget = getAttributeTargetAttribute(container);
         if (containerTarget == null) {
-            log.error(pos, "invalid.repeatable.annotation.incompatible.target", container, contained);
-            return;
-        }
-
-        Set<Name> containerTargets = new HashSet<Name>();
+            containerTargets = getDefaultTargetSet();
+        } else {
+            containerTargets = new HashSet<Name>();
         for (Attribute app : containerTarget.values) {
             if (!(app instanceof Attribute.Enum)) {
                 continue; // recovery
@@ -2805,8 +2797,14 @@ public class Check {
             Attribute.Enum e = (Attribute.Enum)app;
             containerTargets.add(e.value.name);
         }
+        }
 
-        Set<Name> containedTargets = new HashSet<Name>();
+        Set<Name> containedTargets;
+        Attribute.Array containedTarget = getAttributeTargetAttribute(contained);
+        if (containedTarget == null) {
+            containedTargets = getDefaultTargetSet();
+        } else {
+            containedTargets = new HashSet<Name>();
         for (Attribute app : containedTarget.values) {
             if (!(app instanceof Attribute.Enum)) {
                 continue; // recovery
@@ -2814,20 +2812,42 @@ public class Check {
             Attribute.Enum e = (Attribute.Enum)app;
             containedTargets.add(e.value.name);
         }
+        }
 
-        if (!isTargetSubset(containedTargets, containerTargets)) {
+        if (!isTargetSubsetOf(containerTargets, containedTargets)) {
             log.error(pos, "invalid.repeatable.annotation.incompatible.target", container, contained);
         }
     }
 
-    /** Checks that t is a subset of s, with respect to ElementType
+    /* get a set of names for the default target */
+    private Set<Name> getDefaultTargetSet() {
+        if (defaultTargets == null) {
+            Set<Name> targets = new HashSet<Name>();
+            targets.add(names.ANNOTATION_TYPE);
+            targets.add(names.CONSTRUCTOR);
+            targets.add(names.FIELD);
+            targets.add(names.LOCAL_VARIABLE);
+            targets.add(names.METHOD);
+            targets.add(names.PACKAGE);
+            targets.add(names.PARAMETER);
+            targets.add(names.TYPE);
+
+            defaultTargets = java.util.Collections.unmodifiableSet(targets);
+        }
+
+        return defaultTargets;
+    }
+    private Set<Name> defaultTargets;
+
+
+    /** Checks that s is a subset of t, with respect to ElementType
      * semantics, specifically {ANNOTATION_TYPE} is a subset of {TYPE}
      */
-    private boolean isTargetSubset(Set<Name> s, Set<Name> t) {
-        // Check that all elements in t are present in s
-        for (Name n2 : t) {
+    private boolean isTargetSubsetOf(Set<Name> s, Set<Name> t) {
+        // Check that all elements in s are present in t
+        for (Name n2 : s) {
             boolean currentElementOk = false;
-            for (Name n1 : s) {
+            for (Name n1 : t) {
                 if (n1 == n2) {
                     currentElementOk = true;
                     break;

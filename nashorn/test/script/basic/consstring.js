@@ -37,4 +37,4 @@ list.add(String(new String(str + "2")));     // String() called as function with
 list.add((str + "3").toString());            // toString() called on primitive string
 list.add(new String(str + "4").toString());  // toString() called on String object
 
-Packages.jdk.nashorn.internal.test.models.StringArgs.checkString(list);
+Packages.jdk.nashorn.test.models.StringArgs.checkString(list);

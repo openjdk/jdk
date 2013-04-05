@@ -172,7 +172,7 @@ public class ProfilePackageIndexFrameWriter extends AbstractProfileIndexWriter {
      */
     protected void addAllPackagesLink(Content div) {
         Content linkContent = getHyperLink(DocPaths.OVERVIEW_FRAME,
-                allpackagesLabel, "", "profileListFrame");
+                allpackagesLabel, "", "packageListFrame");
         Content span = HtmlTree.SPAN(linkContent);
         div.addContent(span);
     }
@@ -185,7 +185,7 @@ public class ProfilePackageIndexFrameWriter extends AbstractProfileIndexWriter {
      */
     protected void addAllProfilesLink(Content div) {
         Content linkContent = getHyperLink(DocPaths.PROFILE_OVERVIEW_FRAME,
-                allprofilesLabel, "", "profileListFrame");
+                allprofilesLabel, "", "packageListFrame");
         Content span = HtmlTree.SPAN(linkContent);
         div.addContent(span);
     }

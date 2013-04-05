@@ -75,9 +75,9 @@ public class ThrowNode extends Node {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterThrowNode(this) != null) {
             setExpression(expression.accept(visitor));
-            return visitor.leave(this);
+            return visitor.leaveThrowNode(this);
         }
 
         return this;

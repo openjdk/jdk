@@ -30,22 +30,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AuthProvider;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import javax.security.auth.Destroyable;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.Subject;
@@ -123,8 +112,14 @@ import sun.security.util.Password;
  */
 public class KeyStoreLoginModule implements LoginModule {
 
-   static final java.util.ResourceBundle rb =
-        java.util.ResourceBundle.getBundle("sun.security.util.AuthResources");
+    private static final ResourceBundle rb = AccessController.doPrivileged(
+            new PrivilegedAction<ResourceBundle>() {
+                public ResourceBundle run() {
+                    return ResourceBundle.getBundle(
+                            "sun.security.util.AuthResources");
+                }
+            }
+    );
 
     /* -- Fields -- */
 

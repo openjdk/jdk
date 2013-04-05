@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.Source;
  * IR representation of an indexed access (brackets operator.)
  *
  */
-public class IndexNode extends BaseNode implements TypeOverride {
+public class IndexNode extends BaseNode implements TypeOverride<IndexNode> {
     /** Property ident. */
     private Node index;
 
@@ -92,10 +92,10 @@ public class IndexNode extends BaseNode implements TypeOverride {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterIndexNode(this) != null) {
             base = base.accept(visitor);
             index = index.accept(visitor);
-            return visitor.leave(this);
+            return visitor.leaveIndexNode(this);
         }
 
         return this;
@@ -144,12 +144,13 @@ public class IndexNode extends BaseNode implements TypeOverride {
     }
 
     @Override
-    public void setType(final Type type) {
+    public IndexNode setType(final Type type) {
         if (DEBUG_FIELDS && !Type.areEquivalent(getSymbol().getSymbolType(), type)) {
             ObjectClassGenerator.LOG.info(getClass().getName() + " " + this + " => " + type + " instead of " + getType());
         }
         hasCallSiteType = true;
         getSymbol().setTypeOverride(type);
+        return this;
     }
 
     @Override

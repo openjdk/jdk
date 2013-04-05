@@ -38,6 +38,8 @@ public abstract class BaseNode extends Node implements FunctionCall {
     /** Base Node. */
     protected Node base;
 
+    private boolean function;
+
     /**
      * Constructor
      *
@@ -96,6 +98,15 @@ public abstract class BaseNode extends Node implements FunctionCall {
 
     @Override
     public boolean isFunction() {
-        return false;
+        return function;
+    }
+
+    /**
+     * Mark this node as being the callee operand of a {@link CallNode}.
+     * @return a base node identical to this one in all aspects except with its function flag set.
+     */
+    public BaseNode setIsFunction() {
+        function = true;
+        return this;
     }
 }
