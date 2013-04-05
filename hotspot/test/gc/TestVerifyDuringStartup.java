@@ -21,23 +21,23 @@
  * questions.
  */
 
-/* @test TestVerifyBeforeGCDuringStartup.java
+/* @test TestVerifyDuringStartup.java
  * @key gc
  * @bug 8010463
- * @summary Simple test run with -XX:+VerifyBeforeGC -XX:-UseTLAB to verify 8010463
+ * @summary Simple test run with -XX:+VerifyDuringStartup -XX:-UseTLAB to verify 8010463
  * @library /testlibrary
  */
 
 import com.oracle.java.testlibrary.OutputAnalyzer;
 import com.oracle.java.testlibrary.ProcessTools;
 
-public class TestVerifyBeforeGCDuringStartup {
+public class TestVerifyDuringStartup {
   public static void main(String args[]) throws Exception {
     ProcessBuilder pb =
       ProcessTools.createJavaProcessBuilder(System.getProperty("test.vm.opts"),
                                             "-XX:-UseTLAB",
                                             "-XX:+UnlockDiagnosticVMOptions",
-                                            "-XX:+VerifyBeforeGC", "-version");
+                                            "-XX:+VerifyDuringStartup", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("[Verifying");
     output.shouldHaveExitValue(0);
