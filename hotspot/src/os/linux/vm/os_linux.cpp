@@ -193,20 +193,6 @@ julong os::physical_memory() {
   return Linux::physical_memory();
 }
 
-julong os::allocatable_physical_memory(julong size) {
-#ifdef _LP64
-  return size;
-#else
-  julong result = MIN2(size, (julong)3800*M);
-   if (!is_allocatable(result)) {
-     // See comments under solaris for alignment considerations
-     julong reasonable_size = (julong)2*G - 2 * os::vm_page_size();
-     result =  MIN2(size, reasonable_size);
-   }
-   return result;
-#endif // _LP64
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // environment support
 
@@ -1647,7 +1633,7 @@ bool os::dll_build_name(char* buffer, size_t buflen,
     int n;
     char** pelements = split_path(pname, &n);
     if (pelements == NULL) {
-        return false;
+      return false;
     }
     for (int i = 0 ; i < n ; i++) {
       // Really shouldn't be NULL, but check can't hurt

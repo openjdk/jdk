@@ -476,24 +476,6 @@ julong os::physical_memory() {
    return Solaris::physical_memory();
 }
 
-julong os::allocatable_physical_memory(julong size) {
-#ifdef _LP64
-   return size;
-#else
-   julong result = MIN2(size, (julong)3835*M);
-   if (!is_allocatable(result)) {
-     // Memory allocations will be aligned but the alignment
-     // is not known at this point.  Alignments will
-     // be at most to LargePageSizeInBytes.  Protect
-     // allocations from alignments up to illegal
-     // values. If at this point 2G is illegal.
-     julong reasonable_size = (julong)2*G - 2 * LargePageSizeInBytes;
-     result =  MIN2(size, reasonable_size);
-   }
-   return result;
-#endif
-}
-
 static hrtime_t first_hrtime = 0;
 static const hrtime_t hrtime_hz = 1000*1000*1000;
 const int LOCK_BUSY = 1;
@@ -1904,7 +1886,7 @@ bool os::dll_build_name(char* buffer, size_t buflen,
     int n;
     char** pelements = split_path(pname, &n);
     if (pelements == NULL) {
-        return false;
+      return false;
     }
     for (int i = 0 ; i < n ; i++) {
       // really shouldn't be NULL but what the heck, check can't hurt

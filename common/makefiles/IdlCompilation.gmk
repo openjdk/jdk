@@ -70,7 +70,7 @@ define add_idl_package
 		$(PREFIXES) \
 		$4
 	$(RM) -f $$(addprefix $3/$$($4_TMPDIR)/,$6)
-	$(CP) -rp $3/$$($4_TMPDIR)/* $3
+	$(CP) -r $3/$$($4_TMPDIR)/* $3
 	($(CD) $3/$$($4_TMPDIR) && $(FIND) . -type f | $(SED) 's!\./!$3/!g' | $(NAWK) '{ print $$$$1 ": $4" }' > $5)
 	$(RM) -rf $3/$$($4_TMPDIR)
 endef

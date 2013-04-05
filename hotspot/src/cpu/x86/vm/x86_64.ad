@@ -399,6 +399,9 @@ source %{
 static int preserve_SP_size() {
   return 3;  // rex.w, op, rm(reg/reg)
 }
+static int clear_avx_size() {
+  return (Compile::current()->max_vector_size() > 16) ? 3 : 0;  // vzeroupper
+}
 
 // !!!!! Special hack to get all types of calls to specify the byte offset
 //       from the start of the call to the point where the return address
@@ -406,6 +409,7 @@ static int preserve_SP_size() {
 int MachCallStaticJavaNode::ret_addr_offset()
 {
   int offset = 5; // 5 bytes from start of call to where return address points
+  offset += clear_avx_size();
   if (_method_handle_invoke)
     offset += preserve_SP_size();
   return offset;
@@ -413,11 +417,16 @@ int MachCallStaticJavaNode::ret_addr_offset()
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  return 15; // 15 bytes from start of call to where return address points
+  int offset = 15; // 15 bytes from start of call to where return address points
+  offset += clear_avx_size();
+  return offset;
 }
 
-// In os_cpu .ad file
-// int MachCallRuntimeNode::ret_addr_offset()
+int MachCallRuntimeNode::ret_addr_offset() {
+  int offset = 13; // movq r10,#addr; callq (r10)
+  offset += clear_avx_size();
+  return offset;
+}
 
 // Indicate if the safepoint node needs the polling page as an input,
 // it does if the polling page is more than disp32 away.
@@ -434,6 +443,7 @@ bool SafePointNode::needs_polling_address_input()
 // ensure that it does not span a cache line so that it can be patched.
 int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 {
+  current_offset += clear_avx_size(); // skip vzeroupper
   current_offset += 1; // skip call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
 }
@@ -443,6 +453,7 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 int CallStaticJavaHandleNode::compute_padding(int current_offset) const
 {
   current_offset += preserve_SP_size();   // skip mov rbp, rsp
+  current_offset += clear_avx_size(); // skip vzeroupper
   current_offset += 1; // skip call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
 }
@@ -451,6 +462,7 @@ int CallStaticJavaHandleNode::compute_padding(int current_offset) const
 // ensure that it does not span a cache line so that it can be patched.
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 {
+  current_offset += clear_avx_size(); // skip vzeroupper
   current_offset += 11; // skip movq instruction + call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
 }
@@ -764,6 +776,11 @@ int MachPrologNode::reloc() const
 void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   Compile* C = ra_->C;
+  if (C->max_vector_size() > 16) {
+    st->print("vzeroupper");
+    st->cr(); st->print("\t");
+  }
+
   int framesize = C->frame_slots() << LogBytesPerInt;
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove word for return adr already pushed
@@ -793,6 +810,13 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   Compile* C = ra_->C;
+  if (C->max_vector_size() > 16) {
+    // Clear upper bits of YMM registers when current compiled code uses
+    // wide vectors to avoid AVX <-> SSE transition penalty during call.
+    MacroAssembler _masm(&cbuf);
+    __ vzeroupper();
+  }
+
   int framesize = C->frame_slots() << LogBytesPerInt;
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove word for return adr already pushed
@@ -1995,6 +2019,25 @@ encode %{
       __ xorptr(Rrdi, Rrdi);
     }
     __ bind(miss);
+  %}
+
+  enc_class clear_avx %{
+    debug_only(int off0 = cbuf.insts_size());
+    if (ra_->C->max_vector_size() > 16) {
+      // Clear upper bits of YMM registers when current compiled code uses
+      // wide vectors to avoid AVX <-> SSE transition penalty during call.
+      MacroAssembler _masm(&cbuf);
+      __ vzeroupper();
+    }
+    debug_only(int off1 = cbuf.insts_size());
+    assert(off1 - off0 == clear_avx_size(), "correct size prediction");
+  %}
+
+  enc_class Java_To_Runtime(method meth) %{
+    // No relocation needed
+    MacroAssembler _masm(&cbuf);
+    __ mov64(r10, (int64_t) $meth$$method);
+    __ call(r10);
   %}
 
   enc_class Java_To_Interpreter(method meth)
@@ -11355,7 +11398,7 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_cost(300);
   format %{ "call,static " %}
   opcode(0xE8); /* E8 cd */
-  ins_encode(Java_Static_Call(meth), call_epilog);
+  ins_encode(clear_avx, Java_Static_Call(meth), call_epilog);
   ins_pipe(pipe_slow);
   ins_alignment(4);
 %}
@@ -11373,7 +11416,7 @@ instruct CallStaticJavaHandle(method meth, rbp_RegP rbp_mh_SP_save) %{
   ins_cost(300);
   format %{ "call,static/MethodHandle " %}
   opcode(0xE8); /* E8 cd */
-  ins_encode(preserve_SP,
+  ins_encode(clear_avx, preserve_SP,
              Java_Static_Call(meth),
              restore_SP,
              call_epilog);
@@ -11392,7 +11435,7 @@ instruct CallDynamicJavaDirect(method meth)
   ins_cost(300);
   format %{ "movq    rax, #Universe::non_oop_word()\n\t"
             "call,dynamic " %}
-  ins_encode(Java_Dynamic_Call(meth), call_epilog);
+  ins_encode(clear_avx, Java_Dynamic_Call(meth), call_epilog);
   ins_pipe(pipe_slow);
   ins_alignment(4);
 %}
@@ -11405,8 +11448,7 @@ instruct CallRuntimeDirect(method meth)
 
   ins_cost(300);
   format %{ "call,runtime " %}
-  opcode(0xE8); /* E8 cd */
-  ins_encode(Java_To_Runtime(meth));
+  ins_encode(clear_avx, Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
 %}
 
@@ -11418,8 +11460,7 @@ instruct CallLeafDirect(method meth)
 
   ins_cost(300);
   format %{ "call_leaf,runtime " %}
-  opcode(0xE8); /* E8 cd */
-  ins_encode(Java_To_Runtime(meth));
+  ins_encode(clear_avx, Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
 %}
 
@@ -11431,7 +11472,6 @@ instruct CallLeafNoFPDirect(method meth)
 
   ins_cost(300);
   format %{ "call_leaf_nofp,runtime " %}
-  opcode(0xE8); /* E8 cd */
   ins_encode(Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
 %}
