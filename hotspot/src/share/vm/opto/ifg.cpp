@@ -37,8 +37,6 @@
 #include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
 
-#define EXACT_PRESSURE 1
-
 //=============================================================================
 //------------------------------IFG--------------------------------------------
 PhaseIFG::PhaseIFG( Arena *arena ) : Phase(Interference_Graph), _arena(arena) {
@@ -445,23 +443,15 @@ static void lower_pressure( LRG *lrg, uint where, Block *b, uint *pressure, uint
       pressure[1] -= lrg->reg_pressure();
       if( pressure[1] == (uint)FLOATPRESSURE ) {
         hrp_index[1] = where;
-#ifdef EXACT_PRESSURE
-      if( pressure[1] > b->_freg_pressure )
-        b->_freg_pressure = pressure[1]+1;
-#else
-        b->_freg_pressure = (uint)FLOATPRESSURE+1;
-#endif
+        if( pressure[1] > b->_freg_pressure )
+          b->_freg_pressure = pressure[1]+1;
       }
     } else if( lrg->mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ) {
       pressure[0] -= lrg->reg_pressure();
       if( pressure[0] == (uint)INTPRESSURE   ) {
         hrp_index[0] = where;
-#ifdef EXACT_PRESSURE
-      if( pressure[0] > b->_reg_pressure )
-        b->_reg_pressure = pressure[0]+1;
-#else
-        b->_reg_pressure = (uint)INTPRESSURE+1;
-#endif
+        if( pressure[0] > b->_reg_pressure )
+          b->_reg_pressure = pressure[0]+1;
       }
     }
   }
@@ -526,17 +516,13 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
       if (lrg.mask().is_UP() && lrg.mask_size()) {
         if (lrg._is_float || lrg._is_vector) {   // Count float pressure
           pressure[1] += lrg.reg_pressure();
-#ifdef EXACT_PRESSURE
           if( pressure[1] > b->_freg_pressure )
             b->_freg_pressure = pressure[1];
-#endif
           // Count int pressure, but do not count the SP, flags
         } else if( lrgs(lidx).mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ) {
           pressure[0] += lrg.reg_pressure();
-#ifdef EXACT_PRESSURE
           if( pressure[0] > b->_reg_pressure )
             b->_reg_pressure = pressure[0];
-#endif
         }
       }
     }
@@ -589,30 +575,20 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             RegMask itmp = lrgs(r).mask();
             itmp.AND(*Matcher::idealreg2regmask[Op_RegI]);
             int iregs = itmp.Size();
-#ifdef EXACT_PRESSURE
             if( pressure[0]+iregs > b->_reg_pressure )
               b->_reg_pressure = pressure[0]+iregs;
-#endif
             if( pressure[0]       <= (uint)INTPRESSURE &&
                 pressure[0]+iregs >  (uint)INTPRESSURE ) {
-#ifndef EXACT_PRESSURE
-              b->_reg_pressure = (uint)INTPRESSURE+1;
-#endif
               hrp_index[0] = j-1;
             }
             // Count the float-only registers
             RegMask ftmp = lrgs(r).mask();
             ftmp.AND(*Matcher::idealreg2regmask[Op_RegD]);
             int fregs = ftmp.Size();
-#ifdef EXACT_PRESSURE
             if( pressure[1]+fregs > b->_freg_pressure )
               b->_freg_pressure = pressure[1]+fregs;
-#endif
             if( pressure[1]       <= (uint)FLOATPRESSURE &&
                 pressure[1]+fregs >  (uint)FLOATPRESSURE ) {
-#ifndef EXACT_PRESSURE
-              b->_freg_pressure = (uint)FLOATPRESSURE+1;
-#endif
               hrp_index[1] = j-1;
             }
           }
@@ -769,16 +745,12 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             if (lrg.mask().is_UP() && lrg.mask_size()) {
               if (lrg._is_float || lrg._is_vector) {
                 pressure[1] += lrg.reg_pressure();
-#ifdef EXACT_PRESSURE
                 if( pressure[1] > b->_freg_pressure )
                   b->_freg_pressure = pressure[1];
-#endif
               } else if( lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ) {
                 pressure[0] += lrg.reg_pressure();
-#ifdef EXACT_PRESSURE
                 if( pressure[0] > b->_reg_pressure )
                   b->_reg_pressure = pressure[0];
-#endif
               }
             }
             assert( pressure[0] == count_int_pressure  (&liveout), "" );
@@ -794,21 +766,13 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     // the whole block is high pressure.
     if( pressure[0] > (uint)INTPRESSURE   ) {
       hrp_index[0] = 0;
-#ifdef EXACT_PRESSURE
       if( pressure[0] > b->_reg_pressure )
         b->_reg_pressure = pressure[0];
-#else
-      b->_reg_pressure = (uint)INTPRESSURE+1;
-#endif
     }
     if( pressure[1] > (uint)FLOATPRESSURE ) {
       hrp_index[1] = 0;
-#ifdef EXACT_PRESSURE
       if( pressure[1] > b->_freg_pressure )
         b->_freg_pressure = pressure[1];
-#else
-      b->_freg_pressure = (uint)FLOATPRESSURE+1;
-#endif
     }
 
     // Compute high pressure indice; avoid landing in the middle of projnodes
