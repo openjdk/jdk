@@ -38,31 +38,31 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 
 public final class Symbol implements Comparable<Symbol> {
-    /** Symbol flags. Kind ordered by precedence. */
-    public static final int IS_TEMP     = 0b0000_0001;
+    /** Symbol kinds. Kind ordered by precedence. */
+    public static final int IS_TEMP     = 1;
     /** Is this Global */
-    public static final int IS_GLOBAL   = 0b0000_0010;
+    public static final int IS_GLOBAL   = 2;
     /** Is this a variable */
-    public static final int IS_VAR      = 0b0000_0011;
+    public static final int IS_VAR      = 3;
     /** Is this a parameter */
-    public static final int IS_PARAM    = 0b0000_0100;
+    public static final int IS_PARAM    = 4;
     /** Is this a constant */
-    public static final int IS_CONSTANT = 0b0000_0101;
-
-    static final int KINDMASK = 0b0000_1111;
+    public static final int IS_CONSTANT = 5;
+    /** Mask for kind flags */
+    public static final int KINDMASK = (1 << 3) - 1; // Kinds are represented by lower three bits
 
     /** Is this scope */
-    public static final int IS_SCOPE         = 0b0000_0001_0000;
+    public static final int IS_SCOPE         = 1 << 4;
     /** Is this a this symbol */
-    public static final int IS_THIS          = 0b0000_0010_0000;
+    public static final int IS_THIS          = 1 << 5;
     /** Can this symbol ever be undefined */
-    public static final int CAN_BE_UNDEFINED = 0b0000_0100_0000;
+    public static final int CAN_BE_UNDEFINED = 1 << 6;
     /** Can this symbol ever have primitive types */
-    public static final int CAN_BE_PRIMITIVE = 0b0000_1000_0000;
+    public static final int CAN_BE_PRIMITIVE = 1 << 7;
     /** Is this a let */
-    public static final int IS_LET           = 0b0001_0000_0000;
+    public static final int IS_LET           = 1 << 8;
     /** Is this an internal symbol, never represented explicitly in source code */
-    public static final int IS_INTERNAL      = 0b0010_0000_0000;
+    public static final int IS_INTERNAL      = 1 << 9;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -267,15 +267,6 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public int slotCount() {
         return type.isCategory2() ? 2 : 1;
-    }
-
-    /**
-     * Return the defining function (scope.)
-     *
-     * @return Defining function.
-     */
-    public FunctionNode findFunction() {
-        return block != null ? block.getFunction() : null;
     }
 
     @Override
@@ -487,27 +478,6 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
-     * Check if this symbol can be accessed directly with a putfield or getfield or dynamic load
-     *
-     * @param currentFunction function to check for fast scope
-     * @return true if fast scope
-     */
-    public boolean isFastScope(final FunctionNode currentFunction) {
-        if (!isScope() || !block.needsScope()) {
-            return false;
-        }
-        // Allow fast scope access if no parent function contains with or eval
-        FunctionNode func = currentFunction;
-        while (func != null) {
-            if (func.hasWith() || func.hasEval()) {
-                return false;
-            }
-            func = func.findParentFunction();
-        }
-        return true;
-    }
-
-    /**
      * Get the block in which the symbol is defined
      * @return a block
      */
@@ -651,7 +621,7 @@ public final class Symbol implements Comparable<Symbol> {
      * @return true if this this is a global scope symbol
      */
     public boolean isTopLevel() {
-        return block instanceof FunctionNode && ((FunctionNode) block).isScript();
+        return block instanceof FunctionNode && ((FunctionNode) block).isProgram();
     }
 
 

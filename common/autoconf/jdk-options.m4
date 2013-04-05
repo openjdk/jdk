@@ -519,10 +519,10 @@ AC_MSG_RESULT([$ENABLE_DEBUG_SYMBOLS])
 #
 # ZIP_DEBUGINFO_FILES
 #
-AC_ARG_ENABLE([zip-debug-info],
-              [AS_HELP_STRING([--disable-zip-debug-info],[disable zipping of debug-info files @<:@enabled@:>@])])
-
 AC_MSG_CHECKING([if we should zip debug-info files])
+AC_ARG_ENABLE([zip-debug-info],
+              [AS_HELP_STRING([--disable-zip-debug-info],[disable zipping of debug-info files @<:@enabled@:>@])],
+	      [enable_zip_debug_info="${enableval}"], [enable_zip_debug_info="yes"])
 AC_MSG_RESULT([${enable_zip_debug_info}])
 
 if test "x${enable_zip_debug_info}" = "xno"; then

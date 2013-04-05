@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -179,20 +180,24 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private <T> T getInterfaceInner(final Object self, final Class<T> clazz) {
-        final Object realSelf;
+        final ScriptObject realSelf;
         final ScriptObject ctxtGlobal = getNashornGlobalFrom(context);
         if(self == null) {
             realSelf = ctxtGlobal;
         } else if (!(self instanceof ScriptObject)) {
-            realSelf = ScriptObjectMirror.unwrap(self, ctxtGlobal);
+            realSelf = (ScriptObject)ScriptObjectMirror.unwrap(self, ctxtGlobal);
         } else {
-            realSelf = self;
+            realSelf = (ScriptObject)self;
         }
         try {
             final ScriptObject oldGlobal = getNashornGlobal();
             try {
                 if(oldGlobal != ctxtGlobal) {
                     setNashornGlobal(ctxtGlobal);
+                }
+
+                if (! isInterfaceImplemented(clazz, realSelf)) {
+                    return null;
                 }
                 return clazz.cast(JavaAdapterFactory.getConstructor(realSelf.getClass(), clazz).invoke(realSelf));
             } finally {
@@ -394,14 +399,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             setContextVariables(ctxt);
             final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
             final String fileName = (val != null) ? val.toString() : "<eval>";
-
-            // NOTE: FIXME: If this is jrunscript's init.js, we want to run the replacement.
-            // This should go away once we fix jrunscript's copy of init.js.
-            if ("<system-init>".equals(fileName)) {
-                evalSupportScript("resources/init.js", "nashorn:engine/resources/init.js");
-                return null;
-            }
-
             Object res = ScriptRuntime.apply(script, ctxtGlobal);
             return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, ctxtGlobal));
         } catch (final Exception e) {
@@ -469,6 +466,21 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 setNashornGlobal(oldGlobal);
             }
         }
+    }
+
+    private static boolean isInterfaceImplemented(final Class<?> iface, final ScriptObject sobj) {
+        for (final Method method : iface.getMethods()) {
+            // ignore methods of java.lang.Object class
+            if (method.getDeclaringClass() == Object.class) {
+                continue;
+            }
+
+            Object obj = sobj.get(method.getName());
+            if (! (obj instanceof ScriptFunction)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // don't make this public!!
