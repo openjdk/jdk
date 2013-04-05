@@ -106,6 +106,7 @@ class SymbolPropertyTable;
   do_klass(ThreadDeath_klass,                           java_lang_ThreadDeath,                     Pre                 ) \
   do_klass(Exception_klass,                             java_lang_Exception,                       Pre                 ) \
   do_klass(RuntimeException_klass,                      java_lang_RuntimeException,                Pre                 ) \
+  do_klass(SecurityManager_klass,                       java_lang_SecurityManager,                 Pre                 ) \
   do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain,            Pre                 ) \
   do_klass(AccessControlContext_klass,                  java_security_AccessControlContext,        Pre                 ) \
   do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException,          Pre                 ) \
@@ -138,13 +139,14 @@ class SymbolPropertyTable;
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                              \
   /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                                   \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
-  do_klass(lambda_MagicLambdaImpl_klass,                java_lang_invoke_MagicLambdaImpl, Opt ) \
+  do_klass(lambda_MagicLambdaImpl_klass,                java_lang_invoke_MagicLambdaImpl,          Opt                 ) \
   do_klass(reflect_MagicAccessorImpl_klass,             sun_reflect_MagicAccessorImpl,             Opt                 ) \
   do_klass(reflect_MethodAccessorImpl_klass,            sun_reflect_MethodAccessorImpl,            Opt_Only_JDK14NewRef) \
   do_klass(reflect_ConstructorAccessorImpl_klass,       sun_reflect_ConstructorAccessorImpl,       Opt_Only_JDK14NewRef) \
   do_klass(reflect_DelegatingClassLoader_klass,         sun_reflect_DelegatingClassLoader,         Opt                 ) \
   do_klass(reflect_ConstantPool_klass,                  sun_reflect_ConstantPool,                  Opt_Only_JDK15      ) \
   do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15      ) \
+  do_klass(reflect_CallerSensitive_klass,               sun_reflect_CallerSensitive,               Opt                 ) \
                                                                                                                          \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                            \
   do_klass(MethodHandle_klass,                          java_lang_invoke_MethodHandle,             Pre_JSR292          ) \
@@ -628,12 +630,15 @@ private:
   static bool is_parallelCapable(Handle class_loader);
   static bool is_parallelDefine(Handle class_loader);
 
+public:
+  static bool is_ext_class_loader(Handle class_loader);
+
+private:
   static Klass* find_shared_class(Symbol* class_name);
 
   // Setup link to hierarchy
   static void add_to_hierarchy(instanceKlassHandle k, TRAPS);
 
-private:
   // We pass in the hashtable index so we can calculate it outside of
   // the SystemDictionary_lock.
 

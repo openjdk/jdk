@@ -686,12 +686,17 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
-julong os::allocatable_physical_memory(julong size) {
+bool os::has_allocatable_memory_limit(julong* limit) {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
 #ifdef _LP64
-  return size;
+  *limit = (julong)ms.ullAvailVirtual;
+  return true;
 #else
   // Limit to 1400m because of the 2gb address space wall
-  return MIN2(size, (julong)1400*M);
+  *limit = MIN2((julong)1400*M, (julong)ms.ullAvailVirtual);
+  return true;
 #endif
 }
 
@@ -1178,7 +1183,7 @@ bool os::dll_build_name(char *buffer, size_t buflen,
     int n;
     char** pelements = split_path(pname, &n);
     if (pelements == NULL) {
-        return false;
+      return false;
     }
     for (int i = 0 ; i < n ; i++) {
       char* path = pelements[i];
@@ -3771,6 +3776,8 @@ extern "C" {
   }
 }
 
+static jint initSock();
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
   // Allocate a single page and mark it as readable for safepoint polling
@@ -3899,6 +3906,10 @@ jint os::init_2(void) {
     // first check whether this Windows OS supports VirtualAllocExNuma, if not ignore this flag
     bool success = numa_interleaving_init();
     if (!success) UseNUMAInterleaving = false;
+  }
+
+  if (initSock() != JNI_OK) {
+    return JNI_ERR;
   }
 
   return JNI_OK;
@@ -4897,42 +4908,24 @@ LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
 // We don't build a headless jre for Windows
 bool os::is_headless_jre() { return false; }
 
-
-typedef CRITICAL_SECTION mutex_t;
-#define mutexInit(m)    InitializeCriticalSection(m)
-#define mutexDestroy(m) DeleteCriticalSection(m)
-#define mutexLock(m)    EnterCriticalSection(m)
-#define mutexUnlock(m)  LeaveCriticalSection(m)
-
-static bool sock_initialized = FALSE;
-static mutex_t sockFnTableMutex;
-
-static void initSock() {
+static jint initSock() {
   WSADATA wsadata;
 
   if (!os::WinSock2Dll::WinSock2Available()) {
-    jio_fprintf(stderr, "Could not load Winsock 2 (error: %d)\n",
+    jio_fprintf(stderr, "Could not load Winsock (error: %d)\n",
       ::GetLastError());
-    return;
+    return JNI_ERR;
   }
-  if (sock_initialized == TRUE) return;
 
-  ::mutexInit(&sockFnTableMutex);
-  ::mutexLock(&sockFnTableMutex);
-  if (os::WinSock2Dll::WSAStartup(MAKEWORD(1,1), &wsadata) != 0) {
-      jio_fprintf(stderr, "Could not initialize Winsock\n");
+  if (os::WinSock2Dll::WSAStartup(MAKEWORD(2,2), &wsadata) != 0) {
+    jio_fprintf(stderr, "Could not initialize Winsock (error: %d)\n",
+      ::GetLastError());
+    return JNI_ERR;
   }
-  sock_initialized = TRUE;
-  ::mutexUnlock(&sockFnTableMutex);
+  return JNI_OK;
 }
 
 struct hostent* os::get_host_by_name(char* name) {
-  if (!sock_initialized) {
-    initSock();
-  }
-  if (!os::WinSock2Dll::WinSock2Available()) {
-    return NULL;
-  }
   return (struct hostent*)os::WinSock2Dll::gethostbyname(name);
 }
 

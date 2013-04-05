@@ -392,6 +392,9 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, methodHandle meth
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
+#if defined(COMPILER1) && !defined(COMPILER2)
+  return no_profile_data;
+#else
   switch (code) {
   case Bytecodes::_checkcast:
   case Bytecodes::_instanceof:
@@ -438,6 +441,7 @@ int MethodData::bytecode_cell_count(Bytecodes::Code code) {
     return variable_cell_count;
   }
   return no_profile_data;
+#endif
 }
 
 // Compute the size of the profiling information corresponding to
@@ -509,6 +513,9 @@ int MethodData::compute_allocation_size_in_words(methodHandle method) {
 // the segment in bytes.
 int MethodData::initialize_data(BytecodeStream* stream,
                                        int data_index) {
+#if defined(COMPILER1) && !defined(COMPILER2)
+  return 0;
+#else
   int cell_count = -1;
   int tag = DataLayout::no_tag;
   DataLayout* data_layout = data_layout_at(data_index);
@@ -587,6 +594,7 @@ int MethodData::initialize_data(BytecodeStream* stream,
     assert(!bytecode_has_profile(c), "agree w/ !BHP");
     return 0;
   }
+#endif
 }
 
 // Get the data at an arbitrary (sort of) data index.
