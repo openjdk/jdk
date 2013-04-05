@@ -967,6 +967,32 @@ bool Method::should_not_be_cached() const {
   return false;
 }
 
+
+/**
+ *  Returns true if this is one of the specially treated methods for
+ *  security related stack walks (like Reflection.getCallerClass).
+ */
+bool Method::is_ignored_by_security_stack_walk() const {
+  const bool use_new_reflection = JDK_Version::is_gte_jdk14x_version() && UseNewReflection;
+
+  assert(intrinsic_id() != vmIntrinsics::_invoke || Universe::reflect_invoke_cache()->is_same_method((Method*)this), "sanity");
+  if (intrinsic_id() == vmIntrinsics::_invoke) {
+    // This is Method.invoke() -- ignore it
+    return true;
+  }
+  if (use_new_reflection &&
+      method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
+    // This is an auxilary frame -- ignore it
+    return true;
+  }
+  if (is_method_handle_intrinsic() || is_compiled_lambda_form()) {
+    // This is an internal adapter frame for method handles -- ignore it
+    return true;
+  }
+  return false;
+}
+
+
 // Constant pool structure for invoke methods:
 enum {
   _imcp_invoke_name = 1,        // utf8: 'invokeExact', etc.
@@ -1180,13 +1206,13 @@ vmSymbols::SID Method::klass_id_for_intrinsics(Klass* holder) {
   // because we are not loading from core libraries
   // exception: the AES intrinsics come from lib/ext/sunjce_provider.jar
   // which does not use the class default class loader so we check for its loader here
-  if ((InstanceKlass::cast(holder)->class_loader() != NULL) &&
-       InstanceKlass::cast(holder)->class_loader()->klass()->name() != vmSymbols::sun_misc_Launcher_ExtClassLoader()) {
+  InstanceKlass* ik = InstanceKlass::cast(holder);
+  if ((ik->class_loader() != NULL) && !SystemDictionary::is_ext_class_loader(ik->class_loader())) {
     return vmSymbols::NO_SID;   // regardless of name, no intrinsics here
   }
 
   // see if the klass name is well-known:
-  Symbol* klass_name = InstanceKlass::cast(holder)->name();
+  Symbol* klass_name = ik->name();
   return vmSymbols::find_sid(klass_name);
 }
 
