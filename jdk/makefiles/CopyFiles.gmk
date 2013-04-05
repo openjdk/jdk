@@ -46,14 +46,10 @@ H_TARGET_FILES =$(INCLUDEDIR)/jdwpTransport.h		\
 		$(OPENJDK_TARGET_OS_INCLUDE)/jawt_md.h
 
 $(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/share/javavm/export/%.h
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 $(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export/%.h
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES = $(H_TARGET_FILES)
 
@@ -88,22 +84,16 @@ MGMT_SRC_FILES = $(wildcard $(MGMT_LIB_SRC)/*)
 MGMT_TARGET_FILES = $(subst $(MGMT_LIB_SRC),$(MGMT_LIBDIR),$(MGMT_SRC_FILES))
 
 $(MGMT_LIBDIR)/management.properties: $(MGMT_LIB_SRC)/management.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) 644 $@
 
 # this file has different permissions...don't know why...
 $(MGMT_LIBDIR)/jmxremote.access: $(MGMT_LIB_SRC)/jmxremote.access
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) 644 $@
 
 $(MGMT_LIBDIR)/%: $(MGMT_LIB_SRC)/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) 444 $@
 
 COPY_FILES += $(MGMT_TARGET_FILES)
@@ -113,9 +103,7 @@ COPY_FILES += $(MGMT_TARGET_FILES)
 LOGGING_LIB_SRC = $(JDK_TOPDIR)/src/share/lib
 
 $(LIBDIR)/logging.properties: $(LOGGING_LIB_SRC)/logging.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(LIBDIR)/logging.properties
 
@@ -128,9 +116,7 @@ PSFONTPROPFILE_SRCS = $(wildcard $(PSFONTPROPFILE_SRC_DIR)/*.properties*)
 PSFONTPROPFILE_TARGET_FILES = $(subst $(PSFONTPROPFILE_SRC_DIR),$(LIBDIR),$(PSFONTPROPFILE_SRCS))
 
 $(LIBDIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(PSFONTPROPFILE_TARGET_FILES)
 
@@ -145,9 +131,7 @@ OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/macosx/lib
 endif
 
 $(LIBDIR)/flavormap.properties: $(OPENJDK_TARGET_OS_LIB_SRC)/flavormap.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(LIBDIR)/flavormap.properties
 
@@ -155,9 +139,7 @@ CURSORS_DEST_DIR = $(LIBDIR)/images/cursors
 CURSORS_OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib/images/cursors
 
 $(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_OPENJDK_TARGET_OS_LIB_SRC)/cursors.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(CURSORS_DEST_DIR)/cursors.properties
 
@@ -170,9 +152,7 @@ endif # OPENJDK_TARGET_OS
 CURSORS_TARGET_FILES =  $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS_SRC_FILES))
 
 $(CURSORS_DEST_DIR)/%: $(CURSORS_LIB_SRC)/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(CURSORS_TARGET_FILES)
 
@@ -181,9 +161,7 @@ COPY_FILES += $(CURSORS_TARGET_FILES)
 CONTENT_TYPES_SRC=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 
 $(LIBDIR)/content-types.properties: $(CONTENT_TYPES_SRC)/content-types.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(LIBDIR)/content-types.properties
 
@@ -192,9 +170,7 @@ COPY_FILES += $(LIBDIR)/content-types.properties
 CALENDARS_SRC := $(JDK_TOPDIR)/src/share/lib
 
 $(LIBDIR)/calendars.properties: $(CALENDARS_SRC)/calendars.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(LIBDIR)/calendars.properties
 
@@ -205,9 +181,7 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
 TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 
 $(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(LIBDIR)/tzmappings
 
@@ -227,9 +201,7 @@ ICCPROFILE_SRCS:=$(wildcard $(ICCPROFILE_SRC_DIR)/*.pf)
 ICCPROFILE_TARGET_FILES:=$(subst $(ICCPROFILE_SRC_DIR),$(ICCPROFILE_DEST_DIR),$(ICCPROFILE_SRCS))
 
 $(ICCPROFILE_DEST_DIR)%.pf: $(ICCPROFILE_SRC_DIR)%.pf
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) 444 $@
 
 COPY_FILES += $(ICCPROFILE_TARGET_FILES)
@@ -279,9 +251,7 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
     MSVCR_TARGET := $(JDK_OUTPUTDIR)/bin/$(notdir $(MSVCR_DLL))
     # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
     $(MSVCR_TARGET): $(MSVCR_DLL)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) a+rx $@
 
     COPY_FILES += $(MSVCR_TARGET)
@@ -292,9 +262,7 @@ endif
 HPROF_SRC=$(JDK_TOPDIR)/src/share/demo/jvmti/hprof/jvm.hprof.txt
 
 $(LIBDIR)/jvm.hprof.txt : $(HPROF_SRC)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(LIBDIR)/jvm.hprof.txt
 
@@ -351,17 +319,13 @@ ifeq ($(OPENJDK_TARGET_CPU_BITS),32)
         else
             # Use the default jvm.cfg for this 32 bit setup. 
             $(JVMCFG): $(JVMCFG_SRC)
-	    	$(MKDIR) -p $(@D)
-		$(RM) $@
-		$(CP) $< $@
+	    	$(call install-file)
         endif
     endif
 else
     # Use the default jvm.cfg for this 64 bit setup.
     $(JVMCFG): $(JVMCFG_SRC)
-		$(MKDIR) -p $(@D)
-		$(RM) $@
-		$(CP) $< $@
+		$(call install-file)
 endif
 
 COPY_FILES += $(JVMCFG)
@@ -372,9 +336,7 @@ PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-$(OPENJDK_TARGET
 PROPS_DST := $(JDK_OUTPUTDIR)/lib/security/java.security
 
 $(PROPS_DST): $(PROPS_SRC)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(PROPS_DST)
 
@@ -384,9 +346,7 @@ POLICY_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.policy
 POLICY_DST := $(JDK_OUTPUTDIR)/lib/security/java.policy
 
 $(POLICY_DST): $(POLICY_SRC)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(POLICY_DST)
 
@@ -396,9 +356,7 @@ CACERTS_SRC := $(CACERTS_FILE)
 CACERTS_DST := $(JDK_OUTPUTDIR)/lib/security/cacerts
 
 $(CACERTS_DST): $(CACERTS_SRC)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(CACERTS_DST)
 
@@ -413,16 +371,12 @@ TRUSTEDLIBS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/trusted.libraries
 TRUSTEDLIBS_DST := $(JDK_OUTPUTDIR)/lib/security/trusted.libraries
 
 $(BLACKLIST_DST): $(BLACKLIST_SRC)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(BLACKLIST_DST)
 
 $(TRUSTEDLIBS_DST): $(TRUSTEDLIBS_SRC)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(TRUSTEDLIBS_DST)
 
@@ -448,14 +402,10 @@ SHARED_FONTS_SRC := $(foreach F,$(SHARED_FONTS_FILES),$(SHARED_FONTS_SRC_DIR)/$(
 SHARED_FONTS_DST := $(foreach F,$(SHARED_FONTS_FILES),$(SHARED_FONTS_DST_DIR)/$(F))
 
 $(SHARED_FONTS_DST_DIR)/%.ttf : $(SHARED_FONTS_SRC_DIR)/%.ttf
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 $(SHARED_FONTS_DST_DIR)/fonts.dir : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/motif/java.fonts.dir
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(SHARED_FONTS_DST)
 
@@ -476,14 +426,10 @@ OBL_FONTS_SRC := $(foreach F,$(OBL_FONTS_FILES),$(OBL_FONTS_SRC_DIR)/$(F))
 OBL_FONTS_DST := $(foreach F,$(OBL_FONTS_FILES),$(OBL_FONTS_DST_DIR)/$(F))
 
 $(OBL_FONTS_DST_DIR)/%.ttf : $(OBL_FONTS_SRC_DIR)/%.ttf
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 $(OBL_FONTS_DST_DIR)/fonts.dir : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/motif/java.oblique-fonts.dir
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(OBL_FONTS_DST) $(OBL_FONTS_DST_DIR)/fonts.dir
 
@@ -502,9 +448,7 @@ JS_RESOURCES_SRC := $(foreach F,$(JS_RESOURCES_FILES),$(JS_RESOURCES_SRC_DIR)/$(
 JS_RESOURCES_DST := $(foreach F,$(JS_RESOURCES_FILES),$(JS_RESOURCES_DST_DIR)/$(F))
 
 $(JS_RESOURCES_DST_DIR)/% : $(JS_RESOURCES_SRC_DIR)/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(JS_RESOURCES_DST)
 
@@ -539,15 +483,11 @@ _DGALIBS_amd64 = 	# no amd64 library yet
 DGALIBS = $(_DGALIBS_$(OPENJDK_TARGET_CPU_LEGACY):%=$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/%)
 
 $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libxinerama.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(OPENJDK_TARGET_CPU_LEGACY)/libxinerama.so
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) 755 $@
 
 $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNW%.so: $(JDK_TOPDIR)/src/closed/solaris/lib/$(OPENJDK_TARGET_CPU_LEGACY)/libjdgaSUNW%.so
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) 755 $@
 
 $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNWafb.so: $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjdgaSUNWffb.so
@@ -567,9 +507,7 @@ SUNPKCS11_CFG_SRC := $(JDK_TOPDIR)/src/share/lib/security/sunpkcs11-solaris.cfg
 SUNPKCS11_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/sunpkcs11-solaris.cfg
 
 $(SUNPKCS11_CFG_DST) : $(SUNPKCS11_CFG_SRC)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(SUNPKCS11_CFG_DST)
 
@@ -584,9 +522,7 @@ UCRYPTO_CFG_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/ucrypto-solaris.c
 UCRYPTO_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/ucrypto-solaris.cfg
 
 $(UCRYPTO_CFG_DST) : $(UCRYPTO_CFG_SRC)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(UCRYPTO_CFG_DST)
 
@@ -596,9 +532,7 @@ endif
 ##########################################################################################
 
 $(JDK_OUTPUTDIR)/lib/sound.properties : $(JDK_TOPDIR)/src/share/lib/sound.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $(@)
+	$(call install-file)
 
 COPY_FILES += $(JDK_OUTPUTDIR)/lib/sound.properties
 
