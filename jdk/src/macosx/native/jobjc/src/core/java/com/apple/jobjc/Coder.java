@@ -35,26 +35,25 @@ import com.apple.jobjc.PrimitiveCoder.SCharCoder;
 import com.apple.jobjc.PrimitiveCoder.SIntCoder;
 import com.apple.jobjc.PrimitiveCoder.SLongLongCoder;
 import com.apple.jobjc.PrimitiveCoder.SShortCoder;
-import java.lang.annotation.Native;
 
 public abstract class Coder<T> {
     private static native long getNativeFFITypePtrForCode(final int code);
 
-    @Native static final int FFI_VOID        = 0;
-    @Native static final int FFI_PTR        = FFI_VOID+1;
+    static final int FFI_VOID        = 0;
+    static final int FFI_PTR        = FFI_VOID+1;
 
-    @Native static final int FFI_SINT8        = FFI_PTR+1;
-    @Native static final int FFI_UINT8        = FFI_SINT8+1;
-    @Native static final int FFI_SINT16        = FFI_UINT8+1;
-    @Native static final int FFI_UINT16        = FFI_SINT16+1;
-    @Native static final int FFI_SINT32        = FFI_UINT16+1;
-    @Native static final int FFI_UINT32        = FFI_SINT32+1;
-    @Native static final int FFI_SINT64        = FFI_UINT32+1;
-    @Native static final int FFI_UINT64        = FFI_SINT64+1;
+    static final int FFI_SINT8        = FFI_PTR+1;
+    static final int FFI_UINT8        = FFI_SINT8+1;
+    static final int FFI_SINT16        = FFI_UINT8+1;
+    static final int FFI_UINT16        = FFI_SINT16+1;
+    static final int FFI_SINT32        = FFI_UINT16+1;
+    static final int FFI_UINT32        = FFI_SINT32+1;
+    static final int FFI_SINT64        = FFI_UINT32+1;
+    static final int FFI_UINT64        = FFI_SINT64+1;
 
-    @Native static final int FFI_FLOAT        = FFI_UINT64+1;
-    @Native static final int FFI_DOUBLE        = FFI_FLOAT+1;
-    @Native static final int FFI_LONGDOUBLE    = FFI_DOUBLE+1;
+    static final int FFI_FLOAT        = FFI_UINT64+1;
+    static final int FFI_DOUBLE        = FFI_FLOAT+1;
+    static final int FFI_LONGDOUBLE    = FFI_DOUBLE+1;
 
     private static long[] ffiCodesToFFITypePtrs;
     static{
