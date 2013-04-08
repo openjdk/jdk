@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,13 +78,14 @@ import com.sun.corba.se.impl.encoding.OSFCodeSetRegistry ;
 import com.sun.corba.se.impl.legacy.connection.USLPort ;
 import com.sun.corba.se.impl.logging.ORBUtilSystemException ;
 import com.sun.corba.se.impl.oa.poa.BadServerIdHandler ;
-import com.sun.corba.se.impl.orbutil.ORBClassLoader ;
 import com.sun.corba.se.impl.orbutil.ORBConstants ;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.KeyAddr ;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.ProfileAddr ;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.ReferenceAddr ;
 import com.sun.corba.se.impl.transport.DefaultIORToSocketInfoImpl;
 import com.sun.corba.se.impl.transport.DefaultSocketFactoryImpl;
+
+import sun.corba.SharedSecrets;
 
 /** Initialize the parser data for the standard ORB parser.  This is used both
  * to implement ORBDataParserImpl and to provide the basic testing framework
@@ -640,8 +641,8 @@ public class ParserTable {
                 String param = (String)value ;
 
                 try {
-                    Class legacySocketFactoryClass =
-                        ORBClassLoader.loadClass(param);
+                    Class<?> legacySocketFactoryClass =
+                        SharedSecrets.getJavaCorbaAccess().loadClass(param);
                     // For security reasons avoid creating an instance if
                     // this socket factory class is not one that would fail
                     // the class cast anyway.
@@ -670,7 +671,8 @@ public class ParserTable {
                 String param = (String)value ;
 
                 try {
-                    Class socketFactoryClass = ORBClassLoader.loadClass(param);
+                    Class<?> socketFactoryClass =
+                        SharedSecrets.getJavaCorbaAccess().loadClass(param);
                     // For security reasons avoid creating an instance if
                     // this socket factory class is not one that would fail
                     // the class cast anyway.
@@ -699,7 +701,8 @@ public class ParserTable {
                 String param = (String)value ;
 
                 try {
-                    Class iorToSocketInfoClass = ORBClassLoader.loadClass(param);
+                    Class<?> iorToSocketInfoClass =
+                        SharedSecrets.getJavaCorbaAccess().loadClass(param);
                     // For security reasons avoid creating an instance if
                     // this socket factory class is not one that would fail
                     // the class cast anyway.
@@ -728,7 +731,8 @@ public class ParserTable {
                 String param = (String)value ;
 
                 try {
-                    Class iiopPrimaryToContactInfoClass = ORBClassLoader.loadClass(param);
+                    Class<?> iiopPrimaryToContactInfoClass =
+                        SharedSecrets.getJavaCorbaAccess().loadClass(param);
                     // For security reasons avoid creating an instance if
                     // this socket factory class is not one that would fail
                     // the class cast anyway.
@@ -757,8 +761,8 @@ public class ParserTable {
                 String param = (String)value ;
 
                 try {
-                    Class contactInfoListFactoryClass =
-                        ORBClassLoader.loadClass(param);
+                    Class<?> contactInfoListFactoryClass =
+                        SharedSecrets.getJavaCorbaAccess().loadClass(param);
                     // For security reasons avoid creating an instance if
                     // this socket factory class is not one that would fail
                     // the class cast anyway.
