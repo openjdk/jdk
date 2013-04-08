@@ -2340,11 +2340,34 @@ public class Attr extends JCTree.Visitor {
                 new ResultInfo(VAL, lambdaType.getReturnType(), funcContext);
             localEnv.info.returnResult = bodyResultInfo;
 
-            if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
-                attribTree(that.getBody(), localEnv, bodyResultInfo);
-            } else {
-                JCBlock body = (JCBlock)that.body;
-                attribStats(body.stats, localEnv);
+            Log.DeferredDiagnosticHandler lambdaDeferredHandler = new Log.DeferredDiagnosticHandler(log);
+            try {
+                if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
+                    attribTree(that.getBody(), localEnv, bodyResultInfo);
+                } else {
+                    JCBlock body = (JCBlock)that.body;
+                    attribStats(body.stats, localEnv);
+                }
+
+                if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.SPECULATIVE) {
+                    //check for errors in lambda body
+                    for (JCDiagnostic deferredDiag : lambdaDeferredHandler.getDiagnostics()) {
+                        if (deferredDiag.getKind() == JCDiagnostic.Kind.ERROR) {
+                            resultInfo.checkContext
+                                    .report(that, diags.fragment("bad.arg.types.in.lambda", TreeInfo.types(that.params)));
+                            //we mark the lambda as erroneous - this is crucial in the recovery step
+                            //as parameter-dependent type error won't be reported in that stage,
+                            //meaning that a lambda will be deemed erroeneous only if there is
+                            //a target-independent error (which will cause method diagnostic
+                            //to be skipped).
+                            result = that.type = types.createErrorType(target);
+                            return;
+                        }
+                    }
+                }
+            } finally {
+                lambdaDeferredHandler.reportDeferredDiagnostics();
+                log.popDiagnosticHandler(lambdaDeferredHandler);
             }
 
             result = check(that, target, VAL, resultInfo);
