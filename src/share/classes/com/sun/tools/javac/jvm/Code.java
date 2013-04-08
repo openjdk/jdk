@@ -470,7 +470,15 @@ public class Code {
     public void emitInvokedynamic(int desc, Type mtype) {
         // N.B. this format is under consideration by the JSR 292 EG
         int argsize = width(mtype.getParameterTypes());
-        emitop(invokedynamic);
+        int prevPos = pendingStatPos;
+        try {
+            //disable line number generation (we could have used 'emit1', that
+            //bypasses stackmap generation - which is needed for indy calls)
+            pendingStatPos = Position.NOPOS;
+            emitop(invokedynamic);
+        } finally {
+            pendingStatPos = prevPos;
+        }
         if (!alive) return;
         emit2(desc);
         emit2(0);

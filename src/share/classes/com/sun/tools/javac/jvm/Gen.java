@@ -1748,10 +1748,13 @@ public class Gen extends JCTree.Visitor {
         // Generate code for all arguments, where the expected types are
         // the parameters of the method's external type (that is, any implicit
         // outer instance of a super(...) call appears as first parameter).
+        MethodSymbol msym = (MethodSymbol)TreeInfo.symbol(tree.meth);
         genArgs(tree.args,
-                TreeInfo.symbol(tree.meth).externalType(types).getParameterTypes());
-        code.statBegin(tree.pos);
-        code.markStatBegin();
+                msym.externalType(types).getParameterTypes());
+        if (!msym.isDynamic()) {
+            code.statBegin(tree.pos);
+            code.markStatBegin();
+        }
         result = m.invoke();
     }
 
