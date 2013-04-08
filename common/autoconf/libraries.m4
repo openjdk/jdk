@@ -687,7 +687,7 @@ if test "x$OPENJDK_TARGET_OS" = xlinux; then
     AC_MSG_CHECKING([how to link with libstdc++])
     # If dynamic was requested, it's available since it would fail above otherwise.
     # If dynamic wasn't requested, go with static unless it isn't available.
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno; then
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
         LIBCXX="$LIBCXX -lstdc++"
         LDCXX="$CXX"
         STATIC_CXX_SETTING="STATIC_CXX=false"
@@ -700,6 +700,59 @@ if test "x$OPENJDK_TARGET_OS" = xlinux; then
     fi
 fi
 AC_SUBST(STATIC_CXX_SETTING)
+
+if test "x$JVM_VARIANT_ZERO" = xtrue || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    # Figure out LIBFFI_CFLAGS and LIBFFI_LIBS
+    PKG_CHECK_MODULES([LIBFFI], [libffi])
+
+fi
+
+if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    AC_CHECK_PROG([LLVM_CONFIG], [llvm-config], [llvm-config])
+
+    if test "x$LLVM_CONFIG" != xllvm-config; then
+        AC_MSG_ERROR([llvm-config not found in $PATH.])
+    fi
+
+    llvm_components="jit mcjit engine nativecodegen native"
+    unset LLVM_CFLAGS
+    for flag in $("$LLVM_CONFIG" --cxxflags); do
+      if echo "${flag}" | grep -q '^-@<:@ID@:>@'; then
+        if test "${flag}" != "-D_DEBUG" ; then
+          if test "${LLVM_CFLAGS}" != "" ; then
+            LLVM_CFLAGS="${LLVM_CFLAGS} "
+          fi
+          LLVM_CFLAGS="${LLVM_CFLAGS}${flag}"
+        fi
+      fi
+    done
+    llvm_version=$("${LLVM_CONFIG}" --version | sed 's/\.//; s/svn.*//')
+    LLVM_CFLAGS="${LLVM_CFLAGS} -DSHARK_LLVM_VERSION=${llvm_version}"
+
+    unset LLVM_LDFLAGS
+    for flag in $("${LLVM_CONFIG}" --ldflags); do
+      if echo "${flag}" | grep -q '^-L'; then
+        if test "${LLVM_LDFLAGS}" != ""; then
+          LLVM_LDFLAGS="${LLVM_LDFLAGS} "
+        fi
+        LLVM_LDFLAGS="${LLVM_LDFLAGS}${flag}"
+      fi
+    done
+
+    unset LLVM_LIBS
+    for flag in $("${LLVM_CONFIG}" --libs ${llvm_components}); do
+      if echo "${flag}" | grep -q '^-l'; then
+        if test "${LLVM_LIBS}" != ""; then
+          LLVM_LIBS="${LLVM_LIBS} "
+        fi
+        LLVM_LIBS="${LLVM_LIBS}${flag}"
+      fi
+    done
+
+    AC_SUBST(LLVM_CFLAGS)
+    AC_SUBST(LLVM_LDFLAGS)
+    AC_SUBST(LLVM_LIBS)
+fi
 
 # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
 if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$LIBCXX" = x; then
