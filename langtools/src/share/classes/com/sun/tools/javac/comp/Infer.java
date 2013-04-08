@@ -143,7 +143,6 @@ public class Infer {
                                   boolean allowBoxing,
                                   boolean useVarargs,
                                   Resolve.MethodResolutionContext resolveContext,
-                                  Resolve.MethodCheck methodCheck,
                                   Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
         final InferenceContext inferenceContext = new InferenceContext(tvars);
@@ -152,7 +151,7 @@ public class Infer {
             DeferredAttr.DeferredAttrContext deferredAttrContext =
                     resolveContext.deferredAttrContext(msym, inferenceContext, resultInfo, warn);
 
-            methodCheck.argumentsAcceptable(env, deferredAttrContext,
+            resolveContext.methodCheck.argumentsAcceptable(env, deferredAttrContext,
                     argtypes, mt.getParameterTypes(), warn);
 
             if (allowGraphInference &&

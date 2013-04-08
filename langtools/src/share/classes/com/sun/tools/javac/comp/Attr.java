@@ -2574,8 +2574,9 @@ public class Attr extends JCTree.Visitor {
             setFunctionalInfo(that, pt(), desc, resultInfo.checkContext.inferenceContext());
             List<Type> argtypes = desc.getParameterTypes();
 
-            Pair<Symbol, Resolve.ReferenceLookupHelper> refResult = rs.resolveMemberReference(that.pos(), localEnv, that,
-                    that.expr.type, that.name, argtypes, typeargtypes, true);
+            Pair<Symbol, Resolve.ReferenceLookupHelper> refResult =
+                    rs.resolveMemberReference(that.pos(), localEnv, that,
+                        that.expr.type, that.name, argtypes, typeargtypes, true, rs.resolveMethodCheck);
 
             Symbol refSym = refResult.fst;
             Resolve.ReferenceLookupHelper lookupHelper = refResult.snd;
