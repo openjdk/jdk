@@ -415,7 +415,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(String str) {
-        if (str == null) str = "null";
+        if (str == null)
+            return appendNull();
         int len = str.length();
         ensureCapacityInternal(count + len);
         str.getChars(0, len, value, count);
@@ -426,7 +427,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     // Documentation in subclasses because of synchro difference
     public AbstractStringBuilder append(StringBuffer sb) {
         if (sb == null)
-            return append("null");
+            return appendNull();
         int len = sb.length();
         ensureCapacityInternal(count + len);
         sb.getChars(0, len, value, count);
@@ -439,7 +440,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     AbstractStringBuilder append(AbstractStringBuilder asb) {
         if (asb == null)
-            return append("null");
+            return appendNull();
         int len = asb.length();
         ensureCapacityInternal(count + len);
         asb.getChars(0, len, value, count);
@@ -451,13 +452,25 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     @Override
     public AbstractStringBuilder append(CharSequence s) {
         if (s == null)
-            s = "null";
+            return appendNull();
         if (s instanceof String)
             return this.append((String)s);
         if (s instanceof AbstractStringBuilder)
             return this.append((AbstractStringBuilder)s);
 
         return this.append(s, 0, s.length());
+    }
+
+    private AbstractStringBuilder appendNull() {
+        int c = count;
+        ensureCapacityInternal(c + 4);
+        final char[] value = this.value;
+        value[c++] = 'n';
+        value[c++] = 'u';
+        value[c++] = 'l';
+        value[c++] = 'l';
+        count = c;
+        return this;
     }
 
     /**
