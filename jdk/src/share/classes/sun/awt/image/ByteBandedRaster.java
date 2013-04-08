@@ -159,7 +159,7 @@ public class ByteBandedRaster extends SunWritableRaster {
             throw new RasterFormatException("ByteBandedRasters must have"+
                 "BandedSampleModels");
         }
-        verify(false);
+        verify();
     }
 
 
@@ -731,16 +731,30 @@ public class ByteBandedRaster extends SunWritableRaster {
     }
 
     /**
-     * Verify that the layout parameters are consistent with
-     * the data.  If strictCheck
-     * is false, this method will check for ArrayIndexOutOfBounds conditions.  If
-     * strictCheck is true, this method will check for additional error
-     * conditions such as line wraparound (width of a line greater than
-     * the scanline stride).
-     * @return   String   Error string, if the layout is incompatible with
-     *                    the data.  Otherwise returns null.
+     * Verify that the layout parameters are consistent with the data.
+     * Verifies whether the data buffer has enough data for the raster,
+     * taking into account offsets, after ensuring all offsets are >=0.
+     * @throws RasterFormatException if a problem is detected.
      */
-    private void verify (boolean strictCheck) {
+    private void verify() {
+
+        /* Need to re-verify the dimensions since a sample model may be
+         * specified to the constructor
+         */
+        if (width <= 0 || height <= 0 ||
+            height > (Integer.MAX_VALUE / width))
+        {
+            throw new RasterFormatException("Invalid raster dimension");
+        }
+
+        if (scanlineStride < 0 ||
+            scanlineStride > (Integer.MAX_VALUE / height))
+        {
+            // integer overflow
+            throw new RasterFormatException("Incorrect scanline stride: "
+                    + scanlineStride);
+        }
+
         // Make sure data for Raster is in a legal range
         for (int i=0; i < dataOffsets.length; i++) {
             if (dataOffsets[i] < 0) {
@@ -750,32 +764,41 @@ public class ByteBandedRaster extends SunWritableRaster {
             }
         }
 
-        int maxSize = 0;
-        int size;
+        int lastScanOffset = (height - 1) * scanlineStride;
+        int lastPixelOffset = lastScanOffset + (width-1);
+        if (lastPixelOffset < lastScanOffset) {
+            throw new RasterFormatException("Invalid raster dimension");
+        }
+
+        int maxIndex = 0;
+        int index;
 
         for (int i=0; i < numDataElements; i++) {
-            size = (height-1)*scanlineStride + (width-1) + dataOffsets[i];
-            if (size > maxSize) {
-                maxSize = size;
+            index = lastPixelOffset + dataOffsets[i];
+            if (index < lastPixelOffset) {
+                throw new RasterFormatException("Invalid raster dimension");
+            }
+            if (index > maxIndex) {
+                maxIndex = index;
             }
         }
 
         if (data.length == 1) {
-            if (data[0].length < maxSize*numDataElements) {
+            if (data[0].length <= maxIndex*numDataElements) {
                 throw new RasterFormatException("Data array too small "+
                                                 "(it is "+data[0].length+
-                                                " and should be "+
-                                                (maxSize*numDataElements)+
+                                                " and should be > "+
+                                                (maxIndex*numDataElements)+
                                                 " )");
             }
         }
         else {
             for (int i=0; i < numDataElements; i++) {
-                if (data[i].length < maxSize) {
+                if (data[i].length <= maxIndex) {
                     throw new RasterFormatException("Data array too small "+
                                                     "(it is "+data[i].length+
-                                                    " and should be "+
-                                                    maxSize+" )");
+                                                    " and should be > "+
+                                                    maxIndex+" )");
                 }
             }
         }
