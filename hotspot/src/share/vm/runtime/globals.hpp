@@ -3668,8 +3668,13 @@ class CommandLineFlags {
   product(bool, PrintGCCause, true,                                         \
           "Include GC cause in GC logging")                                 \
                                                                             \
-  product(bool, AllowNonVirtualCalls, false,                                \
-          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")
+  product(bool , AllowNonVirtualCalls, false,                               \
+          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
+                                                                            \
+  experimental(uintx, ArrayAllocatorMallocLimit,                            \
+          SOLARIS_ONLY(64*K) NOT_SOLARIS(max_uintx),                        \
+          "Allocation less than this value will be allocated "              \
+          "using malloc. Larger allocations will use mmap.")
 
 /*
  *  Macros for factoring of globals
