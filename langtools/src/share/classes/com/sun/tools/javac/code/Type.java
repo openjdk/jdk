@@ -908,6 +908,12 @@ public class Type implements PrimitiveType {
             return interfaces_field.prepend(supertype_field);
         }
 
+        public List<Type> getExplicitComponents() {
+            return allInterfaces ?
+                    interfaces_field :
+                    getComponents();
+        }
+
         @Override
         public TypeKind getKind() {
             return TypeKind.INTERSECTION;
