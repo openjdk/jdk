@@ -609,6 +609,12 @@ SALIB_NAME
 HOTSPOT_MAKE_ARGS
 FIXPATH
 LIBCXX
+LLVM_LIBS
+LLVM_LDFLAGS
+LLVM_CFLAGS
+LLVM_CONFIG
+LIBFFI_LIBS
+LIBFFI_CFLAGS
 STATIC_CXX_SETTING
 LIBDL
 LIBM
@@ -811,6 +817,7 @@ FASTDEBUG
 VARIANT
 DEBUG_LEVEL
 MACOSX_UNIVERSAL
+INCLUDE_SA
 JVM_VARIANT_ZEROSHARK
 JVM_VARIANT_ZERO
 JVM_VARIANT_KERNEL
@@ -826,6 +833,8 @@ BUILD_LOG
 SYS_ROOT
 PATH_SEP
 SRC_ROOT
+ZERO_ARCHDEF
+ZERO_ARCHFLAG
 DEFINE_CROSS_COMPILE_ARCH
 LP64
 OPENJDK_TARGET_OS_API_DIR
@@ -1039,7 +1048,9 @@ XMKMF
 FREETYPE2_CFLAGS
 FREETYPE2_LIBS
 ALSA_CFLAGS
-ALSA_LIBS'
+ALSA_LIBS
+LIBFFI_CFLAGS
+LIBFFI_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1809,6 +1820,9 @@ Some influential environment variables:
               linker flags for FREETYPE2, overriding pkg-config
   ALSA_CFLAGS C compiler flags for ALSA, overriding pkg-config
   ALSA_LIBS   linker flags for ALSA, overriding pkg-config
+  LIBFFI_CFLAGS
+              C compiler flags for LIBFFI, overriding pkg-config
+  LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -7084,6 +7098,29 @@ $as_echo "$COMPILE_TYPE" >&6; }
     fi
 
 
+    # Some Zero and Shark settings.
+    # ZERO_ARCHFLAG tells the compiler which mode to build for
+    case "${OPENJDK_TARGET_CPU}" in
+      s390)
+        ZERO_ARCHFLAG="-m31"
+        ;;
+      *)
+        ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+    esac
+
+
+    # ZERO_ARCHDEF is used to enable architecture-specific code
+    case "${OPENJDK_TARGET_CPU}" in
+      ppc*)    ZERO_ARCHDEF=PPC   ;;
+      s390*)   ZERO_ARCHDEF=S390  ;;
+      sparc*)  ZERO_ARCHDEF=SPARC ;;
+      x86_64*) ZERO_ARCHDEF=AMD64 ;;
+      x86)     ZERO_ARCHDEF=IA32  ;;
+      *)      ZERO_ARCHDEF=$(echo "${OPENJDK_TARGET_CPU_LEGACY_LIB}" | tr a-z A-Z)
+    esac
+
+
+
 
 
 # Continue setting up basic stuff. Most remaining code require fundamental tools.
@@ -7692,6 +7729,15 @@ fi
 
 
 
+
+
+INCLUDE_SA=true
+if test "x$JVM_VARIANT_ZERO" = xtrue ; then
+    INCLUDE_SA=false
+fi
+if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+    INCLUDE_SA=false
+fi
 
 
 if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
@@ -31693,7 +31739,7 @@ $as_echo "$has_static_libstdcxx" >&6; }
 $as_echo_n "checking how to link with libstdc++... " >&6; }
     # If dynamic was requested, it's available since it would fail above otherwise.
     # If dynamic wasn't requested, go with static unless it isn't available.
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno; then
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
         LIBCXX="$LIBCXX -lstdc++"
         LDCXX="$CXX"
         STATIC_CXX_SETTING="STATIC_CXX=false"
@@ -31708,6 +31754,180 @@ $as_echo "static" >&6; }
     fi
 fi
 
+
+if test "x$JVM_VARIANT_ZERO" = xtrue || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    # Figure out LIBFFI_CFLAGS and LIBFFI_LIBS
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBFFI" >&5
+$as_echo_n "checking for LIBFFI... " >&6; }
+
+if test -n "$LIBFFI_CFLAGS"; then
+    pkg_cv_LIBFFI_CFLAGS="$LIBFFI_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBFFI_CFLAGS=`$PKG_CONFIG --cflags "libffi" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBFFI_LIBS"; then
+    pkg_cv_LIBFFI_LIBS="$LIBFFI_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBFFI_LIBS=`$PKG_CONFIG --libs "libffi" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libffi" 2>&1`
+        else
+	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --print-errors "libffi" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBFFI_PKG_ERRORS" >&5
+
+	as_fn_error $? "Package requirements (libffi) were not met:
+
+$LIBFFI_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables LIBFFI_CFLAGS
+and LIBFFI_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" "$LINENO" 5
+elif test $pkg_failed = untried; then
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables LIBFFI_CFLAGS
+and LIBFFI_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+else
+	LIBFFI_CFLAGS=$pkg_cv_LIBFFI_CFLAGS
+	LIBFFI_LIBS=$pkg_cv_LIBFFI_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	:
+fi
+
+fi
+
+if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    # Extract the first word of "llvm-config", so it can be a program name with args.
+set dummy llvm-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_LLVM_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$LLVM_CONFIG"; then
+  ac_cv_prog_LLVM_CONFIG="$LLVM_CONFIG" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_LLVM_CONFIG="llvm-config"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+LLVM_CONFIG=$ac_cv_prog_LLVM_CONFIG
+if test -n "$LLVM_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_CONFIG" >&5
+$as_echo "$LLVM_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+    if test "x$LLVM_CONFIG" != xllvm-config; then
+        as_fn_error $? "llvm-config not found in $PATH." "$LINENO" 5
+    fi
+
+    llvm_components="jit mcjit engine nativecodegen native"
+    unset LLVM_CFLAGS
+    for flag in $("$LLVM_CONFIG" --cxxflags); do
+      if echo "${flag}" | grep -q '^-[ID]'; then
+        if test "${flag}" != "-D_DEBUG" ; then
+          if test "${LLVM_CFLAGS}" != "" ; then
+            LLVM_CFLAGS="${LLVM_CFLAGS} "
+          fi
+          LLVM_CFLAGS="${LLVM_CFLAGS}${flag}"
+        fi
+      fi
+    done
+    llvm_version=$("${LLVM_CONFIG}" --version | sed 's/\.//; s/svn.*//')
+    LLVM_CFLAGS="${LLVM_CFLAGS} -DSHARK_LLVM_VERSION=${llvm_version}"
+
+    unset LLVM_LDFLAGS
+    for flag in $("${LLVM_CONFIG}" --ldflags); do
+      if echo "${flag}" | grep -q '^-L'; then
+        if test "${LLVM_LDFLAGS}" != ""; then
+          LLVM_LDFLAGS="${LLVM_LDFLAGS} "
+        fi
+        LLVM_LDFLAGS="${LLVM_LDFLAGS}${flag}"
+      fi
+    done
+
+    unset LLVM_LIBS
+    for flag in $("${LLVM_CONFIG}" --libs ${llvm_components}); do
+      if echo "${flag}" | grep -q '^-l'; then
+        if test "${LLVM_LIBS}" != ""; then
+          LLVM_LIBS="${LLVM_LIBS} "
+        fi
+        LLVM_LIBS="${LLVM_LIBS}${flag}"
+      fi
+    done
+
+
+
+
+fi
 
 # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
 if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$LIBCXX" = x; then
