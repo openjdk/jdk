@@ -18,6 +18,7 @@ text: .text%ZIP_FreeEntry;
 text: .text%Java_java_util_zip_ZipFile_initIDs;
 text: .text%Java_java_util_zip_ZipFile_open;
 text: .text%Java_java_util_zip_ZipFile_getTotal;
+text: .text%Java_java_util_zip_ZipFile_startsWithLOC;
 text: .text%Java_java_util_zip_ZipFile_getEntry;
 text: .text%Java_java_util_zip_ZipFile_freeEntry;
 text: .text%Java_java_util_zip_ZipFile_getEntryTime;
