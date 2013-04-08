@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import com.sun.corba.se.spi.transport.ReadTimeouts;
 
 import com.sun.corba.se.impl.encoding.CodeSetComponentInfo ;
 import com.sun.corba.se.impl.legacy.connection.USLPort;
-import com.sun.corba.se.impl.orbutil.ORBClassLoader ;
 import com.sun.corba.se.impl.orbutil.ORBConstants ;
 import com.sun.corba.se.impl.logging.ORBUtilSystemException ;
 
