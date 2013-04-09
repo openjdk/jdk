@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,10 @@ public class TXWContentHandler implements ContentHandler {
             for(int i = 0; i < atts.getLength(); i++)  {
                 String auri = atts.getURI(i);
                 if ("http://www.w3.org/2000/xmlns/".equals(auri)) {
-                    txw._namespace(atts.getValue(i),atts.getLocalName(i));
+                    if ("xmlns".equals(atts.getLocalName(i)))
+                        txw._namespace(atts.getValue(i), "");
+                    else
+                        txw._namespace(atts.getValue(i),atts.getLocalName(i));
                 } else {
                     if ("schemaLocation".equals(atts.getLocalName(i))
                             && "".equals(atts.getValue(i)))

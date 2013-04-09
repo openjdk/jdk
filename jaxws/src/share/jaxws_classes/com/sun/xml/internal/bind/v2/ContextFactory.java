@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,11 @@ import com.sun.xml.internal.bind.v2.util.TypeCast;
  * @author Kohsuke Kawaguchi
  */
 public class ContextFactory {
+
     /**
      * The API will invoke this method via reflection
      */
-    public static JAXBContext createContext( Class[] classes, Map<String,Object> properties ) throws JAXBException {
+    public static JAXBContext createContext(Class[] classes, Map<String,Object> properties ) throws JAXBException {
         // fool-proof check, and copy the map to make it easier to find unrecognized properties.
         if(properties==null)
             properties = Collections.emptyMap();
@@ -75,6 +76,10 @@ public class ContextFactory {
         Boolean c14nSupport = getPropertyValue(properties,JAXBRIContext.CANONICALIZATION_SUPPORT,Boolean.class);
         if(c14nSupport==null)
             c14nSupport = false;
+
+        Boolean disablesecurityProcessing = getPropertyValue(properties, JAXBRIContext.DISABLE_XML_SECURITY, Boolean.class);
+        if (disablesecurityProcessing==null)
+            disablesecurityProcessing = false;
 
         Boolean allNillable = getPropertyValue(properties,JAXBRIContext.TREAT_EVERYTHING_NILLABLE,Boolean.class);
         if(allNillable==null)
@@ -89,8 +94,14 @@ public class ContextFactory {
             supressAccessorWarnings = false;
 
         Boolean improvedXsiTypeHandling = getPropertyValue(properties, JAXBRIContext.IMPROVED_XSI_TYPE_HANDLING, Boolean.class);
-        if(improvedXsiTypeHandling == null)
-            improvedXsiTypeHandling = true;
+        if (improvedXsiTypeHandling == null) {
+            String improvedXsiSystemProperty = Util.getSystemProperty(JAXBRIContext.IMPROVED_XSI_TYPE_HANDLING);
+            if (improvedXsiSystemProperty == null) {
+                improvedXsiTypeHandling = true;
+            } else {
+                improvedXsiTypeHandling = Boolean.valueOf(improvedXsiSystemProperty);
+            }
+        }
 
         Boolean xmlAccessorFactorySupport = getPropertyValue(properties,
            JAXBRIContext.XMLACCESSORFACTORY_SUPPORT,Boolean.class);
@@ -102,6 +113,11 @@ public class ContextFactory {
         }
 
         RuntimeAnnotationReader ar = getPropertyValue(properties,JAXBRIContext.ANNOTATION_READER,RuntimeAnnotationReader.class);
+
+        Collection<TypeReference> tr = getPropertyValue(properties, JAXBRIContext.TYPE_REFERENCES, Collection.class);
+        if (tr == null) {
+            tr = Collections.<TypeReference>emptyList();
+        }
 
         Map<Class,Class> subclassReplacements;
         try {
@@ -117,7 +133,7 @@ public class ContextFactory {
 
         JAXBContextImpl.JAXBContextBuilder builder = new JAXBContextImpl.JAXBContextBuilder();
         builder.setClasses(classes);
-        builder.setTypeRefs(Collections.<TypeReference>emptyList());
+        builder.setTypeRefs(tr);
         builder.setSubclassReplacements(subclassReplacements);
         builder.setDefaultNsUri(defaultNsUri);
         builder.setC14NSupport(c14nSupport);
@@ -127,6 +143,7 @@ public class ContextFactory {
         builder.setRetainPropertyInfo(retainPropertyInfo);
         builder.setSupressAccessorWarnings(supressAccessorWarnings);
         builder.setImprovedXsiTypeHandling(improvedXsiTypeHandling);
+        builder.setDisableSecurityProcessing(disablesecurityProcessing);
         return builder.build();
     }
 
@@ -144,6 +161,22 @@ public class ContextFactory {
             return type.cast(o);
     }
 
+    /**
+     *
+     * @param classes
+     * @param typeRefs
+     * @param subclassReplacements
+     * @param defaultNsUri
+     * @param c14nSupport
+     * @param ar
+     * @param xmlAccessorFactorySupport
+     * @param allNillable
+     * @param retainPropertyInfo
+     * @return
+     * @throws JAXBException
+     * @deprecated use createContext(Class[] classes, Map<String,Object> properties) method instead
+     */
+    @Deprecated
     public static JAXBRIContext createContext( Class[] classes,
             Collection<TypeReference> typeRefs, Map<Class,Class> subclassReplacements,
             String defaultNsUri, boolean c14nSupport, RuntimeAnnotationReader ar,
@@ -154,6 +187,23 @@ public class ContextFactory {
                 allNillable, retainPropertyInfo, false);
     }
 
+    /**
+     *
+     * @param classes
+     * @param typeRefs
+     * @param subclassReplacements
+     * @param defaultNsUri
+     * @param c14nSupport
+     * @param ar
+     * @param xmlAccessorFactorySupport
+     * @param allNillable
+     * @param retainPropertyInfo
+     * @param improvedXsiTypeHandling
+     * @return
+     * @throws JAXBException
+     * @deprecated use createContext( Class[] classes, Map<String,Object> properties) method instead
+     */
+    @Deprecated
     public static JAXBRIContext createContext( Class[] classes,
             Collection<TypeReference> typeRefs, Map<Class,Class> subclassReplacements,
             String defaultNsUri, boolean c14nSupport, RuntimeAnnotationReader ar,

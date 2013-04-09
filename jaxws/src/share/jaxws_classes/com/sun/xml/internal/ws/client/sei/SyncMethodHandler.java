@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,19 @@
 
 package com.sun.xml.internal.ws.client.sei;
 
-import com.sun.xml.internal.ws.api.databinding.ClientCallBridge;
+import com.oracle.webservices.internal.api.databinding.JavaCallInfo;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.client.RequestContext;
 import com.sun.xml.internal.ws.client.ResponseContextReceiver;
 import com.sun.xml.internal.ws.encoding.soap.DeserializationException;
-import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
 import com.sun.xml.internal.ws.message.jaxb.JAXBMessage;
-import com.sun.xml.internal.ws.model.CheckedExceptionImpl;
-import com.sun.xml.internal.ws.model.JavaMethodImpl;
-import com.sun.xml.internal.ws.model.ParameterImpl;
-import com.sun.xml.internal.ws.model.WrapperParameter;
-import com.sun.xml.internal.org.jvnet.ws.databinding.JavaCallInfo;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.ws.Holder;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * {@link MethodHandler} that handles synchronous method invocations.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.xml.internal.stream.buffer.XMLStreamBufferResult;
 import com.sun.xml.internal.ws.api.Component;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.BindingID;
+import com.sun.xml.internal.ws.api.databinding.MetadataReader;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.api.server.*;
@@ -303,6 +304,7 @@ public class EndpointImpl extends Endpoint {
             throw new UnsupportedOperationException("Couldn't load light weight http server", e);
         }
         container = getContainer();
+        MetadataReader metadataReader = EndpointFactory.getExternalMetadatReader(implClass, binding);
         WSEndpoint wse = WSEndpoint.create(
                 implClass, true,
                 invoker,
@@ -310,7 +312,7 @@ public class EndpointImpl extends Endpoint {
                 getProperty(QName.class, Endpoint.WSDL_PORT),
                 container,
                 binding,
-                getPrimaryWsdl(),
+                getPrimaryWsdl(metadataReader),
                 buildDocList(),
                 (EntityResolver) null,
                 false
@@ -360,10 +362,10 @@ public class EndpointImpl extends Endpoint {
     /**
      * Gets wsdl from @WebService or @WebServiceProvider
      */
-    private @Nullable SDDocumentSource getPrimaryWsdl() {
+    private @Nullable SDDocumentSource getPrimaryWsdl(MetadataReader metadataReader) {
         // Takes care of @WebService, @WebServiceProvider's wsdlLocation
-        EndpointFactory.verifyImplementorClass(implClass);
-        String wsdlLocation = EndpointFactory.getWsdlLocation(implClass);
+        EndpointFactory.verifyImplementorClass(implClass, metadataReader);
+        String wsdlLocation = EndpointFactory.getWsdlLocation(implClass, metadataReader);
         if (wsdlLocation != null) {
             ClassLoader cl = implClass.getClassLoader();
             URL url = cl.getResource(wsdlLocation);

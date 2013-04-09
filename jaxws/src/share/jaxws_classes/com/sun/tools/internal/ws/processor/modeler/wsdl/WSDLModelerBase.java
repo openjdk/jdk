@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import com.sun.tools.internal.ws.processor.model.Fault;
 import com.sun.tools.internal.ws.processor.model.Operation;
 import com.sun.tools.internal.ws.processor.model.Port;
 import com.sun.tools.internal.ws.processor.model.java.JavaException;
-import com.sun.tools.internal.ws.processor.modeler.JavaSimpleTypeCreator;
 import com.sun.tools.internal.ws.processor.modeler.Modeler;
 import com.sun.tools.internal.ws.resources.ModelerMessages;
 import com.sun.tools.internal.ws.wscompile.AbortException;
@@ -49,10 +48,8 @@ import com.sun.tools.internal.ws.wsdl.document.soap.*;
 import com.sun.tools.internal.ws.wsdl.framework.Entity;
 import com.sun.tools.internal.ws.wsdl.framework.GloballyKnown;
 import com.sun.tools.internal.ws.wsdl.framework.NoSuchEntityException;
-import com.sun.tools.internal.ws.wsdl.parser.DOMForest;
 import com.sun.tools.internal.ws.wsdl.parser.WSDLParser;
 import com.sun.tools.internal.ws.wsdl.parser.MetadataFinder;
-import com.sun.xml.internal.ws.spi.db.BindingContext;
 import com.sun.xml.internal.ws.spi.db.BindingHelper;
 
 import org.xml.sax.helpers.LocatorImpl;
@@ -84,8 +81,9 @@ public abstract class WSDLModelerBase implements Modeler {
      * @param wsdlPort
      */
     protected void applyPortMethodCustomization(Port port, com.sun.tools.internal.ws.wsdl.document.Port wsdlPort) {
-        if(isProvider(wsdlPort))
+        if (isProvider(wsdlPort)) {
             return;
+        }
         JAXWSBinding jaxwsBinding = (JAXWSBinding)getExtensionOfType(wsdlPort, JAXWSBinding.class);
 
         String portMethodName = (jaxwsBinding != null)?((jaxwsBinding.getMethodName() != null)?jaxwsBinding.getMethodName().getName():null):null;
@@ -108,8 +106,9 @@ public abstract class WSDLModelerBase implements Modeler {
 
         JAXWSBinding jaxwsGlobalCustomization = (JAXWSBinding)getExtensionOfType(document.getDefinitions(), JAXWSBinding.class);
         isProvider = (jaxwsGlobalCustomization != null)?jaxwsGlobalCustomization.isProvider():null;
-        if(isProvider != null)
+        if (isProvider != null) {
             return isProvider;
+        }
         return false;
     }
 
@@ -157,8 +156,9 @@ public abstract class WSDLModelerBase implements Modeler {
     }
 
     protected com.sun.tools.internal.ws.wsdl.document.Message getOutputMessage() {
-        if (info.portTypeOperation.getOutput() == null)
+        if (info.portTypeOperation.getOutput() == null) {
             return null;
+        }
         return info.portTypeOperation.getOutput().resolveMessage(info.document);
     }
 
@@ -180,10 +180,11 @@ public abstract class WSDLModelerBase implements Modeler {
 
         //get Mime parts
         List mimeParts;
-        if(isInput)
+        if (isInput) {
             mimeParts = getMimeContentParts(message, info.bindingOperation.getInput());
-        else
+        } else {
             mimeParts = getMimeContentParts(message, info.bindingOperation.getOutput());
+        }
 
         if (bodyParts != null) {
             StringTokenizer in = new StringTokenizer(bodyParts.trim(), " ");
@@ -198,17 +199,18 @@ public abstract class WSDLModelerBase implements Modeler {
             }
         } else {
             for (MessagePart mPart : message.getParts()) {
-                if (!mimeParts.contains(mPart))
+                if (!mimeParts.contains(mPart)) {
                     mPart.setBindingExtensibilityElementKind(MessagePart.SOAP_BODY_BINDING);
+                }
                 partsList.add(mPart);
             }
         }
 
         for (MessagePart mPart : message.getParts()) {
-            if(mimeParts.contains(mPart)) {
+            if (mimeParts.contains(mPart)) {
                 mPart.setBindingExtensibilityElementKind(MessagePart.WSDL_MIME_BINDING);
                 parts.add(mPart);
-            }else if(partsList.contains(mPart)) {
+            } else if(partsList.contains(mPart)) {
                 mPart.setBindingExtensibilityElementKind(MessagePart.SOAP_BODY_BINDING);
                 parts.add(mPart);
             }
@@ -226,8 +228,9 @@ public abstract class WSDLModelerBase implements Modeler {
 
         for (MIMEPart mimePart : getMimeParts(ext)) {
             MessagePart part = getMimeContentPart(message, mimePart);
-            if (part != null)
+            if (part != null) {
                 mimeContentParts.add(part);
+            }
         }
         return mimeContentParts;
     }
@@ -250,8 +253,9 @@ public abstract class WSDLModelerBase implements Modeler {
                     mimeContents.add((MIMEContent) obj);
                 }
             }
-            if(!validateMimeContentPartNames(mimeContents))
+            if (!validateMimeContentPartNames(mimeContents)) {
                 return false;
+            }
             if(mPart.getName() != null) {
                 warning(mPart, ModelerMessages.MIMEMODELER_INVALID_MIME_PART_NAME_NOT_ALLOWED(info.portTypeOperation.getName()));
             }
@@ -281,8 +285,9 @@ public abstract class WSDLModelerBase implements Modeler {
 //        String mimeType = null;
         for(MIMEContent mimeContent:mimeContents){
             String mimeType = getMimeContentType(mimeContent);
-            if(!mimeTypes.contains(mimeType))
+            if (!mimeTypes.contains(mimeType)) {
                 mimeTypes.add(mimeType);
+            }
         }
         return mimeTypes;
     }
@@ -432,8 +437,9 @@ public abstract class WSDLModelerBase implements Modeler {
      */
     private boolean isRootPart(MIMEPart part) {
         for (TWSDLExtension twsdlExtension : part.extensions()) {
-            if (twsdlExtension instanceof SOAPBody)
+            if (twsdlExtension instanceof SOAPBody) {
                 return true;
+            }
         }
         return false;
     }
@@ -506,13 +512,15 @@ public abstract class WSDLModelerBase implements Modeler {
             info.portTypeOperation.getStyle()
             == OperationStyle.REQUEST_RESPONSE;
         List<MessagePart> inputParts = getMessageParts(getSOAPRequestBody(), getInputMessage(), true);
-        if(!validateStyleAndPart(operation, inputParts))
+        if (!validateStyleAndPart(operation, inputParts)) {
             return false;
+        }
 
         if(isRequestResponse){
             List<MessagePart> outputParts = getMessageParts(getSOAPResponseBody(), getOutputMessage(), false);
-            if(!validateStyleAndPart(operation, outputParts))
+            if (!validateStyleAndPart(operation, outputParts)) {
                 return false;
+            }
         }
         return true;
     }
@@ -526,8 +534,9 @@ public abstract class WSDLModelerBase implements Modeler {
             (SOAPOperation) getExtensionOfType(operation, SOAPOperation.class);
         for (MessagePart part : parts) {
             if (part.getBindingExtensibilityElementKind() == MessagePart.SOAP_BODY_BINDING) {
-                if (!isStyleAndPartMatch(soapOperation, part))
+                if (!isStyleAndPartMatch(soapOperation, part)) {
                     return false;
+                }
             }
         }
         return true;
@@ -538,8 +547,9 @@ public abstract class WSDLModelerBase implements Modeler {
 
         QName memberName = fault.getElementName();
         javaMemberName = fault.getJavaMemberName();
-        if (javaMemberName == null)
+        if (javaMemberName == null) {
             javaMemberName = memberName.getLocalPart();
+        }
         return javaMemberName;
     }
 
@@ -553,8 +563,9 @@ public abstract class WSDLModelerBase implements Modeler {
         for (MIMEPart mimePart : getMimeParts(ext)) {
             List<MIMEContent> mimeContents = getMimeContents(mimePart);
             for (MIMEContent mimeContent : mimeContents) {
-                if (mimeContent.getPart().equals(name))
+                if (mimeContent.getPart().equals(name)) {
                     return mimeContents;
+                }
             }
         }
         return null;
@@ -605,8 +616,9 @@ public abstract class WSDLModelerBase implements Modeler {
     protected TWSDLExtension getAnyExtensionOfType(
         TWSDLExtensible extensible,
         Class type) {
-        if(extensible == null)
+        if (extensible == null) {
             return null;
+        }
         for (TWSDLExtension extension:extensible.extensions()) {
             if(extension.getClass().equals(type)) {
                 return extension;
@@ -616,8 +628,9 @@ public abstract class WSDLModelerBase implements Modeler {
                 for (MIMEPart part : ((MIMEMultipartRelated)extension).getParts()) {
                     //bug fix: 5024001
                     TWSDLExtension extn = getExtensionOfType(part, type);
-                    if (extn != null)
+                    if (extn != null) {
                         return extn;
+                    }
                 }
             }
         }
@@ -660,11 +673,11 @@ public abstract class WSDLModelerBase implements Modeler {
     protected String getUniqueClassName(String className) {
         int cnt = 2;
         String uniqueName = className;
-        while (reqResNames.contains(uniqueName.toLowerCase())) {
+        while (reqResNames.contains(uniqueName.toLowerCase(Locale.ENGLISH))) {
             uniqueName = className + cnt;
             cnt++;
         }
-        reqResNames.add(uniqueName.toLowerCase());
+        reqResNames.add(uniqueName.toLowerCase(Locale.ENGLISH));
         return uniqueName;
     }
 
@@ -700,19 +713,22 @@ public abstract class WSDLModelerBase implements Modeler {
 
     protected void warning(Entity entity, String message){
         //avoid duplicate warning for the second pass
-        if(numPasses > 1)
+        if (numPasses > 1) {
             return;
-        if(entity == null)
+        }
+        if (entity == null) {
             errReceiver.warning(null, message);
-        else
+        } else {
             errReceiver.warning(entity.getLocator(), message);
+        }
     }
 
     protected void error(Entity entity, String message){
-        if(entity == null)
+        if (entity == null) {
             errReceiver.error(null, message);
-        else
+        } else {
             errReceiver.error(entity.getLocator(), message);
+        }
         throw new AbortException();
     }
 
@@ -732,11 +748,10 @@ public abstract class WSDLModelerBase implements Modeler {
     protected Map<String,JavaException> _javaExceptions;
     protected Map _faultTypeToStructureMap;
     protected Map<QName, Port> _bindingNameToPortMap;
-    protected boolean useWSIBasicProfile = true;
 
     private final Set<String> reqResNames = new HashSet<String>();
 
-    public class ProcessSOAPOperationInfo {
+    public static class ProcessSOAPOperationInfo {
 
         public ProcessSOAPOperationInfo(
             Port modelPort,
@@ -768,17 +783,7 @@ public abstract class WSDLModelerBase implements Modeler {
 
         // additional data
         public Operation operation;
-        public String uniqueOperationName;
     }
-
-    public static class WSDLExceptionInfo {
-        public String exceptionType;
-        public QName wsdlMessage;
-        public String wsdlMessagePartName;
-        public HashMap constructorOrder; // mapping of element name to
-                                             // constructor order (of type Integer)
-    }
-
 
     protected WSDLParser parser;
     protected WSDLDocument document;

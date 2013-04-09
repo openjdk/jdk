@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,9 @@ import com.sun.xml.internal.ws.api.model.MEP;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.api.pipe.Tube;
 import com.sun.xml.internal.ws.api.pipe.Fiber;
+import com.sun.xml.internal.ws.api.server.Container;
+import com.sun.xml.internal.ws.api.server.ContainerResolver;
 import com.sun.xml.internal.ws.binding.BindingImpl;
-import com.sun.xml.internal.ws.client.AsyncResponseImpl;
 import com.sun.xml.internal.ws.client.*;
 import com.sun.xml.internal.ws.model.JavaMethodImpl;
 import com.sun.xml.internal.ws.model.SOAPSEIModel;
@@ -131,21 +132,26 @@ public final class SEIStub extends Stub implements InvocationHandler {
     private final Map<Method, MethodHandler> methodHandlers = new HashMap<Method, MethodHandler>();
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        MethodHandler handler = methodHandlers.get(method);
-        if (handler != null) {
-            return handler.invoke(proxy, args);
-        } else {
-            // we handle the other method invocations by ourselves
-            try {
-                return method.invoke(this, args);
-            } catch (IllegalAccessException e) {
-                // impossible
-                throw new AssertionError(e);
-            } catch (IllegalArgumentException e) {
-                throw new AssertionError(e);
-            } catch (InvocationTargetException e) {
-                throw e.getCause();
+        Container old = ContainerResolver.getDefault().enterContainer(owner.getContainer());
+        try {
+            MethodHandler handler = methodHandlers.get(method);
+            if (handler != null) {
+                return handler.invoke(proxy, args);
+            } else {
+                // we handle the other method invocations by ourselves
+                try {
+                    return method.invoke(this, args);
+                } catch (IllegalAccessException e) {
+                    // impossible
+                    throw new AssertionError(e);
+                } catch (IllegalArgumentException e) {
+                    throw new AssertionError(e);
+                } catch (InvocationTargetException e) {
+                    throw e.getCause();
+                }
             }
+        } finally {
+            ContainerResolver.getDefault().exitContainer(old);
         }
     }
 
