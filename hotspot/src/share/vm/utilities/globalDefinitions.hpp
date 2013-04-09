@@ -827,6 +827,10 @@ inline bool is_highest_tier_compile(int comp_level) {
   return comp_level == CompLevel_highest_tier;
 }
 
+inline bool is_compile(int comp_level) {
+  return is_c1_compile(comp_level) || is_c2_compile(comp_level);
+}
+
 //----------------------------------------------------------------------------------------------------
 // 'Forward' declarations of frequently used classes
 // (in order to reduce interface dependencies & reduce
