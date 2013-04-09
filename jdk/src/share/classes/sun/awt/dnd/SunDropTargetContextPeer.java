@@ -57,7 +57,6 @@ import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
-import sun.security.util.SecurityConstants;
 
 /**
  * <p>
@@ -260,6 +259,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         }
 
         final long format = lFormat.longValue();
+
         Object ret = getNativeData(format);
 
         if (ret instanceof byte[]) {
@@ -270,11 +270,14 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
                 throw new InvalidDnDOperationException(e.getMessage());
             }
         } else if (ret instanceof InputStream) {
+            InputStream inputStream = (InputStream)ret;
             try {
                 return DataTransferer.getInstance().
-                    translateStream((InputStream)ret, df, format, this);
+                    translateStream(inputStream, df, format, this);
             } catch (IOException e) {
                 throw new InvalidDnDOperationException(e.getMessage());
+            } finally {
+                inputStream.close();
             }
         } else {
             throw new IOException("no native data was transfered");
