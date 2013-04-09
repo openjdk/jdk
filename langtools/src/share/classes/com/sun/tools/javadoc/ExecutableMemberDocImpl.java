@@ -199,6 +199,17 @@ public abstract class ExecutableMemberDocImpl
         return result;
     }
 
+    /**
+     * Get the receiver type of this executable element.
+     *
+     * @return the receiver type of this executable element.
+     * @since 1.8
+     */
+    public com.sun.javadoc.Type receiverType() {
+        Type recvtype = sym.type.asMethodType().recvtype;
+        return (recvtype != null) ? TypeMaker.getType(env, recvtype, false, true) : null;
+    }
+
     public AnnotationDesc[] receiverAnnotations() {
         // TODO: change how receiver annotations are output!
         Type recvtype = sym.type.asMethodType().recvtype;
