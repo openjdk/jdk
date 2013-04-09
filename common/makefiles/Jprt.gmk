@@ -103,6 +103,9 @@ endif
 ifdef ALT_FREETYPE_HEADERS_PATH
 	@$(ECHO) " --with-freetype=$(call UnixPath,$(ALT_FREETYPE_HEADERS_PATH)/..) " >> $@.tmp
 endif
+ifdef ENABLE_SJAVAC
+	@$(ECHO) " --enable-sjavac" >> $@.tmp
+endif
 ifeq ($(HOTSPOT_AVAILABLE),false)
   ifdef ALT_JDK_IMPORT_PATH
 	@$(ECHO) " --with-import-hotspot=$(call UnixPath,$(ALT_JDK_IMPORT_PATH)) " >> $@.tmp
