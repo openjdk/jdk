@@ -84,12 +84,22 @@ static BOOL                sNeedsEnter;
     return sCurrentDragSource;
 }
 
-- (id)init:(jobject)jdragsourcecontextpeer component:(jobject)jcomponent peer:(jobject)jpeer control:(id)control
-    transferable:(jobject)jtransferable triggerEvent:(jobject)jtrigger
-    dragPosX:(jint)dragPosX dragPosY:(jint)dragPosY modifiers:(jint)extModifiers clickCount:(jint)clickCount
-    timeStamp:(jlong)timeStamp cursor:(jobject)jcursor
-    dragImage:(jobject)jnsdragimage dragImageOffsetX:(jint)jdragimageoffsetx dragImageOffsetY:(jint)jdragimageoffsety
-    sourceActions:(jint)jsourceactions formats:(jlongArray)jformats formatMap:(jobject)jformatmap
+- (id)        init:(jobject)jDragSourceContextPeer
+         component:(jobject)jComponent
+           control:(id)control
+      transferable:(jobject)jTransferable
+      triggerEvent:(jobject)jTrigger
+          dragPosX:(jint)dragPosX
+          dragPosY:(jint)dragPosY
+         modifiers:(jint)extModifiers
+        clickCount:(jint)clickCount
+         timeStamp:(jlong)timeStamp
+         dragImage:(jobject)jDragImage
+  dragImageOffsetX:(jint)jDragImageOffsetX
+  dragImageOffsetY:(jint)jDragImageOffsetY
+     sourceActions:(jint)jSourceActions
+           formats:(jlongArray)jFormats
+         formatMap:(jobject)jFormatMap
 {
     self = [super init];
     DLog2(@"[CDragSource init]: %@\n", self);
@@ -100,27 +110,25 @@ static BOOL                sNeedsEnter;
     // Construct the object if we have a valid model for it:
     if (control != nil) {
         JNIEnv *env = [ThreadUtilities getJNIEnv];
-        fComponent = JNFNewGlobalRef(env, jcomponent);
-        fComponentPeer = JNFNewGlobalRef(env, jpeer);
-        fDragSourceContextPeer = JNFNewGlobalRef(env, jdragsourcecontextpeer);
+        fComponent = JNFNewGlobalRef(env, jComponent);
+        fDragSourceContextPeer = JNFNewGlobalRef(env, jDragSourceContextPeer);
 
-        fTransferable = JNFNewGlobalRef(env, jtransferable);
-        fTriggerEvent = JNFNewGlobalRef(env, jtrigger);
-        fCursor = JNFNewGlobalRef(env, jcursor);
+        fTransferable = JNFNewGlobalRef(env, jTransferable);
+        fTriggerEvent = JNFNewGlobalRef(env, jTrigger);
 
-        if (jnsdragimage) {
+        if (jDragImage) {
             JNF_MEMBER_CACHE(nsImagePtr, CImageClass, "ptr", "J");
-            jlong imgPtr = JNFGetLongField(env, jnsdragimage, nsImagePtr);
+            jlong imgPtr = JNFGetLongField(env, jDragImage, nsImagePtr);
             fDragImage = (NSImage*) jlong_to_ptr(imgPtr); // Double-casting prevents compiler 'd$|//
 
             [fDragImage retain];
         }
 
-        fDragImageOffset = NSMakePoint(jdragimageoffsetx, jdragimageoffsety);
+        fDragImageOffset = NSMakePoint(jDragImageOffsetX, jDragImageOffsetY);
 
-        fSourceActions = jsourceactions;
-        fFormats = JNFNewGlobalRef(env, jformats);
-        fFormatMap = JNFNewGlobalRef(env, jformatmap);
+        fSourceActions = jSourceActions;
+        fFormats = JNFNewGlobalRef(env, jFormats);
+        fFormatMap = JNFNewGlobalRef(env, jFormatMap);
 
         fTriggerEventTimeStamp = timeStamp;
         fDragPos = NSMakePoint(dragPosX, dragPosY);
@@ -129,9 +137,8 @@ static BOOL                sNeedsEnter;
 
         // Set this object as a dragging source:
 
-        AWTView *awtView = [((NSWindow *) control) contentView];
-        fView = [awtView retain];
-        [awtView setDragSource:self];
+        fView = [(AWTView *) control retain];
+        [fView setDragSource:self];
 
         // Let AWTEvent know Java drag is getting underway:
         [NSEvent javaDraggingBegin];
@@ -158,11 +165,6 @@ static BOOL                sNeedsEnter;
         fComponent = NULL;
     }
 
-    if (fComponentPeer != NULL) {
-        JNFDeleteGlobalRef(env, fComponentPeer);
-        fComponentPeer = NULL;
-    }
-
     if (fDragSourceContextPeer != NULL) {
         JNFDeleteGlobalRef(env, fDragSourceContextPeer);
         fDragSourceContextPeer = NULL;
@@ -176,11 +178,6 @@ static BOOL                sNeedsEnter;
     if (fTriggerEvent != NULL) {
         JNFDeleteGlobalRef(env, fTriggerEvent);
         fTriggerEvent = NULL;
-    }
-
-    if (fCursor != NULL) {
-        JNFDeleteGlobalRef(env, fCursor);
-        fCursor = NULL;
     }
 
     if (fFormats != NULL) {
@@ -585,11 +582,6 @@ static BOOL                sNeedsEnter;
 - (void)drag
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
-
-    // Set the drag cursor (or not 3839999)
-    //JNIEnv *env = [ThreadUtilities getJNIEnv];
-    //jobject gCursor = JNFNewGlobalRef(env, fCursor);
-    //[EventFactory setJavaCursor:gCursor withEnv:env];
 
     [self performSelectorOnMainThread:@selector(doDrag) withObject:nil waitUntilDone:YES]; // AWT_THREADING Safe (called from unique asynchronous thread)
 }

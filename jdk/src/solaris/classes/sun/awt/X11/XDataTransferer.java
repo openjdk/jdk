@@ -212,10 +212,9 @@ public class XDataTransferer extends DataTransferer {
      * Translates either a byte array or an input stream which contain
      * platform-specific image data in the given format into an Image.
      */
-    protected Image platformImageBytesOrStreamToImage(InputStream inputStream,
-                                                      byte[] bytes,
-                                                      long format)
-      throws IOException {
+    protected Image platformImageBytesToImage(
+        byte[] bytes, long format) throws IOException
+    {
         String mimeType = null;
         if (format == PNG_ATOM.getAtom()) {
             mimeType = "image/png";
@@ -235,7 +234,7 @@ public class XDataTransferer extends DataTransferer {
             }
         }
         if (mimeType != null) {
-            return standardImageBytesOrStreamToImage(inputStream, bytes, mimeType);
+            return standardImageBytesToImage(bytes, mimeType);
         } else {
             String nativeFormat = getNativeForFormat(format);
             throw new IOException("Translation from " + nativeFormat +
@@ -330,8 +329,8 @@ public class XDataTransferer extends DataTransferer {
      * a valid MIME and return a list of flavors to which the data in this MIME
      * type can be translated by the Data Transfer subsystem.
      */
-    public List getPlatformMappingsForNative(String nat) {
-        List flavors = new ArrayList();
+    public List <DataFlavor> getPlatformMappingsForNative(String nat) {
+        List <DataFlavor> flavors = new ArrayList();
 
         if (nat == null) {
             return flavors;
@@ -346,16 +345,14 @@ public class XDataTransferer extends DataTransferer {
             return flavors;
         }
 
-        Object value = df;
+        DataFlavor value = df;
         final String primaryType = df.getPrimaryType();
         final String baseType = primaryType + "/" + df.getSubType();
 
         // For text formats we map natives to MIME strings instead of data
         // flavors to enable dynamic text native-to-flavor mapping generation.
         // See SystemFlavorMap.getFlavorsForNative() for details.
-        if ("text".equals(primaryType)) {
-            value = primaryType + "/" + df.getSubType();
-        } else if ("image".equals(primaryType)) {
+        if ("image".equals(primaryType)) {
             Iterator readers = ImageIO.getImageReadersByMIMEType(baseType);
             if (readers.hasNext()) {
                 flavors.add(DataFlavor.imageFlavor);
@@ -438,16 +435,13 @@ public class XDataTransferer extends DataTransferer {
                 }
             }
         } else if (DataTransferer.isFlavorCharsetTextType(df)) {
-            final Iterator iter = DataTransferer.standardEncodings();
-
             // stringFlavor is semantically equivalent to the standard
             // "text/plain" MIME type.
             if (DataFlavor.stringFlavor.equals(df)) {
                 baseType = "text/plain";
             }
 
-            while (iter.hasNext()) {
-                String encoding = (String)iter.next();
+            for (String encoding : DataTransferer.standardEncodings()) {
                 if (!encoding.equals(charset)) {
                     natives.add(baseType + ";charset=" + encoding);
                 }
