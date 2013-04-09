@@ -87,13 +87,19 @@ public class WhiteBox {
   // Compiler
   public native void    deoptimizeAll();
   public native boolean isMethodCompiled(Method method);
-  public native boolean isMethodCompilable(Method method);
+  public boolean isMethodCompilable(Method method) {
+      return isMethodCompilable(method, -1 /*any*/);
+  }
+  public native boolean isMethodCompilable(Method method, int compLevel);
   public native boolean isMethodQueuedForCompilation(Method method);
   public native int     deoptimizeMethod(Method method);
   public native void    makeMethodNotCompilable(Method method);
   public native int     getMethodCompilationLevel(Method method);
-  public native boolean setDontInlineMethod(Method method, boolean value);
+  public native boolean testSetDontInlineMethod(Method method, boolean value);
   public native int     getCompileQueuesSize();
+  public native boolean testSetForceInlineMethod(Method method, boolean value);
+  public native boolean enqueueMethodForCompilation(Method method, int compLevel);
+  public native void    clearMethodState(Method method);
 
   //Intered strings
   public native boolean isInStringTable(String str);
