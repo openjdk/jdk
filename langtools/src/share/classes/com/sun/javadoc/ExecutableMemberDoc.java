@@ -88,6 +88,14 @@ public interface ExecutableMemberDoc extends MemberDoc {
     Parameter[] parameters();
 
     /**
+     * Get the receiver type of this executable element.
+     *
+     * @return the receiver type of this executable element.
+     * @since 1.8
+     */
+    Type receiverType();
+
+    /**
      * Get the receiver annotations of this executable element.
      * Return an empty array if there are none.
      *
