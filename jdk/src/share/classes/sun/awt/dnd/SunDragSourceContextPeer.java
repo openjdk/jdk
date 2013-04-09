@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import java.awt.datatransfer.DataFlavor;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * <p>
@@ -64,8 +63,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @since JDK1.3.1
  *
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public abstract class SunDragSourceContextPeer implements DragSourceContextPeer {
 
     private DragGestureEvent  trigger;
