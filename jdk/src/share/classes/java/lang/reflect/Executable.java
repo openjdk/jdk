@@ -82,7 +82,7 @@ public abstract class Executable extends AccessibleObject
 
     void separateWithCommas(Class<?>[] types, StringBuilder sb) {
         for (int j = 0; j < types.length; j++) {
-            sb.append(Field.getTypeName(types[j]));
+            sb.append(types[j].getTypeName());
             if (j < (types.length - 1))
                 sb.append(",");
         }
@@ -161,9 +161,7 @@ public abstract class Executable extends AccessibleObject
             sb.append('(');
             Type[] params = getGenericParameterTypes();
             for (int j = 0; j < params.length; j++) {
-                String param = (params[j] instanceof Class)?
-                    Field.getTypeName((Class)params[j]):
-                    (params[j].toString());
+                String param = params[j].getTypeName();
                 if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
                     param = param.replaceFirst("\\[\\]$", "...");
                 sb.append(param);

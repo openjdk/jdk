@@ -342,9 +342,8 @@ public final class Method extends Executable {
      * specified by "The Java Language Specification".  This is
      * {@code public}, {@code protected} or {@code private} first,
      * and then other modifiers in the following order:
-     * {@code abstract}, {@code static}, {@code final},
-     * {@code synchronized}, {@code native}, {@code strictfp},
-     * {@code default}.
+     * {@code abstract}, {@code default}, {@code static}, {@code final},
+     * {@code synchronized}, {@code native}, {@code strictfp}.
      *
      * @return a string describing this {@code Method}
      *
@@ -359,8 +358,8 @@ public final class Method extends Executable {
 
     @Override
     void specificToStringHeader(StringBuilder sb) {
-        sb.append(Field.getTypeName(getReturnType())).append(' ');
-        sb.append(Field.getTypeName(getDeclaringClass())).append('.');
+        sb.append(getReturnType().getTypeName()).append(' ');
+        sb.append(getDeclaringClass().getTypeName()).append('.');
         sb.append(getName());
     }
 
@@ -387,16 +386,14 @@ public final class Method extends Executable {
      * class name.  If the method is declared to throw exceptions, the
      * parameter list is followed by a space, followed by the word
      * throws followed by a comma-separated list of the generic thrown
-     * exception types.  If there are no type parameters, the type
-     * parameter list is elided.
+     * exception types.
      *
      * <p>The access modifiers are placed in canonical order as
      * specified by "The Java Language Specification".  This is
      * {@code public}, {@code protected} or {@code private} first,
      * and then other modifiers in the following order:
-     * {@code abstract}, {@code static}, {@code final},
-     * {@code synchronized}, {@code native}, {@code strictfp},
-     * {@code default}.
+     * {@code abstract}, {@code default}, {@code static}, {@code final},
+     * {@code synchronized}, {@code native}, {@code strictfp}.
      *
      * @return a string describing this {@code Method},
      * include type parameters
@@ -413,11 +410,8 @@ public final class Method extends Executable {
     @Override
     void specificToGenericStringHeader(StringBuilder sb) {
         Type genRetType = getGenericReturnType();
-        sb.append( ((genRetType instanceof Class<?>)?
-                    Field.getTypeName((Class<?>)genRetType):genRetType.toString()))
-            .append(' ');
-
-        sb.append(Field.getTypeName(getDeclaringClass())).append('.');
+        sb.append(genRetType.getTypeName()).append(' ');
+        sb.append(getDeclaringClass().getTypeName()).append('.');
         sb.append(getName());
     }
 

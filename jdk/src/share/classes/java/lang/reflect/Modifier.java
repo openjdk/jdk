@@ -43,8 +43,7 @@ import sun.reflect.ReflectionFactory;
  * @author Nakul Saraiya
  * @author Kenneth Russell
  */
-public
-class Modifier {
+public class Modifier {
 
     /*
      * Bootstrapping protocol between java.lang and java.lang.reflect
@@ -233,7 +232,7 @@ class Modifier {
      * represented by {@code mod}
      */
     public static String toString(int mod) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int len;
 
         if ((mod & PUBLIC) != 0)        sb.append("public ");
@@ -393,7 +392,7 @@ class Modifier {
      *
      */
     static final int ACCESS_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
+        Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
 
     /**
      * Return an {@code int} value OR-ing together the source language
