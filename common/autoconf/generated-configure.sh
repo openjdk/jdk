@@ -686,6 +686,7 @@ ac_ct_OBJCOPY
 OBJCOPY
 MCS
 STRIP
+GNM
 NM
 AS
 CXXCPP
@@ -3763,7 +3764,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1365147397
+DATE_WHEN_GENERATED=1365493306
 
 ###############################################################################
 #
@@ -25200,10 +25201,8 @@ fi
 
 
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    for ac_prog in gnm nm
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+    # Extract the first word of "nm", so it can be a program name with args.
+set dummy nm; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if test "${ac_cv_path_NM+set}" = set; then :
@@ -25241,9 +25240,6 @@ else
 $as_echo "no" >&6; }
 fi
 
-
-  test -n "$NM" && break
-done
 
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -25509,6 +25505,312 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
       NM="$new_complete"
       { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
+    fi
+
+    # Extract the first word of "gnm", so it can be a program name with args.
+set dummy gnm; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_GNM+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GNM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GNM="$GNM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_GNM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GNM=$ac_cv_path_GNM
+if test -n "$GNM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GNM" >&5
+$as_echo "$GNM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$GNM"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path=`$CYGPATH -u "$path"`
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path=`$CYGPATH -u "$path"`
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of GNM, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of GNM, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of GNM" "$LINENO" 5
+    fi
+  fi
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    # Short path failed, file does not exist as specified.
+    # Try adding .exe or .cmd
+    if test -f "${new_path}.exe"; then
+       input_to_shortpath="${new_path}.exe"
+    elif test -f "${new_path}.cmd"; then
+       input_to_shortpath="${new_path}.cmd"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of GNM, which resolves as \"$new_path\", is invalid." >&5
+$as_echo "$as_me: The path of GNM, which resolves as \"$new_path\", is invalid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
+$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
+      as_fn_error $? "Cannot locate the the path of GNM" "$LINENO" 5
+    fi
+  else
+    input_to_shortpath="$new_path"
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  new_path="$input_to_shortpath"
+
+  input_path="$input_to_shortpath"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+  # remove trailing .exe if any
+  new_path="${new_path/%.exe/}"
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$GNM"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of GNM, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of GNM, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of GNM" "$LINENO" 5
+    fi
+  fi
+
+  # Now new_path has a complete unix path to the binary
+  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
+    # Keep paths in /bin as-is, but remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+    # Do not save /bin paths to all_fixpath_prefixes!
+  else
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $new_path`
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+    # Output is in $new_path
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    # remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+
+    # Save the first 10 bytes of this path to the storage, so fixpath can work.
+    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+  fi
+
+  else
+    # We're on a posix platform. Hooray! :)
+    # First separate the path from the arguments. This will split at the first
+    # space.
+    complete="$GNM"
+    path="${complete%% *}"
+    tmp="$complete EOL"
+    arguments="${tmp#* }"
+
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Resolving GNM (as $path) failed, using $path directly." >&5
+$as_echo "$as_me: Resolving GNM (as $path) failed, using $path directly." >&6;}
+      new_path="$path"
+    fi
+
+    if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of GNM, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of GNM, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of GNM" "$LINENO" 5
+      fi
+  fi
+
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
+
+  if test "x$complete" != "x$new_complete"; then
+      GNM="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting GNM to \"$new_complete\"" >&5
+$as_echo "$as_me: Rewriting GNM to \"$new_complete\"" >&6;}
     fi
 
     # Extract the first word of "strip", so it can be a program name with args.
@@ -26481,6 +26783,8 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
       { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting NM to \"$new_complete\"" >&5
 $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
     fi
+
+    GNM="$NM"
 
     if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}strip", so it can be a program name with args.
@@ -31835,7 +32139,7 @@ and LIBFFI_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
-See \`config.log' for more details" "$LINENO" 5; }
+See \`config.log' for more details" "$LINENO" 5 ; }
 else
 	LIBFFI_CFLAGS=$pkg_cv_LIBFFI_CFLAGS
 	LIBFFI_LIBS=$pkg_cv_LIBFFI_LIBS
@@ -31851,7 +32155,7 @@ if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
 set dummy llvm-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_LLVM_CONFIG+:} false; then :
+if test "${ac_cv_prog_LLVM_CONFIG+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
   if test -n "$LLVM_CONFIG"; then
