@@ -121,6 +121,15 @@ AC_SUBST(JVM_VARIANT_KERNEL)
 AC_SUBST(JVM_VARIANT_ZERO)
 AC_SUBST(JVM_VARIANT_ZEROSHARK)
 
+INCLUDE_SA=true
+if test "x$JVM_VARIANT_ZERO" = xtrue ; then
+    INCLUDE_SA=false
+fi
+if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+    INCLUDE_SA=false
+fi
+AC_SUBST(INCLUDE_SA)
+
 if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
    MACOSX_UNIVERSAL="true"
 fi
