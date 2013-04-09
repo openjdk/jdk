@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.xml.internal.ws.encoding.xml;
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.bind.api.Bridge;
 import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.WSFeatureList;
 import com.sun.xml.internal.ws.api.message.*;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
@@ -44,7 +43,6 @@ import com.sun.xml.internal.ws.message.MimeAttachmentSet;
 import com.sun.xml.internal.ws.message.source.PayloadSourceMessage;
 import com.sun.xml.internal.ws.util.ByteArrayBuffer;
 import com.sun.xml.internal.ws.util.StreamUtils;
-import static com.sun.xml.internal.ws.binding.WebServiceFeatureList.getFeature;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -60,7 +58,6 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.ws.WebServiceException;
-import javax.xml.ws.WebServiceFeature;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,7 +72,6 @@ public final class XMLMessage {
     private static final int PLAIN_XML_FLAG      = 1;       // 00001
     private static final int MIME_MULTIPART_FLAG = 2;       // 00010
     private static final int FI_ENCODED_FLAG     = 16;      // 10000
-    private WebServiceFeature[] features;
 
     /*
      * Construct a message given a content type and an input stream.
@@ -240,7 +236,7 @@ public final class XMLMessage {
         public XmlContent(String ct, InputStream in, WSFeatureList f) {
             super(SOAPVersion.SOAP_11);
             dataSource = new XmlDataSource(ct, in);
-            this.headerList = new HeaderList();
+            this.headerList = new HeaderList(SOAPVersion.SOAP_11);
 //            this.binding = binding;
             features = f;
         }
@@ -268,7 +264,7 @@ public final class XMLMessage {
             return false;
         }
 
-        public @NotNull HeaderList getHeaders() {
+        public @NotNull MessageHeaders getHeaders() {
             return headerList;
         }
 
@@ -351,12 +347,13 @@ public final class XMLMessage {
         private final DataSource dataSource;
         private final StreamingAttachmentFeature feature;
         private Message delegate;
-        private final HeaderList headerList = new HeaderList();
+        private HeaderList headerList;// = new HeaderList();
 //      private final WSBinding binding;
         private final WSFeatureList features;
 
         public XMLMultiPart(final String contentType, final InputStream is, WSFeatureList f) {
             super(SOAPVersion.SOAP_11);
+            headerList = new HeaderList(SOAPVersion.SOAP_11);
             dataSource = createDataSource(contentType, is);
             this.feature = f.get(StreamingAttachmentFeature.class);
             this.features = f;
@@ -391,7 +388,7 @@ public final class XMLMessage {
             return false;
         }
 
-        public @NotNull HeaderList getHeaders() {
+        public @NotNull MessageHeaders getHeaders() {
             return headerList;
         }
 
@@ -500,7 +497,7 @@ public final class XMLMessage {
         public UnknownContent(DataSource ds) {
             super(SOAPVersion.SOAP_11);
             this.ds = ds;
-            this.headerList = new HeaderList();
+            this.headerList = new HeaderList(SOAPVersion.SOAP_11);
         }
 
         /*
@@ -534,7 +531,7 @@ public final class XMLMessage {
             return false;
         }
 
-        public HeaderList getHeaders() {
+        public MessageHeaders getHeaders() {
             return headerList;
         }
 
@@ -579,8 +576,9 @@ public final class XMLMessage {
                 final ByteArrayBuffer bos = new ByteArrayBuffer();
                 try {
                     Codec codec = new XMLHTTPBindingCodec(f);
-                    com.sun.xml.internal.ws.api.pipe.ContentType ct = codec.getStaticContentType(new Packet(msg));
-                    codec.encode(new Packet(msg), bos);
+                    Packet packet = new Packet(msg);
+                    com.sun.xml.internal.ws.api.pipe.ContentType ct = codec.getStaticContentType(packet);
+                    codec.encode(packet, bos);
                     return createDataSource(ct.getContentType(), bos.newInputStream());
                 } catch(IOException ioe) {
                     throw new WebServiceException(ioe);

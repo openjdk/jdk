@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 package com.sun.xml.internal.org.jvnet.mimepull;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Configuration for MIME message parsing and storing.
@@ -39,6 +40,8 @@ public class MIMEConfig {
     private static final long DEFAULT_MEMORY_THRESHOLD = 1048576L;
     private static final String DEFAULT_FILE_PREFIX = "MIME";
 
+    private static final Logger LOGGER = Logger.getLogger(MIMEConfig.class.getName());
+
     // Parses the entire message eagerly
     boolean parseEagerly;
 
@@ -48,14 +51,10 @@ public class MIMEConfig {
     // Maximum in-memory data per attachment
     long memoryThreshold;
 
-    // Do not store to disk
-    boolean onlyMemory;
-
     // temp Dir to store large files
     File tempDir;
     String prefix;
     String suffix;
-
 
     private MIMEConfig(boolean parseEagerly, int chunkSize,
                        long inMemoryThreshold, String dir, String prefix, String suffix) {
@@ -122,7 +121,7 @@ public class MIMEConfig {
     /**
      * @param dir
      */
-    public void setDir(String dir) {
+    public final void setDir(String dir) {
         if (tempDir == null && dir != null && !dir.equals("")) {
             tempDir = new File(dir);
         }
@@ -138,7 +137,12 @@ public class MIMEConfig {
                 File tempFile = (tempDir == null)
                         ? File.createTempFile(prefix, suffix)
                         : File.createTempFile(prefix, suffix, tempDir);
-                tempFile.delete();
+                boolean deleted = tempFile.delete();
+                if (!deleted) {
+                    if (LOGGER.isLoggable(Level.INFO)) {
+                        LOGGER.log(Level.INFO, "File {0} was not deleted", tempFile.getAbsolutePath());
+                    }
+                }
             } catch(Exception ioe) {
                 memoryThreshold = -1L;      // whole attachment will be in-memory
             }

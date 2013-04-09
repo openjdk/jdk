@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.xml.internal.ws.addressing;
 
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.WSBinding;
+import com.sun.xml.internal.ws.api.message.AddressingUtils;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.Tube;
 import com.sun.xml.internal.ws.api.pipe.TubeCloner;
@@ -58,7 +59,7 @@ public class W3CWsaClientTube extends WsaClientTube {
         // RelatesTo required as per
         // Table 5-3 of http://www.w3.org/TR/2006/WD-ws-addr-wsdl-20060216/#wsdl11requestresponse
         if (expectReply && (packet.getMessage() != null) && !foundRelatesTo) {
-            String action = packet.getMessage().getHeaders().getAction(addressingVersion, soapVersion);
+            String action = AddressingUtils.getAction(packet.getMessage().getHeaders(), addressingVersion, soapVersion);
             // Don't check for AddressingFaults as
             // Faults for requests with duplicate MessageId will have no wsa:RelatesTo
             if (!packet.getMessage().isFault() || !action.equals(addressingVersion.getDefaultFaultAction())) {

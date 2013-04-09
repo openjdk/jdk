@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import javax.xml.transform.sax.TransformerHandler;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Pool;
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.api.Bridge;
 import com.sun.xml.internal.bind.api.BridgeContext;
@@ -81,7 +82,6 @@ import com.sun.xml.internal.bind.api.RawAccessor;
 import com.sun.xml.internal.bind.api.TypeReference;
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
 import com.sun.xml.internal.bind.util.Which;
-import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.model.annotation.RuntimeAnnotationReader;
 import com.sun.xml.internal.bind.v2.model.annotation.RuntimeInlineAnnotationReader;
 import com.sun.xml.internal.bind.v2.model.core.Adapter;
@@ -110,6 +110,7 @@ import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
 import com.sun.xml.internal.bind.v2.schemagen.XmlSchemaGenerator;
 import com.sun.xml.internal.bind.v2.util.EditDistance;
 import com.sun.xml.internal.bind.v2.util.QNameMap;
+import com.sun.xml.internal.bind.v2.util.XmlFactory;
 import com.sun.xml.internal.txw2.output.ResultFactory;
 
 import org.w3c.dom.Document;
@@ -220,7 +221,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
     public final boolean retainPropertyInfo;
 
     /**
-     * Supress reflection accessor warnings.
+     * Suppress reflection accessor warnings.
      */
     public final boolean supressAccessorWarnings;
 
@@ -228,6 +229,11 @@ public final class JAXBContextImpl extends JAXBRIContext {
      * Improved xsi type handling.
      */
     public final boolean improvedXsiTypeHandling;
+
+    /**
+     * Disable security processing.
+     */
+    public final boolean disableSecurityProcessing;
 
     private WeakReference<RuntimeTypeInfoSet> typeInfoSetCache;
 
@@ -237,7 +243,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
     private final @NotNull Map<Class,Class> subclassReplacements;
 
     /**
-     * If true, we aim for faster {@link JAXBContext} instanciation performance,
+     * If true, we aim for faster {@link JAXBContext} instantiation performance,
      * instead of going after efficient sustained unmarshalling/marshalling performance.
      *
      * @since 2.0.4
@@ -267,6 +273,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
         this.allNillable = builder.allNillable;
         this.supressAccessorWarnings = builder.supressAccessorWarnings;
         this.improvedXsiTypeHandling = builder.improvedXsiTypeHandling;
+        this.disableSecurityProcessing = builder.disableSecurityProcessing;
 
         Collection<TypeReference> typeRefs = builder.typeRefs;
 
@@ -277,8 +284,6 @@ public final class JAXBContextImpl extends JAXBRIContext {
             fastB = false;
         }
         this.fastBoot = fastB;
-
-        System.arraycopy(classes,0,this.classes,0,classes.length);
 
         RuntimeTypeInfoSet typeSet = getTypeInfoSet();
 
@@ -701,12 +706,12 @@ public final class JAXBContextImpl extends JAXBRIContext {
     /**
      * Creates a new identity transformer.
      */
-    static Transformer createTransformer() {
+    static Transformer createTransformer(boolean disableSecureProcessing) {
         try {
             if (tf==null) {
                 synchronized(JAXBContextImpl.class) {
                     if (tf==null) {
-                        tf = (SAXTransformerFactory)TransformerFactory.newInstance();
+                        tf = (SAXTransformerFactory)XmlFactory.createTransformerFactory(disableSecureProcessing);
                     }
                 }
             }
@@ -719,12 +724,12 @@ public final class JAXBContextImpl extends JAXBRIContext {
     /**
      * Creates a new identity transformer.
      */
-    public static TransformerHandler createTransformerHandler() {
+    public static TransformerHandler createTransformerHandler(boolean disableSecureProcessing) {
         try {
             if (tf==null) {
                 synchronized(JAXBContextImpl.class) {
                     if (tf==null) {
-                        tf = (SAXTransformerFactory)TransformerFactory.newInstance();
+                        tf = (SAXTransformerFactory)XmlFactory.createTransformerFactory(disableSecureProcessing);
                     }
                 }
             }
@@ -737,12 +742,11 @@ public final class JAXBContextImpl extends JAXBRIContext {
     /**
      * Creates a new DOM document.
      */
-    static Document createDom() {
+    static Document createDom(boolean disableSecurityProcessing) {
         synchronized(JAXBContextImpl.class) {
             if(db==null) {
                 try {
-                    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-                    dbf.setNamespaceAware(true);
+                    DocumentBuilderFactory dbf = XmlFactory.createDocumentBuilderFactory(disableSecurityProcessing);
                     db = dbf.newDocumentBuilder();
                 } catch (ParserConfigurationException e) {
                     // impossible
@@ -1055,6 +1059,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
         private boolean xmlAccessorFactorySupport = false;
         private boolean allNillable;
         private boolean improvedXsiTypeHandling = true;
+        private boolean disableSecurityProcessing = true;
 
         public JAXBContextBuilder() {};
 
@@ -1069,6 +1074,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
             this.typeRefs = baseImpl.bridges.keySet();
             this.xmlAccessorFactorySupport = baseImpl.xmlAccessorFactorySupport;
             this.allNillable = baseImpl.allNillable;
+            this.disableSecurityProcessing = baseImpl.disableSecurityProcessing;
         }
 
         public JAXBContextBuilder setRetainPropertyInfo(boolean val) {
@@ -1123,6 +1129,11 @@ public final class JAXBContextImpl extends JAXBRIContext {
 
         public JAXBContextBuilder setImprovedXsiTypeHandling(boolean val) {
             this.improvedXsiTypeHandling = val;
+            return this;
+        }
+
+        public JAXBContextBuilder setDisableSecurityProcessing(boolean val) {
+            this.disableSecurityProcessing = val;
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.AttachmentSet;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
 import com.sun.xml.internal.ws.streaming.DOMStreamReader;
 import com.sun.xml.internal.ws.util.DOMUtil;
 import org.w3c.dom.Element;
@@ -54,18 +55,18 @@ import javax.xml.ws.WebServiceException;
  * @author Kohsuke Kawaguchi
  */
 public final class DOMMessage extends AbstractMessageImpl {
-    private HeaderList headers;
+    private MessageHeaders headers;
     private final Element payload;
 
     public DOMMessage(SOAPVersion ver, Element payload) {
         this(ver,null,payload);
     }
 
-    public DOMMessage(SOAPVersion ver, HeaderList headers, Element payload) {
+    public DOMMessage(SOAPVersion ver, MessageHeaders headers, Element payload) {
         this(ver,headers,payload,null);
     }
 
-    public DOMMessage(SOAPVersion ver, HeaderList headers, Element payload, AttachmentSet attachments) {
+    public DOMMessage(SOAPVersion ver, MessageHeaders headers, Element payload, AttachmentSet attachments) {
         super(ver);
         this.headers = headers;
         this.payload = payload;
@@ -82,12 +83,12 @@ public final class DOMMessage extends AbstractMessageImpl {
     }
 
     public boolean hasHeaders() {
-        return getHeaders().size() > 0;
+        return getHeaders().hasHeaders();
     }
 
-    public HeaderList getHeaders() {
+    public MessageHeaders getHeaders() {
         if (headers == null)
-            headers = new HeaderList();
+            headers = new HeaderList(getSOAPVersion());
 
         return headers;
     }
@@ -151,4 +152,5 @@ public final class DOMMessage extends AbstractMessageImpl {
     public Message copy() {
         return new DOMMessage(this);
     }
+
 }

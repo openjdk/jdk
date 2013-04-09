@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ import javax.xml.namespace.QName;
  */
 public interface JAXWSBindingsConstants {
 
-    public static String NS_JAXWS_BINDINGS = "http://java.sun.com/xml/ns/jaxws";
-    public static String NS_JAXB_BINDINGS = "http://java.sun.com/xml/ns/jaxb";
-    public static String NS_XJC_BINDINGS = "http://java.sun.com/xml/ns/jaxb/xjc";
+    static final String NS_JAXWS_BINDINGS = "http://java.sun.com/xml/ns/jaxws";
+    static final String NS_JAXB_BINDINGS = "http://java.sun.com/xml/ns/jaxb";
+    static final String NS_XJC_BINDINGS = "http://java.sun.com/xml/ns/jaxb/xjc";
 
     /**
      * jaxws:bindings schema component
@@ -62,44 +62,44 @@ public interface JAXWSBindingsConstants {
      *          elements that don't have any jaxws:bindings ancestors (i.e. on
      *          outermost binding declarations).
      */
-    public static QName JAXWS_BINDINGS = new QName(NS_JAXWS_BINDINGS, "bindings");
-    public static String WSDL_LOCATION_ATTR = "wsdlLocation";
-    public static String NODE_ATTR = "node";
-    public static String VERSION_ATTR = "version";
+    static final QName JAXWS_BINDINGS = new QName(NS_JAXWS_BINDINGS, "bindings");
+    static final String WSDL_LOCATION_ATTR = "wsdlLocation";
+    static final String NODE_ATTR = "node";
+    static final String VERSION_ATTR = "version";
 
     /*
      * <jaxws:package name="xs:string">? <jaxws:javadoc>xs:string
      * </jaxws:javadoc> </jaxws:package>
      */
-    public static QName PACKAGE = new QName(NS_JAXWS_BINDINGS, "package");
-    public static String NAME_ATTR = "name";
-    public static QName JAVADOC = new QName(NS_JAXWS_BINDINGS, "javadoc");
+    static final QName PACKAGE = new QName(NS_JAXWS_BINDINGS, "package");
+    static final String NAME_ATTR = "name";
+    static final QName JAVADOC = new QName(NS_JAXWS_BINDINGS, "javadoc");
 
     /*
      * <jaxws:enableWrapperStyle>xs:boolean </jaxws:enableWrapperStyle>?
      */
-    public static QName ENABLE_WRAPPER_STYLE = new QName(NS_JAXWS_BINDINGS, "enableWrapperStyle");
+    static final QName ENABLE_WRAPPER_STYLE = new QName(NS_JAXWS_BINDINGS, "enableWrapperStyle");
 
     /*
      * <jaxws:enableAsynchronousMapping>xs:boolean
      *      </jaxws:enableAsynchronousMapping>?
      */
-    public static QName ENABLE_ASYNC_MAPPING = new QName(NS_JAXWS_BINDINGS, "enableAsyncMapping");
+    static final QName ENABLE_ASYNC_MAPPING = new QName(NS_JAXWS_BINDINGS, "enableAsyncMapping");
 
     /*
      * <jaxws:enableAdditionalSOAPHeaderMapping>xs:boolean</jaxws:enableAdditionalSOAPHeaderMapping>?
      */
-    public static QName ENABLE_ADDITIONAL_SOAPHEADER_MAPPING = new QName(NS_JAXWS_BINDINGS, "enableAdditionalSOAPHeaderMapping");
+    static final QName ENABLE_ADDITIONAL_SOAPHEADER_MAPPING = new QName(NS_JAXWS_BINDINGS, "enableAdditionalSOAPHeaderMapping");
 
     /*
      * <jaxws:enableMIMEContent>xs:boolean</jaxws:enableMIMEContent>?
      */
-    public static QName ENABLE_MIME_CONTENT = new QName(NS_JAXWS_BINDINGS, "enableMIMEContent");
+    static final QName ENABLE_MIME_CONTENT = new QName(NS_JAXWS_BINDINGS, "enableMIMEContent");
 
     /*
      * <jaxwsc:provider>xs:boolean</jaxws:provider>?
      */
-    public static QName PROVIDER = new QName(NS_JAXWS_BINDINGS, "provider");
+    static final QName PROVIDER = new QName(NS_JAXWS_BINDINGS, "provider");
 
     /*
      * PortType
@@ -118,7 +118,7 @@ public interface JAXWSBindingsConstants {
      *
      */
 
-    public static QName CLASS = new QName(NS_JAXWS_BINDINGS, "class");
+    static final QName CLASS = new QName(NS_JAXWS_BINDINGS, "class");
 
     /*
      * PortType WSDLOperation
@@ -142,10 +142,10 @@ public interface JAXWSBindingsConstants {
 
 
 
-    public static QName METHOD = new QName(NS_JAXWS_BINDINGS, "method");
-    public static QName PARAMETER = new QName(NS_JAXWS_BINDINGS, "parameter");
-    public static String PART_ATTR = "part";
-    public static String ELEMENT_ATTR = "childElementName";
+    static final QName METHOD = new QName(NS_JAXWS_BINDINGS, "method");
+    static final QName PARAMETER = new QName(NS_JAXWS_BINDINGS, "parameter");
+    static final String PART_ATTR = "part";
+    static final String ELEMENT_ATTR = "childElementName";
 
     /*
      * Binding
@@ -181,14 +181,14 @@ public interface JAXWSBindingsConstants {
      * </jaxws:exception>
      */
 
-    public static QName EXCEPTION = new QName(NS_JAXWS_BINDINGS, "exception");
+    static final QName EXCEPTION = new QName(NS_JAXWS_BINDINGS, "exception");
 
 
     /*
      * jaxb:bindgs QName
      */
-    public static QName JAXB_BINDINGS = new QName(NS_JAXB_BINDINGS, "bindings");
-    public static String JAXB_BINDING_VERSION = "2.0";
-    public static QName XSD_APPINFO = new QName(Constants.NS_XSD, "appinfo");
-    public static QName XSD_ANNOTATION = new QName(Constants.NS_XSD, "annotation");
+    static final QName JAXB_BINDINGS = new QName(NS_JAXB_BINDINGS, "bindings");
+    static final String JAXB_BINDING_VERSION = "2.0";
+    static final QName XSD_APPINFO = new QName(Constants.NS_XSD, "appinfo");
+    static final QName XSD_ANNOTATION = new QName(Constants.NS_XSD, "annotation");
 }
