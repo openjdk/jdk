@@ -523,8 +523,11 @@ public final class NativeRegExp extends ScriptObject {
     }
 
     private RegExpResult execInner(final String string) {
+        int start = getLastIndex();
+        if (! regexp.isGlobal()) {
+            start = 0;
+        }
 
-        final int start = regexp.isGlobal() ? getLastIndex() : 0;
         if (start < 0 || start > string.length()) {
             setLastIndex(0);
             return null;
