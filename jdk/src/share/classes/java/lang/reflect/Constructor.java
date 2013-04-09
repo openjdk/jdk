@@ -297,7 +297,7 @@ public final class Constructor<T> extends Executable {
 
     @Override
     void specificToStringHeader(StringBuilder sb) {
-        sb.append(Field.getTypeName(getDeclaringClass()));
+        sb.append(getDeclaringClass().getTypeName());
     }
 
     /**
