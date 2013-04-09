@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -570,20 +570,28 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
 // rcx: invocation counter
 //
 void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
+  Label done;
+  const Address invocation_counter(rax,
+                MethodCounters::invocation_counter_offset() +
+                InvocationCounter::counter_offset());
+  const Address backedge_counter  (rax,
+                MethodCounter::backedge_counter_offset() +
+                InvocationCounter::counter_offset());
 
-  const Address invocation_counter(rbx, Method::invocation_counter_offset() + InvocationCounter::counter_offset());
-  const Address backedge_counter  (rbx, Method::backedge_counter_offset() + InvocationCounter::counter_offset());
+  __ get_method_counters(rbx, rax, done);
 
-  if (ProfileInterpreter) { // %%% Merge this into MethodData*
-    __ incrementl(Address(rbx,Method::interpreter_invocation_counter_offset()));
+  if (ProfileInterpreter) {
+    __ incrementl(Address(rax,
+            MethodCounters::interpreter_invocation_counter_offset()));
   }
   // Update standard invocation counters
-  __ movl(rax, backedge_counter);               // load backedge counter
-
+  __ movl(rcx, invocation_counter);
   __ increment(rcx, InvocationCounter::count_increment);
+  __ movl(invocation_counter, rcx);             // save invocation count
+
+  __ movl(rax, backedge_counter);               // load backedge counter
   __ andl(rax, InvocationCounter::count_mask_value);  // mask out the status bits
 
-  __ movl(invocation_counter, rcx);             // save invocation count
   __ addl(rcx, rax);                            // add both counters
 
   // profile_method is non-null only for interpreted method so
@@ -593,7 +601,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
   __ cmp32(rcx,
            ExternalAddress((address)&InvocationCounter::InterpreterInvocationLimit));
   __ jcc(Assembler::aboveEqual, *overflow);
-
+  __ bind(done);
 }
 
 void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
@@ -977,7 +985,6 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   address entry_point = __ pc();
 
   const Address constMethod       (rbx, Method::const_offset());
-  const Address invocation_counter(rbx, Method::invocation_counter_offset() + InvocationCounter::counter_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
   const Address size_of_parameters(rcx, ConstMethod::size_of_parameters_offset());
 
@@ -1028,8 +1035,6 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 #endif
-
-  if (inc_counter) __ movl(rcx, invocation_counter);  // (pre-)fetch invocation count
 
   const Register unlock_thread = LP64_ONLY(r15_thread) NOT_LP64(rax);
   NOT_LP64(__ movptr(unlock_thread, STATE(_thread));) // get thread
