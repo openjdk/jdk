@@ -1133,6 +1133,17 @@ void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
 #endif // INCLUDE_ALL_GCS
 }
 
+void GenCollectedHeap::print_on_error(outputStream* st) const {
+  this->CollectedHeap::print_on_error(st);
+
+#if INCLUDE_ALL_GCS
+  if (UseConcMarkSweepGC) {
+    st->cr();
+    CMSCollector::print_on_error(st);
+  }
+#endif // INCLUDE_ALL_GCS
+}
+
 void GenCollectedHeap::print_tracing_info() const {
   if (TraceGen0Time) {
     get_gen(0)->print_summary_info();

@@ -151,6 +151,8 @@ class CMSBitMap VALUE_OBJ_CLASS_SPEC {
   size_t    heapWordToOffset(HeapWord* addr) const;
   size_t    heapWordDiffToOffsetDiff(size_t diff) const;
 
+  void print_on_error(outputStream* st, const char* prefix) const;
+
   // debugging
   // is this address range covered by the bit-map?
   NOT_PRODUCT(
@@ -983,6 +985,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Adaptive size policy
   CMSAdaptiveSizePolicy* size_policy();
   CMSGCAdaptivePolicyCounters* gc_adaptive_policy_counters();
+
+  static void print_on_error(outputStream* st);
 
   // debugging
   void verify();

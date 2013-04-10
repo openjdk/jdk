@@ -2809,6 +2809,23 @@ bool CMSCollector::is_cms_reachable(HeapWord* addr) {
   }
 }
 
+
+void
+CMSCollector::print_on_error(outputStream* st) {
+  CMSCollector* collector = ConcurrentMarkSweepGeneration::_collector;
+  if (collector != NULL) {
+    CMSBitMap* bitmap = &collector->_markBitMap;
+    st->print_cr("Marking Bits: (CMSBitMap*) " PTR_FORMAT, bitmap);
+    bitmap->print_on_error(st, " Bits: ");
+
+    st->cr();
+
+    CMSBitMap* mut_bitmap = &collector->_modUnionTable;
+    st->print_cr("Mod Union Table: (CMSBitMap*) " PTR_FORMAT, mut_bitmap);
+    mut_bitmap->print_on_error(st, " Bits: ");
+  }
+}
+
 ////////////////////////////////////////////////////////
 // CMS Verification Support
 ////////////////////////////////////////////////////////
@@ -6529,6 +6546,10 @@ void CMSBitMap::dirty_range_iterate_clear(MemRegion mr, MemRegionClosure* cl) {
       return;
     }
   }
+}
+
+void CMSBitMap::print_on_error(outputStream* st, const char* prefix) const {
+  _bm.print_on_error(st, prefix);
 }
 
 #ifndef PRODUCT
