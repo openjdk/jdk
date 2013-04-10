@@ -47,9 +47,6 @@ final class RegExpScanner extends Scanner {
      */
     private final StringBuilder sb;
 
-    /** Is this the special case of a regexp that never matches anything */
-    private boolean neverMatches;
-
     /** Expected token table */
     private final Map<Character, Integer> expected = new HashMap<>();
 
@@ -99,9 +96,6 @@ final class RegExpScanner extends Scanner {
     }
 
     private void processForwardReferences() {
-        if (neverMatches()) {
-            return;
-        }
 
         Iterator<Integer> iterator = forwardReferences.descendingIterator();
         while (iterator.hasNext()) {
@@ -136,9 +130,6 @@ final class RegExpScanner extends Scanner {
         }
 
         scanner.processForwardReferences();
-        if (scanner.neverMatches()) {
-            return null; // never matches
-        }
 
         // Throw syntax error unless we parsed the entire JavaScript regexp without syntax errors
         if (scanner.position != string.length()) {
@@ -147,16 +138,6 @@ final class RegExpScanner extends Scanner {
         }
 
         return scanner;
-     }
-
-    /**
-     * Does this regexp ever match anything? Use of e.g. [], which is legal in JavaScript,
-     * is an example where we never match
-     *
-     * @return boolean
-     */
-    private boolean neverMatches() {
-        return neverMatches;
     }
 
     final StringBuilder getStringBuilder() {
@@ -278,23 +259,16 @@ final class RegExpScanner extends Scanner {
         }
 
         if (atom()) {
-            boolean emptyCharacterClass = false;
+            // Check for character classes that never or always match
             if (sb.toString().endsWith("[]")) {
-                emptyCharacterClass = true;
+                sb.setLength(sb.length() - 1);
+                sb.append("^\\s\\S]");
             } else if (sb.toString().endsWith("[^]")) {
                 sb.setLength(sb.length() - 2);
                 sb.append("\\s\\S]");
             }
 
-            boolean quantifier = quantifier();
-
-            if (emptyCharacterClass) {
-                if (!quantifier) {
-                    neverMatches = true; //never matches ever.
-                }
-                // Note: we could check if quantifier has min zero to mark empty character class as dead.
-            }
-
+            quantifier();
             return true;
         }
 
