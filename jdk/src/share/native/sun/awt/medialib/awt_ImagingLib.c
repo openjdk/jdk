@@ -1152,22 +1152,127 @@ fprintf(stderr,"Flags   : %d\n",dst->flags);
     return retStatus;
 }
 
+typedef struct {
+    jobject jArray;
+    jsize length;
+    unsigned char *table;
+} LookupArrayInfo;
+
+#define NLUT 8
+
+#ifdef _LITTLE_ENDIAN
+#define INDEXES    { 3, 2, 1, 0, 7, 6, 5, 4 }
+#else
+#define INDEXES    { 0, 1, 2, 3, 4, 5, 6, 7 }
+#endif
+
+static int lookupShortData(mlib_image* src, mlib_image* dst,
+    LookupArrayInfo* lookup)
+{
+    int x, y;
+    unsigned int mask = NLUT-1;
+
+    unsigned short* srcLine = (unsigned short*)src->data;
+    unsigned char* dstLine = (unsigned char*)dst->data;
+
+    static int indexes[NLUT] = INDEXES;
+
+    for (y=0; y < src->height; y++) {
+        int nloop, nx;
+        int npix = src->width;
+
+        unsigned short* srcPixel = srcLine;
+        unsigned char* dstPixel = dstLine;
+
+#ifdef SIMPLE_LOOKUP_LOOP
+        for (x=0; status && x < width; x++) {
+            unsigned short s = *srcPixel++;
+            if (s >= lookup->length) {
+                /* we can not handle source image using
+                * byte lookup table. Fall back to processing
+                * images in java
+                */
+                return 0;
+            }
+            *dstPixel++ = lookup->table[s];
+        }
+#else
+        /* Get to 32 bit-aligned point */
+        while(((uintptr_t)dstPixel & 0x3) != 0 && npix>0) {
+            unsigned short s = *srcPixel++;
+            if (s >= lookup->length) {
+                return 0;
+            }
+            *dstPixel++ = lookup->table[s];
+            npix--;
+        }
+
+        /*
+         * Do NLUT pixels per loop iteration.
+         * Pack into ints and write out 2 at a time.
+         */
+        nloop = npix/NLUT;
+        nx = npix%NLUT;
+
+        for(x=nloop; x!=0; x--) {
+            int i = 0;
+            int* dstP = (int*)dstPixel;
+
+            for (i = 0; i < NLUT; i++) {
+                if (srcPixel[i] >= lookup->length) {
+                    return 0;
+                }
+            }
+
+            dstP[0] = (int)
+                ((lookup->table[srcPixel[indexes[0]]] << 24) |
+                 (lookup->table[srcPixel[indexes[1]]] << 16) |
+                 (lookup->table[srcPixel[indexes[2]]] << 8)  |
+                  lookup->table[srcPixel[indexes[3]]]);
+            dstP[1] = (int)
+                ((lookup->table[srcPixel[indexes[4]]] << 24) |
+                 (lookup->table[srcPixel[indexes[5]]] << 16) |
+                 (lookup->table[srcPixel[indexes[6]]] << 8)  |
+                  lookup->table[srcPixel[indexes[7]]]);
+
+
+            dstPixel += NLUT;
+            srcPixel += NLUT;
+        }
+
+        /*
+         * Complete any remaining pixels
+         */
+        for(x=nx; x!=0; x--) {
+            unsigned short s = *srcPixel++;
+            if (s >= lookup->length) {
+                return 0;
+            }
+            *dstPixel++ = lookup->table[s];
+        }
+#endif
+
+        dstLine += dst->stride;     // array of bytes, scan stride in bytes
+        srcLine += src->stride / 2; // array of shorts, scan stride in bytes
+    }
+    return 1;
+}
+
 JNIEXPORT jint JNICALL
-Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
+Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject thisLib,
                                            jobject jsrc, jobject jdst,
                                            jobjectArray jtableArrays)
 {
     mlib_image *src;
     mlib_image *dst;
     void *sdata, *ddata;
-    unsigned char **table;
     unsigned char **tbl;
     unsigned char lut[256];
     int retStatus = 1;
     int i;
     mlib_status status;
-    int jlen;
-    jobject *jtable;
+    int lut_nbands;
+    LookupArrayInfo *jtable;
     BufImageS_t *srcImageP, *dstImageP;
     int nbands;
     int ncomponents;
@@ -1193,11 +1298,28 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
         return 0;
     }
 
-    jlen = (*env)->GetArrayLength(env, jtableArrays);
+    lut_nbands = (*env)->GetArrayLength(env, jtableArrays);
 
     ncomponents = srcImageP->cmodel.isDefaultCompatCM
         ? 4
         : srcImageP->cmodel.numComponents;
+
+    if (lut_nbands > ncomponents) {
+        lut_nbands = ncomponents;
+    }
+
+    /* Make sure that color order can be used for
+     * re-ordering of lookup arrays.
+     */
+    for (i = 0; i < ncomponents; i++) {
+        int idx = srcImageP->hints.colorOrder[i];
+
+        if (idx < 0 || idx >= ncomponents) {
+            awt_freeParsedImage(srcImageP, TRUE);
+            awt_freeParsedImage(dstImageP, TRUE);
+            return 0;
+        }
+    }
 
     tbl = NULL;
     if (SAFE_TO_ALLOC_2(ncomponents, sizeof(unsigned char *))) {
@@ -1206,18 +1328,12 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
     }
 
     jtable = NULL;
-    if (SAFE_TO_ALLOC_2(jlen, sizeof(jobject *))) {
-        jtable = (jobject *)malloc(jlen * sizeof (jobject *));
+    if (SAFE_TO_ALLOC_2(lut_nbands, sizeof(LookupArrayInfo))) {
+        jtable = (LookupArrayInfo *)malloc(lut_nbands * sizeof (LookupArrayInfo));
     }
 
-    table = NULL;
-    if (SAFE_TO_ALLOC_2(jlen, sizeof(unsigned char *))) {
-        table = (unsigned char **)malloc(jlen * sizeof(unsigned char *));
-    }
-
-    if (tbl == NULL || table == NULL || jtable == NULL) {
+    if (tbl == NULL || jtable == NULL) {
         if (tbl != NULL) free(tbl);
-        if (table != NULL) free(table);
         if (jtable != NULL) free(jtable);
         awt_freeParsedImage(srcImageP, TRUE);
         awt_freeParsedImage(dstImageP, TRUE);
@@ -1225,11 +1341,21 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
         return 0;
     }
     /* Need to grab these pointers before we lock down arrays */
-    for (i=0; i < jlen; i++) {
-        jtable[i] = (*env)->GetObjectArrayElement(env, jtableArrays, i);
-        if (jtable[i] == NULL) {
+    for (i=0; i < lut_nbands; i++) {
+        jtable[i].jArray = (*env)->GetObjectArrayElement(env, jtableArrays, i);
+
+        if (jtable[i].jArray != NULL) {
+            jtable[i].length = (*env)->GetArrayLength(env, jtable[i].jArray);
+            jtable[i].table = NULL;
+
+            if (jtable[i].length < 256) {
+                /* we may read outside the table during lookup */
+                jtable[i].jArray = NULL;
+                jtable[i].length = 0;
+            }
+        }
+        if (jtable[i].jArray == NULL) {
             free(tbl);
-            free(table);
             free(jtable);
             awt_freeParsedImage(srcImageP, TRUE);
             awt_freeParsedImage(dstImageP, TRUE);
@@ -1242,7 +1368,6 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
     if (nbands < 1) {
         /* Can't handle any custom images */
         free(tbl);
-        free(table);
         free(jtable);
         awt_freeParsedImage(srcImageP, TRUE);
         awt_freeParsedImage(dstImageP, TRUE);
@@ -1253,7 +1378,6 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
     if (allocateArray(env, srcImageP, &src, &sdata, TRUE, FALSE, FALSE) < 0) {
         /* Must be some problem */
         free(tbl);
-        free(table);
         free(jtable);
         awt_freeParsedImage(srcImageP, TRUE);
         awt_freeParsedImage(dstImageP, TRUE);
@@ -1262,7 +1386,6 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
     if (allocateArray(env, dstImageP, &dst, &ddata, FALSE, FALSE, FALSE) < 0) {
         /* Must be some problem */
         free(tbl);
-        free(table);
         free(jtable);
         freeArray(env, srcImageP, src, sdata, NULL, NULL, NULL);
         awt_freeParsedImage(srcImageP, TRUE);
@@ -1278,7 +1401,7 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
      * sufficient number of lookup arrays we add references to identity
      * lookup array to make medialib happier.
      */
-    if (jlen < ncomponents) {
+    if (lut_nbands < ncomponents) {
         int j;
         /* REMIND: This should be the size of the input lut!! */
         for (j=0; j < 256; j++) {
@@ -1287,65 +1410,45 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
         for (j=0; j < ncomponents; j++) {
             tbl[j] = lut;
         }
-
     }
 
-    for (i=0; i < jlen; i++) {
-        table[i] = (unsigned char *)
-            (*env)->GetPrimitiveArrayCritical(env, jtable[i], NULL);
-        if (table[i] == NULL) {
+    for (i=0; i < lut_nbands; i++) {
+        jtable[i].table = (unsigned char *)
+            (*env)->GetPrimitiveArrayCritical(env, jtable[i].jArray, NULL);
+        if (jtable[i].table == NULL) {
             /* Free what we've got so far. */
             int j;
             for (j = 0; j < i; j++) {
                 (*env)->ReleasePrimitiveArrayCritical(env,
-                                                      jtable[j],
-                                                      (jbyte *) table[j],
+                                                      jtable[j].jArray,
+                                                      (jbyte *) jtable[j].table,
                                                       JNI_ABORT);
             }
             free(tbl);
-            free(table);
             free(jtable);
             freeArray(env, srcImageP, src, sdata, NULL, NULL, NULL);
             awt_freeParsedImage(srcImageP, TRUE);
             awt_freeParsedImage(dstImageP, TRUE);
             return 0;
         }
-        tbl[srcImageP->hints.colorOrder[i]] = table[i];
+        tbl[srcImageP->hints.colorOrder[i]] = jtable[i].table;
     }
 
-    if (jlen == 1) {
+    if (lut_nbands == 1) {
         for (i=1; i < nbands -
                  srcImageP->cmodel.supportsAlpha; i++) {
-            tbl[srcImageP->hints.colorOrder[i]] = table[0];
+                     tbl[srcImageP->hints.colorOrder[i]] = jtable[0].table;
         }
     }
 
     /* Mlib needs 16bit lookuptable and must be signed! */
     if (src->type == MLIB_SHORT) {
-        unsigned short *sdataP = (unsigned short *) src->data;
-        unsigned short *sP;
         if (dst->type == MLIB_BYTE) {
-            unsigned char *cdataP  = (unsigned char *)  dst->data;
-            unsigned char *cP;
             if (nbands > 1) {
                 retStatus = 0;
             }
             else {
-                int x, y;
-                for (y=0; y < src->height; y++) {
-                    cP = cdataP;
-                    sP = sdataP;
-                    for (x=0; x < src->width; x++) {
-                        *cP++ = table[0][*sP++];
-                    }
-
-                    /*
-                     * 4554571: increment pointers using the scanline stride
-                     * in pixel units (not byte units)
-                     */
-                    cdataP += dstImageP->raster.scanlineStride;
-                    sdataP += srcImageP->raster.scanlineStride;
-                }
+                retStatus = lookupShortData(src, dst, &jtable[0]);
             }
         }
         /* How about ddata == null? */
@@ -1370,12 +1473,11 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
     }
 
     /* Release the LUT */
-    for (i=0; i < jlen; i++) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jtable[i],
-                                              (jbyte *) table[i], JNI_ABORT);
+    for (i=0; i < lut_nbands; i++) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jtable[i].jArray,
+            (jbyte *) jtable[i].table, JNI_ABORT);
     }
     free ((void *) jtable);
-    free ((void *) table);
     free ((void *) tbl);
 
     /* Release the pinned memory */
@@ -1388,7 +1490,6 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject this,
 
     return retStatus;
 }
-
 
 JNIEXPORT jint JNICALL
 Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
@@ -1403,8 +1504,8 @@ Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
     mlib_image*    dst;
     void*          sdata;
     void*          ddata;
-    jobject        jtable[4];
-    unsigned char* table[4];
+    LookupArrayInfo jtable[4];
+    unsigned char* mlib_lookupTable[4];
     int            i;
     int            retStatus = 1;
     mlib_status    status;
@@ -1451,6 +1552,11 @@ Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
     lut_nbands = jlen;
     src_nbands = srcRasterP->numBands;
     dst_nbands = dstRasterP->numBands;
+
+    /* adjust number of lookup bands */
+    if (lut_nbands > src_nbands) {
+        lut_nbands = src_nbands;
+    }
 
     /* MediaLib can't do more than 4 bands */
     if (src_nbands <= 0 || src_nbands > 4 ||
@@ -1516,22 +1622,37 @@ Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
     /* Get references to the lookup table arrays */
     /* Need to grab these pointers before we lock down arrays */
     for (i=0; i < lut_nbands; i++) {
-        jtable[i] = (*env)->GetObjectArrayElement(env, jtableArrays, i);
-        if (jtable[i] == NULL) {
+        jtable[i].jArray = (*env)->GetObjectArrayElement(env, jtableArrays, i);
+        jtable[i].table = NULL;
+        if (jtable[i].jArray != NULL) {
+            jtable[i].length = (*env)->GetArrayLength(env, jtable[i].jArray);
+            if (jtable[i].length < 256) {
+                 /* we may read outside the table during lookup */
+                jtable[i].jArray = NULL;
+            }
+        }
+
+        if (jtable[i].jArray == NULL)
+        {
+            freeDataArray(env, srcRasterP->jdata, src, sdata,
+                          dstRasterP->jdata, dst, ddata);
+
+            awt_freeParsedRaster(srcRasterP, TRUE);
+            awt_freeParsedRaster(dstRasterP, TRUE);
             return 0;
         }
     }
 
     for (i=0; i < lut_nbands; i++) {
-        table[i] = (unsigned char *)
-            (*env)->GetPrimitiveArrayCritical(env, jtable[i], NULL);
-        if (table[i] == NULL) {
+        jtable[i].table = (unsigned char *)
+            (*env)->GetPrimitiveArrayCritical(env, jtable[i].jArray, NULL);
+        if (jtable[i].table == NULL) {
             /* Free what we've got so far. */
             int j;
             for (j = 0; j < i; j++) {
                 (*env)->ReleasePrimitiveArrayCritical(env,
-                                                      jtable[j],
-                                                      (jbyte *) table[j],
+                                                      jtable[j].jArray,
+                                                      (jbyte *) jtable[j].table,
                                                       JNI_ABORT);
             }
             freeDataArray(env, srcRasterP->jdata, src, sdata,
@@ -1540,6 +1661,7 @@ Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
             awt_freeParsedRaster(dstRasterP, TRUE);
             return 0;
         }
+        mlib_lookupTable[i] = jtable[i].table;
     }
 
     /*
@@ -1548,107 +1670,28 @@ Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
      * contains single lookup array.
      */
     for (i = lut_nbands; i < src_nbands; i++) {
-        table[i] = table[0];
+        mlib_lookupTable[i] = jtable[0].table;
     }
 
     /*
      * Setup lookup array for "extra" channels
      */
     for ( ; i < src->channels; i++) {
-        table[i] = ilut;
+        mlib_lookupTable[i] = ilut;
     }
 
-#define NLUT 8
     /* Mlib needs 16bit lookuptable and must be signed! */
     if (src->type == MLIB_SHORT) {
-        unsigned short *sdataP = (unsigned short *) src->data;
-        unsigned short *sP;
         if (dst->type == MLIB_BYTE) {
-            unsigned char *cdataP  = (unsigned char *)  dst->data;
-            unsigned char *cP;
             if (lut_nbands > 1) {
                 retStatus = 0;
             } else {
-                int x, y;
-                unsigned int mask = NLUT-1;
-                unsigned char* pLut = table[0];
-                unsigned int endianTest = 0xff000000;
-                for (y=0; y < src->height; y++) {
-                    int nloop, nx;
-                    unsigned short* srcP;
-                    int* dstP;
-                    int npix = src->width;
-                    cP = cdataP;
-                    sP = sdataP;
-                    /* Get to 32 bit-aligned point */
-                    while(((uintptr_t)cP & 0x3) != 0 && npix>0) {
-                          *cP++ = pLut[*sP++];
-                          npix--;
-                    }
-
-                    /*
-                     * Do NLUT pixels per loop iteration.
-                     * Pack into ints and write out 2 at a time.
-                     */
-                    nloop = npix/NLUT;
-                    nx = npix%NLUT;
-                    srcP = sP;
-                    dstP = (int*)cP;
-
-                    if(((char*)(&endianTest))[0] != 0) {
-                        /* Big endian loop */
-                        for(x=nloop; x!=0; x--) {
-                            dstP[0] = (int)
-                                    ((pLut[srcP[0]] << 24) |
-                                     (pLut[srcP[1]] << 16) |
-                                     (pLut[srcP[2]] << 8)  |
-                                      pLut[srcP[3]]);
-                            dstP[1] = (int)
-                                    ((pLut[srcP[4]] << 24) |
-                                     (pLut[srcP[5]] << 16) |
-                                     (pLut[srcP[6]] << 8)  |
-                                      pLut[srcP[7]]);
-                            dstP += NLUT/4;
-                            srcP += NLUT;
-                        }
-                    } else {
-                        /* Little endian loop */
-                        for(x=nloop; x!=0; x--) {
-                            dstP[0] = (int)
-                                    ((pLut[srcP[3]] << 24) |
-                                     (pLut[srcP[2]] << 16) |
-                                     (pLut[srcP[1]] << 8)  |
-                                      pLut[srcP[0]]);
-                            dstP[1] = (int)
-                                    ((pLut[srcP[7]] << 24) |
-                                     (pLut[srcP[6]] << 16) |
-                                     (pLut[srcP[5]] << 8)  |
-                                      pLut[srcP[4]]);
-                            dstP += NLUT/4;
-                            srcP += NLUT;
-                        }
-                    }
-                    /*
-                     * Complete any remaining pixels
-                     */
-                    cP = cP + NLUT * nloop;
-                    sP = sP + NLUT * nloop;
-                    for(x=nx; x!=0; x--) {
-                        *cP++ = pLut[*sP++];
-                    }
-
-                    /*
-                     * 4554571: increment pointers using the scanline stride
-                     * in pixel units (not byte units)
-                     */
-                    cdataP += dstRasterP->scanlineStride;
-                    sdataP += srcRasterP->scanlineStride;
-                }
+                retStatus = lookupShortData(src, dst, &jtable[0]);
             }
         }
         /* How about ddata == null? */
     } else if ((status = (*sMlibFns[MLIB_LOOKUP].fptr)(dst, src,
-                                      (void **)table) != MLIB_SUCCESS)) {
+                                      (void **)mlib_lookupTable) != MLIB_SUCCESS)) {
         printMedialibError(status);
         retStatus = 0;
     }
@@ -1677,8 +1720,8 @@ Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
 
     /* Release the LUT */
     for (i=0; i < lut_nbands; i++) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jtable[i],
-                                              (jbyte *) table[i], JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jtable[i].jArray,
+                                              (jbyte *) jtable[i].table, JNI_ABORT);
     }
 
     /* Release the pinned memory */
