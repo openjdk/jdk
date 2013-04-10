@@ -596,13 +596,14 @@ final class RegExpScanner extends Scanner {
      *      ABCDEFGHIJKLMNOPQRSTUVWXYZ
      */
     private boolean controlLetter() {
-        final char c = Character.toUpperCase(ch0);
-        if (c >= 'A' && c <= 'Z') {
+        // To match other engines we also accept '0'..'9' and '_' as control letters inside a character class.
+        if ((ch0 >= 'A' && ch0 <= 'Z') || (ch0 >= 'a' && ch0 <= 'z')
+                || (inCharClass && (isDecimalDigit(ch0) || ch0 == '_'))) {
             // for some reason java regexps don't like control characters on the
             // form "\\ca".match([string with ascii 1 at char0]). Translating
             // them to unicode does it though.
             sb.setLength(sb.length() - 1);
-            unicode(c - 'A' + 1, sb);
+            unicode(ch0 % 32, sb);
             skip(1);
             return true;
         }
@@ -621,14 +622,7 @@ final class RegExpScanner extends Scanner {
         }
         // ES 5.1 A.7 requires "not IdentifierPart" here but all major engines accept any character here.
         if (ch0 == 'c') {
-            // Ignore invalid control letter escape if within a character class
-            if (inCharClass && ch1 != ']') {
-                sb.setLength(sb.length() - 1);
-                skip(2);
-                return true;
-            } else {
-                sb.append('\\'); // Treat invalid \c control sequence as \\c
-            }
+            sb.append('\\'); // Treat invalid \c control sequence as \\c
         } else if (NON_IDENT_ESCAPES.indexOf(ch0) == -1) {
             sb.setLength(sb.length() - 1);
         }
