@@ -101,7 +101,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
         int keyLength = keySpec.getKeyLength();
         if (keyLength == 0) {
             throw new InvalidKeySpecException("Key length not found");
-        } else if (keyLength == 0) {
+        } else if (keyLength < 0) {
             throw new InvalidKeySpecException("Key length is negative");
         }
         try {
