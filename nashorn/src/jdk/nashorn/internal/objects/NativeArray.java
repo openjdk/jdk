@@ -793,11 +793,15 @@ public final class NativeArray extends ScriptObject {
     }
 
     private static ScriptFunction compareFunction(final Object comparefn) {
-        try {
-            return (ScriptFunction)comparefn;
-        } catch (final ClassCastException e) {
-            return null; //undefined or null
+        if (comparefn == ScriptRuntime.UNDEFINED) {
+            return null;
         }
+
+        if (! (comparefn instanceof ScriptFunction)) {
+            throw typeError("not.a.function", ScriptRuntime.safeToString(comparefn));
+        }
+
+        return (ScriptFunction)comparefn;
     }
 
     private static Object[] sort(final Object[] array, final Object comparefn) {
