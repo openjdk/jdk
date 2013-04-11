@@ -874,7 +874,6 @@ final class RegExpScanner extends Scanner {
         switch (ch0) {
         case ']':
         case '-':
-        case '\0':
             return false;
 
         case '[':
