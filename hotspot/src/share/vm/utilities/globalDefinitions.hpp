@@ -419,6 +419,24 @@ inline intptr_t align_object_offset(intptr_t offset) {
   return align_size_up(offset, HeapWordsPerLong);
 }
 
+// Clamp an address to be within a specific page
+// 1. If addr is on the page it is returned as is
+// 2. If addr is above the page_address the start of the *next* page will be returned
+// 3. Otherwise, if addr is below the page_address the start of the page will be returned
+inline address clamp_address_in_page(address addr, address page_address, intptr_t page_size) {
+  if (align_size_down(intptr_t(addr), page_size) == align_size_down(intptr_t(page_address), page_size)) {
+    // address is in the specified page, just return it as is
+    return addr;
+  } else if (addr > page_address) {
+    // address is above specified page, return start of next page
+    return (address)align_size_down(intptr_t(page_address), page_size) + page_size;
+  } else {
+    // address is below specified page, return start of page
+    return (address)align_size_down(intptr_t(page_address), page_size);
+  }
+}
+
+
 // The expected size in bytes of a cache line, used to pad data structures.
 #define DEFAULT_CACHE_LINE_SIZE 64
 
@@ -1295,5 +1313,16 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 static inline void* dereference_vptr(void* addr) {
   return *(void**)addr;
 }
+
+
+#ifndef PRODUCT
+
+// For unit testing only
+class GlobalDefinitions {
+public:
+  static void test_globals();
+};
+
+#endif // PRODUCT
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP

@@ -1359,18 +1359,6 @@ void G1CollectorPolicy::print_yg_surv_rate_info() const {
 #endif // PRODUCT
 }
 
-#ifndef PRODUCT
-// for debugging, bit of a hack...
-static char*
-region_num_to_mbs(int length) {
-  static char buffer[64];
-  double bytes = (double) (length * HeapRegion::GrainBytes);
-  double mbs = bytes / (double) (1024 * 1024);
-  sprintf(buffer, "%7.2lfMB", mbs);
-  return buffer;
-}
-#endif // PRODUCT
-
 uint G1CollectorPolicy::max_regions(int purpose) {
   switch (purpose) {
     case GCAllocForSurvived:

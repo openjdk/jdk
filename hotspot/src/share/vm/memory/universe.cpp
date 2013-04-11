@@ -1326,6 +1326,8 @@ static uintptr_t _verify_oop_data[2]   = {0, (uintptr_t)-1};
 static uintptr_t _verify_klass_data[2] = {0, (uintptr_t)-1};
 
 
+#ifndef PRODUCT
+
 static void calculate_verify_data(uintptr_t verify_data[2],
                                   HeapWord* low_boundary,
                                   HeapWord* high_boundary) {
@@ -1360,9 +1362,7 @@ static void calculate_verify_data(uintptr_t verify_data[2],
   verify_data[1] = bits;
 }
 
-
 // Oop verification (see MacroAssembler::verify_oop)
-#ifndef PRODUCT
 
 uintptr_t Universe::verify_oop_mask() {
   MemRegion m = heap()->reserved_region();
