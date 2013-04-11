@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.security.KeyRep;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -106,16 +105,11 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             throw new InvalidKeySpecException("Key length is negative");
         }
         try {
-            this.prf = Mac.getInstance(prfAlgo, "SunJCE");
+            this.prf = Mac.getInstance(prfAlgo, SunJCE.getInstance());
         } catch (NoSuchAlgorithmException nsae) {
             // not gonna happen; re-throw just in case
             InvalidKeySpecException ike = new InvalidKeySpecException();
             ike.initCause(nsae);
-            throw ike;
-        } catch (NoSuchProviderException nspe) {
-            // Again, not gonna happen; re-throw just in case
-            InvalidKeySpecException ike = new InvalidKeySpecException();
-            ike.initCause(nspe);
             throw ike;
         }
         this.key = deriveKey(prf, passwdBytes, salt, iterCount, keyLength);
