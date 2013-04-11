@@ -26,30 +26,33 @@
  * @summary Test consistency of NMT by leaking a few select allocations of the Test type and then verify visibility with jcmd
  * @key nmt jcmd
  * @library /testlibrary /testlibrary/whitebox
- * @build AllocTestType
+ * @build MallocTestType
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail AllocTestType
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail MallocTestType
  */
 
 import com.oracle.java.testlibrary.*;
 import sun.hotspot.WhiteBox;
 
-public class AllocTestType {
+public class MallocTestType {
 
   public static void main(String args[]) throws Exception {
     OutputAnalyzer output;
+    WhiteBox wb = WhiteBox.getWhiteBox();
 
     // Grab my own PID
     String pid = Integer.toString(ProcessTools.getProcessId());
     ProcessBuilder pb = new ProcessBuilder();
 
-    // Use WB API to alloc with the mtTest type
-    if (!WhiteBox.getWhiteBox().NMTAllocTest()) {
-      throw new Exception("Call to WB API NMTAllocTest() failed");
-    }
+    // Use WB API to alloc and free with the mtTest type
+    long memAlloc3 = wb.NMTMalloc(128 * 1024);
+    long memAlloc2 = wb.NMTMalloc(256 * 1024);
+    wb.NMTFree(memAlloc3);
+    long memAlloc1 = wb.NMTMalloc(512 * 1024);
+    wb.NMTFree(memAlloc2);
 
     // Use WB API to ensure that all data has been merged before we continue
-    if (!WhiteBox.getWhiteBox().NMTWaitForDataMerge()) {
+    if (!wb.NMTWaitForDataMerge()) {
       throw new Exception("Call to WB API NMTWaitForDataMerge() failed");
     }
 
@@ -59,12 +62,10 @@ public class AllocTestType {
     output.shouldContain("Test (reserved=512KB, committed=512KB)");
 
     // Free the memory allocated by NMTAllocTest
-    if (!WhiteBox.getWhiteBox().NMTFreeTestMemory()) {
-      throw new Exception("Call to WB API NMTFreeTestMemory() failed");
-    }
+    wb.NMTFree(memAlloc1);
 
     // Use WB API to ensure that all data has been merged before we continue
-    if (!WhiteBox.getWhiteBox().NMTWaitForDataMerge()) {
+    if (!wb.NMTWaitForDataMerge()) {
       throw new Exception("Call to WB API NMTWaitForDataMerge() failed");
     }
     output = new OutputAnalyzer(pb.start());

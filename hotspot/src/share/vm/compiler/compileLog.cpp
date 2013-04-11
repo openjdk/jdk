@@ -60,28 +60,6 @@ CompileLog::~CompileLog() {
 }
 
 
-// Advance kind up to a null or space, return this tail.
-// Make sure kind is null-terminated, not space-terminated.
-// Use the buffer if necessary.
-static const char* split_attrs(const char* &kind, char* buffer) {
-  const char* attrs = strchr(kind, ' ');
-  // Tease apart the first word from the rest:
-  if (attrs == NULL) {
-    return "";  // no attrs, no split
-  } else if (kind == buffer) {
-    ((char*) attrs)[-1] = 0;
-    return attrs;
-  } else {
-    // park it in the buffer, so we can put a null on the end
-    assert(!(kind >= buffer && kind < buffer+100), "not obviously in buffer");
-    int klen = attrs - kind;
-    strncpy(buffer, kind, klen);
-    buffer[klen] = 0;
-    kind = buffer;  // return by reference
-    return attrs;
-  }
-}
-
 // see_tag, pop_tag:  Override the default do-nothing methods on xmlStream.
 // These methods provide a hook for managing the the extra context markup.
 void CompileLog::see_tag(const char* tag, bool push) {
