@@ -1754,11 +1754,15 @@ bool Arguments::verify_percentage(uintx value, const char* name) {
   return false;
 }
 
+#if !INCLUDE_ALL_GCS
+#ifdef ASSERT
 static bool verify_serial_gc_flags() {
   return (UseSerialGC &&
         !(UseParNewGC || (UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC ||
           UseParallelGC || UseParallelOldGC));
 }
+#endif // ASSERT
+#endif // INCLUDE_ALL_GCS
 
 // check if do gclog rotation
 // +UseGCLogFileRotation is a must,
@@ -3092,6 +3096,7 @@ do {                                                                  \
   }                                                                   \
 } while(0)
 
+#if !INCLUDE_ALL_GCS
 static void force_serial_gc() {
   FLAG_SET_DEFAULT(UseSerialGC, true);
   FLAG_SET_DEFAULT(CMSIncrementalMode, false);  // special CMS suboption
@@ -3101,6 +3106,7 @@ static void force_serial_gc() {
   UNSUPPORTED_GC_OPTION(UseConcMarkSweepGC);
   UNSUPPORTED_GC_OPTION(UseParNewGC);
 }
+#endif // INCLUDE_ALL_GCS
 
 // Parse entry point called from JNI_CreateJavaVM
 

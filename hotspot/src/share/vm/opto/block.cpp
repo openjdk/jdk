@@ -1028,26 +1028,6 @@ void UnionFind::Union( uint idx1, uint idx2 ) {
 }
 
 #ifndef PRODUCT
-static void edge_dump(GrowableArray<CFGEdge *> *edges) {
-  tty->print_cr("---- Edges ----");
-  for (int i = 0; i < edges->length(); i++) {
-    CFGEdge *e = edges->at(i);
-    if (e != NULL) {
-      edges->at(i)->dump();
-    }
-  }
-}
-
-static void trace_dump(Trace *traces[], int count) {
-  tty->print_cr("---- Traces ----");
-  for (int i = 0; i < count; i++) {
-    Trace *tr = traces[i];
-    if (tr != NULL) {
-      tr->dump();
-    }
-  }
-}
-
 void Trace::dump( ) const {
   tty->print_cr("Trace (freq %f)", first_block()->_freq);
   for (Block *b = first_block(); b != NULL; b = next(b)) {
