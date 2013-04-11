@@ -1581,7 +1581,7 @@ void CompileBroker::compiler_thread_loop() {
       // We need this HandleMark to avoid leaking VM handles.
       HandleMark hm(thread);
 
-      if (CodeCache::largest_free_block() < CodeCacheMinimumFreeSpace) {
+      if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) {
         // the code cache is really full
         handle_full_code_cache();
       } else if (UseCodeCacheFlushing && CodeCache::needs_flushing()) {
