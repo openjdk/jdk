@@ -108,17 +108,20 @@ public class JavatimeTest {
             // TBD: tzdt intergration
             if (zidStr.startsWith("SystemV") ||
                 zidStr.contains("Riyadh8") ||
-                zidStr.equals("US/Pacific-New")) {
+                zidStr.equals("US/Pacific-New") ||
+                zidStr.equals("EST") ||
+                zidStr.equals("HST") ||
+                zidStr.equals("MST")) {
                 continue;
             }
-            ZoneId zid = ZoneId.of(zidStr, ZoneId.OLD_IDS_POST_2005);
+            ZoneId zid = ZoneId.of(zidStr, ZoneId.OLD_SHORT_IDS);
             if (!zid.equals(TimeZone.getTimeZone(zid).toZoneId())) {
                 throw new RuntimeException("FAILED: zid -> tz -> zid :" + zidStr);
             }
             TimeZone tz = TimeZone.getTimeZone(zidStr);
             // no round-trip for alias and "GMT"
             if (!tz.equals(TimeZone.getTimeZone(tz.toZoneId())) &&
-                !ZoneId.OLD_IDS_POST_2005.containsKey(zidStr) &&
+                !ZoneId.OLD_SHORT_IDS.containsKey(zidStr) &&
                 !zidStr.startsWith("GMT")) {
                 throw new RuntimeException("FAILED: tz -> zid -> tz :" + zidStr);
             }

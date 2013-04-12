@@ -178,7 +178,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   // 2) substitute conditional expression
   //    with an IfOp followed by a Goto
   // cut if_ away and get node before
-  Instruction* cur_end = if_->prev(block);
+  Instruction* cur_end = if_->prev();
 
   // append constants of true- and false-block if necessary
   // clone constants because original block must not be destroyed
@@ -202,7 +202,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   }
 
   // append Goto to successor
-  ValueStack* state_before = if_->is_safepoint() ? if_->state_before() : NULL;
+  ValueStack* state_before = if_->state_before();
   Goto* goto_ = new Goto(sux, state_before, if_->is_safepoint() || t_goto->is_safepoint() || f_goto->is_safepoint());
 
   // prepare state for Goto
@@ -367,10 +367,11 @@ class BlockMerger: public BlockClosure {
 #endif
 
         // find instruction before end & append first instruction of sux block
-        Instruction* prev = end->prev(block);
+        Instruction* prev = end->prev();
         Instruction* next = sux->next();
         assert(prev->as_BlockEnd() == NULL, "must not be a BlockEnd");
         prev->set_next(next);
+        prev->fixup_block_pointers();
         sux->disconnect_from_graph();
         block->set_end(sux->end());
         // add exception handlers of deleted block, if any
@@ -533,6 +534,8 @@ public:
   void do_ProfileInvoke  (ProfileInvoke*   x);
   void do_RuntimeCall    (RuntimeCall*     x);
   void do_MemBar         (MemBar*          x);
+  void do_RangeCheckPredicate(RangeCheckPredicate* x);
+  void do_Assert         (Assert*          x);
 };
 
 
@@ -714,6 +717,8 @@ void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_las
 void NullCheckVisitor::do_ProfileInvoke  (ProfileInvoke*   x) {}
 void NullCheckVisitor::do_RuntimeCall    (RuntimeCall*     x) {}
 void NullCheckVisitor::do_MemBar         (MemBar*          x) {}
+void NullCheckVisitor::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
+void NullCheckVisitor::do_Assert         (Assert*          x) {}
 
 
 void NullCheckEliminator::visit(Value* p) {

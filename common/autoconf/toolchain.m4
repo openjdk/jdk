@@ -441,8 +441,10 @@ fi
 AC_SUBST(AS)
 
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    AC_PATH_PROGS(NM, [gnm nm])
+    AC_PATH_PROG(NM, nm)
     BASIC_FIXUP_EXECUTABLE(NM)
+    AC_PATH_PROG(GNM, gnm)
+    BASIC_FIXUP_EXECUTABLE(GNM)
     AC_PATH_PROG(STRIP, strip)
     BASIC_FIXUP_EXECUTABLE(STRIP)
     AC_PATH_PROG(MCS, mcs)
@@ -450,6 +452,8 @@ if test "x$OPENJDK_TARGET_OS" = xsolaris; then
 elif test "x$OPENJDK_TARGET_OS" != xwindows; then
     AC_CHECK_TOOL(NM, nm)
     BASIC_FIXUP_EXECUTABLE(NM)
+    GNM="$NM"
+    AC_SUBST(GNM)
     AC_CHECK_TOOL(STRIP, strip)
     BASIC_FIXUP_EXECUTABLE(STRIP)
 fi
