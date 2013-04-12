@@ -26,6 +26,7 @@
  * @bug 7171982
  * @summary Test that SunJCE.getInstance() is retrieving a provider when
  * SunJCE has been removed from the provider list.
+ * @run main/othervm SunJCEGetInstance
  */
 
 import java.security.Security;
