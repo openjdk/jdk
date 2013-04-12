@@ -2166,6 +2166,9 @@ void CompileBroker::print_times() {
     comp->print_timers();
   }
   tty->cr();
+  tty->print_cr("  Total compiled methods   : %6d methods", CompileBroker::_total_compile_count);
+  tty->print_cr("    Standard compilation   : %6d methods", CompileBroker::_total_standard_compile_count);
+  tty->print_cr("    On stack replacement   : %6d methods", CompileBroker::_total_osr_compile_count);
   int tcb = CompileBroker::_sum_osr_bytes_compiled + CompileBroker::_sum_standard_bytes_compiled;
   tty->print_cr("  Total compiled bytecodes : %6d bytes", tcb);
   tty->print_cr("    Standard compilation   : %6d bytes", CompileBroker::_sum_standard_bytes_compiled);
