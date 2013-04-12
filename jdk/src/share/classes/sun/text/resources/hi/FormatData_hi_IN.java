@@ -67,15 +67,15 @@
 
 package sun.text.resources.hi;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
 /**
  * The locale elements for Hindi.
  *
  */
-public class FormatData_hi_IN extends ListResourceBundle {
+public class FormatData_hi_IN extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -111,6 +111,23 @@ public class FormatData_hi_IN extends ListResourceBundle {
                     "\u0928\u0935\u0902\u092c\u0930", // abb november
                     "\u0926\u093f\u0938\u0902\u092c\u0930", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "\u091c",
+                    "\u092b\u093c",
+                    "\u092e\u093e",
+                    "\u0905",
+                    "\u092e",
+                    "\u091c\u0942",
+                    "\u091c\u0941",
+                    "\u0905",
+                    "\u0938\u093f",
+                    "\u0905",
+                    "\u0928",
+                    "\u0926\u093f",
+                    "",
                 }
             },
             { "DayNames",
@@ -158,6 +175,12 @@ public class FormatData_hi_IN extends ListResourceBundle {
                     "\u0938\u0928"
                 }
             },
+            { "short.Eras",
+                new String[] {
+                    "\u0908\u0938\u093e\u092a\u0942\u0930\u094d\u0935",
+                    "\u0938\u0928",
+                }
+            },
             { "NumberElements",
                 new String[] {
                     ".", // decimal separator
@@ -195,24 +218,6 @@ public class FormatData_hi_IN extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "calendarname.islamic-civil", "\u0907\u0938\u094d\u0932\u093e\u092e\u0940 \u0928\u093e\u0917\u0930\u093f\u0915 \u092a\u0902\u091a\u093e\u0902\u0917" },
-            { "calendarname.islamicc", "\u0907\u0938\u094d\u0932\u093e\u092e\u0940 \u0928\u093e\u0917\u0930\u093f\u0915 \u092a\u0902\u091a\u093e\u0902\u0917" },
-            { "calendarname.roc", "\u091a\u0940\u0928\u0940 \u0917\u0923\u0924\u0902\u0924\u094d\u0930 \u092a\u0902\u091a\u093e\u0902\u0917" },
-            { "calendarname.islamic", "\u0907\u0938\u094d\u0932\u093e\u092e\u0940 \u092a\u0902\u091a\u093e\u0902\u0917" },
-            { "calendarname.buddhist", "\u092c\u094c\u0926\u094d\u0927 \u092a\u0902\u091a\u093e\u0902\u0917" },
-            { "calendarname.japanese", "\u091c\u093e\u092a\u093e\u0928\u0940 \u092a\u0902\u091a\u093e\u0902\u0917" },
-            { "calendarname.gregorian", "\u0917\u094d\u0930\u0947\u0917\u0930\u0940 \u092a\u0902\u091a\u093e\u0902\u0917" },
-            { "calendarname.gregory", "\u0917\u094d\u0930\u0947\u0917\u0930\u0940 \u092a\u0902\u091a\u093e\u0902\u0917" },
-            { "field.era", "\u092f\u0941\u0917" },
-            { "field.year", "\u0935\u0930\u094d\u0937" },
-            { "field.month", "\u092e\u093e\u0938" },
-            { "field.week", "\u0938\u092a\u094d\u0924\u093e\u0939" },
-            { "field.weekday", "\u0938\u092a\u094d\u0924\u093e\u0939 \u0915\u093e \u0926\u093f\u0928" },
-            { "field.dayperiod", "\u0938\u092e\u092f \u0905\u0935\u0927\u093f" },
-            { "field.hour", "\u0918\u0902\u091f\u093e" },
-            { "field.minute", "\u092e\u093f\u0928\u091f" },
-            { "field.second", "\u0938\u0947\u0915\u0947\u0902\u0921" },
-            { "field.zone", "\u0915\u094d\u0937\u0947\u0924\u094d\u0930" },
         };
     }
 }

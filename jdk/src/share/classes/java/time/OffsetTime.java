@@ -79,7 +79,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -87,6 +86,7 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
@@ -384,7 +384,7 @@ public final class OffsetTime
     @Override
     public boolean isSupported(TemporalField field) {
         if (field instanceof ChronoField) {
-            return ((ChronoField) field).isTimeField() || field == OFFSET_SECONDS;
+            return field.isTimeBased() || field == OFFSET_SECONDS;
         }
         return field != null && field.isSupportedBy(this);
     }
@@ -400,7 +400,7 @@ public final class OffsetTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return
      * appropriate range instances.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
@@ -410,6 +410,7 @@ public final class OffsetTime
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
     @Override
     public ValueRange range(TemporalField field) {
@@ -434,7 +435,7 @@ public final class OffsetTime
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this time, except {@code NANO_OF_DAY} and {@code MICRO_OF_DAY}
      * which are too large to fit in an {@code int} and throw a {@code DateTimeException}.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -443,7 +444,10 @@ public final class OffsetTime
      *
      * @param field  the field to get, not null
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override  // override for Javadoc
@@ -461,7 +465,7 @@ public final class OffsetTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this time.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -471,6 +475,7 @@ public final class OffsetTime
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -655,7 +660,7 @@ public final class OffsetTime
      * the matching method on {@link LocalTime#with(TemporalField, long)} LocalTime}.
      * In this case, the offset is not part of the calculation and will be unchanged.
      * <p>
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
@@ -668,6 +673,7 @@ public final class OffsetTime
      * @param newValue  the new value of the field in the result
      * @return an {@code OffsetTime} based on {@code this} with the specified field set, not null
      * @throws DateTimeException if the field cannot be set
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -764,6 +770,7 @@ public final class OffsetTime
      * @param unit  the unit to truncate to, not null
      * @return an {@code OffsetTime} based on this time with the time truncated, not null
      * @throws DateTimeException if unable to truncate
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     public OffsetTime truncatedTo(TemporalUnit unit) {
         return with(time.truncatedTo(unit), offset);
@@ -817,6 +824,7 @@ public final class OffsetTime
      * @param unit  the unit of the amount to add, not null
      * @return an {@code OffsetTime} based on this time with the specified amount added, not null
      * @throws DateTimeException if the addition cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -930,6 +938,7 @@ public final class OffsetTime
      * @param unit  the unit of the amount to subtract, not null
      * @return an {@code OffsetTime} based on this time with the specified amount subtracted, not null
      * @throws DateTimeException if the subtraction cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1020,13 +1029,13 @@ public final class OffsetTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.offset() || query == Queries.zone()) {
+        if (query == TemporalQuery.offset() || query == TemporalQuery.zone()) {
             return (R) offset;
-        } else if (query == Queries.zoneId() | query == Queries.chronology() || query == Queries.localDate()) {
+        } else if (query == TemporalQuery.zoneId() | query == TemporalQuery.chronology() || query == TemporalQuery.localDate()) {
             return null;
-        } else if (query == Queries.localTime()) {
+        } else if (query == TemporalQuery.localTime()) {
             return (R) time;
-        } else if (query == Queries.precision()) {
+        } else if (query == TemporalQuery.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -1042,8 +1051,8 @@ public final class OffsetTime
      * with the offset and time changed to be the same as this.
      * <p>
      * The adjustment is equivalent to using {@link Temporal#with(TemporalField, long)}
-     * twice, passing {@link ChronoField#OFFSET_SECONDS} and
-     * {@link ChronoField#NANO_OF_DAY} as the fields.
+     * twice, passing {@link ChronoField#NANO_OF_DAY} and
+     * {@link ChronoField#OFFSET_SECONDS} as the fields.
      * <p>
      * In most cases, it is clearer to reverse the calling pattern by using
      * {@link Temporal#with(TemporalAdjuster)}:
@@ -1063,8 +1072,8 @@ public final class OffsetTime
     @Override
     public Temporal adjustInto(Temporal temporal) {
         return temporal
-                .with(OFFSET_SECONDS, offset.getTotalSeconds())
-                .with(NANO_OF_DAY, time.toNanoOfDay());
+                .with(NANO_OF_DAY, time.toNanoOfDay())
+                .with(OFFSET_SECONDS, offset.getTotalSeconds());
     }
 
     /**
@@ -1112,6 +1121,7 @@ public final class OffsetTime
      * @param unit  the unit to measure the period in, not null
      * @return the amount of the period between this time and the end time
      * @throws DateTimeException if the period cannot be calculated
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1132,14 +1142,28 @@ public final class OffsetTime
                 case HOURS: return nanosUntil / NANOS_PER_HOUR;
                 case HALF_DAYS: return nanosUntil / (12 * NANOS_PER_HOUR);
             }
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
         return unit.between(this, endTime);
     }
 
+    /**
+     * Formats this time using the specified formatter.
+     * <p>
+     * This time will be passed to the formatter to produce a string.
+     *
+     * @param formatter  the formatter to use, not null
+     * @return the formatted time string, not null
+     * @throws DateTimeException if an error occurs during printing
+     */
+    public String format(DateTimeFormatter formatter) {
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.format(this);
+    }
+
     //-----------------------------------------------------------------------
     /**
-     * Combines this date with a time to create an {@code OffsetDateTime}.
+     * Combines this time with a date to create an {@code OffsetDateTime}.
      * <p>
      * This returns an {@code OffsetDateTime} formed from this time and the specified date.
      * All possible combinations of date and time are valid.
@@ -1307,27 +1331,12 @@ public final class OffsetTime
         return time.toString() + offset.toString();
     }
 
-    /**
-     * Outputs this time as a {@code String} using the formatter.
-     * <p>
-     * This time will be passed to the formatter
-     * {@link DateTimeFormatter#format(TemporalAccessor) format method}.
-     *
-     * @param formatter  the formatter to use, not null
-     * @return the formatted time string, not null
-     * @throws DateTimeException if an error occurs during printing
-     */
-    public String toString(DateTimeFormatter formatter) {
-        Objects.requireNonNull(formatter, "formatter");
-        return formatter.format(this);
-    }
-
-    // -----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
     /**
      * Writes the object using a
      * <a href="../../../serialized-form.html#java.time.temporal.Ser">dedicated serialized form</a>.
      * <pre>
-     *  out.writeByte(9);  // identifies this as a OffsetDateTime
+     *  out.writeByte(9);  // identifies this as a OffsetTime
      *  out.writeObject(time);
      *  out.writeObject(offset);
      * </pre>

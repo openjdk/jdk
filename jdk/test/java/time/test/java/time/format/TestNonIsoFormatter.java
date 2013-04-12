@@ -22,16 +22,29 @@
  */
 package test.java.time.format;
 
-import java.time.*;
-import java.time.chrono.*;
-import java.time.format.*;
-import java.time.temporal.*;
+import static org.testng.Assert.assertEquals;
+
+import java.time.LocalDate;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
+import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
+import java.time.format.TextStyle;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQuery;
 import java.util.Locale;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
 
 /**
  * Test DateTimeFormatter with non-ISO chronology.
@@ -39,8 +52,9 @@ import static org.testng.Assert.assertEquals;
  * Strings in test data are all dependent on CLDR data which may change
  * in future CLDR releases.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestNonIsoFormatter {
+    private static final Chronology ISO8601 = IsoChronology.INSTANCE;
     private static final Chronology JAPANESE = JapaneseChronology.INSTANCE;
     private static final Chronology HIJRAH = HijrahChronology.INSTANCE;
     private static final Chronology MINGUO = MinguoChronology.INSTANCE;
@@ -50,7 +64,8 @@ public class TestNonIsoFormatter {
 
     private static final Locale ARABIC = new Locale("ar");
     private static final Locale thTH = new Locale("th", "TH");
-    private static final Locale thTHTH = new Locale("th", "TH", "TH");
+    private static final Locale thTHTH = Locale.forLanguageTag("th-TH-u-nu-thai");
+    private static final Locale jaJPJP = Locale.forLanguageTag("ja-JP-u-ca-japanese");
 
     @BeforeMethod
     public void setUp() {
@@ -59,19 +74,22 @@ public class TestNonIsoFormatter {
     @DataProvider(name="format_data")
     Object[][] formatData() {
         return new Object[][] {
-            // Chronology, Locale, ChronoLocalDate, expected string
-            { JAPANESE, Locale.JAPANESE, JAPANESE.date(IsoDate),
-              "\u5e73\u621025\u5e742\u670811\u65e5\u6708\u66dc\u65e5" }, // Japanese Heisei 25-02-11 (Mon)
-            { HIJRAH, ARABIC, HIJRAH.date(IsoDate),
-              "\u0627\u0644\u0627\u062b\u0646\u064a\u0646\u060c 30 \u0631\u0628\u064a\u0639 "
-              + "\u0627\u0644\u0623\u0648\u0644 1434" }, // Hijrah AH 1434-03-30 (Mon)
-            { MINGUO, Locale.TAIWAN, MINGUO.date(IsoDate),
+            // Chronology, Format Locale, Numbering Locale, ChronoLocalDate, expected string
+            { JAPANESE, Locale.JAPANESE, Locale.JAPANESE, JAPANESE.date(IsoDate),
+              "\u5e73\u621025\u5e742\u670811\u65e5" }, // Japanese Heisei 25-02-11
+            { HIJRAH, ARABIC, ARABIC, HIJRAH.date(IsoDate),
+              "\u0627\u0644\u0627\u062b\u0646\u064a\u0646\u060c 1 \u0631\u0628\u064a\u0639 "
+              + "\u0627\u0644\u0622\u062e\u0631 1434" }, // Hijrah AH 1434-04-01 (Mon)
+            { MINGUO, Locale.TAIWAN, Locale.TAIWAN, MINGUO.date(IsoDate),
               "\u6c11\u570b102\u5e742\u670811\u65e5\u661f\u671f\u4e00" }, // Minguo ROC 102-02-11 (Mon)
-            { BUDDHIST, thTH, BUDDHIST.date(IsoDate),
+            { BUDDHIST, thTH, thTH, BUDDHIST.date(IsoDate),
               "\u0e27\u0e31\u0e19\u0e08\u0e31\u0e19\u0e17\u0e23\u0e4c\u0e17\u0e35\u0e48"
               + " 11 \u0e01\u0e38\u0e21\u0e20\u0e32\u0e1e\u0e31\u0e19\u0e18\u0e4c"
               + " \u0e1e.\u0e28. 2556" }, // ThaiBuddhist BE 2556-02-11
-         // { BUDDHIST, thTHTH, BUDDHIST.date(IsoDate), "<TBS>" }, // doesn't work
+            { BUDDHIST, thTH, thTHTH, BUDDHIST.date(IsoDate),
+              "\u0e27\u0e31\u0e19\u0e08\u0e31\u0e19\u0e17\u0e23\u0e4c\u0e17\u0e35\u0e48 \u0e51\u0e51 "
+              + "\u0e01\u0e38\u0e21\u0e20\u0e32\u0e1e\u0e31\u0e19\u0e18\u0e4c \u0e1e.\u0e28. "
+              + "\u0e52\u0e55\u0e55\u0e56" }, // ThaiBuddhist BE 2556-02-11 (with Thai digits)
         };
     }
 
@@ -79,23 +97,49 @@ public class TestNonIsoFormatter {
     Object[][] invalidText() {
         return new Object[][] {
             // TODO: currently fixed Chronology and Locale.
-            { "\u662d\u548c64\u5e741\u67089\u65e5\u6708\u66dc\u65e5" }, // S64.01.09 (Mon)
+            // line commented out, as S64.01.09 seems like a reasonable thing to parse
+            // (era "S" ended on S64.01.07, but a little leniency is a good thing
+//            { "\u662d\u548c64\u5e741\u67089\u65e5\u6708\u66dc\u65e5" }, // S64.01.09 (Mon)
             { "\u662d\u548c65\u5e741\u67081\u65e5\u6708\u66dc\u65e5" }, // S65.01.01 (Mon)
         };
     }
 
+    @DataProvider(name="chrono_names")
+    Object[][] chronoNamesData() {
+        return new Object[][] {
+            // Chronology, Locale, Chronology Name
+            { ISO8601,  Locale.ENGLISH, "ISO" },    // No data in CLDR; Use Id.
+            { BUDDHIST, Locale.ENGLISH, "Buddhist Calendar" },
+            { HIJRAH,   Locale.ENGLISH, "Hijrah-umalqura" }, // No data in CLDR; Use Id.
+            { JAPANESE, Locale.ENGLISH, "Japanese Calendar" },
+            { MINGUO,   Locale.ENGLISH, "Minguo Calendar" },
+
+            { ISO8601,  Locale.JAPANESE, "ISO" },    // No data in CLDR; Use Id.
+            { JAPANESE, Locale.JAPANESE, "\u548c\u66a6" },
+            { BUDDHIST, Locale.JAPANESE, "\u30bf\u30a4\u4ecf\u6559\u66a6" },
+
+            { ISO8601,  thTH, "ISO" },    // No data in CLDR; Use Id.
+            { JAPANESE, thTH, "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e0d\u0e35\u0e48\u0e1b\u0e38\u0e48\u0e19" },
+            { BUDDHIST, thTH, "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e1e\u0e38\u0e17\u0e18" },
+        };
+    }
+
     @Test(dataProvider="format_data")
-    public void test_formatLocalizedDate(Chronology chrono, Locale locale, ChronoLocalDate<?> date, String expected) {
+    public void test_formatLocalizedDate(Chronology chrono, Locale formatLocale, Locale numberingLocale,
+                                         ChronoLocalDate<?> date, String expected) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
-            .withChronology(chrono).withLocale(locale);
+            .withChronology(chrono).withLocale(formatLocale)
+            .withSymbols(DateTimeFormatSymbols.of(numberingLocale));
         String text = dtf.format(date);
         assertEquals(text, expected);
     }
 
     @Test(dataProvider="format_data")
-    public void test_parseLocalizedText(Chronology chrono, Locale locale, ChronoLocalDate<?> expected, String text) {
+    public void test_parseLocalizedText(Chronology chrono, Locale formatLocale, Locale numberingLocale,
+                                        ChronoLocalDate<?> expected, String text) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
-            .withChronology(chrono).withLocale(locale);
+            .withChronology(chrono).withLocale(formatLocale)
+            .withSymbols(DateTimeFormatSymbols.of(numberingLocale));
         TemporalAccessor temporal = dtf.parse(text);
         ChronoLocalDate<?> date = chrono.date(temporal);
         assertEquals(date, expected);
@@ -105,6 +149,17 @@ public class TestNonIsoFormatter {
     public void test_parseInvalidText(String text) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
             .withChronology(JAPANESE).withLocale(Locale.JAPANESE);
-        TemporalAccessor temporal = dtf.parse(text);
+        dtf.parse(text);
+    }
+
+    @Test(dataProvider="chrono_names")
+    public void test_chronoNames(Chronology chrono, Locale locale, String expected) {
+        DateTimeFormatter dtf = new DateTimeFormatterBuilder().appendChronologyText(TextStyle.SHORT)
+            .toFormatter(locale);
+        String text = dtf.format(chrono.dateNow());
+        assertEquals(text, expected);
+        TemporalAccessor ta = dtf.parse(text);
+        Chronology cal = ta.query(TemporalQuery.chronology());
+        assertEquals(cal, chrono);
     }
 }
