@@ -22,33 +22,50 @@
  */
 
 /*
- * @test MakeMethodNotCompilableTest
+ * @test ClearMethodStateTest
  * @library /testlibrary /testlibrary/whitebox
- * @build MakeMethodNotCompilableTest
+ * @build ClearMethodStateTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MakeMethodNotCompilableTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ClearMethodStateTest
  * @author igor.ignatyev@oracle.com
  */
-public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
-
+public class ClearMethodStateTest extends CompilerWhiteBoxTest {
     public static void main(String[] args) throws Exception {
-        // to prevent inlining #method into #compile()
+        // to prevent inlining #method into #compile() and #test()
         WHITE_BOX.testSetDontInlineMethod(METHOD, true);
-        new MakeMethodNotCompilableTest().runTest();
+        new ClearMethodStateTest().runTest();
     }
 
-    protected void test() throws Exception  {
-        if (!WHITE_BOX.isMethodCompilable(METHOD)) {
-            throw new RuntimeException(METHOD + " must be compilable");
-        }
-        WHITE_BOX.makeMethodNotCompilable(METHOD);
-        if (WHITE_BOX.isMethodCompilable(METHOD)) {
-            throw new RuntimeException(METHOD + " must be not compilable");
-        }
-        compile();
+    protected void test() throws Exception {
         checkNotCompiled(METHOD);
-        if (WHITE_BOX.isMethodCompilable(METHOD)) {
-            throw new RuntimeException(METHOD + " must be not compilable");
+        compile();
+        checkCompiled(METHOD);
+        WHITE_BOX.clearMethodState(METHOD);
+        WHITE_BOX.deoptimizeMethod(METHOD);
+        checkNotCompiled(METHOD);
+
+
+        if (!TIERED_COMPILATION) {
+            WHITE_BOX.clearMethodState(METHOD);
+            compile(COMPILE_THRESHOLD);
+            checkCompiled(METHOD);
+
+            WHITE_BOX.deoptimizeMethod(METHOD);
+            checkNotCompiled(METHOD);
+            WHITE_BOX.clearMethodState(METHOD);
+
+            if (COMPILE_THRESHOLD > 1) {
+                compile(COMPILE_THRESHOLD - 1);
+                checkNotCompiled(METHOD);
+            } else {
+               System.err.println("Warning: 'CompileThreshold' <= 1");
+            }
+
+            method();
+            checkCompiled(METHOD);
+        } else {
+            System.err.println(
+                    "Warning: part of test is not applicable in Tiered");
         }
     }
 }

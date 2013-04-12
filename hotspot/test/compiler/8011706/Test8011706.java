@@ -22,25 +22,44 @@
  */
 
 /*
- * @test DeoptimizeMethodTest
- * @library /testlibrary /testlibrary/whitebox
- * @build DeoptimizeMethodTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DeoptimizeMethodTest
- * @author igor.ignatyev@oracle.com
+ * @test
+ * @bug 8011706
+ * @summary loop invariant code motion may move load before store to the same field
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation Test8011706
+ *
  */
-public class DeoptimizeMethodTest extends CompilerWhiteBoxTest {
 
-    public static void main(String[] args) throws Exception {
-        // to prevent inlining #method into #compile()
-        WHITE_BOX.testSetDontInlineMethod(METHOD, true);
-        new DeoptimizeMethodTest().runTest();
+public class Test8011706 {
+    int[] array;
+
+    void m(boolean test, int[] array1, int[] array2) {
+        int i = 0;
+        if (test) {
+            array = array1;
+        } else {
+            array = array2;
+        }
+
+        while(true) {
+            int v = array[i];
+            i++;
+            if (i >= 10) return;
+        }
     }
 
-    protected void test() throws Exception {
-        compile();
-        checkCompiled(METHOD);
-        WHITE_BOX.deoptimizeMethod(METHOD);
-        checkNotCompiled(METHOD);
+    static public void main(String[] args) {
+        int[] new_array = new int[10];
+        Test8011706 ti = new Test8011706();
+        boolean failed = false;
+        try {
+            for (int i = 0; i < 10000; i++) {
+                ti.array = null;
+                ti.m(true, new_array, new_array);
+            }
+        } catch(NullPointerException ex) {
+            throw new RuntimeException("TEST FAILED", ex);
+        }
+        System.out.println("TEST PASSED");
     }
+
 }
