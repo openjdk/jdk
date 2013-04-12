@@ -2069,9 +2069,21 @@ public:
   void closing()     { fprintf(_cpp, "  _LAST_MACH_OPER\n");
                        OutputMap::closing();
   }
-  void map(OpClassForm &opc)  { fprintf(_cpp, "  %s", _AD.machOperEnum(opc._ident) ); }
-  void map(OperandForm &oper) { fprintf(_cpp, "  %s", _AD.machOperEnum(oper._ident) ); }
-  void map(char        *name) { fprintf(_cpp, "  %s", _AD.machOperEnum(name)); }
+  void map(OpClassForm &opc)  {
+    const char* opc_ident_to_upper = _AD.machOperEnum(opc._ident);
+    fprintf(_cpp, "  %s", opc_ident_to_upper);
+    delete[] opc_ident_to_upper;
+  }
+  void map(OperandForm &oper) {
+    const char* oper_ident_to_upper = _AD.machOperEnum(oper._ident);
+    fprintf(_cpp, "  %s", oper_ident_to_upper);
+    delete[] oper_ident_to_upper;
+  }
+  void map(char *name) {
+    const char* name_to_upper = _AD.machOperEnum(name);
+    fprintf(_cpp, "  %s", name_to_upper);
+    delete[] name_to_upper;
+  }
 
   bool do_instructions()      { return false; }
   void map(InstructForm &inst){ assert( false, "ShouldNotCallThis()"); }
