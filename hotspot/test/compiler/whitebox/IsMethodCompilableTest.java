@@ -45,7 +45,7 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
         // to prevent inlining #method into #compile()
-        WHITE_BOX.setDontInlineMethod(METHOD, true);
+        WHITE_BOX.testSetDontInlineMethod(METHOD, true);
         new IsMethodCompilableTest().runTest();
     }
 
@@ -60,26 +60,47 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
                     "Warning: test is not applicable if PerMethodRecompilationCutoff == Inf");
             return;
         }
-        boolean madeNotCompilable = false;
 
-        for (long i = 0; i < PER_METHOD_RECOMPILATION_CUTOFF; ++i) {
-            compile();
-            waitBackgroundCompilation(METHOD);
-            WHITE_BOX.deoptimizeMethod(METHOD);
-            if (!WHITE_BOX.isMethodCompilable(METHOD)) {
-                madeNotCompilable = true;
-                break;
-            }
+        // deoptimze 'PerMethodRecompilationCutoff' times and clear state
+        for (long i = 0L, n = PER_METHOD_RECOMPILATION_CUTOFF - 1; i < n; ++i) {
+            compileAndDeoptimaze();
         }
-        if (!madeNotCompilable) {
+        if (!WHITE_BOX.isMethodCompilable(METHOD)) {
+            throw new RuntimeException(METHOD + " is not compilable after "
+                    + (PER_METHOD_RECOMPILATION_CUTOFF - 1) + " iterations");
+        }
+        WHITE_BOX.clearMethodState(METHOD);
+
+        // deoptimze 'PerMethodRecompilationCutoff' + 1 times
+        long i;
+        for (i = 0L; i < PER_METHOD_RECOMPILATION_CUTOFF
+                && WHITE_BOX.isMethodCompilable(METHOD); ++i) {
+            compileAndDeoptimaze();
+        }
+        if (i != PER_METHOD_RECOMPILATION_CUTOFF) {
+           throw new RuntimeException(METHOD + " is not compilable after "
+                   + i + " iterations, but must only after "
+                   + PER_METHOD_RECOMPILATION_CUTOFF);
+        }
+        if (WHITE_BOX.isMethodCompilable(METHOD)) {
             throw new RuntimeException(METHOD + " is still compilable after "
                     + PER_METHOD_RECOMPILATION_CUTOFF + " iterations");
         }
         compile();
-        if (WHITE_BOX.isMethodCompiled(METHOD)) {
-            printInfo(METHOD);
-            throw new RuntimeException(
-                    METHOD + " is not compilable but compiled");
+        checkNotCompiled(METHOD);
+
+        WHITE_BOX.clearMethodState(METHOD);
+        if (!WHITE_BOX.isMethodCompilable(METHOD)) {
+            throw new RuntimeException(METHOD
+                    + " is compilable after clearMethodState()");
         }
+        compile();
+        checkCompiled(METHOD);
+    }
+
+    private void compileAndDeoptimaze() throws Exception {
+        compile();
+        waitBackgroundCompilation(METHOD);
+        WHITE_BOX.deoptimizeMethod(METHOD);
     }
 }
