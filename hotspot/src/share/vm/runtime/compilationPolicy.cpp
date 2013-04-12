@@ -297,9 +297,10 @@ void NonTieredCompPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 // that it's recommended to delay the complation of this method.
 void NonTieredCompPolicy::delay_compilation(Method* method) {
   MethodCounters* mcs = method->method_counters();
-  assert(mcs != NULL, "MethodCounters cannot be NULL");
-  mcs->invocation_counter()->decay();
-  mcs->backedge_counter()->decay();
+  if (mcs != NULL) {
+    mcs->invocation_counter()->decay();
+    mcs->backedge_counter()->decay();
+  }
 }
 
 void NonTieredCompPolicy::disable_compilation(Method* method) {
