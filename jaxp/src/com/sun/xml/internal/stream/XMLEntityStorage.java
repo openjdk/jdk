@@ -36,6 +36,7 @@ import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.PropertyManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.Constants;
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.util.Enumeration;
 
 /**
@@ -414,7 +415,7 @@ public class XMLEntityStorage {
         // get the user.dir property
         String userDir = "";
         try {
-            userDir = System.getProperty("user.dir");
+            userDir = SecuritySupport.getSystemProperty("user.dir");
         }
         catch (SecurityException se) {
         }
