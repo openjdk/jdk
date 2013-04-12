@@ -166,6 +166,22 @@ class RangeCheckStub: public CodeStub {
 #endif // PRODUCT
 };
 
+// stub used when predicate fails and deoptimization is needed
+class PredicateFailedStub: public CodeStub {
+ private:
+  CodeEmitInfo* _info;
+
+ public:
+  PredicateFailedStub(CodeEmitInfo* info);
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const             { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("PredicateFailedStub"); }
+#endif // PRODUCT
+};
 
 class DivByZeroStub: public CodeStub {
  private:

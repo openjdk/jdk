@@ -191,12 +191,19 @@ static void cost_check(FILE *fp, const char *spaces,
 // Macro equivalent to: _kids[0]->valid(FOO) && _kids[1]->valid(BAR)
 //
 static void child_test(FILE *fp, MatchList &mList) {
-  if( mList._lchild )           // If left child, check it
-    fprintf(fp, "STATE__VALID_CHILD(_kids[0], %s)", ArchDesc::getMachOperEnum(mList._lchild));
-  if( mList._lchild && mList._rchild )      // If both, add the "&&"
-    fprintf(fp, " && " );
-  if( mList._rchild )           // If right child, check it
-    fprintf(fp, "STATE__VALID_CHILD(_kids[1], %s)", ArchDesc::getMachOperEnum(mList._rchild));
+  if (mList._lchild) { // If left child, check it
+    const char* lchild_to_upper = ArchDesc::getMachOperEnum(mList._lchild);
+    fprintf(fp, "STATE__VALID_CHILD(_kids[0], %s)", lchild_to_upper);
+    delete[] lchild_to_upper;
+  }
+  if (mList._lchild && mList._rchild) { // If both, add the "&&"
+    fprintf(fp, " && ");
+  }
+  if (mList._rchild) { // If right child, check it
+    const char* rchild_to_upper = ArchDesc::getMachOperEnum(mList._rchild);
+    fprintf(fp, "STATE__VALID_CHILD(_kids[1], %s)", rchild_to_upper);
+    delete[] rchild_to_upper;
+  }
 }
 
 //---------------------------calc_cost-----------------------------------------
@@ -206,13 +213,17 @@ static void child_test(FILE *fp, MatchList &mList) {
 Expr *ArchDesc::calc_cost(FILE *fp, const char *spaces, MatchList &mList, ProductionState &status) {
   fprintf(fp, "%sunsigned int c = ", spaces);
   Expr *c = new Expr("0");
-  if (mList._lchild ) {                   // If left child, add it in
-    sprintf(Expr::buffer(), "_kids[0]->_cost[%s]", ArchDesc::getMachOperEnum(mList._lchild));
+  if (mList._lchild) { // If left child, add it in
+    const char* lchild_to_upper = ArchDesc::getMachOperEnum(mList._lchild);
+    sprintf(Expr::buffer(), "_kids[0]->_cost[%s]", lchild_to_upper);
     c->add(Expr::buffer());
+    delete[] lchild_to_upper;
 }
-  if (mList._rchild) {                    // If right child, add it in
-    sprintf(Expr::buffer(), "_kids[1]->_cost[%s]", ArchDesc::getMachOperEnum(mList._rchild));
+  if (mList._rchild) { // If right child, add it in
+    const char* rchild_to_upper = ArchDesc::getMachOperEnum(mList._rchild);
+    sprintf(Expr::buffer(), "_kids[1]->_cost[%s]", rchild_to_upper);
     c->add(Expr::buffer());
+    delete[] rchild_to_upper;
   }
   // Add in cost of this rule
   const char *mList_cost = mList.get_cost();
@@ -232,15 +243,17 @@ void ArchDesc::gen_match(FILE *fp, MatchList &mList, ProductionState &status, Di
   fprintf(fp, "%s", spaces4);
   // Only generate child tests if this is not a leaf node
   bool has_child_constraints = mList._lchild || mList._rchild;
-  const char *predicate_test        = mList.get_pred();
-  if( has_child_constraints || predicate_test ) {
+  const char *predicate_test = mList.get_pred();
+  if (has_child_constraints || predicate_test) {
     // Open the child-and-predicate-test braces
     fprintf(fp, "if( ");
     status.set_constraint(hasConstraint);
     child_test(fp, mList);
     // Only generate predicate test if one exists for this match
-    if( predicate_test ) {
-      if( has_child_constraints ) { fprintf(fp," &&\n"); }
+    if (predicate_test) {
+      if (has_child_constraints) {
+        fprintf(fp," &&\n");
+      }
       fprintf(fp, "%s  %s", spaces6, predicate_test);
     }
     // End of outer tests

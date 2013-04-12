@@ -146,6 +146,17 @@ bool SystemDictionary::is_parallelDefine(Handle class_loader) {
    }
    return false;
 }
+
+/**
+ * Returns true if the passed class loader is the extension class loader.
+ */
+bool SystemDictionary::is_ext_class_loader(Handle class_loader) {
+  if (class_loader.is_null()) {
+    return false;
+  }
+  return (class_loader->klass()->name() == vmSymbols::sun_misc_Launcher_ExtClassLoader());
+}
+
 // ----------------------------------------------------------------------------
 // Resolving of classes
 
@@ -816,13 +827,28 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
             // We didn't go as far as Klass::restore_unshareable_info(),
             // so nothing to clean up.
           } else {
-            MutexLocker mu(SystemDictionary_lock, THREAD);
-            Klass* kk = find_class(name, ik->class_loader_data());
+            Klass *kk;
+            {
+              MutexLocker mu(SystemDictionary_lock, THREAD);
+              kk = find_class(name, ik->class_loader_data());
+            }
             if (kk != NULL) {
               // No clean up is needed if the shared class has been entered
               // into system dictionary, as load_shared_class() won't be called
               // again.
             } else {
+              // This must be done outside of the SystemDictionary_lock to
+              // avoid deadlock.
+              //
+              // Note that Klass::restore_unshareable_info (called via
+              // load_instance_class above) is also called outside
+              // of SystemDictionary_lock. Other threads are blocked from
+              // loading this class because they are waiting on the
+              // SystemDictionary_lock until this thread removes
+              // the placeholder below.
+              //
+              // This need to be re-thought when parallel-capable non-boot
+              // classloaders are supported by CDS (today they're not).
               clean_up_shared_class(ik, class_loader, THREAD);
             }
           }
@@ -2185,10 +2211,9 @@ Symbol* SystemDictionary::find_resolution_error(constantPoolHandle pool, int whi
 // Make sure all class components (including arrays) in the given
 // signature will be resolved to the same class in both loaders.
 // Returns the name of the type that failed a loader constraint check, or
-// NULL if no constraint failed. The returned C string needs cleaning up
-// with a ResourceMark in the caller.  No exception except OOME is thrown.
+// NULL if no constraint failed.  No exception except OOME is thrown.
 // Arrays are not added to the loader constraint table, their elements are.
-char* SystemDictionary::check_signature_loaders(Symbol* signature,
+Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
                                                Handle loader1, Handle loader2,
                                                bool is_method, TRAPS)  {
   // Nothing to do if loaders are the same.
@@ -2196,14 +2221,12 @@ char* SystemDictionary::check_signature_loaders(Symbol* signature,
     return NULL;
   }
 
-  ResourceMark rm(THREAD);
   SignatureStream sig_strm(signature, is_method);
   while (!sig_strm.is_done()) {
     if (sig_strm.is_object()) {
-      Symbol* s = sig_strm.as_symbol(CHECK_NULL);
-      Symbol*  sig  = s;
+      Symbol* sig = sig_strm.as_symbol(CHECK_NULL);
       if (!add_loader_constraint(sig, loader1, loader2, THREAD)) {
-        return sig->as_C_string();
+        return sig;
       }
     }
     sig_strm.next();
