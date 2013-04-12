@@ -22,39 +22,39 @@
  */
 
 /*
- * @test SetDontInlineMethodTest
+ * @test SetForceInlineMethodTest
  * @library /testlibrary /testlibrary/whitebox
- * @build SetDontInlineMethodTest
+ * @build SetForceInlineMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SetDontInlineMethodTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SetForceInlineMethodTest
  * @author igor.ignatyev@oracle.com
  */
-public class SetDontInlineMethodTest extends CompilerWhiteBoxTest {
+public class SetForceInlineMethodTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        new SetDontInlineMethodTest().runTest();
+        new SetForceInlineMethodTest().runTest();
     }
 
     protected void test() throws Exception {
-        if (WHITE_BOX.testSetDontInlineMethod(METHOD, true)) {
+        if (WHITE_BOX.testSetForceInlineMethod(METHOD, true)) {
             throw new RuntimeException("on start " + METHOD
-                    + " must be inlineable");
+                    + " must be not force inlineable");
         }
-        if (!WHITE_BOX.testSetDontInlineMethod(METHOD, true)) {
+        if (!WHITE_BOX.testSetForceInlineMethod(METHOD, true)) {
             throw new RuntimeException("after first change to true " + METHOD
-                    + " must be not inlineable");
+                    + " must be force inlineable");
         }
-        if (!WHITE_BOX.testSetDontInlineMethod(METHOD, false)) {
+        if (!WHITE_BOX.testSetForceInlineMethod(METHOD, false)) {
             throw new RuntimeException("after second change to true " + METHOD
-                    + " must be still not inlineable");
+                    + " must be still force inlineable");
         }
-        if (WHITE_BOX.testSetDontInlineMethod(METHOD, false)) {
+        if (WHITE_BOX.testSetForceInlineMethod(METHOD, false)) {
             throw new RuntimeException("after first change to false" + METHOD
-                    + " must be inlineable");
+                    + " must be not force inlineable");
         }
-        if (WHITE_BOX.testSetDontInlineMethod(METHOD, false)) {
+        if (WHITE_BOX.testSetForceInlineMethod(METHOD, false)) {
             throw new RuntimeException("after second change to false " + METHOD
-                    + " must be inlineable");
+                    + " must be not force inlineable");
         }
     }
 }

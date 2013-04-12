@@ -758,15 +758,19 @@ class Method : public Metadata {
   void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
 
  public:
-  bool  is_not_c1_compilable() const          { return access_flags().is_not_c1_compilable(); }
-  void set_not_c1_compilable()                {       _access_flags.set_not_c1_compilable();  }
-  bool  is_not_c2_compilable() const          { return access_flags().is_not_c2_compilable(); }
-  void set_not_c2_compilable()                {       _access_flags.set_not_c2_compilable();  }
+  bool   is_not_c1_compilable() const         { return access_flags().is_not_c1_compilable();  }
+  void  set_not_c1_compilable()               {       _access_flags.set_not_c1_compilable();   }
+  void clear_not_c1_compilable()              {       _access_flags.clear_not_c1_compilable(); }
+  bool   is_not_c2_compilable() const         { return access_flags().is_not_c2_compilable();  }
+  void  set_not_c2_compilable()               {       _access_flags.set_not_c2_compilable();   }
+  void clear_not_c2_compilable()              {       _access_flags.clear_not_c2_compilable(); }
 
-  bool  is_not_c1_osr_compilable() const      { return is_not_c1_compilable(); }  // don't waste an accessFlags bit
-  void set_not_c1_osr_compilable()            {       set_not_c1_compilable(); }  // don't waste an accessFlags bit
-  bool  is_not_c2_osr_compilable() const      { return access_flags().is_not_c2_osr_compilable(); }
-  void set_not_c2_osr_compilable()            {       _access_flags.set_not_c2_osr_compilable();  }
+  bool    is_not_c1_osr_compilable() const    { return is_not_c1_compilable(); }  // don't waste an accessFlags bit
+  void   set_not_c1_osr_compilable()          {       set_not_c1_compilable(); }  // don't waste an accessFlags bit
+  void clear_not_c1_osr_compilable()          {     clear_not_c1_compilable(); }  // don't waste an accessFlags bit
+  bool   is_not_c2_osr_compilable() const     { return access_flags().is_not_c2_osr_compilable();  }
+  void  set_not_c2_osr_compilable()           {       _access_flags.set_not_c2_osr_compilable();   }
+  void clear_not_c2_osr_compilable()          {       _access_flags.clear_not_c2_osr_compilable(); }
 
   // Background compilation support
   bool queued_for_compilation() const  { return access_flags().queued_for_compilation(); }
