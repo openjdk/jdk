@@ -76,11 +76,11 @@
 
 package sun.text.resources.hr;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_hr extends ListResourceBundle {
+public class FormatData_hr extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
@@ -157,6 +157,23 @@ public class FormatData_hr extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "1.",
+                    "2.",
+                    "3.",
+                    "4.",
+                    "5.",
+                    "6.",
+                    "7.",
+                    "8.",
+                    "9.",
+                    "10.",
+                    "11.",
+                    "12.",
+                    "",
+                }
+            },
             { "standalone.MonthNarrows",
                 new String[] {
                     "1.",
@@ -185,6 +202,17 @@ public class FormatData_hr extends ListResourceBundle {
                     "subota" // Saturday
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "nedjelja",
+                    "ponedjeljak",
+                    "utorak",
+                    "srijeda",
+                    "\u010detvrtak",
+                    "petak",
+                    "subota",
+                }
+            },
             { "DayAbbreviations",
                 new String[] {
                     "ned", // abb Sunday
@@ -194,6 +222,17 @@ public class FormatData_hr extends ListResourceBundle {
                     "\u010det", // abb Thursday
                     "pet", // abb Friday
                     "sub" // abb Saturday
+                }
+            },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "ned",
+                    "pon",
+                    "uto",
+                    "sri",
+                    "\u010det",
+                    "pet",
+                    "sub",
                 }
             },
             { "DayNarrows",
@@ -216,6 +255,18 @@ public class FormatData_hr extends ListResourceBundle {
                     "\u010d",
                     "p",
                     "s",
+                }
+            },
+            { "Eras",
+                new String[] {
+                    "Prije Krista",
+                    "Poslije Krista",
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "p. n. e.",
+                    "A. D.",
                 }
             },
             { "NumberElements",
@@ -255,58 +306,6 @@ public class FormatData_hr extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, d. MMMM y. G",
-                    "d. MMMM y. G",
-                    "d. M. y. G",
-                    "d.M.y.",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, d. MMMM y. G",
-                    "d. MMMM y. G",
-                    "d. M. y. G",
-                    "d.M.y. G",
-                }
-            },
-            { "roc.Eras", rocEras },
-            { "roc.short.Eras", rocEras },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE, d. MMMM y. G",
-                    "d. MMMM y. G",
-                    "d. M. y. G",
-                    "d.M.y. G",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, d. MMMM y. GGGG",
-                    "d. MMMM y. GGGG",
-                    "d. M. y. GGGG",
-                    "d.M.y. GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "islamski civilni kalendar" },
-            { "calendarname.islamicc", "islamski civilni kalendar" },
-            { "calendarname.roc", "kalendar Republike Kine" },
-            { "calendarname.islamic", "islamski kalendar" },
-            { "calendarname.buddhist", "budisti\u010dki kalendar" },
-            { "calendarname.japanese", "japanski kalendar" },
-            { "calendarname.gregorian", "gregorijanski kalendar" },
-            { "calendarname.gregory", "gregorijanski kalendar" },
-            { "field.era", "era" },
-            { "field.year", "godina" },
-            { "field.month", "mjesec" },
-            { "field.week", "tjedan" },
-            { "field.weekday", "dan u tjednu" },
-            { "field.dayperiod", "dio dana" },
-            { "field.hour", "sat" },
-            { "field.minute", "minuta" },
-            { "field.second", "sekunda" },
-            { "field.zone", "zona" },
         };
     }
 }

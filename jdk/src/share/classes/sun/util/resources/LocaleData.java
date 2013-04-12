@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,11 @@ package sun.util.resources;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import sun.util.locale.provider.LocaleDataMetaInfo;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -122,6 +124,30 @@ public class LocaleData {
         return getBundle(type.getTextResourcesPackage() + ".FormatData", locale);
     }
 
+    public void setSupplementary(ParallelListResourceBundle formatData) {
+        if (!formatData.areParallelContentsComplete()) {
+            String suppName = type.getTextResourcesPackage() + ".JavaTimeSupplementary";
+            setSupplementary(suppName, formatData);
+        }
+    }
+
+    private boolean setSupplementary(String suppName, ParallelListResourceBundle formatData) {
+        ParallelListResourceBundle parent = (ParallelListResourceBundle) formatData.getParent();
+        boolean resetKeySet = false;
+        if (parent != null) {
+            resetKeySet = setSupplementary(suppName, parent);
+        }
+        OpenListResourceBundle supp = getSupplementary(suppName, formatData.getLocale());
+        formatData.setParallelContents(supp);
+        resetKeySet |= supp != null;
+        // If any parents or this bundle has parallel data, reset keyset to create
+        // a new keyset with the data.
+        if (resetKeySet) {
+            formatData.resetKeySet();
+        }
+        return resetKeySet;
+    }
+
     /**
      * Gets a number format data resource bundle, using privileges
      * to allow accessing a sun.* package.
@@ -132,22 +158,37 @@ public class LocaleData {
 
     public static ResourceBundle getBundle(final String baseName, final Locale locale) {
         return AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
-                @Override
-                public ResourceBundle run() {
-                    return ResourceBundle.
-                        getBundle(baseName, locale,
-                                  LocaleDataResourceBundleControl.getRBControlInstance());
-                }
-            });
+            @Override
+            public ResourceBundle run() {
+                return ResourceBundle
+                        .getBundle(baseName, locale, LocaleDataResourceBundleControl.INSTANCE);
+            }
+        });
+    }
+
+    private static OpenListResourceBundle getSupplementary(final String baseName, final Locale locale) {
+        return AccessController.doPrivileged(new PrivilegedAction<OpenListResourceBundle>() {
+           @Override
+           public OpenListResourceBundle run() {
+               OpenListResourceBundle rb = null;
+               try {
+                   rb = (OpenListResourceBundle) ResourceBundle.getBundle(baseName,
+                           locale, SupplementaryResourceBundleControl.INSTANCE);
+
+               } catch (MissingResourceException e) {
+                   // return null if no supplementary is available
+               }
+               return rb;
+           }
+        });
     }
 
     private static class LocaleDataResourceBundleControl extends ResourceBundle.Control {
         /* Singlton instance of ResourceBundle.Control. */
-        private static LocaleDataResourceBundleControl rbControlInstance =
+        private static final LocaleDataResourceBundleControl INSTANCE =
             new LocaleDataResourceBundleControl();
 
-        public static LocaleDataResourceBundleControl getRBControlInstance() {
-            return rbControlInstance;
+        private LocaleDataResourceBundleControl() {
         }
 
         /*
@@ -243,6 +284,25 @@ public class LocaleData {
             }
             return super.toBundleName(newBaseName, locale);
         }
+    }
 
+    private static class SupplementaryResourceBundleControl extends LocaleDataResourceBundleControl {
+        private static final SupplementaryResourceBundleControl INSTANCE =
+                new SupplementaryResourceBundleControl();
+
+        private SupplementaryResourceBundleControl() {
+        }
+
+        @Override
+        public List<Locale> getCandidateLocales(String baseName, Locale locale) {
+            // Specifiy only the given locale
+            return Arrays.asList(locale);
+        }
+
+        @Override
+        public long getTimeToLive(String baseName, Locale locale) {
+            assert baseName.contains("JavaTimeSupplementary");
+            return TTL_DONT_CACHE;
+        }
     }
 }

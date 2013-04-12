@@ -80,7 +80,7 @@ PROFILE_1_JRE_LIB_FILES := \
     security/java.security \
     security/local_policy.jar \
     security/trusted.libraries \
-    tzdb.jar
+    tzdb.dat
 
 PROFILE_1_JRE_OTHER_FILES := \
     COPYRIGHT \
@@ -100,9 +100,7 @@ PROFILE_1_JRE_JAR_FILES := \
     resources.jar \
     rt.jar \
     security/US_export_policy.jar \
-    security/local_policy.jar \
-    tzdb.jar
-
+    security/local_policy.jar
 
 PROFILE_2_JRE_BIN_FILES := \
     rmid$(EXE_SUFFIX) \

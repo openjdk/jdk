@@ -61,19 +61,12 @@
  */
 package java.time.format;
 
-import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
-import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
-import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalQuery;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -83,8 +76,8 @@ import java.util.Objects;
  * It has the ability to store and retrieve the parsed values and manage optional segments.
  * It also provides key information to the parsing methods.
  * <p>
- * Once parsing is complete, the {@link #toBuilder()} is typically used
- * to obtain a builder that can combine the separate parsed fields into meaningful values.
+ * Once parsing is complete, the {@link #toParsed()} is used to obtain the data.
+ * It contains a method to resolve  the separate parsed fields into meaningful values.
  *
  * <h3>Specification for implementors</h3>
  * This class is a mutable context intended for use from a single thread.
@@ -93,7 +86,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
-final class DateTimeParseContext implements TemporalAccessor {
+final class DateTimeParseContext {
 
     /**
      * The formatter, not null.
@@ -306,6 +299,17 @@ final class DateTimeParseContext implements TemporalAccessor {
         return parsed.get(parsed.size() - 1);
     }
 
+    /**
+     * Gets the result of the parse.
+     *
+     * @return the result of the parse, not null
+     */
+    Parsed toParsed() {
+        Parsed parsed = currentParsed();
+        parsed.effectiveChrono = getEffectiveChronology();
+        return parsed;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Gets the first value that was parsed for the specified field.
@@ -368,111 +372,6 @@ final class DateTimeParseContext implements TemporalAccessor {
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a {@code DateTimeBuilder} that can be used to interpret
-     * the results of the parse.
-     * <p>
-     * This method is typically used once parsing is complete to obtain the parsed data.
-     * Parsing will typically result in separate fields, such as year, month and day.
-     * The returned builder can be used to combine the parsed data into meaningful
-     * objects such as {@code LocalDate}, potentially applying complex processing
-     * to handle invalid parsed data.
-     *
-     * @return a new builder with the results of the parse, not null
-     */
-    DateTimeBuilder toBuilder() {
-        Parsed parsed = currentParsed();
-        DateTimeBuilder builder = new DateTimeBuilder();
-        for (Map.Entry<TemporalField, Long> fv : parsed.fieldValues.entrySet()) {
-            builder.addFieldValue(fv.getKey(), fv.getValue());
-        }
-        builder.addObject(getEffectiveChronology());
-        if (parsed.zone != null) {
-            builder.addObject(parsed.zone);
-        }
-        return builder;
-    }
-
-    /**
-     * Resolves the fields in this context.
-     *
-     * @return this, for method chaining
-     * @throws DateTimeException if resolving one field results in a value for
-     *  another field that is in conflict
-     */
-    DateTimeParseContext resolveFields() {
-        Parsed data = currentParsed();
-        outer:
-        while (true) {
-            for (Map.Entry<TemporalField, Long> entry : data.fieldValues.entrySet()) {
-                TemporalField targetField = entry.getKey();
-                Map<TemporalField, Long> changes = targetField.resolve(this, entry.getValue());
-                if (changes != null) {
-                    resolveMakeChanges(data, targetField, changes);
-                    data.fieldValues.remove(targetField);  // helps avoid infinite loops
-                    continue outer;  // have to restart to avoid concurrent modification
-                }
-            }
-            break;
-        }
-        return this;
-    }
-
-    private void resolveMakeChanges(Parsed data, TemporalField targetField, Map<TemporalField, Long> changes) {
-        for (Map.Entry<TemporalField, Long> change : changes.entrySet()) {
-            TemporalField changeField = change.getKey();
-            Long changeValue = change.getValue();
-            Objects.requireNonNull(changeField, "changeField");
-            if (changeValue != null) {
-                Long old = currentParsed().fieldValues.put(changeField, changeValue);
-                if (old != null && old.longValue() != changeValue.longValue()) {
-                    throw new DateTimeException("Conflict found: " + changeField + " " + old +
-                            " differs from " + changeField + " " + changeValue +
-                            " while resolving  " + targetField);
-                }
-            } else {
-                data.fieldValues.remove(changeField);
-            }
-        }
-    }
-
-    //-----------------------------------------------------------------------
-    // TemporalAccessor methods
-    // should only to be used once parsing is complete
-    @Override
-    public boolean isSupported(TemporalField field) {
-        if (currentParsed().fieldValues.containsKey(field)) {
-            return true;
-        }
-        return (field instanceof ChronoField == false) && field.isSupportedBy(this);
-    }
-
-    @Override
-    public long getLong(TemporalField field) {
-        Long value = currentParsed().fieldValues.get(field);
-        if (value != null) {
-            return value;
-        }
-        if (field instanceof ChronoField) {
-            throw new DateTimeException("Unsupported field: " + field.getName());
-        }
-        return field.getFrom(this);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.chronology()) {
-            return (R) currentParsed().chrono;
-        } else if (query == Queries.zoneId()) {
-            return (R) currentParsed().zone;
-        } else if (query == Queries.precision()) {
-            return null;
-        }
-        return query.queryFrom(this);
-    }
-
-    //-----------------------------------------------------------------------
-    /**
      * Returns a string version of the context for debugging.
      *
      * @return a string representation of the context data, not null
@@ -480,29 +379,6 @@ final class DateTimeParseContext implements TemporalAccessor {
     @Override
     public String toString() {
         return currentParsed().toString();
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Temporary store of parsed data.
-     */
-    private static final class Parsed {
-        Chronology chrono = null;
-        ZoneId zone = null;
-        final Map<TemporalField, Long> fieldValues = new HashMap<>();
-        private Parsed() {
-        }
-        protected Parsed copy() {
-            Parsed cloned = new Parsed();
-            cloned.chrono = this.chrono;
-            cloned.zone = this.zone;
-            cloned.fieldValues.putAll(this.fieldValues);
-            return cloned;
-        }
-        @Override
-        public String toString() {
-            return fieldValues.toString() + "," + chrono + "," + zone;
-        }
     }
 
 }
