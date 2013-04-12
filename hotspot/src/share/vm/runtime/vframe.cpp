@@ -391,40 +391,27 @@ vframeStream::vframeStream(JavaThread* thread, frame top_frame,
 // Step back n frames, skip any pseudo frames in between.
 // This function is used in Class.forName, Class.newInstance, Method.Invoke,
 // AccessController.doPrivileged.
-//
-// NOTE that in JDK 1.4 this has been exposed to Java as
-// sun.reflect.Reflection.getCallerClass(), which can be inlined.
-// Inlined versions must match this routine's logic.
-// Native method prefixing logic does not need to match since
-// the method names don't match and inlining will not occur.
-// See, for example,
-// Parse::inline_native_Reflection_getCallerClass in
-// opto/library_call.cpp.
 void vframeStreamCommon::security_get_caller_frame(int depth) {
-  bool use_new_reflection = JDK_Version::is_gte_jdk14x_version() && UseNewReflection;
-
-  while (!at_end()) {
-    if (Universe::reflect_invoke_cache()->is_same_method(method())) {
-      // This is Method.invoke() -- skip it
-    } else if (use_new_reflection &&
-              method()->method_holder()
-                 ->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
-      // This is an auxilary frame -- skip it
-    } else if (method()->is_method_handle_intrinsic() ||
-               method()->is_compiled_lambda_form()) {
-      // This is an internal adapter frame for method handles -- skip it
-    } else {
-      // This is non-excluded frame, we need to count it against the depth
-      if (depth-- <= 0) {
-        // we have reached the desired depth, we are done
-        break;
+  assert(depth >= 0, err_msg("invalid depth: %d", depth));
+  for (int n = 0; !at_end(); security_next()) {
+    if (!method()->is_ignored_by_security_stack_walk()) {
+      if (n == depth) {
+        // We have reached the desired depth; return.
+        return;
       }
+      n++;  // this is a non-skipped frame; count it against the depth
     }
-    if (method()->is_prefixed_native()) {
-      skip_prefixed_method_and_wrappers();
-    } else {
-      next();
-    }
+  }
+  // NOTE: At this point there were not enough frames on the stack
+  // to walk to depth.  Callers of this method have to check for at_end.
+}
+
+
+void vframeStreamCommon::security_next() {
+  if (method()->is_prefixed_native()) {
+    skip_prefixed_method_and_wrappers();  // calls next()
+  } else {
+    next();
   }
 }
 

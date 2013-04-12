@@ -72,9 +72,7 @@ endif
 
 $(GENDATA_FONT_CONFIG_DST)/%.src : \
     $(GENDATA_FONT_CONFIG_SRC_DIR)/$(GENDATA_FONT_CONFIG_SRC_PREFIX)%
-	$(RM) $@
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 
 $(GENDATA_FONT_CONFIG_DST)/%.bfc : \
     $(GENDATA_FONT_CONFIG_SRC_DIR)/$(GENDATA_FONT_CONFIG_SRC_PREFIX)%.properties
