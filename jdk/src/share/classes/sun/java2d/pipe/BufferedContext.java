@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,8 +99,7 @@ public abstract class BufferedContext {
     private int             validatedRGB;
     private int             validatedFlags;
     private boolean         xformInUse;
-    private int             transX;
-    private int             transY;
+    private AffineTransform transform;
 
     protected BufferedContext(RenderQueue rq) {
         this.rq = rq;
@@ -277,14 +276,11 @@ public abstract class BufferedContext {
                 resetTransform();
                 xformInUse = false;
                 txChanged = true;
-            } else if (sg2d != null) {
-                if (transX != sg2d.transX || transY != sg2d.transY) {
-                    txChanged = true;
-                }
+            } else if (sg2d != null && !sg2d.transform.equals(transform)) {
+                txChanged = true;
             }
-            if (sg2d != null) {
-                transX = sg2d.transX;
-                transY = sg2d.transY;
+            if (sg2d != null && txChanged) {
+                transform = new AffineTransform(sg2d.transform);
             }
         } else {
             setTransform(xform);
