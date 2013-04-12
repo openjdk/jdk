@@ -85,14 +85,12 @@ $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo: $(BEANS_SRC) $(JDK_OU
 # For some reason it is under $(JDK_TOPDIR)/make/tools/swing-beans/javax/swing
 # Should it be moved under $(JDK_TOPDIR)/src/share/classes/javax/swing instead?
 $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/SwingBeanInfoBase.java: $(DOCLETSRC_DIR)/javax/swing/SwingBeanInfoBase.java
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 
 # This file is the part of dt.jar 
 # For some reason it is under $(JDK_TOPDIR)/make/tools/swing-beans/sun/swing
 # Should it be moved under $(JDK_TOPDIR)/src/share/classes/sun/swing instead?
 $(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java: $(DOCLETSRC_DIR)/sun/swing/BeanInfoUtils.java
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 
 GENSRC_SWING_BEANINFO = $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo
