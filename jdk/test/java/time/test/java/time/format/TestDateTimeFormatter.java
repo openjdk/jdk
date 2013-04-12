@@ -59,14 +59,15 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static org.testng.Assert.assertSame;
 
+import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.SignStyle;
 import java.util.Locale;
 
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
@@ -74,14 +75,8 @@ import org.testng.annotations.Test;
  */
 @Test
 public class TestDateTimeFormatter {
-    // TODO these tests are not tck, as they refer to a non-public class
-    // rewrite whole test case to use BASIC_FORMATTER or similar
 
-    @BeforeMethod(groups={"tck"})
-    public void setUp() {
-    }
-
-    @Test(groups={"implementation"})
+    @Test
     public void test_withLocale_same() throws Exception {
         DateTimeFormatter base =
             new DateTimeFormatterBuilder().appendLiteral("ONE")

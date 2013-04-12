@@ -602,6 +602,10 @@ AC_PATH_PROG(TIME, time)
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   BASIC_REQUIRE_PROG(COMM, comm)
 fi
+
+if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+  BASIC_REQUIRE_PROG(XATTR, xattr)
+fi
 ])
 
 # Check if build directory is on local disk. If not possible to determine,

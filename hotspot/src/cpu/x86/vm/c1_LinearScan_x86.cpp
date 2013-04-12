@@ -675,7 +675,8 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
   switch (op2->code()) {
     case lir_cmp:
     case lir_cmp_fd2i:
-    case lir_ucmp_fd2i: {
+    case lir_ucmp_fd2i:
+    case lir_assert: {
       assert(left->is_fpu_register(), "invalid LIR");
       assert(right->is_fpu_register(), "invalid LIR");
 

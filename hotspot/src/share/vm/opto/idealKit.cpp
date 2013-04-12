@@ -48,9 +48,9 @@ IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarati
   _cvstate = NULL;
   // We can go memory state free or else we need the entire memory state
   assert(_initial_memory == NULL || _initial_memory->Opcode() == Op_MergeMem, "memory must be pre-split");
+  assert(!_gvn.is_IterGVN(), "IdealKit can't be used during Optimize phase");
   int init_size = 5;
   _pending_cvstates = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, 0);
-  _delay_transform  = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, 0);
   DEBUG_ONLY(_state = new (C->node_arena()) GrowableArray<int>(C->node_arena(), init_size, 0, 0));
   if (!has_declarations) {
      declarations_done();
@@ -296,19 +296,16 @@ Node* IdealKit::transform(Node* n) {
     return delay_transform(n);
   } else {
     n = gvn().transform(n);
-    if (!gvn().is_IterGVN()) {
-      C->record_for_igvn(n);
-    }
+    C->record_for_igvn(n);
     return n;
   }
 }
 
 //-----------------------------delay_transform-----------------------------------
 Node* IdealKit::delay_transform(Node* n) {
-  if (!gvn().is_IterGVN() || !gvn().is_IterGVN()->delay_transform()) {
-    gvn().set_type(n, n->bottom_type());
-  }
-  _delay_transform->push(n);
+  // Delay transform until IterativeGVN
+  gvn().set_type(n, n->bottom_type());
+  C->record_for_igvn(n);
   return n;
 }
 
@@ -332,17 +329,6 @@ void IdealKit::clear(Node* m) {
   for (uint i = 0; i < m->req(); i++) m->set_req(i, NULL);
 }
 
-//-----------------------------drain_delay_transform----------------------------
-void IdealKit::drain_delay_transform() {
-  while (_delay_transform->length() > 0) {
-    Node* n = _delay_transform->pop();
-    gvn().transform(n);
-    if (!gvn().is_IterGVN()) {
-      C->record_for_igvn(n);
-    }
-  }
-}
-
 //-----------------------------IdealVariable----------------------------
 IdealVariable::IdealVariable(IdealKit &k) {
   k.declare(this);
@@ -351,9 +337,7 @@ IdealVariable::IdealVariable(IdealKit &k) {
 Node* IdealKit::memory(uint alias_idx) {
   MergeMemNode* mem = merged_memory();
   Node* p = mem->memory_at(alias_idx);
-  if (!gvn().is_IterGVN() || !gvn().is_IterGVN()->delay_transform()) {
-    _gvn.set_type(p, Type::MEMORY);  // must be mapped
-  }
+  _gvn.set_type(p, Type::MEMORY);  // must be mapped
   return p;
 }
 

@@ -61,6 +61,7 @@
  */
 package java.time;
 
+import java.time.temporal.UnsupportedTemporalTypeException;
 import static java.time.LocalTime.MINUTES_PER_HOUR;
 import static java.time.LocalTime.SECONDS_PER_HOUR;
 import static java.time.LocalTime.SECONDS_PER_MINUTE;
@@ -73,7 +74,6 @@ import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -322,7 +322,7 @@ public final class ZoneOffset
      * A {@code TemporalAccessor} represents some form of date and time information.
      * This factory converts the arbitrary temporal object to an instance of {@code ZoneOffset}.
      * <p>
-     * The conversion uses the {@link Queries#offset()} query, which relies
+     * The conversion uses the {@link TemporalQuery#offset()} query, which relies
      * on extracting the {@link ChronoField#OFFSET_SECONDS OFFSET_SECONDS} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
@@ -333,7 +333,7 @@ public final class ZoneOffset
      * @throws DateTimeException if unable to convert to an {@code ZoneOffset}
      */
     public static ZoneOffset from(TemporalAccessor temporal) {
-        ZoneOffset offset = temporal.query(Queries.offset());
+        ZoneOffset offset = temporal.query(TemporalQuery.offset());
         if (offset == null) {
             throw new DateTimeException("Unable to obtain ZoneOffset from TemporalAccessor: " + temporal.getClass());
         }
@@ -534,7 +534,7 @@ public final class ZoneOffset
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return
      * appropriate range instances.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
@@ -544,6 +544,7 @@ public final class ZoneOffset
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
     @Override  // override for Javadoc
     public ValueRange range(TemporalField field) {
@@ -560,7 +561,7 @@ public final class ZoneOffset
      * <p>
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@code OFFSET_SECONDS} field returns the value of the offset.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -569,7 +570,10 @@ public final class ZoneOffset
      *
      * @param field  the field to get, not null
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override  // override for Javadoc and performance
@@ -577,7 +581,7 @@ public final class ZoneOffset
         if (field == OFFSET_SECONDS) {
             return totalSeconds;
         } else if (field instanceof ChronoField) {
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return range(field).checkValidIntValue(getLong(field), field);
     }
@@ -591,7 +595,7 @@ public final class ZoneOffset
      * <p>
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@code OFFSET_SECONDS} field returns the value of the offset.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -601,6 +605,7 @@ public final class ZoneOffset
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -608,7 +613,7 @@ public final class ZoneOffset
         if (field == OFFSET_SECONDS) {
             return totalSeconds;
         } else if (field instanceof ChronoField) {
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.getFrom(this);
     }
@@ -635,7 +640,7 @@ public final class ZoneOffset
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.offset() || query == Queries.zone()) {
+        if (query == TemporalQuery.offset() || query == TemporalQuery.zone()) {
             return (R) this;
         }
         return TemporalAccessor.super.query(query);

@@ -835,6 +835,11 @@ class StubGenerator: public StubCodeGenerator {
   __ BIND(L_copy_64_bytes);
     __ subl(qword_count, 8);
     __ jcc(Assembler::greaterEqual, L_copy_64_bytes_loop);
+
+    if (UseUnalignedLoadStores && (UseAVX >= 2)) {
+      // clean upper bits of YMM registers
+      __ vzeroupper();
+    }
     __ addl(qword_count, 8);
     __ jccb(Assembler::zero, L_exit);
     //

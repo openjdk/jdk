@@ -55,9 +55,8 @@ $(eval $(call SetupCharacterData,CharacterData0E,-plane 14,11 4 1))
 
 # Copy two Java files that need no preprocessing.
 $(JDK_OUTPUTDIR)/gensrc/java/lang/%.java : $(CHARACTERDATA)/%.java.template
-	$(MKDIR) -p $(@D)
 	$(ECHO) $(LOG_INFO) Generating $(@F)
-	$(CP) -f $< $@
+	$(call install-file)
 
 GENSRC_CHARACTERDATA += $(JDK_OUTPUTDIR)/gensrc/java/lang/CharacterDataUndefined.java \
                        $(JDK_OUTPUTDIR)/gensrc/java/lang/CharacterDataPrivateUse.java
