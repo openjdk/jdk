@@ -66,6 +66,7 @@ PROFILE_1_JRE_LIB_FILES := \
     ext/sunec.jar \
     ext/sunjce_provider.jar \
     ext/sunpkcs11.jar \
+    hijrah-config-umalqura.properties \
     jce.jar \
     jsse.jar \
     logging.properties \
