@@ -59,11 +59,19 @@
  */
 package tck.java.time;
 
-import static java.time.temporal.ChronoField.EPOCH_MONTH;
 import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
+import static java.time.temporal.ChronoUnit.CENTURIES;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.DECADES;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.MILLENNIA;
+import static java.time.temporal.ChronoUnit.MONTHS;
+import static java.time.temporal.ChronoUnit.WEEKS;
+import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -78,6 +86,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.Period;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZoneId;
@@ -88,10 +97,11 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.JulianFields;
-import java.time.temporal.Queries;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -110,7 +120,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
 
     private YearMonth TEST_2008_06;
 
-    @BeforeMethod(groups={"tck", "implementation"})
+    @BeforeMethod
     public void setUp() {
         TEST_2008_06 = YearMonth.of(2008, 6);
     }
@@ -126,7 +136,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     protected List<TemporalField> validFields() {
         TemporalField[] array = {
             MONTH_OF_YEAR,
-            EPOCH_MONTH,
+            PROLEPTIC_MONTH,
             YEAR_OF_ERA,
             YEAR,
             ERA,
@@ -171,7 +181,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void now() {
         YearMonth expected = YearMonth.now(Clock.systemDefaultZone());
         YearMonth test = YearMonth.now();
@@ -188,12 +198,12 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now(ZoneId)
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void now_ZoneId_nullZoneId() {
         YearMonth.now((ZoneId) null);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void now_ZoneId() {
         ZoneId zone = ZoneId.of("UTC+01:02:03");
         YearMonth expected = YearMonth.now(Clock.system(zone));
@@ -211,7 +221,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now(Clock)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void now_Clock() {
         Instant instant = LocalDateTime.of(2010, 12, 31, 0, 0).toInstant(ZoneOffset.UTC);
         Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
@@ -220,72 +230,72 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         assertEquals(test.getMonth(), Month.DECEMBER);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void now_Clock_nullClock() {
         YearMonth.now((Clock) null);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_intsMonth() {
         YearMonth test = YearMonth.of(2008, Month.FEBRUARY);
         check(test, 2008, 2);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_factory_intsMonth_yearTooLow() {
         YearMonth.of(Year.MIN_VALUE - 1, Month.JANUARY);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_factory_intsMonth_dayTooHigh() {
         YearMonth.of(Year.MAX_VALUE + 1, Month.JANUARY);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void factory_intsMonth_nullMonth() {
         YearMonth.of(2008, null);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_ints() {
         YearMonth test = YearMonth.of(2008, 2);
         check(test, 2008, 2);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_factory_ints_yearTooLow() {
         YearMonth.of(Year.MIN_VALUE - 1, 2);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_factory_ints_dayTooHigh() {
         YearMonth.of(Year.MAX_VALUE + 1, 2);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_factory_ints_monthTooLow() {
         YearMonth.of(2008, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_factory_ints_monthTooHigh() {
         YearMonth.of(2008, 13);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_factory_CalendricalObject() {
         assertEquals(YearMonth.from(LocalDate.of(2007, 7, 15)), YearMonth.of(2007, 7));
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_factory_CalendricalObject_invalid_noDerive() {
         YearMonth.from(LocalTime.of(12, 30));
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_factory_CalendricalObject_null() {
         YearMonth.from((TemporalAccessor) null);
     }
@@ -323,7 +333,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="goodParseData", groups={"tck"})
+    @Test(dataProvider="goodParseData")
     public void factory_parse_success(String text, YearMonth expected) {
         YearMonth yearMonth = YearMonth.parse(text);
         assertEquals(yearMonth, expected);
@@ -351,7 +361,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="badParseData", expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(dataProvider="badParseData", expectedExceptions=DateTimeParseException.class)
     public void factory_parse_fail(String text, int pos) {
         try {
             YearMonth.parse(text);
@@ -364,12 +374,12 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeParseException.class)
     public void factory_parse_illegalValue_Month() {
         YearMonth.parse("2008-13");
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_nullText() {
         YearMonth.parse(null);
     }
@@ -377,20 +387,20 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // parse(DateTimeFormatter)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_parse_formatter() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("y M");
         YearMonth test = YearMonth.parse("2010 12", f);
         assertEquals(test, YearMonth.of(2010, 12));
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_formatter_nullText() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("y M");
         YearMonth.parse((String) null, f);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_formatter_nullFormatter() {
         YearMonth.parse("ANY", null);
     }
@@ -400,19 +410,19 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_get_TemporalField() {
-        assertEquals(TEST_2008_06.get(ChronoField.YEAR), 2008);
-        assertEquals(TEST_2008_06.get(ChronoField.MONTH_OF_YEAR), 6);
-        assertEquals(TEST_2008_06.get(ChronoField.YEAR_OF_ERA), 2008);
-        assertEquals(TEST_2008_06.get(ChronoField.ERA), 1);
+        assertEquals(TEST_2008_06.get(YEAR), 2008);
+        assertEquals(TEST_2008_06.get(MONTH_OF_YEAR), 6);
+        assertEquals(TEST_2008_06.get(YEAR_OF_ERA), 2008);
+        assertEquals(TEST_2008_06.get(ERA), 1);
     }
 
     @Test
     public void test_getLong_TemporalField() {
-        assertEquals(TEST_2008_06.getLong(ChronoField.YEAR), 2008);
-        assertEquals(TEST_2008_06.getLong(ChronoField.MONTH_OF_YEAR), 6);
-        assertEquals(TEST_2008_06.getLong(ChronoField.YEAR_OF_ERA), 2008);
-        assertEquals(TEST_2008_06.getLong(ChronoField.ERA), 1);
-        assertEquals(TEST_2008_06.getLong(ChronoField.EPOCH_MONTH), (2008 - 1970) * 12 + 6 - 1);
+        assertEquals(TEST_2008_06.getLong(YEAR), 2008);
+        assertEquals(TEST_2008_06.getLong(MONTH_OF_YEAR), 6);
+        assertEquals(TEST_2008_06.getLong(YEAR_OF_ERA), 2008);
+        assertEquals(TEST_2008_06.getLong(ERA), 1);
+        assertEquals(TEST_2008_06.getLong(PROLEPTIC_MONTH), 2008 * 12 + 6 - 1);
     }
 
     //-----------------------------------------------------------------------
@@ -421,13 +431,13 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_2008_06, Queries.chronology(), IsoChronology.INSTANCE},
-                {TEST_2008_06, Queries.zoneId(), null},
-                {TEST_2008_06, Queries.precision(), ChronoUnit.MONTHS},
-                {TEST_2008_06, Queries.zone(), null},
-                {TEST_2008_06, Queries.offset(), null},
-                {TEST_2008_06, Queries.localDate(), null},
-                {TEST_2008_06, Queries.localTime(), null},
+                {TEST_2008_06, TemporalQuery.chronology(), IsoChronology.INSTANCE},
+                {TEST_2008_06, TemporalQuery.zoneId(), null},
+                {TEST_2008_06, TemporalQuery.precision(), ChronoUnit.MONTHS},
+                {TEST_2008_06, TemporalQuery.zone(), null},
+                {TEST_2008_06, TemporalQuery.offset(), null},
+                {TEST_2008_06, TemporalQuery.localDate(), null},
+                {TEST_2008_06, TemporalQuery.localTime(), null},
         };
     }
 
@@ -470,19 +480,19 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // with(Year)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_with_Year() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.with(Year.of(2000)), YearMonth.of(2000, 6));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_with_Year_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.with(Year.of(2008)), test);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_with_Year_null() {
         YearMonth test = YearMonth.of(2008, 6);
         test.with((Year) null);
@@ -491,19 +501,19 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // with(Month)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_with_Month() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.with(Month.JANUARY), YearMonth.of(2008, 1));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_with_Month_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.with(Month.JUNE), test);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_with_Month_null() {
         YearMonth test = YearMonth.of(2008, 6);
         test.with((Month) null);
@@ -512,25 +522,25 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // withYear()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_withYear() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.withYear(1999), YearMonth.of(1999, 6));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withYear_int_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.withYear(2008), test);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withYear_tooLow() {
         YearMonth test = YearMonth.of(2008, 6);
         test.withYear(Year.MIN_VALUE - 1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withYear_tooHigh() {
         YearMonth test = YearMonth.of(2008, 6);
         test.withYear(Year.MAX_VALUE + 1);
@@ -539,25 +549,25 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // withMonth()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_withMonth() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.withMonth(1), YearMonth.of(2008, 1));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withMonth_int_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.withMonth(6), test);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withMonth_tooLow() {
         YearMonth test = YearMonth.of(2008, 6);
         test.withMonth(0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withMonth_tooHigh() {
         YearMonth test = YearMonth.of(2008, 6);
         test.withMonth(13);
@@ -566,49 +576,49 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // plusYears()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_plusYears_long() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.plusYears(1), YearMonth.of(2009, 6));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusYears_long_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.plusYears(0), test);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusYears_long_negative() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.plusYears(-1), YearMonth.of(2007, 6));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusYears_long_big() {
         YearMonth test = YearMonth.of(-40, 6);
         assertEquals(test.plusYears(20L + Year.MAX_VALUE), YearMonth.of((int) (-40L + 20L + Year.MAX_VALUE), 6));
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_plusYears_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 6);
         test.plusYears(1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_plusYears_long_invalidTooLargeMaxAddMax() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.plusYears(Long.MAX_VALUE);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_plusYears_long_invalidTooLargeMaxAddMin() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.plusYears(Long.MIN_VALUE);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_plusYears_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 6);
         test.plusYears(-1);
@@ -617,62 +627,62 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // plusMonths()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMonths_long() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.plusMonths(1), YearMonth.of(2008, 7));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMonths_long_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.plusMonths(0), test);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMonths_long_overYears() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.plusMonths(7), YearMonth.of(2009, 1));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMonths_long_negative() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.plusMonths(-1), YearMonth.of(2008, 5));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMonths_long_negativeOverYear() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.plusMonths(-6), YearMonth.of(2007, 12));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMonths_long_big() {
         YearMonth test = YearMonth.of(-40, 6);
         long months = 20L + Integer.MAX_VALUE;
         assertEquals(test.plusMonths(months), YearMonth.of((int) (-40L + months / 12), 6 + (int) (months % 12)));
     }
 
-    @Test(expectedExceptions={DateTimeException.class}, groups={"tck"})
+    @Test(expectedExceptions={DateTimeException.class})
     public void test_plusMonths_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.plusMonths(1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_plusMonths_long_invalidTooLargeMaxAddMax() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.plusMonths(Long.MAX_VALUE);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_plusMonths_long_invalidTooLargeMaxAddMin() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.plusMonths(Long.MIN_VALUE);
     }
 
-    @Test(expectedExceptions={DateTimeException.class}, groups={"tck"})
+    @Test(expectedExceptions={DateTimeException.class})
     public void test_plusMonths_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 1);
         test.plusMonths(-1);
@@ -681,49 +691,49 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // minusYears()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_minusYears_long() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.minusYears(1), YearMonth.of(2007, 6));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusYears_long_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.minusYears(0), test);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusYears_long_negative() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.minusYears(-1), YearMonth.of(2009, 6));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusYears_long_big() {
         YearMonth test = YearMonth.of(40, 6);
         assertEquals(test.minusYears(20L + Year.MAX_VALUE), YearMonth.of((int) (40L - 20L - Year.MAX_VALUE), 6));
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_minusYears_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 6);
         test.minusYears(-1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_minusYears_long_invalidTooLargeMaxSubtractMax() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 12);
         test.minusYears(Long.MAX_VALUE);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_minusYears_long_invalidTooLargeMaxSubtractMin() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 12);
         test.minusYears(Long.MIN_VALUE);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_minusYears_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 6);
         test.minusYears(1);
@@ -732,62 +742,62 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // minusMonths()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMonths_long() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.minusMonths(1), YearMonth.of(2008, 5));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMonths_long_noChange_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.minusMonths(0), test);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMonths_long_overYears() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.minusMonths(6), YearMonth.of(2007, 12));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMonths_long_negative() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.minusMonths(-1), YearMonth.of(2008, 7));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMonths_long_negativeOverYear() {
         YearMonth test = YearMonth.of(2008, 6);
         assertEquals(test.minusMonths(-7), YearMonth.of(2009, 1));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMonths_long_big() {
         YearMonth test = YearMonth.of(40, 6);
         long months = 20L + Integer.MAX_VALUE;
         assertEquals(test.minusMonths(months), YearMonth.of((int) (40L - months / 12), 6 - (int) (months % 12)));
     }
 
-    @Test(expectedExceptions={DateTimeException.class}, groups={"tck"})
+    @Test(expectedExceptions={DateTimeException.class})
     public void test_minusMonths_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.minusMonths(-1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_minusMonths_long_invalidTooLargeMaxSubtractMax() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.minusMonths(Long.MAX_VALUE);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_minusMonths_long_invalidTooLargeMaxSubtractMin() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.minusMonths(Long.MIN_VALUE);
     }
 
-    @Test(expectedExceptions={DateTimeException.class}, groups={"tck"})
+    @Test(expectedExceptions={DateTimeException.class})
     public void test_minusMonths_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 1);
         test.minusMonths(1);
@@ -796,35 +806,35 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // adjustInto()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_adjustDate() {
         YearMonth test = YearMonth.of(2008, 6);
         LocalDate date = LocalDate.of(2007, 1, 1);
         assertEquals(test.adjustInto(date), LocalDate.of(2008, 6, 1));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_adjustDate_preserveDoM() {
         YearMonth test = YearMonth.of(2011, 3);
         LocalDate date = LocalDate.of(2008, 2, 29);
         assertEquals(test.adjustInto(date), LocalDate.of(2011, 3, 29));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_adjustDate_resolve() {
         YearMonth test = YearMonth.of(2007, 2);
         LocalDate date = LocalDate.of(2008, 3, 31);
         assertEquals(test.adjustInto(date), LocalDate.of(2007, 2, 28));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_adjustDate_equal() {
         YearMonth test = YearMonth.of(2008, 6);
         LocalDate date = LocalDate.of(2008, 6, 30);
         assertEquals(test.adjustInto(date), date);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_adjustDate_null() {
         TEST_2008_06.adjustInto((LocalDate) null);
     }
@@ -832,7 +842,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // isLeapYear()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_isLeapYear() {
         assertEquals(YearMonth.of(2007, 6).isLeapYear(), false);
         assertEquals(YearMonth.of(2008, 6).isLeapYear(), true);
@@ -841,19 +851,19 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // lengthOfMonth()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_lengthOfMonth_june() {
         YearMonth test = YearMonth.of(2007, 6);
         assertEquals(test.lengthOfMonth(), 30);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_lengthOfMonth_febNonLeap() {
         YearMonth test = YearMonth.of(2007, 2);
         assertEquals(test.lengthOfMonth(), 28);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_lengthOfMonth_febLeap() {
         YearMonth test = YearMonth.of(2008, 2);
         assertEquals(test.lengthOfMonth(), 29);
@@ -862,7 +872,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // lengthOfYear()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_lengthOfYear() {
         assertEquals(YearMonth.of(2007, 6).lengthOfYear(), 365);
         assertEquals(YearMonth.of(2008, 6).lengthOfYear(), 366);
@@ -871,7 +881,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // isValidDay(int)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_isValidDay_int_june() {
         YearMonth test = YearMonth.of(2007, 6);
         assertEquals(test.isValidDay(1), true);
@@ -883,7 +893,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         assertEquals(test.isValidDay(32), false);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_isValidDay_int_febNonLeap() {
         YearMonth test = YearMonth.of(2007, 2);
         assertEquals(test.isValidDay(1), true);
@@ -895,7 +905,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         assertEquals(test.isValidDay(32), false);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_isValidDay_int_febLeap() {
         YearMonth test = YearMonth.of(2008, 2);
         assertEquals(test.isValidDay(1), true);
@@ -905,6 +915,127 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         assertEquals(test.isValidDay(0), false);
         assertEquals(test.isValidDay(30), false);
         assertEquals(test.isValidDay(32), false);
+    }
+
+    //-----------------------------------------------------------------------
+    // periodUntil(Temporal, TemporalUnit)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="periodUntilUnit")
+    Object[][] data_periodUntilUnit() {
+        return new Object[][] {
+                {ym(2000, 1), ym(-1, 12), MONTHS, -2000 * 12 - 1},
+                {ym(2000, 1), ym(0, 1), MONTHS, -2000 * 12},
+                {ym(2000, 1), ym(0, 12), MONTHS, -1999 * 12 - 1},
+                {ym(2000, 1), ym(1, 1), MONTHS, -1999 * 12},
+                {ym(2000, 1), ym(1999, 12), MONTHS, -1},
+                {ym(2000, 1), ym(2000, 1), MONTHS, 0},
+                {ym(2000, 1), ym(2000, 2), MONTHS, 1},
+                {ym(2000, 1), ym(2000, 3), MONTHS, 2},
+                {ym(2000, 1), ym(2000, 12), MONTHS, 11},
+                {ym(2000, 1), ym(2001, 1), MONTHS, 12},
+                {ym(2000, 1), ym(2246, 5), MONTHS, 246 * 12 + 4},
+
+                {ym(2000, 1), ym(-1, 12), YEARS, -2000},
+                {ym(2000, 1), ym(0, 1), YEARS, -2000},
+                {ym(2000, 1), ym(0, 12), YEARS, -1999},
+                {ym(2000, 1), ym(1, 1), YEARS, -1999},
+                {ym(2000, 1), ym(1998, 12), YEARS, -1},
+                {ym(2000, 1), ym(1999, 1), YEARS, -1},
+                {ym(2000, 1), ym(1999, 2), YEARS, 0},
+                {ym(2000, 1), ym(1999, 12), YEARS, 0},
+                {ym(2000, 1), ym(2000, 1), YEARS, 0},
+                {ym(2000, 1), ym(2000, 2), YEARS, 0},
+                {ym(2000, 1), ym(2000, 12), YEARS, 0},
+                {ym(2000, 1), ym(2001, 1), YEARS, 1},
+                {ym(2000, 1), ym(2246, 5), YEARS, 246},
+
+                {ym(2000, 5), ym(-1, 5), DECADES, -200},
+                {ym(2000, 5), ym(0, 4), DECADES, -200},
+                {ym(2000, 5), ym(0, 5), DECADES, -200},
+                {ym(2000, 5), ym(0, 6), DECADES, -199},
+                {ym(2000, 5), ym(1, 5), DECADES, -199},
+                {ym(2000, 5), ym(1990, 4), DECADES, -1},
+                {ym(2000, 5), ym(1990, 5), DECADES, -1},
+                {ym(2000, 5), ym(1990, 6), DECADES, 0},
+                {ym(2000, 5), ym(2000, 4), DECADES, 0},
+                {ym(2000, 5), ym(2000, 5), DECADES, 0},
+                {ym(2000, 5), ym(2000, 6), DECADES, 0},
+                {ym(2000, 5), ym(2010, 4), DECADES, 0},
+                {ym(2000, 5), ym(2010, 5), DECADES, 1},
+                {ym(2000, 5), ym(2010, 6), DECADES, 1},
+
+                {ym(2000, 5), ym(-1, 5), CENTURIES, -20},
+                {ym(2000, 5), ym(0, 4), CENTURIES, -20},
+                {ym(2000, 5), ym(0, 5), CENTURIES, -20},
+                {ym(2000, 5), ym(0, 6), CENTURIES, -19},
+                {ym(2000, 5), ym(1, 5), CENTURIES, -19},
+                {ym(2000, 5), ym(1900, 4), CENTURIES, -1},
+                {ym(2000, 5), ym(1900, 5), CENTURIES, -1},
+                {ym(2000, 5), ym(1900, 6), CENTURIES, 0},
+                {ym(2000, 5), ym(2000, 4), CENTURIES, 0},
+                {ym(2000, 5), ym(2000, 5), CENTURIES, 0},
+                {ym(2000, 5), ym(2000, 6), CENTURIES, 0},
+                {ym(2000, 5), ym(2100, 4), CENTURIES, 0},
+                {ym(2000, 5), ym(2100, 5), CENTURIES, 1},
+                {ym(2000, 5), ym(2100, 6), CENTURIES, 1},
+
+                {ym(2000, 5), ym(-1, 5), MILLENNIA, -2},
+                {ym(2000, 5), ym(0, 4), MILLENNIA, -2},
+                {ym(2000, 5), ym(0, 5), MILLENNIA, -2},
+                {ym(2000, 5), ym(0, 6), MILLENNIA, -1},
+                {ym(2000, 5), ym(1, 5), MILLENNIA, -1},
+                {ym(2000, 5), ym(1000, 4), MILLENNIA, -1},
+                {ym(2000, 5), ym(1000, 5), MILLENNIA, -1},
+                {ym(2000, 5), ym(1000, 6), MILLENNIA, 0},
+                {ym(2000, 5), ym(2000, 4), MILLENNIA, 0},
+                {ym(2000, 5), ym(2000, 5), MILLENNIA, 0},
+                {ym(2000, 5), ym(2000, 6), MILLENNIA, 0},
+                {ym(2000, 5), ym(3000, 4), MILLENNIA, 0},
+                {ym(2000, 5), ym(3000, 5), MILLENNIA, 1},
+                {ym(2000, 5), ym(3000, 5), MILLENNIA, 1},
+        };
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_periodUntil_TemporalUnit(YearMonth ym1, YearMonth ym2, TemporalUnit unit, long expected) {
+        long amount = ym1.periodUntil(ym2, unit);
+        assertEquals(amount, expected);
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_periodUntil_TemporalUnit_negated(YearMonth ym1, YearMonth ym2, TemporalUnit unit, long expected) {
+        long amount = ym2.periodUntil(ym1, unit);
+        assertEquals(amount, -expected);
+    }
+
+    @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
+    public void test_periodUntil_TemporalUnit_unsupportedUnit() {
+        TEST_2008_06.periodUntil(TEST_2008_06, HOURS);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_periodUntil_TemporalUnit_nullEnd() {
+        TEST_2008_06.periodUntil(null, DAYS);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_periodUntil_TemporalUnit_nullUnit() {
+        TEST_2008_06.periodUntil(TEST_2008_06, null);
+    }
+
+    //-----------------------------------------------------------------------
+    // format(DateTimeFormatter)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_format_formatter() {
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("y M");
+        String t = YearMonth.of(2010, 12).format(f);
+        assertEquals(t, "2010 12");
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_format_formatter_null() {
+        YearMonth.of(2010, 12).format(null);
     }
 
     //-----------------------------------------------------------------------
@@ -975,7 +1106,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // compareTo()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_comparisons() {
         doTest_comparisons_YearMonth(
             YearMonth.of(-1, 1),
@@ -1015,17 +1146,17 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         }
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_compareTo_ObjectNull() {
         TEST_2008_06.compareTo(null);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_isBefore_ObjectNull() {
         TEST_2008_06.isBefore(null);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_isAfter_ObjectNull() {
         TEST_2008_06.isAfter(null);
     }
@@ -1033,7 +1164,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // equals()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_equals() {
         YearMonth a = YearMonth.of(2008, 6);
         YearMonth b = YearMonth.of(2008, 6);
@@ -1061,17 +1192,17 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         assertEquals(d.equals(d), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_itself_true() {
         assertEquals(TEST_2008_06.equals(TEST_2008_06), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_string_false() {
         assertEquals(TEST_2008_06.equals("2007-07-15"), false);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_null_false() {
         assertEquals(TEST_2008_06.equals(null), false);
     }
@@ -1079,7 +1210,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // hashCode()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="sampleDates", groups={"tck"})
+    @Test(dataProvider="sampleDates")
     public void test_hashCode(int y, int m) {
         YearMonth a = YearMonth.of(y, m);
         assertEquals(a.hashCode(), a.hashCode());
@@ -1087,7 +1218,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         assertEquals(a.hashCode(), b.hashCode());
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_hashCode_unique() {
         Set<Integer> uniques = new HashSet<Integer>(201 * 12);
         for (int i = 1900; i <= 2100; i++) {
@@ -1111,26 +1242,15 @@ public class TCKYearMonth extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="sampleToString", groups={"tck"})
+    @Test(dataProvider="sampleToString")
     public void test_toString(int y, int m, String expected) {
         YearMonth test = YearMonth.of(y, m);
         String str = test.toString();
         assertEquals(str, expected);
     }
 
-    //-----------------------------------------------------------------------
-    // toString(DateTimeFormatter)
-    //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_toString_formatter() {
-        DateTimeFormatter f = DateTimeFormatter.ofPattern("y M");
-        String t = YearMonth.of(2010, 12).toString(f);
-        assertEquals(t, "2010 12");
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
-    public void test_toString_formatter_null() {
-        YearMonth.of(2010, 12).toString(null);
+    private YearMonth ym(int year, int month) {
+        return YearMonth.of(year, month);
     }
 
 }
