@@ -83,7 +83,7 @@ import java.time.ZoneId;
  * Two pieces of date/time information cannot be represented by numbers,
  * the {@linkplain java.time.chrono.Chronology chronology} and the {@linkplain ZoneId time-zone}.
  * These can be accessed via {@link #query(TemporalQuery) queries} using
- * the static methods defined on {@link Queries}.
+ * the static methods defined on {@link TemporalQuery}.
  * <p>
  * This interface is a framework-level interface that should not be widely
  * used in application code. Instead, applications should create and pass
@@ -134,7 +134,7 @@ public interface Temporal extends TemporalAccessor {
      * This adjusts this date-time according to the rules of the specified adjuster.
      * A simple adjuster might simply set the one of the fields, such as the year field.
      * A more complex adjuster might set the date to the last day of the month.
-     * A selection of common adjustments is provided in {@link Adjusters}.
+     * A selection of common adjustments is provided in {@link TemporalAdjuster}.
      * These include finding the "last day of the month" and "next Wednesday".
      * The adjuster is responsible for handling special cases, such as the varying
      * lengths of month and leap years.
@@ -161,7 +161,7 @@ public interface Temporal extends TemporalAccessor {
      * @throws DateTimeException if unable to make the adjustment
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public default Temporal with(TemporalAdjuster adjuster) {
+    default Temporal with(TemporalAdjuster adjuster) {
         return adjuster.adjustInto(this);
     }
 
@@ -180,7 +180,7 @@ public interface Temporal extends TemporalAccessor {
      * <h3>Specification for implementors</h3>
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported, then the adjustment must be performed.
-     * If unsupported, then a {@code DateTimeException} must be thrown.
+     * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
@@ -194,6 +194,7 @@ public interface Temporal extends TemporalAccessor {
      * @param newValue  the new value of the field in the result
      * @return an object of the same type with the specified field set, not null
      * @throws DateTimeException if the field cannot be set
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     Temporal with(TemporalField field, long newValue);
@@ -210,7 +211,6 @@ public interface Temporal extends TemporalAccessor {
      * <pre>
      *  date = date.plus(period);                      // add a Period instance
      *  date = date.plus(duration);                    // add a Duration instance
-     *  date = date.plus(MONTHS.between(start, end));  // static import of MONTHS field
      *  date = date.plus(workingDays(6));              // example user-written workingDays method
      * </pre>
      * <p>
@@ -232,7 +232,7 @@ public interface Temporal extends TemporalAccessor {
      * @throws DateTimeException if the addition cannot be made
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public default Temporal plus(TemporalAmount amount) {
+    default Temporal plus(TemporalAmount amount) {
         return amount.addTo(this);
     }
 
@@ -255,7 +255,7 @@ public interface Temporal extends TemporalAccessor {
      * <h3>Specification for implementors</h3>
      * Implementations must check and handle all units defined in {@link ChronoUnit}.
      * If the unit is supported, then the addition must be performed.
-     * If unsupported, then a {@code DateTimeException} must be thrown.
+     * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.addTo(Temporal, long)}
@@ -269,6 +269,7 @@ public interface Temporal extends TemporalAccessor {
      * @param unit  the unit of the period to add, not null
      * @return an object of the same type with the specified period added, not null
      * @throws DateTimeException if the unit cannot be added
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     Temporal plus(long amountToAdd, TemporalUnit unit);
@@ -285,7 +286,6 @@ public interface Temporal extends TemporalAccessor {
      * <pre>
      *  date = date.minus(period);                      // subtract a Period instance
      *  date = date.minus(duration);                    // subtract a Duration instance
-     *  date = date.minus(MONTHS.between(start, end));  // static import of MONTHS field
      *  date = date.minus(workingDays(6));              // example user-written workingDays method
      * </pre>
      * <p>
@@ -307,7 +307,7 @@ public interface Temporal extends TemporalAccessor {
      * @throws DateTimeException if the subtraction cannot be made
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public default Temporal minus(TemporalAmount amount) {
+    default Temporal minus(TemporalAmount amount) {
         return amount.subtractFrom(this);
     }
 
@@ -344,9 +344,10 @@ public interface Temporal extends TemporalAccessor {
      * @param unit  the unit of the period to subtract, not null
      * @return an object of the same type with the specified period subtracted, not null
      * @throws DateTimeException if the unit cannot be subtracted
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public default Temporal minus(long amountToSubtract, TemporalUnit unit) {
+    default Temporal minus(long amountToSubtract, TemporalUnit unit) {
         return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
     }
 
@@ -388,7 +389,7 @@ public interface Temporal extends TemporalAccessor {
      * Implementations must begin by checking to ensure that the input temporal
      * object is of the same observable type as the implementation.
      * They must then perform the calculation for all instances of {@link ChronoUnit}.
-     * A {@code DateTimeException} must be thrown for {@code ChronoUnit}
+     * An {@code UnsupportedTemporalTypeException} must be thrown for {@code ChronoUnit}
      * instances that are unsupported.
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
@@ -401,7 +402,7 @@ public interface Temporal extends TemporalAccessor {
      *  // check input temporal is the same type as this class
      *  if (unit instanceof ChronoUnit) {
      *    // if unit is supported, then calculate and return result
-     *    // else throw DateTimeException for unsupported units
+     *    // else throw UnsupportedTemporalTypeException for unsupported units
      *  }
      *  return unit.between(this, endTemporal);
      * </pre>
@@ -414,6 +415,7 @@ public interface Temporal extends TemporalAccessor {
      *  the unit; positive if the specified object is later than this one, negative if
      *  it is earlier than this one
      * @throws DateTimeException if the period cannot be calculated
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     long periodUntil(Temporal endTemporal, TemporalUnit unit);

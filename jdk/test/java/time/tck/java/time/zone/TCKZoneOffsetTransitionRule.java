@@ -61,7 +61,6 @@ package tck.java.time.zone;
 
 import static org.testng.Assert.assertEquals;
 
-import tck.java.time.AbstractTCKTest;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -72,6 +71,7 @@ import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
 
 import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
 
 /**
  * Test ZoneOffsetTransitionRule.
@@ -86,70 +86,70 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // factory
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_factory_nullMonth() {
         ZoneOffsetTransitionRule.of(
                 null, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_factory_nullTime() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, null, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_factory_nullTimeDefinition() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, null,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_factory_nullStandardOffset() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 null, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_factory_nullOffsetBefore() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, null, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_factory_nullOffsetAfter() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, null);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_factory_invalidDayOfMonthIndicator_tooSmall() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, -29, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_factory_invalidDayOfMonthIndicator_zero() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, 0, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_factory_invalidDayOfMonthIndicator_tooLarge() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, 32, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_factory_invalidMidnightFlag() {
         ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, true, TimeDefinition.WALL,
@@ -239,7 +239,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // createTransition()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_createTransition_floatingWeek_gap_notEndOfDay() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -249,7 +249,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.createTransition(2000), trans);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_createTransition_floatingWeek_overlap_endOfDay() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, LocalTime.MIDNIGHT, true, TimeDefinition.WALL,
@@ -259,7 +259,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.createTransition(2000), trans);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_createTransition_floatingWeekBackwards_last() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -1, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -269,7 +269,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.createTransition(2000), trans);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_createTransition_floatingWeekBackwards_seventhLast() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -7, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -279,7 +279,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.createTransition(2000), trans);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_createTransition_floatingWeekBackwards_secondLast() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -2, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -289,7 +289,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.createTransition(2000), trans);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_createTransition_fixedDate() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
@@ -302,7 +302,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // equals()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_monthDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -316,7 +316,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_dayOfMonthDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -330,7 +330,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_dayOfWeekDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -344,7 +344,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_dayOfWeekDifferentNull() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -358,7 +358,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_localTimeDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -372,7 +372,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_endOfDayDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, LocalTime.MIDNIGHT, false, TimeDefinition.WALL,
@@ -386,7 +386,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_timeDefinitionDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -400,7 +400,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_standardOffsetDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -414,7 +414,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_offsetBeforeDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -428,7 +428,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_offsetAfterDifferent() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -442,7 +442,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(b.equals(b), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_string_false() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -450,7 +450,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(a.equals("TZDB"), false);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_null_false() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -461,7 +461,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // hashCode()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_hashCode_floatingWeek_gap_notEndOfDay() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -472,7 +472,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(a.hashCode(), b.hashCode());
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_hashCode_floatingWeek_overlap_endOfDay_nullDayOfWeek() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.OCTOBER, 20, null, LocalTime.MIDNIGHT, true, TimeDefinition.WALL,
@@ -483,7 +483,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(a.hashCode(), b.hashCode());
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_hashCode_floatingWeekBackwards() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -1, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -494,7 +494,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(a.hashCode(), b.hashCode());
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_hashCode_fixedDate() {
         ZoneOffsetTransitionRule a = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
@@ -508,7 +508,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_toString_floatingWeek_gap_notEndOfDay() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -516,7 +516,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or after MARCH 20 at 01:00 WALL, standard offset +02:00]");
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_toString_floatingWeek_overlap_endOfDay() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.OCTOBER, 20, DayOfWeek.SUNDAY, LocalTime.MIDNIGHT, true, TimeDefinition.WALL,
@@ -524,7 +524,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.toString(), "TransitionRule[Overlap +03:00 to +02:00, SUNDAY on or after OCTOBER 20 at 24:00 WALL, standard offset +02:00]");
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_toString_floatingWeekBackwards_last() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -1, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -532,7 +532,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or before last day of MARCH at 01:00 WALL, standard offset +02:00]");
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_toString_floatingWeekBackwards_secondLast() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, -2, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
@@ -540,7 +540,7 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or before last day minus 1 of MARCH at 01:00 WALL, standard offset +02:00]");
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_toString_fixedDate() {
         ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
                 Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
