@@ -170,7 +170,7 @@ public class LWWindowPeer
             setTitle(((Dialog) getTarget()).getTitle());
         }
 
-        setAlwaysOnTop(getTarget().isAlwaysOnTop());
+        updateAlwaysOnTopState();
         updateMinimumSize();
 
         final Shape shape = getTarget().getShape();
@@ -357,8 +357,8 @@ public class LWWindowPeer
     }
 
     @Override
-    public void setAlwaysOnTop(boolean value) {
-        platformWindow.setAlwaysOnTop(value);
+    public void updateAlwaysOnTopState() {
+        platformWindow.setAlwaysOnTop(getTarget().isAlwaysOnTop());
     }
 
     @Override

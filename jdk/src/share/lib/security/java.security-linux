@@ -146,22 +146,35 @@ keystore.type=jks
 # corresponding RuntimePermission ("accessClassInPackage."+package) has
 # been granted.
 package.access=sun.,\
-               com.sun.xml.internal.bind.,\
-               com.sun.xml.internal.org.jvnet.staxex.,\
-               com.sun.xml.internal.ws.,\
+               com.sun.xml.internal.,\
                com.sun.imageio.,\
                com.sun.istack.internal.,\
                com.sun.jmx.,\
                com.sun.proxy.,\
-               com.sun.org.apache.xerces.internal.utils.,\
+               com.sun.org.apache.bcel.internal.,\
+               com.sun.org.apache.regexp.internal.,\
+               com.sun.org.apache.xerces.internal.,\
+               com.sun.org.apache.xpath.internal.,\
+               com.sun.org.apache.xalan.internal.extensions.,\
+               com.sun.org.apache.xalan.internal.lib.,\
+               com.sun.org.apache.xalan.internal.res.,\
+               com.sun.org.apache.xalan.internal.templates.,\
                com.sun.org.apache.xalan.internal.utils.,\
-               com.sun.org.glassfish.external.,\
-               com.sun.org.glassfish.gmbal.,\
+               com.sun.org.apache.xalan.internal.xslt.,\
+               com.sun.org.apache.xalan.internal.xsltc.cmdline.,\
+               com.sun.org.apache.xalan.internal.xsltc.compiler.,\
+               com.sun.org.apache.xalan.internal.xsltc.trax.,\
+               com.sun.org.apache.xalan.internal.xsltc.util.,\
+               com.sun.org.apache.xml.internal.res.,\
+               com.sun.org.apache.xml.internal.serializer.utils.,\
+               com.sun.org.apache.xml.internal.utils.,\
+               com.sun.org.glassfish.,\
                com.oracle.xmlns.internal.,\
                com.oracle.webservices.internal.,\
-	       jdk.internal.,\
-	       jdk.nashorn.internal.,\
-	       jdk.nashorn.tools.
+               jdk.internal.,\
+               jdk.nashorn.internal.,\
+               jdk.nashorn.tools.
+
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -174,22 +187,35 @@ package.access=sun.,\
 # checkPackageDefinition.
 #
 package.definition=sun.,\
-                   com.sun.xml.internal.bind.,\
-                   com.sun.xml.internal.org.jvnet.staxex.,\
-                   com.sun.xml.internal.ws.,\
+                   com.sun.xml.internal.,\
                    com.sun.imageio.,\
                    com.sun.istack.internal.,\
                    com.sun.jmx.,\
                    com.sun.proxy.,\
-                   com.sun.org.apache.xerces.internal.utils.,\
+                   com.sun.org.apache.bcel.internal.,\
+                   com.sun.org.apache.regexp.internal.,\
+                   com.sun.org.apache.xerces.internal.,\
+                   com.sun.org.apache.xpath.internal.,\
+                   com.sun.org.apache.xalan.internal.extensions.,\
+                   com.sun.org.apache.xalan.internal.lib.,\
+                   com.sun.org.apache.xalan.internal.res.,\
+                   com.sun.org.apache.xalan.internal.templates.,\
                    com.sun.org.apache.xalan.internal.utils.,\
-                   com.sun.org.glassfish.external.,\
-                   com.sun.org.glassfish.gmbal.,\
+                   com.sun.org.apache.xalan.internal.xslt.,\
+                   com.sun.org.apache.xalan.internal.xsltc.cmdline.,\
+                   com.sun.org.apache.xalan.internal.xsltc.compiler.,\
+                   com.sun.org.apache.xalan.internal.xsltc.trax.,\
+                   com.sun.org.apache.xalan.internal.xsltc.util.,\
+                   com.sun.org.apache.xml.internal.res.,\
+                   com.sun.org.apache.xml.internal.serializer.utils.,\
+                   com.sun.org.apache.xml.internal.utils.,\
+                   com.sun.org.glassfish.,\
                    com.oracle.xmlns.internal.,\
                    com.oracle.webservices.internal.,\
-		   jdk.internal.,\
-		   jdk.nashorn.internal.,\
-		   jdk.nashorn.tools.
+                   jdk.internal.,\
+                   jdk.nashorn.internal.,\
+                   jdk.nashorn.tools.
+
 
 #
 # Determines whether this properties file can be appended to
