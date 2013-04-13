@@ -1237,6 +1237,30 @@ return mh1;
             checkMethod(refKind, refc, method);
             if (method.isMethodHandleInvoke())
                 return fakeMethodHandleInvoke(method);
+
+            Class<?> refcAsSuper;
+            if (refKind == REF_invokeSpecial &&
+                refc != lookupClass() &&
+                refc != (refcAsSuper = lookupClass().getSuperclass()) &&
+                refc.isAssignableFrom(lookupClass())) {
+                assert(!method.getName().equals("<init>"));  // not this code path
+                // Per JVMS 6.5, desc. of invokespecial instruction:
+                // If the method is in a superclass of the LC,
+                // and if our original search was above LC.super,
+                // repeat the search (symbolic lookup) from LC.super.
+                // FIXME: MemberName.resolve should handle this instead.
+                MemberName m2 = new MemberName(refcAsSuper,
+                                               method.getName(),
+                                               method.getMethodType(),
+                                               REF_invokeSpecial);
+                m2 = IMPL_NAMES.resolveOrNull(refKind, m2, lookupClassOrNull());
+                if (m2 == null)  throw new InternalError(method.toString());
+                method = m2;
+                refc = refcAsSuper;
+                // redo basic checks
+                checkMethod(refKind, refc, method);
+            }
+
             MethodHandle mh = DirectMethodHandle.make(refKind, refc, method);
             mh = maybeBindCaller(method, mh, callerClass);
             mh = mh.setVarargs(method);

@@ -102,7 +102,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
             if ((fd != null && fd1 != null) && !connected) {
                 return anyLocalBoundAddr;
             }
-            int family = connectedAddress == null ? -1 : connectedAddress.family;
+            int family = connectedAddress == null ? -1 : connectedAddress.holder().getFamily();
             return socketLocalAddress(family);
         } else
             return super.getOption(optID);

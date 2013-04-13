@@ -36,9 +36,12 @@
 
 U_NAMESPACE_BEGIN
 
-GDEFMarkFilter::GDEFMarkFilter(const GlyphDefinitionTableHeader *gdefTable)
+GDEFMarkFilter::GDEFMarkFilter(const LEReferenceTo<GlyphDefinitionTableHeader> &gdefTable, LEErrorCode &success)
+  : classDefTable(gdefTable->getGlyphClassDefinitionTable(gdefTable, success))
 {
-    classDefTable = gdefTable->getGlyphClassDefinitionTable();
+  if(!classDefTable.isValid()) {
+    success = LE_INTERNAL_ERROR;
+  }
 }
 
 GDEFMarkFilter::~GDEFMarkFilter()
