@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Sets make macros for making debug version of VM
@@ -59,5 +59,5 @@ CFLAGS$(HOTSPARC_GENERIC) += $(OPT_CFLAGS/BYFILE)
 MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-debug
 
 VERSION = optimized
-SYSDEFS += -DASSERT -DFASTDEBUG
+SYSDEFS += -DASSERT
 PICFLAGS = DEFAULT

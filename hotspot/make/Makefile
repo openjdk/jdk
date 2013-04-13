@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Top level gnumake file for hotspot builds
@@ -85,15 +85,15 @@ else
 endif
 
 # Typical C1/C2 targets made available with this Makefile
-C1_VM_TARGETS=product1 fastdebug1 optimized1 jvmg1
-C2_VM_TARGETS=product  fastdebug  optimized  jvmg
-ZERO_VM_TARGETS=productzero fastdebugzero optimizedzero jvmgzero
-SHARK_VM_TARGETS=productshark fastdebugshark optimizedshark jvmgshark
-MINIMAL1_VM_TARGETS=productminimal1 fastdebugminimal1 jvmgminimal1
+C1_VM_TARGETS=product1 fastdebug1 optimized1 debug1
+C2_VM_TARGETS=product  fastdebug  optimized  debug
+ZERO_VM_TARGETS=productzero fastdebugzero optimizedzero debugzero
+SHARK_VM_TARGETS=productshark fastdebugshark optimizedshark debugshark
+MINIMAL1_VM_TARGETS=productminimal1 fastdebugminimal1 debugminimal1
 
 COMMON_VM_PRODUCT_TARGETS=product product1 docs export_product
 COMMON_VM_FASTDEBUG_TARGETS=fastdebug fastdebug1 docs export_fastdebug
-COMMON_VM_DEBUG_TARGETS=jvmg jvmg1 docs export_debug
+COMMON_VM_DEBUG_TARGETS=debug debug1 docs export_debug
 
 # JDK directory list
 JDK_DIRS=bin include jre lib demo
@@ -103,13 +103,13 @@ all:           all_product all_fastdebug
 ifeq ($(JVM_VARIANT_MINIMAL1),true)
 all_product:	productminimal1
 all_fastdebug:	fastdebugminimal1
-all_debug:	jvmgminimal1
+all_debug:	debugminimal1
 endif
 
 ifdef BUILD_CLIENT_ONLY
 all_product:   product1 docs export_product
 all_fastdebug: fastdebug1 docs export_fastdebug
-all_debug:     jvmg1 docs export_debug
+all_debug:     debug1 docs export_debug
 else
 ifeq ($(MACOSX_UNIVERSAL),true)
 all_product:   universal_product
@@ -127,13 +127,13 @@ all_optimized: optimized optimized1 docs export_optimized
 allzero:           all_productzero all_fastdebugzero
 all_productzero:   productzero docs export_product
 all_fastdebugzero: fastdebugzero docs export_fastdebug
-all_debugzero:     jvmgzero docs export_debug
+all_debugzero:     debugzero docs export_debug
 all_optimizedzero: optimizedzero docs export_optimized
 
 allshark:           all_productshark all_fastdebugshark
 all_productshark:   productshark docs export_product
 all_fastdebugshark: fastdebugshark docs export_fastdebug
-all_debugshark:     jvmgshark docs export_debug
+all_debugshark:     debugshark docs export_debug
 all_optimizedshark: optimizedshark docs export_optimized
 
 # Do everything
@@ -227,7 +227,7 @@ generic_buildshark:
 	$(MKDIR) -p $(OUTPUTDIR)
 	$(CD) $(OUTPUTDIR); \
 		$(MAKE) -f $(ABS_OS_MAKEFILE) \
-			$(MAKE_ARGS) $(VM_TARGET) 
+			$(MAKE_ARGS) $(VM_TARGET)
 
 generic_buildminimal1:
 ifeq ($(JVM_VARIANT_MINIMAL1),true)
@@ -260,7 +260,7 @@ export_fastdebug:
 	  EXPORT_SUBDIR=/$(@:export_%=%) \
 	  generic_export
 export_debug:
-	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=${VM_DEBUG} \
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
 	  EXPORT_SUBDIR=/$(@:export_%=%) \
 	  generic_export
 export_optimized:
@@ -281,7 +281,7 @@ export_fastdebug_jdk::
 	  ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) \
 	  generic_export
 export_debug_jdk::
-	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) VM_SUBDIR=${VM_DEBUG} \
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) VM_SUBDIR=$(@:export_%_jdk=%) \
 	  ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) \
 	  generic_export
 
@@ -323,7 +323,7 @@ endif
 # Bin files (windows)
 ifeq ($(OSNAME),windows)
 
-# Get jvm.lib 
+# Get jvm.lib
 $(EXPORT_LIB_DIR)/%.lib:  $(MISC_DIR)/%.lib
 	$(install-file)
 
@@ -541,11 +541,11 @@ generic_test:
 	@$(RUN_JVM) -XXaltjvm=$(ALTJVM_DIR) -showversion -help
 
 # C2 test targets
-test_product test_optimized test_fastdebug test_jvmg:
+test_product test_optimized test_fastdebug test_debug:
 	@$(MAKE) generic_test ALTJVM_DIR="$(C2_DIR)/$(@:test_%=%)"
 
 # C1 test targets
-test_product1 test_optimized1 test_fastdebug1 test_jvmg1:
+test_product1 test_optimized1 test_fastdebug1 test_debug1:
   ifeq ($(ARCH_DATA_MODEL), 32)
 	@$(MAKE) generic_test ALTJVM_DIR="$(C1_DIR)/$(@:test_%1=%)"
   else
@@ -553,15 +553,15 @@ test_product1 test_optimized1 test_fastdebug1 test_jvmg1:
   endif
 
 # Zero test targets
-test_productzero test_optimizedzero test_fastdebugzero test_jvmgzero:
+test_productzero test_optimizedzero test_fastdebugzero test_debugzero:
 	@$(MAKE) generic_test ALTJVM_DIR="$(ZERO_DIR)/$(@:test_%zero=%)"
 
 # Shark test targets
-test_productshark test_optimizedshark test_fastdebugshark test_jvmgshark:
+test_productshark test_optimizedshark test_fastdebugshark test_debugshark:
 	@$(MAKE) generic_test ALTJVM_DIR="$(SHARK_DIR)/$(@:test_%shark=%)"
 
 # Minimal1 test targets
-test_productminimal1 test_optimizedminimal1 test_fastdebugminimal1 test_jvmgminimal1:
+test_productminimal1 test_optimizedminimal1 test_fastdebugminimal1 test_debugminimal1:
 	@$(MAKE) generic_test ALTJVM_DIR="$(MINIMAL1_DIR)/$(@:test_%minimal1=%)"
 
 
@@ -626,7 +626,7 @@ help: intro_help target_help variable_help notes_help examples_help
 # Intro help message
 intro_help:
 	@$(ECHO) \
-"Makefile for the Hotspot workspace." 
+"Makefile for the Hotspot workspace."
 	@$(ECHO) \
 "Default behavior is to build and create an export area for the j2se builds."
 
@@ -637,7 +637,7 @@ target_help:
 	@$(ECHO) "world:            Same as: all create_jdk"
 	@$(ECHO) "all_product:      Same as: product product1 export_product"
 	@$(ECHO) "all_fastdebug:    Same as: fastdebug fastdebug1 export_fastdebug"
-	@$(ECHO) "all_debug:        Same as: jvmg jvmg1 export_debug"
+	@$(ECHO) "all_debug:        Same as: debug debug1 export_debug"
 	@$(ECHO) "all_optimized:    Same as: optimized optimized1 export_optimized"
 	@$(ECHO) "clean:            Clean all areas"
 	@$(ECHO) "export_product:   Export product files to EXPORT_PATH"
@@ -730,7 +730,7 @@ examples_help:
 	@$(ECHO) \
 "  $(MAKE) world"
 	@$(ECHO) \
-"  $(MAKE) ALT_BOOTDIR=/opt/java/jdk$(PREVIOUS_JDK_VERSION)" 
+"  $(MAKE) ALT_BOOTDIR=/opt/java/jdk$(PREVIOUS_JDK_VERSION)"
 	@$(ECHO) \
 "  $(MAKE) ALT_JDK_IMPORT_PATH=/opt/java/jdk$(JDK_VERSION)"
 
@@ -740,6 +740,23 @@ ifeq ($(MACOSX_UNIVERSAL),true)
 include $(GAMMADIR)/make/$(OSNAME)/makefiles/universal.gmk
 endif
 endif
+
+# Compatibility for transition to new naming
+warn_jvmg_deprecated:
+	echo "Warning: The jvmg target has been replaced with debug"
+	echo "Warning: Please update your usage"
+
+jvmg: warn_jvmg_deprecated debug
+
+jvmg1: warn_jvmg_deprecated debug1
+
+jvmgminimal1: warn_jvmg_deprecated debugminimal1
+
+jvmgcore: warn_jvmg_deprecated debugcore
+
+jvmgzero: warn_jvmg_deprecated debugzero
+
+jvmgshark: warn_jvmg_deprecated debugshark
 
 # JPRT rule to build this workspace
 include $(GAMMADIR)/make/jprt.gmk
