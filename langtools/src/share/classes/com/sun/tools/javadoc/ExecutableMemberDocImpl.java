@@ -210,24 +210,6 @@ public abstract class ExecutableMemberDocImpl
         return (recvtype != null) ? TypeMaker.getType(env, recvtype, false, true) : null;
     }
 
-    public AnnotationDesc[] receiverAnnotations() {
-        // TODO: change how receiver annotations are output!
-        Type recvtype = sym.type.asMethodType().recvtype;
-        if (recvtype == null) {
-            return new AnnotationDesc[0];
-        }
-        if (!recvtype.isAnnotated()) {
-            return new AnnotationDesc[0];
-        }
-        List<? extends Compound> typeAnnos = ((com.sun.tools.javac.code.Type.AnnotatedType)recvtype).typeAnnotations;
-        AnnotationDesc result[] = new AnnotationDesc[typeAnnos.length()];
-        int i = 0;
-        for (Attribute.Compound a : typeAnnos) {
-            result[i++] = new AnnotationDescImpl(env, a);
-        }
-        return result;
-    }
-
     /**
      * Return the formal type parameters of this method or constructor.
      * Return an empty array if there are none.

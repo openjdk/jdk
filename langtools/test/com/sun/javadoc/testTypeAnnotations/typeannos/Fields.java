@@ -40,7 +40,7 @@ class DefaultScope {
     @FldA String [] array1;
     @FldA String @FldB [] array1Deep;
     @FldA String [] [] array2;
-    @FldA String @FldA [] @FldB [] array2Deep;
+    @FldD String @FldC @FldA [] @FldC @FldB [] array2Deep;
     String @FldA [] [] array2First;
     String [] @FldB [] array2Second;
 
@@ -74,3 +74,9 @@ class Parameterized<K, V> { }
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @Documented
 @interface FldB { }
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@Documented
+@interface FldC { }
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@Documented
+@interface FldD { }
