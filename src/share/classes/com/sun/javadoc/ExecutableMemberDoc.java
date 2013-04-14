@@ -96,15 +96,6 @@ public interface ExecutableMemberDoc extends MemberDoc {
     Type receiverType();
 
     /**
-     * Get the receiver annotations of this executable element.
-     * Return an empty array if there are none.
-     *
-     * @return the receiver annotations of this executable element.
-     * @since 1.8
-     */
-    AnnotationDesc[] receiverAnnotations();
-
-    /**
      * Return the throws tags in this method.
      *
      * @return an array of ThrowTag containing all <code>&#64;exception</code>

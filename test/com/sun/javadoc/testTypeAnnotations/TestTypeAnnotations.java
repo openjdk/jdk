@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8005091
+ * @bug      8005091 8009686
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib/
@@ -34,7 +34,7 @@
 public class TestTypeAnnotations extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "8005091";
+    private static final String BUG_ID = "8005091-8009686";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
@@ -45,18 +45,37 @@ public class TestTypeAnnotations extends JavadocTester {
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[][] TEST = {
         // Test for type annotations on Class Extends (ClassExtends.java).
+        /* @ignore 8012173
+        {BUG_ID + FS + "typeannos" + FS + "MyClass.html",
+            "extends <a href=\"../typeannos/ClassExtA.html\" title=\"annotation " +
+            "in typeannos\">@ClassExtA</a> <a href=\"../typeannos/ParameterizedClass.html\" " +
+            "title=\"class in typeannos\">ParameterizedClass</a>&lt;<a href=\"" +
+            "../typeannos/ClassExtB.html\" title=\"annotation in typeannos\">" +
+            "@ClassExtB</a> java.lang.String&gt;"
+        },
+        */
+        /* @ignore 8012173
         {BUG_ID + FS + "typeannos" + FS + "MyClass.html",
             "implements <a href=\"../typeannos/ClassExtB.html\" title=\"" +
             "annotation in typeannos\">@ClassExtB</a> java.lang.CharSequence, " +
-            "<a href=\"../typeannos/ParameterizedInterface.html\" title=\"" +
-            "interface in typeannos\">ParameterizedInterface</a>&lt;java.lang.String&gt;</pre>"
+            "<a href=\"../typeannos/ClassExtA.html\" title=\"annotation in " +
+            "typeannos\">@ClassExtA</a> <a href=\"../typeannos/ParameterizedInterface.html\" " +
+            "title=\"interface in typeannos\">ParameterizedInterface</a>&lt;" +
+            "<a href=\"../typeannos/ClassExtB.html\" title=\"annotation in " +
+            "typeannos\">@ClassExtB</a> java.lang.String&gt;</pre>"
         },
+        */
+        /* @ignore 8012173
         {BUG_ID + FS + "typeannos" + FS + "MyInterface.html",
-            "extends <a href=\"../typeannos/ParameterizedInterface.html\" title" +
-            "=\"interface in typeannos\">ParameterizedInterface</a>&lt;java." +
-            "lang.String&gt;, <a href=\"../typeannos/ClassExtB.html\" title=\"" +
-            "annotation in typeannos\">@ClassExtB</a> java.lang.CharSequence</pre>"
+            "extends <a href=\"../typeannos/ClassExtA.html\" title=\"annotation " +
+            "in typeannos\">@ClassExtA</a> <a href=\"../typeannos/" +
+            "ParameterizedInterface.html\" title=\"interface in typeannos\">" +
+            "ParameterizedInterface</a>&lt;<a href=\"../typeannos/ClassExtA.html\" " +
+            "title=\"annotation in typeannos\">@ClassExtA</a> java.lang.String&gt;, " +
+            "<a href=\"../typeannos/ClassExtB.html\" title=\"annotation in " +
+            "typeannos\">@ClassExtB</a> java.lang.CharSequence</pre>"
         },
+        */
 
         // Test for type annotations on Class Parameters (ClassParameters.java).
         {BUG_ID + FS + "typeannos" + FS + "ExtendsBound.html",
@@ -64,11 +83,21 @@ public class TestTypeAnnotations extends JavadocTester {
             "href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> java.lang.String&gt;</span>"
         },
+        /* @ignore 8012173
+        {BUG_ID + FS + "typeannos" + FS + "ExtendsGeneric.html",
+            "<pre> class <span class=\"strong\">ExtendsGeneric&lt;K extends " +
+            "<a href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
+            "typeannos\">@ClassParamA</a> <a href=\"../typeannos/Unannotated.html\" " +
+            "title=\"class in typeannos\">Unannotated</a>&lt;<a href=\"" +
+            "../typeannos/ClassParamB.html\" title=\"annotation in typeannos\">" +
+            "@ClassParamB</a> java.lang.String&gt;&gt;</span>"
+        },
+        */
         {BUG_ID + FS + "typeannos" + FS + "TwoBounds.html",
-            "class <span class=\"strong\">TwoBounds&lt;K extends <a href=\"" +
+            "<pre> class <span class=\"strong\">TwoBounds&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
-            "@ClassParamA</a> java.lang.String,V extends <a href=\"../typeannos" +
-            "/ClassParamB.html\" title=\"annotation in typeannos\">@ClassParamB" +
+            "@ClassParamA</a> java.lang.String,V extends <a href=\"../typeannos/" +
+            "ClassParamB.html\" title=\"annotation in typeannos\">@ClassParamB" +
             "</a> java.lang.String&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "Complex1.html",
@@ -89,12 +118,86 @@ public class TestTypeAnnotations extends JavadocTester {
             "</a> java.lang.Runnable&gt;</span>"
         },
 
+        // Test for type annotations on fields (Fields.java).
+        /* @ignore 8012173
+        {BUG_ID + FS + "typeannos" + FS + "DefaultScope.html",
+            "<pre><a href=\"../typeannos/Parameterized.html\" title=\"class in " +
+            "typeannos\">Parameterized</a>&lt;<a href=\"../typeannos/FldA.html\" " +
+            "title=\"annotation in typeannos\">@FldA</a> java.lang.String,<a " +
+            "href=\"../typeannos/FldB.html\" title=\"annotation in typeannos\">" +
+            "@FldB</a> java.lang.String&gt; bothTypeArgs</pre>"
+        },
+        */
+        {BUG_ID + FS + "typeannos" + FS + "DefaultScope.html",
+            "<pre><a href=\"../typeannos/FldA.html\" title=\"annotation in " +
+            "typeannos\">@FldA</a> java.lang.String <a href=\"../typeannos/" +
+            "FldB.html\" title=\"annotation in typeannos\">@FldB</a> [] " +
+            "array1Deep</pre>"
+        },
+        {BUG_ID + FS + "typeannos" + FS + "DefaultScope.html",
+            "<pre>java.lang.String[] <a href=\"../typeannos/FldB.html\" " +
+            "title=\"annotation in typeannos\">@FldB</a> [] array2SecondOld</pre>"
+        },
+        {BUG_ID + FS + "typeannos" + FS + "DefaultScope.html",
+            "<pre><a href=\"../typeannos/FldD.html\" title=\"annotation in " +
+            "typeannos\">@FldD</a> java.lang.String <a href=\"../typeannos/" +
+            "FldC.html\" title=\"annotation in typeannos\">@FldC</a> <a href=\"" +
+            "../typeannos/FldA.html\" title=\"annotation in typeannos\">@FldA" +
+            "</a> [] <a href=\"../typeannos/FldC.html\" title=\"annotation in " +
+            "typeannos\">@FldC</a> <a href=\"../typeannos/FldB.html\" title=\"" +
+            "annotation in typeannos\">@FldB</a> [] array2Deep</pre>"
+        },
+        /* @ignore 8012173
+        {BUG_ID + FS + "typeannos" + FS + "ModifiedScoped.html",
+            "<pre>public final&nbsp;<a href=\"../typeannos/Parameterized.html\" " +
+            "title=\"class in typeannos\">Parameterized</a>&lt;<a href=\"../" +
+            "typeannos/FldA.html\" title=\"annotation in typeannos\">@FldA</a> " +
+            "<a href=\"../typeannos/Parameterized.html\" title=\"class in " +
+            "typeannos\">Parameterized</a>&lt;<a href=\"../typeannos/FldA.html\" " +
+            "title=\"annotation in typeannos\">@FldA</a> java.lang.String,<a " +
+            "href=\"../typeannos/FldB.html\" title=\"annotation in typeannos\">" +
+            "@FldB</a> java.lang.String&gt;,<a href=\"../typeannos/FldB.html\" " +
+            "title=\"annotation in typeannos\">@FldB</a> java.lang.String&gt; " +
+            "nestedParameterized</pre>"
+        },
+        */
+        {BUG_ID + FS + "typeannos" + FS + "ModifiedScoped.html",
+            "<pre>public final&nbsp;<a href=\"../typeannos/FldA.html\" " +
+            "title=\"annotation in typeannos\">@FldA</a> java.lang.String[][] " +
+            "array2</pre>"
+        },
+
         // Test for type annotations on method return types (MethodReturnType.java).
         {BUG_ID + FS + "typeannos" + FS + "MtdDefaultScope.html",
             "<pre>public&nbsp;&lt;T&gt;&nbsp;<a href=\"../typeannos/MRtnA.html\" " +
             "title=\"annotation in typeannos\">@MRtnA</a> java.lang.String" +
             "&nbsp;method()</pre>"
         },
+        {BUG_ID + FS + "typeannos" + FS + "MtdDefaultScope.html",
+            "<pre><a href=\"../typeannos/MRtnA.html\" title=\"annotation in " +
+            "typeannos\">@MRtnA</a> java.lang.String <a href=\"../typeannos/" +
+            "MRtnA.html\" title=\"annotation in typeannos\">@MRtnA</a> [] <a " +
+            "href=\"../typeannos/MRtnB.html\" title=\"annotation in typeannos\">" +
+            "@MRtnB</a> []&nbsp;array2Deep()</pre>"
+        },
+        {BUG_ID + FS + "typeannos" + FS + "MtdDefaultScope.html",
+            "<pre><a href=\"../typeannos/MRtnA.html\" title=\"annotation in " +
+            "typeannos\">@MRtnA</a> java.lang.String[][]&nbsp;array2()</pre>"
+        },
+        /* @ignore 8012173
+        {BUG_ID + FS + "typeannos" + FS + "MtdModifiedScoped.html",
+            "<pre>public final&nbsp;<a href=\"../typeannos/MtdParameterized.html\" " +
+            "title=\"class in typeannos\">MtdParameterized</a>&lt;<a href=\"../" +
+            "typeannos/MRtnA.html\" title=\"annotation in typeannos\">@MRtnA</a> " +
+            "<a href=\"../typeannos/MtdParameterized.html\" title=\"class in " +
+            "typeannos\">MtdParameterized</a>&lt;<a href=\"../typeannos/MRtnA." +
+            "html\" title=\"annotation in typeannos\">@MRtnA</a> java.lang." +
+            "String,<a href=\"../typeannos/MRtnB.html\" title=\"annotation in " +
+            "typeannos\">@MRtnB</a> java.lang.String&gt;,<a href=\"../typeannos/" +
+            "MRtnB.html\" title=\"annotation in typeannos\">@MRtnB</a> java." +
+            "lang.String&gt;&nbsp;nestedMtdParameterized()</pre>"
+        },
+        */
 
         // Test for type annotations on method type parameters (MethodTypeParameters.java).
         {BUG_ID + FS + "typeannos" + FS + "UnscopedUnmodified.html",
@@ -102,10 +205,62 @@ public class TestTypeAnnotations extends JavadocTester {
             "annotation in typeannos\">@MTyParamA</a> java.lang.String&gt;" +
             "&nbsp;void&nbsp;methodExtends()</pre>"
         },
+        /* @ignore 8012173
+        {BUG_ID + FS + "typeannos" + FS + "UnscopedUnmodified.html",
+            "<pre>&lt;K extends <a href=\"../typeannos/MTyParamA.html\" title=\"" +
+            "annotation in typeannos\">@MTyParamA</a> <a href=\"../typeannos/" +
+            "MtdTyParameterized.html\" title=\"class in typeannos\">" +
+            "MtdTyParameterized</a>&lt;<a href=\"../typeannos/MTyParamB.html\" " +
+            "title=\"annotation in typeannos\">@MTyParamB</a> java.lang.String" +
+            "&gt;&gt;&nbsp;void&nbsp;nestedExtends()</pre>"
+        },
+        */
         {BUG_ID + FS + "typeannos" + FS + "PublicModifiedMethods.html",
             "<pre>public final&nbsp;&lt;K extends <a href=\"../typeannos/" +
             "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> " +
             "java.lang.String&gt;&nbsp;void&nbsp;methodExtends()</pre>"
+        },
+        /* @ignore 8012173
+        {BUG_ID + FS + "typeannos" + FS + "PublicModifiedMethods.html",
+            "<pre>public final&nbsp;&lt;K extends <a href=\"../typeannos/" +
+            "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> " +
+            "java.lang.String,V extends <a href=\"../typeannos/MTyParamA.html\" " +
+            "title=\"annotation in typeannos\">@MTyParamA</a> <a href=\"../" +
+            "typeannos/MtdTyParameterized.html\" title=\"class in typeannos\">" +
+            "MtdTyParameterized</a>&lt;<a href=\"../typeannos/MTyParamB.html\" " +
+            "title=\"annotation in typeannos\">@MTyParamB</a> java.lang.String" +
+            "&gt;&gt;&nbsp;void&nbsp;dual()</pre>"
+        },
+        */
+
+        // Test for type annotations on parameters (Parameters.java).
+        {BUG_ID + FS + "typeannos" + FS + "Parameters.html",
+            "<pre>void&nbsp;unannotated(<a href=\"../typeannos/" +
+            "ParaParameterized.html\" title=\"class in typeannos\">" +
+            "ParaParameterized</a>&lt;java.lang.String,java.lang.String&gt;" +
+            "&nbsp;a)</pre>"
+        },
+        /* @ignore 8012173
+        {BUG_ID + FS + "typeannos" + FS + "Parameters.html",
+            "<pre>void&nbsp;nestedParaParameterized(<a href=\"../typeannos/" +
+            "ParaParameterized.html\" title=\"class in typeannos\">" +
+            "ParaParameterized</a>&lt;<a href=\"../typeannos/ParamA.html\" " +
+            "title=\"annotation in typeannos\">@ParamA</a> <a href=\"../" +
+            "typeannos/ParaParameterized.html\" title=\"class in typeannos\">" +
+            "ParaParameterized</a>&lt;<a href=\"../typeannos/ParamA.html\" " +
+            "title=\"annotation in typeannos\">@ParamA</a> java.lang.String," +
+            "<a href=\"../typeannos/ParamB.html\" title=\"annotation in " +
+            "typeannos\">@ParamB</a> java.lang.String&gt;,<a href=\"../" +
+            "typeannos/ParamB.html\" title=\"annotation in typeannos\">@ParamB" +
+            "</a> java.lang.String&gt;&nbsp;a)</pre>"
+        },
+        */
+        {BUG_ID + FS + "typeannos" + FS + "Parameters.html",
+            "<pre>void&nbsp;array2Deep(<a href=\"../typeannos/ParamA.html\" " +
+            "title=\"annotation in typeannos\">@ParamA</a> java.lang.String " +
+            "<a href=\"../typeannos/ParamA.html\" title=\"annotation in " +
+            "typeannos\">@ParamA</a> [] <a href=\"../typeannos/ParamB.html\" " +
+            "title=\"annotation in typeannos\">@ParamB</a> []&nbsp;a)</pre>"
         },
 
         // Test for type annotations on throws (Throws.java).
@@ -146,6 +301,13 @@ public class TestTypeAnnotations extends JavadocTester {
             "ThrB.html#value()\">value</a>=\"m\") java.lang.RuntimeException," + NL +
             "                    <a href=\"../typeannos/ThrA.html\" title=\"" +
             "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>"
+        },
+
+        // Test for type annotations on type parameters (TypeParameters.java).
+        {BUG_ID + FS + "typeannos" + FS + "TestMethods.html",
+            "<pre>&lt;K,V extends <a href=\"../typeannos/TyParaA.html\" title=\"" +
+            "annotation in typeannos\">@TyParaA</a> java.lang.String&gt;&nbsp;" +
+            "void&nbsp;secondAnnotated()</pre>"
         },
 
         // Test for type annotations on wildcard type (Wildcards.java).
