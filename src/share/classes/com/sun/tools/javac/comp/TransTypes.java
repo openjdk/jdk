@@ -710,8 +710,18 @@ public class TransTypes extends TreeTranslator {
 
     public void visitTypeCast(JCTypeCast tree) {
         tree.clazz = translate(tree.clazz, null);
+        Type originalTarget = tree.type;
         tree.type = erasure(tree.type);
         tree.expr = translate(tree.expr, tree.type);
+        if (originalTarget.isCompound()) {
+            Type.IntersectionClassType ict = (Type.IntersectionClassType)originalTarget;
+            for (Type c : ict.getExplicitComponents()) {
+                Type ec = erasure(c);
+                if (!types.isSameType(ec, tree.type)) {
+                    tree.expr = coerce(tree.expr, ec);
+                }
+            }
+        }
         result = tree;
     }
 
