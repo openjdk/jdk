@@ -1308,13 +1308,17 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject thisLib,
         return 0;
     }
 
+    ncomponents = srcImageP->cmodel.isDefaultCompatCM
+        ? 4
+        : srcImageP->cmodel.numComponents;
+
     /* Make sure that color order can be used for
      * re-ordering of lookup arrays.
      */
     for (i = 0; i < nbands; i++) {
         int idx = srcImageP->hints.colorOrder[i];
 
-        if (idx < 0 || idx >= nbands) {
+        if (idx < 0 || idx >= ncomponents) {
             awt_freeParsedImage(srcImageP, TRUE);
             awt_freeParsedImage(dstImageP, TRUE);
             return 0;
@@ -1322,10 +1326,6 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject thisLib,
     }
 
     lut_nbands = (*env)->GetArrayLength(env, jtableArrays);
-
-    ncomponents = srcImageP->cmodel.isDefaultCompatCM
-        ? 4
-        : srcImageP->cmodel.numComponents;
 
     if (lut_nbands > ncomponents) {
         lut_nbands = ncomponents;
