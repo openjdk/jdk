@@ -163,13 +163,15 @@ public class LCMSTransform implements ColorTransform {
     public void colorConvert(BufferedImage src, BufferedImage dst) {
         LCMSImageLayout srcIL, dstIL;
 
-        dstIL = LCMSImageLayout.createImageLayout(dst);
+        if (!dst.getColorModel().hasAlpha()) {
+            dstIL = LCMSImageLayout.createImageLayout(dst);
 
-        if (dstIL != null) {
-            srcIL = LCMSImageLayout.createImageLayout(src);
-            if (srcIL != null) {
-                doTransform(srcIL, dstIL);
-                return;
+            if (dstIL != null) {
+                srcIL = LCMSImageLayout.createImageLayout(src);
+                if (srcIL != null) {
+                    doTransform(srcIL, dstIL);
+                    return;
+                }
             }
         }
 
