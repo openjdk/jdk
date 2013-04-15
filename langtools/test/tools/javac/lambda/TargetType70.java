@@ -23,29 +23,30 @@
 
 /*
  * @test
- * @bug 8010303
- * @summary Graph inference: missing incorporation step causes spurious inference error
- * @compile TargetType69.java
+ * @bug 8011028
+ * @summary lang/INFR/infr001/infr00101md/infr00101md.java fails to compile after switch to JDK8-b82
+ * @compile TargetType70.java
  */
-import java.util.*;
+class TargetType70  {
 
-class TargetType69 {
+    static class Sup {}
+    static class Sub extends Sup {}
 
-    interface Function<X,Y> {
-        Y m(X x);
+    interface I<T extends GenSup<U>, U> {
+        T m(U o);
     }
 
-    abstract class TabulationAssertion<T, U> { }
-
-    class GroupedMapAssertion<K, M1 extends Map<K, ?>> extends TabulationAssertion<Integer, M1> {
-        GroupedMapAssertion(Function<Integer, K> classifier) { }
+    static class GenSup<T> {
+        GenSup(T f) { }
     }
 
+    static class GenSub<T> extends GenSup<T> {
+        GenSub(T f) { super(f); }
+    }
 
-    <T, M2 extends Map> void exerciseMapTabulation(Function<T, ? extends M2> collector,
-                                                             TabulationAssertion<T, M2> assertion)  { }
+    <T extends Sup> void m(I<? extends GenSup<T>, T> o1, T o2) { }
 
-    void test(Function<Integer, Integer> classifier, Function<Integer, Map<Integer, List<Integer>>> coll) {
-        exerciseMapTabulation(coll, new GroupedMapAssertion<>(classifier));
+    void test(Sub sub) {
+        m(GenSub::new, sub);
     }
 }
