@@ -1182,8 +1182,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
                             "\nKFM's focused window: " + focusedWindow);
             }
 
-            // See 6522725, 6613426.
-            if (target == realNativeFocusedWindow) {
+            // A workaround for Metacity. See 6522725, 6613426, 7147075.
+            if (target == realNativeFocusedWindow && XWM.getWMID() == XWM.METACITY_WM) {
                 if (focusLog.isLoggable(PlatformLogger.FINE)) {
                     focusLog.fine("The window is already natively focused.");
                 }
