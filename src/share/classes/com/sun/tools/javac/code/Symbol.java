@@ -454,8 +454,7 @@ public abstract class Symbol implements Element {
     }
 
     public Set<Modifier> getModifiers() {
-        long flags = flags();
-        return Flags.asModifierSet((flags & DEFAULT) != 0 ? flags & ~ABSTRACT : flags);
+        return Flags.asModifierSet(flags());
     }
 
     public Name getSimpleName() {
@@ -1126,6 +1125,12 @@ public abstract class Symbol implements Element {
             };
             m.code = code;
             return m;
+        }
+
+        @Override
+        public Set<Modifier> getModifiers() {
+            long flags = flags();
+            return Flags.asModifierSet((flags & DEFAULT) != 0 ? flags & ~ABSTRACT : flags);
         }
 
         /** The Java source which this symbol represents.
