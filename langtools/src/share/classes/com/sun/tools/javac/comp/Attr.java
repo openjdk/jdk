@@ -2455,20 +2455,24 @@ public class Attr extends JCTree.Visitor {
                                 argtypes.append(param.vartype.type) :
                                 argtypes.append(syms.errType);
                     }
-                    return new MethodType(argtypes, Type.recoveryType, List.<Type>nil(), syms.methodClass);
+                    return new MethodType(argtypes, Type.recoveryType,
+                            List.of(syms.throwableType), syms.methodClass);
                 case REFERENCE:
-                    return new MethodType(List.<Type>nil(), Type.recoveryType, List.<Type>nil(), syms.methodClass);
+                    return new MethodType(List.<Type>nil(), Type.recoveryType,
+                            List.of(syms.throwableType), syms.methodClass);
                 default:
                     Assert.error("Cannot get here!");
             }
             return null;
         }
 
-        private void checkAccessibleTypes(final DiagnosticPosition pos, final Env<AttrContext> env, final InferenceContext inferenceContext, final Type... ts) {
+        private void checkAccessibleTypes(final DiagnosticPosition pos, final Env<AttrContext> env,
+                final InferenceContext inferenceContext, final Type... ts) {
             checkAccessibleTypes(pos, env, inferenceContext, List.from(ts));
         }
 
-        private void checkAccessibleTypes(final DiagnosticPosition pos, final Env<AttrContext> env, final InferenceContext inferenceContext, final List<Type> ts) {
+        private void checkAccessibleTypes(final DiagnosticPosition pos, final Env<AttrContext> env,
+                final InferenceContext inferenceContext, final List<Type> ts) {
             if (inferenceContext.free(ts)) {
                 inferenceContext.addFreeTypeListener(ts, new FreeTypeListener() {
                     @Override
