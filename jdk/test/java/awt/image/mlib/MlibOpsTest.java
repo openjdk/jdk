@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6556332 8011992
+ * @bug     6556332 8011992 8012112
  * @summary Test verifies that on-demnad loading of medialib library does
  *          not break imageing ops based on this library.
  * @run     main MlibOpsTest
