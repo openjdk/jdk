@@ -148,6 +148,7 @@ public class Attr extends JCTree.Visitor {
         varInfo = new ResultInfo(VAR, Type.noType);
         unknownExprInfo = new ResultInfo(VAL, Type.noType);
         unknownTypeInfo = new ResultInfo(TYP, Type.noType);
+        unknownTypeExprInfo = new ResultInfo(Kinds.TYP | Kinds.VAL, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
     }
 
@@ -559,6 +560,7 @@ public class Attr extends JCTree.Visitor {
     final ResultInfo varInfo;
     final ResultInfo unknownExprInfo;
     final ResultInfo unknownTypeInfo;
+    final ResultInfo unknownTypeExprInfo;
     final ResultInfo recoveryInfo;
 
     Type pt() {
@@ -667,7 +669,7 @@ public class Attr extends JCTree.Visitor {
     List<Type> attribArgs(List<JCExpression> trees, Env<AttrContext> env) {
         ListBuffer<Type> argtypes = new ListBuffer<Type>();
         for (JCExpression arg : trees) {
-            Type argtype = allowPoly && TreeInfo.isPoly(arg, env.tree) ?
+            Type argtype = allowPoly && deferredAttr.isDeferred(env, arg) ?
                     deferredAttr.new DeferredType(arg, env) :
                     chk.checkNonVoid(arg, attribExpr(arg, env, Infer.anyPoly));
             argtypes.append(argtype);
@@ -2989,7 +2991,8 @@ public class Attr extends JCTree.Visitor {
         Env<AttrContext> localEnv = env.dup(tree);
         //should we propagate the target type?
         final ResultInfo castInfo;
-        final boolean isPoly = TreeInfo.isPoly(tree.expr, tree);
+        JCExpression expr = TreeInfo.skipParens(tree.expr);
+        boolean isPoly = expr.hasTag(LAMBDA) || expr.hasTag(REFERENCE);
         if (isPoly) {
             //expression is a poly - we need to propagate target type info
             castInfo = new ResultInfo(VAL, clazztype, new Check.NestedCheckContext(resultInfo.checkContext) {
