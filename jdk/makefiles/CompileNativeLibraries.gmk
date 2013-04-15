@@ -1213,7 +1213,6 @@ BUILD_LIBRARIES += $(BUILD_LIBJSDT)
 
 ##########################################################################################
 
-ifdef OPENJDK
     # TODO: Update awt lib path when awt is converted
     $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS,\
                 LIBRARY:=lcms,\
@@ -1246,7 +1245,6 @@ ifdef OPENJDK
     BUILD_LIBRARIES += $(BUILD_LIBLCMS)
 
     $(BUILD_LIBLCMS) : $(BUILD_LIBAWT)
-endif
 
 ##########################################################################################
 
