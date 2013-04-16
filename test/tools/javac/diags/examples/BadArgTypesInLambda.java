@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,18 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req
-// key: compiler.misc.secondary.bound.must.be.marker.intf
+// key: compiler.err.cant.apply.symbol
+// key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.misc.bad.arg.types.in.lambda
 
-class SecondaryBoundMustBeMarkerInterface {
-    Runnable r = (Runnable & Comparable<?>)()->{};
+class BadArgTypesInLambda {
+    interface SAM {
+        void m(Integer i);
+    }
+
+    void g(SAM s) { }
+
+    void test() {
+        g(x->{ String s = x; });
+    }
 }

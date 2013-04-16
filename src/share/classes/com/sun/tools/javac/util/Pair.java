@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.Objects;
+
 /** A generic class for pairs.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -46,15 +48,11 @@ public class Pair<A, B> {
         return "Pair[" + fst + "," + snd + "]";
     }
 
-    private static boolean equals(Object x, Object y) {
-        return (x == null && y == null) || (x != null && x.equals(y));
-    }
-
     public boolean equals(Object other) {
         return
             other instanceof Pair<?,?> &&
-            equals(fst, ((Pair<?,?>)other).fst) &&
-            equals(snd, ((Pair<?,?>)other).snd);
+            Objects.equals(fst, ((Pair<?,?>)other).fst) &&
+            Objects.equals(snd, ((Pair<?,?>)other).snd);
     }
 
     public int hashCode() {
