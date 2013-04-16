@@ -97,6 +97,14 @@ public abstract class SunToolkit extends Toolkit
      */
     public final static int MAX_BUTTONS_SUPPORTED = 20;
 
+    /**
+     * Creates and initializes EventQueue instance for the specified
+     * AppContext.
+     * Note that event queue must be created from createNewAppContext()
+     * only in order to ensure that EventQueue constructor obtains
+     * the correct AppContext.
+     * @param appContext AppContext to associate with the event queue
+     */
     private static void initEQ(AppContext appContext) {
         EventQueue eventQueue;
 
