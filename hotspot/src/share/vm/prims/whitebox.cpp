@@ -237,10 +237,10 @@ WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject meth
 WB_END
 
 
-WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method))
+WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  mh->set_not_compilable();
+  mh->set_not_compilable(comp_level, true /* report */, "WhiteBox");
 WB_END
 
 WB_ENTRY(jboolean, WB_TestSetDontInlineMethod(JNIEnv* env, jobject o, jobject method, jboolean value))
@@ -398,28 +398,28 @@ static JNINativeMethod methods[] = {
   {CC"NMTWaitForDataMerge", CC"()Z",                  (void*)&WB_NMTWaitForDataMerge},
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
-  {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Method;)I",
+  {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;)I",
                                                       (void*)&WB_DeoptimizeMethod  },
-  {CC"isMethodCompiled",   CC"(Ljava/lang/reflect/Method;)Z",
+  {CC"isMethodCompiled",   CC"(Ljava/lang/reflect/Executable;)Z",
                                                       (void*)&WB_IsMethodCompiled  },
-  {CC"isMethodCompilable", CC"(Ljava/lang/reflect/Method;I)Z",
+  {CC"isMethodCompilable", CC"(Ljava/lang/reflect/Executable;I)Z",
                                                       (void*)&WB_IsMethodCompilable},
   {CC"isMethodQueuedForCompilation",
-      CC"(Ljava/lang/reflect/Method;)Z",              (void*)&WB_IsMethodQueuedForCompilation},
+      CC"(Ljava/lang/reflect/Executable;)Z",          (void*)&WB_IsMethodQueuedForCompilation},
   {CC"makeMethodNotCompilable",
-      CC"(Ljava/lang/reflect/Method;)V",              (void*)&WB_MakeMethodNotCompilable},
+      CC"(Ljava/lang/reflect/Executable;I)V",         (void*)&WB_MakeMethodNotCompilable},
   {CC"testSetDontInlineMethod",
-      CC"(Ljava/lang/reflect/Method;Z)Z",             (void*)&WB_TestSetDontInlineMethod},
+      CC"(Ljava/lang/reflect/Executable;Z)Z",         (void*)&WB_TestSetDontInlineMethod},
   {CC"getMethodCompilationLevel",
-      CC"(Ljava/lang/reflect/Method;)I",              (void*)&WB_GetMethodCompilationLevel},
+      CC"(Ljava/lang/reflect/Executable;)I",          (void*)&WB_GetMethodCompilationLevel},
   {CC"getCompileQueuesSize",
       CC"()I",                                        (void*)&WB_GetCompileQueuesSize},
   {CC"testSetForceInlineMethod",
-      CC"(Ljava/lang/reflect/Method;Z)Z",             (void*)&WB_TestSetForceInlineMethod},
+      CC"(Ljava/lang/reflect/Executable;Z)Z",         (void*)&WB_TestSetForceInlineMethod},
   {CC"enqueueMethodForCompilation",
-      CC"(Ljava/lang/reflect/Method;I)Z",             (void*)&WB_EnqueueMethodForCompilation},
+      CC"(Ljava/lang/reflect/Executable;I)Z",         (void*)&WB_EnqueueMethodForCompilation},
   {CC"clearMethodState",
-      CC"(Ljava/lang/reflect/Method;)V",              (void*)&WB_ClearMethodState},
+      CC"(Ljava/lang/reflect/Executable;)V",          (void*)&WB_ClearMethodState},
   {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
 };
