@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,7 +770,7 @@ public class JavaTokenizer {
     * (which is treated as the beginning of the first line).
     * Stops positioned at the closing '/'.
     */
-    protected class BasicComment<U extends UnicodeReader> implements Comment {
+    protected static class BasicComment<U extends UnicodeReader> implements Comment {
 
         CommentStyle cs;
         U comment_reader;

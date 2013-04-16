@@ -314,6 +314,7 @@ public class Flags {
                                           modifiers.add(Modifier.SYNCHRONIZED);
             if (0 != (flags & NATIVE))    modifiers.add(Modifier.NATIVE);
             if (0 != (flags & STRICTFP))  modifiers.add(Modifier.STRICTFP);
+            if (0 != (flags & DEFAULT))   modifiers.add(Modifier.DEFAULT);
             modifiers = Collections.unmodifiableSet(modifiers);
             modifierSets.put(flags, modifiers);
         }

@@ -206,7 +206,7 @@ public class JavadocTokenizer extends JavaTokenizer {
          }
      }
 
-     protected class JavadocComment extends JavaTokenizer.BasicComment<DocReader> {
+     protected static class JavadocComment extends JavaTokenizer.BasicComment<DocReader> {
 
         /**
         * Translated and stripped contents of doc comment
