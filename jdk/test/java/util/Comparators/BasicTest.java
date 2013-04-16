@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8001667
- * @run testng ComparatorsTest
+ * @bug 8001667 8010279
+ * @run testng BasicTest
  */
 
 import java.util.Comparator;
@@ -33,6 +33,7 @@ import java.util.AbstractMap;
 import java.util.Map;
 import org.testng.annotations.Test;
 
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
@@ -41,12 +42,13 @@ import java.util.function.ToDoubleFunction;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.fail;
 
 /**
  * Unit tests for helper methods in Comparators
  */
 @Test(groups = "unit")
-public class ComparatorsTest {
+public class BasicTest {
     private static class Thing {
         public final int intField;
         public final long longField;
@@ -95,7 +97,7 @@ public class ComparatorsTest {
         Thing[] things = new Thing[intValues.length];
         for (int i=0; i<intValues.length; i++)
             things[i] = new Thing(intValues[i], 0L, 0.0, null);
-        Comparator<Thing> comp = Comparators.comparing(new ToIntFunction<ComparatorsTest.Thing>() {
+        Comparator<Thing> comp = Comparators.comparing(new ToIntFunction<BasicTest.Thing>() {
             @Override
             public int applyAsInt(Thing thing) {
                 return thing.getIntField();
@@ -109,7 +111,7 @@ public class ComparatorsTest {
         Thing[] things = new Thing[longValues.length];
         for (int i=0; i<longValues.length; i++)
             things[i] = new Thing(0, longValues[i], 0.0, null);
-        Comparator<Thing> comp = Comparators.comparing(new ToLongFunction<ComparatorsTest.Thing>() {
+        Comparator<Thing> comp = Comparators.comparing(new ToLongFunction<BasicTest.Thing>() {
             @Override
             public long applyAsLong(Thing thing) {
                 return thing.getLongField();
@@ -123,7 +125,7 @@ public class ComparatorsTest {
         Thing[] things = new Thing[doubleValues.length];
         for (int i=0; i<doubleValues.length; i++)
             things[i] = new Thing(0, 0L, doubleValues[i], null);
-        Comparator<Thing> comp = Comparators.comparing(new ToDoubleFunction<ComparatorsTest.Thing>() {
+        Comparator<Thing> comp = Comparators.comparing(new ToDoubleFunction<BasicTest.Thing>() {
             @Override
             public double applyAsDouble(Thing thing) {
                 return thing.getDoubleField();
@@ -349,5 +351,62 @@ public class ComparatorsTest {
                                     (ToIntFunction<People>) People::getAge))
                               .apply(people[0], people[1]),
                    people[1]);
+    }
+
+    public void testNulls() {
+        try {
+            Comparators.<String>naturalOrder().compare("abc", (String) null);
+            fail("expected NPE with naturalOrder");
+        } catch (NullPointerException npe) {}
+        try {
+            Comparators.<String>naturalOrder().compare((String) null, "abc");
+            fail("expected NPE with naturalOrder");
+        } catch (NullPointerException npe) {}
+
+        try {
+            Comparators.<String>reverseOrder().compare("abc", (String) null);
+            fail("expected NPE with naturalOrder");
+        } catch (NullPointerException npe) {}
+        try {
+            Comparators.<String>reverseOrder().compare((String) null, "abc");
+            fail("expected NPE with naturalOrder");
+        } catch (NullPointerException npe) {}
+
+        try {
+            Comparator<Map.Entry<String, String>> cmp = Comparators.byKey(null);
+            fail("byKey(null) should throw NPE");
+        } catch (NullPointerException npe) {}
+
+        try {
+            Comparator<Map.Entry<String, String>> cmp = Comparators.byValue(null);
+            fail("byValue(null) should throw NPE");
+        } catch (NullPointerException npe) {}
+
+        try {
+            Comparator<People> cmp = Comparators.comparing((Function<People, String>) null);
+            fail("comparing(null) should throw NPE");
+        } catch (NullPointerException npe) {}
+        try {
+            Comparator<People> cmp = Comparators.comparing((ToIntFunction<People>) null);
+            fail("comparing(null) should throw NPE");
+        } catch (NullPointerException npe) {}
+        try {
+            Comparator<People> cmp = Comparators.comparing((ToLongFunction<People>) null);
+            fail("comparing(null) should throw NPE");
+        } catch (NullPointerException npe) {}
+        try {
+            Comparator<People> cmp = Comparators.comparing((ToDoubleFunction<People>) null);
+            fail("comparing(null) should throw NPE");
+        } catch (NullPointerException npe) {}
+
+        try {
+            BinaryOperator<String> op = Comparators.lesserOf(null);
+            fail("lesserOf(null) should throw NPE");
+        } catch (NullPointerException npe) {}
+
+        try {
+            BinaryOperator<String> op = Comparators.greaterOf(null);
+            fail("lesserOf(null) should throw NPE");
+        } catch (NullPointerException npe) {}
     }
 }

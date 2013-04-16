@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,38 @@
  * questions.
  */
 
-#ifndef _JAVASOFT_JNI_MD_H_
-#define _JAVASOFT_JNI_MD_H_
+/*
+ * @test
+ * @bug 8008941
+ * @summary Generated Lambda implementing class should be synthetic
+ */
 
-#ifndef __has_attribute
-  #define __has_attribute(x) 0
-#endif
-#if (defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4) && (__GNUC_MINOR__ > 2))) || __has_attribute(visibility)
-  #define JNIEXPORT     __attribute__((visibility("default")))
-  #define JNIIMPORT     __attribute__((visibility("default")))
-#else
-  #define JNIEXPORT
-  #define JNIIMPORT
-#endif
+import java.lang.reflect.Modifier;
+import java.io.Serializable;
 
-#define JNICALL
+public class LambdaClassSynthetic {
 
-typedef int jint;
-#ifdef _LP64 /* 64-bit Solaris */
-typedef long jlong;
-#else
-typedef long long jlong;
-#endif
+    interface I {
+        void m();
+    }
 
-typedef signed char jbyte;
+    interface Iser extends Serializable {
+        void m();
+    }
 
-#endif /* !_JAVASOFT_JNI_MD_H_ */
+    static void assertTrue(boolean cond) {
+        if (!cond)
+            throw new AssertionError();
+    }
+
+    public static void main(String[] args) throws Exception {
+        new LambdaClassFinal().test();
+    }
+
+    void test() throws Exception {
+        I lam = () -> { };
+        assertTrue(lam.getClass().isSynthetic());
+        Iser slam = () -> { };
+        assertTrue(slam.getClass().isSynthetic());
+    }
+}

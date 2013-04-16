@@ -94,13 +94,13 @@ typedef struct {
 
 JNIEXPORT void JNICALL nptInitialize
                        (NptEnv **pnpt, char *nptVersion, char *options);
-typedef JNIEXPORT void (JNICALL *NptInitialize)
-                       (NptEnv **pnpt, char *nptVersion, char *options);
+typedef void (JNICALL *NptInitialize)
+             (NptEnv **pnpt, char *nptVersion, char *options);
 
 JNIEXPORT void JNICALL nptTerminate
                        (NptEnv* npt, char *options);
-typedef JNIEXPORT void (JNICALL *NptTerminate)
-                       (NptEnv* npt, char *options);
+typedef void (JNICALL *NptTerminate)
+             (NptEnv* npt, char *options);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -217,7 +217,7 @@ SUNWprivate_1.1 {
 		Java_java_lang_Throwable_fillInStackTrace;
                 Java_java_lang_Throwable_getStackTraceDepth;
                 Java_java_lang_Throwable_getStackTraceElement;
-		Java_java_lang_UNIXProcess_initIDs;
+		Java_java_lang_UNIXProcess_init;
 		Java_java_lang_UNIXProcess_waitForProcessExit;
 		Java_java_lang_UNIXProcess_forkAndExec;
 		Java_java_lang_UNIXProcess_destroyProcess;
