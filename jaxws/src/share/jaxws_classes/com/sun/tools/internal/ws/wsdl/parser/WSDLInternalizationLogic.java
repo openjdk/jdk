@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.tools.internal.ws.wsdl.parser;
 
-import com.sun.tools.internal.ws.wscompile.WsimportOptions;
 import com.sun.tools.internal.ws.wsdl.document.WSDLConstants;
 import com.sun.tools.internal.ws.wsdl.document.jaxws.JAXWSBindingsConstants;
 import com.sun.tools.internal.ws.wsdl.document.schema.SchemaConstants;
@@ -49,11 +48,12 @@ public class WSDLInternalizationLogic implements InternalizationLogic{
             super(parent);
         }
 
+        @Override
         protected String findExternalResource( String nsURI, String localName, Attributes atts) {
             if(WSDLConstants.NS_WSDL.equals(nsURI) && "import".equals(localName)){
-                if(parent.isExtensionMode()){
-                    //TODO: add support for importing schema using wsdl:import
-                }
+//                if(parent.isExtensionMode()){
+//                    //TODO: add support for importing schema using wsdl:import
+//                }
                 return atts.getValue("location");
             }
 
@@ -67,14 +67,17 @@ public class WSDLInternalizationLogic implements InternalizationLogic{
             return null;
         }
     }
+    @Override
     public XMLFilterImpl createExternalReferenceFinder(DOMForest parent) {
         return new ReferenceFinder(parent);
     }
 
+    @Override
     public boolean checkIfValidTargetNode(DOMForest parent, Element bindings, Element target) {
         return false;
     }
 
+    @Override
     public Element refineSchemaTarget(Element target) {
         // look for existing xs:annotation
         Element annotation = DOMUtils.getFirstChildElement(target, Constants.NS_XSD, "annotation");
@@ -92,6 +95,7 @@ public class WSDLInternalizationLogic implements InternalizationLogic{
 
     }
 
+    @Override
     public Element refineWSDLTarget(Element target){
         // look for existing xs:annotation
         Element JAXWSBindings = DOMUtils.getFirstChildElement(target, JAXWSBindingsConstants.NS_JAXWS_BINDINGS, "bindings");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,19 @@ import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.Closeable;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.ComponentFeature;
+import com.sun.xml.internal.ws.api.ComponentsFeature;
 import com.sun.xml.internal.ws.api.ComponentFeature.Target;
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.WSService;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 import com.sun.xml.internal.ws.api.client.ServiceInterceptor;
 import com.sun.xml.internal.ws.api.client.ServiceInterceptorFactory;
-import com.sun.xml.internal.ws.api.databinding.DatabindingFactory;
 import com.sun.xml.internal.ws.api.databinding.DatabindingConfig;
+import com.sun.xml.internal.ws.api.databinding.DatabindingFactory;
+import com.sun.xml.internal.ws.api.databinding.MetadataReader;
 import com.sun.xml.internal.ws.api.model.SEIModel;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLService;
-import com.sun.xml.internal.ws.api.pipe.*;
+import com.sun.xml.internal.ws.api.pipe.Stubs;
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.api.server.ContainerResolver;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
@@ -50,9 +51,10 @@ import com.sun.xml.internal.ws.binding.WebServiceFeatureList;
 import com.sun.xml.internal.ws.client.HandlerConfigurator.AnnotationConfigurator;
 import com.sun.xml.internal.ws.client.HandlerConfigurator.HandlerResolverImpl;
 import com.sun.xml.internal.ws.client.sei.SEIStub;
+
 import com.sun.xml.internal.ws.developer.MemberSubmissionAddressingFeature;
-import com.sun.xml.internal.ws.developer.WSBindingProvider;
 import com.sun.xml.internal.ws.developer.UsesJAXBContextFeature;
+import com.sun.xml.internal.ws.developer.WSBindingProvider;
 import com.sun.xml.internal.ws.model.RuntimeModeler;
 import com.sun.xml.internal.ws.model.SOAPSEIModel;
 import com.sun.xml.internal.ws.model.wsdl.WSDLModelImpl;
@@ -64,9 +66,7 @@ import com.sun.xml.internal.ws.resources.ProviderApiMessages;
 import com.sun.xml.internal.ws.util.JAXWSUtils;
 import com.sun.xml.internal.ws.util.ServiceConfigurationError;
 import com.sun.xml.internal.ws.util.ServiceFinder;
-import static com.sun.xml.internal.ws.util.xml.XmlUtil.createDefaultCatalogResolver;
 import com.sun.xml.internal.ws.wsdl.parser.RuntimeWSDLParser;
-
 import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
 
@@ -77,7 +77,13 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.ws.*;
+import javax.xml.ws.BindingProvider;
+import javax.xml.ws.Dispatch;
+import javax.xml.ws.EndpointReference;
+import javax.xml.ws.Service;
+import javax.xml.ws.WebServiceClient;
+import javax.xml.ws.WebServiceException;
+import javax.xml.ws.WebServiceFeature;
 import javax.xml.ws.handler.HandlerResolver;
 import javax.xml.ws.soap.AddressingFeature;
 import java.io.IOException;
@@ -87,9 +93,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
+
+import static com.sun.xml.internal.ws.util.xml.XmlUtil.createDefaultCatalogResolver;
 
 /**
  * <code>Service</code> objects provide the client view of a Web service.
@@ -177,6 +190,10 @@ public class WSServiceDelegate extends WSService {
 
 
     public WSServiceDelegate(URL wsdlDocumentLocation, QName serviceName, Class<? extends Service> serviceClass, WebServiceFeature... features) {
+        this(wsdlDocumentLocation, serviceName, serviceClass, new WebServiceFeatureList(features));
+    }
+
+    protected WSServiceDelegate(URL wsdlDocumentLocation, QName serviceName, Class<? extends Service> serviceClass, WebServiceFeatureList features) {
         this(
             wsdlDocumentLocation==null ? null : new StreamSource(wsdlDocumentLocation.toExternalForm()),
             serviceName,serviceClass, features);
@@ -187,6 +204,14 @@ public class WSServiceDelegate extends WSService {
      *      Either {@link Service}.class or other generated service-derived classes.
      */
     public WSServiceDelegate(@Nullable Source wsdl, @NotNull QName serviceName, @NotNull final Class<? extends Service> serviceClass, WebServiceFeature... features) {
+        this(wsdl, serviceName, serviceClass, new WebServiceFeatureList(features));
+    }
+
+    /**
+     * @param serviceClass
+     *      Either {@link Service}.class or other generated service-derived classes.
+     */
+    protected WSServiceDelegate(@Nullable Source wsdl, @NotNull QName serviceName, @NotNull final Class<? extends Service> serviceClass, WebServiceFeatureList features) {
         this(wsdl, null, serviceName, serviceClass, features);
     }
 
@@ -195,15 +220,26 @@ public class WSServiceDelegate extends WSService {
      *      Either {@link Service}.class or other generated service-derived classes.
      */
     public WSServiceDelegate(@Nullable Source wsdl, @Nullable WSDLServiceImpl service, @NotNull QName serviceName, @NotNull final Class<? extends Service> serviceClass, WebServiceFeature... features) {
-        //we cant create a Service without serviceName
-        if (serviceName == null)
-            throw new WebServiceException(ClientMessages.INVALID_SERVICE_NAME_NULL(serviceName));
+        this(wsdl, service, serviceName, serviceClass, new WebServiceFeatureList(features));
+    }
 
-        this.features = new WebServiceFeatureList(features);
+    /**
+     * @param serviceClass
+     *      Either {@link Service}.class or other generated service-derived classes.
+     */
+    public WSServiceDelegate(@Nullable Source wsdl, @Nullable WSDLServiceImpl service, @NotNull QName serviceName, @NotNull final Class<? extends Service> serviceClass, WebServiceFeatureList features) {
+        //we cant create a Service without serviceName
+        if (serviceName == null) {
+            throw new WebServiceException(ClientMessages.INVALID_SERVICE_NAME_NULL(null));
+        }
+
+        this.features = features;
 
         InitParams initParams = INIT_PARAMS.get();
         INIT_PARAMS.set(null);  // mark it as consumed
-        if(initParams==null)    initParams = EMPTY_PARAMS;
+        if(initParams==null) {
+            initParams = EMPTY_PARAMS;
+        }
 
         this.serviceName = serviceName;
         this.serviceClass = serviceClass;
@@ -221,8 +257,24 @@ public class WSServiceDelegate extends WSService {
                     break;
                 case CONTAINER:
                     this.container.getComponents().add(cf.getComponent());
+                    break;
                 default:
                     throw new IllegalArgumentException();
+            }
+        }
+        ComponentsFeature csf = this.features.get(ComponentsFeature.class);
+        if (csf != null) {
+            for (ComponentFeature cfi : csf.getComponentFeatures()) {
+                switch(cfi.getTarget()) {
+                    case SERVICE:
+                        getComponents().add(cfi.getComponent());
+                        break;
+                    case CONTAINER:
+                        this.container.getComponents().add(cfi.getComponent());
+                        break;
+                    default:
+                        throw new IllegalArgumentException();
+                }
             }
         }
 
@@ -354,10 +406,11 @@ public class WSServiceDelegate extends WSService {
 
     public <T> T getPort(WSEndpointReference wsepr, Class<T> portInterface, WebServiceFeature... features) {
         //get the portType from SEI, so that it can be used if EPR does n't have endpointName
-        QName portTypeName = RuntimeModeler.getPortTypeName(portInterface);
+        WebServiceFeatureList featureList = new WebServiceFeatureList(features);
+        QName portTypeName = RuntimeModeler.getPortTypeName(portInterface, getMetadadaReader(featureList, portInterface.getClassLoader()));
         //if port name is not specified in EPR, it will use portTypeName to get it from the WSDL model.
         QName portName = getPortNameFromEPR(wsepr, portTypeName);
-        return getPort(wsepr,portName,portInterface,new WebServiceFeatureList(features));
+        return getPort(wsepr,portName,portInterface, featureList);
     }
 
     protected <T> T getPort(WSEndpointReference wsepr, QName portName, Class<T> portInterface,
@@ -366,29 +419,38 @@ public class WSServiceDelegate extends WSService {
         if (cf != null && !Target.STUB.equals(cf.getTarget())) {
             throw new IllegalArgumentException();
         }
+        ComponentsFeature csf = features.get(ComponentsFeature.class);
+        if (csf != null) {
+            for (ComponentFeature cfi : csf.getComponentFeatures()) {
+                if (!Target.STUB.equals(cfi.getTarget()))
+                    throw new IllegalArgumentException();
+            }
+        }
         features.addAll(this.features);
 
         SEIPortInfo spi = addSEI(portName, portInterface, features);
         return createEndpointIFBaseProxy(wsepr,portName,portInterface,features, spi);
     }
 
+    @Override
     public <T> T getPort(Class<T> portInterface, WebServiceFeature... features) {
         //get the portType from SEI
-        QName portTypeName = RuntimeModeler.getPortTypeName(portInterface);
-        WSDLServiceImpl wsdlService = this.wsdlService;
-        if(wsdlService == null) {
+        QName portTypeName = RuntimeModeler.getPortTypeName(portInterface, getMetadadaReader(new WebServiceFeatureList(features), portInterface.getClassLoader()));
+        WSDLServiceImpl tmpWsdlService = this.wsdlService;
+        if (tmpWsdlService == null) {
             // assigning it to local variable and not setting it back to this.wsdlService intentionally
             // as we don't want to include the service instance with information gathered from sei
-            wsdlService = getWSDLModelfromSEI(portInterface);
+            tmpWsdlService = getWSDLModelfromSEI(portInterface);
             //still null? throw error need wsdl metadata to create a proxy
-            if(wsdlService == null) {
+            if(tmpWsdlService == null) {
                 throw new WebServiceException(ProviderApiMessages.NO_WSDL_NO_PORT(portInterface.getName()));
             }
         }
         //get the first port corresponding to the SEI
-        WSDLPortImpl port = wsdlService.getMatchingPort(portTypeName);
-        if (port == null)
-                throw new WebServiceException(ClientMessages.UNDEFINED_PORT_TYPE(portTypeName));
+        WSDLPortImpl port = tmpWsdlService.getMatchingPort(portTypeName);
+        if (port == null) {
+            throw new WebServiceException(ClientMessages.UNDEFINED_PORT_TYPE(portTypeName));
+        }
         QName portName = port.getName();
         return getPort(portName, portInterface,features);
     }
@@ -423,6 +485,13 @@ public class WSServiceDelegate extends WSService {
         ComponentFeature cf = features.get(ComponentFeature.class);
         if (cf != null && !Target.STUB.equals(cf.getTarget())) {
             throw new IllegalArgumentException();
+        }
+        ComponentsFeature csf = features.get(ComponentsFeature.class);
+        if (csf != null) {
+            for (ComponentFeature cfi : csf.getComponentFeatures()) {
+                if (!Target.STUB.equals(cfi.getTarget()))
+                    throw new IllegalArgumentException();
+            }
         }
         features.addAll(this.features);
 
@@ -506,6 +575,13 @@ public class WSServiceDelegate extends WSService {
         ComponentFeature cf = features.get(ComponentFeature.class);
         if (cf != null && !Target.STUB.equals(cf.getTarget())) {
             throw new IllegalArgumentException();
+        }
+        ComponentsFeature csf = features.get(ComponentsFeature.class);
+        if (csf != null) {
+            for (ComponentFeature cfi : csf.getComponentFeatures()) {
+                if (!Target.STUB.equals(cfi.getTarget()))
+                    throw new IllegalArgumentException();
+            }
         }
         features.addAll(this.features);
 
@@ -664,6 +740,7 @@ public class WSServiceDelegate extends WSService {
         return ports.keySet().iterator();
     }
 
+    @Override
     public URL getWSDLDocumentLocation() {
         if(wsdlService==null)   return null;
         try {
@@ -676,8 +753,9 @@ public class WSServiceDelegate extends WSService {
     private <T> T createEndpointIFBaseProxy(@Nullable WSEndpointReference epr,QName portName, Class<T> portInterface,
                                             WebServiceFeatureList webServiceFeatures, SEIPortInfo eif) {
         //fail if service doesnt have WSDL
-        if (wsdlService == null)
+        if (wsdlService == null) {
             throw new WebServiceException(ClientMessages.INVALID_SERVICE_NO_WSDL(serviceName));
+        }
 
         if (wsdlService.get(portName)==null) {
             throw new WebServiceException(
@@ -706,7 +784,6 @@ public class WSServiceDelegate extends WSService {
     }
 
     protected InvocationHandler getStubHandler(BindingImpl binding, SEIPortInfo eif, @Nullable WSEndpointReference epr) {
-        SEIPortInfo spi = (SEIPortInfo) eif;
         return new SEIStub(eif, binding, eif.model, epr);
     }
 
@@ -715,8 +792,9 @@ public class WSServiceDelegate extends WSService {
      */
     private StringBuilder buildWsdlPortNames() {
         Set<QName> wsdlPortNames = new HashSet<QName>();
-        for (WSDLPortImpl port : wsdlService.getPorts())
+        for (WSDLPortImpl port : wsdlService.getPorts()) {
             wsdlPortNames.add(port.getName());
+        }
         return buildNameList(wsdlPortNames);
     }
 
@@ -764,9 +842,22 @@ public class WSServiceDelegate extends WSService {
                 config.setClassLoader(portInterface.getClassLoader());
                 config.getMappingInfo().setPortName(portName);
 
+        // if ExternalMetadataFeature present, ExternalMetadataReader will be created ...
+        config.setMetadataReader(getMetadadaReader(features, portInterface.getClassLoader()));
+
                 com.sun.xml.internal.ws.db.DatabindingImpl rt = (com.sun.xml.internal.ws.db.DatabindingImpl)fac.createRuntime(config);
 
                 return rt.getModel();
+    }
+
+    private MetadataReader getMetadadaReader(WebServiceFeatureList features, ClassLoader classLoader) {
+        if (features == null) return null;
+        com.oracle.webservices.internal.api.databinding.ExternalMetadataFeature ef =
+                features.get(com.oracle.webservices.internal.api.databinding.ExternalMetadataFeature.class);
+        // TODO-Miran: would it be necessary to disable secure xml processing?
+        if (ef != null)
+            return ef.getMetadataReader(classLoader, false);
+        return null;
     }
 
     private SEIPortInfo createSEIPortInfo(QName portName, Class portInterface, WebServiceFeatureList features) {
@@ -784,7 +875,8 @@ public class WSServiceDelegate extends WSService {
         return wsdlService;
     }
 
-     class DaemonThreadFactory implements ThreadFactory {
+    static class DaemonThreadFactory implements ThreadFactory {
+        @Override
         public Thread newThread(Runnable r) {
             Thread daemonThread = new Thread(r);
             daemonThread.setDaemon(Boolean.TRUE);
@@ -800,26 +892,53 @@ public class WSServiceDelegate extends WSService {
         return new DelegatingLoader(loader1, loader2);
     }
 
-    private static final class DelegatingLoader
-      extends ClassLoader
-    {
-      private final ClassLoader loader;
+    private static final class DelegatingLoader extends ClassLoader {
+        private final ClassLoader loader;
 
-      DelegatingLoader(ClassLoader loader1, ClassLoader loader2)
-      {
-        super(loader2);
-        this.loader = loader1;
-      }
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result
+                    + ((loader == null) ? 0 : loader.hashCode());
+            result = prime * result
+                    + ((getParent() == null) ? 0 : getParent().hashCode());
+            return result;
+        }
 
-      protected Class findClass(String name)
-        throws ClassNotFoundException
-      {
-        return loader.loadClass(name);
-      }
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            DelegatingLoader other = (DelegatingLoader) obj;
+            if (loader == null) {
+                if (other.loader != null)
+                    return false;
+            } else if (!loader.equals(other.loader))
+                return false;
+            if (getParent() == null) {
+                if (other.getParent() != null)
+                    return false;
+            } else if (!getParent().equals(other.getParent()))
+                return false;
+            return true;
+        }
 
-      protected URL findResource(String name)
-      {
-        return loader.getResource(name);
-      }
+        DelegatingLoader(ClassLoader loader1, ClassLoader loader2) {
+            super(loader2);
+            this.loader = loader1;
+        }
+
+        protected Class findClass(String name) throws ClassNotFoundException {
+            return loader.loadClass(name);
+        }
+
+        protected URL findResource(String name) {
+            return loader.getResource(name);
+        }
     }
 }

@@ -354,7 +354,7 @@ public class StreamReaderBufferProcessor extends AbstractProcessor implements XM
         }
 
         int eventType = getEventType();
-        StringBuffer content = new StringBuffer();
+        StringBuilder content = new StringBuilder();
         while(eventType != END_ELEMENT ) {
             if(eventType == CHARACTERS
                     || eventType == CDATA
@@ -642,6 +642,7 @@ public class StreamReaderBufferProcessor extends AbstractProcessor implements XM
             return new CharSequenceImpl(_offset + start, length);
         }
 
+        @Override
         public String toString() {
             return new String(_characters, _offset, _length);
         }

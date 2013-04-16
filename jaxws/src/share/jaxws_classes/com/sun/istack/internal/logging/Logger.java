@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 
 /**
- * This is a helper class that provides some conveniece methods wrapped around the
+ * This is a helper class that provides some convenience methods wrapped around the
  * standard {@link java.util.logging.Logger} interface.
  *
  * The class also makes sure that logger names of each Metro subsystem are consistent
@@ -129,6 +129,20 @@ public class Logger {
         logger.logp(level, componentClassName, getCallerMethodName(), message);
     }
 
+    public void log(final Level level, final String message, Object param1) {
+        if (!this.logger.isLoggable(level)) {
+            return;
+        }
+        logger.logp(level, componentClassName, getCallerMethodName(), message, param1);
+    }
+
+    public void log(final Level level, final String message, Object[] params) {
+        if (!this.logger.isLoggable(level)) {
+            return;
+        }
+        logger.logp(level, componentClassName, getCallerMethodName(), message, params);
+    }
+
     public void log(final Level level, final String message, final Throwable thrown) {
         if (!this.logger.isLoggable(level)) {
             return;
@@ -143,6 +157,13 @@ public class Logger {
         logger.logp(Level.FINEST, componentClassName, getCallerMethodName(), message);
     }
 
+    public void finest(final String message, Object[] params) {
+        if (!this.logger.isLoggable(Level.FINEST)) {
+            return;
+        }
+        logger.logp(Level.FINEST, componentClassName, getCallerMethodName(), message, params);
+    }
+
     public void finest(final String message, final Throwable thrown) {
         if (!this.logger.isLoggable(Level.FINEST)) {
             return;
@@ -155,6 +176,13 @@ public class Logger {
             return;
         }
         logger.logp(Level.FINER, componentClassName, getCallerMethodName(), message);
+    }
+
+    public void finer(final String message, Object[] params) {
+        if (!this.logger.isLoggable(Level.FINER)) {
+            return;
+        }
+        logger.logp(Level.FINER, componentClassName, getCallerMethodName(), message, params);
     }
 
     public void finer(final String message, final Throwable thrown) {
@@ -185,6 +213,13 @@ public class Logger {
         logger.logp(Level.INFO, componentClassName, getCallerMethodName(), message);
     }
 
+    public void info(final String message, Object[] params) {
+        if (!this.logger.isLoggable(Level.INFO)) {
+            return;
+        }
+        logger.logp(Level.INFO, componentClassName, getCallerMethodName(), message, params);
+    }
+
     public void info(final String message, final Throwable thrown) {
         if (!this.logger.isLoggable(Level.INFO)) {
             return;
@@ -197,6 +232,13 @@ public class Logger {
             return;
         }
         logger.logp(Level.CONFIG, componentClassName, getCallerMethodName(), message);
+    }
+
+    public void config(final String message, Object[] params) {
+        if (!this.logger.isLoggable(Level.CONFIG)) {
+            return;
+        }
+        logger.logp(Level.CONFIG, componentClassName, getCallerMethodName(), message, params);
     }
 
     public void config(final String message, final Throwable thrown) {
@@ -213,6 +255,13 @@ public class Logger {
         logger.logp(Level.WARNING, componentClassName, getCallerMethodName(), message);
     }
 
+    public void warning(final String message, Object[] params) {
+        if (!this.logger.isLoggable(Level.WARNING)) {
+            return;
+        }
+        logger.logp(Level.WARNING, componentClassName, getCallerMethodName(), message, params);
+    }
+
     public void warning(final String message, final Throwable thrown) {
         if (!this.logger.isLoggable(Level.WARNING)) {
             return;
@@ -225,6 +274,13 @@ public class Logger {
             return;
         }
         logger.logp(Level.SEVERE, componentClassName, getCallerMethodName(), message);
+    }
+
+    public void severe(final String message, Object[] params) {
+        if (!this.logger.isLoggable(Level.SEVERE)) {
+            return;
+        }
+        logger.logp(Level.SEVERE, componentClassName, getCallerMethodName(), message, params);
     }
 
     public void severe(final String message, final Throwable thrown) {

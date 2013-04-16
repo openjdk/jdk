@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,11 @@ import javax.xml.namespace.QName;
 public interface MIMEConstants {
 
     // namespace URIs
-    public static String NS_WSDL_MIME = "http://schemas.xmlsoap.org/wsdl/mime/";
+    static final String NS_WSDL_MIME = "http://schemas.xmlsoap.org/wsdl/mime/";
 
     // QNames
-    public static QName QNAME_CONTENT = new QName(NS_WSDL_MIME, "content");
-    public static QName QNAME_MULTIPART_RELATED =
-        new QName(NS_WSDL_MIME, "multipartRelated");
-    public static QName QNAME_PART = new QName(NS_WSDL_MIME, "part");
-    public static QName QNAME_MIME_XML = new QName(NS_WSDL_MIME, "mimeXml");
+    static final QName QNAME_CONTENT = new QName(NS_WSDL_MIME, "content");
+    static final QName QNAME_MULTIPART_RELATED = new QName(NS_WSDL_MIME, "multipartRelated");
+    static final QName QNAME_PART = new QName(NS_WSDL_MIME, "part");
+    static final QName QNAME_MIME_XML = new QName(NS_WSDL_MIME, "mimeXml");
 }

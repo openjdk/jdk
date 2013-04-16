@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,10 @@ import com.sun.xml.internal.ws.addressing.model.MissingAddressingHeaderException
 import com.sun.xml.internal.ws.addressing.model.InvalidAddressingHeaderException;
 import static com.sun.xml.internal.ws.addressing.W3CAddressingConstants.ONLY_NON_ANONYMOUS_ADDRESS_SUPPORTED;
 import static com.sun.xml.internal.ws.addressing.W3CAddressingConstants.ONLY_ANONYMOUS_ADDRESS_SUPPORTED;
-import com.sun.xml.internal.ws.resources.AddressingMessages;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 
 import javax.xml.ws.soap.AddressingFeature;
-import javax.xml.ws.WebServiceException;
 
 /**
  * @author Rama Pulavarthi
@@ -135,57 +133,4 @@ public class W3CWsaServerTube extends WsaServerTube{
         }
     }
 
-    /*
-     @Override
-    protected boolean isAnonymousRequired(@Nullable WSDLBoundOperation wbo) {
-        return getResponseRequirement(wbo) ==  AddressingFeature.Responses.ANONYMOUS;
-    }
-
-    private AddressingFeature.Responses getResponseRequirement(@Nullable WSDLBoundOperation wbo) {
-        if (af.getResponses() == AddressingFeature.Responses.ALL && wbo != null) {
-            //wsaw wsdl binding case will have some value set on wbo
-            WSDLBoundOperation.ANONYMOUS anon = wbo.getAnonymous();
-            if (wbo.getAnonymous() == WSDLBoundOperation.ANONYMOUS.required)
-                return AddressingFeature.Responses.ANONYMOUS;
-            else if (wbo.getAnonymous() == WSDLBoundOperation.ANONYMOUS.prohibited)
-                return AddressingFeature.Responses.NON_ANONYMOUS;
-            else
-                return AddressingFeature.Responses.ALL;
-
-        } else
-            return af.getResponses();
-    }
-
-    @Override
-    protected void checkAnonymousSemantics(WSDLBoundOperation wbo, WSEndpointReference replyTo, WSEndpointReference faultTo) {
-        String replyToValue = null;
-        String faultToValue = null;
-
-        if (replyTo != null)
-            replyToValue = replyTo.getAddress();
-
-        if (faultTo != null)
-            faultToValue = faultTo.getAddress();
-        AddressingFeature.Responses responseRequirement = getResponseRequirement(wbo);
-
-        switch (responseRequirement) {
-            case NON_ANONYMOUS:
-                if (replyToValue != null && replyToValue.equals(addressingVersion.anonymousUri))
-                    throw new InvalidAddressingHeaderException(addressingVersion.replyToTag, ONLY_NON_ANONYMOUS_ADDRESS_SUPPORTED);
-
-                if (faultToValue != null && faultToValue.equals(addressingVersion.anonymousUri))
-                    throw new InvalidAddressingHeaderException(addressingVersion.faultToTag, ONLY_NON_ANONYMOUS_ADDRESS_SUPPORTED);
-                break;
-            case ANONYMOUS:
-                if (replyToValue != null && !replyToValue.equals(addressingVersion.anonymousUri))
-                    throw new InvalidAddressingHeaderException(addressingVersion.replyToTag, ONLY_ANONYMOUS_ADDRESS_SUPPORTED);
-
-                if (faultToValue != null && !faultToValue.equals(addressingVersion.anonymousUri))
-                    throw new InvalidAddressingHeaderException(addressingVersion.faultToTag, ONLY_ANONYMOUS_ADDRESS_SUPPORTED);
-                break;
-            default:
-                // ALL: no check
-        }
-    }
-    */
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package com.sun.xml.internal.ws.message.stream;
 
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.message.AttachmentSet;
-import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
 import com.sun.xml.internal.ws.message.AbstractMessageImpl;
 import com.sun.xml.internal.ws.message.AttachmentSetImpl;
 import com.sun.istack.internal.Nullable;
@@ -56,7 +56,7 @@ public class PayloadStreamReaderMessage extends AbstractMessageImpl {
         this(null, reader,new AttachmentSetImpl(), soapVer);
     }
 
-    public PayloadStreamReaderMessage(@Nullable HeaderList headers, @NotNull XMLStreamReader reader,
+    public PayloadStreamReaderMessage(@Nullable MessageHeaders headers, @NotNull XMLStreamReader reader,
                                       @NotNull AttachmentSet attSet, @NotNull SOAPVersion soapVersion) {
         super(soapVersion);
         message = new StreamMessage(headers, attSet, reader, soapVersion);
@@ -64,10 +64,6 @@ public class PayloadStreamReaderMessage extends AbstractMessageImpl {
 
     public boolean hasHeaders() {
         return message.hasHeaders();
-    }
-
-    public HeaderList getHeaders() {
-        return message.getHeaders();
     }
 
     public AttachmentSet getAttachments() {
@@ -112,5 +108,10 @@ public class PayloadStreamReaderMessage extends AbstractMessageImpl {
 
     public Message copy() {
         return message.copy();
+    }
+
+    @Override
+    public @NotNull MessageHeaders getHeaders() {
+        return message.getHeaders();
     }
 }

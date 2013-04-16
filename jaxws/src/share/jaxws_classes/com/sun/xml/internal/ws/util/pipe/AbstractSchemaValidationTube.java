@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,9 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
     private static class ValidationDocumentAddressResolver implements DocumentAddressResolver {
 
         @Nullable
+        @Override
         public String getRelativeAddressFor(@NotNull SDDocument current, @NotNull SDDocument referenced) {
-            LOGGER.fine("Current = "+current.getURL()+" resolved relative="+referenced.getURL());
+            LOGGER.log(Level.FINE, "Current = {0} resolved relative={1}", new Object[]{current.getURL(), referenced.getURL()});
             return referenced.getURL().toExternalForm();
         }
     }
@@ -175,6 +176,7 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
             }
         }
 
+        @Override
         public SDDocument resolve(String systemId) {
             SDDocument sdi = docs.get(systemId);
             if (sdi == null) {
@@ -190,8 +192,11 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
             return sdi;
         }
 
+        @Override
         public LSInput resolveResource(String type, String namespaceURI, String publicId, final String systemId, final String baseURI) {
-            LOGGER.fine("type="+type+ " namespaceURI="+namespaceURI+" publicId="+publicId+" systemId="+systemId+" baseURI="+baseURI);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, "type={0} namespaceURI={1} publicId={2} systemId={3} baseURI={4}", new Object[]{type, namespaceURI, publicId, systemId, baseURI});
+            }
             try {
                 final SDDocument doc;
                 if (systemId == null) {
@@ -205,14 +210,17 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
                 if (doc != null) {
                     return new LSInput() {
 
+                        @Override
                         public Reader getCharacterStream() {
                             return null;
                         }
 
+                        @Override
                         public void setCharacterStream(Reader characterStream) {
                             throw new UnsupportedOperationException();
                         }
 
+                        @Override
                         public InputStream getByteStream() {
                             ByteArrayBuffer bab = new ByteArrayBuffer();
                             try {
@@ -223,54 +231,67 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
                             return bab.newInputStream();
                         }
 
+                        @Override
                         public void setByteStream(InputStream byteStream) {
                             throw new UnsupportedOperationException();
                         }
 
+                        @Override
                         public String getStringData() {
                             return null;
                         }
 
+                        @Override
                         public void setStringData(String stringData) {
                             throw new UnsupportedOperationException();
                         }
 
+                        @Override
                         public String getSystemId() {
                             return doc.getURL().toExternalForm();
                         }
 
+                        @Override
                         public void setSystemId(String systemId) {
                             throw new UnsupportedOperationException();
                         }
 
+                        @Override
                         public String getPublicId() {
                             return null;
                         }
 
+                        @Override
                         public void setPublicId(String publicId) {
                             throw new UnsupportedOperationException();
                         }
 
+                        @Override
                         public String getBaseURI() {
                             return doc.getURL().toExternalForm();
                         }
 
+                        @Override
                         public void setBaseURI(String baseURI) {
                             throw new UnsupportedOperationException();
                         }
 
+                        @Override
                         public String getEncoding() {
                             return null;
                         }
 
+                        @Override
                         public void setEncoding(String encoding) {
                             throw new UnsupportedOperationException();
                         }
 
+                        @Override
                         public boolean getCertifiedText() {
                             return false;
                         }
 
+                        @Override
                         public void setCertifiedText(boolean certifiedText) {
                             throw new UnsupportedOperationException();
                         }
@@ -279,7 +300,9 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
             } catch(Exception e) {
                 LOGGER.log(Level.WARNING, "Exception in LSResourceResolver impl", e);
             }
-            LOGGER.fine("Don't know about systemId="+systemId+" baseURI="+baseURI);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, "Don''t know about systemId={0} baseURI={1}", new Object[]{systemId, baseURI});
+            }
             return null;
         }
 
@@ -325,7 +348,9 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
                 updateMultiSchemaForTns(((SDDocument.Schema)sdoc).getTargetNamespace(), sdoc.getURL().toExternalForm(), multiSchemaForTns);
             }
         }
-        LOGGER.fine("WSDL inlined schema fragment documents(these are used to create a pseudo schema) = "+ inlinedSchemas.keySet());
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "WSDL inlined schema fragment documents(these are used to create a pseudo schema) = {0}", inlinedSchemas.keySet());
+        }
         for(DOMSource src: inlinedSchemas.values()) {
             String tns = getTargetNamespace(src);
             updateMultiSchemaForTns(tns, src.getSystemId(), multiSchemaForTns);
@@ -393,8 +418,9 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
      * Recursively visit ancestors and build up {@link org.xml.sax.helpers.NamespaceSupport} object.
      */
     private void buildNamespaceSupport(NamespaceSupport nss, Node node) {
-        if(node==null || node.getNodeType()!=Node.ELEMENT_NODE)
+        if (node==null || node.getNodeType()!=Node.ELEMENT_NODE) {
             return;
+        }
 
         buildNamespaceSupport( nss, node.getParentNode() );
 
@@ -427,7 +453,9 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
             for( int i=0; i<atts.getLength(); i++ ) {
                 Attr a = (Attr)atts.item(i);
                 if (!"xmlns".equals(a.getPrefix()) || !a.getLocalName().equals(prefix)) {
-                    LOGGER.fine("Patching with xmlns:"+prefix+"="+nss.getURI(prefix));
+                    if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.log(Level.FINE, "Patching with xmlns:{0}={1}", new Object[]{prefix, nss.getURI(prefix)});
+                    }
                     elem.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:"+prefix, nss.getURI(prefix));
                 }
             }
@@ -461,7 +489,9 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
             sb.append("<xsd:include schemaLocation='").append(systemId).append("'/>\n");
         }
         sb.append("</xsd:schema>\n");
-        LOGGER.fine("Pseudo Schema for the same tns="+tns+"is "+sb);
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "Pseudo Schema for the same tns={0}is {1}", new Object[]{tns, sb});
+        }
 
         // override getReader() so that the same source can be used multiple times
         return new StreamSource(pseudoSystemId) {
@@ -495,7 +525,9 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
             sb.append("/>\n");
         }
         sb.append("</xsd:schema>");
-        LOGGER.fine("Master Pseudo Schema = "+sb);
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "Master Pseudo Schema = {0}", sb);
+        }
 
         // override getReader() so that the same source can be used multiple times
         return new StreamSource("file:x-jax-ws-master-doc") {
