@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.message.AttachmentSet;
 import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
 import com.sun.xml.internal.ws.encoding.SOAPBindingCodec;
 import com.sun.xml.internal.ws.message.AbstractMessageImpl;
 import com.sun.xml.internal.ws.message.AttachmentSetImpl;
@@ -71,7 +72,7 @@ import java.io.OutputStream;
  * @author Kohsuke Kawaguchi
  */
 public final class JAXBMessage extends AbstractMessageImpl {
-    private HeaderList headers;
+    private MessageHeaders headers;
 
     /**
      * The JAXB object that represents the payload.
@@ -99,7 +100,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
      */
     private XMLStreamBuffer infoset;
 
-    public static Message create(BindingContext context, Object jaxbObject, SOAPVersion soapVersion, HeaderList headers, AttachmentSet attachments) {
+    public static Message create(BindingContext context, Object jaxbObject, SOAPVersion soapVersion, MessageHeaders headers, AttachmentSet attachments) {
         if(!context.hasSwaRef()) {
             return new JAXBMessage(context,jaxbObject,soapVersion,headers,attachments);
         }
@@ -155,7 +156,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
         return new JAXBMessage(context,jaxbObject,soapVersion,null,null);
     }
 
-    private JAXBMessage( BindingContext context, Object jaxbObject, SOAPVersion soapVer, HeaderList headers, AttachmentSet attachments ) {
+    private JAXBMessage( BindingContext context, Object jaxbObject, SOAPVersion soapVer, MessageHeaders headers, AttachmentSet attachments ) {
         super(soapVer);
 //        this.bridge = new MarshallerBridge(context);
         this.bridge = context.createFragmentBridge();
@@ -165,7 +166,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
         this.attachmentSet = attachments;
     }
 
-    private JAXBMessage( JAXBContext rawContext, Object jaxbObject, SOAPVersion soapVer, HeaderList headers, AttachmentSet attachments ) {
+    private JAXBMessage( JAXBContext rawContext, Object jaxbObject, SOAPVersion soapVer, MessageHeaders headers, AttachmentSet attachments ) {
         super(soapVer);
 //        this.bridge = new MarshallerBridge(context);
         this.rawContext = rawContext;
@@ -235,28 +236,33 @@ public final class JAXBMessage extends AbstractMessageImpl {
         this.rawContext = that.rawContext;
     }
 
+    @Override
     public boolean hasHeaders() {
-        return headers!=null && !headers.isEmpty();
+        return headers!=null && headers.hasHeaders();
     }
 
-    public HeaderList getHeaders() {
+    @Override
+    public MessageHeaders getHeaders() {
         if(headers==null)
-            headers = new HeaderList();
+            headers = new HeaderList(getSOAPVersion());
         return headers;
     }
 
+    @Override
     public String getPayloadLocalPart() {
         if(localName==null)
             sniff();
         return localName;
     }
 
+    @Override
     public String getPayloadNamespaceURI() {
         if(nsUri==null)
             sniff();
         return nsUri;
     }
 
+    @Override
     public boolean hasPayload() {
         return true;
     }
@@ -285,10 +291,12 @@ public final class JAXBMessage extends AbstractMessageImpl {
         }
     }
 
+    @Override
     public Source readPayloadAsSource() {
         return new JAXBBridgeSource(bridge,jaxbObject);
     }
 
+    @Override
     public <T> T readPayloadAsJAXB(Unmarshaller unmarshaller) throws JAXBException {
         JAXBResult out = new JAXBResult(unmarshaller);
         // since the bridge only produces fragments, we need to fire start/end document.
@@ -307,6 +315,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
         return (T)out.getResult();
     }
 
+    @Override
     public XMLStreamReader readPayload() throws XMLStreamException {
        try {
             if(infoset==null) {
@@ -332,6 +341,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
     /**
      * Writes the payload as SAX events.
      */
+    @Override
     protected void writePayloadTo(ContentHandler contentHandler, ErrorHandler errorHandler, boolean fragment) throws SAXException {
         try {
             if(fragment)
@@ -353,6 +363,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
         }
     }
 
+    @Override
     public void writePayloadTo(XMLStreamWriter sw) throws XMLStreamException {
         try {
             // MtomCodec sets its own AttachmentMarshaller
@@ -364,7 +375,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
             String encoding = XMLStreamWriterUtil.getEncoding(sw);
 
             // Get output stream and use JAXB UTF-8 writer
-            OutputStream os = XMLStreamWriterUtil.getOutputStream(sw);
+            OutputStream os = bridge.supportOutputStream() ? XMLStreamWriterUtil.getOutputStream(sw) : null;
                         if (rawContext != null) {
                                 Marshaller m = rawContext.createMarshaller();
                                 m.setProperty("jaxb.fragment", Boolean.TRUE);
@@ -374,7 +385,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
                                 else
                                         m.marshal(jaxbObject, sw);
                         } else {
-                                if (os != null && bridge.supportOutputStream() && encoding != null && encoding.equalsIgnoreCase(SOAPBindingCodec.UTF8_ENCODING)) {
+                                if (os != null  && encoding != null && encoding.equalsIgnoreCase(SOAPBindingCodec.UTF8_ENCODING)) {
                                         bridge.marshal(jaxbObject, os, sw.getNamespaceContext(), am);
                                 } else {
                                         bridge.marshal(jaxbObject, sw, am);
@@ -388,6 +399,7 @@ public final class JAXBMessage extends AbstractMessageImpl {
         }
     }
 
+    @Override
     public Message copy() {
         return new JAXBMessage(this);
     }
