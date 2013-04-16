@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3044,21 +3044,20 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   assert(level > CompLevel_simple, "Shouldn't be here");
 
   int offset = -1;
-  LIR_Opr counter_holder = new_register(T_METADATA);
-  LIR_Opr meth;
+  LIR_Opr counter_holder;
   if (level == CompLevel_limited_profile) {
-    offset = in_bytes(backedge ? Method::backedge_counter_offset() :
-                                 Method::invocation_counter_offset());
-    __ metadata2reg(method->constant_encoding(), counter_holder);
-    meth = counter_holder;
+    address counters_adr = method->ensure_method_counters();
+    counter_holder = new_pointer_register();
+    __ move(LIR_OprFact::intptrConst(counters_adr), counter_holder);
+    offset = in_bytes(backedge ? MethodCounters::backedge_counter_offset() :
+                                 MethodCounters::invocation_counter_offset());
   } else if (level == CompLevel_full_profile) {
+    counter_holder = new_register(T_METADATA);
     offset = in_bytes(backedge ? MethodData::backedge_counter_offset() :
                                  MethodData::invocation_counter_offset());
     ciMethodData* md = method->method_data_or_null();
     assert(md != NULL, "Sanity");
     __ metadata2reg(md->constant_encoding(), counter_holder);
-    meth = new_register(T_METADATA);
-    __ metadata2reg(method->constant_encoding(), meth);
   } else {
     ShouldNotReachHere();
   }
@@ -3069,6 +3068,8 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   __ store(result, counter);
   if (notify) {
     LIR_Opr mask = load_immediate(frequency << InvocationCounter::count_shift, T_INT);
+    LIR_Opr meth = new_register(T_METADATA);
+    __ metadata2reg(method->constant_encoding(), meth);
     __ logical_and(result, mask, result);
     __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
     // The bci for info can point to cmp for if's we want the if bci
