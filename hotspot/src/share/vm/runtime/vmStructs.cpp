@@ -1115,7 +1115,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   c2_nonstatic_field(PhaseChaitin,       _lo_stk_degree,           uint)                                                             \
   c2_nonstatic_field(PhaseChaitin,       _hi_degree,               uint)                                                             \
   c2_nonstatic_field(PhaseChaitin,       _simplified,              uint)                                                             \
-  c2_nonstatic_field(PhaseChaitin,       _maxlrg,                  uint)                                                             \
                                                                                                                                      \
   c2_nonstatic_field(Block,              _nodes,                   Node_List)                                                        \
   c2_nonstatic_field(Block,              _succs,                   Block_Array)                                                      \
