@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,11 @@
  */
 
 package java.util;
+
 import java.io.*;
+import java.util.function.Consumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Hash table based implementation of the <tt>Map</tt> interface.  This
@@ -376,6 +380,13 @@ public class HashMap<K,V>
         return null == entry ? null : entry.getValue();
     }
 
+    @Override
+    public V getOrDefault(Object key, V defaultValue) {
+        Entry<K,V> entry = getEntry(key);
+
+        return (entry == null) ? defaultValue : entry.getValue();
+    }
+
     /**
      * Returns <tt>true</tt> if this map contains a mapping for the
      * specified key.
@@ -603,6 +614,261 @@ public class HashMap<K,V>
         return (e == null ? null : e.value);
     }
 
+    // optimized implementations of default methods in Map
+
+    @Override
+    public V putIfAbsent(K key, V value) {
+        if (table == EMPTY_TABLE) {
+            inflateTable(threshold);
+        }
+        int hash = (key == null) ? 0 : hash(key);
+        int i = indexFor(hash, table.length);
+        @SuppressWarnings("unchecked")
+        Entry<K,V> e = (Entry<K,V>)table[i];
+        for(; e != null; e = e.next) {
+            if (e.hash == hash && Objects.equals(e.key, key)) {
+                if(e.value != null) {
+                    return e.value;
+                }
+                e.value = value;
+                modCount++;
+                e.recordAccess(this);
+                return null;
+            }
+        }
+
+        modCount++;
+        addEntry(hash, key, value, i);
+        return null;
+    }
+
+    @Override
+    public boolean remove(Object key, Object value) {
+        if (isEmpty()) {
+            return false;
+        }
+        int hash = (key == null) ? 0 : hash(key);
+        int i = indexFor(hash, table.length);
+        @SuppressWarnings("unchecked")
+        Entry<K,V> prev = (Entry<K,V>)table[i];
+        Entry<K,V> e = prev;
+
+        while (e != null) {
+            Entry<K,V> next = e.next;
+            if (e.hash == hash && Objects.equals(e.key, key)) {
+                if (!Objects.equals(e.value, value)) {
+                    return false;
+                }
+                modCount++;
+                size--;
+                if (prev == e)
+                    table[i] = next;
+                else
+                    prev.next = next;
+                e.recordRemoval(this);
+                return true;
+            }
+            prev = e;
+            e = next;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        if (isEmpty()) {
+            return false;
+        }
+        int hash = (key == null) ? 0 : hash(key);
+        int i = indexFor(hash, table.length);
+        @SuppressWarnings("unchecked")
+        Entry<K,V> e = (Entry<K,V>)table[i];
+        for (; e != null; e = e.next) {
+            if (e.hash == hash && Objects.equals(e.key, key) && Objects.equals(e.value, oldValue)) {
+                e.value = newValue;
+                e.recordAccess(this);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public V replace(K key, V value) {
+        if (isEmpty()) {
+            return null;
+        }
+        int hash = (key == null) ? 0 : hash(key);
+        int i = indexFor(hash, table.length);
+        @SuppressWarnings("unchecked")
+        Entry<K,V> e = (Entry<K,V>)table[i];
+        for (; e != null; e = e.next) {
+            if (e.hash == hash && Objects.equals(e.key, key)) {
+                V oldValue = e.value;
+                e.value = value;
+                e.recordAccess(this);
+                return oldValue;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        if (table == EMPTY_TABLE) {
+            inflateTable(threshold);
+        }
+        int hash = (key == null) ? 0 : hash(key);
+        int i = indexFor(hash, table.length);
+        @SuppressWarnings("unchecked")
+        Entry<K,V> e = (Entry<K,V>)table[i];
+        for (; e != null; e = e.next) {
+            if (e.hash == hash && Objects.equals(e.key, key)) {
+                V oldValue = e.value;
+                return oldValue == null ? (e.value = mappingFunction.apply(key)) : oldValue;
+            }
+        }
+
+        V newValue = mappingFunction.apply(key);
+        if (newValue != null) {
+            modCount++;
+            addEntry(hash, key, newValue, i);
+        }
+
+        return newValue;
+    }
+
+    @Override
+    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        if (isEmpty()) {
+            return null;
+        }
+        int hash = (key == null) ? 0 : hash(key);
+        int i = indexFor(hash, table.length);
+        @SuppressWarnings("unchecked")
+        Entry<K,V> prev = (Entry<K,V>)table[i];
+        Entry<K,V> e = prev;
+
+        while (e != null) {
+            Entry<K,V> next = e.next;
+            if (e.hash == hash && Objects.equals(e.key, key)) {
+                V oldValue = e.value;
+                if (oldValue == null)
+                    break;
+                V newValue = remappingFunction.apply(key, oldValue);
+                modCount++;
+                if (newValue == null) {
+                    size--;
+                    if (prev == e)
+                        table[i] = next;
+                    else
+                        prev.next = next;
+                    e.recordRemoval(this);
+                } else {
+                    e.value = newValue;
+                    e.recordAccess(this);
+                }
+                return newValue;
+            }
+            prev = e;
+            e = next;
+        }
+
+        return null;
+    }
+
+    @Override
+    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        if (table == EMPTY_TABLE) {
+            inflateTable(threshold);
+        }
+        int hash = (key == null) ? 0 : hash(key);
+        int i = indexFor(hash, table.length);
+        @SuppressWarnings("unchecked")
+        Entry<K,V> prev = (Entry<K,V>)table[i];
+        Entry<K,V> e = prev;
+
+        while (e != null) {
+            Entry<K,V> next = e.next;
+            if (e.hash == hash && Objects.equals(e.key, key)) {
+                V oldValue = e.value;
+                V newValue = remappingFunction.apply(key, oldValue);
+                if (newValue != oldValue) {
+                    modCount++;
+                    if (newValue == null) {
+                        size--;
+                        if (prev == e)
+                            table[i] = next;
+                        else
+                            prev.next = next;
+                        e.recordRemoval(this);
+                    } else {
+                        e.value = newValue;
+                        e.recordAccess(this);
+                    }
+                }
+                return newValue;
+            }
+            prev = e;
+            e = next;
+        }
+
+        V newValue = remappingFunction.apply(key, null);
+        if (newValue != null) {
+            modCount++;
+            addEntry(hash, key, newValue, i);
+        }
+
+        return newValue;
+    }
+
+    @Override
+    public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        if (table == EMPTY_TABLE) {
+            inflateTable(threshold);
+        }
+        int hash = (key == null) ? 0 : hash(key);
+        int i = indexFor(hash, table.length);
+        @SuppressWarnings("unchecked")
+        Entry<K,V> prev = (Entry<K,V>)table[i];
+        Entry<K,V> e = prev;
+
+        while (e != null) {
+            Entry<K,V> next = e.next;
+            if (e.hash == hash && Objects.equals(e.key, key)) {
+                V oldValue = e.value;
+                V newValue = remappingFunction.apply(oldValue, value);
+                modCount++;
+                if (newValue == null) {
+                    size--;
+                    if (prev == e)
+                        table[i] = next;
+                    else
+                        prev.next = next;
+                    e.recordRemoval(this);
+                } else {
+                    e.value = newValue;
+                    e.recordAccess(this);
+                }
+                return newValue;
+            }
+            prev = e;
+            e = next;
+        }
+
+        if (value != null) {
+            modCount++;
+            addEntry(hash, key, value, i);
+        }
+
+        return value;
+    }
+
+    // end of optimized implementations of default methods in Map
+
     /**
      * Removes and returns the entry associated with the specified key
      * in the HashMap.  Returns null if the HashMap contains no mapping
@@ -697,8 +963,8 @@ public class HashMap<K,V>
             return containsNullValue();
 
         Entry<?,?>[] tab = table;
-        for (int i = 0; i < tab.length ; i++)
-            for (Entry<?,?> e = tab[i] ; e != null ; e = e.next)
+        for (int i = 0; i < tab.length; i++)
+            for (Entry<?,?> e = tab[i]; e != null; e = e.next)
                 if (value.equals(e.value))
                     return true;
         return false;
@@ -709,8 +975,8 @@ public class HashMap<K,V>
      */
     private boolean containsNullValue() {
         Entry<?,?>[] tab = table;
-        for (int i = 0; i < tab.length ; i++)
-            for (Entry<?,?> e = tab[i] ; e != null ; e = e.next)
+        for (int i = 0; i < tab.length; i++)
+            for (Entry<?,?> e = tab[i]; e != null; e = e.next)
                 if (e.value == null)
                     return true;
         return false;
