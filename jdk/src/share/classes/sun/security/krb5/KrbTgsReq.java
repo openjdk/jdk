@@ -147,8 +147,7 @@ public class KrbTgsReq {
 
         princName = cname;
         servName = sname;
-        ctime = new KerberosTime(KerberosTime.NOW);
-
+        ctime = KerberosTime.now();
 
         // check if they are valid arguments. The optional fields
         // should be  consistent with settings in KDCOptions.
