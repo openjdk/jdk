@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,19 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jvm.h"
+package sun.reflect;
 
-#include "java_util_ResourceBundle.h"
+import java.lang.annotation.*;
+import static java.lang.annotation.ElementType.*;
 
-JNIEXPORT jobjectArray JNICALL
-Java_java_util_ResourceBundle_getClassContext(JNIEnv *env, jobject this)
-{
-    return JVM_GetClassContext(env);
+/**
+ * A method annotated @CallerSensitive is sensitive to its calling class,
+ * via {@link sun.reflect.Reflection#getCallerClass Reflection.getCallerClass},
+ * or via some equivalent.
+ *
+ * @author John R. Rose
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target({CONSTRUCTOR, METHOD})
+public @interface CallerSensitive {
 }

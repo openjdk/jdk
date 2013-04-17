@@ -78,7 +78,6 @@ text: .text%writeBytes;
 # Test Sleep
 # Test IntToString
 # Test LoadToolkit
-text: .text%Java_java_util_ResourceBundle_getClassContext;
 text: .text%Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2Ljava_security_AccessControlContext_2;
 text: .text%JNU_GetEnv;
 text: .text%Java_java_io_UnixFileSystem_checkAccess;
