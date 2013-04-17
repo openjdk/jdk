@@ -158,14 +158,19 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
         if (val == noreg) {
           __ store_heap_oop_null(Address(rdx, 0));
         } else {
+          // G1 barrier needs uncompressed oop for region cross check.
+          Register new_val = val;
+          if (UseCompressedOops) {
+            new_val = rbx;
+            __ movptr(new_val, val);
+          }
           __ store_heap_oop(Address(rdx, 0), val);
           __ g1_write_barrier_post(rdx /* store_adr */,
-                                   val /* new_val */,
+                                   new_val /* new_val */,
                                    r15_thread /* thread */,
                                    r8 /* tmp */,
                                    rbx /* tmp2 */);
         }
-
       }
       break;
 #endif // INCLUDE_ALL_GCS
