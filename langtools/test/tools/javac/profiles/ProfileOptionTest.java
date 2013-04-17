@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,6 @@ public class ProfileOptionTest {
         for (Target t: Target.values()) {
             switch (t) {
                 case JDK1_1: case JDK1_2: // no equivalent -source
-                case JDK1_4_1: case JDK1_4_2: case JSR14: // transitional values
                     continue;
             }
 

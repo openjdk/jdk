@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,10 +142,6 @@ public class Util {
     public void error(String key, Object... args) throws Exit {
         dl.report(createDiagnostic(Diagnostic.Kind.ERROR, key, args));
         throw new Exit(15);
-    }
-
-    private void fatal(String msg) throws Exit {
-        fatal(msg, null);
     }
 
     private void fatal(String msg, Exception e) throws Exit {

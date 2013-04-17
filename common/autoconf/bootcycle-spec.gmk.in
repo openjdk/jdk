@@ -29,9 +29,16 @@
 include @SPEC@
 
 # Check that the user did not try to specify a different java to use for compiling.
-ifneq ($(firstword $(SJAVAC_SERVER_JAVA)),$(firstword $(JAVA)))
-  $(error Bootcycle builds are not possible if --with-sjavac-server-java is specified)
+# On windows we need to account for fixpath being first word.
+ifeq ($(firstword $(JAVA)),$(FIXPATH))
+  JAVA_EXEC_POS=2
+else
+  JAVA_EXEC_POS=1
 endif
+ifneq ($(word $(JAVA_EXEC_POS),$(SJAVAC_SERVER_JAVA)),$(word $(JAVA_EXEC_POS),$(JAVA)))
+    $(error Bootcycle builds are not possible if --with-sjavac-server-java is specified)
+endif
+
 
 # Override specific values to do a boot cycle build
 
@@ -39,5 +46,8 @@ endif
 BUILD_OUTPUT:=@BUILD_OUTPUT@/bootcycle-build
 
 # Use a different Boot JDK
+OLD_BOOT_JDK:=$(BOOT_JDK)
 BOOT_JDK:=@BUILD_OUTPUT@/images/j2sdk-image
 BOOT_RTJAR:=@BUILD_OUTPUT@/images/j2sdk-image/jre/lib/rt.jar
+
+SJAVAC_SERVER_JAVA:=$(subst $(OLD_BOOT_JDK),$(BOOT_JDK),$(SJAVAC_SERVER_JAVA))

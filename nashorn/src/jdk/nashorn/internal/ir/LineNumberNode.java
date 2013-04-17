@@ -63,8 +63,8 @@ public class LineNumberNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            return visitor.leave(this);
+        if (visitor.enterLineNumberNode(this) != null) {
+            return visitor.leaveLineNumberNode(this);
         }
 
         return this;

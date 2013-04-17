@@ -119,6 +119,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     enum Location { _in_field, _in_method, _in_class };
     enum ID {
       _unknown = 0,
+      _method_CallerSensitive,
       _method_ForceInline,
       _method_DontInline,
       _method_LambdaForm_Compiled,

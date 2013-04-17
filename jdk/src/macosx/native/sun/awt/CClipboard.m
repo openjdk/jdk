@@ -189,18 +189,18 @@ static CClipboard *sClipboard = nil;
 
 - (void) checkPasteboard:(id)application {
     AWT_ASSERT_APPKIT_THREAD;
-
+    
     //NSLog(@"CClipboard checkPasteboard oldCount %d newCount %d newTypes %@", fChangeCount, [[NSPasteboard generalPasteboard] changeCount], [[NSPasteboard generalPasteboard] types]);
-
+    
     // This is called via NSApplicationDidBecomeActiveNotification.
-
+    
     // If the change count on the general pasteboard is different than when we set it
     // someone else put data on the clipboard.  That means the current owner lost ownership.
     NSInteger newChangeCount = [[NSPasteboard generalPasteboard] changeCount];
-
+    
     if (fChangeCount != newChangeCount) {
         fChangeCount = newChangeCount;
-
+        
         [self pasteboardChangedOwner:[NSPasteboard generalPasteboard]];
     }
 }
@@ -369,6 +369,23 @@ JNF_COCOA_ENTER(env);
 
 JNF_COCOA_EXIT(env);
     return returnValue;
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CClipboard
+ * Method:    checkPasteboard
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CClipboard_checkPasteboard
+(JNIEnv *env, jobject inObject )
+{
+    JNF_COCOA_ENTER(env);
+
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        [[CClipboard sharedClipboard] checkPasteboard:nil];
+    }];
+        
+    JNF_COCOA_EXIT(env);
 }
 
 

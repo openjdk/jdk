@@ -91,7 +91,9 @@ public class ProtectedInnerClassesTest {
 //"${TESTJAVA}${FS}bin${FS}java" ${TESTVMOPTS} -classpath "${CLASSPATH}${PS}${TESTCLASSES}" p2.ProtectedInnerClass2
         ToolBox.AnyToolArgs javaParams =
                 new ToolBox.AnyToolArgs()
-                .setAllArgs(ToolBox.javaBinary, "-classpath", System.getProperty("user.dir"),
+                .appendArgs(ToolBox.javaBinary)
+                .appendArgs(ToolBox.testVMOpts)
+                .appendArgs("-classpath", System.getProperty("user.dir"),
                     "p2.ProtectedInnerClass2");
         ToolBox.executeCommand(javaParams);
     }
@@ -101,14 +103,15 @@ public class ProtectedInnerClassesTest {
 //@run compile p1/ProtectedInnerClass1.java
         ToolBox.JavaToolArgs javacParams =
                 new ToolBox.JavaToolArgs()
-                .setOptions("-d", ".")
+                .appendArgs("-d", ".")
                 .setSources(protectedInnerClass1Src);
 
         ToolBox.javac(javacParams);
 
 //@run compile/fail p2/ProtectedInnerClass3.java
-        javacParams.setSources(protectedInnerClass3Src)
-                .set(ToolBox.Expect.FAIL);
+        javacParams = new ToolBox.JavaToolArgs(ToolBox.Expect.FAIL)
+                .appendArgs("-d", ".")
+                .setSources(protectedInnerClass3Src);
         ToolBox.javac(javacParams);
     }
 

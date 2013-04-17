@@ -156,7 +156,7 @@ public abstract class RegExp {
      *
      * @param key the message key
      * @param str string argument
-     * @throws jdk.nashorn.internal.runtime.ParserException
+     * @throws jdk.nashorn.internal.runtime.ParserException unconditionally
      */
     protected static void throwParserException(final String key, final String str) throws ParserException {
         throw new ParserException(ECMAErrors.getMessage("parser.error.regex." + key, str));

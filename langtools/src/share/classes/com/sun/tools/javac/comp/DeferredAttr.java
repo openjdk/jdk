@@ -229,9 +229,9 @@ public class DeferredAttr extends JCTree.Visitor {
         public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
             switch (deferredAttrContext.mode) {
                 case SPECULATIVE:
-                    Assert.check(dt.mode == null ||
-                            (dt.mode == AttrMode.SPECULATIVE &&
-                            dt.speculativeType(deferredAttrContext.msym, deferredAttrContext.phase).hasTag(NONE)));
+                    //Note: if a symbol is imported twice we might do two identical
+                    //speculative rounds...
+                    Assert.check(dt.mode == null || dt.mode == AttrMode.SPECULATIVE);
                     JCTree speculativeTree = attribSpeculative(dt.tree, dt.env, resultInfo);
                     dt.speculativeCache.put(deferredAttrContext.msym, speculativeTree, deferredAttrContext.phase);
                     return speculativeTree.type;

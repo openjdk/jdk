@@ -321,6 +321,13 @@ ClassLoaderData::~ClassLoaderData() {
   }
 }
 
+/**
+ * Returns true if this class loader data is for the extension class loader.
+ */
+bool ClassLoaderData::is_ext_class_loader_data() const {
+  return SystemDictionary::is_ext_class_loader(class_loader());
+}
+
 Metaspace* ClassLoaderData::metaspace_non_null() {
   assert(!DumpSharedSpaces, "wrong metaspace!");
   // If the metaspace has not been allocated, create a new one.  Might want

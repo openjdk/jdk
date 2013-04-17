@@ -457,6 +457,9 @@ class CommandLineFlags {
   lp64_product(intx, ObjectAlignmentInBytes, 8,                             \
           "Default object alignment in bytes, 8 is minimum")                \
                                                                             \
+  product(bool, AssumeMP, false,                                            \
+          "Instruct the VM to assume multiple processors are available")    \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
@@ -679,9 +682,6 @@ class CommandLineFlags {
   product(bool, UseCompilerSafepoints, true,                                \
           "Stop at safepoints in compiled code")                            \
                                                                             \
-  product(bool, UseSplitVerifier, true,                                     \
-          "use split verifier with StackMapTable attributes")               \
-                                                                            \
   product(bool, FailOverToOldVerifier, true,                                \
           "fail over to old verifier when split verifier fails")            \
                                                                             \
@@ -868,6 +868,11 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, PrintNMTStatistics, false,                               \
           "Print native memory tracking summary data if it is on")          \
+                                                                            \
+  diagnostic(bool, AutoShutdownNMT, true,                                   \
+          "Automatically shutdown native memory tracking under stress "     \
+          "situation. When set to false, native memory tracking tries to "  \
+          "stay alive at the expense of JVM performance")                   \
                                                                             \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to hotspot.log or LogFile")   \
@@ -1401,6 +1406,10 @@ class CommandLineFlags {
   product(uintx, GCLockerEdenExpansionPercent, 5,                           \
           "How much the GC can expand the eden by while the GC locker  "    \
           "is active (as a percentage)")                                    \
+                                                                            \
+  diagnostic(intx, GCLockerRetryAllocationCount, 2,                         \
+          "Number of times to retry allocations when"                       \
+          " blocked by the GC locker")                                      \
                                                                             \
   develop(bool, UseCMSAdaptiveFreeLists, true,                              \
           "Use Adaptive Free Lists in the CMS generation")                  \
@@ -1957,6 +1966,10 @@ class CommandLineFlags {
                                                                             \
   product(uintx, InitialRAMFraction, 64,                                    \
           "Fraction (1/n) of real memory used for initial heap size")       \
+                                                                            \
+  develop(uintx, MaxVirtMemFraction, 2,                                     \
+          "Maximum fraction (1/n) of virtual memory used for ergonomically" \
+          "determining maximum heap size")                                  \
                                                                             \
   product(bool, UseAutoGCSelectPolicy, false,                               \
           "Use automatic collection selection policy")                      \
@@ -2515,7 +2528,7 @@ class CommandLineFlags {
           "disable locking assertions (for speed)")                         \
                                                                             \
   product(bool, RangeCheckElimination, true,                                \
-          "Split loop iterations to eliminate range checks")                \
+          "Eliminate range checks")                                         \
                                                                             \
   develop_pd(bool, UncommonNullCast,                                        \
           "track occurrences of null in casts; adjust compiler tactics")    \
@@ -2904,6 +2917,10 @@ class CommandLineFlags {
   diagnostic(intx, MallocVerifyStart,     0,                                \
           "if non-zero, start verifying C heap after Nth call to "          \
           "malloc/realloc/free")                                            \
+                                                                            \
+  diagnostic(uintx, MallocMaxTestWords,     0,                              \
+          "if non-zero, max # of Words that malloc/realloc can allocate "   \
+          "(for testing only)")                                             \
                                                                             \
   product(intx, TypeProfileWidth,     2,                                    \
           "number of receiver types to record in call/cast profile")        \
@@ -3569,8 +3586,9 @@ class CommandLineFlags {
   product(uintx, SharedMiscCodeSize,    120*K,                              \
           "Size of the shared miscellaneous code area (in bytes)")          \
                                                                             \
-  product(uintx, SharedDummyBlockSize, 0,                                   \
-          "Size of dummy block used to shift heap addresses (in bytes)")    \
+  product(uintx, SharedBaseAddress, LP64_ONLY(32*G)                         \
+          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
+          "Address to allocate shared memory region for class data")        \
                                                                             \
   diagnostic(bool, EnableInvokeDynamic, true,                               \
           "support JSR 292 (method handles, invokedynamic, "                \
