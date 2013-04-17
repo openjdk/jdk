@@ -1901,7 +1901,7 @@ bool Arguments::check_vm_args_consistency() {
 
   // Divide by bucket size to prevent a large size from causing rollover when
   // calculating amount of memory needed to be allocated for the String table.
-  status = status && verify_interval(StringTableSize, defaultStringTableSize,
+  status = status && verify_interval(StringTableSize, minimumStringTableSize,
     (max_uintx / StringTable::bucket_size()), "StringTable size");
 
   if (MinHeapFreeRatio > MaxHeapFreeRatio) {
