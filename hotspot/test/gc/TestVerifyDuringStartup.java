@@ -21,26 +21,25 @@
  * questions.
  */
 
-/*
- * @test DeoptimizeMethodTest
- * @library /testlibrary /testlibrary/whitebox
- * @build DeoptimizeMethodTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DeoptimizeMethodTest
- * @author igor.ignatyev@oracle.com
+/* @test TestVerifyDuringStartup.java
+ * @key gc
+ * @bug 8010463
+ * @summary Simple test run with -XX:+VerifyDuringStartup -XX:-UseTLAB to verify 8010463
+ * @library /testlibrary
  */
-public class DeoptimizeMethodTest extends CompilerWhiteBoxTest {
 
-    public static void main(String[] args) throws Exception {
-        // to prevent inlining #method into #compile()
-        WHITE_BOX.testSetDontInlineMethod(METHOD, true);
-        new DeoptimizeMethodTest().runTest();
-    }
+import com.oracle.java.testlibrary.OutputAnalyzer;
+import com.oracle.java.testlibrary.ProcessTools;
 
-    protected void test() throws Exception {
-        compile();
-        checkCompiled(METHOD);
-        WHITE_BOX.deoptimizeMethod(METHOD);
-        checkNotCompiled(METHOD);
-    }
+public class TestVerifyDuringStartup {
+  public static void main(String args[]) throws Exception {
+    ProcessBuilder pb =
+      ProcessTools.createJavaProcessBuilder(System.getProperty("test.vm.opts"),
+                                            "-XX:-UseTLAB",
+                                            "-XX:+UnlockDiagnosticVMOptions",
+                                            "-XX:+VerifyDuringStartup", "-version");
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldContain("[Verifying");
+    output.shouldHaveExitValue(0);
+  }
 }
