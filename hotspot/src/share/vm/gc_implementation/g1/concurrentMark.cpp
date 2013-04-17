@@ -101,6 +101,10 @@ bool CMBitMapRO::covers(ReservedSpace heap_rs) const {
 }
 #endif
 
+void CMBitMapRO::print_on_error(outputStream* st, const char* prefix) const {
+  _bm.print_on_error(st, prefix);
+}
+
 bool CMBitMap::allocate(ReservedSpace heap_rs) {
   _bmStartWord = (HeapWord*)(heap_rs.base());
   _bmWordSize  = heap_rs.size()/HeapWordSize;    // heap_rs.size() is in bytes
@@ -3275,6 +3279,13 @@ void ConcurrentMark::print_worker_threads_on(outputStream* st) const {
   if (use_parallel_marking_threads()) {
     _parallel_workers->print_worker_threads_on(st);
   }
+}
+
+void ConcurrentMark::print_on_error(outputStream* st) const {
+  st->print_cr("Marking Bits (Prev, Next): (CMBitMap*) " PTR_FORMAT ", (CMBitMap*) " PTR_FORMAT,
+      _prevMarkBitMap, _nextMarkBitMap);
+  _prevMarkBitMap->print_on_error(st, " Prev Bits: ");
+  _nextMarkBitMap->print_on_error(st, " Next Bits: ");
 }
 
 // We take a break if someone is trying to stop the world.
