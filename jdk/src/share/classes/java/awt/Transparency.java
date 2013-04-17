@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,32 @@
 
 package java.awt;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * The <code>Transparency</code> interface defines the common transparency
  * modes for implementing classes.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public interface Transparency {
 
     /**
      * Represents image data that is guaranteed to be completely opaque,
      * meaning that all pixels have an alpha value of 1.0.
      */
-    public final static int OPAQUE            = 1;
+    @Native public final static int OPAQUE            = 1;
 
     /**
      * Represents image data that is guaranteed to be either completely
      * opaque, with an alpha value of 1.0, or completely transparent,
      * with an alpha value of 0.0.
      */
-    public final static int BITMASK = 2;
+    @Native public final static int BITMASK = 2;
 
     /**
      * Represents image data that contains or might contain arbitrary
      * alpha values between and including 0.0 and 1.0.
      */
-    public final static int TRANSLUCENT        = 3;
+    @Native public final static int TRANSLUCENT        = 3;
 
     /**
      * Returns the type of this <code>Transparency</code>.
