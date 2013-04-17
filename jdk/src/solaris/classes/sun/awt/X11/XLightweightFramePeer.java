@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,43 @@
  * questions.
  */
 
-package java.awt.dnd;
+package sun.awt.X11;
 
-/**
- * This exception is thrown by various methods in the java.awt.dnd package.
- * It is usually thrown to indicate that the target in question is unable
- * to undertake the requested operation that the present time, since the
- * undrelying DnD system is not in the appropriate state.
- *
- * @since 1.2
- */
+import java.awt.Graphics;
 
-public class InvalidDnDOperationException extends IllegalStateException {
+import sun.awt.LightweightFrame;
 
-    private static final long serialVersionUID = -6062568741193956678L;
+public class XLightweightFramePeer extends XFramePeer {
 
-    static private String dft_msg = "The operation requested cannot be performed by the DnD system since it is not in the appropriate state";
+    XLightweightFramePeer(LightweightFrame target) {
+        super(target);
+    }
 
-    /**
-     * Create a default Exception
-     */
+    private LightweightFrame getLwTarget() {
+        return (LightweightFrame)target;
+    }
 
-    public InvalidDnDOperationException() { super(dft_msg); }
+    @Override
+    public Graphics getGraphics() {
+        return getLwTarget().getGraphics();
+    }
 
-    /**
-     * Create an Exception with its own descriptive message
-     * <P>
-     * @param msg the detail message
-     */
+    @Override
+    public void xSetVisible(boolean visible) {
+        this.visible = visible;
+    }
 
-    public InvalidDnDOperationException(String msg) { super(msg); }
+    @Override
+    protected void requestXFocus(long time, boolean timeProvided) {
+        // not sending native focus events to the proxy
+    }
 
+    @Override
+    public void setGrab(boolean grab) {
+        if (grab) {
+            getLwTarget().grabFocus();
+        } else {
+            getLwTarget().ungrabFocus();
+        }
+    }
 }

@@ -875,6 +875,21 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
     }
 
+    /**
+     * Helper method to get a pointer to the native view from the PlatformWindow.
+     */
+    static long getNativeViewPtr(PlatformWindow platformWindow) {
+        long nativePeer = 0L;
+        if (platformWindow instanceof CPlatformWindow) {
+            nativePeer = ((CPlatformWindow) platformWindow).getContentView().getAWTView();
+        } else if (platformWindow instanceof CViewPlatformEmbeddedFrame){
+            nativePeer = ((CViewPlatformEmbeddedFrame) platformWindow).getNSViewPtr();
+        } else {
+            throw new IllegalArgumentException("Unsupported platformWindow implementation");
+        }
+        return nativePeer;
+    }
+
     /*************************************************************
      * Callbacks from the AWTWindow and AWTView objc classes.
      *************************************************************/
