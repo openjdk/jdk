@@ -122,12 +122,15 @@ public class Checker extends DocTreeScanner<Void, Void> {
     private Deque<TagStackItem> tagStack; // TODO: maybe want to record starting tree as well
     private HtmlTag currHeaderTag;
 
+    private final int implicitHeaderLevel;
+
     // <editor-fold defaultstate="collapsed" desc="Top level">
 
     Checker(Env env) {
         env.getClass();
         this.env = env;
         tagStack = new LinkedList<TagStackItem>();
+        implicitHeaderLevel = env.implicitHeaderLevel;
     }
 
     public Void scan(DocCommentTree tree, TreePath p) {
@@ -386,7 +389,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
 
     private int getHeaderLevel(HtmlTag tag) {
         if (tag == null)
-            return 0;
+            return implicitHeaderLevel;
         switch (tag) {
             case H1: return 1;
             case H2: return 2;

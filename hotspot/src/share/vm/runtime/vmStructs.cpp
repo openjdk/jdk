@@ -478,6 +478,9 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
                                                                                                                                      \
   nonstatic_field(CardGeneration,              _rs,                                           GenRemSet*)                            \
   nonstatic_field(CardGeneration,              _bts,                                          BlockOffsetSharedArray*)               \
+  nonstatic_field(CardGeneration,              _shrink_factor,                                size_t)                                \
+  nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
+  nonstatic_field(CardGeneration,              _used_at_prologue,                             size_t)                                \
                                                                                                                                      \
   nonstatic_field(CardTableModRefBS,           _whole_heap,                                   const MemRegion)                       \
   nonstatic_field(CardTableModRefBS,           _guard_index,                                  const size_t)                          \
@@ -548,8 +551,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(Space,                       _bottom,                                       HeapWord*)                             \
   nonstatic_field(Space,                       _end,                                          HeapWord*)                             \
                                                                                                                                      \
-  nonstatic_field(TenuredGeneration,           _shrink_factor,                                size_t)                                \
-  nonstatic_field(TenuredGeneration,           _capacity_at_prologue,                         size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          HeapWord*)                             \

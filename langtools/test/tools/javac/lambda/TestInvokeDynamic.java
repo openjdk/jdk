@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7194586
- * @bug 8003280 8006694
+ * @bug 8003280 8006694 8010404
  * @summary Add lambda tests
  *  Add back-end support for invokedynamic
  *  temporarily workaround combo tests are causing time out in several platforms
@@ -48,6 +48,7 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool.*;
 import com.sun.tools.classfile.Instruction;
+import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.Method;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
@@ -239,7 +240,7 @@ public class TestInvokeDynamic
         int id = checkCount.incrementAndGet();
         JavaSource source = new JavaSource(id);
         JavacTaskImpl ct = (JavacTaskImpl)comp.getTask(null, fm.get(), dc,
-                null, null, Arrays.asList(source));
+                Arrays.asList("-g"), null, Arrays.asList(source));
         Context context = ct.getContext();
         Symtab syms = Symtab.instance(context);
         Names names = Names.instance(context);
@@ -349,6 +350,16 @@ public class TestInvokeDynamic
                         bsm_ref.getNameAndTypeInfo().getType() + " " +
                         asBSMSignatureString());
             }
+
+            LineNumberTable_attribute lnt =
+                    (LineNumberTable_attribute)ea.attributes.get(Attribute.LineNumberTable);
+
+            if (lnt == null) {
+                throw new Error("No LineNumberTable attribute");
+            }
+            if (lnt.line_number_table_length != 2) {
+                throw new Error("Wrong number of entries in LineNumberTable");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw new Error("error reading " + compiledTest +": " + e);
@@ -376,7 +387,10 @@ public class TestInvokeDynamic
                 "}\n" +
                 "class Test#ID {\n" +
                 "   void m() { }\n" +
-                "   void test() { m(); }\n" +
+                "   void test() {\n" +
+                "      Object o = this; // marker statement \n" +
+                "      m();\n" +
+                "   }\n" +
                 "}";
 
         String source;

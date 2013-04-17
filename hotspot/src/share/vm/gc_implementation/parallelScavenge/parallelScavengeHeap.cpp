@@ -648,6 +648,15 @@ void ParallelScavengeHeap::print_on(outputStream* st) const {
   MetaspaceAux::print_on(st);
 }
 
+void ParallelScavengeHeap::print_on_error(outputStream* st) const {
+  this->CollectedHeap::print_on_error(st);
+
+  if (UseParallelOldGC) {
+    st->cr();
+    PSParallelCompact::print_on_error(st);
+  }
+}
+
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
   PSScavenge::gc_task_manager()->threads_do(tc);
 }

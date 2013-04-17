@@ -26,11 +26,10 @@
 package jdk.nashorn.internal.runtime.regexp;
 
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.PatternSyntaxException;
 
 import jdk.nashorn.internal.parser.Lexer;
@@ -58,7 +57,7 @@ final class RegExpScanner extends Scanner {
     private final List<Capture> caps = new LinkedList<>();
 
     /** Forward references to capturing parenthesis to be resolved later.*/
-    private final Set<Integer> forwardReferences = new LinkedHashSet<>();
+    private final LinkedList<Integer> forwardReferences = new LinkedList<>();
 
     /** Current level of zero-width negative lookahead assertions. */
     private int negativeLookaheadLevel;
@@ -104,10 +103,20 @@ final class RegExpScanner extends Scanner {
             return;
         }
 
-        for (final Integer ref : forwardReferences) {
-            if (ref.intValue() > caps.size()) {
-                neverMatches = true;
-                break;
+        Iterator<Integer> iterator = forwardReferences.descendingIterator();
+        while (iterator.hasNext()) {
+            final int pos = iterator.next();
+            final int num = iterator.next();
+            if (num > caps.size()) {
+                // Non-existing reference should never match, if smaller than 8 convert to octal escape
+                // to be compatible with other engines.
+                if (num < 8) {
+                    String escape = "\\x0" + num;
+                    sb.insert(pos, escape);
+                } else {
+                    neverMatches = true;
+                    break;
+                }
             }
         }
 
@@ -402,6 +411,10 @@ final class RegExpScanner extends Scanner {
             if (ch0 == '}') {
                 pop('}');
                 commit(1);
+            } else {
+                // Bad quantifier should be rejected but is accepted by all major engines
+                restart(startIn, startOut);
+                return false;
             }
 
             return true;
@@ -637,7 +650,16 @@ final class RegExpScanner extends Scanner {
             throw new RuntimeException("\\ at end of pattern"); // will be converted to PatternSyntaxException
         }
         // ES 5.1 A.7 requires "not IdentifierPart" here but all major engines accept any character here.
-        if (NON_IDENT_ESCAPES.indexOf(ch0) == -1) {
+        if (ch0 == 'c') {
+            // Ignore invalid control letter escape if within a character class
+            if (inCharClass && ch1 != ']') {
+                sb.setLength(sb.length() - 1);
+                skip(2);
+                return true;
+            } else {
+                sb.append('\\'); // Treat invalid \c control sequence as \\c
+            }
+        } else if (NON_IDENT_ESCAPES.indexOf(ch0) == -1) {
             sb.setLength(sb.length() - 1);
         }
         return commit(1);
@@ -677,8 +699,9 @@ final class RegExpScanner extends Scanner {
                     // Forward reference to a capture group. Forward references are always undefined so we
                     // can omit it from the output buffer. Additionally, if the capture group does not exist
                     // the whole regexp becomes invalid, so register the reference for later processing.
-                    forwardReferences.add(num);
                     sb.setLength(sb.length() - 1);
+                    forwardReferences.add(num);
+                    forwardReferences.add(sb.length());
                     skip(1);
                     return true;
                 }

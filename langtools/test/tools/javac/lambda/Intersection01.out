@@ -1,3 +1,0 @@
-Intersection01.java:36:45: compiler.err.prob.found.req: (compiler.misc.not.a.functional.intf.1: java.io.Serializable, (compiler.misc.no.abstracts: kindname.interface, java.io.Serializable))
-Intersection01.java:38:45: compiler.err.prob.found.req: (compiler.misc.not.a.functional.intf.1: java.io.Serializable, (compiler.misc.no.abstracts: kindname.interface, java.io.Serializable))
-2 errors

@@ -217,6 +217,7 @@ void LinkResolver::lookup_polymorphic_method(methodHandle& result,
                                              TRAPS) {
   vmIntrinsics::ID iid = MethodHandles::signature_polymorphic_name_id(name);
   if (TraceMethodHandles) {
+    ResourceMark rm(THREAD);
     tty->print_cr("lookup_polymorphic_method iid=%s %s.%s%s",
                   vmIntrinsics::name_at(iid), klass->external_name(),
                   name->as_C_string(), full_signature->as_C_string());
@@ -231,6 +232,7 @@ void LinkResolver::lookup_polymorphic_method(methodHandle& result,
       TempNewSymbol basic_signature =
         MethodHandles::lookup_basic_type_signature(full_signature, keep_last_arg, CHECK);
       if (TraceMethodHandles) {
+        ResourceMark rm(THREAD);
         tty->print_cr("lookup_polymorphic_method %s %s => basic %s",
                       name->as_C_string(),
                       full_signature->as_C_string(),
@@ -283,6 +285,8 @@ void LinkResolver::lookup_polymorphic_method(methodHandle& result,
       }
       if (result.not_null()) {
 #ifdef ASSERT
+        ResourceMark rm(THREAD);
+
         TempNewSymbol basic_signature =
           MethodHandles::lookup_basic_type_signature(full_signature, CHECK);
         int actual_size_of_params = result->size_of_parameters();
@@ -1222,8 +1226,10 @@ void LinkResolver::resolve_invokehandle(CallInfo& result, constantPoolHandle poo
   Symbol* method_signature = NULL;
   KlassHandle  current_klass;
   resolve_pool(resolved_klass, method_name,  method_signature, current_klass, pool, index, CHECK);
-  if (TraceMethodHandles)
+  if (TraceMethodHandles) {
+    ResourceMark rm(THREAD);
     tty->print_cr("resolve_invokehandle %s %s", method_name->as_C_string(), method_signature->as_C_string());
+  }
   resolve_handle_call(result, resolved_klass, method_name, method_signature, current_klass, CHECK);
 }
 
