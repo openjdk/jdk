@@ -127,7 +127,7 @@ public class TypeVariableImpl extends AbstractTypeImpl implements TypeVariable {
         final Type upperBound = v.getUpperBound();
         Name boundname = upperBound.tsym.getQualifiedName();
         if (boundname == boundname.table.names.java_lang_Object
-            && upperBound.getKind() != TypeKind.ANNOTATED) {
+            && !upperBound.isAnnotated()) {
             return List.nil();
         } else {
             return env.types.getBounds(v);
@@ -139,7 +139,7 @@ public class TypeVariableImpl extends AbstractTypeImpl implements TypeVariable {
      * Return an empty array if there are none.
      */
     public AnnotationDesc[] annotations() {
-        if (type.getKind() != TypeKind.ANNOTATED) {
+        if (!type.isAnnotated()) {
             return new AnnotationDesc[0];
         }
         List<TypeCompound> tas = ((com.sun.tools.javac.code.Type.AnnotatedType) type).typeAnnotations;

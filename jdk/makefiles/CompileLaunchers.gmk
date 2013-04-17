@@ -489,8 +489,7 @@ endif
 # -link -incremental:no
 # like all other launchers.
 $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX): $(BUILD_UNPACKEXE)
-	$(MKDIR) -p $(@D)
-	$(CP) '$<' '$@'
+	$(call install-file)
 
 BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX)
 
@@ -588,8 +587,7 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
         $(call SET_SHARED_LIBRARY_MAPFILE,$(JDK_TOPDIR)/makefiles/java/main/java/mapfile-$(OPENJDK_TARGET_CPU))))
 else
     $(JAVA_RMI_CGI): $(JDK_TOPDIR)/src/solaris/bin/java-rmi.cgi.sh
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) a+x $@
 endif
 

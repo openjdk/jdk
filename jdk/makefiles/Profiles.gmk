@@ -93,8 +93,11 @@ ALL_JARS := $(FULL_JRE_JARS) \
         $(IMAGES_OUTPUTDIR)/lib/dt.jar \
         $(IMAGES_OUTPUTDIR)/lib/tools.jar \
         $(IMAGES_OUTPUTDIR)/lib/ct.sym \
-        $(IMAGES_OUTPUTDIR)/src.zip \
-        $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
+        $(IMAGES_OUTPUTDIR)/src.zip
+
+ifeq ($(INCLUDE_SA),true)
+    ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
+endif
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
     ifndef OPENJDK

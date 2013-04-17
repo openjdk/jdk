@@ -75,7 +75,7 @@ public class IfNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterIfNode(this) != null) {
             test = test.accept(visitor);
 
             pass = (Block)pass.accept(visitor);
@@ -84,7 +84,7 @@ public class IfNode extends Node {
                 fail = (Block)fail.accept(visitor);
             }
 
-            return visitor.leave(this);
+            return visitor.leaveIfNode(this);
         }
 
         return this;

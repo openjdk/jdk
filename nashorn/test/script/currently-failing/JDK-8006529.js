@@ -39,12 +39,13 @@
  * and FunctionNode because of package-access check and so reflective calls.
  */
 
-var Parser         = Java.type("jdk.nashorn.internal.parser.Parser")
-var Compiler       = Java.type("jdk.nashorn.internal.codegen.Compiler")
-var Context        = Java.type("jdk.nashorn.internal.runtime.Context")
+var Parser            = Java.type("jdk.nashorn.internal.parser.Parser")
+var Compiler          = Java.type("jdk.nashorn.internal.codegen.Compiler")
+var Context           = Java.type("jdk.nashorn.internal.runtime.Context")
 var ScriptEnvironment = Java.type("jdk.nashorn.internal.runtime.ScriptEnvironment")
-var Source         = Java.type("jdk.nashorn.internal.runtime.Source")
-var FunctionNode   = Java.type("jdk.nashorn.internal.ir.FunctionNode")
+var Source            = Java.type("jdk.nashorn.internal.runtime.Source")
+var FunctionNode      = Java.type("jdk.nashorn.internal.ir.FunctionNode")
+var ThrowErrorManager = Java.type("jdk.nashorn.internal.runtime.Context$ThrowErrorManager");
 
 // Compiler class methods and fields
 var parseMethod = Parser.class.getMethod("parse");
@@ -90,7 +91,7 @@ function getFirstFunction(functionNode) {
 // representing it.
 function compile(source) {
     var source   = new Source("<no name>", source);
-    var parser   = new Parser(Context.getContext().getEnv(), source, null);
+    var parser   = new Parser(Context.getContext().getEnv(), source, new ThrowErrorManager());
     var func     = parseMethod.invoke(parser);
     var compiler = new Compiler(Context.getContext().getEnv(), func);
 

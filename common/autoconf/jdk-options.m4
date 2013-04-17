@@ -121,6 +121,15 @@ AC_SUBST(JVM_VARIANT_KERNEL)
 AC_SUBST(JVM_VARIANT_ZERO)
 AC_SUBST(JVM_VARIANT_ZEROSHARK)
 
+INCLUDE_SA=true
+if test "x$JVM_VARIANT_ZERO" = xtrue ; then
+    INCLUDE_SA=false
+fi
+if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+    INCLUDE_SA=false
+fi
+AC_SUBST(INCLUDE_SA)
+
 if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
    MACOSX_UNIVERSAL="true"
 fi
@@ -519,10 +528,10 @@ AC_MSG_RESULT([$ENABLE_DEBUG_SYMBOLS])
 #
 # ZIP_DEBUGINFO_FILES
 #
-AC_ARG_ENABLE([zip-debug-info],
-              [AS_HELP_STRING([--disable-zip-debug-info],[disable zipping of debug-info files @<:@enabled@:>@])])
-
 AC_MSG_CHECKING([if we should zip debug-info files])
+AC_ARG_ENABLE([zip-debug-info],
+              [AS_HELP_STRING([--disable-zip-debug-info],[disable zipping of debug-info files @<:@enabled@:>@])],
+	      [enable_zip_debug_info="${enableval}"], [enable_zip_debug_info="yes"])
 AC_MSG_RESULT([${enable_zip_debug_info}])
 
 if test "x${enable_zip_debug_info}" = "xno"; then

@@ -97,14 +97,14 @@ public class JoniRegExp extends RegExp {
             return null;
         }
 
-        RegExpMatcher matcher = this.matcher;
+        RegExpMatcher currentMatcher = this.matcher;
 
-        if (matcher == null || input != matcher.getInput()) {
-            matcher = new JoniMatcher(input);
-            this.matcher = matcher;
+        if (currentMatcher == null || input != currentMatcher.getInput()) {
+            currentMatcher = new JoniMatcher(input);
+            this.matcher   = currentMatcher;
         }
 
-        return matcher;
+        return currentMatcher;
     }
 
     /**

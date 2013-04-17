@@ -223,6 +223,23 @@ public final class NativeJava {
     }
 
     /**
+     * Returns name of a java type {@link StaticClass}.
+     * @param self not used
+     * @param type the type whose name is returned
+     * @return name of the given type
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object typeName(final Object self, final Object type) {
+        if (type instanceof StaticClass) {
+            return ((StaticClass)type).getRepresentedClass().getName();
+        } else if (type instanceof Class) {
+            return ((Class<?>)type).getName();
+        } else {
+            return UNDEFINED;
+        }
+    }
+
+    /**
      * Given a JavaScript array and a Java type, returns a Java array with the same initial contents, and with the
      * specified component type. Example:
      * <pre>

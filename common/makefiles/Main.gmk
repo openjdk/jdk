@@ -175,9 +175,8 @@ sign-jars-only: start-make
 	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk sign-jars)
 	@$(call TargetExit)
 
-bootcycle-images:
-	@$(ECHO) Boot cycle build step 1: Building the JDK image normally
-	@($(CD) $(SRC_ROOT)/common/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) SPEC=$(SPEC) images)
+bootcycle-images: images bootcycle-images-only
+bootcycle-images-only: start-make
 	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
 	@($(CD) $(SRC_ROOT)/common/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) SPEC=$(dir $(SPEC))bootcycle-spec.gmk images)
 

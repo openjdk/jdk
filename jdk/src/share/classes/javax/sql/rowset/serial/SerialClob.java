@@ -508,7 +508,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
      *
      * @param length the length, in bytes, to which the <code>CLOB</code>
      *        value should be truncated
-     * @throws SerialLException if there is an error accessing the
+     * @throws SerialException if there is an error accessing the
      *        <code>CLOB</code> value;
      * if the {@code free} method had been previously called on this object
      */

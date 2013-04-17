@@ -72,9 +72,8 @@ ifeq ($(OPENJDK_TARGET_OS_API),posix)
 
     $(JDK_OUTPUTDIR)/gensrc/java/lang/UNIXProcess.java : \
               $(JDK_TOPDIR)/src/solaris/classes/java/lang/UNIXProcess.java.$(UPSUFFIX)
-	$(MKDIR) -p $(@D)
 	$(ECHO) $(LOG_INFO) Copying UNIXProcess.java.$(OPENJDK_TARGET_OS) to java/lang/UNIXProcess.java
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) u+rw $@
 
     GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/java/lang/UNIXProcess.java
@@ -114,9 +113,7 @@ $(JDK_OUTPUTDIR)/gensrc/sun/nio/ch/SocketOptionRegistry.java : $(BUILD_GENSRC_SO
 	$(MV) $@.tmp $@
 else
 $(JDK_OUTPUTDIR)/gensrc/sun/nio/ch/SocketOptionRegistry.java : $(JDK_TOPDIR)/src/closed/solaris/classes/sun/nio/ch/SocketOptionRegistry-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 endif
 
 ##########################################################################################
@@ -156,9 +153,7 @@ $(JDK_OUTPUTDIR)/gensrc/sun/nio/fs/UnixConstants.java : $(BUILD_GENSRC_UC_EXE)
 	$(MV) $@.tmp $@
 else
 $(JDK_OUTPUTDIR)/gensrc/sun/nio/fs/UnixConstants.java : $(JDK_TOPDIR)/src/closed/solaris/classes/sun/nio/fs/UnixConstants-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 endif
 
 endif

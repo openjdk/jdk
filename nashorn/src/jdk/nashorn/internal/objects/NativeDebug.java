@@ -66,7 +66,7 @@ public final class NativeDebug extends ScriptObject {
     public static Object getContext(final Object self) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getNashornContext"));
+            sm.checkPermission(new RuntimePermission("nashorn.getContext"));
         }
         return Global.getThisContext();
     }
@@ -157,21 +157,6 @@ public final class NativeDebug extends ScriptObject {
     public static Object spill(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).spill;
-        }
-        return UNDEFINED;
-    }
-
-    /**
-     * Nashorn extension: get invocation handle from {@link ScriptFunction}
-     *
-     * @param self self reference
-     * @param obj script function
-     * @return the invocation handle for the given ScriptFunction
-     */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object methodHandle(final Object self, final Object obj) {
-        if (obj instanceof ScriptFunction) {
-            return ((ScriptFunction)obj).getInvokeHandle();
         }
         return UNDEFINED;
     }

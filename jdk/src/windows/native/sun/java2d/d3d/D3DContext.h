@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 
 #include "java_awt_Transparency.h"
 #include "sun_java2d_pipe_BufferedContext.h"
-#include "sun_java2d_d3d_D3DContext.h"
 #include "sun_java2d_d3d_D3DContext_D3DContextCaps.h"
 #include "sun_java2d_d3d_D3DSurfaceData.h"
 #include "sun_java2d_pipe_hw_AccelDeviceEventNotifier.h"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package java.awt.event;
 
 import java.awt.AWTEvent;
 import java.awt.Event;
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * A semantic event which indicates that a component-defined action occurred.
@@ -57,8 +57,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @author Carl Quinn
  * @since 1.1
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class ActionEvent extends AWTEvent {
 
     /**
@@ -99,7 +97,7 @@ public class ActionEvent extends AWTEvent {
     /**
      * This event id indicates that a meaningful action occured.
      */
-    public static final int ACTION_PERFORMED    = ACTION_FIRST; //Event.ACTION_EVENT
+    @Native public static final int ACTION_PERFORMED    = ACTION_FIRST; //Event.ACTION_EVENT
 
     /**
      * The nonlocalized string that gives more details

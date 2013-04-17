@@ -56,6 +56,7 @@ import static jdk.nashorn.internal.parser.TokenType.WHILE;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -75,17 +76,18 @@ import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LabelNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
 import jdk.nashorn.internal.ir.PropertyKey;
 import jdk.nashorn.internal.ir.PropertyNode;
-import jdk.nashorn.internal.ir.ReferenceNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SwitchNode;
@@ -96,7 +98,6 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
@@ -116,19 +117,13 @@ public class Parser extends AbstractParser {
     /** Is scripting mode. */
     private final boolean scripting;
 
-    /** Top level script being parsed. */
-    private FunctionNode script;
-
-    /** Current function being parsed. */
-    private FunctionNode function;
-
-    /** Current parsing block. */
-    private Block block;
+    private final LexicalContext lexicalContext = new LexicalContext();
+    private List<Node> functionDeclarations;
 
     /** Namespace for function names where not explicitly given */
     private final Namespace namespace;
 
-    private static DebugLogger LOG = new DebugLogger("parser");
+    private static final DebugLogger LOG = new DebugLogger("parser");
 
     /**
      * Constructor
@@ -279,7 +274,9 @@ loop:
      * @return New block.
      */
     private Block newBlock() {
-        return block = new Block(source, token, Token.descPosition(token), block, function);
+        final Block block = new Block(source, token, Token.descPosition(token));
+        lexicalContext.push(block);
+        return block;
     }
 
     /**
@@ -292,18 +289,23 @@ loop:
         // Build function name.
         final StringBuilder sb = new StringBuilder();
 
-        if (block != null) {
-            block.addParentName(sb);
+        final FunctionNode parentFunction = getFunction();
+        if(parentFunction != null && !parentFunction.isProgram()) {
+            sb.append(parentFunction.getName()).append('$');
         }
 
         sb.append(ident != null ? ident.getName() : FUNCTION_PREFIX.tag());
         final String name = namespace.uniqueName(sb.toString());
-        assert function != null || name.equals(RUN_SCRIPT.tag())  : "name = " + name;// must not rename runScript().
+        assert parentFunction != null || name.equals(RUN_SCRIPT.tag())  : "name = " + name;// must not rename runScript().
 
         // Start new block.
-        final FunctionNode functionBlock = new FunctionNode(source, token, Token.descPosition(token), namespace, block, ident, name);
-        block = function = functionBlock;
-        function.setStrictMode(isStrictMode);
+        final FunctionNode functionBlock = new FunctionNode(source, token, Token.descPosition(token), namespace, ident, name);
+        if(parentFunction == null) {
+            functionBlock.setProgram();
+        }
+        functionBlock.setStrictMode(isStrictMode);
+        functionBlock.setState(errors.hasErrors() ? CompilationState.PARSE_ERROR : CompilationState.PARSED);
+        lexicalContext.push(functionBlock);
 
         return functionBlock;
     }
@@ -311,9 +313,8 @@ loop:
     /**
      * Restore the current block.
      */
-    private void restoreBlock() {
-        block = block.getParent();
-        function = block.getFunction();
+    private void restoreBlock(Block block) {
+        lexicalContext.pop(block);
     }
 
     /**
@@ -323,22 +324,25 @@ loop:
     private Block getBlock(final boolean needsBraces) {
         // Set up new block. Captures LBRACE.
         final Block newBlock = newBlock();
-        pushControlNode(newBlock);
-
-        // Block opening brace.
-        if (needsBraces) {
-            expect(LBRACE);
-        }
-
         try {
-            // Accumulate block statements.
-            statementList();
+            pushControlNode(newBlock);
+
+            // Block opening brace.
+            if (needsBraces) {
+                expect(LBRACE);
+            }
+
+            try {
+                // Accumulate block statements.
+                statementList();
+            } finally {
+                popControlNode();
+            }
         } finally {
-            restoreBlock();
-            popControlNode();
+            restoreBlock(newBlock);
         }
 
-    final int possibleEnd = Token.descPosition(token) + Token.descLength(token);
+        final int possibleEnd = Token.descPosition(token) + Token.descLength(token);
 
         // Block closing brace.
         if (needsBraces) {
@@ -365,7 +369,7 @@ loop:
             // Accumulate statements.
             statement();
         } finally {
-            restoreBlock();
+            restoreBlock(newBlock);
         }
 
         return newBlock;
@@ -379,7 +383,10 @@ loop:
         final String name = ident.getName();
 
         if (EVAL.tag().equals(name)) {
-            function.setHasEval();
+            final Iterator<FunctionNode> it = lexicalContext.getFunctions();
+            if(it.hasNext()) {
+                it.next().setHasEval(it);
+            }
         }
     }
 
@@ -391,7 +398,7 @@ loop:
         final String name = ident.getName();
 
         if (ARGUMENTS.tag().equals(name)) {
-            function.setUsesArguments();
+            getFunction().setUsesArguments();
         }
     }
 
@@ -438,7 +445,7 @@ loop:
             }
 
             if (lhs instanceof IdentNode) {
-                if (! checkIdentLValue((IdentNode)lhs)) {
+                if (!checkIdentLValue((IdentNode)lhs)) {
                     return referenceError(lhs, rhs);
                 }
                 verifyStrictIdent((IdentNode)lhs, "assignment");
@@ -482,7 +489,7 @@ loop:
      * @return null or the found label node.
      */
     private LabelNode findLabel(final IdentNode ident) {
-        for (final LabelNode labelNode : function.getLabelStack()) {
+        for (final LabelNode labelNode : getFunction().getLabelStack()) {
             if (labelNode.getLabel().equals(ident)) {
                 return labelNode;
             }
@@ -496,14 +503,14 @@ loop:
      * @param labelNode Label to add.
      */
     private void pushLabel(final LabelNode labelNode) {
-        function.getLabelStack().push(labelNode);
+        getFunction().getLabelStack().push(labelNode);
     }
 
     /**
       * Remove a label from the label stack.
       */
     private void popLabel() {
-        function.getLabelStack().pop();
+        getFunction().getLabelStack().pop();
     }
 
     /**
@@ -513,6 +520,7 @@ loop:
     private void pushControlNode(final Node node) {
         final boolean isLoop = node instanceof WhileNode;
         final boolean isBreakable = node instanceof BreakableNode || node instanceof Block;
+        final FunctionNode function = getFunction();
         function.getControlStack().push(node);
 
         for (final LabelNode labelNode : function.getLabelStack()) {
@@ -531,7 +539,7 @@ loop:
      */
     private void popControlNode() {
         // Get control stack.
-        final Stack<Node> controlStack = function.getControlStack();
+        final Stack<Node> controlStack = getFunction().getControlStack();
 
         // Can be empty if missing brace.
         if (!controlStack.isEmpty()) {
@@ -541,7 +549,7 @@ loop:
 
     private void popControlNode(final Node node) {
         // Get control stack.
-        final Stack<Node> controlStack = function.getControlStack();
+        final Stack<Node> controlStack = getFunction().getControlStack();
 
         // Can be empty if missing brace.
         if (!controlStack.isEmpty() && controlStack.peek() == node) {
@@ -550,7 +558,7 @@ loop:
     }
 
     private boolean isInWithBlock() {
-        final Stack<Node> controlStack = function.getControlStack();
+        final Stack<Node> controlStack = getFunction().getControlStack();
         for (int i = controlStack.size() - 1; i >= 0; i--) {
             final Node node = controlStack.get(i);
 
@@ -563,7 +571,7 @@ loop:
     }
 
     private <T extends Node> T findControl(final Class<T> ctype) {
-        final Stack<Node> controlStack = function.getControlStack();
+        final Stack<Node> controlStack = getFunction().getControlStack();
         for (int i = controlStack.size() - 1; i >= 0; i--) {
             final Node node = controlStack.get(i);
 
@@ -577,7 +585,7 @@ loop:
 
     private <T extends Node> List<T> findControls(final Class<T> ctype, final Node to) {
         final List<T> nodes = new ArrayList<>();
-        final Stack<Node> controlStack = function.getControlStack();
+        final Stack<Node> controlStack = getFunction().getControlStack();
         for (int i = controlStack.size() - 1; i >= 0; i--) {
             final Node node = controlStack.get(i);
 
@@ -621,15 +629,16 @@ loop:
         // Make a fake token for the script.
         final long functionToken = Token.toDesc(FUNCTION, 0, source.getLength());
         // Set up the script to append elements.
-        script = newFunctionBlock(new IdentNode(source, functionToken, Token.descPosition(functionToken), scriptName));
-        // set kind to be SCRIPT
+
+        final FunctionNode script = newFunctionBlock(new IdentNode(source, functionToken, Token.descPosition(functionToken), scriptName));
+
         script.setKind(FunctionNode.Kind.SCRIPT);
-        // Set the first token of the script.
         script.setFirstToken(functionToken);
-        // Gather source elements.
+        functionDeclarations = new ArrayList<>();
         sourceElements();
+        script.prependStatements(functionDeclarations);
+        functionDeclarations = null;
         expect(EOF);
-        // Set the last token of the script.
         script.setLastToken(token);
         script.setFinish(source.getLength() - 1);
 
@@ -707,7 +716,7 @@ loop:
                     // check for directive prologues
                     if (checkDirective) {
                         // skip any debug statement like line number to get actual first line
-                        final Node lastStatement = lastStatement(block.getStatements());
+                        final Node lastStatement = lastStatement(getBlock().getStatements());
 
                         // get directive prologue, if any
                         final String directive = getDirective(lastStatement);
@@ -727,6 +736,7 @@ loop:
                             // handle use strict directive
                             if ("use strict".equals(directive)) {
                                 isStrictMode = true;
+                                final FunctionNode function = getFunction();
                                 function.setStrictMode(true);
 
                                 // We don't need to check these, if lexical environment is already strict
@@ -799,11 +809,11 @@ loop:
             if (isStrictMode && !topLevel) {
                 error(AbstractParser.message("strict.no.func.here"), token);
             }
-            functionExpression(true);
+            functionExpression(true, topLevel);
             return;
         }
 
-        block.addStatement(lineNumberNode);
+        getBlock().addStatement(lineNumberNode);
 
         switch (type) {
         case LBRACE:
@@ -889,7 +899,7 @@ loop:
         // Force block execution.
         final ExecuteNode executeNode = new ExecuteNode(source, newBlock.getToken(), finish, newBlock);
 
-        block.addStatement(executeNode);
+        getBlock().addStatement(executeNode);
     }
 
     /**
@@ -984,13 +994,9 @@ loop:
 
             // Allocate var node.
             final VarNode var = new VarNode(source, varToken, finish, name, init);
-            if (isStatement) {
-                function.addDeclaration(var);
-            }
-
             vars.add(var);
             // Add to current block.
-            block.addStatement(var);
+            getBlock().addStatement(var);
 
             if (type != COMMARIGHT) {
                 break;
@@ -1003,7 +1009,7 @@ loop:
             boolean semicolon = type == SEMICOLON;
             endOfLine();
             if (semicolon) {
-                block.setFinish(finish);
+                getBlock().setFinish(finish);
             }
         }
 
@@ -1020,7 +1026,7 @@ loop:
      */
     private void emptyStatement() {
         if (env._empty_statements) {
-            block.addStatement(new EmptyNode(source, token,
+            getBlock().addStatement(new EmptyNode(source, token,
                     Token.descPosition(token) + Token.descLength(token)));
         }
 
@@ -1046,7 +1052,7 @@ loop:
         ExecuteNode executeNode = null;
         if (expression != null) {
             executeNode = new ExecuteNode(source, expressionToken, finish, expression);
-            block.addStatement(executeNode);
+            getBlock().addStatement(executeNode);
         } else {
             expect(null);
         }
@@ -1055,7 +1061,7 @@ loop:
 
         if (executeNode != null) {
             executeNode.setFinish(finish);
-            block.setFinish(finish);
+            getBlock().setFinish(finish);
         }
     }
 
@@ -1097,7 +1103,7 @@ loop:
         // Construct and add new if node.
         final IfNode ifNode = new IfNode(source, ifToken, fail != null ? fail.getFinish() : pass.getFinish(), test, pass, fail);
 
-        block.addStatement(ifNode);
+        getBlock().addStatement(ifNode);
     }
 
     /**
@@ -1146,13 +1152,13 @@ loop:
             outer.setFinish(body.getFinish());
 
             // Add for to current block.
-            block.addStatement(forNode);
+            getBlock().addStatement(forNode);
         } finally {
-            restoreBlock();
+            restoreBlock(outer);
             popControlNode();
         }
 
-        block.addStatement(new ExecuteNode(source, outer.getToken(), outer.getFinish(), outer));
+        getBlock().addStatement(new ExecuteNode(source, outer.getToken(), outer.getFinish(), outer));
      }
 
     /**
@@ -1231,7 +1237,7 @@ loop:
                 }
 
                 if (init instanceof IdentNode) {
-                    if (! checkIdentLValue((IdentNode)init)) {
+                    if (!checkIdentLValue((IdentNode)init)) {
                         error(AbstractParser.message("not.lvalue.for.in.loop"), init.getToken());
                     }
                     verifyStrictIdent((IdentNode)init, "for-in iterator");
@@ -1286,7 +1292,7 @@ loop:
             whileNode.setFinish(statements.getFinish());
 
             // Add WHILE node.
-            block.addStatement(whileNode);
+            getBlock().addStatement(whileNode);
         } finally {
             popControlNode();
         }
@@ -1333,7 +1339,7 @@ loop:
             doWhileNode.setFinish(finish);
 
             // Add DO node.
-            block.addStatement(doWhileNode);
+            getBlock().addStatement(doWhileNode);
         } finally {
             popControlNode();
         }
@@ -1385,7 +1391,7 @@ loop:
         final ContinueNode continueNode = new ContinueNode(source, continueToken, finish, labelNode, targetNode, findControl(TryNode.class));
         continueNode.setScopeNestingLevel(countControls(WithNode.class, targetNode));
 
-        block.addStatement(continueNode);
+        getBlock().addStatement(continueNode);
     }
 
     /**
@@ -1433,7 +1439,7 @@ loop:
         final BreakNode breakNode = new BreakNode(source, breakToken, finish, labelNode, targetNode, findControl(TryNode.class));
         breakNode.setScopeNestingLevel(countControls(WithNode.class, targetNode));
 
-        block.addStatement(breakNode);
+        getBlock().addStatement(breakNode);
     }
 
     /**
@@ -1446,7 +1452,7 @@ loop:
      */
     private void returnStatement() {
         // check for return outside function
-        if (function.getKind() == FunctionNode.Kind.SCRIPT) {
+        if (getFunction().getKind() == FunctionNode.Kind.SCRIPT) {
             error(AbstractParser.message("invalid.return"));
         }
 
@@ -1473,7 +1479,7 @@ loop:
 
         // Construct and add RETURN node.
         final ReturnNode returnNode = new ReturnNode(source, returnToken, finish, expression, findControl(TryNode.class));
-        block.addStatement(returnNode);
+        getBlock().addStatement(returnNode);
     }
 
     /**
@@ -1508,7 +1514,7 @@ loop:
 
         // Construct and add YIELD node.
         final ReturnNode yieldNode = new ReturnNode(source, yieldToken, finish, expression, findControl(TryNode.class));
-        block.addStatement(yieldNode);
+        getBlock().addStatement(yieldNode);
     }
 
     /**
@@ -1532,7 +1538,10 @@ loop:
 
         // Get WITH expression.
         final WithNode withNode = new WithNode(source, withToken, finish, null, null);
-        function.setHasWith();
+        final Iterator<FunctionNode> it = lexicalContext.getFunctions();
+        if(it.hasNext()) {
+            it.next().setHasWith(it);
+        }
 
         try {
             pushControlNode(withNode);
@@ -1552,7 +1561,7 @@ loop:
             popControlNode(withNode);
         }
 
-        block.addStatement(withNode);
+        getBlock().addStatement(withNode);
     }
 
     /**
@@ -1652,7 +1661,7 @@ loop:
 
             switchNode.setFinish(finish);
 
-            block.addStatement(switchNode);
+            getBlock().addStatement(switchNode);
         } finally {
             popControlNode();
         }
@@ -1687,7 +1696,7 @@ loop:
             labelNode.setBody(statements);
             labelNode.setFinish(finish);
 
-            block.addStatement(labelNode);
+            getBlock().addStatement(labelNode);
         } finally {
             // Remove label.
             popLabel();
@@ -1730,7 +1739,7 @@ loop:
 
         // Construct and add THROW node.
         final ThrowNode throwNode = new ThrowNode(source, throwToken, finish, expression, findControl(TryNode.class));
-        block.addStatement(throwNode);
+        getBlock().addStatement(throwNode);
     }
 
     /**
@@ -1796,18 +1805,18 @@ loop:
 
                 expect(RPAREN);
 
+                final Block catchBlock = newBlock();
                 try {
-                    final Block catchBlock = newBlock();
 
                     // Get CATCH body.
                     final Block catchBody = getBlock(true);
 
                     // Create and add catch.
                     final CatchNode catchNode = new CatchNode(source, catchToken, finish, exception, ifExpression, catchBody);
-                    block.addStatement(catchNode);
+                    getBlock().addStatement(catchNode);
                     catchBlocks.add(catchBlock);
                 } finally {
-                    restoreBlock();
+                    restoreBlock(catchBlock);
                 }
 
                 // If unconditional catch then should to be the end.
@@ -1843,11 +1852,11 @@ loop:
             outer.addStatement(tryNode);
         } finally {
             popControlNode(tryNode);
-            restoreBlock();
+            restoreBlock(outer);
             popControlNode(outer);
         }
 
-        block.addStatement(new ExecuteNode(source, outer.getToken(), outer.getFinish(), outer));
+        getBlock().addStatement(new ExecuteNode(source, outer.getToken(), outer.getFinish(), outer));
     }
 
     /**
@@ -1867,7 +1876,7 @@ loop:
         endOfLine();
 
         final RuntimeNode runtimeNode = new RuntimeNode(source, debuggerToken, finish, RuntimeNode.Request.DEBUGGER, new ArrayList<Node>());
-        block.addStatement(runtimeNode);
+        getBlock().addStatement(runtimeNode);
     }
 
     /**
@@ -2026,7 +2035,7 @@ loop:
                 break;
 
             default:
-                if (! elision) {
+                if (!elision) {
                     error(AbstractParser.message("expected.comma", type.getNameOrType()));
                 }
                 // Add expression element.
@@ -2067,15 +2076,11 @@ loop:
         next();
 
         // Object context.
-        Block objectContext = null;
         // Prepare to accumulate elements.
         final List<Node> elements = new ArrayList<>();
         final Map<Object, PropertyNode> map = new HashMap<>();
 
-        try {
-            // Create a block for the object literal.
-            objectContext = newBlock();
-
+        // Create a block for the object literal.
             boolean commaSeen = true;
 loop:
             while (true) {
@@ -2090,97 +2095,90 @@ loop:
                     break;
 
                 default:
-                    if (! commaSeen) {
+                    if (!commaSeen) {
                         error(AbstractParser.message("expected.comma", type.getNameOrType()));
-                    }
-
-                    commaSeen = false;
-                    // Get and add the next property.
-                    final PropertyNode property = propertyAssignment();
-                    final Object key = property.getKeyName();
-                    final PropertyNode existingProperty = map.get(key);
-
-                    if (existingProperty != null) {
-                        // ECMA section 11.1.5 Object Initialiser
-                        // point # 4 on property assignment production
-                        final Node value  = property.getValue();
-                        final Node getter = property.getGetter();
-                        final Node setter = property.getSetter();
-
-                        final Node prevValue  = existingProperty.getValue();
-                        final Node prevGetter = existingProperty.getGetter();
-                        final Node prevSetter = existingProperty.getSetter();
-
-                        boolean redefinitionOk = true;
-                        // ECMA 11.1.5 strict mode restrictions
-                        if (isStrictMode) {
-                            if (value != null && prevValue != null) {
-                                redefinitionOk = false;
-                            }
-                        }
-
-                        final boolean isPrevAccessor = prevGetter != null || prevSetter != null;
-                        final boolean isAccessor = getter != null || setter != null;
-
-                        // data property redefined as accessor property
-                        if (prevValue != null && isAccessor) {
-                            redefinitionOk = false;
-                        }
-
-                        // accessor property redefined as data
-                        if (isPrevAccessor && value != null) {
-                            redefinitionOk = false;
-                        }
-
-                        if (isAccessor && isPrevAccessor) {
-                            if (getter != null && prevGetter != null ||
-                                setter != null && prevSetter != null) {
-                                redefinitionOk = false;
-                            }
-                        }
-
-                        if (! redefinitionOk) {
-                            error(AbstractParser.message("property.redefinition", key.toString()), property.getToken());
-                        }
-
-                        if (value != null) {
-                            final Node existingValue = existingProperty.getValue();
-
-                            if (existingValue == null) {
-                                existingProperty.setValue(value);
-                            } else {
-                                final long propertyToken = Token.recast(existingProperty.getToken(), COMMARIGHT);
-                                existingProperty.setValue(new BinaryNode(source, propertyToken, existingValue, value));
-                            }
-
-                            existingProperty.setGetter(null);
-                            existingProperty.setSetter(null);
-                        }
-
-                        if (getter != null) {
-                            existingProperty.setGetter(getter);
-                        }
-
-                        if (setter != null) {
-                            existingProperty.setSetter(setter);
-                        }
-                    } else {
-                        map.put(key, property);
-                        elements.add(property);
-                    }
-
-                    break;
                 }
+
+                commaSeen = false;
+                // Get and add the next property.
+                final PropertyNode property = propertyAssignment();
+                final Object key = property.getKeyName();
+                final PropertyNode existingProperty = map.get(key);
+
+                if (existingProperty != null) {
+                    // ECMA section 11.1.5 Object Initialiser
+                    // point # 4 on property assignment production
+                    final Node value  = property.getValue();
+                    final Node getter = property.getGetter();
+                    final Node setter = property.getSetter();
+
+                    final Node prevValue  = existingProperty.getValue();
+                    final Node prevGetter = existingProperty.getGetter();
+                    final Node prevSetter = existingProperty.getSetter();
+
+                    boolean redefinitionOk = true;
+                    // ECMA 11.1.5 strict mode restrictions
+                    if (isStrictMode) {
+                        if (value != null && prevValue != null) {
+                            redefinitionOk = false;
+                        }
+                    }
+
+                    final boolean isPrevAccessor = prevGetter != null || prevSetter != null;
+                    final boolean isAccessor = getter != null || setter != null;
+
+                    // data property redefined as accessor property
+                    if (prevValue != null && isAccessor) {
+                        redefinitionOk = false;
+                    }
+
+                    // accessor property redefined as data
+                    if (isPrevAccessor && value != null) {
+                        redefinitionOk = false;
+                    }
+
+                    if (isAccessor && isPrevAccessor) {
+                        if (getter != null && prevGetter != null ||
+                            setter != null && prevSetter != null) {
+                            redefinitionOk = false;
+                        }
+                    }
+
+                    if (!redefinitionOk) {
+                        error(AbstractParser.message("property.redefinition", key.toString()), property.getToken());
+                    }
+
+                    if (value != null) {
+                        final Node existingValue = existingProperty.getValue();
+
+                        if (existingValue == null) {
+                            existingProperty.setValue(value);
+                        } else {
+                            final long propertyToken = Token.recast(existingProperty.getToken(), COMMARIGHT);
+                            existingProperty.setValue(new BinaryNode(source, propertyToken, existingValue, value));
+                        }
+
+                        existingProperty.setGetter(null);
+                        existingProperty.setSetter(null);
+                    }
+
+                    if (getter != null) {
+                        existingProperty.setGetter(getter);
+                    }
+
+                    if (setter != null) {
+                        existingProperty.setSetter(setter);
+                    }
+                } else {
+                    map.put(key, property);
+                    elements.add(property);
+                }
+
+                break;
             }
-        } finally {
-            restoreBlock();
         }
 
-        // Construct new object literal.
-        objectContext.setFinish(finish);
-        objectContext.setStart(Token.descPosition(objectToken));
-
-        return new ObjectNode(source, objectToken, finish, objectContext, elements);
+        return new ObjectNode(source, objectToken, finish, elements);
     }
 
     /**
@@ -2258,7 +2256,7 @@ loop:
                     parameters = new ArrayList<>();
                     functionNode = functionBody(getSetToken, getNameNode, parameters, FunctionNode.Kind.GETTER);
                     propertyNode = new PropertyNode(source, propertyToken, finish, getIdent, null);
-                    propertyNode.setGetter(new ReferenceNode(source, propertyToken, finish, functionNode));
+                    propertyNode.setGetter(functionNode);
                     return propertyNode;
 
                 case "set":
@@ -2273,7 +2271,7 @@ loop:
                     parameters.add(argIdent);
                     functionNode = functionBody(getSetToken, setNameNode, parameters, FunctionNode.Kind.SETTER);
                     propertyNode = new PropertyNode(source, propertyToken, finish, setIdent, null);
-                    propertyNode.setSetter(new ReferenceNode(source, propertyToken, finish, functionNode));
+                    propertyNode.setSetter(functionNode);
                     return propertyNode;
 
                 default:
@@ -2454,7 +2452,7 @@ loop:
 
         case FUNCTION:
             // Get function expression.
-            lhs = functionExpression(false);
+            lhs = functionExpression(false, false);
             break;
 
         default:
@@ -2559,7 +2557,7 @@ loop:
      *
      * @return Expression node.
      */
-    private Node functionExpression(final boolean isStatement) {
+    private Node functionExpression(final boolean isStatement, final boolean topLevel) {
         final LineNumberNode lineNumber = lineNumber();
 
         final long functionToken = token;
@@ -2594,18 +2592,18 @@ loop:
 
         final FunctionNode functionNode = functionBody(functionToken, name, parameters, FunctionNode.Kind.NORMAL);
 
-        if (isStatement && !isInWithBlock()) {
-            functionNode.setIsStatement();
+        if (isStatement) {
+            if(topLevel) {
+                functionNode.setIsDeclared();
+            }
             if(ARGUMENTS.tag().equals(name.getName())) {
-                functionNode.findParentFunction().setDefinesArguments();
+                getFunction().setDefinesArguments();
             }
         }
 
         if (isAnonymous) {
             functionNode.setIsAnonymous();
         }
-
-        final ReferenceNode referenceNode = new ReferenceNode(source, functionToken, finish, functionNode);
 
         final int arity = parameters.size();
 
@@ -2642,17 +2640,18 @@ loop:
         }
 
         if (isStatement) {
-            final VarNode var = new VarNode(source, functionToken, finish, name, referenceNode);
-            if (isInWithBlock()) {
-                function.addDeclaration(var);
-                // Add to current block.
-                block.addStatement(var);
+            final VarNode varNode = new VarNode(source, functionToken, finish, name, functionNode, true);
+            if(topLevel) {
+                functionDeclarations.add(lineNumber);
+                functionDeclarations.add(varNode);
             } else {
-                functionNode.setFunctionVarNode(var, lineNumber);
+                final Block block = getBlock();
+                block.addStatement(lineNumber);
+                block.addStatement(varNode);
             }
         }
 
-        return referenceNode;
+        return functionNode;
     }
 
     /**
@@ -2735,7 +2734,14 @@ loop:
                 expect(LBRACE);
 
                 // Gather the function elements.
-                sourceElements();
+                final List<Node> prevFunctionDecls = functionDeclarations;
+                functionDeclarations = new ArrayList<>();
+                try {
+                    sourceElements();
+                    functionNode.prependStatements(functionDeclarations);
+                } finally {
+                    functionDeclarations = prevFunctionDecls;
+                }
 
                 functionNode.setLastToken(token);
                 expect(RBRACE);
@@ -2743,11 +2749,8 @@ loop:
 
             }
         } finally {
-            restoreBlock();
+            restoreBlock(functionNode);
         }
-
-        // Add the body of the function to the current block.
-        block.addFunction(functionNode);
 
         return functionNode;
     }
@@ -2845,7 +2848,7 @@ loop:
             }
 
             if (lhs instanceof IdentNode) {
-                if (! checkIdentLValue((IdentNode)lhs)) {
+                if (!checkIdentLValue((IdentNode)lhs)) {
                     return referenceError(lhs, null);
                 }
                 verifyStrictIdent((IdentNode)lhs, "operand for " + opType.getName() + " operator");
@@ -2872,7 +2875,7 @@ loop:
                     return referenceError(lhs, null);
                 }
                 if (lhs instanceof IdentNode) {
-                    if (! checkIdentLValue((IdentNode)lhs)) {
+                    if (!checkIdentLValue((IdentNode)lhs)) {
                         next();
                         return referenceError(lhs, null);
                     }
@@ -3082,5 +3085,13 @@ loop:
     @Override
     public String toString() {
         return "[JavaScript Parsing]";
+    }
+
+    private Block getBlock() {
+        return lexicalContext.getCurrentBlock();
+    }
+
+    private FunctionNode getFunction() {
+        return lexicalContext.getCurrentFunction();
     }
 }

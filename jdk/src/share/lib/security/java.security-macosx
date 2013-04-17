@@ -158,6 +158,8 @@ package.access=sun.,\
                com.sun.org.apache.xalan.internal.utils.,\
                com.sun.org.glassfish.external.,\
                com.sun.org.glassfish.gmbal.,\
+               com.oracle.xmlns.internal.,\
+               com.oracle.webservices.internal.,\
 	       jdk.internal.,\
 	       jdk.nashorn.internal.,\
 	       jdk.nashorn.tools.,\
@@ -185,6 +187,8 @@ package.definition=sun.,\
                    com.sun.org.apache.xalan.internal.utils.,\
                    com.sun.org.glassfish.external.,\
                    com.sun.org.glassfish.gmbal.,\
+                   com.oracle.xmlns.internal.,\
+                   com.oracle.webservices.internal.,\
 		   jdk.internal.,\
 		   jdk.nashorn.internal.,\
 		   jdk.nashorn.tools.,\

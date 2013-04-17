@@ -39,7 +39,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
- * Utility class shared by {@link NashornLinker} and {@code NashornPrimitiveLinker} for converting JS values to Java
+ * Utility class shared by {@code NashornLinker} and {@code NashornPrimitiveLinker} for converting JS values to Java
  * types.
  */
 public class JavaArgumentConverters {

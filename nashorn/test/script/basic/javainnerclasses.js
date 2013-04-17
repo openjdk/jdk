@@ -29,25 +29,25 @@
  */
  
 // Do it with Java.type()
-var outer = new (Java.type("jdk.nashorn.internal.test.models.OuterClass"))("apple")
+var outer = new (Java.type("jdk.nashorn.test.models.OuterClass"))("apple")
 print(outer)
-var innerStatic = new (Java.type("jdk.nashorn.internal.test.models.OuterClass$InnerStaticClass"))("orange")
+var innerStatic = new (Java.type("jdk.nashorn.test.models.OuterClass$InnerStaticClass"))("orange")
 print(innerStatic)
-var innerNonStatic = new (Java.type("jdk.nashorn.internal.test.models.OuterClass$InnerNonStaticClass"))(outer, "pear")
+var innerNonStatic = new (Java.type("jdk.nashorn.test.models.OuterClass$InnerNonStaticClass"))(outer, "pear")
 print(innerNonStatic)
 
 // Now do it with Packages and explicit $ names
-var outer = new Packages.jdk.nashorn.internal.test.models.OuterClass("red")
+var outer = new Packages.jdk.nashorn.test.models.OuterClass("red")
 print(outer)
-var innerStatic = new Packages.jdk.nashorn.internal.test.models.OuterClass$InnerStaticClass("green")
+var innerStatic = new Packages.jdk.nashorn.test.models.OuterClass$InnerStaticClass("green")
 print(innerStatic)
-var innerNonStatic = new Packages.jdk.nashorn.internal.test.models.OuterClass$InnerNonStaticClass(outer, "blue")
+var innerNonStatic = new Packages.jdk.nashorn.test.models.OuterClass$InnerNonStaticClass(outer, "blue")
 print(innerNonStatic)
 
 // Now do it with Packages and nested properties
-var outer = new Packages.jdk.nashorn.internal.test.models.OuterClass("sweet")
+var outer = new Packages.jdk.nashorn.test.models.OuterClass("sweet")
 print(outer)
-var innerStatic = new Packages.jdk.nashorn.internal.test.models.OuterClass.InnerStaticClass("sour")
+var innerStatic = new Packages.jdk.nashorn.test.models.OuterClass.InnerStaticClass("sour")
 print(innerStatic)
-var innerNonStatic = new Packages.jdk.nashorn.internal.test.models.OuterClass.InnerNonStaticClass(outer, "bitter")
+var innerNonStatic = new Packages.jdk.nashorn.test.models.OuterClass.InnerNonStaticClass(outer, "bitter")
 print(innerNonStatic)
