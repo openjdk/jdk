@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package java.util;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+
+import java.util.function.Consumer;
 
 /**
  * The {@code Vector} class implements a growable array of
@@ -1155,6 +1157,28 @@ public class Vector<E>
             lastRet = -1;
         }
 
+        @Override
+        public void forEachRemaining(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+            synchronized (Vector.this) {
+                final int size = Vector.this.elementCount;
+                int i = cursor;
+                if (i >= size) {
+                    return;
+                }
+                final Object[] elementData = Vector.this.elementData;
+                if (i >= elementData.length) {
+                    throw new ConcurrentModificationException();
+                }
+                while (i != size && modCount == expectedModCount) {
+                    action.accept((E) elementData[i++]);
+                }
+                // update once at end of iteration to reduce heap write traffic
+                lastRet = cursor = i;
+                checkForComodification();
+            }
+        }
+
         final void checkForComodification() {
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
@@ -1297,5 +1321,97 @@ public class Vector<E>
             throw new ConcurrentModificationException();
         }
         modCount++;
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        return new VectorSpliterator<>(this, null, 0, -1, 0);
+    }
+
+    /** Similar to ArrayList Spliterator */
+    static final class VectorSpliterator<E> implements Spliterator<E> {
+        private final Vector<E> list;
+        private Object[] array;
+        private int index; // current index, modified on advance/split
+        private int fence; // -1 until used; then one past last index
+        private int expectedModCount; // initialized when fence set
+
+        /** Create new spliterator covering the given  range */
+        VectorSpliterator(Vector<E> list, Object[] array, int origin, int fence,
+                          int expectedModCount) {
+            this.list = list;
+            this.array = array;
+            this.index = origin;
+            this.fence = fence;
+            this.expectedModCount = expectedModCount;
+        }
+
+        private int getFence() { // initialize on first use
+            int hi;
+            if ((hi = fence) < 0) {
+                synchronized(list) {
+                    array = list.elementData;
+                    expectedModCount = list.modCount;
+                    hi = fence = list.elementCount;
+                }
+            }
+            return hi;
+        }
+
+        public Spliterator<E> trySplit() {
+            int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
+            return (lo >= mid) ? null :
+                new VectorSpliterator<E>(list, array, lo, index = mid,
+                                         expectedModCount);
+        }
+
+        @SuppressWarnings("unchecked")
+        public boolean tryAdvance(Consumer<? super E> action) {
+            int i;
+            if (action == null)
+                throw new NullPointerException();
+            if (getFence() > (i = index)) {
+                index = i + 1;
+                action.accept((E)array[i]);
+                if (list.modCount != expectedModCount)
+                    throw new ConcurrentModificationException();
+                return true;
+            }
+            return false;
+        }
+
+        @SuppressWarnings("unchecked")
+        public void forEachRemaining(Consumer<? super E> action) {
+            int i, hi; // hoist accesses and checks from loop
+            Vector<E> lst; Object[] a;
+            if (action == null)
+                throw new NullPointerException();
+            if ((lst = list) != null) {
+                if ((hi = fence) < 0) {
+                    synchronized(lst) {
+                        expectedModCount = lst.modCount;
+                        a = array = lst.elementData;
+                        hi = fence = lst.elementCount;
+                    }
+                }
+                else
+                    a = array;
+                if (a != null && (i = index) >= 0 && (index = hi) <= a.length) {
+                    while (i < hi)
+                        action.accept((E) a[i++]);
+                    if (lst.modCount == expectedModCount)
+                        return;
+                }
+            }
+            throw new ConcurrentModificationException();
+        }
+
+        public long estimateSize() {
+            return (long) (getFence() - index);
+        }
+
+        public int characteristics() {
+            return Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED;
+        }
     }
 }
