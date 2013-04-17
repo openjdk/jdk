@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,17 +21,17 @@
  * questions.
  */
 
-#include "jvm.h"
-#include "sun_reflect_Reflection.h"
+package boot;
 
-JNIEXPORT jclass JNICALL Java_sun_reflect_Reflection_getCallerClass
-(JNIEnv *env, jclass unused)
-{
-    return JVM_GetCallerClass(env, JVM_DEPTH); // JVM_DEPTH is only the expected value
-}
+public class GetCallerClass {
+    @sun.reflect.CallerSensitive
+    public ClassLoader getCallerLoader() {
+        Class<?> c = sun.reflect.Reflection.getCallerClass();
+        return c.getClassLoader();
+    }
 
-JNIEXPORT jint JNICALL Java_sun_reflect_Reflection_getClassAccessFlags
-(JNIEnv *env, jclass unused, jclass cls)
-{
-    return JVM_GetClassAccessFlags(env, cls);
+    public ClassLoader missingCallerSensitiveAnnotation() {
+        Class<?> c = sun.reflect.Reflection.getCallerClass();
+        return c.getClassLoader();
+    }
 }

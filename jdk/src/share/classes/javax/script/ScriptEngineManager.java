@@ -28,6 +28,7 @@ import java.util.*;
 import java.security.*;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
@@ -60,9 +61,10 @@ public class ScriptEngineManager  {
      *
      * @see java.lang.Thread#getContextClassLoader
      */
+    @CallerSensitive
     public ScriptEngineManager() {
         ClassLoader ctxtLoader = Thread.currentThread().getContextClassLoader();
-        if (canCallerAccessLoader(ctxtLoader)) {
+        if (canCallerAccessLoader(ctxtLoader, Reflection.getCallerClass())) {
             if (DEBUG) System.out.println("using " + ctxtLoader);
             init(ctxtLoader);
         } else {
@@ -419,10 +421,10 @@ public class ScriptEngineManager  {
     /** Global bindings associated with script engines created by this manager. */
     private Bindings globalScope;
 
-    private boolean canCallerAccessLoader(ClassLoader loader) {
+    private boolean canCallerAccessLoader(ClassLoader loader, Class<?> caller) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            ClassLoader callerLoader = getCallerClassLoader();
+            ClassLoader callerLoader = getClassLoader(caller);
             if (!sun.misc.VM.isSystemDomainLoader(callerLoader)) {
                 if (loader != callerLoader || !isAncestor(loader, callerLoader)) {
                     try {
@@ -438,10 +440,9 @@ public class ScriptEngineManager  {
         return true;
     }
 
-    // Note that this code is same as ClassLoader.getCallerClassLoader().
+    // Note that this code is same as ClassLoader.getClassLoader().
     // But, that method is package private and hence we can't call here.
-    private ClassLoader getCallerClassLoader() {
-        Class<?> caller = Reflection.getCallerClass(3);
+    private ClassLoader getClassLoader(Class<?> caller) {
         if (caller == null) {
             return null;
         }
