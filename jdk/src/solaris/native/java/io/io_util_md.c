@@ -200,12 +200,8 @@ handleAvailable(FD fd, jlong *pbytes)
             return 0;
     }
 
-    if (size >= current) {
-        *pbytes = size - current;
-        return 1;
-    } else {
-        return 0;
-    }
+    *pbytes = size - current;
+    return 1;
 }
 
 jint

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ import java.util.Map;
 import java.util.Iterator;
 import sun.misc.PerformanceLogger;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * This is a the master Graphics2D superclass for all of the Sun
@@ -103,8 +103,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  *
  * @author Jim Graham
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public final class SunGraphics2D
     extends Graphics2D
     implements ConstrainableGraphics, Cloneable, DestSurfaceProvider
@@ -113,18 +111,29 @@ public final class SunGraphics2D
      * Attribute States
      */
     /* Paint */
+    @Native
     public static final int PAINT_CUSTOM       = 6; /* Any other Paint object */
+    @Native
     public static final int PAINT_TEXTURE      = 5; /* Tiled Image */
+    @Native
     public static final int PAINT_RAD_GRADIENT = 4; /* Color RadialGradient */
+    @Native
     public static final int PAINT_LIN_GRADIENT = 3; /* Color LinearGradient */
+    @Native
     public static final int PAINT_GRADIENT     = 2; /* Color Gradient */
+    @Native
     public static final int PAINT_ALPHACOLOR   = 1; /* Non-opaque Color */
+    @Native
     public static final int PAINT_OPAQUECOLOR  = 0; /* Opaque Color */
 
     /* Composite*/
+    @Native
     public static final int COMP_CUSTOM = 3;/* Custom Composite */
+    @Native
     public static final int COMP_XOR    = 2;/* XOR Mode Composite */
+    @Native
     public static final int COMP_ALPHA  = 1;/* AlphaComposite */
+    @Native
     public static final int COMP_ISCOPY = 0;/* simple stores into destination,
                                              * i.e. Src, SrcOverNoEa, and other
                                              * alpha modes which replace
@@ -132,21 +141,33 @@ public final class SunGraphics2D
                                              */
 
     /* Stroke */
+    @Native
     public static final int STROKE_CUSTOM = 3; /* custom Stroke */
+    @Native
     public static final int STROKE_WIDE   = 2; /* BasicStroke */
+    @Native
     public static final int STROKE_THINDASHED   = 1; /* BasicStroke */
+    @Native
     public static final int STROKE_THIN   = 0; /* BasicStroke */
 
     /* Transform */
+    @Native
     public static final int TRANSFORM_GENERIC = 4; /* any 3x2 */
+    @Native
     public static final int TRANSFORM_TRANSLATESCALE = 3; /* scale XY */
+    @Native
     public static final int TRANSFORM_ANY_TRANSLATE = 2; /* non-int translate */
+    @Native
     public static final int TRANSFORM_INT_TRANSLATE = 1; /* int translate */
+    @Native
     public static final int TRANSFORM_ISIDENT = 0; /* Identity */
 
     /* Clipping */
+    @Native
     public static final int CLIP_SHAPE       = 2; /* arbitrary clip */
+    @Native
     public static final int CLIP_RECTANGULAR = 1; /* rectangular clip */
+    @Native
     public static final int CLIP_DEVICE      = 0; /* no clipping set */
 
     /* The following fields are used when the current Paint is a Color. */

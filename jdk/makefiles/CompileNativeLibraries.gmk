@@ -109,7 +109,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM_MAC,\
 
 BUILD_LIBFDLIBM := $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX)
 $(BUILD_LIBFDLIBM) : $(BUILD_LIBFDLIBM_MAC)
-	$(CP) -a $< $@
+	$(call install-file)
 
 endif
 BUILD_LIBRARIES += $(BUILD_LIBFDLIBM)
@@ -1838,16 +1838,14 @@ BUILD_LIBRARIES += $(BUILD_LIBNET)
 
 $(JDK_OUTPUTDIR)/lib/net.properties: $(JDK_TOPDIR)/src/share/lib/net.properties
 	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(JDK_OUTPUTDIR)/lib/net.properties
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template : $(JDK_TOPDIR)/src/${OPENJDK_TARGET_OS_API_DIR}/lib/sdp/sdp.conf.template
 	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template
 endif
@@ -2168,7 +2166,7 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli_static))
 
 $(JDK_OUTPUTDIR)/objs/libjli_static.a : $(BUILD_LIBJLI_STATIC)
-	$(CP) -a $< $@
+	$(call install-file)
 
 BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/objs/libjli_static.a
 endif
@@ -2386,17 +2384,22 @@ endif
 
 ifndef BUILD_HEADLESS_ONLY
 LIBSPLASHSCREEN_DIRS:=\
-	$(JDK_TOPDIR)/src/share/native/sun/awt/giflib \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/libpng \
 	$(JDK_TOPDIR)/src/share/native/sun/awt/splashscreen
+
+ifeq ($(USE_EXTERNAL_LIBGIF),true)
+    GIFLIB_LDFLAGS := -lgif
+else
+    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/sun/awt/giflib
+    GIFLIB_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/awt/giflib
+endif
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
     LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/awt/splashscreen
 else
     LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/macosx/native/sun/awt/splashscreen
 endif
-
 
 LIBSPLASHSCREEN_CFLAGS:=-DSPLASHSCREEN -DPNG_NO_MMX_CODE \
 	$(foreach dir,$(LIBSPLASHSCREEN_DIRS),-I$(dir))
@@ -2449,11 +2452,11 @@ $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
 		EXCLUDE_FILES:=imageioJPEG.c jpegdecoder.c pngtest.c,\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
-		CFLAGS:=$(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB),\
+		CFLAGS:=$(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) $(GIFLIB_CFLAGS),\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libsplashscreen/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_SUFFIX:=$(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ),\
+		LDFLAGS_SUFFIX:=$(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ) $(GIFLIB_LDFLAGS),\
 		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\

@@ -38,6 +38,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -65,14 +66,31 @@ public class ToolBox {
 
     public static final String lineSeparator = System.getProperty("line.separator");
     public static final String jdkUnderTest = System.getProperty("test.jdk");
-    public static final String testVMOpts = System.getProperty("test.tool.vm.opts");
-    public static final String javaBinary = Paths.get(jdkUnderTest, "bin", "java").toString();
-    //why this one private. Because the function which provide also the test options should be used
-    private static final String javacBinary = Paths.get(jdkUnderTest, "bin", "javac").toString();
+    public static final Path javaBinary = Paths.get(jdkUnderTest, "bin", "java");
+    public static final Path javacBinary = Paths.get(jdkUnderTest, "bin", "javac");
+
+    public static final List<String> testToolVMOpts;
+    public static final List<String> testVMOpts;
 
     private static final Charset defaultCharset = Charset.defaultCharset();
 
     static final JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
+
+    static {
+        String sysProp = System.getProperty("test.tool.vm.opts");
+        if (sysProp != null && sysProp.length() > 0) {
+            testToolVMOpts = Arrays.asList(sysProp.split("\\s+"));
+        } else {
+            testToolVMOpts = Collections.<String>emptyList();
+        }
+
+        sysProp = System.getProperty("test.vm.opts");
+        if (sysProp != null && sysProp.length() > 0) {
+            testVMOpts = Arrays.asList(sysProp.split("\\s+"));
+        } else {
+            testVMOpts = Collections.<String>emptyList();
+        }
+    }
 
     /**
      * The expected result of command-like method execution.
@@ -199,8 +217,8 @@ public class ToolBox {
         protected Expect whatToExpect;
         protected WriterHelper stdOutput;
         protected WriterHelper errOutput;
-        protected List<String> options;
-        protected String[] optionsArr;
+        protected List<String> args = new ArrayList<>();
+        protected String[] argsArr;
 
         protected GenericArgs() {
             set(Expect.SUCCESS);
@@ -238,19 +256,50 @@ public class ToolBox {
 
         public T setAllArgs(String... args) {
             currentParams.add(AcceptedParams.OPTIONS);
-            this.optionsArr = args;
+            this.argsArr = args;
+            return (T) this;
+        }
+
+
+        public T appendArgs(String... args) {
+            appendArgs(Arrays.asList(args));
+            return (T)this;
+        }
+
+        public T appendArgs(Path... args) {
+            if (args != null) {
+                List<String> list = new ArrayList<>();
+                for (int i = 0; i < args.length; i++) {
+                    if (args[i] != null) {
+                        list.add(args[i].toString());
+                    }
+                }
+                appendArgs(list);
+            }
+            return (T)this;
+        }
+
+        public T appendArgs(List<String> args) {
+            if (args != null && args.size() > 0) {
+                currentParams.add(AcceptedParams.OPTIONS);
+                for (int i = 0; i < args.size(); i++) {
+                    if (args.get(i) != null) {
+                        this.args.add(args.get(i));
+                    }
+                }
+            }
             return (T)this;
         }
 
         public T setOptions(List<String> options) {
             currentParams.add(AcceptedParams.OPTIONS);
-            this.options = options;
+            this.args = options;
             return (T)this;
         }
 
         public T setOptions(String... options) {
             currentParams.add(AcceptedParams.OPTIONS);
-            this.options = Arrays.asList(options);
+            this.args = Arrays.asList(options);
             return (T)this;
         }
 
@@ -365,8 +414,12 @@ public class ToolBox {
      * Custom exception for not equal resources.
      */
     public static class ResourcesNotEqualException extends Exception {
-        public ResourcesNotEqualException() {
-            super("The resources provided for comparison are different");
+        public ResourcesNotEqualException(List<String> res1, List<String> res2) {
+            super(createMessage(res1, res2));
+        }
+
+        public ResourcesNotEqualException(String line1, String line2) {
+            super(createMessage(line1, line2));
         }
 
         public ResourcesNotEqualException(Path path1, Path path2) {
@@ -379,15 +432,20 @@ public class ToolBox {
                     .append(path1.toString()).append(" and \n")
                     .append(path2.toString()).append("are different").toString();
         }
-    }
 
-    /**
-     * Method to get the a path to the javac command available at the jdk being
-     * tested along with the test vm options.
-     * @return a String[] with the two components mentioned.
-     */
-    public static String[] getJavacBin() {
-        return new String[]{javacBinary, testVMOpts};
+        private static String createMessage(String line1, String line2) {
+            return new StringBuilder()
+                    .append("The resources provided for comparison are different at lines: \n")
+                    .append(line1).append(" and \n")
+                    .append(line2).toString();
+        }
+
+        private static String createMessage(List<String> res1, List<String> res2) {
+            return new StringBuilder()
+                    .append("The resources provided for comparison are different: \n")
+                    .append("Resource 1 is: ").append(res1).append("\n and \n")
+                    .append("Resource 2 is: ").append(res2).append("\n").toString();
+        }
     }
 
     /**
@@ -396,7 +454,7 @@ public class ToolBox {
     public static int javac(JavaToolArgs params)
             throws CommandExecutionException, IOException {
         if (params.hasMinParams()) {
-            if (params.optionsArr != null) {
+            if (params.argsArr != null) {
                 return genericJavaCMD(JavaCMD.JAVAC, params);
             } else {
                 return genericJavaCMD(JavaCMD.JAVAC_API, params);
@@ -437,14 +495,14 @@ public class ToolBox {
         JAVAC {
             @Override
             int run(JavaToolArgs params, PrintWriter pw) {
-                return com.sun.tools.javac.Main.compile(params.optionsArr, pw);
+                return com.sun.tools.javac.Main.compile(params.argsArr, pw);
             }
         },
         JAVAC_API {
             @Override
             int run(JavaToolArgs params, PrintWriter pw) {
                 JavacTask ct = (JavacTask)comp.getTask(pw, null, null,
-                        params.options, null, params.sources);
+                        params.args, null, params.sources);
                 return ((JavacTaskImpl)ct).doCall().exitCode;
             }
 
@@ -467,13 +525,13 @@ public class ToolBox {
         JAVAH {
             @Override
             int run(JavaToolArgs params, PrintWriter pw) {
-                return com.sun.tools.javah.Main.run(params.optionsArr, pw);
+                return com.sun.tools.javah.Main.run(params.argsArr, pw);
             }
         },
         JAVAP {
             @Override
             int run(JavaToolArgs params, PrintWriter pw) {
-                return com.sun.tools.javap.Main.run(params.optionsArr, pw);
+                return com.sun.tools.javap.Main.run(params.argsArr, pw);
             }
         };
 
@@ -486,9 +544,9 @@ public class ToolBox {
         List<String> getExceptionMsgContent(JavaToolArgs params) {
             List<String> result = new ArrayList<>();
             result.add(getName());
-            result.addAll(params.optionsArr != null ?
-                    Arrays.asList(params.optionsArr) :
-                    params.options);
+            result.addAll(params.argsArr != null ?
+                    Arrays.asList(params.argsArr) :
+                    params.args);
             return result;
         }
     }
@@ -509,7 +567,7 @@ public class ToolBox {
         String out = (sw == null) ? null : sw.toString();
 
         if (params.errOutput != null && (out != null) && !out.isEmpty()) {
-            params.errOutput.addAll(splitLines(out));
+            params.errOutput.addAll(splitLines(out, lineSeparator));
         }
 
         if ( (rc == 0 && params.whatToExpect == Expect.SUCCESS) ||
@@ -542,9 +600,9 @@ public class ToolBox {
     public static int executeCommand(AnyToolArgs params)
             throws CommandExecutionException, IOException, InterruptedException {
         if (params.hasMinParams()) {
-            List<String> cmd = (params.options != null) ?
-                    params.options :
-                    Arrays.asList(params.optionsArr);
+            List<String> cmd = (params.args != null) ?
+                    params.args :
+                    Arrays.asList(params.argsArr);
             return executeCommand(cmd, params.extraEnv, params.stdOutput,
                     params.errOutput, params.whatToExpect);
         }
@@ -630,7 +688,7 @@ public class ToolBox {
             List<String> list2, boolean trim) throws ResourcesNotEqualException {
         if ((list1 == list2) || (list1 == null && list2 == null)) return;
         if (list1.size() != list2.size())
-            throw new ResourcesNotEqualException();
+            throw new ResourcesNotEqualException(list1, list2);
         int i = 0;
         int j = 0;
         while (i < list1.size() &&
@@ -639,7 +697,7 @@ public class ToolBox {
             i++; j++;
         }
         if (!(i == list1.size() && j == list2.size()))
-            throw new ResourcesNotEqualException();
+            throw new ResourcesNotEqualException(list1, list2);
     }
 
     private static boolean equals(String s1, String s2, boolean trim) {
@@ -652,8 +710,8 @@ public class ToolBox {
      * and later the regExpr is seek in every split line. If a match is found,
      * the whole line is added to the result.
      */
-    public static List<String> grep(String regExpr, String text) {
-        return grep(regExpr, splitLines(text));
+    public static List<String> grep(String regExpr, String text, String sep) {
+        return grep(regExpr, splitLines(text, sep));
     }
 
     public static List<String> grep(String regExpr, List<String> text) {
@@ -865,8 +923,8 @@ public class ToolBox {
     /**
      * Splits a String using the System's line separator character as splitting point.
      */
-    public static List<String> splitLines(String lines) {
-        return Arrays.asList(lines.split(lineSeparator));
+    public static List<String> splitLines(String lines, String sep) {
+        return Arrays.asList(lines.split(sep));
     }
 
     /**
@@ -879,6 +937,14 @@ public class ToolBox {
             sb.append(s).append(lineSeparator);
         }
         return sb.toString();
+    }
+
+    /**
+     * Returns true if the OS is a Windows version.
+     */
+    public static boolean isWindows() {
+        String osName = System.getProperty("os.name");
+        return osName.toUpperCase().startsWith("WINDOWS");
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 import sun.awt.image.ImagingLib;
 
 /**
@@ -63,8 +63,6 @@ import sun.awt.image.ImagingLib;
  * @see java.awt.RenderingHints#KEY_COLOR_RENDERING
  * @see java.awt.RenderingHints#KEY_DITHERING
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class AffineTransformOp implements BufferedImageOp, RasterOp {
     private AffineTransform xform;
     RenderingHints hints;
@@ -72,17 +70,17 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
     /**
      * Nearest-neighbor interpolation type.
      */
-    public static final int TYPE_NEAREST_NEIGHBOR = 1;
+    @Native public static final int TYPE_NEAREST_NEIGHBOR = 1;
 
     /**
      * Bilinear interpolation type.
      */
-    public static final int TYPE_BILINEAR = 2;
+    @Native public static final int TYPE_BILINEAR = 2;
 
     /**
      * Bicubic interpolation type.
      */
-    public static final int TYPE_BICUBIC = 3;
+    @Native public static final int TYPE_BICUBIC = 3;
 
     int interpolationType = TYPE_NEAREST_NEIGHBOR;
 

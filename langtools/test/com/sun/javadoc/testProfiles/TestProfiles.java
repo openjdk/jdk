@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8006124
+ * @bug      8006124 8009684
  * @summary  Test javadoc support for profiles.
  * @author   Bhavesh Patel
  * @library  ../lib/
@@ -33,7 +33,7 @@
 public class TestProfiles extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "8006124";
+    private static final String BUG_ID = "8006124-8009684";
     private static final String PROFILE_BUG_ID = BUG_ID + "-1";
     private static final String PACKAGE_BUG_ID = BUG_ID + "-2";
     //Javadoc arguments.
@@ -49,17 +49,17 @@ public class TestProfiles extends JavadocTester {
         // Tests for profile-overview-frame.html listing all profiles.
         {PROFILE_BUG_ID + FS + "profile-overview-frame.html",
             "<span><a href=\"overview-frame.html\" "
-            + "target=\"profileListFrame\">All Packages</a></span>"
+            + "target=\"packageListFrame\">All Packages</a></span>"
         },
         {PROFILE_BUG_ID + FS + "profile-overview-frame.html",
-            "<li><a href=\"compact1-frame.html\" target=\"profileListFrame\">"
+            "<li><a href=\"compact1-frame.html\" target=\"packageListFrame\">"
             + "compact1</a></li>"
         },
         // Tests for profileName-frame.html listing all packages in a profile.
         {PROFILE_BUG_ID + FS + "compact2-frame.html",
-            "<span><a href=\"overview-frame.html\" target=\"profileListFrame\">"
+            "<span><a href=\"overview-frame.html\" target=\"packageListFrame\">"
             + "All Packages</a></span><span><a href=\"profile-overview-frame.html\" "
-            + "target=\"profileListFrame\">All Profiles</a></span>"
+            + "target=\"packageListFrame\">All Profiles</a></span>"
         },
         {PROFILE_BUG_ID + FS + "compact2-frame.html",
             "<li><a href=\"pkg4/compact2-package-frame.html\" "
@@ -96,11 +96,15 @@ public class TestProfiles extends JavadocTester {
         //Test for "overview-frame.html" showing the "All Profiles" link.
         {PROFILE_BUG_ID + FS + "overview-frame.html",
             "<span><a href=\"profile-overview-frame.html\" "
-            + "target=\"profileListFrame\">All Profiles</a></span>"
+            + "target=\"packageListFrame\">All Profiles</a></span>"
         },
         //Test for "className.html" showing the profile information for the type.
         {PROFILE_BUG_ID + FS + "pkg2" + FS + "Class1Pkg2.html",
             "<div class=\"subTitle\">compact1, compact2, compact3</div>"
+        },
+        {PROFILE_BUG_ID + FS + "index.html",
+            "<frame src=\"overview-frame.html\" name=\"packageListFrame\" " +
+            "title=\"All Packages\">"
         }
     };
     private static final String[][] PROFILES_NEGATED_TEST = {
@@ -131,12 +135,12 @@ public class TestProfiles extends JavadocTester {
     private static final String[][] PACKAGES_NEGATED_TEST = {
         {PACKAGE_BUG_ID + FS + "profile-overview-frame.html",
             "<span><a href=\"overview-frame.html\" "
-            + "target=\"profileListFrame\">All Packages</a></span>"
+            + "target=\"packageListFrame\">All Packages</a></span>"
         },
         {PACKAGE_BUG_ID + FS + "compact2-frame.html",
-            "<span><a href=\"overview-frame.html\" target=\"profileListFrame\">"
+            "<span><a href=\"overview-frame.html\" target=\"packageListFrame\">"
             + "All Packages</a></span><span><a href=\"profile-overview-frame.html\" "
-            + "target=\"profileListFrame\">All Profiles</a></span>"
+            + "target=\"packageListFrame\">All Profiles</a></span>"
         },
         {PACKAGE_BUG_ID + FS + "pkg2" + FS + "compact2-package-frame.html",
             "<a href=\"../compact2-summary.html\" target=\"classFrame\">"
@@ -151,7 +155,7 @@ public class TestProfiles extends JavadocTester {
         },
         {PACKAGE_BUG_ID + FS + "overview-frame.html",
             "<span><a href=\"profile-overview-frame.html\" "
-            + "target=\"profileListFrame\">All Profiles</a></span>"
+            + "target=\"packageListFrame\">All Profiles</a></span>"
         },
         {PACKAGE_BUG_ID + FS + "pkg2" + FS + "Class1Pkg2.html",
             "<div class=\"subTitle\">compact1, compact2, compact3</div>"

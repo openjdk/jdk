@@ -34,19 +34,18 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.List;
-import com.sun.tools.javac.util.ArrayUtils;
 
 //original test: test/tools/javac/newlines/Newlines.sh
 public class NewLineTest {
 
     public static void main(String args[]) throws Exception {
-        String[] mainArgs = ToolBox.getJavacBin();
-
 //        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -J-Dline.separator='@' > ${TMP1} 2>&1
         File javacErrOutput = new File("output.txt");
         ToolBox.AnyToolArgs cmdArgs =
                 new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .setAllArgs(ArrayUtils.concatOpen(mainArgs, "-J-Dline.separator='@'"))
+                .appendArgs(ToolBox.javacBinary)
+                .appendArgs(ToolBox.testToolVMOpts)
+                .appendArgs("-J-Dline.separator='@'")
                 .setErrOutput(javacErrOutput);
         ToolBox.executeCommand(cmdArgs);
 

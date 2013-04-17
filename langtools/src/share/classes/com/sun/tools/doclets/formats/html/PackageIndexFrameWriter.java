@@ -162,7 +162,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      */
     protected void addAllProfilesLink(Content div) {
         Content linkContent = getHyperLink(DocPaths.PROFILE_OVERVIEW_FRAME,
-                allprofilesLabel, "", "profileListFrame");
+                allprofilesLabel, "", "packageListFrame");
         Content span = HtmlTree.SPAN(linkContent);
         div.addContent(span);
     }

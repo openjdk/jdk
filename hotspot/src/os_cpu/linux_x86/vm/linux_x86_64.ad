@@ -55,29 +55,11 @@ encode %{
   // adding a syntax that specifies the sizes of fields in an order,
   // so that the adlc can build the emit functions automagically
 
-  enc_class Java_To_Runtime(method meth) %{
-    // No relocation needed
-
-    // movq r10, <meth>
-    emit_opcode(cbuf, Assembler::REX_WB);
-    emit_opcode(cbuf, 0xB8 | (R10_enc - 8));
-    emit_d64(cbuf, (int64_t) $meth$$method);
-
-    // call (r10)
-    emit_opcode(cbuf, Assembler::REX_B);
-    emit_opcode(cbuf, 0xFF);
-    emit_opcode(cbuf, 0xD0 | (R10_enc - 8));
-  %}
-
 %}
 
 
 // Platform dependent source
 
 source %{
-
-int MachCallRuntimeNode::ret_addr_offset() {
-  return 13; // movq r10,#addr; callq (r10)
-}
 
 %}

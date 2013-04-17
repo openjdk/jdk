@@ -101,7 +101,7 @@ public class TryNode extends Node {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterTryNode(this) != null) {
             // Need to do first for termination analysis.
             if (finallyBody != null) {
                 finallyBody = (Block)finallyBody.accept(visitor);
@@ -115,7 +115,7 @@ public class TryNode extends Node {
             }
             this.catchBlocks = newCatchBlocks;
 
-            return visitor.leave(this);
+            return visitor.leaveTryNode(this);
         }
 
         return this;
@@ -152,6 +152,15 @@ public class TryNode extends Node {
             catches.add((CatchNode)catchBlock.getStatements().get(0));
         }
         return catches;
+    }
+
+    /**
+     * Returns true if the specified block is the body of this try block, or any of its catch blocks.
+     * @param block the block
+     * @return true if the specified block is the body of this try block, or any of its catch blocks.
+     */
+    public boolean isChildBlock(Block block) {
+        return body == block || catchBlocks.contains(block);
     }
 
     /**

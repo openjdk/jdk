@@ -206,6 +206,8 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };
   void do_RuntimeCall    (RuntimeCall*     x) { /* nothing to do */ };
   void do_MemBar         (MemBar*          x) { /* nothing to do */ };
+  void do_RangeCheckPredicate(RangeCheckPredicate* x) { /* nothing to do */ };
+  void do_Assert         (Assert*          x) { /* nothing to do */ };
 };
 
 
@@ -225,14 +227,21 @@ class ValueNumberingEffects: public ValueNumberingVisitor {
 
 class GlobalValueNumbering: public ValueNumberingVisitor {
  private:
+  Compilation*  _compilation;     // compilation data
   ValueMap*     _current_map;     // value map of current block
   ValueMapArray _value_maps;      // list of value maps for all blocks
+  ValueSet      _processed_values;  // marker for instructions that were already processed
+  bool          _has_substitutions; // set to true when substitutions must be resolved
 
  public:
   // accessors
+  Compilation*  compilation() const              { return _compilation; }
   ValueMap*     current_map()                    { return _current_map; }
   ValueMap*     value_map_of(BlockBegin* block)  { return _value_maps.at(block->linear_scan_number()); }
   void          set_value_map_of(BlockBegin* block, ValueMap* map)   { assert(value_map_of(block) == NULL, ""); _value_maps.at_put(block->linear_scan_number(), map); }
+
+  bool          is_processed(Value v)            { return _processed_values.contains(v); }
+  void          set_processed(Value v)           { _processed_values.put(v); }
 
   // implementation for abstract methods of ValueNumberingVisitor
   void          kill_memory()                                 { current_map()->kill_memory(); }
@@ -241,6 +250,7 @@ class GlobalValueNumbering: public ValueNumberingVisitor {
 
   // main entry point that performs global value numbering
   GlobalValueNumbering(IR* ir);
+  void          substitute(Instruction* instr);  // substitute instruction if it is contained in current value map
 };
 
 #endif // SHARE_VM_C1_C1_VALUEMAP_HPP

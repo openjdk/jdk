@@ -30,9 +30,7 @@
  */
 
 function check(e) {
-    if (e instanceof java.lang.SecurityException) {
-        print(e);
-    } else {
+    if (! (e instanceof java.lang.SecurityException)) {
         fail("expected SecurityException, got " + e);
     }
 }
