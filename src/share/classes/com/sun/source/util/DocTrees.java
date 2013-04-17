@@ -72,6 +72,8 @@ public abstract class DocTrees extends Trees {
      */
     public abstract Element getElement(TreePath path, ReferenceTree reference);
 
+    public abstract DocSourcePositions getSourcePositions();
+
     /**
      * Prints a message of the specified kind at the location of the
      * tree within the provided compilation unit
