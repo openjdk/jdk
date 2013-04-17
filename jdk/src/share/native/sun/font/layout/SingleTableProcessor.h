@@ -50,9 +50,9 @@ class LEGlyphStorage;
 class SingleTableProcessor : public NonContextualGlyphSubstitutionProcessor
 {
 public:
-    virtual void process(LEGlyphStorage &glyphStorage);
+    virtual void process(LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
-    SingleTableProcessor(const MorphSubtableHeader *morphSubtableHeader);
+    SingleTableProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success);
 
     virtual ~SingleTableProcessor();
 
@@ -74,7 +74,7 @@ private:
     SingleTableProcessor();
 
 protected:
-    const SingleTableLookupTable *singleTableLookupTable;
+    LEReferenceTo<SingleTableLookupTable> singleTableLookupTable;
 
 };
 
