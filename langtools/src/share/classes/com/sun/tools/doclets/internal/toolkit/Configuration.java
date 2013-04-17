@@ -56,7 +56,7 @@ public abstract class Configuration {
     /**
      * Exception used to report a problem during setOptions.
      */
-    public class Fault extends Exception {
+    public static class Fault extends Exception {
         private static final long serialVersionUID = 0;
 
         Fault(String msg) {

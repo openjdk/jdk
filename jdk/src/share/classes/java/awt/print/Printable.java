@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package java.awt.print;
 
 import java.awt.Graphics;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * The <code>Printable</code> interface is implemented
@@ -100,8 +99,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @see java.awt.print.PageFormat
  * @see java.awt.print.PrinterJob
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public interface Printable {
 
     /**

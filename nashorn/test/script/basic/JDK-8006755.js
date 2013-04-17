@@ -31,7 +31,7 @@
 var scope = { x: "hello" };
 
 with (scope) {
-    function main() {
+    var main = function() {
         if (x != "hello") {
             fail("x != 'hello'");
         }

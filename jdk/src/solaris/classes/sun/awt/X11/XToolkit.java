@@ -420,7 +420,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     public FramePeer createLightweightFrame(LightweightFrame target) {
-        return null;
+        FramePeer peer = new XLightweightFramePeer(target);
+        targetCreatedPeer(target, peer);
+        return peer;
     }
 
     public FramePeer createFrame(Frame target) {

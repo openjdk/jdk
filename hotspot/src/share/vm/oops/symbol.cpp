@@ -162,7 +162,7 @@ char* Symbol::as_quoted_ascii() const {
   const char *ptr = (const char *)&_body[0];
   int quoted_length = UTF8::quoted_ascii_length(ptr, utf8_length());
   char* result = NEW_RESOURCE_ARRAY(char, quoted_length + 1);
-  UTF8::as_quoted_ascii(ptr, result, quoted_length + 1);
+  UTF8::as_quoted_ascii(ptr, utf8_length(), result, quoted_length + 1);
   return result;
 }
 

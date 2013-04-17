@@ -260,6 +260,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "CMSRevisitStackSize",           JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "PrintRevisitStats",             JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseVectoredExceptions",         JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseSplitVerifier",              JDK_Version::jdk(8), JDK_Version::jdk(9) },
 #ifdef PRODUCT
   { "DesiredMethodLimit",
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
@@ -1169,7 +1170,6 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     set_parnew_gc_flags();
   }
 
-  // MaxHeapSize is aligned down in collectorPolicy
   size_t max_heap = align_size_down(MaxHeapSize,
                                     CardTableRS::ct_max_alignment_constraint());
 
@@ -1207,10 +1207,6 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     }
 
     // Code along this path potentially sets NewSize and OldSize
-
-    assert(max_heap >= InitialHeapSize, "Error");
-    assert(max_heap >= NewSize, "Error");
-
     if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
       tty->print_cr("CMS set min_heap_size: " SIZE_FORMAT
@@ -1557,6 +1553,15 @@ void Arguments::set_g1_gc_flags() {
   }
 }
 
+julong Arguments::limit_by_allocatable_memory(julong limit) {
+  julong max_allocatable;
+  julong result = limit;
+  if (os::has_allocatable_memory_limit(&max_allocatable)) {
+    result = MIN2(result, max_allocatable / MaxVirtMemFraction);
+  }
+  return result;
+}
+
 void Arguments::set_heap_size() {
   if (!FLAG_IS_DEFAULT(DefaultMaxRAMFraction)) {
     // Deprecated flag
@@ -1595,12 +1600,12 @@ void Arguments::set_heap_size() {
       }
       reasonable_max = MIN2(reasonable_max, max_coop_heap);
     }
-    reasonable_max = os::allocatable_physical_memory(reasonable_max);
+    reasonable_max = limit_by_allocatable_memory(reasonable_max);
 
     if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
       // An initial heap size was specified on the command line,
       // so be sure that the maximum size is consistent.  Done
-      // after call to allocatable_physical_memory because that
+      // after call to limit_by_allocatable_memory because that
       // method might reduce the allocation size.
       reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
     }
@@ -1620,14 +1625,14 @@ void Arguments::set_heap_size() {
 
     reasonable_minimum = MIN2(reasonable_minimum, (julong)MaxHeapSize);
 
-    reasonable_minimum = os::allocatable_physical_memory(reasonable_minimum);
+    reasonable_minimum = limit_by_allocatable_memory(reasonable_minimum);
 
     julong reasonable_initial = phys_mem / InitialRAMFraction;
 
     reasonable_initial = MAX2(reasonable_initial, reasonable_minimum);
     reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
 
-    reasonable_initial = os::allocatable_physical_memory(reasonable_initial);
+    reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
 
     if (PrintGCDetails && Verbose) {
       // Cannot use gclog_or_tty yet.
@@ -2613,9 +2618,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       initHeapSize = MIN2(total_memory / (julong)2,
                           total_memory - (julong)160*M);
 
-      // Make sure that if we have a lot of memory we cap the 32 bit
-      // process space.  The 64bit VM version of this function is a nop.
-      initHeapSize = os::allocatable_physical_memory(initHeapSize);
+      initHeapSize = limit_by_allocatable_memory(initHeapSize);
 
       if (FLAG_IS_DEFAULT(MaxHeapSize)) {
          FLAG_SET_CMDLINE(uintx, MaxHeapSize, initHeapSize);
@@ -3324,6 +3327,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
   check_deprecated_gcs();
   check_deprecated_gc_flags();
+  if (AssumeMP && !UseSerialGC) {
+    if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
+      warning("If the number of processors is expected to increase from one, then"
+              " you should configure the number of parallel GC threads appropriately"
+              " using -XX:ParallelGCThreads=N");
+    }
+  }
 #else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS

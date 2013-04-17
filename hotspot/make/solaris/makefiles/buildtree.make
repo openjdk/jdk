@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,19 @@ $(SIMPLE_DIRS):
 # absolute path, and then replaces $(GAMMADIR) in the result with a 
 # literal "$(GAMMADIR)/" suitable for inclusion in a Makefile.  
 gamma-path=$(subst $(GAMMADIR),\$$(GAMMADIR),$(call $(1),$(HS_COMMON_SRC)/$(2)))
+
+# This bit is needed to enable local rebuilds.
+# Unless the makefile itself sets LP64, any environmental
+# setting of LP64 will interfere with the build.
+LP64_SETTING/32 = LP64 = \#empty
+LP64_SETTING/64 = LP64 = 1
+
+DATA_MODE/i486 = 32
+DATA_MODE/sparc = 32
+DATA_MODE/sparcv9 = 64
+DATA_MODE/amd64 = 64
+
+DATA_MODE = $(DATA_MODE/$(BUILDARCH))
 
 flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	@echo Creating $@ ...

@@ -171,12 +171,12 @@ public abstract class DataTransferer {
      * Lazy initialization of Standard Encodings.
      */
     private static class StandardEncodingsHolder {
-        private static final SortedSet standardEncodings = load();
+        private static final SortedSet<String> standardEncodings = load();
 
-        private static SortedSet load() {
+        private static SortedSet<String> load() {
             final Comparator comparator =
                     new CharsetComparator(IndexedComparator.SELECT_WORST);
-            final SortedSet tempSet = new TreeSet(comparator);
+            final SortedSet<String> tempSet = new TreeSet<String>(comparator);
             tempSet.add("US-ASCII");
             tempSet.add("ISO-8859-1");
             tempSet.add("UTF-8");
@@ -523,8 +523,8 @@ public abstract class DataTransferer {
      * So as to avoid loading all available character converters, optional,
      * non-standard, character sets are not included.
      */
-    public static Iterator standardEncodings() {
-        return StandardEncodingsHolder.standardEncodings.iterator();
+    public static Set <String> standardEncodings() {
+        return StandardEncodingsHolder.standardEncodings;
     }
 
     /**
@@ -1068,17 +1068,10 @@ public abstract class DataTransferer {
      *
      * Native to Java string conversion
      */
-    private String translateBytesOrStreamToString(InputStream str,  byte[] bytes,
-                                                    long format,
-                                                    Transferable localeTransferable)
+    private String translateBytesToString(byte[] bytes, long format,
+                                          Transferable localeTransferable)
             throws IOException
     {
-        // A String holds all of its data in memory at one time, so
-        // we can't avoid reading the entire InputStream at this point.
-        if (bytes == null) {
-            bytes = inputStreamToByteArray(str);
-        }
-        str.close();
 
         Long lFormat = Long.valueOf(format);
         String charset = getBestCharsetForTextFormat(lFormat, localeTransferable);
@@ -1221,13 +1214,13 @@ search:
                     ("cannot transfer non-text data as Reader");
             }
 
-            Reader r = (Reader)obj;
             StringBuffer buf = new StringBuffer();
-            int c;
-            while ((c = r.read()) != -1) {
-                buf.append((char)c);
+            try (Reader r = (Reader)obj) {
+                int c;
+                while ((c = r.read()) != -1) {
+                    buf.append((char)c);
+                }
             }
-            r.close();
 
             return translateTransferableString(
                 buf.toString(),
@@ -1309,7 +1302,7 @@ search:
             return bytes;
         }
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        byte[] theByteArray = null;
 
         // Target data is a file list. Source data must be a
         // java.util.List which contains java.io.File or String instances.
@@ -1324,8 +1317,9 @@ search:
 
             final ArrayList<String> fileList = castToFiles(list, userProtectionDomain);
 
-            bos = convertFileListToBytes(fileList);
-
+            try (ByteArrayOutputStream bos = convertFileListToBytes(fileList)) {
+                theByteArray = bos.toByteArray();
+            }
 
         // Target data is a URI list. Source data must be a
         // java.util.List which contains java.io.File or String instances.
@@ -1360,57 +1354,72 @@ search:
               }
 
             byte[] eoln = "\r\n".getBytes(targetCharset);
-            for (int i = 0; i < uriList.size(); i++) {
-                byte[] bytes = uriList.get(i).getBytes(targetCharset);
-                bos.write(bytes, 0, bytes.length);
-                bos.write(eoln, 0, eoln.length);
+
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                for (int i = 0; i < uriList.size(); i++) {
+                    byte[] bytes = uriList.get(i).getBytes(targetCharset);
+                    bos.write(bytes, 0, bytes.length);
+                    bos.write(eoln, 0, eoln.length);
+                }
+                theByteArray = bos.toByteArray();
             }
 
         // Source data is an InputStream. For arbitrary flavors, just grab the
         // bytes and dump them into a byte array. For text flavors, decode back
         // to a String and recur to reencode according to the requested format.
         } else if (flavor.isRepresentationClassInputStream()) {
-            InputStream is = (InputStream)obj;
-            boolean eof = false;
-            int avail = is.available();
-            byte[] tmp = new byte[avail > 8192 ? avail : 8192];
-            do {
-                int ret;
-                if (!(eof = (ret = is.read(tmp, 0, tmp.length)) == -1)) {
-                    bos.write(tmp, 0, ret);
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                try (InputStream is = (InputStream)obj) {
+                    boolean eof = false;
+                    int avail = is.available();
+                    byte[] tmp = new byte[avail > 8192 ? avail : 8192];
+                    do {
+                        int aValue;
+                        if (!(eof = (aValue = is.read(tmp, 0, tmp.length)) == -1)) {
+                            bos.write(tmp, 0, aValue);
+                        }
+                    } while (!eof);
                 }
-            } while (!eof);
-            is.close();
 
-            if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
-                byte[] bytes = bos.toByteArray();
-                bos.close();
-                String sourceEncoding = DataTransferer.getTextCharset(flavor);
-                return translateTransferableString(
-                    new String(bytes, sourceEncoding),
-                    format);
+                if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+                    byte[] bytes = bos.toByteArray();
+                    String sourceEncoding = DataTransferer.getTextCharset(flavor);
+                    return translateTransferableString(
+                               new String(bytes, sourceEncoding),
+                               format);
+                }
+                theByteArray = bos.toByteArray();
             }
+
+
 
         // Source data is an RMI object
         } else if (flavor.isRepresentationClassRemote()) {
-            Object mo = RMI.newMarshalledObject(obj);
-            ObjectOutputStream oos = new ObjectOutputStream(bos);
-            oos.writeObject(mo);
-            oos.close();
 
-        // Source data is Serializable
+            Object mo = RMI.newMarshalledObject(obj);
+            theByteArray = convertObjectToBytes(mo);
+
+            // Source data is Serializable
         } else if (flavor.isRepresentationClassSerializable()) {
-            ObjectOutputStream oos = new ObjectOutputStream(bos);
-            oos.writeObject(obj);
-            oos.close();
+
+            theByteArray = convertObjectToBytes(obj);
 
         } else {
             throw new IOException("data translation failed");
         }
 
-        byte[] ret = bos.toByteArray();
-        bos.close();
-        return ret;
+
+
+        return theByteArray;
+    }
+
+    private static byte[] convertObjectToBytes(Object object) throws IOException {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(bos))
+        {
+            oos.writeObject(object);
+            return bos.toByteArray();
+        }
     }
 
     protected abstract ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList) throws IOException;
@@ -1565,38 +1574,8 @@ search:
                                  long format, Transferable localeTransferable)
         throws IOException
     {
-        return translateBytesOrStream(null, bytes, flavor, format,
-                                      localeTransferable);
-    }
 
-    public Object translateStream(InputStream str, DataFlavor flavor,
-                                  long format, Transferable localeTransferable)
-        throws IOException
-    {
-        return translateBytesOrStream(str, null, flavor, format,
-                                      localeTransferable);
-    }
-
-
-    /**
-     * Primary translation function for translating either a byte array or
-     * an InputStream into an Object, given a source format and a target
-     * DataFlavor.
-     *
-     * One of str/bytes is non-null; the other is null.
-     * The conversion from byte[] to InputStream is cheap, so do that
-     * immediately if necessary. The opposite conversion is expensive,
-     * so avoid it if possible.
-     */
-    protected Object translateBytesOrStream(InputStream str, byte[] bytes,
-                                            DataFlavor flavor, long format,
-                                            Transferable localeTransferable)
-        throws IOException
-    {
-
-        if (str == null) {
-            str = new ByteArrayInputStream(bytes);
-        }
+        Object theObject = null;
 
         // Source data is a file list. Use the dragQueryFile native function to
         // do most of the decoding. Then wrap File objects around the String
@@ -1605,12 +1584,8 @@ search:
             if (!DataFlavor.javaFileListFlavor.equals(flavor)) {
                 throw new IOException("data translation failed");
             }
-            if (bytes == null) {
-                bytes = inputStreamToByteArray(str);
-            }
             String[] filenames = dragQueryFile(bytes);
             if (filenames == null) {
-                str.close();
                 return null;
             }
 
@@ -1619,178 +1594,203 @@ search:
             for (int i = 0; i < filenames.length; i++) {
                 files[i] = new File(filenames[i]);
             }
-            str.close();
 
             // Turn the list of Files into a List and return
-            return Arrays.asList(files);
+            theObject = Arrays.asList(files);
 
-        // Source data is a URI list. Convert to DataFlavor.javaFileListFlavor
-        // where possible.
-        } else if (isURIListFormat(format) && DataFlavor.javaFileListFlavor.equals(flavor)) {
-            try {
-                URI uris[] = dragQueryURIs(str, bytes, format, localeTransferable);
-                if (uris == null) {
-                    return null;
-                }
-                ArrayList files = new ArrayList();
-                for (URI uri : uris) {
-                    try {
-                        files.add(new File(uri));
-                    } catch (IllegalArgumentException illegalArg) {
-                        // When converting from URIs to less generic files,
-                        // common practice (Wine, SWT) seems to be to
-                        // silently drop the URIs that aren't local files.
-                    }
-                }
-                return files;
-            } finally {
-                str.close();
-            }
-
-        // Target data is a String. Strip terminating NUL bytes. Decode bytes
-        // into characters. Search-and-replace EOLN.
+            // Target data is a String. Strip terminating NUL bytes. Decode bytes
+            // into characters. Search-and-replace EOLN.
         } else if (String.class.equals(flavor.getRepresentationClass()) &&
-                   isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+                       isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
 
-            return translateBytesOrStreamToString(
-                str, bytes,
-                format, localeTransferable);
+            theObject = translateBytesToString(bytes, format, localeTransferable);
 
-        // Special hack to maintain backwards-compatibility with the brokenness
-        // of StringSelection. Return a StringReader instead of an InputStream.
-        // Recur to obtain String and encapsulate.
-        } else if (DataFlavor.plainTextFlavor.equals(flavor)) {
-            return new StringReader(translateBytesOrStreamToString(
-                        str, bytes,
-                        format, localeTransferable));
-
-        // Target data is an InputStream. For arbitrary flavors, just return
-        // the raw bytes. For text flavors, decode to strip terminators and
-        // search-and-replace EOLN, then reencode according to the requested
-        // flavor.
-        } else if (flavor.isRepresentationClassInputStream()) {
-            return translateBytesOrStreamToInputStream(str, flavor, format,
-                                                       localeTransferable);
-
-        // Target data is a Reader. Obtain data in InputStream format, encoded
-        // as "Unicode" (utf-16be). Then use an InputStreamReader to decode
-        // back to chars on demand.
+            // Target data is a Reader. Obtain data in InputStream format, encoded
+            // as "Unicode" (utf-16be). Then use an InputStreamReader to decode
+            // back to chars on demand.
         } else if (flavor.isRepresentationClassReader()) {
-            if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
-                throw new IOException
-                    ("cannot transfer non-text data as Reader");
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
+                theObject = translateStream(bais,
+                        flavor, format, localeTransferable);
             }
-
-            InputStream is = (InputStream)
-                translateBytesOrStreamToInputStream
-                    (str, DataFlavor.plainTextFlavor, format,
-                     localeTransferable);
-            String unicode =
-                DataTransferer.getTextCharset(DataFlavor.plainTextFlavor);
-            Reader reader = new InputStreamReader(is, unicode);
-
-            return constructFlavoredObject(reader, flavor, Reader.class);
-
-        // Target data is a CharBuffer. Recur to obtain String and wrap.
+            // Target data is a CharBuffer. Recur to obtain String and wrap.
         } else if (flavor.isRepresentationClassCharBuffer()) {
             if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
-                    ("cannot transfer non-text data as CharBuffer");
+                          ("cannot transfer non-text data as CharBuffer");
             }
 
-            CharBuffer buffer = CharBuffer.wrap(translateBytesOrStreamToString(
-                str, bytes,
-                format, localeTransferable));
+            CharBuffer buffer = CharBuffer.wrap(
+                translateBytesToString(bytes,format, localeTransferable));
 
-            return constructFlavoredObject(buffer, flavor, CharBuffer.class);
+            theObject = constructFlavoredObject(buffer, flavor, CharBuffer.class);
 
-        // Target data is a char array. Recur to obtain String and convert to
-        // char array.
+            // Target data is a char array. Recur to obtain String and convert to
+            // char array.
         } else if (charArrayClass.equals(flavor.getRepresentationClass())) {
             if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
-                    ("cannot transfer non-text data as char array");
+                          ("cannot transfer non-text data as char array");
             }
 
-            return translateBytesOrStreamToString(
-                    str, bytes,
-                    format, localeTransferable).toCharArray();
+            theObject = translateBytesToString(
+                bytes, format, localeTransferable).toCharArray();
 
-        // Target data is a ByteBuffer. For arbitrary flavors, just return
-        // the raw bytes. For text flavors, convert to a String to strip
-        // terminators and search-and-replace EOLN, then reencode according to
-        // the requested flavor.
+            // Target data is a ByteBuffer. For arbitrary flavors, just return
+            // the raw bytes. For text flavors, convert to a String to strip
+            // terminators and search-and-replace EOLN, then reencode according to
+            // the requested flavor.
         } else if (flavor.isRepresentationClassByteBuffer()) {
             if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
-                bytes = translateBytesOrStreamToString(
-                    str, bytes,
-                    format, localeTransferable
-                ).getBytes(
-                    DataTransferer.getTextCharset(flavor)
-                );
-            } else {
-                if (bytes == null) {
-                    bytes = inputStreamToByteArray(str);
-                }
+                bytes = translateBytesToString(
+                    bytes, format, localeTransferable).getBytes(
+                        DataTransferer.getTextCharset(flavor)
+                    );
             }
 
             ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            return constructFlavoredObject(buffer, flavor, ByteBuffer.class);
+            theObject = constructFlavoredObject(buffer, flavor, ByteBuffer.class);
 
-        // Target data is a byte array. For arbitrary flavors, just return
-        // the raw bytes. For text flavors, convert to a String to strip
-        // terminators and search-and-replace EOLN, then reencode according to
-        // the requested flavor.
+            // Target data is a byte array. For arbitrary flavors, just return
+            // the raw bytes. For text flavors, convert to a String to strip
+            // terminators and search-and-replace EOLN, then reencode according to
+            // the requested flavor.
         } else if (byteArrayClass.equals(flavor.getRepresentationClass())) {
             if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
-                return translateBytesOrStreamToString(
-                    str, bytes,
-                    format, localeTransferable
-                ).getBytes(
-                    DataTransferer.getTextCharset(flavor)
-                );
+                theObject = translateBytesToString(
+                    bytes, format, localeTransferable
+                ).getBytes(DataTransferer.getTextCharset(flavor));
             } else {
-                return (bytes != null) ? bytes : inputStreamToByteArray(str);
+                theObject = bytes;
             }
 
-        // Target data is an RMI object
-        } else if (flavor.isRepresentationClassRemote()) {
-            try {
-                byte[] ba = inputStreamToByteArray(str);
-                ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(ba));
-                Object ret = RMI.getMarshalledObject(ois.readObject());
-                ois.close();
-                str.close();
-                return ret;
-            } catch (Exception e) {
-                throw new IOException(e.getMessage());
+            // Target data is an InputStream. For arbitrary flavors, just return
+            // the raw bytes. For text flavors, decode to strip terminators and
+            // search-and-replace EOLN, then reencode according to the requested
+            // flavor.
+        } else if (flavor.isRepresentationClassInputStream()) {
+
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
+                theObject = translateStream(bais, flavor, format, localeTransferable);
             }
 
-        // Target data is Serializable
+            // Target data is Serializable
         } else if (flavor.isRepresentationClassSerializable()) {
-            try {
-                byte[] ba = inputStreamToByteArray(str);
-                ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(ba));
-                Object ret = ois.readObject();
-                ois.close();
-                str.close();
-                return ret;
-            } catch (Exception e) {
-                throw new IOException(e.getMessage());
+
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
+                theObject = translateStream(bais, flavor, format, localeTransferable);
             }
 
-        // Target data is Image
+            // Target data is Image
         } else if (DataFlavor.imageFlavor.equals(flavor)) {
             if (!isImageFormat(format)) {
                 throw new IOException("data translation failed");
             }
 
-            Image image = platformImageBytesOrStreamToImage(str, bytes, format);
-            str.close();
-            return image;
+            theObject = platformImageBytesToImage(bytes, format);
         }
 
-        throw new IOException("data translation failed");
+        if (theObject == null) {
+            throw new IOException("data translation failed");
+        }
+
+        return theObject;
+
+    }
+
+    /**
+     * Primary translation function for translating
+     * an InputStream into an Object, given a source format and a target
+     * DataFlavor.
+     */
+    public Object translateStream(InputStream str, DataFlavor flavor,
+                                  long format, Transferable localeTransferable)
+        throws IOException
+    {
+
+        Object theObject = null;
+        // Source data is a URI list. Convert to DataFlavor.javaFileListFlavor
+        // where possible.
+        if (isURIListFormat(format)
+                && DataFlavor.javaFileListFlavor.equals(flavor))
+        {
+
+            URI uris[] = dragQueryURIs(str, format, localeTransferable);
+            if (uris == null) {
+                return null;
+            }
+            ArrayList files = new ArrayList();
+            for (URI uri : uris) {
+                try {
+                    files.add(new File(uri));
+                } catch (IllegalArgumentException illegalArg) {
+                    // When converting from URIs to less generic files,
+                    // common practice (Wine, SWT) seems to be to
+                    // silently drop the URIs that aren't local files.
+                }
+            }
+            theObject = files;
+
+            // Special hack to maintain backwards-compatibility with the brokenness
+            // of StringSelection. Return a StringReader instead of an InputStream.
+            // Recur to obtain String and encapsulate.
+        } else if (DataFlavor.plainTextFlavor.equals(flavor)) {
+            theObject = new StringReader(translateBytesToString(
+                inputStreamToByteArray(str),
+                format, localeTransferable));
+
+            // Target data is an InputStream. For arbitrary flavors, just return
+            // the raw bytes. For text flavors, decode to strip terminators and
+            // search-and-replace EOLN, then reencode according to the requested
+            // flavor.
+        } else if (flavor.isRepresentationClassInputStream()) {
+            theObject = translateStreamToInputStream(str, flavor, format,
+                                                               localeTransferable);
+
+            // Target data is a Reader. Obtain data in InputStream format, encoded
+            // as "Unicode" (utf-16be). Then use an InputStreamReader to decode
+            // back to chars on demand.
+        } else if (flavor.isRepresentationClassReader()) {
+            if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
+                throw new IOException
+                          ("cannot transfer non-text data as Reader");
+            }
+
+            InputStream is = (InputStream)translateStreamToInputStream(
+                    str, DataFlavor.plainTextFlavor,
+                    format, localeTransferable);
+
+            String unicode = DataTransferer.getTextCharset(DataFlavor.plainTextFlavor);
+
+            Reader reader = new InputStreamReader(is, unicode);
+
+            theObject = constructFlavoredObject(reader, flavor, Reader.class);
+
+            // Target data is an RMI object
+        } else if (flavor.isRepresentationClassRemote()) {
+
+            try (ObjectInputStream ois =
+                     new ObjectInputStream(str))
+            {
+                theObject = RMI.getMarshalledObject(ois.readObject());
+            }catch (Exception e) {
+                throw new IOException(e.getMessage());
+            }
+
+            // Target data is Serializable
+        } else if (flavor.isRepresentationClassSerializable()) {
+            try (ObjectInputStream ois =
+                     new ObjectInputStream(str))
+            {
+                theObject = ois.readObject();
+            } catch (Exception e) {
+                throw new IOException(e.getMessage());
+            }
+        }
+
+
+        return theObject;
+
     }
 
     /**
@@ -1798,7 +1798,7 @@ search:
      * ReencodingInputStream will decode and reencode the InputStream on demand
      * so that we can strip terminators and search-and-replace EOLN.
      */
-    private Object translateBytesOrStreamToInputStream
+    private Object translateStreamToInputStream
         (InputStream str, DataFlavor flavor, long format,
          Transferable localeTransferable) throws IOException
     {
@@ -2054,7 +2054,6 @@ search:
      * Decodes URIs from either a byte array or a stream.
      */
     protected URI[] dragQueryURIs(InputStream stream,
-                                  byte[] bytes,
                                   long format,
                                   Transferable localeTransferable)
       throws IOException
@@ -2067,10 +2066,10 @@ search:
      * Translates either a byte array or an input stream which contain
      * platform-specific image data in the given format into an Image.
      */
-    protected abstract Image platformImageBytesOrStreamToImage(InputStream str,
-                                                               byte[] bytes,
-                                                               long format)
-      throws IOException;
+
+
+    protected abstract Image platformImageBytesToImage(
+        byte[] bytes,long format) throws IOException;
 
     /**
      * Translates either a byte array or an input stream which contain
@@ -2078,13 +2077,9 @@ search:
      *
      * @param mimeType image MIME type, such as: image/png, image/jpeg, image/gif
      */
-    protected Image standardImageBytesOrStreamToImage(InputStream inputStream,
-                                                      byte[] bytes,
-                                                      String mimeType)
-      throws IOException {
-        if (inputStream == null) {
-            inputStream = new ByteArrayInputStream(bytes);
-        }
+    protected Image standardImageBytesToImage(
+        byte[] bytes, String mimeType) throws IOException
+    {
 
         Iterator readerIterator = ImageIO.getImageReadersByMIMEType(mimeType);
 
@@ -2097,9 +2092,9 @@ search:
 
         while (readerIterator.hasNext()) {
             ImageReader imageReader = (ImageReader)readerIterator.next();
-            try {
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
                 ImageInputStream imageInputStream =
-                    ImageIO.createImageInputStream(inputStream);
+                    ImageIO.createImageInputStream(bais);
 
                 try {
                     ImageReadParam param = imageReader.getDefaultReadParam();
@@ -2456,15 +2451,16 @@ search:
     protected static byte[] inputStreamToByteArray(InputStream str)
         throws IOException
     {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        int len = 0;
-        byte[] buf = new byte[8192];
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            int len = 0;
+            byte[] buf = new byte[8192];
 
-        while ((len = str.read(buf)) != -1) {
-            baos.write(buf, 0, len);
+            while ((len = str.read(buf)) != -1) {
+                baos.write(buf, 0, len);
+            }
+
+            return baos.toByteArray();
         }
-
-        return baos.toByteArray();
     }
 
     /**

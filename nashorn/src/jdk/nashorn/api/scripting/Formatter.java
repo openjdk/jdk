@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
  * <p>Pattern and the logic for parameter position: java.util.Formatter
  *
  */
-public final class Formatter {
+final class Formatter {
 
     private Formatter() {
     }
@@ -59,8 +59,8 @@ public final class Formatter {
      * @param args arguments referenced by the format specifiers in format
      * @return a formatted string
      */
-    public static String format(final String format, final Object[] args) {
-        Matcher m = FS_PATTERN.matcher(format);
+    static String format(final String format, final Object[] args) {
+        final Matcher m = FS_PATTERN.matcher(format);
         int positionalParameter = 1;
 
         while (m.find()) {
@@ -143,7 +143,7 @@ public final class Formatter {
     /**
      * Method to parse the integer of the argument index.
      *
-     * @param s
+     * @param s string to parse
      * @return -1 if parsing failed, 0 if string is null, > 0 integer
      */
     private static int index(final String s) {
@@ -166,7 +166,7 @@ public final class Formatter {
      * Method to check if a string contains '&lt;'. This is used to find out if
      * previous parameter is used.
      *
-     * @param s
+     * @param s string to check
      * @return true if '&lt;' is in the string, else false
      */
     private static boolean isPreviousArgument(final String s) {

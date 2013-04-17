@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -104,6 +104,10 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     if (hModule == NULL) {
         systemErrorMessage = dlerror();
         exceptionMessage = (char *) malloc(sizeof(char) * (strlen(systemErrorMessage) + strlen(libraryNameStr) + 1));
+        if (exceptionMessage == NULL) {
+            throwOutOfMemoryError(env, 0);
+            return;
+        }
         strcpy(exceptionMessage, systemErrorMessage);
         strcat(exceptionMessage, libraryNameStr);
         throwIOException(env, exceptionMessage);
@@ -134,6 +138,11 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
      * Get function pointers to all PKCS #11 functions
      */
     moduleData = (ModuleData *) malloc(sizeof(ModuleData));
+    if (moduleData == NULL) {
+        dlclose(hModule);
+        throwOutOfMemoryError(env, 0);
+        return;
+    }
     moduleData->hModule = hModule;
     moduleData->applicationMutexHandler = NULL;
     rv = (C_GetFunctionList)(&(moduleData->ckFunctionListPtr));

@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import java.security.CodeSource;
+import java.security.ProtectionDomain;
 
 /**
  * Responsible for loading script generated classes.
@@ -57,6 +58,9 @@ final class ScriptLoader extends NashornLoader {
      * @return Installed class.
      */
     synchronized Class<?> installClass(final String name, final byte[] data, final CodeSource cs) {
+        if (cs == null) {
+            return defineClass(name, data, 0, data.length, new ProtectionDomain(null, getPermissions(null)));
+        }
         return defineClass(name, data, 0, data.length, cs);
     }
 }

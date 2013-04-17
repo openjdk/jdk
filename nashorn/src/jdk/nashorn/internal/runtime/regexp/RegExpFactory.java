@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime.regexp;
 
-import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.options.Options;
 
@@ -34,7 +33,6 @@ import jdk.nashorn.internal.runtime.options.Options;
  * An alternative factory can be installed using the {@code nashorn.regexp.impl} system property.
  */
 public class RegExpFactory {
-
 
     private final static RegExpFactory instance;
 
@@ -60,7 +58,8 @@ public class RegExpFactory {
      * Creates a Regular expression from the given {@code pattern} and {@code flags} strings.
      *
      * @param pattern RegExp pattern string
-     * @param flags RegExp flags string
+     * @param flags   RegExp flags string
+     * @return new RegExp
      * @throws ParserException if flags is invalid or pattern string has syntax error.
      */
     protected RegExp compile(final String pattern, final String flags) throws ParserException {
@@ -71,8 +70,8 @@ public class RegExpFactory {
      * Compile a regexp with the given {@code source} and {@code flags}.
      *
      * @param pattern RegExp pattern string
-     * @param flags  flag string
-     *
+     * @param flags   flag string
+     * @return new RegExp
      * @throws ParserException if invalid source or flags
      */
     public static RegExp create(final String pattern, final String flags) {
