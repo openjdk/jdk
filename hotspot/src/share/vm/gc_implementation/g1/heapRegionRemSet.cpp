@@ -877,14 +877,9 @@ bool HeapRegionRemSet::iter_is_complete() {
   return _iter_state == Complete;
 }
 
-void HeapRegionRemSet::init_iterator(HeapRegionRemSetIterator* iter) const {
-  iter->initialize(this);
-}
-
 #ifndef PRODUCT
 void HeapRegionRemSet::print() const {
-  HeapRegionRemSetIterator iter;
-  init_iterator(&iter);
+  HeapRegionRemSetIterator iter(this);
   size_t card_index;
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
@@ -928,35 +923,23 @@ void HeapRegionRemSet::scrub(CardTableModRefBS* ctbs,
 
 //-------------------- Iteration --------------------
 
-HeapRegionRemSetIterator::
-HeapRegionRemSetIterator() :
-  _hrrs(NULL),
+HeapRegionRemSetIterator:: HeapRegionRemSetIterator(const HeapRegionRemSet* hrrs) :
+  _hrrs(hrrs),
   _g1h(G1CollectedHeap::heap()),
-  _bosa(NULL),
-  _sparse_iter() { }
-
-void HeapRegionRemSetIterator::initialize(const HeapRegionRemSet* hrrs) {
-  _hrrs = hrrs;
-  _coarse_map = &_hrrs->_other_regions._coarse_map;
-  _fine_grain_regions = _hrrs->_other_regions._fine_grain_regions;
-  _bosa = _hrrs->bosa();
-
-  _is = Sparse;
+  _coarse_map(&hrrs->_other_regions._coarse_map),
+  _fine_grain_regions(hrrs->_other_regions._fine_grain_regions),
+  _bosa(hrrs->bosa()),
+  _is(Sparse),
   // Set these values so that we increment to the first region.
-  _coarse_cur_region_index = -1;
-  _coarse_cur_region_cur_card = (HeapRegion::CardsPerRegion-1);
-
-  _cur_region_cur_card = 0;
-
-  _fine_array_index = -1;
-  _fine_cur_prt = NULL;
-
-  _n_yielded_coarse = 0;
-  _n_yielded_fine = 0;
-  _n_yielded_sparse = 0;
-
-  _sparse_iter.init(&hrrs->_other_regions._sparse_table);
-}
+  _coarse_cur_region_index(-1),
+  _coarse_cur_region_cur_card(HeapRegion::CardsPerRegion-1),
+  _cur_region_cur_card(0),
+  _fine_array_index(-1),
+  _fine_cur_prt(NULL),
+  _n_yielded_coarse(0),
+  _n_yielded_fine(0),
+  _n_yielded_sparse(0),
+  _sparse_iter(&hrrs->_other_regions._sparse_table) {}
 
 bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {
   if (_hrrs->_other_regions._n_coarse_entries == 0) return false;
@@ -1209,8 +1192,7 @@ void HeapRegionRemSet::test() {
   hrrs->add_reference((OopOrNarrowOopStar)hr5->bottom());
 
   // Now, does iteration yield these three?
-  HeapRegionRemSetIterator iter;
-  hrrs->init_iterator(&iter);
+  HeapRegionRemSetIterator iter(hrrs);
   size_t sum = 0;
   size_t card_index;
   while (iter.has_next(card_index)) {
