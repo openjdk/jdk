@@ -157,9 +157,9 @@ public class LinkFactoryImpl extends LinkFactory {
             if (!isFirst) {
                 linkInfo.displayLength += 1;
                 output.append(" ");
-                isFirst = false;
             }
             output.append(anno);
+            isFirst = false;
         }
         if (!annos.isEmpty()) {
             linkInfo.displayLength += 1;

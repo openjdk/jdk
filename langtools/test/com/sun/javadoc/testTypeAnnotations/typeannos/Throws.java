@@ -21,31 +21,31 @@
  * questions.
  */
 
+package typeannos;
+
+import java.lang.annotation.*;
+
 /*
- * @test
- * @bug 8010303
- * @summary Graph inference: missing incorporation step causes spurious inference error
- * @compile TargetType69.java
+ * This class is replicated from test/tools/javac/annotations/typeAnnotations/newlocations.
  */
-import java.util.*;
-
-class TargetType69 {
-
-    interface Function<X,Y> {
-        Y m(X x);
-    }
-
-    abstract class TabulationAssertion<T, U> { }
-
-    class GroupedMapAssertion<K, M1 extends Map<K, ?>> extends TabulationAssertion<Integer, M1> {
-        GroupedMapAssertion(Function<Integer, K> classifier) { }
-    }
-
-
-    <T, M2 extends Map> void exerciseMapTabulation(Function<T, ? extends M2> collector,
-                                                             TabulationAssertion<T, M2> assertion)  { }
-
-    void test(Function<Integer, Integer> classifier, Function<Integer, Map<Integer, List<Integer>>> coll) {
-        exerciseMapTabulation(coll, new GroupedMapAssertion<>(classifier));
-    }
+class ThrDefaultUnmodified {
+    void oneException() throws @ThrA Exception {}
+    void twoExceptions() throws @ThrA RuntimeException, @ThrA Exception {}
 }
+
+class ThrPublicModified {
+    public final void oneException(String a) throws @ThrA Exception {}
+    public final void twoExceptions(String a) throws @ThrA RuntimeException, @ThrA Exception {}
+}
+
+class ThrWithValue {
+    void oneException() throws @ThrB("m") Exception {}
+    void twoExceptions() throws @ThrB(value="m") RuntimeException, @ThrA Exception {}
+}
+
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@Documented
+@interface ThrA {}
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@Documented
+@interface ThrB { String value(); }

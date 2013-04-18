@@ -20,32 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package typeannos;
+
+import java.lang.annotation.*;
+
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@Documented
+@interface VarArgA {}
 
 /*
- * @test
- * @bug 8010303
- * @summary Graph inference: missing incorporation step causes spurious inference error
- * @compile TargetType69.java
+ * This class is replicated from test/tools/javac/annotations/typeAnnotations/newlocations.
  */
-import java.util.*;
+class Varargs {
 
-class TargetType69 {
-
-    interface Function<X,Y> {
-        Y m(X x);
+    // Handle annotations on a varargs element type
+    void varargPlain(Object @VarArgA... objs) {
     }
 
-    abstract class TabulationAssertion<T, U> { }
-
-    class GroupedMapAssertion<K, M1 extends Map<K, ?>> extends TabulationAssertion<Integer, M1> {
-        GroupedMapAssertion(Function<Integer, K> classifier) { }
-    }
-
-
-    <T, M2 extends Map> void exerciseMapTabulation(Function<T, ? extends M2> collector,
-                                                             TabulationAssertion<T, M2> assertion)  { }
-
-    void test(Function<Integer, Integer> classifier, Function<Integer, Map<Integer, List<Integer>>> coll) {
-        exerciseMapTabulation(coll, new GroupedMapAssertion<>(classifier));
+    void varargGeneric(Class<?> @VarArgA ... clz) {
     }
 }
