@@ -1955,13 +1955,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   int n_rem_sets = HeapRegionRemSet::num_par_rem_sets();
   assert(n_rem_sets > 0, "Invariant.");
 
-  HeapRegionRemSetIterator** iter_arr =
-    NEW_C_HEAP_ARRAY(HeapRegionRemSetIterator*, n_queues, mtGC);
-  for (int i = 0; i < n_queues; i++) {
-    iter_arr[i] = new HeapRegionRemSetIterator();
-  }
-  _rem_set_iterator = iter_arr;
-
   _worker_cset_start_region = NEW_C_HEAP_ARRAY(HeapRegion*, n_queues, mtGC);
   _worker_cset_start_region_time_stamp = NEW_C_HEAP_ARRAY(unsigned int, n_queues, mtGC);
 

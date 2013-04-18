@@ -786,9 +786,6 @@ protected:
   // concurrently after the collection.
   DirtyCardQueueSet _dirty_card_queue_set;
 
-  // The Heap Region Rem Set Iterator.
-  HeapRegionRemSetIterator** _rem_set_iterator;
-
   // The closure used to refine a single card.
   RefineCardTableEntryClosure* _refine_cte_cl;
 
@@ -1112,15 +1109,6 @@ public:
   // The rem set and barrier set.
   G1RemSet* g1_rem_set() const { return _g1_rem_set; }
   ModRefBarrierSet* mr_bs() const { return _mr_bs; }
-
-  // The rem set iterator.
-  HeapRegionRemSetIterator* rem_set_iterator(int i) {
-    return _rem_set_iterator[i];
-  }
-
-  HeapRegionRemSetIterator* rem_set_iterator() {
-    return _rem_set_iterator[0];
-  }
 
   unsigned get_gc_time_stamp() {
     return _gc_time_stamp;
