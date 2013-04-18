@@ -278,6 +278,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   MutexLockerEx mu(Compile_lock);
   MethodData* mdo = mh->method_data();
+  MethodCounters* mcs = mh->method_counters();
 
   if (mdo != NULL) {
     mdo->init();
@@ -288,20 +289,22 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     }
   }
 
-  mh->backedge_counter()->init();
-  mh->invocation_counter()->init();
-  mh->set_interpreter_invocation_count(0);
-  mh->set_interpreter_throwout_count(0);
   mh->clear_not_c1_compilable();
   mh->clear_not_c2_compilable();
   mh->clear_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
+  if (mcs != NULL) {
+    mcs->backedge_counter()->init();
+    mcs->invocation_counter()->init();
+    mcs->set_interpreter_invocation_count(0);
+    mcs->set_interpreter_throwout_count(0);
 
 #ifdef TIERED
-  mh->set_rate(0.0F);
-  mh->set_prev_event_count(0);
-  mh->set_prev_time(0);
+    mcs->set_rate(0.0F);
+    mh->set_prev_event_count(0, THREAD);
+    mh->set_prev_time(0, THREAD);
 #endif
+  }
 WB_END
 
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
