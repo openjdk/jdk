@@ -21,31 +21,25 @@
  * questions.
  */
 
+package typeannos;
+
+import java.lang.annotation.*;
+
 /*
- * @test
- * @bug 8010303
- * @summary Graph inference: missing incorporation step causes spurious inference error
- * @compile TargetType69.java
+ * This class is replicated from test/tools/javac/annotations/typeAnnotations/newlocations.
  */
-import java.util.*;
+abstract class MyClass extends @ClassExtA ParameterizedClass<@ClassExtB String>
+  implements @ClassExtB CharSequence, @ClassExtA ParameterizedInterface<@ClassExtB String> { }
 
-class TargetType69 {
+interface MyInterface extends @ClassExtA ParameterizedInterface<@ClassExtA String>,
+                              @ClassExtB CharSequence { }
 
-    interface Function<X,Y> {
-        Y m(X x);
-    }
+class ParameterizedClass<K> {}
+interface ParameterizedInterface<K> {}
 
-    abstract class TabulationAssertion<T, U> { }
-
-    class GroupedMapAssertion<K, M1 extends Map<K, ?>> extends TabulationAssertion<Integer, M1> {
-        GroupedMapAssertion(Function<Integer, K> classifier) { }
-    }
-
-
-    <T, M2 extends Map> void exerciseMapTabulation(Function<T, ? extends M2> collector,
-                                                             TabulationAssertion<T, M2> assertion)  { }
-
-    void test(Function<Integer, Integer> classifier, Function<Integer, Map<Integer, List<Integer>>> coll) {
-        exerciseMapTabulation(coll, new GroupedMapAssertion<>(classifier));
-    }
-}
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@Documented
+@interface ClassExtA {}
+@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
+@Documented
+@interface ClassExtB {}
