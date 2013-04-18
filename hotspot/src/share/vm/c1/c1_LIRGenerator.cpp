@@ -3103,8 +3103,8 @@ void LIRGenerator::do_RuntimeCall(RuntimeCall* x) {
   }
 }
 
-void LIRGenerator::do_Assert(Assert *x) {
 #ifdef ASSERT
+void LIRGenerator::do_Assert(Assert *x) {
   ValueTag tag = x->x()->type()->tag();
   If::Condition cond = x->cond();
 
@@ -3124,9 +3124,8 @@ void LIRGenerator::do_Assert(Assert *x) {
   LIR_Opr right = yin->result();
 
   __ lir_assert(lir_cond(x->cond()), left, right, x->message(), true);
-#endif
 }
-
+#endif
 
 void LIRGenerator::do_RangeCheckPredicate(RangeCheckPredicate *x) {
 

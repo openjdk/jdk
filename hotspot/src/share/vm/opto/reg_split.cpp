@@ -318,9 +318,13 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
     for( uint i = 1; i < def->req(); i++ ) {
       Node *in = def->in(i);
       // Check for single-def (LRG cannot redefined)
-      uint lidx = n2lidx(in);
-      if( lidx >= _maxlrg ) continue; // Value is a recent spill-copy
-      if (lrgs(lidx).is_singledef()) continue;
+      uint lidx = _lrg_map.live_range_id(in);
+      if (lidx >= _lrg_map.max_lrg_id()) {
+        continue; // Value is a recent spill-copy
+      }
+      if (lrgs(lidx).is_singledef()) {
+        continue;
+      }
 
       Block *b_def = _cfg._bbs[def->_idx];
       int idx_def = b_def->find_node(def);
@@ -344,26 +348,28 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
   if( spill->req() > 1 ) {
     for( uint i = 1; i < spill->req(); i++ ) {
       Node *in = spill->in(i);
-      uint lidx = Find_id(in);
+      uint lidx = _lrg_map.find_id(in);
 
       // Walk backwards thru spill copy node intermediates
       if (walkThru) {
-        while ( in->is_SpillCopy() && lidx >= _maxlrg ) {
+        while (in->is_SpillCopy() && lidx >= _lrg_map.max_lrg_id()) {
           in = in->in(1);
-          lidx = Find_id(in);
+          lidx = _lrg_map.find_id(in);
         }
 
-        if (lidx < _maxlrg && lrgs(lidx).is_multidef()) {
+        if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).is_multidef()) {
           // walkThru found a multidef LRG, which is unsafe to use, so
           // just keep the original def used in the clone.
           in = spill->in(i);
-          lidx = Find_id(in);
+          lidx = _lrg_map.find_id(in);
         }
       }
 
-      if( lidx < _maxlrg && lrgs(lidx).reg() >= LRG::SPILL_REG ) {
+      if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).reg() >= LRG::SPILL_REG) {
         Node *rdef = Reachblock[lrg2reach[lidx]];
-        if( rdef ) spill->set_req(i,rdef);
+        if (rdef) {
+          spill->set_req(i, rdef);
+        }
       }
     }
   }
@@ -382,7 +388,7 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
 #endif
   // See if the cloned def kills any flags, and copy those kills as well
   uint i = insidx+1;
-  if( clone_projs( b, i, def, spill, maxlrg ) ) {
+  if( clone_projs( b, i, def, spill, maxlrg) ) {
     // Adjust the point where we go hi-pressure
     if( i <= b->_ihrp_index ) b->_ihrp_index++;
     if( i <= b->_fhrp_index ) b->_fhrp_index++;
@@ -424,17 +430,25 @@ bool PhaseChaitin::is_high_pressure( Block *b, LRG *lrg, uint insidx ) {
 //------------------------------prompt_use---------------------------------
 // True if lidx is used before any real register is def'd in the block
 bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
-  if( lrgs(lidx)._was_spilled2 ) return false;
+  if (lrgs(lidx)._was_spilled2) {
+    return false;
+  }
 
   // Scan block for 1st use.
   for( uint i = 1; i <= b->end_idx(); i++ ) {
     Node *n = b->_nodes[i];
     // Ignore PHI use, these can be up or down
-    if( n->is_Phi() ) continue;
-    for( uint j = 1; j < n->req(); j++ )
-      if( Find_id(n->in(j)) == lidx )
+    if (n->is_Phi()) {
+      continue;
+    }
+    for (uint j = 1; j < n->req(); j++) {
+      if (_lrg_map.find_id(n->in(j)) == lidx) {
         return true;          // Found 1st use!
-    if( n->out_RegMask().is_NotEmpty() ) return false;
+      }
+    }
+    if (n->out_RegMask().is_NotEmpty()) {
+      return false;
+    }
   }
   return false;
 }
@@ -464,23 +478,23 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   bool                 u1, u2, u3;
   Block               *b, *pred;
   PhiNode             *phi;
-  GrowableArray<uint>  lidxs(split_arena, _maxlrg, 0, 0);
+  GrowableArray<uint>  lidxs(split_arena, maxlrg, 0, 0);
 
   // Array of counters to count splits per live range
-  GrowableArray<uint>  splits(split_arena, _maxlrg, 0, 0);
+  GrowableArray<uint>  splits(split_arena, maxlrg, 0, 0);
 
 #define NEW_SPLIT_ARRAY(type, size)\
   (type*) split_arena->allocate_bytes((size) * sizeof(type))
 
   //----------Setup Code----------
   // Create a convenient mapping from lrg numbers to reaches/leaves indices
-  uint *lrg2reach = NEW_SPLIT_ARRAY( uint, _maxlrg );
+  uint *lrg2reach = NEW_SPLIT_ARRAY(uint, maxlrg);
   // Keep track of DEFS & Phis for later passes
   defs = new Node_List();
   phis = new Node_List();
   // Gather info on which LRG's are spilling, and build maps
-  for( bidx = 1; bidx < _maxlrg; bidx++ ) {
-    if( lrgs(bidx).alive() && lrgs(bidx).reg() >= LRG::SPILL_REG ) {
+  for (bidx = 1; bidx < maxlrg; bidx++) {
+    if (lrgs(bidx).alive() && lrgs(bidx).reg() >= LRG::SPILL_REG) {
       assert(!lrgs(bidx).mask().is_AllStack(),"AllStack should color");
       lrg2reach[bidx] = spill_cnt;
       spill_cnt++;
@@ -629,7 +643,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           break;
         }
         // must be looking at a phi
-        if( Find_id(n1) == lidxs.at(slidx) ) {
+        if (_lrg_map.find_id(n1) == lidxs.at(slidx)) {
           // found the necessary phi
           needs_phi = false;
           has_phi = true;
@@ -651,11 +665,11 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           Reachblock[slidx] = phi;
 
           // add node to block & node_to_block mapping
-          insert_proj( b, insidx++, phi, maxlrg++ );
+          insert_proj(b, insidx++, phi, maxlrg++);
           non_phi++;
           // Reset new phi's mapping to be the spilling live range
-          _names.map(phi->_idx, lidx);
-          assert(Find_id(phi) == lidx,"Bad update on Union-Find mapping");
+          _lrg_map.map(phi->_idx, lidx);
+          assert(_lrg_map.find_id(phi) == lidx, "Bad update on Union-Find mapping");
         }  // end if not found correct phi
         // Here you have either found or created the Phi, so record it
         assert(phi != NULL,"Must have a Phi Node here");
@@ -721,12 +735,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
       Node *n = b->_nodes[insidx];
       // Find the defining Node's live range index
-      uint defidx = Find_id(n);
+      uint defidx = _lrg_map.find_id(n);
       uint cnt = n->req();
 
-      if( n->is_Phi() ) {
+      if (n->is_Phi()) {
         // Skip phi nodes after removing dead copies.
-        if( defidx < _maxlrg ) {
+        if (defidx < _lrg_map.max_lrg_id()) {
           // Check for useless Phis.  These appear if we spill, then
           // coalesce away copies.  Dont touch Phis in spilling live
           // ranges; they are busy getting modifed in this pass.
@@ -744,8 +758,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               }
             }
             assert( u, "at least 1 valid input expected" );
-            if( i >= cnt ) {    // Found one unique input
-              assert(Find_id(n) == Find_id(u), "should be the same lrg");
+            if (i >= cnt) {    // Found one unique input
+              assert(_lrg_map.find_id(n) == _lrg_map.find_id(u), "should be the same lrg");
               n->replace_by(u); // Then replace with unique input
               n->disconnect_inputs(NULL, C);
               b->_nodes.remove(insidx);
@@ -793,16 +807,24 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 while( insert_point > 0 ) {
                   Node *n = b->_nodes[insert_point];
                   // Hit top of block?  Quit going backwards
-                  if( n->is_Phi() ) break;
+                  if (n->is_Phi()) {
+                    break;
+                  }
                   // Found a def?  Better split after it.
-                  if( n2lidx(n) == lidx ) break;
+                  if (_lrg_map.live_range_id(n) == lidx) {
+                    break;
+                  }
                   // Look for a use
                   uint i;
-                  for( i = 1; i < n->req(); i++ )
-                    if( n2lidx(n->in(i)) == lidx )
+                  for( i = 1; i < n->req(); i++ ) {
+                    if (_lrg_map.live_range_id(n->in(i)) == lidx) {
                       break;
+                    }
+                  }
                   // Found a use?  Better split after it.
-                  if( i < n->req() ) break;
+                  if (i < n->req()) {
+                    break;
+                  }
                   insert_point--;
                 }
                 uint orig_eidx = b->end_idx();
@@ -812,8 +834,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                   return 0;
                 }
                 // Spill of NULL check mem op goes into the following block.
-                if (b->end_idx() > orig_eidx)
+                if (b->end_idx() > orig_eidx) {
                   insidx++;
+                }
               }
               // This is a new DEF, so update UP
               UPblock[slidx] = false;
@@ -832,13 +855,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       }  // end if crossing HRP Boundry
 
       // If the LRG index is oob, then this is a new spillcopy, skip it.
-      if( defidx >= _maxlrg ) {
+      if (defidx >= _lrg_map.max_lrg_id()) {
         continue;
       }
       LRG &deflrg = lrgs(defidx);
       uint copyidx = n->is_Copy();
       // Remove coalesced copy from CFG
-      if( copyidx && defidx == n2lidx(n->in(copyidx)) ) {
+      if (copyidx && defidx == _lrg_map.live_range_id(n->in(copyidx))) {
         n->replace_by( n->in(copyidx) );
         n->set_req( copyidx, NULL );
         b->_nodes.remove(insidx--);
@@ -864,13 +887,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           // If inpidx > old_last, then one of these new inputs is being
           // handled. Skip the derived part of the pair, but process
           // the base like any other input.
-          if( inpidx > old_last && ((inpidx - oopoff) & 1) == DERIVED ) {
+          if (inpidx > old_last && ((inpidx - oopoff) & 1) == DERIVED) {
             continue;  // skip derived_debug added below
           }
           // Get lidx of input
-          uint useidx = Find_id(n->in(inpidx));
+          uint useidx = _lrg_map.find_id(n->in(inpidx));
           // Not a brand-new split, and it is a spill use
-          if( useidx < _maxlrg && lrgs(useidx).reg() >= LRG::SPILL_REG ) {
+          if (useidx < _lrg_map.max_lrg_id() && lrgs(useidx).reg() >= LRG::SPILL_REG) {
             // Check for valid reaching DEF
             slidx = lrg2reach[useidx];
             Node *def = Reachblock[slidx];
@@ -886,7 +909,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               if (def == NULL || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
                 return 0;
               }
-              _names.extend(def->_idx,0);
+              _lrg_map.extend(def->_idx, 0);
               _cfg._bbs.map(def->_idx,b);
               n->set_req(inpidx, def);
               continue;
@@ -1186,10 +1209,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // ********** Split Left Over Mem-Mem Moves **********
       // Check for mem-mem copies and split them now.  Do not do this
       // to copies about to be spilled; they will be Split shortly.
-      if( copyidx ) {
+      if (copyidx) {
         Node *use = n->in(copyidx);
-        uint useidx = Find_id(use);
-        if( useidx < _maxlrg &&       // This is not a new split
+        uint useidx = _lrg_map.find_id(use);
+        if (useidx < _lrg_map.max_lrg_id() &&       // This is not a new split
             OptoReg::is_stack(deflrg.reg()) &&
             deflrg.reg() < LRG::SPILL_REG ) { // And DEF is from stack
           LRG &uselrg = lrgs(useidx);
@@ -1228,7 +1251,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         uint member;
         IndexSetIterator isi(liveout);
         while ((member = isi.next()) != 0) {
-          assert(defidx != Find_const(member), "Live out member has not been compressed");
+          assert(defidx != _lrg_map.find_const(member), "Live out member has not been compressed");
         }
 #endif
         Reachblock[slidx] = NULL;
@@ -1261,7 +1284,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     assert(phi->is_Phi(),"This list must only contain Phi Nodes");
     Block *b = _cfg._bbs[phi->_idx];
     // Grab the live range number
-    uint lidx = Find_id(phi);
+    uint lidx = _lrg_map.find_id(phi);
     uint slidx = lrg2reach[lidx];
     // Update node to lidx map
     new_lrg(phi, maxlrg++);
@@ -1296,11 +1319,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         int insert = pred->end_idx();
         while (insert >= 1 &&
                pred->_nodes[insert - 1]->is_SpillCopy() &&
-               Find(pred->_nodes[insert - 1]) >= lrgs_before_phi_split) {
+               _lrg_map.find(pred->_nodes[insert - 1]) >= lrgs_before_phi_split) {
           insert--;
         }
-        def = split_Rematerialize( def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false );
-        if( !def ) return 0;    // Bail out
+        def = split_Rematerialize(def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false);
+        if (!def) {
+          return 0;    // Bail out
+        }
       }
       // Update the Phi's input edge array
       phi->set_req(i,def);
@@ -1316,7 +1341,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     }  // End for all inputs to the Phi
   }  // End for all Phi Nodes
   // Update _maxlrg to save Union asserts
-  _maxlrg = maxlrg;
+  _lrg_map.set_max_lrg_id(maxlrg);
 
 
   //----------PASS 3----------
@@ -1328,47 +1353,51 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     for( uint i = 1; i < phi->req(); i++ ) {
       // Grab the input node
       Node *n = phi->in(i);
-      assert( n, "" );
-      uint lidx = Find(n);
-      uint pidx = Find(phi);
-      if( lidx < pidx )
+      assert(n, "node should exist");
+      uint lidx = _lrg_map.find(n);
+      uint pidx = _lrg_map.find(phi);
+      if (lidx < pidx) {
         Union(n, phi);
-      else if( lidx > pidx )
+      }
+      else if(lidx > pidx) {
         Union(phi, n);
+      }
     }  // End for all inputs to the Phi Node
   }  // End for all Phi Nodes
   // Now union all two address instructions
-  for( insidx = 0; insidx < defs->size(); insidx++ ) {
+  for (insidx = 0; insidx < defs->size(); insidx++) {
     // Grab the def
     n1 = defs->at(insidx);
     // Set new lidx for DEF & handle 2-addr instructions
-    if( n1->is_Mach() && ((twoidx = n1->as_Mach()->two_adr()) != 0) ) {
-      assert( Find(n1->in(twoidx)) < maxlrg,"Assigning bad live range index");
+    if (n1->is_Mach() && ((twoidx = n1->as_Mach()->two_adr()) != 0)) {
+      assert(_lrg_map.find(n1->in(twoidx)) < maxlrg,"Assigning bad live range index");
       // Union the input and output live ranges
-      uint lr1 = Find(n1);
-      uint lr2 = Find(n1->in(twoidx));
-      if( lr1 < lr2 )
+      uint lr1 = _lrg_map.find(n1);
+      uint lr2 = _lrg_map.find(n1->in(twoidx));
+      if (lr1 < lr2) {
         Union(n1, n1->in(twoidx));
-      else if( lr1 > lr2 )
+      }
+      else if (lr1 > lr2) {
         Union(n1->in(twoidx), n1);
+      }
     }  // End if two address
   }  // End for all defs
   // DEBUG
 #ifdef ASSERT
   // Validate all live range index assignments
-  for( bidx = 0; bidx < _cfg._num_blocks; bidx++ ) {
+  for (bidx = 0; bidx < _cfg._num_blocks; bidx++) {
     b  = _cfg._blocks[bidx];
-    for( insidx = 0; insidx <= b->end_idx(); insidx++ ) {
+    for (insidx = 0; insidx <= b->end_idx(); insidx++) {
       Node *n = b->_nodes[insidx];
-      uint defidx = Find(n);
-      assert(defidx < _maxlrg,"Bad live range index in Split");
+      uint defidx = _lrg_map.find(n);
+      assert(defidx < _lrg_map.max_lrg_id(), "Bad live range index in Split");
       assert(defidx < maxlrg,"Bad live range index in Split");
     }
   }
   // Issue a warning if splitting made no progress
   int noprogress = 0;
-  for( slidx = 0; slidx < spill_cnt; slidx++ ) {
-    if( PrintOpto && WizardMode && splits.at(slidx) == 0 ) {
+  for (slidx = 0; slidx < spill_cnt; slidx++) {
+    if (PrintOpto && WizardMode && splits.at(slidx) == 0) {
       tty->print_cr("Failed to split live range %d", lidxs.at(slidx));
       //BREAKPOINT;
     }
