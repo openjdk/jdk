@@ -23,29 +23,17 @@
 
 /*
  * @test
- * @bug 8010303
- * @summary Graph inference: missing incorporation step causes spurious inference error
- * @compile TargetType69.java
+ * @bug 8011376
+ * @summary Spurious checked exception errors in nested method call
+ * @compile TargetType72.java
  */
-import java.util.*;
+import java.io.IOException;
+import java.util.concurrent.Callable;
 
-class TargetType69 {
+class TargetType72 {
 
-    interface Function<X,Y> {
-        Y m(X x);
-    }
+    Callable<Number> c = id(id(()->{ if (true) throw new java.io.IOException(); return 0; }));
 
-    abstract class TabulationAssertion<T, U> { }
+    <Z> Z id(Z z) { return null; }
 
-    class GroupedMapAssertion<K, M1 extends Map<K, ?>> extends TabulationAssertion<Integer, M1> {
-        GroupedMapAssertion(Function<Integer, K> classifier) { }
-    }
-
-
-    <T, M2 extends Map> void exerciseMapTabulation(Function<T, ? extends M2> collector,
-                                                             TabulationAssertion<T, M2> assertion)  { }
-
-    void test(Function<Integer, Integer> classifier, Function<Integer, Map<Integer, List<Integer>>> coll) {
-        exerciseMapTabulation(coll, new GroupedMapAssertion<>(classifier));
-    }
 }

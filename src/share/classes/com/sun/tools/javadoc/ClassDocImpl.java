@@ -108,6 +108,10 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         this.tsym = sym;
     }
 
+    public com.sun.javadoc.Type getElementType() {
+        return null;
+    }
+
     /**
      * Returns the flags in terms of javac's flags
      */
