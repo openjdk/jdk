@@ -28,6 +28,7 @@
 #include "jni_util.h"
 
 #include "Region.h"
+#include "sizecalc.h"
 
 static jfieldID endIndexID;
 static jfieldID bandsID;
@@ -260,8 +261,8 @@ RegionToYXBandedRectangles(JNIEnv *env,
         }
         Region_StartIteration(env, &clipInfo);
         numrects = Region_CountIterationRects(&clipInfo);
-        if (numrects > initialBufferSize) {
-            *pRect = (RECT_T *) malloc(numrects * sizeof(RECT_T));
+        if ((unsigned long)numrects > initialBufferSize) {
+            *pRect = (RECT_T *) SAFE_SIZE_ARRAY_ALLOC(malloc, numrects, sizeof(RECT_T));
             if (*pRect == NULL) {
                 Region_EndIteration(env, &clipInfo);
                 JNU_ThrowOutOfMemoryError(env,

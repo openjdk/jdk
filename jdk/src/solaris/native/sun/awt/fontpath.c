@@ -41,6 +41,7 @@
 #include <jni.h>
 #include <jni_util.h>
 #include <jvm_md.h>
+#include <sizecalc.h>
 #ifndef HEADLESS
 #include <X11/Xlib.h>
 #include <awt.h>
@@ -225,7 +226,7 @@ static void AddFontsToX11FontPath ( fDirRecord *fDirP )
 
     if ( fDirP->num == 0 ) return;
 
-    appendDirList = malloc ( fDirP->num * sizeof ( int ));
+    appendDirList = SAFE_SIZE_ARRAY_ALLOC(malloc, fDirP->num, sizeof ( int ));
     if ( appendDirList == NULL ) {
       return;  /* if it fails we cannot do much */
     }
@@ -282,7 +283,7 @@ static void AddFontsToX11FontPath ( fDirRecord *fDirP )
     }
 
 
-    newFontPath = malloc ( totalDirCount * sizeof ( char **) );
+    newFontPath = SAFE_SIZE_ARRAY_ALLOC(malloc, totalDirCount, sizeof ( char **) );
     /* if it fails free things and get out */
     if ( newFontPath == NULL ) {
       free ( ( void *) appendDirList );
@@ -303,7 +304,12 @@ static void AddFontsToX11FontPath ( fDirRecord *fDirP )
 
         /* printf ( "Appending %s\n", fDirP->name[index] ); */
 
-        onePath = malloc ( ( strlen (fDirP->name[index]) + 2 )* sizeof( char ) );
+        onePath = SAFE_SIZE_ARRAY_ALLOC(malloc, strlen (fDirP->name[index]) + 2, sizeof( char ) );
+        if (onePath == NULL) {
+            free ( ( void *) appendDirList );
+            XFreeFontPath ( origFontPath );
+            return;
+        }
         strcpy ( onePath, fDirP->name[index] );
         strcat ( onePath, "/" );
         newFontPath[nPaths++] = onePath;

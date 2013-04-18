@@ -39,6 +39,7 @@
 #include <X11/extensions/XInput.h>
 #include <X11/extensions/XI.h>
 #include <jni.h>
+#include <sizecalc.h>
 #include "robot_common.h"
 #include "canvas.h"
 #include "wsutils.h"
@@ -174,7 +175,7 @@ Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls, jint numberOfButton
 
     num_buttons = numberOfButtons;
     tmp = (*env)->GetIntArrayElements(env, buttonDownMasks, JNI_FALSE);
-    masks = (jint *)malloc(sizeof(jint) * num_buttons);
+    masks = (jint *)SAFE_SIZE_ARRAY_ALLOC(malloc, sizeof(jint), num_buttons);
     if (masks == (jint *) NULL) {
         JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), NULL);
         (*env)->ReleaseIntArrayElements(env, buttonDownMasks, tmp, 0);
@@ -231,8 +232,9 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     image = getWindowImage(awt_display, rootWindow, x, y, width, height);
 
     /* Array to use to crunch around the pixel values */
-    ary = (jint *) malloc(width * height * sizeof (jint));
-    if (ary == NULL) {
+    if (!IS_SAFE_SIZE_MUL(width, height) ||
+        !(ary = (jint *) SAFE_SIZE_ARRAY_ALLOC(malloc, width * height, sizeof (jint))))
+    {
         JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         XDestroyImage(image);
         AWT_UNLOCK();
