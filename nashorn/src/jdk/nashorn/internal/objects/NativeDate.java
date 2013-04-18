@@ -851,11 +851,11 @@ public final class NativeDate extends ScriptObject {
         }
         final ScriptObject sobj  = (ScriptObject)selfObj;
         final Object       value = sobj.getDefaultValue(Number.class);
-
-        final double num = (value instanceof Number) ? ((Number)value).doubleValue() : NaN;
-
-        if (isInfinite(num) || isNaN(num)) {
-            return null;
+        if (value instanceof Number) {
+            final double num = ((Number)value).doubleValue();
+            if (isInfinite(num) || isNaN(num)) {
+                return null;
+            }
         }
 
         try {
