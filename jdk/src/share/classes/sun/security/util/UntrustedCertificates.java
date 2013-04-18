@@ -843,5 +843,52 @@ public final class UntrustedCertificates {
         "zCOfhbsRWdMLYepauaNZOIMZXmFwcrIl0TGMkTAtATz+XmZc\n" +
         "-----END CERTIFICATE-----");
 
+        //
+        // Revoked code signing certificate w/ a stolen key issued by GoDaddy
+        // used to sign malware
+        //
+
+        // Subject: CN=CLEARESULT CONSULTING INC., OU=Corporate IT,
+        //          O=CLEARESULT CONSULTING INC., L=Austin, ST=TX, C=US
+        // Issuer:  SERIALNUMBER=07969287,
+        //          CN=Go Daddy Secure Certification Authority,
+        //          OU=http://certificates.godaddy.com/repository,
+        //          O="GoDaddy.com, Inc.",
+        //          L=Scottsdale,
+        //          ST=Arizona,
+        //          C=US
+        // Serial:  2b:73:43:2a:a8:4f:44
+        add("clearesult-consulting-inc-2AA84F44",
+        "-----BEGIN CERTIFICATE-----\n" +
+        "MIIFYjCCBEqgAwIBAgIHK3NDKqhPRDANBgkqhkiG9w0BAQUFADCByjELMAkGA1UE\n" +
+        "BhMCVVMxEDAOBgNVBAgTB0FyaXpvbmExEzARBgNVBAcTClNjb3R0c2RhbGUxGjAY\n" +
+        "BgNVBAoTEUdvRGFkZHkuY29tLCBJbmMuMTMwMQYDVQQLEypodHRwOi8vY2VydGlm\n" +
+        "aWNhdGVzLmdvZGFkZHkuY29tL3JlcG9zaXRvcnkxMDAuBgNVBAMTJ0dvIERhZGR5\n" +
+        "IFNlY3VyZSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTERMA8GA1UEBRMIMDc5Njky\n" +
+        "ODcwHhcNMTIwMjE1MjEwOTA2WhcNMTQwMjE1MjEwOTA2WjCBjDELMAkGA1UEBgwC\n" +
+        "VVMxCzAJBgNVBAgMAlRYMQ8wDQYDVQQHDAZBdXN0aW4xIzAhBgNVBAoMGkNMRUFS\n" +
+        "RVNVTFQgQ09OU1VMVElORyBJTkMuMRUwEwYDVQQLDAxDb3Jwb3JhdGUgSVQxIzAh\n" +
+        "BgNVBAMMGkNMRUFSRVNVTFQgQ09OU1VMVElORyBJTkMuMIIBIjANBgkqhkiG9w0B\n" +
+        "AQEFAAOCAQ8AMIIBCgKCAQEAtIOjCKeAicull+7ZIzt0/4ya3IeXUFlfypqKMLkU\n" +
+        "IbKjn0P5uMj6VE3rlbZr44RCegxvdnR6umBh1c0ZXoN3o+yc0JKcKcLiApmJJ277\n" +
+        "p7IbLwYDhBXRQNoIJm187IOMRPIxsKN4hL91txn9jGBmW+9zKlJlNhR5R7vjwU2E\n" +
+        "jrH/6oqsc9EM2yYpfjlNv6+3jSwAYZCkSWr+27PQOV+YHKmIxtJjX0upFz5FdIrV\n" +
+        "9CCX+L2Kji1THOkSgG4QTbYxmEcHqGViWz8hXLeNXjcbEsPuIiAu3hknxRHfUTE/\n" +
+        "U0Lh0Ug1e3LrJu+WnxM2SmUY4krsZ22c0yWUW9hzWITIjQIDAQABo4IBhzCCAYMw\n" +
+        "DwYDVR0TAQH/BAUwAwEBADATBgNVHSUEDDAKBggrBgEFBQcDAzAOBgNVHQ8BAf8E\n" +
+        "BAMCB4AwMwYDVR0fBCwwKjAooCagJIYiaHR0cDovL2NybC5nb2RhZGR5LmNvbS9n\n" +
+        "ZHM1LTE2LmNybDBTBgNVHSAETDBKMEgGC2CGSAGG/W0BBxcCMDkwNwYIKwYBBQUH\n" +
+        "AgEWK2h0dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5jb20vcmVwb3NpdG9yeS8w\n" +
+        "gYAGCCsGAQUFBwEBBHQwcjAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZ29kYWRk\n" +
+        "eS5jb20vMEoGCCsGAQUFBzAChj5odHRwOi8vY2VydGlmaWNhdGVzLmdvZGFkZHku\n" +
+        "Y29tL3JlcG9zaXRvcnkvZ2RfaW50ZXJtZWRpYXRlLmNydDAfBgNVHSMEGDAWgBT9\n" +
+        "rGEyk2xF1uLuhV+auud2mWjM5zAdBgNVHQ4EFgQUDtdeKqeN2QkcbEp1HovFieNB\n" +
+        "XiowDQYJKoZIhvcNAQEFBQADggEBAD74Agw5tvi2aBl4/f/s7/VE/BClzDsKMb9K\n" +
+        "v9qpeC45ZA/jelxV11HKbQnVF194gDb7D2H9OsAsRUy8HVKbXEcc/8dKvwOqb+BC\n" +
+        "2i/EmfjLgmCfezNFtLq8xcPxF3zIRc44vPrK0z4YZsaHdH+yTEJ51p5EMdTqaLaP\n" +
+        "4n5m8LX3RfqlQB9dYFe6dUoYZjKm9d/pIRww3VqfOzjl42Edi1w6dWmBVMx1NZuR\n" +
+        "DBabJH1vJ9Gd+KwxMCmBZ6pQPl28JDimhJhI2LNqU349uADQVV0HJosddN/ARyyI\n" +
+        "LSIQO7BnNVKVG9Iujf33bvPNeg0qNz5qw+rKKq97Pqeum+L5oKU=\n" +
+        "-----END CERTIFICATE-----");
     }
 }
