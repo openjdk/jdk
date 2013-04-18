@@ -71,7 +71,7 @@ import java.time.chrono.Era;
  * <h4>Implementation notes</h4>
  * This is an immutable and thread-safe enum.
  */
-enum CopticEra implements Era {
+public enum CopticEra implements Era {
 
     /**
      * The singleton instance for the era BEFORE_AM, 'Before Era of the Martyrs'.
@@ -116,23 +116,6 @@ enum CopticEra implements Era {
      */
     public int getValue() {
         return ordinal();
-    }
-
-    @Override
-    public CopticChronology getChronology() {
-        return CopticChronology.INSTANCE;
-    }
-
-    // JDK8 default methods:
-    //-----------------------------------------------------------------------
-    @Override
-    public CopticDate date(int year, int month, int day) {
-        return (CopticDate)(getChronology().date(this, year, month, day));
-    }
-
-    @Override
-    public CopticDate dateYearDay(int year, int dayOfYear) {
-        return (CopticDate)(getChronology().dateYearDay(this, year, dayOfYear));
     }
 
 }

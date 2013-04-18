@@ -25,11 +25,9 @@
 
 package com.sun.crypto.provider;
 
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.*;
-import javax.crypto.interfaces.*;
 import javax.crypto.spec.*;
 
 /**
@@ -145,16 +143,12 @@ abstract class PBES2Core extends CipherSpi {
         }
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount, ivSpec);
         try {
-            params = AlgorithmParameters.getInstance(pbeAlgo, "SunJCE");
+            params = AlgorithmParameters.getInstance(pbeAlgo,
+                SunJCE.getInstance());
+            params.init(pbeSpec);
         } catch (NoSuchAlgorithmException nsae) {
             // should never happen
             throw new RuntimeException("SunJCE called, but not configured");
-        } catch (NoSuchProviderException nspe) {
-            // should never happen
-            throw new RuntimeException("SunJCE called, but not configured");
-        }
-        try {
-            params.init(pbeSpec);
         } catch (InvalidParameterSpecException ipse) {
             // should never happen
             throw new RuntimeException("PBEParameterSpec not supported");
