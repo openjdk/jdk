@@ -1611,9 +1611,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   // Normal (non-jsr) branch handling
 
   // Save the current Lbcp
-  const Register O0_cur_bcp = O0;
-  __ mov( Lbcp, O0_cur_bcp );
-
+  const Register l_cur_bcp = Lscratch;
+  __ mov( Lbcp, l_cur_bcp );
 
   bool increment_invocation_counter_for_backward_branches = UseCompiler && UseLoopCounter;
   if ( increment_invocation_counter_for_backward_branches ) {
@@ -1622,6 +1621,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ br( Assembler::positive, false,  Assembler::pn, Lforward );
     // Bump bytecode pointer by displacement (take the branch)
     __ delayed()->add( O1_disp, Lbcp, Lbcp );     // add to bc addr
+
+    const Register Rcounters = G3_scratch;
+    __ get_method_counters(Lmethod, Rcounters, Lforward);
 
     if (TieredCompilation) {
       Label Lno_mdo, Loverflow;
@@ -1635,21 +1637,22 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
         // Increment backedge counter in the MDO
         Address mdo_backedge_counter(G4_scratch, in_bytes(MethodData::backedge_counter_offset()) +
                                                  in_bytes(InvocationCounter::counter_offset()));
-        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, G3_scratch, Lscratch,
+        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, G3_scratch, O0,
                                    Assembler::notZero, &Lforward);
         __ ba_short(Loverflow);
       }
 
-      // If there's no MDO, increment counter in Method*
+      // If there's no MDO, increment counter in MethodCounters*
       __ bind(Lno_mdo);
-      Address backedge_counter(Lmethod, in_bytes(Method::backedge_counter_offset()) +
-                                        in_bytes(InvocationCounter::counter_offset()));
-      __ increment_mask_and_jump(backedge_counter, increment, mask, G3_scratch, Lscratch,
+      Address backedge_counter(Rcounters,
+              in_bytes(MethodCounters::backedge_counter_offset()) +
+              in_bytes(InvocationCounter::counter_offset()));
+      __ increment_mask_and_jump(backedge_counter, increment, mask, G4_scratch, O0,
                                  Assembler::notZero, &Lforward);
       __ bind(Loverflow);
 
       // notify point for loop, pass branch bytecode
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), O0_cur_bcp);
+      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), l_cur_bcp);
 
       // Was an OSR adapter generated?
       // O0 = osr nmethod
@@ -1686,15 +1689,15 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     } else {
       // Update Backedge branch separately from invocations
       const Register G4_invoke_ctr = G4;
-      __ increment_backedge_counter(G4_invoke_ctr, G1_scratch);
+      __ increment_backedge_counter(Rcounters, G4_invoke_ctr, G1_scratch);
       if (ProfileInterpreter) {
         __ test_invocation_counter_for_mdp(G4_invoke_ctr, G3_scratch, Lforward);
         if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(O2_bumped_count, O0_cur_bcp, G3_scratch);
+          __ test_backedge_count_for_osr(O2_bumped_count, l_cur_bcp, G3_scratch);
         }
       } else {
         if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(G4_invoke_ctr, O0_cur_bcp, G3_scratch);
+          __ test_backedge_count_for_osr(G4_invoke_ctr, l_cur_bcp, G3_scratch);
         }
       }
     }
