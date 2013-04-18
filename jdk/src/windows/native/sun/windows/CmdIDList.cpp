@@ -39,7 +39,7 @@ AwtCmdIDList::AwtCmdIDList()
 {
     m_capacity = ARRAY_INITIAL_SIZE;
     m_first_free = -1;
-    m_array = (CmdIDEntry *)safe_Malloc(m_capacity * sizeof(AwtObject*));
+    m_array = (CmdIDEntry *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, m_capacity, sizeof(AwtObject*));
     BuildFreeList(0);
 }
 
@@ -80,8 +80,8 @@ UINT AwtCmdIDList::Add(AwtObject* obj)
             m_capacity += ARRAY_SIZE_INCREMENT;
             if (m_capacity > ARRAY_MAXIMUM_SIZE)
                 m_capacity = ARRAY_MAXIMUM_SIZE;
-            m_array = (CmdIDEntry *)safe_Realloc(m_array,
-                                        m_capacity * sizeof(CmdIDEntry*));
+            m_array = (CmdIDEntry *)SAFE_SIZE_ARRAY_REALLOC(safe_Realloc, m_array,
+                                        m_capacity, sizeof(CmdIDEntry*));
             BuildFreeList(old_capacity);
         }
     }

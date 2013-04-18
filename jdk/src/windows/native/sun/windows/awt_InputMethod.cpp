@@ -333,7 +333,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_setNativeLocale
     // list which is returned by GetKeyboardLayoutList ensures to match first when
     // looking up suitable layout.
     int layoutCount = ::GetKeyboardLayoutList(0, NULL) + 1;  // +1 for user's preferred HKL
-    HKL FAR * hKLList = (HKL FAR *)safe_Malloc(sizeof(HKL)*layoutCount);
+    HKL FAR * hKLList = (HKL FAR *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(HKL), layoutCount);
     DASSERT(!safe_ExceptionOccurred(env));
     ::GetKeyboardLayoutList(layoutCount - 1, &(hKLList[1]));
     hKLList[0] = getDefaultKeyboardLayout(); // put user's preferred layout on top of the list
@@ -444,7 +444,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
 
     // get list of available HKLs
     int layoutCount = ::GetKeyboardLayoutList(0, NULL);
-    HKL FAR * hKLList = (HKL FAR *)safe_Malloc(sizeof(HKL)*layoutCount);
+    HKL FAR * hKLList = (HKL FAR *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(HKL), layoutCount);
     DASSERT(!safe_ExceptionOccurred(env));
     ::GetKeyboardLayoutList(layoutCount, hKLList);
 
@@ -453,7 +453,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
     int destIndex = 0;
     int javaLocaleNameCount = 0;
     int current = 0;
-    const char ** javaLocaleNames = (const char **)safe_Malloc(sizeof(char *)*layoutCount);
+    const char ** javaLocaleNames = (const char **)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(char *), layoutCount);
     DASSERT(!safe_ExceptionOccurred(env));
     for (; srcIndex < layoutCount; srcIndex++) {
         const char * srcLocaleName = getJavaIDFromLangID(LOWORD(hKLList[srcIndex]));
@@ -517,7 +517,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WInputMethod_getNativeIMMDescript
     jstring infojStr = NULL;
 
     if ((buffSize = ::ImmGetDescription(hkl, szImmDescription, 0)) > 0) {
-        szImmDescription = (LPTSTR) safe_Malloc((buffSize+1) * sizeof(TCHAR));
+        szImmDescription = (LPTSTR) SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, (buffSize+1), sizeof(TCHAR));
 
         if (szImmDescription != NULL) {
             ImmGetDescription(hkl, szImmDescription, (buffSize+1));

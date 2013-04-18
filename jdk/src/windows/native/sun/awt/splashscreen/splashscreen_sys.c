@@ -37,6 +37,7 @@
 #include <windowsx.h>
 #include <windows.h>
 #include <winuser.h>
+#include "sizecalc.h"
 
 #ifndef WS_EX_LAYERED
 #define WS_EX_LAYERED 0x80000
@@ -67,7 +68,10 @@ char* SplashConvertStringAlloc(const char* in, int *size) {
     len = strlen(in);
     outChars = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, in, len,
                                        NULL, 0);
-    buf = malloc(outChars*sizeof(WCHAR));
+    buf = (WCHAR*) SAFE_SIZE_ARRAY_ALLOC(malloc, outChars, sizeof(WCHAR));
+    if (!buf) {
+        return NULL;
+    }
     rc = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, in, len,
                                  buf, outChars);
     if (rc==0) {
@@ -98,8 +102,14 @@ SplashInitFrameShape(Splash * splash, int imageIndex)
         return;
 
     /* reserving memory for the worst case */
-    pRgnData = (RGNDATA *) malloc(sizeof(RGNDATAHEADER) +
-            sizeof(RECT) * (splash->width / 2 + 1) * splash->height);
+    if (!IS_SAFE_SIZE_MUL(splash->width / 2 + 1, splash->height)) {
+        return;
+    }
+    pRgnData = (RGNDATA *) SAFE_SIZE_STRUCT_ALLOC(malloc, sizeof(RGNDATAHEADER),
+            sizeof(RECT), (splash->width / 2 + 1) * splash->height);
+    if (!pRgnData) {
+        return;
+    }
     pRgnHdr = (RGNDATAHEADER *) pRgnData;
     initRect(&maskRect, 0, 0, splash->width, splash->height, 1,
             splash->width * splash->imageFormat.depthBytes,
@@ -130,7 +140,6 @@ SplashPaint(Splash * splash, HDC hdc)
 {
     unsigned numColors = splash->screenFormat.colorMap ?
         splash->screenFormat.numColors : 0;
-    unsigned bmiSize;
     BITMAPV4HEADER *pBmi;
     HPALETTE hOldPal = NULL;
 
@@ -138,8 +147,11 @@ SplashPaint(Splash * splash, HDC hdc)
         return;
     if (splash->currentFrame < 0 || splash->currentFrame >= splash->frameCount)
         return;
-    bmiSize = sizeof(BITMAPV4HEADER) + sizeof(RGBQUAD) * numColors;
-    pBmi = (BITMAPV4HEADER *) alloca(bmiSize);
+    pBmi = (BITMAPV4HEADER *) SAFE_SIZE_STRUCT_ALLOC(alloca, sizeof(BITMAPV4HEADER),
+            sizeof(RGBQUAD), numColors);
+    if (!pBmi) {
+        return;
+    }
     memset(pBmi, 0, sizeof(BITMAPV4HEADER));
     if (splash->screenFormat.colorMap)
         memcpy(((BYTE *) pBmi) + sizeof(BITMAPV4HEADER),
@@ -163,8 +175,11 @@ SplashPaint(Splash * splash, HDC hdc)
        here on demand */
     if (!splash->hPalette) {
         unsigned i;
-        LOGPALETTE *pLogPal =
-            malloc(sizeof(LOGPALETTE) + sizeof(PALETTEENTRY) * numColors);
+        LOGPALETTE *pLogPal = (LOGPALETTE *) SAFE_SIZE_STRUCT_ALLOC(malloc,
+                sizeof(LOGPALETTE), sizeof(PALETTEENTRY), numColors);
+        if (!pLogPal) {
+            return;
+        }
 
         pLogPal->palVersion = 0x300;
         pLogPal->palNumEntries = (WORD) numColors;

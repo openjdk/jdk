@@ -1037,8 +1037,8 @@ void AwtDropTarget::LoadCache(IDataObject* pDataObj) {
         if (m_dataObject->QueryGetData(&tmp) != S_OK) continue;
 
         if (m_nformats % CACHE_INCR == 0) {
-            m_formats = (FORMATETC *)safe_Realloc(m_formats,
-                                                  (CACHE_INCR + m_nformats) *
+            m_formats = (FORMATETC *)SAFE_SIZE_ARRAY_REALLOC(safe_Realloc, m_formats,
+                                                  CACHE_INCR + m_nformats,
                                                   sizeof(FORMATETC));
         }
 

@@ -345,14 +345,14 @@ Java_sun_awt_windows_WCustomCursor_createCursorIndirect(
         return;
     }
 
-    int length = env->GetArrayLength(andMask);
-    jbyte *andMaskPtr = new jbyte[length];
+    jsize length = env->GetArrayLength(andMask);
+    jbyte *andMaskPtr = new jbyte[length]; // safe because sizeof(jbyte)==1
     env->GetByteArrayRegion(andMask, 0, length, andMaskPtr);
 
     HBITMAP hMask = ::CreateBitmap(nW, nH, 1, 1, (BYTE *)andMaskPtr);
     ::GdiFlush();
 
-    int *cols = new int[nW*nH];
+    int *cols = SAFE_SIZE_NEW_ARRAY2(int, nW, nH);
 
     jint *intRasterDataPtr = NULL;
     HBITMAP hColor = NULL;
