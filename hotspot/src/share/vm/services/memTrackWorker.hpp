@@ -32,7 +32,7 @@
 // Maximum MAX_GENERATIONS generation data can be tracked.
 #define MAX_GENERATIONS  512
 
-class GenerationData : public _ValueObj {
+class GenerationData VALUE_OBJ_CLASS_SPEC {
  private:
   int           _number_of_classes;
   MemRecorder*  _recorder_list;
