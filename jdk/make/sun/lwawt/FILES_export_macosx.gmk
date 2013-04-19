@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ FILES_export = \
         sun/lwawt/LWToolkit.java \
         sun/lwawt/LWWindowPeer.java \
         sun/lwawt/PlatformWindow.java \
+        sun/lwawt/SecurityWarningWindow.java \
         sun/lwawt/SelectionClearListener.java \
         sun/lwawt/macosx/CPrinterDevice.java \
         sun/lwawt/macosx/CPrinterDialog.java \
@@ -143,6 +144,7 @@ FILES_export = \
         sun/lwawt/macosx/CMouseInfoPeer.java \
         sun/lwawt/macosx/CPlatformView.java \
         sun/lwawt/macosx/CPlatformWindow.java \
+        sun/lwawt/macosx/CWarningWindow.java \
         sun/lwawt/macosx/CPlatformComponent.java \
         sun/lwawt/macosx/CEmbeddedFrame.java \
         sun/lwawt/macosx/CPlatformEmbeddedFrame.java \

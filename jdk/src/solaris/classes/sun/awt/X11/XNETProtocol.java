@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 package sun.awt.X11;
 
 import java.awt.Frame;
+
+import sun.awt.IconInfo;
 import sun.util.logging.PlatformLogger;
 
 final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProtocol
@@ -350,10 +352,10 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     }
 
     /**
-     * Sets _NET_WM_ICON property on the window using the List of XIconInfo
+     * Sets _NET_WM_ICON property on the window using the List of IconInfo
      * If icons is null or empty list, removes _NET_WM_ICON property
      */
-    public void setWMIcons(XWindowPeer window, java.util.List<XIconInfo> icons) {
+    public void setWMIcons(XWindowPeer window, java.util.List<IconInfo> icons) {
         if (window == null) return;
 
         XAtom iconsAtom = XAtom.get("_NET_WM_ICON");
@@ -363,7 +365,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         }
 
         int length = 0;
-        for (XIconInfo ii : icons) {
+        for (IconInfo ii : icons) {
             length += ii.getRawLength();
         }
         int cardinalSize = (XlibWrapper.dataModel == 32) ? 4 : 8;
@@ -373,7 +375,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
             long buffer = XlibWrapper.unsafe.allocateMemory(bufferSize);
             try {
                 long ptr = buffer;
-                for (XIconInfo ii : icons) {
+                for (IconInfo ii : icons) {
                     int size = ii.getRawLength() * cardinalSize;
                     if (XlibWrapper.dataModel == 32) {
                         XlibWrapper.copyIntArray(ptr, ii.getIntData(), size);

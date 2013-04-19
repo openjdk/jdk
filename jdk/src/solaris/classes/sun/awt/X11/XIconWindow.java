@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@ package sun.awt.X11;
 
 import java.awt.*;
 import java.awt.image.*;
-import sun.awt.X11GraphicsConfig;
+
+import sun.awt.IconInfo;
 import sun.awt.image.ToolkitImage;
 import sun.awt.image.ImageRepresentation;
 
@@ -398,12 +399,12 @@ public class XIconWindow extends XBaseWindow {
      * Sets icon image by selecting one of the images from the list.
      * The selected image is the one having the best matching size.
      */
-    void setIconImages(java.util.List<XIconInfo> icons) {
+    void setIconImages(java.util.List<IconInfo> icons) {
         if (icons == null || icons.size() == 0) return;
 
         int minDiff = Integer.MAX_VALUE;
         Image min = null;
-        for (XIconInfo iconInfo : icons) {
+        for (IconInfo iconInfo : icons) {
             if (iconInfo.isValid()) {
                 Image image = iconInfo.getImage();
                 Dimension dim = calcIconSize(image.getWidth(null), image.getHeight(null));
