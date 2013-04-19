@@ -25,49 +25,51 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for a function call.
- *
  */
-public class CallNode extends Node implements TypeOverride<CallNode> {
+@Immutable
+public final class CallNode extends LexicalContextNode implements TypeOverride<CallNode> {
 
-    private Type type;
+    private final Type type;
 
     /** Function identifier or function body. */
-    private Node function;
+    private final Node function;
 
     /** Call arguments. */
-    private List<Node> args;
+    private final List<Node> args;
 
-    /** flag - is new expression */
-    private boolean isNew;
+    /** Is this a "new" operation */
+    public static final int IS_NEW        = 0x1;
 
-    /** flag - is in with block */
-    private boolean inWithBlock;
+    /** Is this call tagged as inside a with block */
+    public static final int IN_WITH_BLOCK = 0x2;
+
+    private final int flags;
 
     /**
      * Arguments to be passed to builtin {@code eval} function
      */
     public static class EvalArgs {
         /** evaluated code */
-        private Node code;
+        private final Node code;
 
         /** 'this' passed to evaluated code */
-        private IdentNode evalThis;
+        private final IdentNode evalThis;
 
         /** location string for the eval call */
-        final private String location;
+        private final String location;
 
         /** is this call from a strict context? */
-        final private boolean strictMode;
+        private final boolean strictMode;
 
         /**
          * Constructor
@@ -92,12 +94,11 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
             return code;
         }
 
-        /**
-         * Set the code that is to be eval.ed by this eval function
-         * @param code the code as an AST node
-         */
-        public void setCode(final Node code) {
-            this.code = code;
+        private EvalArgs setCode(final Node code) {
+            if (this.code == code) {
+                return this;
+            }
+            return new EvalArgs(code, evalThis, location, strictMode);
         }
 
         /**
@@ -108,12 +109,11 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
             return this.evalThis;
         }
 
-        /**
-         * Set the {@code this} symbol used to invoke this eval call
-         * @param evalThis the {@code this} symbol
-         */
-        public void setThis(final IdentNode evalThis) {
-            this.evalThis = evalThis;
+        private EvalArgs setThis(final IdentNode evalThis) {
+            if (this.evalThis == evalThis) {
+                return this;
+            }
+            return new EvalArgs(code, evalThis, location, strictMode);
         }
 
         /**
@@ -135,7 +135,7 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
 
     /** arguments for 'eval' call. Non-null only if this call node is 'eval' */
     @Ignore
-    private EvalArgs evalArgs;
+    private final EvalArgs evalArgs;
 
     /**
      * Constructors
@@ -145,31 +145,26 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
      * @param finish   finish
      * @param function the function to call
      * @param args     args to the call
+     * @param flags    flags
      */
-    public CallNode(final Source source, final long token, final int finish, final Node function, final List<Node> args) {
+    public CallNode(final Source source, final long token, final int finish, final Node function, final List<Node> args, final int flags) {
         super(source, token, finish);
 
-        setStart(function.getStart());
-
-        this.function     = function;
-        this.args         = args;
+        this.function = function;
+        this.args     = args;
+        this.flags    = flags;
+        this.type     = null;
+        this.evalArgs = null;
     }
 
-    private CallNode(final CallNode callNode, final CopyState cs) {
+    private CallNode(final CallNode callNode, final Node function, final List<Node> args, final int flags, final Type type, final EvalArgs evalArgs) {
         super(callNode);
-
-        final List<Node> newArgs = new ArrayList<>();
-
-        for (final Node arg : callNode.args) {
-            newArgs.add(cs.existingOrCopy(arg));
-        }
-
-        this.function     = cs.existingOrCopy(callNode.function);     //TODO existing or same?
-        this.args         = newArgs;
-        this.isNew        = callNode.isNew;
-        this.inWithBlock  = callNode.inWithBlock;
+        this.function = function;
+        this.args = args;
+        this.flags = flags;
+        this.type = type;
+        this.evalArgs = evalArgs;
     }
-
 
     @Override
     public Type getType() {
@@ -181,8 +176,10 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
 
     @Override
     public CallNode setType(final Type type) {
-        this.type = type;
-        return this;
+        if (this.type == type) {
+            return this;
+        }
+        return new CallNode(this, function, args, flags, type, evalArgs);
     }
 
     private boolean hasCallSiteType() {
@@ -194,11 +191,6 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
         return true;
     }
 
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new CallNode(this, cs);
-    }
-
     /**
      * Assist in IR navigation.
      *
@@ -207,15 +199,22 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
      * @return node or replacement
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterCallNode(this) != null) {
-            function = function.accept(visitor);
-
-            for (int i = 0, count = args.size(); i < count; i++) {
-                args.set(i, args.get(i).accept(visitor));
+    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+        if (visitor.enterCallNode(this)) {
+            final CallNode newCallNode = (CallNode)visitor.leaveCallNode(
+                    setFunction(function.accept(visitor)).
+                    setArgs(Node.accept(visitor, Node.class, args)).
+                    setFlags(flags).
+                    setType(type).
+                    setEvalArgs(evalArgs == null ?
+                            null :
+                            evalArgs.setCode(evalArgs.getCode().accept(visitor)).
+                                setThis((IdentNode)evalArgs.getThis().accept(visitor))));
+            // Theoretically, we'd need to instead pass lc to every setter and do a replacement on each. In practice,
+            // setType from TypeOverride can't accept a lc, and we don't necessarily want to go there now.
+            if(this != newCallNode) {
+                return Node.replaceInLexicalContext(lc, this, newCallNode);
             }
-
-            return visitor.leaveCallNode(this);
         }
 
         return this;
@@ -226,7 +225,7 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
         if (hasCallSiteType()) {
             sb.append('{');
             final String desc = getType().getDescriptor();
-            sb.append(desc.charAt(desc.length() - 1) == ';' ? "O" : getType().getDescriptor());
+            sb.append(desc.charAt(desc.length() - 1) == ';' ? 'O' : getType().getDescriptor());
             sb.append('}');
         }
 
@@ -261,8 +260,11 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
      * Reset the arguments for the call
      * @param args new arguments list
      */
-    public void setArgs(final List<Node> args) {
-        this.args = args;
+    private CallNode setArgs(final List<Node> args) {
+        if (this.args == args) {
+            return this;
+        }
+        return new CallNode(this, function, args, flags, type, evalArgs);
     }
 
     /**
@@ -278,9 +280,13 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
      * {@code eval}
      *
      * @param evalArgs eval args
+     * @return same node or new one on state change
      */
-    public void setEvalArgs(final EvalArgs evalArgs) {
-        this.evalArgs = evalArgs;
+    public CallNode setEvalArgs(final EvalArgs evalArgs) {
+        if (this.evalArgs == evalArgs) {
+            return this;
+        }
+        return new CallNode(this, function, args, flags, type, evalArgs);
     }
 
     /**
@@ -301,10 +307,14 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
 
     /**
      * Reset the function expression that this call invokes
-     * @param node the function
+     * @param function the function
+     * @return same node or new one on state change
      */
-    public void setFunction(final Node node) {
-        function = node;
+    public CallNode setFunction(final Node function) {
+        if (this.function == function) {
+            return this;
+        }
+        return new CallNode(this, function, args, flags, type, evalArgs);
     }
 
     /**
@@ -312,14 +322,15 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
      * @return true if this a new operation
      */
     public boolean isNew() {
-        return isNew;
+        return (flags & IS_NEW) == IS_NEW;
     }
 
     /**
      * Flag this call as a new operation
+     * @return same node or new one on state change
      */
-    public void setIsNew() {
-        this.isNew = true;
+    public CallNode setIsNew() {
+        return setFlags(IS_NEW);
     }
 
     /**
@@ -327,13 +338,13 @@ public class CallNode extends Node implements TypeOverride<CallNode> {
      * @return true if the call is inside a {@code with} block
      */
     public boolean inWithBlock() {
-        return inWithBlock;
+        return (flags & IN_WITH_BLOCK) == IN_WITH_BLOCK;
     }
 
-    /**
-     * Flag this call to be inside a {@code with} block
-     */
-    public void setInWithBlock() {
-        this.inWithBlock = true;
+    private CallNode setFlags(final int flags) {
+        if (this.flags == flags) {
+            return this;
+        }
+        return new CallNode(this, function, args, flags, type, evalArgs);
     }
 }

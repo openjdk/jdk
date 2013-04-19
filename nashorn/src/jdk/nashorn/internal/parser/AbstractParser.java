@@ -197,9 +197,10 @@ public abstract class AbstractParser {
      *
      * @param message    Error message.
      * @param errorToken Offending token.
+     * @return ParserException upon failure. Caller should throw and not ignore
      */
-    protected final void error(final String message, final long errorToken) {
-        error(JSErrorType.SYNTAX_ERROR, message, errorToken);
+    protected final ParserException error(final String message, final long errorToken) {
+        return error(JSErrorType.SYNTAX_ERROR, message, errorToken);
     }
 
     /**
@@ -208,22 +209,24 @@ public abstract class AbstractParser {
      * @param errorType  The error type
      * @param message    Error message.
      * @param errorToken Offending token.
+     * @return ParserException upon failure. Caller should throw and not ignore
      */
-    protected final void error(final JSErrorType errorType, final String message, final long errorToken) {
+    protected final ParserException error(final JSErrorType errorType, final String message, final long errorToken) {
         final int position  = Token.descPosition(errorToken);
         final int lineNum   = source.getLine(position);
         final int columnNum = source.getColumn(position);
         final String formatted = ErrorManager.format(message, source, lineNum, columnNum, errorToken);
-        throw new ParserException(errorType, formatted, source, lineNum, columnNum, errorToken);
+        return new ParserException(errorType, formatted, source, lineNum, columnNum, errorToken);
     }
 
     /**
      * Report an error.
      *
      * @param message Error message.
+     * @return ParserException upon failure. Caller should throw and not ignore
      */
-    protected final void error(final String message) {
-        error(JSErrorType.SYNTAX_ERROR, message);
+    protected final ParserException error(final String message) {
+        return error(JSErrorType.SYNTAX_ERROR, message);
     }
 
     /**
@@ -231,13 +234,14 @@ public abstract class AbstractParser {
      *
      * @param errorType  The error type
      * @param message    Error message.
+     * @return ParserException upon failure. Caller should throw and not ignore
      */
-    protected final void error(final JSErrorType errorType, final String message) {
+    protected final ParserException error(final JSErrorType errorType, final String message) {
         // TODO - column needs to account for tabs.
         final int position = Token.descPosition(token);
         final int column = position - linePosition;
         final String formatted = ErrorManager.format(message, source, line, column, token);
-        throw new ParserException(errorType, formatted, source, line, column, token);
+        return new ParserException(errorType, formatted, source, line, column, token);
     }
 
     /**
@@ -270,7 +274,7 @@ public abstract class AbstractParser {
      */
     protected final void expect(final TokenType expected) throws ParserException {
         if (type != expected) {
-            error(expectMessage(expected));
+            throw error(expectMessage(expected));
         }
 
         next();
@@ -285,7 +289,7 @@ public abstract class AbstractParser {
      */
     protected final Object expectValue(final TokenType expected) throws ParserException {
         if (type != expected) {
-            error(expectMessage(expected));
+            throw error(expectMessage(expected));
         }
 
         final Object value = getValue();
@@ -429,7 +433,7 @@ public abstract class AbstractParser {
                 try {
                     RegExpFactory.validate(regex.getExpression(), regex.getOptions());
                 } catch (final ParserException e) {
-                    error(e.getMessage());
+                    throw error(e.getMessage());
                 }
             }
             node = LiteralNode.newInstance(source, literalToken, finish, (LexerToken)value);
