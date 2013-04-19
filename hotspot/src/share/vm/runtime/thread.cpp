@@ -228,8 +228,8 @@ Thread::Thread() {
   _oops_do_parity = 0;
 
   // the handle mark links itself to last_handle_mark
-  new HandleMark(this);
-
+  HandleMark *hm = NEW_C_HEAP_OBJ(HandleMark, mtThread);
+  hm->initialize(this);
   // plain initialization
   debug_only(_owned_locks = NULL;)
   debug_only(_allow_allocation_count = 0;)
@@ -352,8 +352,8 @@ Thread::~Thread() {
   // since the handle marks are using the handle area, we have to deallocated the root
   // handle mark before deallocating the thread's handle area,
   assert(last_handle_mark() != NULL, "check we have an element");
-  delete last_handle_mark();
-  assert(last_handle_mark() == NULL, "check we have reached the end");
+  FREE_C_HEAP_OBJECT(HandleMark, last_handle_mark(), mtThread);
+  set_last_handle_mark(NULL);
 
   // It's possible we can encounter a null _ParkEvent, etc., in stillborn threads.
   // We NULL out the fields for good hygiene.

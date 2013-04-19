@@ -3116,15 +3116,15 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
   // Search for the base type by peeling off const and *
   size_t len = strlen(typeName);
   if (typeName[len-1] == '*') {
-    char * s = new char[len];
+    char * s = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     strncpy(s, typeName, len - 1);
     s[len-1] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {
-      delete [] s;
+      FREE_C_HEAP_ARRAY(char, s, mtInternal);
       return 1;
     }
-    delete [] s;
+    FREE_C_HEAP_ARRAY(char, s, mtInternal);
   }
   const char* start = NULL;
   if (strstr(typeName, "GrowableArray<") == typeName) {
@@ -3135,15 +3135,15 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
   if (start != NULL) {
     const char * end = strrchr(typeName, '>');
     int len = end - start + 1;
-    char * s = new char[len];
+    char * s = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     strncpy(s, start, len - 1);
     s[len-1] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {
-      delete [] s;
+      FREE_C_HEAP_ARRAY(char, s, mtInternal);
       return 1;
     }
-    delete [] s;
+    FREE_C_HEAP_ARRAY(char, s, mtInternal);
   }
   if (strstr(typeName, "const ") == typeName) {
     const char * s = typeName + strlen("const ");

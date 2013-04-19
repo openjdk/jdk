@@ -1012,7 +1012,8 @@ ObjectMonitor * ATTR ObjectSynchronizer::omAlloc (Thread * Self) {
         // Both the local and global free lists are empty -- resort to malloc().
         // In the current implementation objectMonitors are TSM - immortal.
         assert (_BLOCKSIZE > 1, "invariant") ;
-        ObjectMonitor * temp = new ObjectMonitor[_BLOCKSIZE];
+        ObjectMonitor * temp;
+        NEW_C_HEAP_OBJECT_ARRAY(temp, ObjectMonitor, _BLOCKSIZE, mtInternal, 0, AllocFailStrategy::RETURN_NULL);
 
         // NOTE: (almost) no way to recover if allocation failed.
         // We might be able to induce a STW safepoint and scavenge enough
