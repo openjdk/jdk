@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,7 @@ public class CGLLayer extends CFRetainedResource {
     }
 
     public int getTransparency() {
-        return peer.isTranslucent() ? Transparency.TRANSLUCENT :
-               Transparency.OPAQUE;
+        return isOpaque() ? Transparency.OPAQUE : Transparency.TRANSLUCENT;
     }
 
     public Object getDestination() {
@@ -81,14 +80,14 @@ public class CGLLayer extends CFRetainedResource {
     }
 
     public SurfaceData replaceSurfaceData() {
-        if (peer.getBounds().isEmpty()) {
+        if (getBounds().isEmpty()) {
             surfaceData = NullSurfaceData.theInstance;
             return surfaceData;
         }
 
         // the layer redirects all painting to the buffer's graphics
         // and blits the buffer to the layer surface (in drawInCGLContext callback)
-        CGraphicsConfig gc = (CGraphicsConfig)peer.getGraphicsConfiguration();
+        CGraphicsConfig gc = (CGraphicsConfig)getGraphicsConfiguration();
         surfaceData = gc.createSurfaceData(this);
 
         // the layer holds a reference to the buffer, which in

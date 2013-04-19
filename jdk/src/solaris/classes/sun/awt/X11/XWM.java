@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  */
 package sun.awt.X11;
 
+import sun.awt.IconInfo;
 import sun.misc.Unsafe;
 import java.awt.Insets;
 import java.awt.Frame;
@@ -1670,7 +1671,7 @@ final class XWM
      *
      * @return true if hint was modified successfully, false otherwise
      */
-    public boolean setNetWMIcon(XWindowPeer window, java.util.List<XIconInfo> icons) {
+    public boolean setNetWMIcon(XWindowPeer window, java.util.List<IconInfo> icons) {
         if (g_net_protocol != null && g_net_protocol.active()) {
             g_net_protocol.setWMIcons(window, icons);
             return getWMID() != ICE_WM;
