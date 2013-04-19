@@ -204,8 +204,8 @@ public final class ObjectClassGenerator {
      * @return The class name.
      */
     public static String getClassName(final int fieldCount) {
-        return fieldCount != 0 ? SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.tag() + fieldCount :
-                                 SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.tag();
+        return fieldCount != 0 ? SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName() + fieldCount :
+                                 SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName();
     }
 
     /**
@@ -218,7 +218,7 @@ public final class ObjectClassGenerator {
      * @return The class name.
      */
     public static String getClassName(final int fieldCount, final int paramCount) {
-        return SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.tag() + fieldCount + SCOPE_MARKER + paramCount;
+        return SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName() + fieldCount + SCOPE_MARKER + paramCount;
     }
 
     /**
@@ -449,7 +449,7 @@ public final class ObjectClassGenerator {
      * @param className    Name of JavaScript class.
      */
     private static void newAllocate(final ClassEmitter classEmitter, final String className) {
-        final MethodEmitter allocate = classEmitter.method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), ALLOCATE.tag(), ScriptObject.class, PropertyMap.class);
+        final MethodEmitter allocate = classEmitter.method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), ALLOCATE.symbolName(), ScriptObject.class, PropertyMap.class);
         allocate.begin();
         allocate._new(className);
         allocate.dup();

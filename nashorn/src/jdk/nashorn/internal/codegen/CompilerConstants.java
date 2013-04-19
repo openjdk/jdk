@@ -52,9 +52,6 @@ public enum CompilerConstants {
     /** lazy prefix for classes of jitted methods */
     LAZY("Lazy"),
 
-    /** leaf tag used for functions that require no scope */
-    LEAF("__leaf__"),
-
     /** constructor name */
     INIT("<init>"),
 
@@ -96,7 +93,7 @@ public enum CompilerConstants {
     SCOPE("__scope__", ScriptObject.class, 2),
 
     /** the return value variable name were intermediate results are stored for scripts */
-    SCRIPT_RETURN("__return__"),
+    RETURN("__return__"),
 
     /** the callee value variable when necessary */
     CALLEE("__callee__", ScriptFunction.class),
@@ -167,30 +164,30 @@ public enum CompilerConstants {
     /** get array suffix */
     GET_ARRAY_SUFFIX("$array");
 
-    private final String tag;
+    private final String symbolName;
     private final Class<?> type;
     private final int slot;
 
     private CompilerConstants() {
-        this.tag = name();
+        this.symbolName = name();
         this.type = null;
         this.slot = -1;
     }
 
-    private CompilerConstants(final String tag) {
-        this(tag, -1);
+    private CompilerConstants(final String symbolName) {
+        this(symbolName, -1);
     }
 
-    private CompilerConstants(final String tag, final int slot) {
-        this(tag, null, slot);
+    private CompilerConstants(final String symbolName, final int slot) {
+        this(symbolName, null, slot);
     }
 
-    private CompilerConstants(final String tag, final Class<?> type) {
-        this(tag, type, -1);
+    private CompilerConstants(final String symbolName, final Class<?> type) {
+        this(symbolName, type, -1);
     }
 
-    private CompilerConstants(final String tag, final Class<?> type, final int slot) {
-        this.tag  = tag;
+    private CompilerConstants(final String symbolName, final Class<?> type, final int slot) {
+        this.symbolName  = symbolName;
         this.type = type;
         this.slot = slot;
     }
@@ -202,8 +199,8 @@ public enum CompilerConstants {
      *
      * @return the tag
      */
-    public final String tag() {
-        return tag;
+    public final String symbolName() {
+        return symbolName;
     }
 
     /**
@@ -277,7 +274,7 @@ public enum CompilerConstants {
      * @return Call representing void constructor for type
      */
     public static Call constructorNoLookup(final Class<?> clazz) {
-        return specialCallNoLookup(clazz, INIT.tag(), void.class);
+        return specialCallNoLookup(clazz, INIT.symbolName(), void.class);
     }
 
     /**
@@ -290,7 +287,7 @@ public enum CompilerConstants {
      * @return Call representing constructor for type
      */
     public static Call constructorNoLookup(final String className, final Class<?>... ptypes) {
-        return specialCallNoLookup(className, INIT.tag(), methodDescriptor(void.class, ptypes));
+        return specialCallNoLookup(className, INIT.symbolName(), methodDescriptor(void.class, ptypes));
     }
 
     /**
@@ -303,7 +300,7 @@ public enum CompilerConstants {
      * @return Call representing constructor for type
      */
     public static Call constructorNoLookup(final Class<?> clazz, final Class<?>... ptypes) {
-        return specialCallNoLookup(clazz, INIT.tag(), void.class, ptypes);
+        return specialCallNoLookup(clazz, INIT.symbolName(), void.class, ptypes);
     }
 
     /**

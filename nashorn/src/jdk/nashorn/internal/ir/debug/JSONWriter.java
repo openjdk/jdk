@@ -36,7 +36,6 @@ import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
-import jdk.nashorn.internal.ir.DoWhileNode;
 import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
@@ -88,7 +87,7 @@ public final class JSONWriter extends NodeVisitor {
         final Parser       parser     = new Parser(env, new Source(name, code), new Context.ThrowErrorManager(), env._strict);
         final JSONWriter   jsonWriter = new JSONWriter(includeLoc);
         try {
-            final FunctionNode functionNode = parser.parse(CompilerConstants.RUN_SCRIPT.tag());
+            final FunctionNode functionNode = parser.parse(CompilerConstants.RUN_SCRIPT.symbolName());
             functionNode.accept(jsonWriter);
             return jsonWriter.getString();
         } catch (final ParserException e) {
@@ -98,11 +97,16 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    protected Node enterDefault(final Node node) {
+    protected boolean enterDefault(final Node node) {
         objectStart();
         location(node);
 
-        return node;
+        return true;
+    }
+
+    private boolean leave() {
+        objectEnd();
+        return false;
     }
 
     @Override
@@ -112,7 +116,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enterAccessNode(final AccessNode accessNode) {
+    public boolean enterAccessNode(final AccessNode accessNode) {
         enterDefault(accessNode);
 
         type("MemberExpression");
@@ -128,11 +132,11 @@ public final class JSONWriter extends NodeVisitor {
 
         property("computed", false);
 
-        return leaveDefault(accessNode);
+        return leave();
     }
 
     @Override
-    public Node enterBlock(final Block block) {
+    public boolean enterBlock(final Block block) {
         enterDefault(block);
 
         type("BlockStatement");
@@ -140,21 +144,21 @@ public final class JSONWriter extends NodeVisitor {
 
         array("body", block.getStatements());
 
-        return leaveDefault(block);
+        return leave();
     }
 
     private static boolean isLogical(final TokenType tt) {
         switch (tt) {
-            case AND:
-            case OR:
-                return true;
-            default:
-                return false;
+        case AND:
+        case OR:
+            return true;
+        default:
+            return false;
         }
     }
 
     @Override
-    public Node enterBinaryNode(final BinaryNode binaryNode) {
+    public boolean enterBinaryNode(final BinaryNode binaryNode) {
         enterDefault(binaryNode);
 
         final String name;
@@ -179,29 +183,29 @@ public final class JSONWriter extends NodeVisitor {
         property("right");
         binaryNode.rhs().accept(this);
 
-        return leaveDefault(binaryNode);
+        return leave();
     }
 
     @Override
-    public Node enterBreakNode(final BreakNode breakNode) {
+    public boolean enterBreakNode(final BreakNode breakNode) {
         enterDefault(breakNode);
 
         type("BreakStatement");
         comma();
 
-        final LabelNode label = breakNode.getLabel();
+        final IdentNode label = breakNode.getLabel();
         if (label != null) {
-            property("label", label.getLabel().getName());
+            property("label", label.getName());
         } else {
             property("label");
             nullValue();
         }
 
-        return leaveDefault(breakNode);
+        return leave();
     }
 
     @Override
-    public Node enterCallNode(final CallNode callNode) {
+    public boolean enterCallNode(final CallNode callNode) {
         enterDefault(callNode);
 
         type("CallExpression");
@@ -213,11 +217,11 @@ public final class JSONWriter extends NodeVisitor {
 
         array("arguments", callNode.getArgs());
 
-        return leaveDefault(callNode);
+        return leave();
     }
 
     @Override
-    public Node enterCaseNode(final CaseNode caseNode) {
+    public boolean enterCaseNode(final CaseNode caseNode) {
         enterDefault(caseNode);
 
         type("SwitchCase");
@@ -234,11 +238,11 @@ public final class JSONWriter extends NodeVisitor {
 
         array("consequent", caseNode.getBody().getStatements());
 
-        return leaveDefault(caseNode);
+        return leave();
     }
 
     @Override
-    public Node enterCatchNode(final CatchNode catchNode) {
+    public boolean enterCatchNode(final CatchNode catchNode) {
         enterDefault(catchNode);
 
         type("CatchClause");
@@ -260,55 +264,38 @@ public final class JSONWriter extends NodeVisitor {
         property("body");
         catchNode.getBody().accept(this);
 
-        return leaveDefault(catchNode);
+        return leave();
     }
 
     @Override
-    public Node enterContinueNode(final ContinueNode continueNode) {
+    public boolean enterContinueNode(final ContinueNode continueNode) {
         enterDefault(continueNode);
 
         type("ContinueStatement");
         comma();
 
-        final LabelNode label = continueNode.getLabel();
+        final IdentNode label = continueNode.getLabel();
         if (label != null) {
-            property("label", label.getLabel().getName());
+            property("label", label.getName());
         } else {
             property("label");
             nullValue();
         }
 
-        return leaveDefault(continueNode);
+        return leave();
     }
 
     @Override
-    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
-        enterDefault(doWhileNode);
-
-        type("DoWhileStatement");
-        comma();
-
-        property("body");
-        doWhileNode.getBody().accept(this);
-        comma();
-
-        property("test");
-        doWhileNode.getTest().accept(this);
-
-        return leaveDefault(doWhileNode);
-    }
-
-    @Override
-    public Node enterEmptyNode(final EmptyNode emptyNode) {
+    public boolean enterEmptyNode(final EmptyNode emptyNode) {
         enterDefault(emptyNode);
 
         type("EmptyStatement");
 
-        return leaveDefault(emptyNode);
+        return leave();
     }
 
     @Override
-    public Node enterExecuteNode(final ExecuteNode executeNode) {
+    public boolean enterExecuteNode(final ExecuteNode executeNode) {
         enterDefault(executeNode);
 
         type("ExpressionStatement");
@@ -317,11 +304,11 @@ public final class JSONWriter extends NodeVisitor {
         property("expression");
         executeNode.getExpression().accept(this);
 
-        return leaveDefault(executeNode);
+        return leave();
     }
 
     @Override
-    public Node enterForNode(final ForNode forNode) {
+    public boolean enterForNode(final ForNode forNode) {
         enterDefault(forNode);
 
         if (forNode.isForIn() || (forNode.isForEach() && forNode.getInit() != null)) {
@@ -380,11 +367,11 @@ public final class JSONWriter extends NodeVisitor {
             forNode.getBody().accept(this);
         }
 
-        return leaveDefault(forNode);
+        return leave();
     }
 
     @Override
-    public Node enterFunctionNode(final FunctionNode functionNode) {
+    public boolean enterFunctionNode(final FunctionNode functionNode) {
         enterDefault(functionNode);
 
         final boolean program = functionNode.isProgram();
@@ -419,7 +406,7 @@ public final class JSONWriter extends NodeVisitor {
         }
 
         // body consists of nested functions and statements
-        final List<Node> stats = functionNode.getStatements();
+        final List<Node> stats = functionNode.getBody().getStatements();
         final int size = stats.size();
         int idx = 0;
         arrayStart("body");
@@ -435,11 +422,11 @@ public final class JSONWriter extends NodeVisitor {
         }
         arrayEnd();
 
-        return leaveDefault(functionNode);
+        return leave();
     }
 
     @Override
-    public Node enterIdentNode(final IdentNode identNode) {
+    public boolean enterIdentNode(final IdentNode identNode) {
         enterDefault(identNode);
 
         final String name = identNode.getName();
@@ -451,11 +438,11 @@ public final class JSONWriter extends NodeVisitor {
             property("name", identNode.getName());
         }
 
-        return leaveDefault(identNode);
+        return leave();
     }
 
     @Override
-    public Node enterIfNode(final IfNode ifNode) {
+    public boolean enterIfNode(final IfNode ifNode) {
         enterDefault(ifNode);
 
         type("IfStatement");
@@ -477,11 +464,11 @@ public final class JSONWriter extends NodeVisitor {
             nullValue();
         }
 
-        return leaveDefault(ifNode);
+        return leave();
     }
 
     @Override
-    public Node enterIndexNode(final IndexNode indexNode) {
+    public boolean enterIndexNode(final IndexNode indexNode) {
         enterDefault(indexNode);
 
         type("MemberExpression");
@@ -497,11 +484,11 @@ public final class JSONWriter extends NodeVisitor {
 
         property("computed", true);
 
-        return leaveDefault(indexNode);
+        return leave();
     }
 
     @Override
-    public Node enterLabelNode(final LabelNode labelNode) {
+    public boolean enterLabelNode(final LabelNode labelNode) {
         enterDefault(labelNode);
 
         type("LabeledStatement");
@@ -514,17 +501,17 @@ public final class JSONWriter extends NodeVisitor {
         property("body");
         labelNode.getBody().accept(this);
 
-        return leaveDefault(labelNode);
+        return leave();
     }
 
     @Override
-    public Node enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        return null;
+    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
+        return false;
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public Node enterLiteralNode(final LiteralNode literalNode) {
+    public boolean enterLiteralNode(final LiteralNode literalNode) {
         enterDefault(literalNode);
 
         if (literalNode instanceof LiteralNode.ArrayLiteralNode) {
@@ -556,11 +543,11 @@ public final class JSONWriter extends NodeVisitor {
             }
         }
 
-        return leaveDefault(literalNode);
+        return leave();
     }
 
     @Override
-    public Node enterObjectNode(final ObjectNode objectNode) {
+    public boolean enterObjectNode(final ObjectNode objectNode) {
         enterDefault(objectNode);
 
         type("ObjectExpression");
@@ -568,11 +555,11 @@ public final class JSONWriter extends NodeVisitor {
 
         array("properties", objectNode.getElements());
 
-        return leaveDefault(objectNode);
+        return leave();
     }
 
     @Override
-    public Node enterPropertyNode(final PropertyNode propertyNode) {
+    public boolean enterPropertyNode(final PropertyNode propertyNode) {
         final Node key = propertyNode.getKey();
 
         final Node value = propertyNode.getValue();
@@ -634,11 +621,11 @@ public final class JSONWriter extends NodeVisitor {
             }
         }
 
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterReturnNode(final ReturnNode returnNode) {
+    public boolean enterReturnNode(final ReturnNode returnNode) {
         enterDefault(returnNode);
 
         type("ReturnStatement");
@@ -652,31 +639,29 @@ public final class JSONWriter extends NodeVisitor {
             nullValue();
         }
 
-        return leaveDefault(returnNode);
+        return leave();
     }
 
     @Override
-    public Node enterRuntimeNode(final RuntimeNode runtimeNode) {
+    public boolean enterRuntimeNode(final RuntimeNode runtimeNode) {
         final RuntimeNode.Request req = runtimeNode.getRequest();
 
         if (req == RuntimeNode.Request.DEBUGGER) {
             enterDefault(runtimeNode);
-
             type("DebuggerStatement");
-
-            return leaveDefault(runtimeNode);
+            return leave();
         }
 
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterSplitNode(final SplitNode splitNode) {
-        return null;
+    public boolean enterSplitNode(final SplitNode splitNode) {
+        return false;
     }
 
     @Override
-    public Node enterSwitchNode(final SwitchNode switchNode) {
+    public boolean enterSwitchNode(final SwitchNode switchNode) {
         enterDefault(switchNode);
 
         type("SwitchStatement");
@@ -688,11 +673,11 @@ public final class JSONWriter extends NodeVisitor {
 
         array("cases", switchNode.getCases());
 
-        return leaveDefault(switchNode);
+        return leave();
     }
 
     @Override
-    public Node enterTernaryNode(final TernaryNode ternaryNode) {
+    public boolean enterTernaryNode(final TernaryNode ternaryNode) {
         enterDefault(ternaryNode);
 
         type("ConditionalExpression");
@@ -709,11 +694,11 @@ public final class JSONWriter extends NodeVisitor {
         property("alternate");
         ternaryNode.third().accept(this);
 
-        return leaveDefault(ternaryNode);
+        return leave();
     }
 
     @Override
-    public Node enterThrowNode(final ThrowNode throwNode) {
+    public boolean enterThrowNode(final ThrowNode throwNode) {
         enterDefault(throwNode);
 
         type("ThrowStatement");
@@ -722,11 +707,11 @@ public final class JSONWriter extends NodeVisitor {
         property("argument");
         throwNode.getExpression().accept(this);
 
-        return leaveDefault(throwNode);
+        return leave();
     }
 
     @Override
-    public Node enterTryNode(final TryNode tryNode) {
+    public boolean enterTryNode(final TryNode tryNode) {
         enterDefault(tryNode);
 
         type("TryStatement");
@@ -747,11 +732,11 @@ public final class JSONWriter extends NodeVisitor {
             nullValue();
         }
 
-        return leaveDefault(tryNode);
+        return leave();
     }
 
     @Override
-    public Node enterUnaryNode(final UnaryNode unaryNode) {
+    public boolean enterUnaryNode(final UnaryNode unaryNode) {
         enterDefault(unaryNode);
 
         final TokenType tokenType = unaryNode.tokenType();
@@ -769,25 +754,25 @@ public final class JSONWriter extends NodeVisitor {
             final boolean prefix;
             final String operator;
             switch (tokenType) {
-                case INCPOSTFIX:
-                    prefix = false;
-                    operator = "++";
-                    break;
-                case DECPOSTFIX:
-                    prefix = false;
-                    operator = "--";
-                    break;
-                case INCPREFIX:
-                    operator = "++";
-                    prefix = true;
-                    break;
-                case DECPREFIX:
-                    operator = "--";
-                    prefix = true;
-                    break;
-                default:
-                    prefix = false;
-                    operator = tokenType.getName();
+            case INCPOSTFIX:
+                prefix = false;
+                operator = "++";
+                break;
+            case DECPOSTFIX:
+                prefix = false;
+                operator = "--";
+                break;
+            case INCPREFIX:
+                operator = "++";
+                prefix = true;
+                break;
+            case DECPREFIX:
+                operator = "--";
+                prefix = true;
+                break;
+            default:
+                prefix = false;
+                operator = tokenType.getName();
             }
 
             type(unaryNode.isAssignment()? "UpdateExpression" : "UnaryExpression");
@@ -803,11 +788,11 @@ public final class JSONWriter extends NodeVisitor {
             unaryNode.rhs().accept(this);
         }
 
-        return leaveDefault(unaryNode);
+        return leave();
     }
 
     @Override
-    public Node enterVarNode(final VarNode varNode) {
+    public boolean enterVarNode(final VarNode varNode) {
         enterDefault(varNode);
 
         type("VariableDeclaration");
@@ -839,28 +824,37 @@ public final class JSONWriter extends NodeVisitor {
         // declarations
         arrayEnd();
 
-        return leaveDefault(varNode);
+        return leave();
     }
 
     @Override
-    public Node enterWhileNode(final WhileNode whileNode) {
+    public boolean enterWhileNode(final WhileNode whileNode) {
         enterDefault(whileNode);
 
-        type("WhileStatement");
+        type(whileNode.isDoWhile() ? "DoWhileStatement" : "WhileStatement");
         comma();
 
-        property("test");
-        whileNode.getTest().accept(this);
-        comma();
+        if (whileNode.isDoWhile()) {
+            property("body");
+            whileNode.getBody().accept(this);
+            comma();
 
-        property("block");
-        whileNode.getBody().accept(this);
+            property("test");
+            whileNode.getTest().accept(this);
+        } else {
+            property("test");
+            whileNode.getTest().accept(this);
+            comma();
 
-        return leaveDefault(whileNode);
+            property("block");
+            whileNode.getBody().accept(this);
+        }
+
+        return leave();
     }
 
     @Override
-    public Node enterWithNode(final WithNode withNode) {
+    public boolean enterWithNode(final WithNode withNode) {
         enterDefault(withNode);
 
         type("WithStatement");
@@ -873,8 +867,8 @@ public final class JSONWriter extends NodeVisitor {
         property("body");
         withNode.getBody().accept(this);
 
-        return leaveDefault(withNode);
-    }
+        return leave();
+   }
 
     // Internals below
 

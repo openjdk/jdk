@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 public abstract class ObjectCreator {
 
     /** Compile unit for this ObjectCreator, see CompileUnit */
-    protected final CompileUnit   compileUnit;
+    //protected final CompileUnit   compileUnit;
 
     /** List of keys to initiate in this ObjectCreator */
     protected final List<String>  keys;
@@ -66,7 +66,6 @@ public abstract class ObjectCreator {
      */
     protected ObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final boolean isScope, final boolean hasArguments) {
         this.codegen       = codegen;
-        this.compileUnit   = codegen.getCurrentCompileUnit();
         this.keys          = keys;
         this.symbols       = symbols;
         this.isScope       = isScope;
