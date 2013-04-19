@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.List;
  * A list of {@link InaccessibleWSDLException} wrapped in one exception.
  *
  * <p>
- * This exception is used to report all the errors during WSDL parsing from {@link RuntimeWSDLParser#parse(java.net.URL, org.xml.sax.EntityResolver, boolean, com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension[])}
+ * This exception is used to report all the errors during WSDL parsing from {@link RuntimeWSDLParser#parse(java.net.URL, javax.xml.transform.Source, org.xml.sax.EntityResolver, boolean, com.sun.xml.internal.ws.api.server.Container, com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension[])}
  *
  * @author Vivek Pandey
  */

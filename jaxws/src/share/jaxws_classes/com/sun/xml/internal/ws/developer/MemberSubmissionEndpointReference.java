@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,9 @@ public final class MemberSubmissionEndpointReference extends EndpointReference i
      */
     public MemberSubmissionEndpointReference(@NotNull Source source) {
 
-        if (source == null)
+        if (source == null) {
             throw new WebServiceException("Source parameter can not be null on constructor");
+        }
 
         try {
             Unmarshaller unmarshaller = MemberSubmissionEndpointReference.msjc.createUnmarshaller();
@@ -102,6 +103,7 @@ public final class MemberSubmissionEndpointReference extends EndpointReference i
         }
     }
 
+    @Override
     public void writeTo(Result result) {
         try {
             Marshaller marshaller = MemberSubmissionEndpointReference.msjc.createMarshaller();
@@ -160,6 +162,7 @@ public final class MemberSubmissionEndpointReference extends EndpointReference i
     @XmlAnyElement
     public List<Element> elements;
 
+    @XmlType(name="address", namespace=MemberSubmissionEndpointReference.MSNS)
     public static class Address {
         public Address() {
         }
@@ -170,6 +173,7 @@ public final class MemberSubmissionEndpointReference extends EndpointReference i
         public Map<QName, String> attributes;
     }
 
+    @XmlType(name="elements", namespace=MemberSubmissionEndpointReference.MSNS)
     public static class Elements {
         public Elements() {}
 

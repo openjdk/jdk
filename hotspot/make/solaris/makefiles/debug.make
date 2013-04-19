@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Sets make macros for making debug version of VM
@@ -37,22 +37,20 @@ ifeq ($(COMPILER_REV_NUMERIC),508)
 endif
 endif
 
-CFLAGS += $(DEBUG_CFLAGS/BYFILE)
+# _NMT_NOINLINE_ informs NMT that no inlining by Compiler
+CFLAGS += $(DEBUG_CFLAGS/BYFILE) -D_NMT_NOINLINE_
+
+# Set the environment variable HOTSPARC_GENERIC to "true"
+# to inhibit the effect of the previous line on CFLAGS.
 
 # Linker mapfiles
 MAPFILE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers \
           $(GAMMADIR)/make/solaris/makefiles/mapfile-vers-debug
 
-# This mapfile is only needed when compiling with dtrace support, 
+# This mapfile is only needed when compiling with dtrace support,
 # and mustn't be otherwise.
 MAPFILE_DTRACE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers-$(TYPE)
 
-_JUNK_ := $(shell echo >&2 ""\
- "-------------------------------------------------------------------------\n" \
- "WARNING: 'gnumake debug' is deprecated. It will be removed in the future.\n" \
- "Please use 'gnumake jvmg' to build debug JVM.                            \n" \
- "-------------------------------------------------------------------------\n")
-
 VERSION = debug
-SYSDEFS += -DASSERT -DDEBUG
+SYSDEFS += -DASSERT
 PICFLAGS = DEFAULT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package com.sun.xml.internal.ws.addressing;
 
+import com.oracle.webservices.internal.api.message.BasePropertySet;
 import com.sun.istack.internal.NotNull;
-import com.sun.xml.internal.ws.api.PropertySet;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
+import com.sun.xml.internal.ws.api.message.AddressingUtils;
 import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
@@ -38,6 +39,7 @@ import com.sun.xml.internal.ws.developer.JAXWSProperties;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
+
 /**
  * Provides access to the Addressing headers.
  *
@@ -45,7 +47,7 @@ import javax.xml.stream.XMLStreamException;
  * @author Rama Pulavarthi
  * @since 2.1.3
  */
-public class WsaPropertyBag extends PropertySet {
+public class WsaPropertyBag extends BasePropertySet {
 
     public static final String WSA_REPLYTO_FROM_REQUEST = "com.sun.xml.internal.ws.addressing.WsaPropertyBag.ReplyToFromRequest";
     public static final String WSA_FAULTTO_FROM_REQUEST = "com.sun.xml.internal.ws.addressing.WsaPropertyBag.FaultToFromRequest";
@@ -137,7 +139,7 @@ public class WsaPropertyBag extends PropertySet {
         if (packet.getMessage() == null) {
           return null;
         }
-        return packet.getMessage().getHeaders().getMessageID(addressingVersion,soapVersion);
+        return AddressingUtils.getMessageID(packet.getMessage().getHeaders(), addressingVersion,soapVersion);
     }
 
     private WSEndpointReference getEPR(QName tag) throws XMLStreamException {

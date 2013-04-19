@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@ class ServerContainer extends Container {
     };
 
     public <T> T getSPI(Class<T> spiType) {
+        T t = super.getSPI(spiType);
+        if (t != null)
+            return t;
         if (spiType == Module.class) {
             return spiType.cast(module);
         }

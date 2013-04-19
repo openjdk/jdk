@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.xml.internal.ws.server;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.api.server.WSWebServiceContext;
+import com.sun.xml.internal.ws.server.provider.AsyncProviderInvokerTube;
 import com.sun.istack.internal.NotNull;
 import org.w3c.dom.Element;
 
@@ -41,7 +42,8 @@ import java.security.Principal;
  * {@link Packet} and concrete implementations provide it via
  * {@link #getRequestPacket()}.
  *
- * @see InvokerTube, AsyncProviderInvokerTube
+ * @see InvokerTube,
+ * @see AsyncProviderInvokerTube
  *
  * @author Jitendra Kotamraju
  */
@@ -91,7 +93,7 @@ public abstract class AbstractWebServiceContext implements WSWebServiceContext {
         if(endpoint.getServiceDefinition() != null) {
             wsdlAddress = packet.webServiceContextDelegate.getWSDLAddress(packet,endpoint);
         }
-        return clazz.cast(((WSEndpointImpl)endpoint).getEndpointReference(clazz,address,wsdlAddress, referenceParameters));
+        return clazz.cast(endpoint.getEndpointReference(clazz,address,wsdlAddress, referenceParameters));
     }
 
 }

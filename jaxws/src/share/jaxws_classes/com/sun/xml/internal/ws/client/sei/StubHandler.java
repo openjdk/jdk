@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package com.sun.xml.internal.ws.client.sei;
 
+import com.oracle.webservices.internal.api.databinding.JavaCallInfo;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.databinding.ClientCallBridge;
-import com.sun.xml.internal.ws.api.databinding.JavaCallInfo;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageContextFactory;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.JavaMethod;
 import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
@@ -53,7 +54,7 @@ import java.util.Map;
  * <ol>
  *  <li>Accepts Object[] that represents arguments for a Java method,
  *      and creates {@link com.sun.xml.internal.ws.message.jaxb.JAXBMessage} that represents a request message.
- *  <li>Takes a {@link com.sun.xml.internal.ws.api.message.Message] that represents a response,
+ *  <li>Takes a {@link com.sun.xml.internal.ws.api.message.Message} that represents a response,
  *      and extracts the return value (and updates {@link javax.xml.ws.Holder }s.)
  * </ol>
  *
@@ -78,8 +79,9 @@ public class StubHandler implements ClientCallBridge {
     protected final Map<QName, CheckedExceptionImpl> checkedExceptions;
     protected SOAPVersion soapVersion = SOAPVersion.SOAP_11;
     protected ResponseBuilder responseBuilder;
+    protected MessageContextFactory packetFactory;
 
-    public StubHandler(JavaMethodImpl method) {
+    public StubHandler(JavaMethodImpl method, MessageContextFactory mcf) {
         //keep all the CheckedException model for the detail qname
         this.checkedExceptions = new HashMap<QName, CheckedExceptionImpl>();
         for(CheckedExceptionImpl ce : method.getCheckedExceptions()){
@@ -93,6 +95,7 @@ public class StubHandler implements ClientCallBridge {
             this.soapAction = soapActionFromBinding;
         }
         this.javaMethod = method;
+        packetFactory = mcf;
 
         soapVersion = javaMethod.getBinding().getSOAPVersion();
 
@@ -210,12 +213,13 @@ public class StubHandler implements ClientCallBridge {
      * @param args proxy invocation arguments
      * @return Message for the arguments
      */
-    public Packet createRequestPacket(JavaCallInfo call) {
-        Message msg = bodyBuilder.createMessage(call.getParameters());
+    public Packet createRequestPacket(JavaCallInfo args) {
+        Message msg = bodyBuilder.createMessage(args.getParameters());
 
-        for (MessageFiller filler : inFillers) filler.fillIn(call.getParameters(),msg);
+        for (MessageFiller filler : inFillers) filler.fillIn(args.getParameters(),msg);
 
-        Packet req = new Packet(msg);
+        Packet req = (Packet)packetFactory.createContext(msg);
+        req.setState(Packet.State.ClientRequest);
         req.soapAction = soapAction;
         req.expectReply = !isOneWay;
         req.getMessage().assertOneWay(isOneWay);

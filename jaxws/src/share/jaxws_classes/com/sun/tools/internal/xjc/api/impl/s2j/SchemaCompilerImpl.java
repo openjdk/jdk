@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import com.sun.tools.internal.xjc.reader.internalizer.SCDBasedBindingSet;
 import com.sun.tools.internal.xjc.reader.xmlschema.parser.LSInputSAXWrapper;
 import com.sun.tools.internal.xjc.reader.xmlschema.parser.XMLSchemaInternalizationLogic;
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
+import com.sun.xml.internal.bind.v2.util.XmlFactory;
 import com.sun.xml.internal.xsom.XSSchemaSet;
 
 import org.w3c.dom.Element;
@@ -169,7 +170,7 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
         // eventually we need a proper URI class that works for us.
         try {
             new URL(systemId);
-        } catch( MalformedURLException _ ) {
+        } catch( MalformedURLException mue) {
             try {
                 new URI(systemId);
             } catch (URISyntaxException e ) {
@@ -196,7 +197,7 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
     }
 
     public void resetSchema() {
-        forest = new DOMForest(new XMLSchemaInternalizationLogic());
+        forest = new DOMForest(new XMLSchemaInternalizationLogic(), opts);
         forest.setErrorHandler(this);
         forest.setEntityResolver(opts.entityResolver);
     }
@@ -216,7 +217,7 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
 
         if (!NO_CORRECTNESS_CHECK) {
             // correctness check
-            SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            SchemaFactory sf = XmlFactory.createSchemaFactory(XMLConstants.W3C_XML_SCHEMA_NS_URI, opts.disableXmlSecurity);
 
             // fix for https://jaxb.dev.java.net/issues/show_bug.cgi?id=795
             // taken from SchemaConstraintChecker, TODO XXX FIXME UGLY

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
@@ -531,12 +532,13 @@ public class DeferredAttr extends JCTree.Visitor {
                             attr.memberReferenceQualifierResult(tree));
                     ListBuffer<Type> argtypes = ListBuffer.lb();
                     for (Type t : types.findDescriptorType(pt).getParameterTypes()) {
-                        argtypes.append(syms.errType);
+                        argtypes.append(Type.noType);
                     }
                     JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
                     mref2.expr = exprTree;
                     Pair<Symbol, ?> lookupRes =
-                            rs.resolveMemberReference(tree, env, mref2, exprTree.type, tree.name, argtypes.toList(), null, true);
+                            rs.resolveMemberReference(tree, env, mref2, exprTree.type,
+                                tree.name, argtypes.toList(), null, true, rs.arityMethodCheck);
                     switch (lookupRes.fst.kind) {
                         //note: as argtypes are erroneous types, type-errors must
                         //have been caused by arity mismatch
