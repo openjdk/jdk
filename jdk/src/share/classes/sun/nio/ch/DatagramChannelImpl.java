@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
-import javax.tools.annotation.GenerateNativeHeader;
 import sun.net.ResourceManager;
 
 /**
  * An implementation of DatagramChannels.
  */
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 class DatagramChannelImpl
     extends DatagramChannel
     implements SelChImpl

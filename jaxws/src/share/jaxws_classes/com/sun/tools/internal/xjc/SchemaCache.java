@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.ValidatorHandler;
 
-import com.sun.xml.internal.bind.v2.WellKnownNamespace;
-
+import com.sun.xml.internal.bind.v2.util.XmlFactory;
+import javax.xml.XMLConstants;
 import org.xml.sax.SAXException;
 
 /**
@@ -57,7 +57,9 @@ public final class SchemaCache {
         synchronized(this) {
             if(schema==null) {
                 try {
-                    schema = SchemaFactory.newInstance(WellKnownNamespace.XML_SCHEMA).newSchema(source);
+                    // do not disable secure processing - these are well-known schemas
+                    SchemaFactory sf = XmlFactory.createSchemaFactory(XMLConstants.W3C_XML_SCHEMA_NS_URI, false);
+                    schema = sf.newSchema(source);
                 } catch (SAXException e) {
                     // we make sure that the schema is correct before we ship.
                     throw new AssertionError(e);

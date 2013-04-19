@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8005046
+ * @bug 8005046 8011052
  * @summary Test basic properties of javax.lang.element.Element
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
@@ -35,6 +35,7 @@ import java.lang.annotation.*;
 import java.util.Formatter;
 import java.util.Set;
 import java.util.Objects;
+import java.util.regex.*;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
@@ -79,9 +80,39 @@ public class TestExecutableElement extends JavacTestingAbstractProcessor impleme
 
         boolean methodIsDefault = method.isDefault();
 
+        if (expectedDefault) {
+            if (!method.getModifiers().contains(Modifier.DEFAULT)) {
+                messager.printMessage(ERROR,
+                                      "Modifier \"default\" not present as expected.",
+                                      method);
+            }
+
+            // Check printing output
+            java.io.Writer stringWriter = new java.io.StringWriter();
+            eltUtils.printElements(stringWriter, method);
+            Pattern p = Pattern.compile(expectedIsDefault.expectedTextRegex(), Pattern.DOTALL);
+
+            if (! p.matcher(stringWriter.toString()).matches()) {
+                messager.printMessage(ERROR,
+                                      new Formatter().format("Unexpected printing ouptput:%n\tgot %s,%n\texpected pattern %s.",
+                                                             stringWriter.toString(),
+                                                             expectedIsDefault.expectedTextRegex()).toString(),
+                                      method);
+            }
+
+            System.out.println("\t" + stringWriter.toString());
+
+        } else {
+            if (method.getModifiers().contains(Modifier.DEFAULT)) {
+                messager.printMessage(ERROR,
+                                      "Modifier \"default\" present when not expected.",
+                                      method);
+            }
+        }
+
         if (methodIsDefault != expectedDefault) {
             messager.printMessage(ERROR,
-                                  new Formatter().format("Unexpected Executable.isDefault result: got %s, expected %s",
+                                  new Formatter().format("Unexpected Executable.isDefault result: got ``%s'', expected ``%s''.",
                                                          expectedDefault,
                                                          methodIsDefault).toString(),
                                   method);
@@ -98,6 +129,7 @@ public class TestExecutableElement extends JavacTestingAbstractProcessor impleme
 @Target(ElementType.METHOD)
 @interface IsDefault {
     boolean value();
+    String expectedTextRegex() default "";
 }
 
 /**
@@ -108,6 +140,6 @@ interface ProviderOfDefault {
     boolean process(Set<? extends TypeElement> annotations,
                     RoundEnvironment roundEnv);
 
-    @IsDefault(true)
-    default void quux() {};
+    @IsDefault(value=true, expectedTextRegex="\\s*@IsDefault\\(.*\\)\\s*default strictfp void quux\\(\\);\\s*$")
+    default strictfp void quux() {};
 }

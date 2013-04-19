@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,24 +32,22 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public abstract class BufferedTextPipe extends GlyphListPipe {
 
-    private static final int BYTES_PER_GLYPH_IMAGE = 8;
-    private static final int BYTES_PER_GLYPH_POSITION = 8;
+    @Native private static final int BYTES_PER_GLYPH_IMAGE = 8;
+    @Native private static final int BYTES_PER_GLYPH_POSITION = 8;
 
     /**
      * The following offsets are used to pack the parameters in
      * createPackedParams().  (They are also used at the native level when
      * unpacking the params.)
      */
-    private static final int OFFSET_CONTRAST  = 8;
-    private static final int OFFSET_RGBORDER  = 2;
-    private static final int OFFSET_SUBPIXPOS = 1;
-    private static final int OFFSET_POSITIONS = 0;
+    @Native private static final int OFFSET_CONTRAST  = 8;
+    @Native private static final int OFFSET_RGBORDER  = 2;
+    @Native private static final int OFFSET_SUBPIXPOS = 1;
+    @Native private static final int OFFSET_POSITIONS = 0;
 
     /**
      * Packs the given parameters into a single int value in order to save

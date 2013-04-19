@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,19 +32,26 @@ import com.sun.xml.internal.ws.api.Component;
 import com.sun.xml.internal.ws.api.ComponentRegistry;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
+import com.sun.xml.internal.ws.api.message.AddressingUtils;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.helper.AbstractFilterTubeImpl;
+import com.sun.xml.internal.ws.api.pipe.helper.AbstractTubeImpl;
 import com.sun.xml.internal.ws.api.server.Adapter;
+import com.sun.xml.internal.ws.api.server.Container;
+import com.sun.xml.internal.ws.api.server.ContainerResolver;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.xml.ws.Holder;
+import javax.xml.ws.WebServiceException;
 
 /**
  * User-level thread&#x2E; Represents the execution of one request/response processing.
@@ -108,6 +115,7 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
          * Callback interface for notification of suspend and resume.
          *
          * @since 2.2.6
+         * @deprecated Use {@link NextAction#suspend(Runnable)}
          */
     public interface Listener {
         /**
@@ -123,12 +131,13 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
         public void fiberResumed(Fiber fiber);
     }
 
-    private List<Listener> _listeners = new ArrayList<Listener>();
+    private final List<Listener> _listeners = new ArrayList<Listener>();
 
     /**
      * Adds suspend/resume callback listener
      * @param listener Listener
      * @since 2.2.6
+     * @deprecated
      */
     public void addListener(Listener listener) {
         synchronized(_listeners) {
@@ -142,6 +151,7 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * Removes suspend/resume callback listener
      * @param listener Listener
      * @since 2.2.6
+     * @deprecated
      */
     public void removeListener(Listener listener) {
         synchronized(_listeners) {
@@ -149,7 +159,7 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
         }
     }
 
-    private List<Listener> getCurrentListeners() {
+    List<Listener> getCurrentListeners() {
       synchronized(_listeners) {
          return new ArrayList<Listener>(_listeners);
       }
@@ -210,11 +220,6 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
     private volatile boolean isInsideSuspendCallbacks = false;
 
     /**
-     * Is this fiber completed?
-     */
-    private volatile boolean completed;
-
-    /**
      * Is this {@link Fiber} currently running in the synchronous mode?
      */
     private boolean synchronous;
@@ -229,20 +234,6 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
     private List<FiberContextSwitchInterceptor> interceptors;
 
     /**
-     * Not null when {@link #interceptors} is not null.
-     */
-    private InterceptorHandler interceptorHandler;
-
-    /**
-     * This flag is set to true when a new interceptor is added.
-     * <p/>
-     * When that happens, we need to first exit the current interceptors
-     * and then reenter them, so that the newly added interceptors start
-     * taking effect. This flag is used to control that flow.
-     */
-    private boolean needsToReenter;
-
-    /**
      * Fiber's context {@link ClassLoader}.
      */
     private
@@ -253,10 +244,23 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
     @Nullable
     CompletionCallback completionCallback;
 
+    private boolean isDeliverThrowableInPacket = false;
+
+    public void setDeliverThrowableInPacket(boolean isDeliverThrowableInPacket) {
+        this.isDeliverThrowableInPacket = isDeliverThrowableInPacket;
+    }
+
     /**
      * The thread on which this Fiber is currently executing, if applicable.
      */
     private Thread currentThread;
+
+    /**
+     * Replace uses of synchronized(this) with this lock so that we can control
+     * unlocking for resume use cases
+     */
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
 
     private volatile boolean isCanceled;
 
@@ -277,7 +281,7 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
     private boolean startedSync;
 
     /**
-     * Callback to be invoked when a {@link Fiber} finishs execution.
+     * Callback to be invoked when a {@link Fiber} finishes execution.
      */
     public interface CompletionCallback {
         /**
@@ -298,11 +302,9 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
 
     Fiber(Engine engine) {
         this.owner = engine;
+        id = iotaGen.incrementAndGet();
         if (isTraceEnabled()) {
-            id = iotaGen.incrementAndGet();
-            LOGGER.fine(getName() + " created");
-        } else {
-            id = -1;
+            LOGGER.log(Level.FINE, "{0} created", getName());
         }
 
         // if this is run from another fiber, then we naturally inherit its context classloader,
@@ -333,8 +335,8 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
             if (packet != null) {
                 for (SOAPVersion sv: SOAPVersion.values()) {
                     for (AddressingVersion av: AddressingVersion.values()) {
-                        action = packet.getMessage() != null ? packet.getMessage().getHeaders().getAction(av, sv) : null;
-                        msgId = packet.getMessage() != null ? packet.getMessage().getHeaders().getMessageID(av, sv) : null;
+                        action = packet.getMessage() != null ? AddressingUtils.getAction(packet.getMessage().getHeaders(), av, sv) : null;
+                        msgId = packet.getMessage() != null ? AddressingUtils.getMessageID(packet.getMessage().getHeaders(), av, sv) : null;
                         if (action != null || msgId != null) {
                            break;
                         }
@@ -358,7 +360,7 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
                 tubeDesc = peekCont() + ".processResponse()";
             }
 
-            LOGGER.fine(getName() + " " + desc + " with " + actionAndMsgDesc  + " and 'current' tube " + tubeDesc + " from thread " + Thread.currentThread().getName() + " with Packet: " + (packet != null ? packet.toShortString() : null));
+            LOGGER.log(Level.FINE, "{0} {1} with {2} and ''current'' tube {3} from thread {4} with Packet: {5}", new Object[]{getName(), desc, actionAndMsgDesc, tubeDesc, Thread.currentThread().getName(), packet != null ? packet.toShortString() : null});
         }
     }
 
@@ -445,9 +447,9 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * until message order is confirmed prior to returning to asynchronous processing.
      * @since 2.2.6
      */
-    public synchronized void resume(@NotNull Packet resumePacket,
-                                    boolean forceSync) {
-      resume(resumePacket, forceSync, null);
+    public void resume(@NotNull Packet resumePacket,
+    boolean forceSync) {
+        resume(resumePacket, forceSync, null);
     }
 
     /**
@@ -458,51 +460,53 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
     public void resume(@NotNull Packet resumePacket,
                        boolean forceSync,
                        CompletionCallback callback) {
-
-       synchronized(this) {
+       lock.lock();
+       try {
            if (callback != null) {
              setCompletionCallback(callback);
            }
            if(isTraceEnabled())
-                LOGGER.fine(getName()+" resuming. Will have suspendedCount=" + (suspendedCount-1));
-            packet = resumePacket;
-            if( --suspendedCount == 0 ) {
-                if (!isInsideSuspendCallbacks) {
+                LOGGER.log(Level.FINE, "{0} resuming. Will have suspendedCount={1}", new Object[]{getName(), suspendedCount-1});
+                packet = resumePacket;
+                if( --suspendedCount == 0 ) {
+                   if (!isInsideSuspendCallbacks) {
                         List<Listener> listeners = getCurrentListeners();
                         for (Listener listener: listeners) {
                             try {
                                 listener.fiberResumed(this);
                             } catch (Throwable e) {
                                 if (isTraceEnabled())
-                                        LOGGER.fine("Listener " + listener + " threw exception: "  + e.getMessage());
+                                        LOGGER.log(Level.FINE, "Listener {0} threw exception: {1}", new Object[]{listener, e.getMessage()});
                             }
                         }
 
                         if(synchronous) {
-                            notifyAll();
+                            condition.signalAll();
                         } else if (forceSync || startedSync) {
                             run();
                         } else {
                             dumpFiberContext("resuming (async)");
                             owner.addRunnable(this);
                         }
-                }
-            } else {
-                if (isTraceEnabled()) {
-                    LOGGER.fine(getName() + " taking no action on resume because suspendedCount != 0: " + suspendedCount);
+                   }
+                } else {
+                    if (isTraceEnabled()) {
+                        LOGGER.log(Level.FINE, "{0} taking no action on resume because suspendedCount != 0: {1}", new Object[]{getName(), suspendedCount});
                 }
             }
-        }
+       } finally {
+           lock.unlock();
+       }
     }
 
     /**
      * Wakes up a suspended fiber and begins response processing.
      * @since 2.2.6
      */
-    public synchronized void resumeAndReturn(@NotNull Packet resumePacket,
-                                             boolean forceSync) {
+    public void resumeAndReturn(@NotNull Packet resumePacket,
+                                boolean forceSync) {
         if(isTraceEnabled())
-            LOGGER.fine(getName()+" resumed with Return Packet");
+            LOGGER.log(Level.FINE, "{0} resumed with Return Packet", getName());
         next = null;
         resume(resumePacket, forceSync);
     }
@@ -523,8 +527,30 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      *
      * @param throwable exception that is used in the resumed processing
      */
-    public synchronized void resume(@NotNull Throwable throwable) {
-        resume(throwable, false);
+    public void resume(@NotNull Throwable throwable) {
+        resume(throwable, packet, false);
+    }
+
+    /**
+     * Wakes up a suspended fiber with an exception.
+     * <p/>
+     * <p/>
+     * The execution of the suspended fiber will be resumed in the response
+     * processing direction, by calling the {@link Tube#processException(Throwable)} method
+     * on the next/first {@link Tube} in the {@link Fiber}'s processing stack with
+     * the specified exception as the parameter.
+     * <p/>
+     * <p/>
+     * This method is implemented in a race-free way. Another thread can invoke
+     * this method even before this fiber goes into the suspension mode. So the caller
+     * need not worry about synchronizing {@link NextAction#suspend()} and this method.
+     *
+     * @param throwable exception that is used in the resumed processing
+     * @param packet Packet that will be visible on the Fiber after the resume
+     * @since 2.2.8
+     */
+    public void resume(@NotNull Throwable throwable, @NotNull Packet packet) {
+        resume(throwable, packet, false);
     }
 
     /**
@@ -539,10 +565,29 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * @param forceSync if processing begins synchronously
      * @since 2.2.6
      */
-    public synchronized void resume(@NotNull Throwable error,
-                                            boolean forceSync) {
+    public void resume(@NotNull Throwable error,
+                       boolean forceSync) {
+        resume(error, packet, forceSync);
+    }
+
+    /**
+     * Wakes up a suspend fiber with an exception.
+     *
+     * If forceSync is true, then the suspended fiber will resume with
+     * synchronous processing on the current thread.  This will continue
+     * until some Tube indicates that it is safe to switch to asynchronous
+     * processing.
+     *
+     * @param error exception that is used in the resumed processing
+     * @param packet Packet that will be visible on the Fiber after the resume
+     * @param forceSync if processing begins synchronously
+     * @since 2.2.8
+     */
+    public void resume(@NotNull Throwable error,
+                       @NotNull Packet packet,
+                       boolean forceSync) {
         if(isTraceEnabled())
-            LOGGER.fine(getName()+" resumed with Return Throwable");
+            LOGGER.log(Level.FINE, "{0} resumed with Return Throwable", getName());
         next = null;
         throwable = error;
         resume(packet, forceSync);
@@ -550,17 +595,19 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
 
     /**
      * Marks this Fiber as cancelled.  A cancelled Fiber will never invoke its completion callback
-     * @param mayInterrupt if cancel should use {@link Thread.interrupt()}
-     * @see java.util.Future.cancel
+     * @param mayInterrupt if cancel should use {@link Thread#interrupt()}
+     * @see java.util.concurrent.Future#cancel(boolean)
      * @since 2.2.6
      */
+    @Override
     public void cancel(boolean mayInterrupt) {
         isCanceled = true;
         if (mayInterrupt) {
-                synchronized(this) {
-                        if (currentThread != null)
-                                currentThread.interrupt();
-                }
+            // synchronized(this) is used as Thread running Fiber will be holding lock
+            synchronized(this) {
+                if (currentThread != null)
+                    currentThread.interrupt();
+            }
         }
     }
 
@@ -569,49 +616,85 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * <p/>
      * The call returns immediately, and when the fiber is resumed
      * the execution picks up from the last scheduled continuation.
+     * @param onExitRunnable runnable to be invoked after fiber is marked for suspension
+     * @return if control loop must exit
      */
-    private boolean suspend() {
-
-        synchronized(this) {
-            if(isTraceEnabled()) {
-                LOGGER.fine(getName()+" suspending. Will have suspendedCount=" + (suspendedCount+1));
-                if (suspendedCount > 0) {
-                    LOGGER.fine("WARNING - " + getName()+" suspended more than resumed. Will require more than one resume to actually resume this fiber.");
-                }
+    private boolean suspend(Holder<Boolean> isRequireUnlock, Runnable onExitRunnable) {
+        if(isTraceEnabled()) {
+            LOGGER.log(Level.FINE, "{0} suspending. Will have suspendedCount={1}", new Object[]{getName(), suspendedCount+1});
+            if (suspendedCount > 0) {
+                LOGGER.log(Level.FINE, "WARNING - {0} suspended more than resumed. Will require more than one resume to actually resume this fiber.", getName());
             }
+        }
 
-            List<Listener> listeners = getCurrentListeners();
-            if (++suspendedCount == 1) {
-                isInsideSuspendCallbacks = true;
-                try {
-                        for (Listener listener: listeners) {
-                            try {
-                                listener.fiberSuspended(this);
-                            } catch (Throwable e) {
-                                if(isTraceEnabled())
-                                        LOGGER.fine("Listener " + listener + " threw exception: "  + e.getMessage());
-                            }
-                        }
-                } finally {
-                        isInsideSuspendCallbacks = false;
-                }
-            }
-
-            if (suspendedCount <= 0) {
-                // suspend callback caused fiber to resume
+        List<Listener> listeners = getCurrentListeners();
+        if (++suspendedCount == 1) {
+            isInsideSuspendCallbacks = true;
+            try {
                 for (Listener listener: listeners) {
                     try {
-                        listener.fiberResumed(this);
+                        listener.fiberSuspended(this);
                     } catch (Throwable e) {
                         if(isTraceEnabled())
-                                LOGGER.fine("Listener " + listener + " threw exception: "  + e.getMessage());
+                            LOGGER.log(Level.FINE, "Listener {0} threw exception: {1}", new Object[]{listener, e.getMessage()});
                     }
                 }
+            } finally {
+                isInsideSuspendCallbacks = false;
+            }
+        }
 
-                return false;
+        if (suspendedCount <= 0) {
+            // suspend callback caused fiber to resume
+            for (Listener listener: listeners) {
+                try {
+                    listener.fiberResumed(this);
+                } catch (Throwable e) {
+                        if(isTraceEnabled())
+                                LOGGER.log(Level.FINE, "Listener {0} threw exception: {1}", new Object[]{listener, e.getMessage()});
+                }
             }
 
-            return true;
+        } else if (onExitRunnable != null) {
+            // synchronous use cases cannot disconnect from the current thread
+            if (!synchronous) {
+                /* INTENTIONALLY UNLOCKING EARLY */
+                synchronized(this) {
+                    // currentThread is protected by the monitor for this fiber so
+                    // that it is accessible to cancel() even when the lock is held
+                    currentThread = null;
+                }
+                lock.unlock();
+                assert(!lock.isHeldByCurrentThread());
+                isRequireUnlock.value = Boolean.FALSE;
+
+                try {
+                    onExitRunnable.run();
+                } catch(Throwable t) {
+                    throw new OnExitRunnableException(t);
+                }
+
+                return true;
+
+            } else {
+                // for synchronous we will stay with current thread, so do not disconnect
+                if (isTraceEnabled())
+                    LOGGER.fine("onExitRunnable used with synchronous Fiber execution -- not exiting current thread");
+                onExitRunnable.run();
+            }
+        }
+
+        return false;
+    }
+
+    private static final class OnExitRunnableException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        Throwable target;
+
+        public OnExitRunnableException(Throwable target) {
+            super((Throwable)null); // see pattern for InvocationTargetException
+            this.target = target;
         }
     }
 
@@ -634,13 +717,15 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * <li>Y.processRequest()
      * </ol>
      */
-    public void addInterceptor(@NotNull FiberContextSwitchInterceptor interceptor) {
+    public synchronized void addInterceptor(@NotNull FiberContextSwitchInterceptor interceptor) {
         if (interceptors == null) {
             interceptors = new ArrayList<FiberContextSwitchInterceptor>();
-            interceptorHandler = new InterceptorHandler();
+        } else {
+            List<FiberContextSwitchInterceptor> l = new ArrayList<FiberContextSwitchInterceptor>();
+            l.addAll(interceptors);
+            interceptors = l;
         }
         interceptors.add(interceptor);
-        needsToReenter = true;
     }
 
     /**
@@ -666,10 +751,17 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * @return true if the specified interceptor was removed. False if
      *         the specified interceptor was not registered with this fiber to begin with.
      */
-    public boolean removeInterceptor(@NotNull FiberContextSwitchInterceptor interceptor) {
-        if (interceptors != null && interceptors.remove(interceptor)) {
-            needsToReenter = true;
-            return true;
+    public synchronized boolean removeInterceptor(@NotNull FiberContextSwitchInterceptor interceptor) {
+        if (interceptors != null) {
+            boolean result = interceptors.remove(interceptor);
+            if (interceptors.isEmpty())
+                interceptors = null;
+            else {
+                List<FiberContextSwitchInterceptor> l = new ArrayList<FiberContextSwitchInterceptor>();
+                l.addAll(interceptors);
+                interceptors = l;
+            }
+            return result;
         }
         return false;
     }
@@ -697,19 +789,27 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * of {@link Fiber}.
      */
     @Deprecated
+    @Override
     public void run() {
-        assert !synchronous;
-        doRun();
-        if (startedSync && suspendedCount == 0 &&
-            (next != null || contsSize > 0)) {
-            // We bailed out of running this fiber we started as sync, and now
-            // want to finish running it async
-            startedSync = false;
-            // Start back up as an async fiber
-            dumpFiberContext("restarting (async) after startSync");
-            owner.addRunnable(this);
-        } else {
-            completionCheck();
+        Container old = ContainerResolver.getDefault().enterContainer(owner.getContainer());
+        try {
+            assert !synchronous;
+            // doRun returns true to indicate an early exit from fiber processing
+            if (!doRun()) {
+                if (startedSync && suspendedCount == 0 &&
+                    (next != null || contsSize > 0)) {
+                    // We bailed out of running this fiber we started as sync, and now
+                    // want to finish running it async
+                    startedSync = false;
+                    // Start back up as an async fiber
+                    dumpFiberContext("restarting (async) after startSync");
+                    owner.addRunnable(this);
+                } else {
+                    completionCheck();
+                }
+            }
+        } finally {
+            ContainerResolver.getDefault().exitContainer(old);
         }
     }
 
@@ -739,84 +839,101 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * @return The response packet to the <tt>request</tt>.
      * @see #start(Tube, Packet, CompletionCallback)
      */
-    public synchronized
+    public
     @NotNull
     Packet runSync(@NotNull Tube tubeline, @NotNull Packet request) {
-        // save the current continuation, so that we return runSync() without executing them.
-        final Tube[] oldCont = conts;
-        final int oldContSize = contsSize;
-        final boolean oldSynchronous = synchronous;
-        final Tube oldNext = next;
-
-        if (oldContSize > 0) {
-            conts = new Tube[16];
-            contsSize = 0;
-        }
-
+        lock.lock();
         try {
-            synchronous = true;
-            this.packet = request;
-            next = tubeline;
-            doRun();
-            if (throwable != null) {
-                if (throwable instanceof RuntimeException) {
-                    throw (RuntimeException) throwable;
-                }
-                if (throwable instanceof Error) {
-                    throw (Error) throwable;
-                }
-                // our system is supposed to only accept Error or RuntimeException
-                throw new AssertionError(throwable);
+            // save the current continuation, so that we return runSync() without executing them.
+            final Tube[] oldCont = conts;
+            final int oldContSize = contsSize;
+            final boolean oldSynchronous = synchronous;
+            final Tube oldNext = next;
+
+            if (oldContSize > 0) {
+                conts = new Tube[16];
+                contsSize = 0;
             }
-            return this.packet;
+
+            try {
+                synchronous = true;
+                this.packet = request;
+                next = tubeline;
+                doRun();
+                if (throwable != null) {
+                    if (isDeliverThrowableInPacket) {
+                        packet.addSatellite(new ThrowableContainerPropertySet(throwable));
+                    } else {
+                        if (throwable instanceof RuntimeException) {
+                            throw (RuntimeException) throwable;
+                        }
+                        if (throwable instanceof Error) {
+                            throw (Error) throwable;
+                        }
+                        // our system is supposed to only accept Error or RuntimeException
+                        throw new AssertionError(throwable);
+                    }
+                }
+                return this.packet;
+            } finally {
+                conts = oldCont;
+                contsSize = oldContSize;
+                synchronous = oldSynchronous;
+                next = oldNext;
+                if(interrupted) {
+                    Thread.currentThread().interrupt();
+                    interrupted = false;
+                }
+                if(!started && !startedSync)
+                    completionCheck();
+            }
         } finally {
-            conts = oldCont;
-            contsSize = oldContSize;
-            synchronous = oldSynchronous;
-            next = oldNext;
-            if(interrupted) {
-                Thread.currentThread().interrupt();
-                interrupted = false;
-            }
-            if(!started && !startedSync)
-                completionCheck();
+            lock.unlock();
         }
     }
 
-    private synchronized void completionCheck() {
-        // Don't trigger completion and callbacks if fiber is suspended
-        if(!isCanceled && contsSize==0 && suspendedCount == 0) {
-            if(isTraceEnabled())
-                LOGGER.fine(getName()+" completed");
-            completed = true;
-            clearListeners();
-            notifyAll();
-            if (completionCallback != null) {
-                if (throwable != null)
-                    completionCallback.onCompletion(throwable);
-                else
-                    completionCallback.onCompletion(packet);
+    private void completionCheck() {
+        lock.lock();
+        try {
+            // Don't trigger completion and callbacks if fiber is suspended
+            if(!isCanceled && contsSize==0 && suspendedCount == 0) {
+                if(isTraceEnabled())
+                    LOGGER.log(Level.FINE, "{0} completed", getName());
+                clearListeners();
+                condition.signalAll();
+                if (completionCallback != null) {
+                    if (throwable != null) {
+                        if (isDeliverThrowableInPacket) {
+                            packet.addSatellite(new ThrowableContainerPropertySet(throwable));
+                            completionCallback.onCompletion(packet);
+                        } else
+                            completionCallback.onCompletion(throwable);
+                    } else
+                        completionCallback.onCompletion(packet);
+                }
             }
+        } finally {
+            lock.unlock();
         }
     }
-
-    ///**
-    // * Blocks until the fiber completes.
-    // */
-    //public synchronized void join() throws InterruptedException {
-    //    while(!completed)
-    //        wait();
-    //}
 
     /**
      * Invokes all registered {@link InterceptorHandler}s and then call into
      * {@link Fiber#__doRun()}.
      */
     private class InterceptorHandler implements FiberContextSwitchInterceptor.Work<Tube, Tube> {
+        private final Holder<Boolean> isUnlockRequired;
+        private final List<FiberContextSwitchInterceptor> ints;
+
         /**
          * Index in {@link Fiber#interceptors} to invoke next.
          */
         private int idx;
+
+        public InterceptorHandler(Holder<Boolean> isUnlockRequired, List<FiberContextSwitchInterceptor> ints) {
+            this.isUnlockRequired = isUnlockRequired;
+            this.ints = ints;
+        }
 
         /**
          * Initiate the interception, and eventually invokes {@link Fiber#__doRun()}.
@@ -826,15 +943,46 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
             return execute(next);
         }
 
+        @Override
         public Tube execute(Tube next) {
-            if (idx == interceptors.size()) {
+            if (idx == ints.size()) {
                 Fiber.this.next = next;
-                __doRun();
+                if (__doRun(isUnlockRequired, ints))
+                    return PLACEHOLDER;
             } else {
-                FiberContextSwitchInterceptor interceptor = interceptors.get(idx++);
+                FiberContextSwitchInterceptor interceptor = ints.get(idx++);
                 return interceptor.execute(Fiber.this, next, this);
             }
             return Fiber.this.next;
+        }
+    }
+
+    private static final PlaceholderTube PLACEHOLDER = new PlaceholderTube();
+
+    private static class PlaceholderTube extends AbstractTubeImpl {
+
+        @Override
+        public NextAction processRequest(Packet request) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public NextAction processResponse(Packet response) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public NextAction processException(Throwable t) {
+            return doThrow(t);
+        }
+
+        @Override
+        public void preDestroy() {
+        }
+
+        @Override
+        public PlaceholderTube copy(TubeCloner cloner) {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -842,70 +990,89 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      * Executes the fiber as much as possible.
      *
      */
-    @SuppressWarnings({"LoopStatementThatDoesntLoop"}) // IntelliJ reports this bogus error
-    private void doRun() {
-
+    private boolean doRun() {
         dumpFiberContext("running");
 
         if (serializeExecution) {
             serializedExecutionLock.lock();
             try {
-                _doRun(next);
+                return _doRun(next);
             } finally {
                 serializedExecutionLock.unlock();
             }
         } else {
-            _doRun(next);
+            return _doRun(next);
         }
     }
 
-    private String currentThreadMonitor = "CurrentThreadMonitor";
-
-    private void _doRun(Tube next) {
-        Thread thread;
-        synchronized(currentThreadMonitor) {
-          if (currentThread != null && !synchronous) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-              LOGGER.fine("Attempt to run Fiber ['" + this + "'] in more than one thread. Current Thread: " + currentThread + " Attempted Thread: " + Thread.currentThread());
-            }
-            while (currentThread != null) {
-              try {
-                currentThreadMonitor.wait();
-              } catch (Exception e) {
-                // ignore
-              }
-            }
-          }
-          currentThread = Thread.currentThread();
-          thread = currentThread;
-          if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("Thread entering _doRun(): " + thread);
-          }
-        }
-
-        ClassLoader old = thread.getContextClassLoader();
-        thread.setContextClassLoader(contextClassLoader);
+    private boolean _doRun(Tube next) {
+        // isRequireUnlock will contain Boolean.FALSE when lock has already been released in suspend
+        Holder<Boolean> isRequireUnlock = new Holder<Boolean>(Boolean.TRUE);
+        lock.lock();
         try {
-            do {
-                needsToReenter = false;
+            List<FiberContextSwitchInterceptor> ints;
+            ClassLoader old;
+            synchronized(this) {
+                ints = interceptors;
 
-                // if interceptors are set, go through the interceptors.
-                if(interceptorHandler ==null) {
-                    this.next = next;
-                    __doRun();
+                // currentThread is protected by the monitor for this fiber so
+                // that it is accessible to cancel() even when the lock is held
+                currentThread = Thread.currentThread();
+                if (isTraceEnabled()) {
+                    LOGGER.log(Level.FINE, "Thread entering _doRun(): {0}", currentThread);
                 }
-                else
-                    next = interceptorHandler.invoke(next);
-            } while (needsToReenter);
 
+                old = currentThread.getContextClassLoader();
+                currentThread.setContextClassLoader(contextClassLoader);
+            }
+
+            try {
+                boolean needsToReenter = false;
+                do {
+                    // if interceptors are set, go through the interceptors.
+                    if (ints == null) {
+                        this.next = next;
+                        if (__doRun(isRequireUnlock, ints)) {
+                            return true;
+                        }
+                    } else {
+                        next = new InterceptorHandler(isRequireUnlock, ints).invoke(next);
+                        if (next == PLACEHOLDER) {
+                            return true;
+                        }
+                    }
+
+                    synchronized(this) {
+                        needsToReenter = (ints != interceptors);
+                        if (needsToReenter)
+                            ints = interceptors;
+                    }
+                } while (needsToReenter);
+            } catch(OnExitRunnableException o) {
+                // catching this exception indicates onExitRunnable in suspend() threw.
+                // we must still avoid double unlock
+                Throwable t = o.target;
+                if (t instanceof WebServiceException)
+                    throw (WebServiceException) t;
+                throw new WebServiceException(t);
+            } finally {
+                // don't reference currentThread here because fiber processing
+                // may already be running on a different thread (Note: isAlreadyExited
+                // tracks this state
+                Thread thread = Thread.currentThread();
+                thread.setContextClassLoader(old);
+                if (isTraceEnabled()) {
+                    LOGGER.log(Level.FINE, "Thread leaving _doRun(): {0}", thread);
+                }
+            }
+
+            return false;
         } finally {
-            thread.setContextClassLoader(old);
-            synchronized(currentThreadMonitor) {
-                currentThread = null;
-              if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Thread leaving _doRun(): " + thread);
-              }
-              currentThreadMonitor.notify();
+            if (isRequireUnlock.value) {
+                synchronized(this) {
+                    currentThread = null;
+                }
+                lock.unlock();
             }
         }
     }
@@ -915,7 +1082,9 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      *
      * @see #doRun()
      */
-    private void __doRun() {
+    private boolean __doRun(Holder<Boolean> isRequireUnlock, List<FiberContextSwitchInterceptor> originalInterceptors) {
+        assert(lock.isHeldByCurrentThread());
+
         final Fiber old = CURRENT_FIBER.get();
         CURRENT_FIBER.set(this);
 
@@ -924,8 +1093,14 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
 
         try {
             boolean abortResponse = false;
-            boolean justSuspended = false;
-            while(!isCanceled && !isBlocking(justSuspended) && !needsToReenter) {
+            while(isReady(originalInterceptors)) {
+                if (isCanceled) {
+                    next = null;
+                    throwable = null;
+                    contsSize = 0;
+                    break;
+                }
+
                 try {
                     NextAction na;
                     Tube last;
@@ -933,33 +1108,33 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
                         if(contsSize==0 || abortResponse) {
                             contsSize = 0; // abortResponse case
                             // nothing else to execute. we are done.
-                            return;
+                            return false;
                         }
                         last = popCont();
                         if (traceEnabled)
-                            LOGGER.finer(getName() + ' ' + last + ".processException(" + throwable + ')');
+                            LOGGER.log(Level.FINER, "{0} {1}.processException({2})", new Object[]{getName(), last, throwable});
                         na = last.processException(throwable);
                     } else {
                         if(next!=null) {
                             if(traceEnabled)
-                                LOGGER.finer(getName()+' '+next+".processRequest("+(packet != null ? "Packet@"+Integer.toHexString(packet.hashCode()) : "null")+')');
+                                LOGGER.log(Level.FINER, "{0} {1}.processRequest({2})", new Object[]{getName(), next, packet != null ? "Packet@"+Integer.toHexString(packet.hashCode()) : "null"});
                             na = next.processRequest(packet);
                             last = next;
                         } else {
                             if(contsSize==0 || abortResponse) {
                                 // nothing else to execute. we are done.
                                 contsSize = 0;
-                                return;
+                                return false;
                             }
                             last = popCont();
                             if(traceEnabled)
-                                LOGGER.finer(getName()+' '+last+".processResponse("+(packet != null ? "Packet@"+Integer.toHexString(packet.hashCode()) : "null")+')');
+                                LOGGER.log(Level.FINER, "{0} {1}.processResponse({2})", new Object[]{getName(), last, packet != null ? "Packet@"+Integer.toHexString(packet.hashCode()) : "null"});
                             na = last.processResponse(packet);
                         }
                     }
 
                     if (traceEnabled)
-                        LOGGER.finer(getName() + ' ' + last + " returned with " + na);
+                        LOGGER.log(Level.FINER, "{0} {1} returned with {2}", new Object[]{getName(), last, na});
 
                     // If resume is called before suspend, then make sure
                     // resume(Packet) is not lost
@@ -981,14 +1156,14 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
                         if (na.kind == NextAction.INVOKE_ASYNC
                             && startedSync) {
                           // Break out here
-                          return;
+                          return false;
                         }
                         break;
                     case NextAction.THROW_ABORT_RESPONSE:
                     case NextAction.ABORT_RESPONSE:
                         abortResponse = true;
-                        if (LOGGER.isLoggable(Level.FINE)) {
-                          LOGGER.fine("Fiber " + this + " is aborting a response due to exception: " + na.throwable);
+                        if (isTraceEnabled()) {
+                          LOGGER.log(Level.FINE, "Fiber {0} is aborting a response due to exception: {1}", new Object[]{this, na.throwable});
                         }
                     case NextAction.RETURN:
                     case NextAction.THROW:
@@ -1001,7 +1176,8 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
                           pushCont(last);
                         }
                         next = na.next;
-                        justSuspended = suspend();
+                        if(suspend(isRequireUnlock, na.onExitRunnable))
+                            return true; // explicitly exiting control loop
                         break;
                     default:
                         throw new AssertionError();
@@ -1019,18 +1195,14 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
                 dumpFiberContext("After tube execution");
             }
 
-            if (isCanceled) {
-                next = null;
-                throwable = null;
-                contsSize = 0;
-            }
-
             // there's nothing we can execute right away.
             // we'll be back when this fiber is resumed.
 
         } finally {
             CURRENT_FIBER.set(old);
         }
+
+        return false;
     }
 
     private void pushCont(Tube tube) {
@@ -1068,26 +1240,34 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
     }
 
     /**
-     * Returns true if the fiber needs to block its execution.
+     * Returns true if the fiber is ready to execute.
      */
-    private boolean isBlocking(boolean justSuspended) {
+    private boolean isReady(List<FiberContextSwitchInterceptor> originalInterceptors) {
         if (synchronous) {
             while (suspendedCount == 1)
                 try {
                     if (isTraceEnabled()) {
-                        LOGGER.fine(getName() + " is blocking thread " + Thread.currentThread().getName());
+                        LOGGER.log(Level.FINE, "{0} is blocking thread {1}", new Object[]{getName(), Thread.currentThread().getName()});
                     }
-                    wait(); // the synchronized block is the whole runSync method.
+                    condition.await(); // the synchronized block is the whole runSync method.
                 } catch (InterruptedException e) {
                     // remember that we are interrupted, but don't respond to it
                     // right away. This behavior is in line with what happens
                     // when you are actually running the whole thing synchronously.
                     interrupted = true;
                 }
-            return false;
+
+            synchronized(this) {
+                return interceptors == originalInterceptors;
+            }
         }
-        else
-            return justSuspended || suspendedCount==1;
+        else {
+            if (suspendedCount>0)
+                return false;
+            synchronized(this) {
+                return interceptors == originalInterceptors;
+            }
+        }
     }
 
     private String getName() {
@@ -1215,16 +1395,19 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
 
     private final Set<Component> components = new CopyOnWriteArraySet<Component>();
 
-        public <S> S getSPI(Class<S> spiType) {
-                for(Component c : components) {
-                        S spi = c.getSPI(spiType);
-                        if (spi != null)
-                                return spi;
-                }
-                return null;
+    @Override
+    public <S> S getSPI(Class<S> spiType) {
+        for (Component c : components) {
+            S spi = c.getSPI(spiType);
+            if (spi != null) {
+                return spi;
+            }
         }
+        return null;
+    }
 
-        public Set<Component> getComponents() {
-                return components;
-        }
+    @Override
+    public Set<Component> getComponents() {
+        return components;
+    }
 }

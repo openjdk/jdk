@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.pipe.NextAction;
+import com.sun.xml.internal.ws.api.pipe.ThrowableContainerPropertySet;
 import com.sun.xml.internal.ws.api.server.Invoker;
 
 import javax.xml.ws.Provider;
@@ -41,6 +42,7 @@ import java.util.logging.Logger;
  *
  * @author Jitendra Kotamraju
  */
+public // TODO needed by factory
 class SyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
 
     private static final Logger LOGGER = Logger.getLogger(
@@ -79,15 +81,21 @@ class SyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
             }
         }
         Packet response = argsBuilder.getResponse(request,returnValue,port,binding);
+
+        // Only used by Provider<Packet>
+        // Implementation may pass Packet containing throwable; use both
+        ThrowableContainerPropertySet tc = response.getSatellite(ThrowableContainerPropertySet.class);
+        Throwable t = (tc != null) ? tc.getThrowable() : null;
+
+        return t != null ? doThrow(response, t) : doReturnWith(response);
+    }
+
+    public @NotNull NextAction processResponse(@NotNull Packet response) {
         return doReturnWith(response);
     }
 
-    public NextAction processResponse(Packet response) {
-        throw new IllegalStateException("InovkerPipe's processResponse shouldn't be called.");
-    }
-
-    public NextAction processException(@NotNull Throwable t) {
-        throw new IllegalStateException("InovkerPipe's processException shouldn't be called.");
+    public @NotNull NextAction processException(@NotNull Throwable t) {
+        return doThrow(t);
     }
 
 }

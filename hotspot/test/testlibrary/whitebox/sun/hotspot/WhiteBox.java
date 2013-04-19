@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 package sun.hotspot;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Executable;
 import java.security.BasicPermission;
 import sun.hotspot.parser.DiagnosticCommand;
 
@@ -90,22 +90,25 @@ public class WhiteBox {
 
   // Compiler
   public native void    deoptimizeAll();
-  public native boolean isMethodCompiled(Method method);
-  public boolean isMethodCompilable(Method method) {
+  public native boolean isMethodCompiled(Executable method);
+  public boolean isMethodCompilable(Executable method) {
       return isMethodCompilable(method, -1 /*any*/);
   }
-  public native boolean isMethodCompilable(Method method, int compLevel);
-  public native boolean isMethodQueuedForCompilation(Method method);
-  public native int     deoptimizeMethod(Method method);
-  public native void    makeMethodNotCompilable(Method method);
-  public native int     getMethodCompilationLevel(Method method);
-  public native boolean testSetDontInlineMethod(Method method, boolean value);
+  public native boolean isMethodCompilable(Executable method, int compLevel);
+  public native boolean isMethodQueuedForCompilation(Executable method);
+  public native int     deoptimizeMethod(Executable method);
+  public void makeMethodNotCompilable(Executable method) {
+      makeMethodNotCompilable(method, -1 /*any*/);
+  }
+  public native void    makeMethodNotCompilable(Executable method, int compLevel);
+  public native int     getMethodCompilationLevel(Executable method);
+  public native boolean testSetDontInlineMethod(Executable method, boolean value);
   public native int     getCompileQueuesSize();
-  public native boolean testSetForceInlineMethod(Method method, boolean value);
-  public native boolean enqueueMethodForCompilation(Method method, int compLevel);
-  public native void    clearMethodState(Method method);
+  public native boolean testSetForceInlineMethod(Executable method, boolean value);
+  public native boolean enqueueMethodForCompilation(Executable method, int compLevel);
+  public native void    clearMethodState(Executable method);
 
-  //Intered strings
+  // Intered strings
   public native boolean isInStringTable(String str);
 
   // force Full GC

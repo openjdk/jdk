@@ -27,15 +27,14 @@
 
 package com.sun.tools.internal.jxc.ap;
 
+import com.sun.tools.internal.jxc.api.JXC;
 import com.sun.tools.internal.xjc.api.J2SJAXBModel;
 import com.sun.tools.internal.xjc.api.Reference;
-import com.sun.tools.internal.xjc.api.XJC;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -66,7 +65,6 @@ import java.util.Set;
  * @author Kohsuke Kawaguchi
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class SchemaGenerator extends AbstractProcessor {
 
     /**
@@ -96,7 +94,7 @@ public class SchemaGenerator extends AbstractProcessor {
         // so that users won't have to manually exclude interfaces, which is silly.
         filterClass(classes, roundEnv.getRootElements());
 
-        J2SJAXBModel model = XJC.createJavaCompiler().bind(classes, Collections.<QName, Reference>emptyMap(), null, processingEnv);
+        J2SJAXBModel model = JXC.createJavaCompiler().bind(classes, Collections.<QName, Reference>emptyMap(), null, processingEnv);
         if (model == null)
             return false; // error
 
@@ -142,5 +140,13 @@ public class SchemaGenerator extends AbstractProcessor {
                 filterClass(classes, ElementFilter.typesIn(element.getEnclosedElements()));
             }
         }
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        if (SourceVersion.latest().compareTo(SourceVersion.RELEASE_6) > 0)
+            return SourceVersion.valueOf("RELEASE_7");
+        else
+            return SourceVersion.RELEASE_6;
     }
 }

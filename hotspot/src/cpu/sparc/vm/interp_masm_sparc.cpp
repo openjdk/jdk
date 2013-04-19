@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "oops/markOop.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodCounters.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -2086,19 +2087,28 @@ void InterpreterMacroAssembler::compute_stack_base( Register Rdest ) {
 
 #endif /* CC_INTERP */
 
-void InterpreterMacroAssembler::increment_invocation_counter( Register Rtmp, Register Rtmp2 ) {
+void InterpreterMacroAssembler::get_method_counters(Register method,
+                                                    Register Rcounters,
+                                                    Label& skip) {
+  Label has_counters;
+  Address method_counters(method, in_bytes(Method::method_counters_offset()));
+  ld_ptr(method_counters, Rcounters);
+  br_notnull_short(Rcounters, Assembler::pt, has_counters);
+  call_VM(noreg, CAST_FROM_FN_PTR(address,
+          InterpreterRuntime::build_method_counters), method);
+  ld_ptr(method_counters, Rcounters);
+  br_null_short(Rcounters, Assembler::pn, skip); // No MethodCounters, OutOfMemory
+  bind(has_counters);
+}
+
+void InterpreterMacroAssembler::increment_invocation_counter( Register Rcounters, Register Rtmp, Register Rtmp2 ) {
   assert(UseCompiler, "incrementing must be useful");
-#ifdef CC_INTERP
-  Address inv_counter(G5_method, Method::invocation_counter_offset() +
+  assert_different_registers(Rcounters, Rtmp, Rtmp2);
+
+  Address inv_counter(Rcounters, MethodCounters::invocation_counter_offset() +
                                  InvocationCounter::counter_offset());
-  Address be_counter (G5_method, Method::backedge_counter_offset() +
+  Address be_counter (Rcounters, MethodCounters::backedge_counter_offset() +
                                  InvocationCounter::counter_offset());
-#else
-  Address inv_counter(Lmethod, Method::invocation_counter_offset() +
-                               InvocationCounter::counter_offset());
-  Address be_counter (Lmethod, Method::backedge_counter_offset() +
-                               InvocationCounter::counter_offset());
-#endif /* CC_INTERP */
   int delta = InvocationCounter::count_increment;
 
   // Load each counter in a register
@@ -2122,19 +2132,15 @@ void InterpreterMacroAssembler::increment_invocation_counter( Register Rtmp, Reg
   // Note that this macro must leave the backedge_count + invocation_count in Rtmp!
 }
 
-void InterpreterMacroAssembler::increment_backedge_counter( Register Rtmp, Register Rtmp2 ) {
+void InterpreterMacroAssembler::increment_backedge_counter( Register Rcounters, Register Rtmp, Register Rtmp2 ) {
   assert(UseCompiler, "incrementing must be useful");
-#ifdef CC_INTERP
-  Address be_counter (G5_method, Method::backedge_counter_offset() +
+  assert_different_registers(Rcounters, Rtmp, Rtmp2);
+
+  Address be_counter (Rcounters, MethodCounters::backedge_counter_offset() +
                                  InvocationCounter::counter_offset());
-  Address inv_counter(G5_method, Method::invocation_counter_offset() +
+  Address inv_counter(Rcounters, MethodCounters::invocation_counter_offset() +
                                  InvocationCounter::counter_offset());
-#else
-  Address be_counter (Lmethod, Method::backedge_counter_offset() +
-                               InvocationCounter::counter_offset());
-  Address inv_counter(Lmethod, Method::invocation_counter_offset() +
-                               InvocationCounter::counter_offset());
-#endif /* CC_INTERP */
+
   int delta = InvocationCounter::count_increment;
   // Load each counter in a register
   ld( be_counter, Rtmp );
