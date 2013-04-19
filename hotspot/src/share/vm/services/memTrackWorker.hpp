@@ -85,8 +85,10 @@ class MemTrackWorker : public NamedThread {
 
   bool            _has_error;
 
+  MemSnapshot*    _snapshot;
+
  public:
-  MemTrackWorker();
+  MemTrackWorker(MemSnapshot* snapshot);
   ~MemTrackWorker();
   _NOINLINE_ void* operator new(size_t size);
   _NOINLINE_ void* operator new(size_t size, const std::nothrow_t& nothrow_constant);
