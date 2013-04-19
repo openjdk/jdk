@@ -261,7 +261,7 @@ public class FieldDocImpl extends MemberDocImpl implements FieldDoc {
     private String name;
 
     public String qualifiedName() {
-        if (qualifiedName == null) }
+        if (qualifiedName == null) {
             qualifiedName = sym.enclClass().getQualifiedName() + "." + name();
         }
         return qualifiedName;
