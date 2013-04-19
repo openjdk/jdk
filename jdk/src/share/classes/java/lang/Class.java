@@ -961,9 +961,28 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the immediately enclosing method of the underlying class, if
      *     that class is a local or anonymous class; otherwise {@code null}.
+     * @exception  SecurityException
+     *             If a security manager, <i>s</i>, is present and any of the
+     *             following conditions is met:
+     *
+     *             <ul>
+     *
+     *             <li> invocation of
+     *             {@link SecurityManager#checkMemberAccess
+     *             s.checkMemberAccess(enclosingClass, Member.PUBLIC)} denies
+     *             access to the methods within the enclosing class
+     *
+     *             <li> the caller's class loader is not the same as or an
+     *             ancestor of the class loader for the enclosing class and
+     *             invocation of {@link SecurityManager#checkPackageAccess
+     *             s.checkPackageAccess()} denies access to the package
+     *             of the enclosing class
+     *
+     *             </ul>
      * @since 1.5
      */
-    public Method getEnclosingMethod() {
+    @CallerSensitive
+    public Method getEnclosingMethod() throws SecurityException {
         EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
 
         if (enclosingInfo == null)
@@ -984,13 +1003,22 @@ public final class Class<T> implements java.io.Serializable,
             for(int i = 0; i < parameterClasses.length; i++)
                 parameterClasses[i] = toClass(parameterTypes[i]);
 
+            // Perform access check
+            Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
+            // be very careful not to change the stack depth of this
+            // checkMemberAccess call for security reasons
+            // see java.lang.SecurityManager.checkMemberAccess
+            //
+            // Note that we need to do this on the enclosing class
+            enclosingCandidate.checkMemberAccess(Member.DECLARED,
+                                                 Reflection.getCallerClass(), true);
             /*
              * Loop over all declared methods; match method name,
              * number of and type of parameters, *and* return
              * type.  Matching return type is also necessary
              * because of covariant returns, etc.
              */
-            for(Method m: enclosingInfo.getEnclosingClass().getDeclaredMethods()) {
+            for(Method m: enclosingCandidate.getDeclaredMethods()) {
                 if (m.getName().equals(enclosingInfo.getName()) ) {
                     Class<?>[] candidateParamClasses = m.getParameterTypes();
                     if (candidateParamClasses.length == parameterClasses.length) {
@@ -1089,9 +1117,28 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the immediately enclosing constructor of the underlying class, if
      *     that class is a local or anonymous class; otherwise {@code null}.
+     * @exception  SecurityException
+     *             If a security manager, <i>s</i>, is present and any of the
+     *             following conditions is met:
+     *
+     *             <ul>
+     *
+     *             <li> invocation of
+     *             {@link SecurityManager#checkMemberAccess
+     *             s.checkMemberAccess(enclosingClass, Member.PUBLIC)} denies
+     *             access to the constructors within the enclosing class
+     *
+     *             <li> the caller's class loader is not the same as or an
+     *             ancestor of the class loader for the enclosing class and
+     *             invocation of {@link SecurityManager#checkPackageAccess
+     *             s.checkPackageAccess()} denies access to the package
+     *             of the enclosing class
+     *
+     *             </ul>
      * @since 1.5
      */
-    public Constructor<?> getEnclosingConstructor() {
+    @CallerSensitive
+    public Constructor<?> getEnclosingConstructor() throws SecurityException {
         EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
 
         if (enclosingInfo == null)
@@ -1111,11 +1158,20 @@ public final class Class<T> implements java.io.Serializable,
             for(int i = 0; i < parameterClasses.length; i++)
                 parameterClasses[i] = toClass(parameterTypes[i]);
 
+            // Perform access check
+            Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
+            // be very careful not to change the stack depth of this
+            // checkMemberAccess call for security reasons
+            // see java.lang.SecurityManager.checkMemberAccess
+            //
+            // Note that we need to do this on the enclosing class
+            enclosingCandidate.checkMemberAccess(Member.DECLARED,
+                                                 Reflection.getCallerClass(), true);
             /*
              * Loop over all declared constructors; match number
              * of and type of parameters.
              */
-            for(Constructor<?> c: enclosingInfo.getEnclosingClass().getDeclaredConstructors()) {
+            for(Constructor<?> c: enclosingCandidate.getDeclaredConstructors()) {
                 Class<?>[] candidateParamClasses = c.getParameterTypes();
                 if (candidateParamClasses.length == parameterClasses.length) {
                     boolean matches = true;
@@ -1155,9 +1211,16 @@ public final class Class<T> implements java.io.Serializable,
      * class.  If the underlying class is a top level class this
      * method returns {@code null}.
      * @return the immediately enclosing class of the underlying class
+     * @exception  SecurityException
+     *             If a security manager, <i>s</i>, is present and the caller's
+     *             class loader is not the same as or an ancestor of the class
+     *             loader for the enclosing class and invocation of {@link
+     *             SecurityManager#checkPackageAccess s.checkPackageAccess()}
+     *             denies access to the package of the enclosing class
      * @since 1.5
      */
-    public Class<?> getEnclosingClass() {
+    @CallerSensitive
+    public Class<?> getEnclosingClass() throws SecurityException {
         // There are five kinds of classes (or interfaces):
         // a) Top level classes
         // b) Nested classes (static member classes)
@@ -1170,18 +1233,28 @@ public final class Class<T> implements java.io.Serializable,
         // attribute if and only if it is a local class or an
         // anonymous class.
         EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
+        Class<?> enclosingCandidate;
 
         if (enclosingInfo == null) {
             // This is a top level or a nested class or an inner class (a, b, or c)
-            return getDeclaringClass();
+            enclosingCandidate = getDeclaringClass();
         } else {
             Class<?> enclosingClass = enclosingInfo.getEnclosingClass();
             // This is a local class or an anonymous class (d or e)
             if (enclosingClass == this || enclosingClass == null)
                 throw new InternalError("Malformed enclosing method information");
             else
-                return enclosingClass;
+                enclosingCandidate = enclosingClass;
         }
+
+        // be very careful not to change the stack depth of this
+        // checkMemberAccess call for security reasons
+        // see java.lang.SecurityManager.checkMemberAccess
+        if (enclosingCandidate != null) {
+            enclosingCandidate.checkMemberAccess(Member.DECLARED,
+                                                 Reflection.getCallerClass(), true);
+        }
+        return enclosingCandidate;
     }
 
     /**
