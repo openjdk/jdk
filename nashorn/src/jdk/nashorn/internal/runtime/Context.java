@@ -56,8 +56,6 @@ import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.options.Options;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
 
 /**
  * This class manages the global state of execution. Context is immutable.
@@ -114,24 +112,9 @@ public final class Context {
      * Get the current global scope
      * @return the current global scope
      */
-    @CallerSensitive
     public static ScriptObject getGlobal() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            // skip getCallerClass and getGlobal and get to the real caller
-            Class<?> caller = Reflection.getCallerClass();
-            ClassLoader callerLoader = caller.getClassLoader();
-
-            // Allow this method only for nashorn's own classes, objects
-            // package classes and Java adapter classes. Rest should
-            // have the necessary security permission.
-            if (callerLoader != myLoader &&
-                !(callerLoader instanceof StructureLoader) &&
-                !(JavaAdapterFactory.isAdapterClass(caller))) {
-                sm.checkPermission(new RuntimePermission("nashorn.getGlobal"));
-            }
-        }
-
+        // This class in a package.access protected package.
+        // Trusted code only can call this method.
         return getGlobalTrusted();
     }
 
