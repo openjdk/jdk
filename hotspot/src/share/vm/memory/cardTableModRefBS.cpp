@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,17 +78,13 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
 
   assert(card_size <= 512, "card_size must be less than 512"); // why?
 
-  _covered   = new MemRegion[max_covered_regions];
-  _committed = new MemRegion[max_covered_regions];
-  if (_covered == NULL || _committed == NULL)
+  NEW_C_HEAP_OBJECT_ARRAY(_covered, MemRegion, max_covered_regions, mtGC, 0, AllocFailStrategy::RETURN_NULL);
+  NEW_C_HEAP_OBJECT_ARRAY(_committed, MemRegion, max_covered_regions, mtGC, 0, AllocFailStrategy::RETURN_NULL);
+  if (_covered == NULL || _committed == NULL) {
     vm_exit_during_initialization("couldn't alloc card table covered region set.");
-  int i;
-  for (i = 0; i < max_covered_regions; i++) {
-    _covered[i].set_word_size(0);
-    _committed[i].set_word_size(0);
   }
-  _cur_covered_regions = 0;
 
+  _cur_covered_regions = 0;
   const size_t rs_align = _page_size == (size_t) os::vm_page_size() ? 0 :
     MAX2(_page_size, (size_t) os::vm_allocation_granularity());
   ReservedSpace heap_rs(_byte_map_size, rs_align, false);
@@ -134,7 +130,7 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
       || _lowest_non_clean_base_chunk_index == NULL
       || _last_LNC_resizing_collection == NULL)
     vm_exit_during_initialization("couldn't allocate an LNC array.");
-  for (i = 0; i < max_covered_regions; i++) {
+  for (int i = 0; i < max_covered_regions; i++) {
     _lowest_non_clean[i] = NULL;
     _lowest_non_clean_chunk_size[i] = 0;
     _last_LNC_resizing_collection[i] = -1;
@@ -150,6 +146,33 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
     gclog_or_tty->print_cr("  "
                   "  byte_map_base: " INTPTR_FORMAT,
                   byte_map_base);
+  }
+}
+
+CardTableModRefBS::~CardTableModRefBS() {
+  if (_covered) {
+    FREE_C_HEAP_OBJECT_ARRAY(MemRegion, _covered, _max_covered_regions, mtGC);
+    _covered = NULL;
+  }
+  if (_committed) {
+    FREE_C_HEAP_OBJECT_ARRAY(MemRegion, _committed, _max_covered_regions, mtGC);
+    _committed = NULL;
+  }
+  if (_lowest_non_clean) {
+    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean, mtGC);
+    _lowest_non_clean = NULL;
+  }
+  if (_lowest_non_clean_chunk_size) {
+    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size, mtGC);
+    _lowest_non_clean_chunk_size = NULL;
+  }
+  if (_lowest_non_clean_base_chunk_index) {
+    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index, mtGC);
+    _lowest_non_clean_base_chunk_index = NULL;
+  }
+  if (_last_LNC_resizing_collection) {
+    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection, mtGC);
+    _last_LNC_resizing_collection = NULL;
   }
 }
 
