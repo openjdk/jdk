@@ -252,7 +252,11 @@ public final class WithObject extends ScriptObject implements Scope {
     }
 
     private static GuardedInvocation fixScopeCallSite(final GuardedInvocation link) {
-        return link.replaceMethods(filter(link.getInvocation(), WITHSCOPEFILTER), filterGuard(link, WITHSCOPEFILTER));
+        // The receiver may be an object or a ScriptObject.
+        final MethodType invType = link.getInvocation().type();
+        final MethodType newInvType = invType.changeParameterType(0, WITHSCOPEFILTER.type().returnType());
+        final GuardedInvocation newLink = link.asType(newInvType);
+        return link.replaceMethods(filter(newLink.getInvocation(), WITHSCOPEFILTER), filterGuard(newLink, WITHSCOPEFILTER));
     }
 
     private static MethodHandle filterGuard(final GuardedInvocation link, final MethodHandle filter) {
