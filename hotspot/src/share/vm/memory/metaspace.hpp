@@ -150,6 +150,9 @@ class Metaspace : public CHeapObj<mtClass> {
   static bool contains(const void *ptr);
   void dump(outputStream* const out) const;
 
+  // Free empty virtualspaces
+  static void purge();
+
   void print_on(outputStream* st) const;
   // Debugging support
   void verify();

@@ -686,6 +686,7 @@ void ClassLoaderDataGraph::purge() {
     next = purge_me->next();
     delete purge_me;
   }
+  Metaspace::purge();
 }
 
 // CDS support
