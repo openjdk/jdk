@@ -6151,7 +6151,7 @@ void AwtComponent::_SetRectangularShape(void *param)
 
                 RGNDATA *pRgnData = (RGNDATA *) SAFE_SIZE_STRUCT_ALLOC(safe_Malloc,
                         sizeof(RGNDATAHEADER), sizeof(RECT_T), numrects);
-                memcpy(pRgnData + sizeof(RGNDATAHEADER), pRect, sizeof(RECT_T) * numrects);
+                memcpy((BYTE*)pRgnData + sizeof(RGNDATAHEADER), pRect, sizeof(RECT_T) * numrects);
                 if (pRect != rects) {
                     free(pRect);
                 }

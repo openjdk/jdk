@@ -34,6 +34,7 @@ import javax.xml.crypto.dom.*;
 
 import java.security.Provider;
 import java.util.*;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -87,7 +88,13 @@ public final class DOMKeyInfo extends DOMStructure implements KeyInfo {
     public DOMKeyInfo(Element kiElem, XMLCryptoContext context,
         Provider provider) throws MarshalException {
         // get Id attribute, if specified
-        id = DOMUtils.getAttributeValue(kiElem, "Id");
+        Attr attr = kiElem.getAttributeNodeNS(null, "Id");
+        if (attr != null) {
+            id = attr.getValue();
+            kiElem.setIdAttributeNode(attr, true);
+        } else {
+            id = null;
+        }
 
         // get all children nodes
         NodeList nl = kiElem.getChildNodes();

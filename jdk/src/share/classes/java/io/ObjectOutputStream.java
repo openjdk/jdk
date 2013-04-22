@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
 import java.io.SerialCallbackContext;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * An ObjectOutputStream writes primitive data types and graphs of Java objects
@@ -1228,6 +1229,12 @@ public class ObjectOutputStream
         }
     }
 
+    private boolean isCustomSubclass() {
+        // Return true if this class is a custom subclass of ObjectOutputStream
+        return getClass().getClassLoader()
+                   != ObjectOutputStream.class.getClassLoader();
+    }
+
     /**
      * Writes class descriptor representing a dynamic proxy class to stream.
      */
@@ -1245,6 +1252,9 @@ public class ObjectOutputStream
         }
 
         bout.setBlockDataMode(true);
+        if (isCustomSubclass()) {
+            ReflectUtil.checkPackageAccess(cl);
+        }
         annotateProxyClass(cl);
         bout.setBlockDataMode(false);
         bout.writeByte(TC_ENDBLOCKDATA);
@@ -1271,6 +1281,9 @@ public class ObjectOutputStream
 
         Class<?> cl = desc.forClass();
         bout.setBlockDataMode(true);
+        if (isCustomSubclass()) {
+            ReflectUtil.checkPackageAccess(cl);
+        }
         annotateClass(cl);
         bout.setBlockDataMode(false);
         bout.writeByte(TC_ENDBLOCKDATA);

@@ -197,11 +197,13 @@ package.access=sun.,\
                com.sun.org.apache.xalan.internal.xsltc.trax.,\
                com.sun.org.apache.xalan.internal.xsltc.util.,\
                com.sun.org.apache.xml.internal.res.,\
+               com.sun.org.apache.xml.internal.security.,\
                com.sun.org.apache.xml.internal.serializer.utils.,\
                com.sun.org.apache.xml.internal.utils.,\
                com.sun.org.glassfish.,\
                com.oracle.xmlns.internal.,\
                com.oracle.webservices.internal.,\
+               org.jcp.xml.dsig.internal.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.
@@ -238,11 +240,13 @@ package.definition=sun.,\
                    com.sun.org.apache.xalan.internal.xsltc.trax.,\
                    com.sun.org.apache.xalan.internal.xsltc.util.,\
                    com.sun.org.apache.xml.internal.res.,\
+                   com.sun.org.apache.xml.internal.security.,\
                    com.sun.org.apache.xml.internal.serializer.utils.,\
                    com.sun.org.apache.xml.internal.utils.,\
                    com.sun.org.glassfish.,\
                    com.oracle.xmlns.internal.,\
                    com.oracle.webservices.internal.,\
+                   org.jcp.xml.dsig.internal.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.
