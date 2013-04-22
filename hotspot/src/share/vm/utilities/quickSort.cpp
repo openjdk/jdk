@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
 
 #include "runtime/os.hpp"
 #include "utilities/quickSort.hpp"
-#include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include <stdlib.h>
 
 static int test_comparator(int a, int b) {
@@ -189,8 +187,8 @@ void QuickSort::test_quick_sort() {
   // test sorting random arrays
   for (int i = 0; i < 1000; i++) {
     int length = os::random() % 100;
-    int* test_array = NEW_C_HEAP_ARRAY(int, length, mtInternal);
-    int* expected_array = NEW_C_HEAP_ARRAY(int, length, mtInternal);
+    int* test_array = new int[length];
+    int* expected_array = new int[length];
     for (int j = 0; j < length; j++) {
         // Choose random values, but get a chance of getting duplicates
         test_array[j] = os::random() % (length * 2);
@@ -212,8 +210,8 @@ void QuickSort::test_quick_sort() {
     sort(test_array, length, test_even_odd_comparator, true);
     assert(compare_arrays(test_array, expected_array, length), "Sorting already sorted array changed order of elements - not idempotent");
 
-    FREE_C_HEAP_ARRAY(int, test_array, mtInternal);
-    FREE_C_HEAP_ARRAY(int, expected_array, mtInternal);
+    delete[] test_array;
+    delete[] expected_array;
   }
 }
 

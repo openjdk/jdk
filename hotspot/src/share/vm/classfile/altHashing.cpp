@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,8 +242,8 @@ static const juint MURMUR3_32_X86_CHECK_VALUE = 0xB0F57EE3;
 void AltHashing::testMurmur3_32_ByteArray() {
   // printf("testMurmur3_32_ByteArray\n");
 
-  jbyte vector[256];
-  jbyte hashes[4 * 256];
+  jbyte* vector = new jbyte[256];
+  jbyte* hashes = new jbyte[4 * 256];
 
   for (int i = 0; i < 256; i++) {
     vector[i] = (jbyte) i;
