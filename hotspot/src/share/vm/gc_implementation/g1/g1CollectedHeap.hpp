@@ -827,8 +827,7 @@ protected:
   // Apply "blk" to all the weak roots of the system.  These include
   // JNI weak roots, the code cache, system dictionary, symbol table,
   // string table, and referents of reachable weak refs.
-  void g1_process_weak_roots(OopClosure* root_closure,
-                             OopClosure* non_root_closure);
+  void g1_process_weak_roots(OopClosure* root_closure);
 
   // Frees a non-humongous region by initializing its contents and
   // adding it to the free list that's passed as a parameter (this is
