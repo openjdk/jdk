@@ -112,6 +112,7 @@ typedef class FreeList<Metachunk> ChunkList;
 class ChunkManager VALUE_OBJ_CLASS_SPEC {
 
   // Free list of chunks of different sizes.
+  //   SpecializedChunk
   //   SmallChunk
   //   MediumChunk
   //   HumongousChunk
@@ -164,6 +165,10 @@ class ChunkManager VALUE_OBJ_CLASS_SPEC {
   // Map a size to a list index assuming that there are lists
   // for special, small, medium, and humongous chunks.
   static ChunkIndex list_index(size_t size);
+
+  // Remove the chunk from its freelist.  It is
+  // expected to be on one of the _free_chunks[] lists.
+  void remove_chunk(Metachunk* chunk);
 
   // Add the simple linked list of chunks to the freelist of chunks
   // of type index.
@@ -255,6 +260,8 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   ReservedSpace _rs;
   VirtualSpace _virtual_space;
   MetaWord* _top;
+  // count of chunks contained in this VirtualSpace
+  uintx _container_count;
 
   // Convenience functions for logical bottom and end
   MetaWord* bottom() const { return (MetaWord*) _virtual_space.low(); }
@@ -264,10 +271,19 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   char* low()  const { return virtual_space()->low(); }
   char* high() const { return virtual_space()->high(); }
 
+  // The first Metachunk will be allocated at the bottom of the
+  // VirtualSpace
+  Metachunk* first_chunk() { return (Metachunk*) bottom(); }
+
+  void inc_container_count();
+#ifdef ASSERT
+  uint container_count_slow();
+#endif
+
  public:
 
   VirtualSpaceNode(size_t byte_size);
-  VirtualSpaceNode(ReservedSpace rs) : _top(NULL), _next(NULL), _rs(rs) {}
+  VirtualSpaceNode(ReservedSpace rs) : _top(NULL), _next(NULL), _rs(rs), _container_count(0) {}
   ~VirtualSpaceNode();
 
   // address of next available space in _virtual_space;
@@ -288,6 +304,12 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   MetaWord* top() const { return _top; }
   void inc_top(size_t word_size) { _top += word_size; }
 
+  uintx container_count() { return _container_count; }
+  void dec_container_count();
+#ifdef ASSERT
+  void verify_container_count();
+#endif
+
   // used and capacity in this single entry in the list
   size_t used_words_in_vs() const;
   size_t capacity_words_in_vs() const;
@@ -306,6 +328,10 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   bool expand_by(size_t words, bool pre_touch = false);
   bool shrink_by(size_t words);
 
+  // In preparation for deleting this node, remove all the chunks
+  // in the node from any freelist.
+  void purge(ChunkManager* chunk_manager);
+
 #ifdef ASSERT
   // Debug support
   static void verify_virtual_space_total();
@@ -317,7 +343,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 };
 
   // byte_size is the size of the associated virtualspace.
-VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(0) {
+VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(0), _container_count(0) {
   // align up to vm allocation granularity
   byte_size = align_size_up(byte_size, os::vm_allocation_granularity());
 
@@ -340,6 +366,39 @@ VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), 
 
   MemTracker::record_virtual_memory_type((address)_rs.base(), mtClass);
 }
+
+void VirtualSpaceNode::purge(ChunkManager* chunk_manager) {
+  Metachunk* chunk = first_chunk();
+  Metachunk* invalid_chunk = (Metachunk*) top();
+  while (chunk < invalid_chunk ) {
+    assert(chunk->is_free(), "Should be marked free");
+      MetaWord* next = ((MetaWord*)chunk) + chunk->word_size();
+      chunk_manager->remove_chunk(chunk);
+      assert(chunk->next() == NULL &&
+             chunk->prev() == NULL,
+             "Was not removed from its list");
+      chunk = (Metachunk*) next;
+  }
+}
+
+#ifdef ASSERT
+uint VirtualSpaceNode::container_count_slow() {
+  uint count = 0;
+  Metachunk* chunk = first_chunk();
+  Metachunk* invalid_chunk = (Metachunk*) top();
+  while (chunk < invalid_chunk ) {
+    MetaWord* next = ((MetaWord*)chunk) + chunk->word_size();
+    // Don't count the chunks on the free lists.  Those are
+    // still part of the VirtualSpaceNode but not currently
+    // counted.
+    if (!chunk->is_free()) {
+      count++;
+    }
+    chunk = (Metachunk*) next;
+  }
+  return count;
+}
+#endif
 
 // List of VirtualSpaces for metadata allocation.
 // It has a  _next link for singly linked list and a MemRegion
@@ -410,14 +469,14 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   void initialize(size_t word_size);
 
   size_t virtual_space_total() { return _virtual_space_total; }
-  void inc_virtual_space_total(size_t v) {
-    Atomic::add_ptr(v, &_virtual_space_total);
-  }
 
-  size_t virtual_space_count() { return _virtual_space_count; }
-  void inc_virtual_space_count() {
-    Atomic::inc_ptr(&_virtual_space_count);
-  }
+  void inc_virtual_space_total(size_t v);
+  void dec_virtual_space_total(size_t v);
+  void inc_virtual_space_count();
+  void dec_virtual_space_count();
+
+  // Unlink empty VirtualSpaceNodes and free it.
+  void purge();
 
   // Used and capacity in the entire list of virtual spaces.
   // These are global values shared by all Metaspaces
@@ -641,6 +700,28 @@ Mutex* const SpaceManager::_expand_lock =
             SpaceManager::_expand_lock_name,
             Mutex::_allow_vm_block_flag);
 
+void VirtualSpaceNode::inc_container_count() {
+  assert_lock_strong(SpaceManager::expand_lock());
+  _container_count++;
+  assert(_container_count == container_count_slow(),
+         err_msg("Inconsistency in countainer_count _container_count " SIZE_FORMAT
+                 "container_count_slow() " SIZE_FORMAT,
+                 _container_count, container_count_slow()));
+}
+
+void VirtualSpaceNode::dec_container_count() {
+  assert_lock_strong(SpaceManager::expand_lock());
+  _container_count--;
+}
+
+#ifdef ASSERT
+void VirtualSpaceNode::verify_container_count() {
+  assert(_container_count == container_count_slow(),
+    err_msg("Inconsistency in countainer_count _container_count " SIZE_FORMAT
+            "container_count_slow() " SIZE_FORMAT, _container_count, container_count_slow()));
+}
+#endif
+
 // BlockFreelist methods
 
 BlockFreelist::BlockFreelist() : _dictionary(NULL) {}
@@ -701,6 +782,10 @@ void BlockFreelist::print_on(outputStream* st) const {
 
 VirtualSpaceNode::~VirtualSpaceNode() {
   _rs.release();
+#ifdef ASSERT
+  size_t word_size = sizeof(*this) / BytesPerWord;
+  Copy::fill_to_words((HeapWord*) this, word_size, 0xf1f1f1f1);
+#endif
 }
 
 size_t VirtualSpaceNode::used_words_in_vs() const {
@@ -733,8 +818,8 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
   // Take the space  (bump top on the current virtual space).
   inc_top(chunk_word_size);
 
-  // Point the chunk at the space
-  Metachunk* result = Metachunk::initialize(chunk_limit, chunk_word_size);
+  // Initialize the chunk
+  Metachunk* result = ::new (chunk_limit) Metachunk(chunk_word_size, this);
   return result;
 }
 
@@ -762,9 +847,11 @@ bool VirtualSpaceNode::shrink_by(size_t words) {
 
 Metachunk* VirtualSpaceNode::get_chunk_vs(size_t chunk_word_size) {
   assert_lock_strong(SpaceManager::expand_lock());
-  Metachunk* result = NULL;
-
-  return take_from_committed(chunk_word_size);
+  Metachunk* result = take_from_committed(chunk_word_size);
+  if (result != NULL) {
+    inc_container_count();
+  }
+  return result;
 }
 
 Metachunk* VirtualSpaceNode::get_chunk_vs_with_expand(size_t chunk_word_size) {
@@ -841,6 +928,83 @@ VirtualSpaceList::~VirtualSpaceList() {
     VirtualSpaceNode* vsl = iter.get_next();
     delete vsl;
   }
+}
+
+void VirtualSpaceList::inc_virtual_space_total(size_t v) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  _virtual_space_total = _virtual_space_total + v;
+}
+void VirtualSpaceList::dec_virtual_space_total(size_t v) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  _virtual_space_total = _virtual_space_total - v;
+}
+
+void VirtualSpaceList::inc_virtual_space_count() {
+  assert_lock_strong(SpaceManager::expand_lock());
+  _virtual_space_count++;
+}
+void VirtualSpaceList::dec_virtual_space_count() {
+  assert_lock_strong(SpaceManager::expand_lock());
+  _virtual_space_count--;
+}
+
+void ChunkManager::remove_chunk(Metachunk* chunk) {
+  size_t word_size = chunk->word_size();
+  ChunkIndex index = list_index(word_size);
+  if (index != HumongousIndex) {
+    free_chunks(index)->remove_chunk(chunk);
+  } else {
+    humongous_dictionary()->remove_chunk(chunk);
+  }
+
+  // Chunk is being removed from the chunks free list.
+  dec_free_chunks_total(chunk->capacity_word_size());
+}
+
+// Walk the list of VirtualSpaceNodes and delete
+// nodes with a 0 container_count.  Remove Metachunks in
+// the node from their respective freelists.
+void VirtualSpaceList::purge() {
+  assert_lock_strong(SpaceManager::expand_lock());
+  // Don't use a VirtualSpaceListIterator because this
+  // list is being changed and a straightforward use of an iterator is not safe.
+  VirtualSpaceNode* purged_vsl = NULL;
+  VirtualSpaceNode* prev_vsl = virtual_space_list();
+  VirtualSpaceNode* next_vsl = prev_vsl;
+  while (next_vsl != NULL) {
+    VirtualSpaceNode* vsl = next_vsl;
+    next_vsl = vsl->next();
+    // Don't free the current virtual space since it will likely
+    // be needed soon.
+    if (vsl->container_count() == 0 && vsl != current_virtual_space()) {
+      // Unlink it from the list
+      if (prev_vsl == vsl) {
+        // This is the case of the current note being the first note.
+        assert(vsl == virtual_space_list(), "Expected to be the first note");
+        set_virtual_space_list(vsl->next());
+      } else {
+        prev_vsl->set_next(vsl->next());
+      }
+
+      vsl->purge(chunk_manager());
+      dec_virtual_space_total(vsl->reserved()->word_size());
+      dec_virtual_space_count();
+      purged_vsl = vsl;
+      delete vsl;
+    } else {
+      prev_vsl = vsl;
+    }
+  }
+#ifdef ASSERT
+  if (purged_vsl != NULL) {
+  // List should be stable enough to use an iterator here.
+  VirtualSpaceListIterator iter(virtual_space_list());
+    while (iter.repeat()) {
+      VirtualSpaceNode* vsl = iter.get_next();
+      assert(vsl != purged_vsl, "Purge of vsl failed");
+    }
+  }
+#endif
 }
 
 size_t VirtualSpaceList::used_words_sum() {
@@ -955,8 +1119,10 @@ Metachunk* VirtualSpaceList::get_new_chunk(size_t word_size,
   // Get a chunk from the chunk freelist
   Metachunk* next = chunk_manager()->chunk_freelist_allocate(grow_chunks_by_words);
 
-  // Allocate a chunk out of the current virtual space.
-  if (next == NULL) {
+  if (next != NULL) {
+    next->container()->inc_container_count();
+  } else {
+    // Allocate a chunk out of the current virtual space.
     next = current_virtual_space()->get_chunk_vs(grow_chunks_by_words);
   }
 
@@ -1567,9 +1733,6 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
       }
       // Chunk is being removed from the chunks free list.
       dec_free_chunks_total(chunk->capacity_word_size());
-#ifdef ASSERT
-      chunk->set_is_free(false);
-#endif
     } else {
       return NULL;
     }
@@ -1578,6 +1741,11 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
   // Remove it from the links to this freelist
   chunk->set_next(NULL);
   chunk->set_prev(NULL);
+#ifdef ASSERT
+  // Chunk is no longer on any freelist. Setting to false make container_count_slow()
+  // work.
+  chunk->set_is_free(false);
+#endif
   slow_locked_verify();
   return chunk;
 }
@@ -1887,11 +2055,13 @@ void ChunkManager::return_chunks(ChunkIndex index, Metachunk* chunks) {
   assert_lock_strong(SpaceManager::expand_lock());
   Metachunk* cur = chunks;
 
-  // This return chunks one at a time.  If a new
+  // This returns chunks one at a time.  If a new
   // class List can be created that is a base class
   // of FreeList then something like FreeList::prepend()
   // can be used in place of this loop
   while (cur != NULL) {
+    assert(cur->container() != NULL, "Container should have been set");
+    cur->container()->dec_container_count();
     // Capture the next link before it is changed
     // by the call to return_chunk_at_head();
     Metachunk* next = cur->next();
@@ -1917,8 +2087,8 @@ SpaceManager::~SpaceManager() {
     locked_print_chunks_in_use_on(gclog_or_tty);
   }
 
-  // Mangle freed memory.
-  NOT_PRODUCT(mangle_freed_chunks();)
+  // Do not mangle freed Metachunks.  The chunk size inside Metachunks
+  // is during the freeing of a VirtualSpaceNodes.
 
   // Have to update before the chunks_in_use lists are emptied
   // below.
@@ -1978,6 +2148,7 @@ SpaceManager::~SpaceManager() {
                    " granularity %d",
                    humongous_chunks->word_size(), HumongousChunkGranularity));
     Metachunk* next_humongous_chunks = humongous_chunks->next();
+    humongous_chunks->container()->dec_container_count();
     chunk_manager->humongous_dictionary()->return_chunk(humongous_chunks);
     humongous_chunks = next_humongous_chunks;
   }
@@ -2716,6 +2887,13 @@ Metablock* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   return Metablock::initialize(result, word_size);
 }
 
+void Metaspace::purge() {
+  MutexLockerEx cl(SpaceManager::expand_lock(),
+                   Mutex::_no_safepoint_check_flag);
+  space_list()->purge();
+  class_space_list()->purge();
+}
+
 void Metaspace::print_on(outputStream* out) const {
   // Print both class virtual space counts and metaspace.
   if (Verbose) {
@@ -2733,7 +2911,8 @@ bool Metaspace::contains(const void * ptr) {
   // aren't deleted presently.  When they are, some sort of locking might
   // be needed.  Note, locking this can cause inversion problems with the
   // caller in MetaspaceObj::is_metadata() function.
-  return space_list()->contains(ptr) || class_space_list()->contains(ptr);
+  return space_list()->contains(ptr) ||
+         class_space_list()->contains(ptr);
 }
 
 void Metaspace::verify() {
