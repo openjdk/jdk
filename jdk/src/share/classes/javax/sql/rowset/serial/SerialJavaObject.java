@@ -30,7 +30,9 @@ import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Vector;
 import javax.sql.rowset.RowSetWarning;
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * A serializable mapping in the Java programming language of an SQL
@@ -129,10 +131,22 @@ public class SerialJavaObject implements Serializable, Cloneable {
      * of that class.
      * @see Class#getFields
      */
+    @CallerSensitive
     public Field[] getFields() throws SerialException {
         if (fields != null) {
             Class<?> c = this.obj.getClass();
-            checkPackageAccess(c);
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                /*
+                 * Check if the caller is allowed to access the specified class's package.
+                 * If access is denied, throw a SecurityException.
+                 */
+                Class<?> caller = sun.reflect.Reflection.getCallerClass();
+                if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(),
+                                                        c.getClassLoader())) {
+                    ReflectUtil.checkPackageAccess(c);
+                }
+            }
             return c.getFields();
         } else {
             throw new SerialException("SerialJavaObject does not contain" +
@@ -263,39 +277,5 @@ public class SerialJavaObject implements Serializable, Cloneable {
             }
         }
         return false;
-    }
-
-    /*
-     * Check if the caller is allowed to access the specified class's package.  If access is denied,
-     * throw a SecurityException.
-     *
-     */
-    private void checkPackageAccess(Class<?> clz) {
-        SecurityManager s = System.getSecurityManager();
-        if (s != null) {
-            if (sun.reflect.misc.ReflectUtil.needsPackageAccessCheck(
-                    getCallerClassLoader(), clz.getClassLoader())) {
-                String name = clz.getName();
-                int i = name.lastIndexOf('.');
-                if (i != -1) {
-                    s.checkPackageAccess(name.substring(0, i));
-                }
-            }
-        }
-    }
-
-    /* Internal method used to get the caller's caller class loader.
-     * Caution is required if you attempt to make changes as this method assumes
-     * the following stack frame count:
-     * 0: Reflection
-     * 1: getCallerClassLoader
-     * 2: checkPackageAccess
-     * 3: getFields
-     * 4: caller of getFields
-     */
-    private static ClassLoader getCallerClassLoader() {
-        Class<?> cc = Reflection.getCallerClass(4);
-        ClassLoader cl = (cc != null) ? cc.getClassLoader() : null;
-        return cl;
     }
 }

@@ -31,6 +31,7 @@ import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.*;
 
 import java.util.*;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -86,7 +87,13 @@ public final class DOMSignatureProperties extends DOMStructure
      */
     public DOMSignatureProperties(Element propsElem) throws MarshalException{
         // unmarshal attributes
-        id = DOMUtils.getAttributeValue(propsElem, "Id");
+        Attr attr = propsElem.getAttributeNodeNS(null, "Id");
+        if (attr != null) {
+            id = attr.getValue();
+            propsElem.setIdAttributeNode(attr, true);
+        } else {
+            id = null;
+        }
 
         NodeList nodes = propsElem.getChildNodes();
         int length = nodes.getLength();
