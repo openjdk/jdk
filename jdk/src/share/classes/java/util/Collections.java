@@ -30,7 +30,10 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -1110,6 +1113,15 @@ public class Collections {
         public void clear() {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            c.forEach(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
@@ -1240,6 +1252,16 @@ public class Collections {
         public boolean addAll(int index, Collection<? extends E> c) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            throw new UnsupportedOperationException();
+        }
+
         public ListIterator<E> listIterator()   {return listIterator(0);}
 
         public ListIterator<E> listIterator(final int index) {
@@ -1742,6 +1764,15 @@ public class Collections {
         private void writeObject(ObjectOutputStream s) throws IOException {
             synchronized (mutex) {s.defaultWriteObject();}
         }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            synchronized (mutex) {c.forEach(action);}
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            synchronized (mutex) {return c.removeIf(filter);}
+        }
     }
 
     /**
@@ -1994,6 +2025,15 @@ public class Collections {
                 return new SynchronizedList<>(list.subList(fromIndex, toIndex),
                                             mutex);
             }
+        }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            synchronized (mutex) {list.replaceAll(operator);}
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            synchronized (mutex) {list.sort(c);}
         }
 
         /**
@@ -2492,6 +2532,15 @@ public class Collections {
             // element as we added it)
             return c.addAll(checkedCopyOf(coll));
         }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            c.forEach(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            return c.removeIf(filter);
+        }
     }
 
     /**
@@ -2752,6 +2801,15 @@ public class Collections {
 
         public List<E> subList(int fromIndex, int toIndex) {
             return new CheckedList<>(list.subList(fromIndex, toIndex), type);
+        }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            list.replaceAll(operator);
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            list.sort(c);
         }
     }
 
@@ -3416,6 +3474,16 @@ public class Collections {
             return a;
         }
 
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
+            return false;
+        }
+
         // Preserves singleton property
         private Object readResolve() {
             return EMPTY_SET;
@@ -3523,6 +3591,16 @@ public class Collections {
         public E last() {
             throw new NoSuchElementException();
         }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
+            return false;
+        }
     }
 
     /**
@@ -3591,6 +3669,24 @@ public class Collections {
         }
 
         public int hashCode() { return 1; }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
+            return false;
+        }
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            Objects.requireNonNull(operator);
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            Objects.requireNonNull(c);
+        }
 
         // Preserves singleton property
         private Object readResolve() {
@@ -3770,6 +3866,15 @@ public class Collections {
         public int size() {return 1;}
 
         public boolean contains(Object o) {return eq(o, element);}
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            action.accept(element);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
@@ -3809,6 +3914,22 @@ public class Collections {
             if (index != 0)
               throw new IndexOutOfBoundsException("Index: "+index+", Size: 1");
             return element;
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            action.accept(element);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
         }
     }
 
@@ -4408,6 +4529,15 @@ public class Collections {
         public boolean retainAll(Collection<?> c)   {return s.retainAll(c);}
         // addAll is the only inherited implementation
 
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            s.forEach(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            return s.removeIf(filter);
+        }
+
         private static final long serialVersionUID = 2454657854757543876L;
 
         private void readObject(java.io.ObjectInputStream stream)
@@ -4466,5 +4596,14 @@ public class Collections {
         public boolean removeAll(Collection<?> c)   {return q.removeAll(c);}
         public boolean retainAll(Collection<?> c)   {return q.retainAll(c);}
         // We use inherited addAll; forwarding addAll would be wrong
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            q.forEach(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            return q.removeIf(filter);
+        }
     }
 }
