@@ -179,7 +179,6 @@ public final class NativeString extends ScriptObject {
         return ((ScriptObject) Global.toObject(self)).get(key);
     }
 
-    @SuppressWarnings("unused")
     private static Object get(final Object self, final int key) {
         final CharSequence cs = JSType.toCharSequence(self);
         if (key >= 0 && key < cs.length()) {

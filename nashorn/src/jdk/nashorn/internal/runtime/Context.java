@@ -56,8 +56,6 @@ import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.options.Options;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
 
 /**
  * This class manages the global state of execution. Context is immutable.
@@ -114,24 +112,9 @@ public final class Context {
      * Get the current global scope
      * @return the current global scope
      */
-    @CallerSensitive
     public static ScriptObject getGlobal() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            // skip getCallerClass and getGlobal and get to the real caller
-            Class<?> caller = Reflection.getCallerClass();
-            ClassLoader callerLoader = caller.getClassLoader();
-
-            // Allow this method only for nashorn's own classes, objects
-            // package classes and Java adapter classes. Rest should
-            // have the necessary security permission.
-            if (callerLoader != myLoader &&
-                !(callerLoader instanceof StructureLoader) &&
-                !(JavaAdapterFactory.isAdapterClass(caller))) {
-                sm.checkPermission(new RuntimePermission("nashorn.getGlobal"));
-            }
-        }
-
+        // This class in a package.access protected package.
+        // Trusted code only can call this method.
         return getGlobalTrusted();
     }
 
@@ -399,7 +382,7 @@ public final class Context {
             // We need to get strict mode flag from compiled class. This is
             // because eval code may start with "use strict" directive.
             try {
-                strictFlag = clazz.getField(STRICT_MODE.tag()).getBoolean(null);
+                strictFlag = clazz.getField(STRICT_MODE.symbolName()).getBoolean(null);
             } catch (final NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
                 //ignored
                 strictFlag = false;
@@ -713,7 +696,7 @@ public final class Context {
                 MH.findStatic(
                     MethodHandles.lookup(),
                     script,
-                    RUN_SCRIPT.tag(),
+                    RUN_SCRIPT.symbolName(),
                     MH.type(
                         Object.class,
                         ScriptFunction.class,
@@ -722,13 +705,13 @@ public final class Context {
         boolean strict;
 
         try {
-            strict = script.getField(STRICT_MODE.tag()).getBoolean(null);
+            strict = script.getField(STRICT_MODE.symbolName()).getBoolean(null);
         } catch (final NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
             strict = false;
         }
 
         // Package as a JavaScript function and pass function back to shell.
-        return ((GlobalObject)Context.getGlobalTrusted()).newScriptFunction(RUN_SCRIPT.tag(), runMethodHandle, scope, strict);
+        return ((GlobalObject)Context.getGlobalTrusted()).newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, scope, strict);
     }
 
     private ScriptFunction compileScript(final Source source, final ScriptObject scope, final ErrorManager errMan) {
@@ -746,13 +729,13 @@ public final class Context {
             global = (GlobalObject)Context.getGlobalTrusted();
             script = global.findCachedClass(source);
             if (script != null) {
-                Compiler.LOG.fine("Code cache hit for " + source + " avoiding recompile.");
+                Compiler.LOG.fine("Code cache hit for ", source, " avoiding recompile.");
                 return script;
             }
         }
 
         final FunctionNode functionNode = new Parser(env, source, errMan, strict).parse();
-        if (errors.hasErrors() || env._parse_only) {
+        if (errors.hasErrors()) {
             return null;
         }
 
@@ -762,6 +745,10 @@ public final class Context {
 
         if (env._print_parse) {
             getErr().println(new PrintVisitor(functionNode));
+        }
+
+        if (env._parse_only) {
+            return null;
         }
 
         final URL          url    = source.getURL();

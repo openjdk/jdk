@@ -42,6 +42,8 @@ import java.util.ResourceBundle;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.debug.ASTWriter;
+import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
@@ -252,6 +254,14 @@ public class Shell {
 
                 if (errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;
+                }
+
+                if (env._print_ast) {
+                    context.getErr().println(new ASTWriter(functionNode));
+                }
+
+                if (env._print_parse) {
+                    context.getErr().println(new PrintVisitor(functionNode));
                 }
 
                 //null - pass no code installer - this is compile only

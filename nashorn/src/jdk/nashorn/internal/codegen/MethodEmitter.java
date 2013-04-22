@@ -53,9 +53,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.NEW;
 import static jdk.internal.org.objectweb.asm.Opcodes.PUTFIELD;
 import static jdk.internal.org.objectweb.asm.Opcodes.PUTSTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
+import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.CONSTANTS;
+import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS_DEBUGGER;
+import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
@@ -67,6 +70,8 @@ import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.EnumSet;
 import java.util.Iterator;
+import java.util.List;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -79,14 +84,14 @@ import jdk.nashorn.internal.codegen.types.NumericType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
-import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.ArgumentSetter;
+import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
-import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -116,10 +121,10 @@ public class MethodEmitter implements Emitter {
     private final ClassEmitter classEmitter;
 
     /** FunctionNode representing this method, or null if none exists */
-    private FunctionNode functionNode;
+    protected FunctionNode functionNode;
 
-    /** SplitNode representing the current split, or null if none exists */
-    private SplitNode splitNode;
+    /** Check whether this emitter ever has a function return point */
+    private boolean hasReturn;
 
     /** The script environment */
     private final ScriptEnvironment env;
@@ -203,7 +208,7 @@ public class MethodEmitter implements Emitter {
 
     @Override
     public String toString() {
-        return "methodEmitter: " + (functionNode == null ? method : functionNode.getName()).toString() + ' ' + stack;
+        return "methodEmitter: " + (functionNode == null ? method : functionNode.getName()).toString() + ' ' + Debug.id(this);
     }
 
     /**
@@ -476,8 +481,8 @@ public class MethodEmitter implements Emitter {
 
         String name = symbol.getName();
 
-        if (name.equals(THIS.tag())) {
-            name = THIS_DEBUGGER.tag();
+        if (name.equals(THIS.symbolName())) {
+            name = THIS_DEBUGGER.symbolName();
         }
 
         method.visitLocalVariable(name, symbol.getSymbolType().getDescriptor(), null, start, end, symbol.getSlot());
@@ -654,7 +659,7 @@ public class MethodEmitter implements Emitter {
      * @return this method emitter
      */
     MethodEmitter loadConstants() {
-        getStatic(classEmitter.getUnitClassName(), CONSTANTS.tag(), CONSTANTS.descriptor());
+        getStatic(classEmitter.getUnitClassName(), CONSTANTS.symbolName(), CONSTANTS.descriptor());
         assert peekType().isArray() : peekType();
         return this;
     }
@@ -835,13 +840,13 @@ public class MethodEmitter implements Emitter {
             if (functionNode.needsArguments()) {
                 // ScriptObject.getArgument(int) on arguments
                 debug("load symbol", symbol.getName(), " arguments index=", index);
-                loadArguments();
+                loadCompilerConstant(ARGUMENTS);
                 load(index);
                 ScriptObject.GET_ARGUMENT.invoke(this);
             } else {
                 // array load from __varargs__
                 debug("load symbol", symbol.getName(), " array index=", index);
-                loadVarArgs();
+                loadCompilerConstant(VARARGS);
                 load(symbol.getFieldIndex());
                 arrayload();
             }
@@ -870,46 +875,11 @@ public class MethodEmitter implements Emitter {
         if(functionNode == null) {
             return slot == CompilerConstants.JAVA_THIS.slot();
         }
-        final int thisSlot = functionNode.getThisNode().getSymbol().getSlot();
+        final int thisSlot = compilerConstant(THIS).getSlot();
         assert !functionNode.needsCallee() || thisSlot == 1; // needsCallee -> thisSlot == 1
         assert functionNode.needsCallee() || thisSlot == 0; // !needsCallee -> thisSlot == 0
         return slot == thisSlot;
     }
-
-    /**
-     * Push the this object to the stack.
-     *
-     * @return the method emitter
-     */
-    MethodEmitter loadThis() {
-        load(functionNode.getThisNode().getSymbol());
-        return this;
-    }
-
-    /**
-     * Push the scope object to the stack.
-     *
-     * @return the method emitter
-     */
-    MethodEmitter loadScope() {
-        if (peekType() == Type.SCOPE) {
-            dup();
-            return this;
-        }
-        load(functionNode.getScopeNode().getSymbol());
-        return this;
-    }
-
-    /**
-     * Push the return object to the stack.
-     *
-     * @return the method emitter
-     */
-    MethodEmitter loadResult() {
-        load(functionNode.getResultNode().getSymbol());
-        return this;
-    }
-
 
     /**
      * Push a method handle to the stack
@@ -927,62 +897,24 @@ public class MethodEmitter implements Emitter {
         return this;
     }
 
-    /**
-     * Push the varargs object to the stack
-     *
-     * @return the method emitter
-     */
-    MethodEmitter loadVarArgs() {
-        debug("load var args " + functionNode.getVarArgsNode().getSymbol());
-        return load(functionNode.getVarArgsNode().getSymbol());
+    private Symbol compilerConstant(final CompilerConstants cc) {
+        return functionNode.getBody().getExistingSymbol(cc.symbolName());
     }
 
-    /**
-     * Push the arguments array to the stack
-     *
-     * @return the method emitter
-     */
-    MethodEmitter loadArguments() {
-        debug("load arguments ", functionNode.getArgumentsNode().getSymbol());
-        assert functionNode.getArgumentsNode().getSymbol().getSlot() != 0;
-        return load(functionNode.getArgumentsNode().getSymbol());
+    MethodEmitter loadCompilerConstant(final CompilerConstants cc) {
+        final Symbol symbol = compilerConstant(cc);
+        if (cc == SCOPE && peekType() == Type.SCOPE) {
+            dup();
+            return this;
+        }
+        debug("load compiler constant ", symbol);
+        return load(symbol);
     }
 
-    /**
-     * Push the callee object to the stack
-     *
-     * @return the method emitter
-     */
-    MethodEmitter loadCallee() {
-        final Symbol calleeSymbol = functionNode.getCalleeNode().getSymbol();
-        debug("load callee ", calleeSymbol);
-        assert calleeSymbol.getSlot() == 0 : "callee has wrong slot " + calleeSymbol.getSlot() + " in " + functionNode.getName();
-
-        return load(calleeSymbol);
-    }
-
-    /**
-     * Pop the scope from the stack and store it in its predefined slot
-     */
-    void storeScope() {
-        debug("store scope");
-        store(functionNode.getScopeNode().getSymbol());
-    }
-
-    /**
-     * Pop the return from the stack and store it in its predefined slot
-     */
-    void storeResult() {
-        debug("store result");
-        store(functionNode.getResultNode().getSymbol());
-    }
-
-    /**
-     * Pop the arguments array from the stack and store it in its predefined slot
-     */
-    void storeArguments() {
-        debug("store arguments");
-        store(functionNode.getArgumentsNode().getSymbol());
+    void storeCompilerConstant(final CompilerConstants cc) {
+        final Symbol symbol = compilerConstant(cc);
+        debug("store compiler constant ", symbol);
+        store(symbol);
     }
 
     /**
@@ -1030,13 +962,13 @@ public class MethodEmitter implements Emitter {
             final int index = symbol.getFieldIndex();
             if (functionNode.needsArguments()) {
                 debug("store symbol", symbol.getName(), " arguments index=", index);
-                loadArguments();
+                loadCompilerConstant(ARGUMENTS);
                 load(index);
                 ArgumentSetter.SET_ARGUMENT.invoke(this);
             } else {
                 // varargs without arguments object - just do array store to __varargs__
                 debug("store symbol", symbol.getName(), " array index=", index);
-                loadVarArgs();
+                loadCompilerConstant(VARARGS);
                 load(index);
                 ArgumentSetter.SET_ARRAY_ELEMENT.invoke(this);
             }
@@ -1345,6 +1277,11 @@ public class MethodEmitter implements Emitter {
         }
     }
 
+    MethodEmitter registerReturn() {
+        this.hasReturn = true;
+        return this;
+    }
+
     /**
      * Perform a non void return, popping the type from the stack
      *
@@ -1385,22 +1322,7 @@ public class MethodEmitter implements Emitter {
      *
      * @param label destination label
      */
-    void splitAwareGoto(final Label label) {
-
-        if (splitNode != null) {
-            final int index = splitNode.getExternalTargets().indexOf(label);
-
-            if (index > -1) {
-                loadScope();
-                checkcast(Scope.class);
-                load(index + 1);
-                invoke(Scope.SET_SPLIT_STATE);
-                loadUndefined(Type.OBJECT);
-                _return(functionNode.getReturnType());
-                return;
-            }
-        }
-
+    void splitAwareGoto(final LexicalContext lc, final Label label) {
         _goto(label);
     }
 
@@ -2237,7 +2159,7 @@ public class MethodEmitter implements Emitter {
             }
 
             if (env != null) { //early bootstrap code doesn't have inited context yet
-                LOG.info(sb.toString());
+                LOG.info(sb);
                 if (DEBUG_TRACE_LINE == linePrefix) {
                     new Throwable().printStackTrace(LOG.getOutputStream());
                 }
@@ -2254,21 +2176,12 @@ public class MethodEmitter implements Emitter {
         this.functionNode = functionNode;
     }
 
-    /**
-     * Get the split node for this method emitter, if this is code
-     * generation due to splitting large methods
-     *
-     * @return split node
-     */
-    SplitNode getSplitNode() {
-        return splitNode;
+    boolean hasReturn() {
+        return hasReturn;
     }
 
-    /**
-     * Set the split node for this method emitter
-     * @param splitNode split node
-     */
-    void setSplitNode(final SplitNode splitNode) {
-        this.splitNode = splitNode;
+    List<Label> getExternalTargets() {
+        return null;
     }
+
 }

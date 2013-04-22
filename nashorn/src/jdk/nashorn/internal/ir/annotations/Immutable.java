@@ -23,50 +23,12 @@
  * questions.
  */
 
-package jdk.nashorn.internal.ir;
-
-import jdk.nashorn.internal.ir.annotations.Immutable;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
+package jdk.nashorn.internal.ir.annotations;
 
 /**
- * IR representation for an empty statement.
+ * Tag for nodes that are immutable. To be immutable all fields must be
+ * final and copy on write semantics must be in place
  */
-@Immutable
-public final class EmptyNode extends Node {
-
-    /**
-     * Constructor
-     *
-     * @param node node to wrap
-     */
-    public EmptyNode(final Node node) {
-        super(node);
-    }
-
-    /**
-     * Constructor
-     *
-     * @param source     the source
-     * @param token      token
-     * @param finish     finish
-     */
-    public EmptyNode(final Source source, final long token, final int finish) {
-        super(source, token, finish);
-    }
-
-
-    @Override
-    public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterEmptyNode(this)) {
-            return visitor.leaveEmptyNode(this);
-        }
-        return this;
-    }
-
-    @Override
-    public void toString(final StringBuilder sb) {
-        sb.append(';');
-    }
-
+public @interface Immutable {
+    //empty
 }
