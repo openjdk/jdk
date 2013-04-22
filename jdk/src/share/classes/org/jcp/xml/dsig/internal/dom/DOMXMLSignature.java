@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -492,7 +493,13 @@ public final class DOMXMLSignature extends DOMStructure
                 throw new MarshalException(bde);
             }
 
-            id = DOMUtils.getAttributeValue(sigValueElem, "Id");
+            Attr attr = sigValueElem.getAttributeNodeNS(null, "Id");
+            if (attr != null) {
+                id = attr.getValue();
+                sigValueElem.setIdAttributeNode(attr, true);
+            } else {
+                id = null;
+            }
             this.sigValueElem = sigValueElem;
         }
 
