@@ -31,6 +31,7 @@ import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.*;
 
 import java.util.*;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -94,7 +95,13 @@ public final class DOMSignatureProperty extends DOMStructure
         if (target == null) {
             throw new MarshalException("target cannot be null");
         }
-        id = DOMUtils.getAttributeValue(propElem, "Id");
+        Attr attr = propElem.getAttributeNodeNS(null, "Id");
+        if (attr != null) {
+            id = attr.getValue();
+            propElem.setIdAttributeNode(attr, true);
+        } else {
+            id = null;
+        }
 
         NodeList nodes = propElem.getChildNodes();
         int length = nodes.getLength();

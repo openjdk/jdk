@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 
+import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -109,7 +110,8 @@ public class TransformXSLT extends TransformSpi {
          TransformerFactory tFactory = TransformerFactory.newInstance();
 
          // Process XSLT stylesheets in a secure manner
-         tFactory.setFeature("http://javax.xml.XMLConstants/feature/secure-processing", Boolean.TRUE);
+         tFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                             Boolean.TRUE);
          /*
           * This transform requires an octet stream as input. If the actual
           * input is an XPath node-set, then the signature application should

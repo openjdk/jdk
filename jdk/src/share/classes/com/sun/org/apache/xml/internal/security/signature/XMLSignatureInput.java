@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -603,6 +604,8 @@ public class XMLSignatureInput implements Cloneable {
         DocumentBuilderFactory dfactory = DocumentBuilderFactory.newInstance();
         dfactory.setValidating(false);
         dfactory.setNamespaceAware(true);
+        dfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                            Boolean.TRUE);
         DocumentBuilder db = dfactory.newDocumentBuilder();
         // select all nodes, also the comments.
         try {

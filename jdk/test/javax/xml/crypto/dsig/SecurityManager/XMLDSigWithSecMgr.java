@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,10 @@ public class XMLDSigWithSecMgr implements Runnable {
             // validate a signature with SecurityManager enabled
             DOMValidateContext dvc = new DOMValidateContext
                 (kp.getPublic(), envelope.getFirstChild());
+
+            // disable secure validation mode so that http reference will work
+            dvc.setProperty("org.jcp.xml.dsig.secureValidation", Boolean.FALSE);
+
             sig = fac.unmarshalXMLSignature(dvc);
             if (!sig.validate(dvc)) {
                 throw new Exception
