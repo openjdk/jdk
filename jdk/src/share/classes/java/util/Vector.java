@@ -25,6 +25,10 @@
 
 package java.util;
 
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+
 /**
  * The {@code Vector} class implements a growable array of
  * objects. Like an array, it contains components that can be
@@ -1208,5 +1212,90 @@ public class Vector<E>
             cursor = i + 1;
             lastRet = -1;
         }
+    }
+
+    @Override
+    public synchronized void forEach(Consumer<? super E> action) {
+        Objects.requireNonNull(action);
+        final int expectedModCount = modCount;
+        @SuppressWarnings("unchecked")
+        final E[] elementData = (E[]) this.elementData;
+        final int elementCount = this.elementCount;
+        for (int i=0; modCount == expectedModCount && i < elementCount; i++) {
+            action.accept(elementData[i]);
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        // figure out which elements are to be removed
+        // any exception thrown from the filter predicate at this stage
+        // will leave the collection unmodified
+        int removeCount = 0;
+        final int size = elementCount;
+        final BitSet removeSet = new BitSet(size);
+        final int expectedModCount = modCount;
+        for (int i=0; modCount == expectedModCount && i < size; i++) {
+            @SuppressWarnings("unchecked")
+            final E element = (E) elementData[i];
+            if (filter.test(element)) {
+                removeSet.set(i);
+                removeCount++;
+            }
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+
+        // shift surviving elements left over the spaces left by removed elements
+        final boolean anyToRemove = removeCount > 0;
+        if (anyToRemove) {
+            final int newSize = size - removeCount;
+            for (int i=0, j=0; (i < size) && (j < newSize); i++, j++) {
+                i = removeSet.nextClearBit(i);
+                elementData[j] = elementData[i];
+            }
+            for (int k=newSize; k < size; k++) {
+                elementData[k] = null;  // Let gc do its work
+            }
+            elementCount = newSize;
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+            modCount++;
+        }
+
+        return anyToRemove;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized void replaceAll(UnaryOperator<E> operator) {
+        Objects.requireNonNull(operator);
+        final int expectedModCount = modCount;
+        final int size = elementCount;
+        for (int i=0; modCount == expectedModCount && i < size; i++) {
+            elementData[i] = operator.apply((E) elementData[i]);
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+        modCount++;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized void sort(Comparator<? super E> c) {
+        final int expectedModCount = modCount;
+        Arrays.sort((E[]) elementData, 0, elementCount, c);
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+        modCount++;
     }
 }

@@ -25,6 +25,8 @@
 
 package java.util;
 
+import java.util.function.Predicate;
+
 /**
  * The root interface in the <i>collection hierarchy</i>.  A collection
  * represents a group of objects, known as its <i>elements</i>.  Some
@@ -371,6 +373,40 @@ public interface Collection<E> extends Iterable<E> {
      * @see #contains(Object)
      */
     boolean removeAll(Collection<?> c);
+
+    /**
+     * Removes all of the elements of this collection that satisfy the given
+     * predicate.  Errors or runtime exceptions thrown by the predicate are
+     * relayed to the caller.
+     *
+     * @implSpec
+     * The default implementation traverses all elements of the collection using
+     * its {@link #iterator}.  Each matching element is removed using
+     * {@link Iterator#remove()}.  If the collection's iterator does not
+     * support removal then an {@code UnsupportedOperationException} will be
+     * thrown on the first matching element.
+     *
+     * @param filter a predicate which returns {@code true} for elements to be
+     *        removed
+     * @return {@code true} if any elements were removed
+     * @throws NullPointerException if the specified filter is null
+     * @throws UnsupportedOperationException if the {@code remove}
+     *         method is not supported by this collection's
+     *         {@link #iterator}
+     * @since 1.8
+     */
+    default boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        boolean removed = false;
+        final Iterator<E> each = iterator();
+        while (each.hasNext()) {
+            if (filter.test(each.next())) {
+                each.remove();
+                removed = true;
+            }
+        }
+        return removed;
+    }
 
     /**
      * Retains only the elements in this collection that are contained in the
