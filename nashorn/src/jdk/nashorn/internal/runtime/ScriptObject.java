@@ -1892,7 +1892,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     private static GuardedInvocation findMegaMorphicSetMethod(final CallSiteDescriptor desc, final String name) {
         final MethodType type = desc.getMethodType().insertParameterTypes(1, Object.class);
-        final GuardedInvocation inv = findSetIndexMethod(type, NashornCallSiteDescriptor.isStrict(desc)).asType(type);
+        final GuardedInvocation inv = findSetIndexMethod(type, NashornCallSiteDescriptor.isStrict(desc));
         return inv.replaceMethods(MH.insertArguments(inv.getInvocation(), 1, name), inv.getGuard());
     }
 
