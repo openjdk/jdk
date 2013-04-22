@@ -2819,8 +2819,10 @@ oop java_security_AccessControlContext::create(objArrayHandle context, bool isPr
   result->obj_field_put(_context_offset, context());
   result->obj_field_put(_privilegedContext_offset, privileged_context());
   result->bool_field_put(_isPrivileged_offset, isPrivileged);
-  // whitelist AccessControlContexts created by the JVM.
-  result->bool_field_put(_isAuthorized_offset, true);
+  // whitelist AccessControlContexts created by the JVM if present
+  if (_isAuthorized_offset != -1) {
+    result->bool_field_put(_isAuthorized_offset, true);
+  }
   return result;
 }
 
