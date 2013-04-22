@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,24 +86,12 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 // subclasses.
 //
 // The following macros and function should be used to allocate memory
-// directly in the resource area or in the C-heap, The _OBJECT variants
-// of the NEW_C_HEAP macros are used when a constructor and destructor
-// must be invoked for the object(s) and the objects are not inherited
-// from CHeapObj. The preferable way to allocate objects is using the
-// new operator.
-//
-// WARNING: The array variant must only be used for a homogenous array
-// where all objects are of the exact type specified. If subtypes are
-// stored in the array then the incorrect destructor might be called.
+// directly in the resource area or in the C-heap:
 //
 //   NEW_RESOURCE_ARRAY(type,size)
 //   NEW_RESOURCE_OBJ(type)
 //   NEW_C_HEAP_ARRAY(type,size)
 //   NEW_C_HEAP_OBJ(type)
-//   NEW_C_HEAP_OBJECT(type, memflags, pc, allocfail)
-//   NEW_C_HEAP_OBJECT_ARRAY(type, size, memflags, pc, allocfail)
-//   FREE_C_HEAP_OBJECT(type, objname, memflags)
-//   FREE_C_HEAP_OBJECT_ARRAY(type, size, arrayname, memflags)
 //   char* AllocateHeap(size_t size, const char* name);
 //   void  FreeHeap(void* p);
 //
@@ -207,11 +195,8 @@ template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
   _NOINLINE_ void* operator new(size_t size, address caller_pc = 0);
   _NOINLINE_ void* operator new (size_t size, const std::nothrow_t&  nothrow_constant,
                                address caller_pc = 0);
-  _NOINLINE_ void* operator new [](size_t size, address caller_pc = 0);
-  _NOINLINE_ void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-                               address caller_pc = 0);
+
   void  operator delete(void* p);
-  void  operator delete [] (void* p);
 };
 
 // Base class for objects allocated on the stack only.
@@ -221,8 +206,6 @@ class StackObj ALLOCATION_SUPER_CLASS_SPEC {
  private:
   void* operator new(size_t size);
   void  operator delete(void* p);
-  void* operator new [](size_t size);
-  void  operator delete [](void* p);
 };
 
 // Base class for objects used as value objects.
@@ -246,9 +229,7 @@ class StackObj ALLOCATION_SUPER_CLASS_SPEC {
 class _ValueObj {
  private:
   void* operator new(size_t size);
-  void  operator delete(void* p);
-  void* operator new [](size_t size);
-  void  operator delete [](void* p);
+  void operator delete(void* p);
 };
 
 
@@ -529,24 +510,13 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 
  public:
   void* operator new(size_t size, allocation_type type, MEMFLAGS flags);
-  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags);
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant,
       allocation_type type, MEMFLAGS flags);
-  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags);
-
   void* operator new(size_t size, Arena *arena) {
       address res = (address)arena->Amalloc(size);
       DEBUG_ONLY(set_allocation_type(res, ARENA);)
       return res;
   }
-
-  void* operator new [](size_t size, Arena *arena) {
-      address res = (address)arena->Amalloc(size);
-      DEBUG_ONLY(set_allocation_type(res, ARENA);)
-      return res;
-  }
-
   void* operator new(size_t size) {
       address res = (address)resource_allocate_bytes(size);
       DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
@@ -559,20 +529,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
       return res;
   }
 
-  void* operator new [](size_t size) {
-      address res = (address)resource_allocate_bytes(size);
-      DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
-      return res;
-  }
-
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) {
-      address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-      DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
-      return res;
-  }
-
   void  operator delete(void* p);
-  void  operator delete [](void* p);
 };
 
 // One of the following macros must be used when allocating an array
@@ -603,13 +560,12 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #define REALLOC_C_HEAP_ARRAY(type, old, size, memflags)\
   (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags))
 
-#define FREE_C_HEAP_ARRAY(type, old, memflags) \
+#define FREE_C_HEAP_ARRAY(type,old,memflags) \
   FreeHeap((char*)(old), memflags)
 
-// allocate type in heap without calling ctor
-// WARNING: type must not have virtual functions!!! There is no way to initialize vtable.
 #define NEW_C_HEAP_OBJ(type, memflags)\
   NEW_C_HEAP_ARRAY(type, 1, memflags)
+
 
 #define NEW_C_HEAP_ARRAY2(type, size, memflags, pc)\
   (type*) (AllocateHeap((size) * sizeof(type), memflags, pc))
@@ -617,46 +573,9 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #define REALLOC_C_HEAP_ARRAY2(type, old, size, memflags, pc)\
   (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags, pc))
 
-#define NEW_C_HEAP_ARRAY3(type, size, memflags, pc, allocfail)         \
-  (type*) AllocateHeap(size * sizeof(type), memflags, pc, allocfail);
+#define NEW_C_HEAP_OBJ2(type, memflags, pc)\
+  NEW_C_HEAP_ARRAY2(type, 1, memflags, pc)
 
-// !!! Attention, see comments above about the usage !!!
-
-// allocate type in heap and call ctor
-#define NEW_C_HEAP_OBJECT(objname, type, memflags, pc, allocfail)\
-  {                                                                                 \
-    objname = (type*)AllocateHeap(sizeof(type), memflags, pc, allocfail);           \
-    if (objname != NULL) ::new ((void *)objname) type();                            \
-  }
-
-// allocate array of type, call ctor for every element in the array
-#define NEW_C_HEAP_OBJECT_ARRAY(array_name, type, size, memflags, pc, allocfail)    \
-  {                                                                                 \
-    array_name = (type*)AllocateHeap(size * sizeof(type), memflags, pc, allocfail); \
-    if (array_name != NULL) {                                                       \
-      for (int index = 0; index < size; index++) {                                  \
-        ::new ((void*)&array_name[index]) type();                                   \
-      }                                                                             \
-    }                                                                               \
-  }
-
-// deallocate type in heap, call dtor
-#define FREE_C_HEAP_OBJECT(type, objname, memflags)                                 \
-  if (objname != NULL) {                                                            \
-    ((type*)objname)->~type();                                                      \
-    FREE_C_HEAP_ARRAY(type, objname, memflags);                                     \
-  }
-
-// deallocate array of type with size, call dtor for every element in the array
-#define FREE_C_HEAP_OBJECT_ARRAY(type, array_name, size, memflags)                  \
-  {                                                                                 \
-    if (array_name != NULL) {                                                       \
-      for (int index = 0; index < size; index++) {                                  \
-        ((type*)&array_name[index])->~type();                                       \
-      }                                                                             \
-      FREE_C_HEAP_ARRAY(type, array_name, memflags);                                \
-    }                                                                               \
-  }
 
 extern bool warn_new_operator;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,7 +528,7 @@ bool FreeIdSet::_safepoint;
 FreeIdSet::FreeIdSet(int sz, Monitor* mon) :
   _sz(sz), _mon(mon), _hd(0), _waiters(0), _index(-1), _claimed(0)
 {
-  _ids = NEW_C_HEAP_ARRAY(int, sz, mtInternal);
+  _ids = new int[sz];
   for (int i = 0; i < sz; i++) _ids[i] = i+1;
   _ids[sz-1] = end_of_list; // end of list.
   if (_stat_init) {
@@ -548,7 +548,6 @@ FreeIdSet::FreeIdSet(int sz, Monitor* mon) :
 
 FreeIdSet::~FreeIdSet() {
   _sets[_index] = NULL;
-  FREE_C_HEAP_ARRAY(int, _ids, mtInternal);
 }
 
 void FreeIdSet::set_safepoint(bool b) {

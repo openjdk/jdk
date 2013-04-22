@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,8 +282,7 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr) :
     _fine_eviction_stride = _max_fine_entries / _fine_eviction_sample_size;
   }
 
-  _fine_grain_regions = NEW_C_HEAP_ARRAY3(PerRegionTablePtr, _max_fine_entries,
-                        mtGC, 0, AllocFailStrategy::RETURN_NULL);
+  _fine_grain_regions = new PerRegionTablePtr[_max_fine_entries];
 
   if (_fine_grain_regions == NULL) {
     vm_exit_out_of_memory(sizeof(void*)*_max_fine_entries,
