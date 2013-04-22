@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,10 +280,10 @@ class HandleArea: public Arena {
 // If h has to be preserved, it can be converted to an oop or a local JNI handle
 // across the HandleMark boundary.
 
-// The only special case for HandleMark is when a Thread is created, the first
-// HandleMark of the Thread is allocated in heap.
+// The base class of HandleMark should have been StackObj but we also heap allocate
+// a HandleMark when a thread is created.
 
-class HandleMark : public StackObj {
+class HandleMark {
  private:
   Thread *_thread;              // thread that owns this mark
   HandleArea *_area;            // saved handle area
@@ -293,6 +293,7 @@ class HandleMark : public StackObj {
   // Link to previous active HandleMark in thread
   HandleMark* _previous_handle_mark;
 
+  void initialize(Thread* thread);                // common code for constructors
   void set_previous_handle_mark(HandleMark* mark) { _previous_handle_mark = mark; }
   HandleMark* previous_handle_mark() const        { return _previous_handle_mark; }
 
@@ -302,7 +303,6 @@ class HandleMark : public StackObj {
   HandleMark(Thread* thread)                      { initialize(thread); }
   ~HandleMark();
 
-  void initialize(Thread* thread);                // common code for constructors
   // Functions used by HandleMarkCleaner
   // called in the constructor of HandleMarkCleaner
   void push();

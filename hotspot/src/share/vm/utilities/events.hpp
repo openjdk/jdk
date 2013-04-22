@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ class EventLog : public CHeapObj<mtInternal> {
 // semantics aren't appropriate.  The name is used as the label of the
 // log when it is dumped during a crash.
 template <class T> class EventLogBase : public EventLog {
-  template <class X> class EventRecord : public CHeapObj<mtInternal> {
+  template <class X> class EventRecord {
    public:
     double  timestamp;
     Thread* thread;
