@@ -49,6 +49,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.misc.Unsafe;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
 import sun.reflect.ReflectionFactory;
 import sun.reflect.misc.ReflectUtil;
 
@@ -259,12 +261,13 @@ public class ObjectStreamClass implements Serializable {
      *
      * @return  the <code>Class</code> instance that this descriptor represents
      */
+    @CallerSensitive
     public Class<?> forClass() {
         if (cl == null) {
             return null;
         }
-        ClassLoader ccl = ObjectStreamField.getCallerClassLoader();
-        if (ReflectUtil.needsPackageAccessCheck(ccl, cl.getClassLoader())) {
+        Class<?> caller = Reflection.getCallerClass();
+        if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), cl.getClassLoader())) {
             ReflectUtil.checkPackageAccess(cl);
         }
         return cl;
