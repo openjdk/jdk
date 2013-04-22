@@ -583,28 +583,27 @@ void PSMarkSweep::mark_sweep_phase3() {
   ClassLoaderDataGraph::clear_claimed_marks();
 
   // General strong roots.
-  Universe::oops_do(adjust_root_pointer_closure());
-  JNIHandles::oops_do(adjust_root_pointer_closure());   // Global (strong) JNI handles
-  CLDToOopClosure adjust_from_cld(adjust_root_pointer_closure());
-  Threads::oops_do(adjust_root_pointer_closure(), &adjust_from_cld, NULL);
-  ObjectSynchronizer::oops_do(adjust_root_pointer_closure());
-  FlatProfiler::oops_do(adjust_root_pointer_closure());
-  Management::oops_do(adjust_root_pointer_closure());
-  JvmtiExport::oops_do(adjust_root_pointer_closure());
+  Universe::oops_do(adjust_pointer_closure());
+  JNIHandles::oops_do(adjust_pointer_closure());   // Global (strong) JNI handles
+  CLDToOopClosure adjust_from_cld(adjust_pointer_closure());
+  Threads::oops_do(adjust_pointer_closure(), &adjust_from_cld, NULL);
+  ObjectSynchronizer::oops_do(adjust_pointer_closure());
+  FlatProfiler::oops_do(adjust_pointer_closure());
+  Management::oops_do(adjust_pointer_closure());
+  JvmtiExport::oops_do(adjust_pointer_closure());
   // SO_AllClasses
-  SystemDictionary::oops_do(adjust_root_pointer_closure());
-  ClassLoaderDataGraph::oops_do(adjust_root_pointer_closure(), adjust_klass_closure(), true);
-  //CodeCache::scavenge_root_nmethods_oops_do(adjust_root_pointer_closure());
+  SystemDictionary::oops_do(adjust_pointer_closure());
+  ClassLoaderDataGraph::oops_do(adjust_pointer_closure(), adjust_klass_closure(), true);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(&always_true, adjust_root_pointer_closure());
+  JNIHandles::weak_oops_do(&always_true, adjust_pointer_closure());
 
   CodeCache::oops_do(adjust_pointer_closure());
-  StringTable::oops_do(adjust_root_pointer_closure());
-  ref_processor()->weak_oops_do(adjust_root_pointer_closure());
-  PSScavenge::reference_processor()->weak_oops_do(adjust_root_pointer_closure());
+  StringTable::oops_do(adjust_pointer_closure());
+  ref_processor()->weak_oops_do(adjust_pointer_closure());
+  PSScavenge::reference_processor()->weak_oops_do(adjust_pointer_closure());
 
   adjust_marks();
 

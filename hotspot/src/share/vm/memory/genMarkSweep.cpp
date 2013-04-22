@@ -282,11 +282,10 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
 
-  // Because the two closures below are created statically, cannot
+  // Because the closure below is created statically, we cannot
   // use OopsInGenClosure constructor which takes a generation,
   // as the Universe has not been created when the static constructors
   // are run.
-  adjust_root_pointer_closure.set_orig_generation(gch->get_gen(level));
   adjust_pointer_closure.set_orig_generation(gch->get_gen(level));
 
   gch->gen_process_strong_roots(level,
@@ -294,18 +293,17 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
                                 true,  // activate StrongRootsScope
                                 false, // not scavenging
                                 SharedHeap::SO_AllClasses,
-                                &adjust_root_pointer_closure,
+                                &adjust_pointer_closure,
                                 false, // do not walk code
-                                &adjust_root_pointer_closure,
+                                &adjust_pointer_closure,
                                 &adjust_klass_closure);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   CodeBlobToOopClosure adjust_code_pointer_closure(&adjust_pointer_closure,
                                                    /*do_marking=*/ false);
-  gch->gen_process_weak_roots(&adjust_root_pointer_closure,
-                              &adjust_code_pointer_closure,
-                              &adjust_pointer_closure);
+  gch->gen_process_weak_roots(&adjust_pointer_closure,
+                              &adjust_code_pointer_closure);
 
   adjust_marks();
   GenAdjustPointersClosure blk;

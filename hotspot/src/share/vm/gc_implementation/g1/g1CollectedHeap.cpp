@@ -5079,10 +5079,9 @@ g1_process_strong_roots(bool is_scavenging,
 }
 
 void
-G1CollectedHeap::g1_process_weak_roots(OopClosure* root_closure,
-                                       OopClosure* non_root_closure) {
+G1CollectedHeap::g1_process_weak_roots(OopClosure* root_closure) {
   CodeBlobToOopClosure roots_in_blobs(root_closure, /*do_marking=*/ false);
-  SharedHeap::process_weak_roots(root_closure, &roots_in_blobs, non_root_closure);
+  SharedHeap::process_weak_roots(root_closure, &roots_in_blobs);
 }
 
 // Weak Reference Processing support

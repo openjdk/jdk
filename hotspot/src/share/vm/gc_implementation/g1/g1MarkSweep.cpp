@@ -308,17 +308,16 @@ void G1MarkSweep::mark_sweep_phase3() {
   sh->process_strong_roots(true,  // activate StrongRootsScope
                            false, // not scavenging.
                            SharedHeap::SO_AllClasses,
-                           &GenMarkSweep::adjust_root_pointer_closure,
+                           &GenMarkSweep::adjust_pointer_closure,
                            NULL,  // do not touch code cache here
                            &GenMarkSweep::adjust_klass_closure);
 
   assert(GenMarkSweep::ref_processor() == g1h->ref_processor_stw(), "Sanity");
-  g1h->ref_processor_stw()->weak_oops_do(&GenMarkSweep::adjust_root_pointer_closure);
+  g1h->ref_processor_stw()->weak_oops_do(&GenMarkSweep::adjust_pointer_closure);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
-  g1h->g1_process_weak_roots(&GenMarkSweep::adjust_root_pointer_closure,
-                             &GenMarkSweep::adjust_pointer_closure);
+  g1h->g1_process_weak_roots(&GenMarkSweep::adjust_pointer_closure);
 
   GenMarkSweep::adjust_marks();
 
