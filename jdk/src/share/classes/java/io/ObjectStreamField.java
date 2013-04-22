@@ -26,6 +26,7 @@
 package java.io;
 
 import java.lang.reflect.Field;
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 
@@ -159,30 +160,13 @@ public class ObjectStreamField
      * @return  a <code>Class</code> object representing the type of the
      *          serializable field
      */
+    @CallerSensitive
     public Class<?> getType() {
-        ClassLoader ccl = getCallerClassLoader();
-        if (ReflectUtil.needsPackageAccessCheck(ccl, type.getClassLoader())) {
+        Class<?> caller = Reflection.getCallerClass();
+        if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), type.getClassLoader())) {
             ReflectUtil.checkPackageAccess(type);
         }
         return type;
-    }
-
-    // Returns the invoker's class loader.
-    // This is package private because it is accessed from ObjectStreamClass.
-    // NOTE: This must always be invoked when there is exactly one intervening
-    // frame from the core libraries on the stack between this method's
-    // invocation and the desired invoker. The frame count of 3 is determined
-    // as follows:
-    //
-    // 0: Reflection.getCallerClass
-    // 1: getCallerClassLoader()
-    // 2: ObjectStreamField.getType() or ObjectStreamClass.forClass()
-    // 3: the caller we want to check
-    //
-    // NOTE: copied from java.lang.ClassLoader and modified.
-    static ClassLoader getCallerClassLoader() {
-        Class caller = Reflection.getCallerClass(3);
-        return caller.getClassLoader();
     }
 
     /**
