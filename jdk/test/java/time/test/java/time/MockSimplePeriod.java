@@ -59,19 +59,16 @@
  */
 package test.java.time;
 
-import java.time.*;
-
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.FOREVER;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-import java.util.Objects;
-
+import java.time.DateTimeException;
 import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Mock period of time measured using a single unit, such as {@code 3 Days}.

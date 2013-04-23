@@ -33,7 +33,6 @@
 @private
     NSView*        fView;
     jobject            fComponent;
-    jobject            fComponentPeer;
     jobject            fDragSourceContextPeer;
 
     jobject            fTransferable;
@@ -42,8 +41,6 @@
     NSPoint            fDragPos;
     jint                fClickCount;
     jint                fModifiers;
-
-    jobject            fCursor;
 
     NSImage*        fDragImage;
     NSPoint            fDragImageOffset;
@@ -59,12 +56,22 @@
 + (CDragSource *) currentDragSource;
 
 // Common methods:
-- (id)init:(jobject)jdragsourcecontextpeer component:(jobject)jcomponent peer:(jobject)jpeer control:(id)control
-    transferable:(jobject)jtransferable triggerEvent:(jobject)jtrigger
-    dragPosX:(jint)dragPosX dragPosY:(jint)dragPosY modifiers:(jint)extModifiers clickCount:(jint)clickCount timeStamp:(jlong)timeStamp
-    cursor:(jobject)jcursor
-    dragImage:(jobject)jnsdragimage dragImageOffsetX:(jint)jdragimageoffsetx dragImageOffsetY:(jint)jdragimageoffsety
-    sourceActions:(jint)jsourceactions formats:(jlongArray)jformats formatMap:(jobject)jformatmap;
+- (id)        init:(jobject)jDragSourceContextPeer
+         component:(jobject)jComponent
+           control:(id)control
+      transferable:(jobject)jTransferable
+      triggerEvent:(jobject)jTrigger
+          dragPosX:(jint)dragPosX
+          dragPosY:(jint)dragPosY
+         modifiers:(jint)extModifiers
+        clickCount:(jint)clickCount
+         timeStamp:(jlong)timeStamp
+         dragImage:(jobject)jDragImage
+  dragImageOffsetX:(jint)jDragImageOffsetX
+  dragImageOffsetY:(jint)jDragImageOffsetY
+     sourceActions:(jint)jSourceActions
+           formats:(jlongArray)jFormats
+         formatMap:(jobject)jFormatMap;
 
 - (void)removeFromView:(JNIEnv *)env;
 

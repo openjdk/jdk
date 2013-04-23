@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class ClientTubeAssemblerContext {
     /**
      * This constructor should be used only by JAX-WS Runtime and is not meant for external consumption.
      * @deprecated
-     *      Use {@link #ClientTubeAssemblerContext(EndpointAddress, WSDLPort, WSBindingProvider, WSBinding, Container, Codec, SEIModel)}
+     *      Use {@link #ClientTubeAssemblerContext(EndpointAddress, WSDLPort, WSService, WSBindingProvider, WSBinding, Container, Codec, SEIModel, Class)}
      */
     public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @Nullable WSDLPort wsdlModel, @NotNull WSService rootOwner, @NotNull WSBinding binding) {
         this(address, wsdlModel, rootOwner, binding, Container.NONE);
@@ -87,7 +87,7 @@ public class ClientTubeAssemblerContext {
     /**
      * This constructor should be used only by JAX-WS Runtime and is not meant for external consumption.
      * @deprecated
-     *      Use {@link #ClientTubeAssemblerContext(EndpointAddress, WSDLPort, WSBindingProvider, WSBinding, Container, Codec, SEIModel)}.
+     *      Use {@link #ClientTubeAssemblerContext(EndpointAddress, WSDLPort, WSService, WSBindingProvider, WSBinding, Container, Codec, SEIModel, Class)}
      */
     public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @Nullable WSDLPort wsdlModel,
                                       @NotNull WSService rootOwner, @NotNull WSBinding binding,
@@ -99,7 +99,7 @@ public class ClientTubeAssemblerContext {
     /**
      * This constructor should be used only by JAX-WS Runtime and is not meant for external consumption.
      * @deprecated
-     *      Use {@link #ClientTubeAssemblerContext(EndpointAddress, WSDLPort, WSBindingProvider, WSBinding, Container, Codec,SEIModel)}.
+     *      Use {@link #ClientTubeAssemblerContext(EndpointAddress, WSDLPort, WSService, WSBindingProvider, WSBinding, Container, Codec, SEIModel, Class)}
      */
     public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @Nullable WSDLPort wsdlModel,
                                       @NotNull WSService rootOwner, @NotNull WSBinding binding,
@@ -110,7 +110,7 @@ public class ClientTubeAssemblerContext {
     /**
      * This constructor should be used only by JAX-WS Runtime and is not meant for external consumption.
      * @deprecated
-     *      Use {@link #ClientTubeAssemblerContext(EndpointAddress, WSDLPort, WSBindingProvider, WSBinding, Container, Codec, SEIModel)}.
+     *      Use {@link #ClientTubeAssemblerContext(EndpointAddress, WSDLPort, WSService, WSBindingProvider, WSBinding, Container, Codec, SEIModel, Class)}
      */
     public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @Nullable WSDLPort wsdlModel,
                                       @NotNull WSService rootOwner, @NotNull WSBinding binding,

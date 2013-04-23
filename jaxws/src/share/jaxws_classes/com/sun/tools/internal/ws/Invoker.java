@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,45 @@ import java.util.List;
  * @author Kohsuke Kawaguchi
  */
 public final class Invoker {
+
+    /**
+     * The list of package prefixes we want the
+     * {@link MaskingClassLoader} to prevent the parent
+     * classLoader from loading
+     */
+    static final String[] maskedPackages = new String[]{
+            "com.sun.istack.internal.tools.",
+            "com.sun.tools.internal.jxc.",
+            "com.sun.tools.internal.xjc.",
+            "com.sun.tools.internal.ws.",
+            "com.sun.codemodel.internal.",
+            "com.sun.relaxng.",
+            "com.sun.xml.internal.xsom.",
+            "com.sun.xml.internal.bind.",
+            "com.ctc.wstx.", //wsimport, wsgen ant task
+            "org.codehaus.stax2.", //wsimport, wsgen ant task
+            "com.sun.xml.internal.messaging.saaj.", //wsgen ant task
+            "com.sun.xml.internal.ws.",
+            "com.oracle.webservices.internal.api." //wsgen
+    };
+
+    /**
+     * Escape hatch to work around IBM JDK problem.
+     * See http://www-128.ibm.com/developerworks/forums/dw_thread.jsp?nav=false&forum=367&thread=164718&cat=10
+     */
+    public static final boolean noSystemProxies;
+
+    static {
+        boolean noSysProxiesProperty = false;
+        try {
+            noSysProxiesProperty = Boolean.getBoolean(Invoker.class.getName()+".noSystemProxies");
+        } catch(SecurityException e) {
+            // ignore
+        } finally {
+            noSystemProxies = noSysProxiesProperty;
+        }
+    }
+
     static int invoke(String mainClass, String[] args) throws Throwable {
         // use the platform default proxy if available.
         // see sun.net.spi.DefaultProxySelector for details.
@@ -107,7 +146,7 @@ public final class Invoker {
 
                     // finally load the rest of the RI. The actual class files are loaded from ancestors
                     cl = new ParallelWorldClassLoader(cl,"");
-                }
+                        }
 
             }
 
@@ -194,29 +233,6 @@ public final class Invoker {
     }
 
     /**
-     * Creates a classloader for loading JAXB/WS 2.1 jar and tools.jar
-     */
-    private static URL[] findIstack21APIs(ClassLoader cl) throws ClassNotFoundException, MalformedURLException, ToolsJarNotFoundException {
-        List<URL> urls = new ArrayList<URL>();
-
-        if(Service.class.getClassLoader()==null) {
-            // JAX-WS API is loaded from bootstrap classloader
-            URL res = cl.getResource("javax/xml/ws/EndpointReference.class");
-            if(res==null)
-                throw new ClassNotFoundException("There's no JAX-WS 2.1 API in the classpath");
-            urls.add(ParallelWorldClassLoader.toJarUrl(res));
-
-            res = cl.getResource("javax/xml/bind/annotation/XmlSeeAlso.class");
-            if(res==null)
-                throw new ClassNotFoundException("There's no JAXB 2.1 API in the classpath");
-            urls.add(ParallelWorldClassLoader.toJarUrl(res));
-        }
-
-        findToolsJar(cl, urls);
-
-        return urls.toArray(new URL[urls.size()]);
-    }
-    /**
      * Creates a classloader for loading JAXB/WS 2.2 jar and tools.jar
      */
     private static URL[] findIstack22APIs(ClassLoader cl) throws ClassNotFoundException, IOException, ToolsJarNotFoundException {
@@ -258,37 +274,4 @@ public final class Invoker {
         }
     }
 
-    /**
-     * The list of package prefixes we want the
-     * {@link MaskingClassLoader} to prevent the parent
-     * classLoader from loading
-     */
-    public static String[] maskedPackages = new String[]{
-        "com.sun.istack.internal.tools.",
-        "com.sun.tools.internal.jxc.",
-        "com.sun.tools.internal.xjc.",
-        "com.sun.tools.internal.ws.",
-        "com.sun.codemodel.internal.",
-        "com.sun.relaxng.",
-        "com.sun.xml.internal.xsom.",
-        "com.sun.xml.internal.bind.",
-        "com.ctc.wstx.", //wsimport, wsgen ant task
-        "org.codehaus.stax2.", //wsimport, wsgen ant task
-        "com.sun.xml.internal.messaging.saaj.", //wsgen ant task
-        "com.sun.xml.internal.ws."
-    };
-
-    /**
-     * Escape hatch to work around IBM JDK problem.
-     * See http://www-128.ibm.com/developerworks/forums/dw_thread.jsp?nav=false&forum=367&thread=164718&cat=10
-     */
-    public static boolean noSystemProxies = false;
-
-    static {
-        try {
-            noSystemProxies = Boolean.getBoolean(Invoker.class.getName()+".noSystemProxies");
-        } catch(SecurityException e) {
-            // ignore
-        }
-    }
 }

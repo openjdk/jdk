@@ -1693,17 +1693,6 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return PTR_RBP_REG_mask();
 }
 
-static Address build_address(int b, int i, int s, int d) {
-  Register index = as_Register(i);
-  Address::ScaleFactor scale = (Address::ScaleFactor)s;
-  if (index == rsp) {
-    index = noreg;
-    scale = Address::no_scale;
-  }
-  Address addr(as_Register(b), index, scale, d);
-  return addr;
-}
-
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import java.util.Map;
  *
  * @author shih-chang.chen@oracle.com
  */
-public abstract class DatabindingFactory extends com.sun.xml.internal.org.jvnet.ws.databinding.DatabindingFactory {
+public abstract class DatabindingFactory extends com.oracle.webservices.internal.api.databinding.DatabindingFactory {
 
   /**
    * Creates a new instance of a <code>WsTool</code>.
@@ -73,7 +73,7 @@ public abstract class DatabindingFactory extends com.sun.xml.internal.org.jvnet.
    *          the EndpointRuntimeConfig to init this WsRuntime
    * @return New instance of a <code>WsRuntime</code>
    */
-  abstract public com.sun.xml.internal.org.jvnet.ws.databinding.Databinding createRuntime(DatabindingConfig config);
+  abstract public com.oracle.webservices.internal.api.databinding.Databinding createRuntime(DatabindingConfig config);
 
   /**
    * Creates a new instance of a <code>XsTool</code>.

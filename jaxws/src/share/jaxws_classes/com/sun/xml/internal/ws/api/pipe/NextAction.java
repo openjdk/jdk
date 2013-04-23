@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.xml.internal.ws.api.pipe;
 
 import com.sun.xml.internal.ws.api.message.Packet;
+import java.util.concurrent.Executor;
 
 /**
  * Indicates what shall happen after {@link Tube#processRequest(Packet)} or
@@ -44,6 +45,7 @@ public final class NextAction {
      * Really either {@link RuntimeException} or {@link Error}.
      */
     Throwable throwable;
+    Runnable onExitRunnable;
 
     // public enum Kind { INVOKE, INVOKE_AND_FORGET, RETURN, SUSPEND }
 
@@ -97,6 +99,20 @@ public final class NextAction {
 
     /**
      * Indicates that the next action is to flip the processing direction
+     * and starts exception processing, but with the indicated context.
+     *
+     * @param t
+     *      Either {@link RuntimeException} or {@link Error}, but defined to
+     *      take {@link Throwable} because {@link Tube#processException(Throwable)}
+     *      takes {@link Throwable}.
+     */
+    public void throwException( Packet response, Throwable t ) {
+        // Use of RETURN is correct -- Fiber processing does not set packet for type of THROW
+        set(RETURN, null, response, t);
+    }
+
+    /**
+     * Indicates that the next action is to flip the processing direction
      * and starts exception processing.
      *
      * @param t
@@ -145,18 +161,52 @@ public final class NextAction {
     /**
      * Indicates that the fiber should be suspended.
      * Once {@link Fiber#resume(Packet) resumed}, return the response processing.
+     * @deprecated Use variants that pass {@link Runnable}
      */
     public void suspend() {
-        set(SUSPEND, null, null, null);
+        suspend(null, null);
+    }
+
+    /**
+     * Indicates that the fiber should be suspended.  Once the current {@link Thread}
+     * exits the fiber's control loop, the onExitRunnable will be invoked.  This {@link Runnable}
+     * may call {@link Fiber#resume(Packet)}; however it is still guaranteed that the current
+     * Thread will return control, therefore, further processing will be handled on a {@link Thread}
+     * from the {@link Executor}.  For synchronous cases, the Thread invoking this fiber cannot return
+     * until fiber processing is complete; therefore, the guarantee is only that the onExitRunnable
+     * will be invoked prior to completing the suspension.
+     * @since 2.2.7
+     */
+    public void suspend(Runnable onExitRunnable) {
+        suspend(null, onExitRunnable);
     }
 
     /**
      * Indicates that the fiber should be suspended.
      * Once {@link Fiber#resume(Packet) resumed}, resume with the
      * {@link Tube#processRequest(Packet)} on the given next tube.
+     * @deprecated Use variants that pass {@link Runnable}
      */
     public void suspend(Tube next) {
+        suspend(next, null);
+    }
+
+    /**
+     * Indicates that the fiber should be suspended.  Once the current {@link Thread}
+     * exits the fiber's control loop, the onExitRunnable will be invoked.  This {@link Runnable}
+     * may call {@link Fiber#resume(Packet)}; however it is still guaranteed that the current
+     * fiber will return control, therefore, further processing will be handled on a {@link Thread}
+     * from the {@link Executor}.  For synchronous cases, the Thread invoking this fiber cannot return
+     * until fiber processing is complete; therefore, the guarantee is only that the onExitRunnable
+     * will be invoked prior to completing the suspension.
+     * <p>
+     * Once {@link Fiber#resume(Packet) resumed}, resume with the
+     * {@link Tube#processRequest(Packet)} on the given next tube.
+     * @since 2.2.7
+     */
+    public void suspend(Tube next, Runnable onExitRunnable) {
         set(SUSPEND, next, null, null);
+        this.onExitRunnable = onExitRunnable;
     }
 
     /** Returns the next tube

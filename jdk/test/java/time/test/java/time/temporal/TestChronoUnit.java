@@ -121,7 +121,11 @@ public class TestChronoUnit {
 
     @Test(dataProvider = "yearsBetween")
     public void test_yearsBetween_LocalDateTimeLaterTime(LocalDate start, LocalDate end, long expected) {
-        assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+        if (expected >= 0) {
+            assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+        } else {
+            assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 29)), expected);
+        }
     }
 
     @Test(dataProvider = "yearsBetween")
@@ -132,7 +136,11 @@ public class TestChronoUnit {
     @Test(dataProvider = "yearsBetween")
     public void test_yearsBetween_ZonedDateLaterOffset(LocalDate start, LocalDate end, long expected) {
         // +01:00 is later than +02:00
-        assertEquals(YEARS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+        if (expected >= 0) {
+            assertEquals(YEARS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+        } else {
+            assertEquals(YEARS.between(start.atStartOfDay(ZoneOffset.ofHours(1)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -186,7 +194,11 @@ public class TestChronoUnit {
 
     @Test(dataProvider = "monthsBetween")
     public void test_monthsBetween_LocalDateTimeLaterTime(LocalDate start, LocalDate end, long expected) {
-        assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+        if (expected >= 0) {
+            assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+        } else {
+            assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 29)), expected);
+        }
     }
 
     @Test(dataProvider = "monthsBetween")
@@ -197,7 +209,11 @@ public class TestChronoUnit {
     @Test(dataProvider = "monthsBetween")
     public void test_monthsBetween_ZonedDateLaterOffset(LocalDate start, LocalDate end, long expected) {
         // +01:00 is later than +02:00
-        assertEquals(MONTHS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+        if (expected >= 0) {
+            assertEquals(MONTHS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+        } else {
+            assertEquals(MONTHS.between(start.atStartOfDay(ZoneOffset.ofHours(1)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -288,7 +304,11 @@ public class TestChronoUnit {
 
     @Test(dataProvider = "daysBetween")
     public void test_daysBetween_LocalDateTimeLaterTime(LocalDate start, LocalDate end, long expected) {
-        assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+        if (expected >= 0) {
+            assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+        } else {
+            assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 29)), expected);
+        }
     }
 
     @Test(dataProvider = "daysBetween")
@@ -299,7 +319,11 @@ public class TestChronoUnit {
     @Test(dataProvider = "daysBetween")
     public void test_daysBetween_ZonedDateLaterOffset(LocalDate start, LocalDate end, long expected) {
         // +01:00 is later than +02:00
-        assertEquals(DAYS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+        if (expected >= 0) {
+            assertEquals(DAYS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+        } else {
+            assertEquals(DAYS.between(start.atStartOfDay(ZoneOffset.ofHours(1)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+        }
     }
 
     //-----------------------------------------------------------------------

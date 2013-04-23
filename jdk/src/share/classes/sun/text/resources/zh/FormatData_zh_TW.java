@@ -76,11 +76,11 @@
 
 package sun.text.resources.zh;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_zh_TW extends ListResourceBundle {
+public class FormatData_zh_TW extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
@@ -93,6 +93,40 @@ public class FormatData_zh_TW extends ListResourceBundle {
                 new String[] { // era strings
                     "\u897f\u5143\u524d",
                     "\u897f\u5143"
+                }
+            },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "1\u6708",
+                    "2\u6708",
+                    "3\u6708",
+                    "4\u6708",
+                    "5\u6708",
+                    "6\u6708",
+                    "7\u6708",
+                    "8\u6708",
+                    "9\u6708",
+                    "10\u6708",
+                    "11\u6708",
+                    "12\u6708",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "10",
+                    "11",
+                    "12",
+                    "",
                 }
             },
             { "NumberPatterns",
@@ -123,74 +157,23 @@ public class FormatData_zh_TW extends ListResourceBundle {
                     "{1} {0}" // date-time pattern
                 }
             },
+            { "buddhist.DatePatterns",
+                new String[] {
+                    "GGGGy\u5e74M\u6708d\u65e5EEEE",
+                    "GGGGy\u5e74M\u6708d\u65e5",
+                    "GGGGy/M/d",
+                    "GGGGy/M/d",
+                }
+            },
+            { "japanese.DatePatterns",
+                new String[] {
+                    "GGGGy\u5e74M\u6708d\u65e5EEEE",
+                    "GGGGy\u5e74M\u6708d\u65e5",
+                    "GGGGy/M/d",
+                    "GGGGy/M/d",
+                }
+            },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy/M/d",
-                    "Gy/M/d",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy/M/d",
-                    "Gy/M/d",
-                }
-            },
-            { "roc.Eras", rocEras },
-            { "roc.short.Eras", rocEras },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy/M/d",
-                    "Gy/M/d",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "GGGGy\u5e74M\u6708d\u65e5EEEE",
-                    "GGGGy\u5e74M\u6708d\u65e5",
-                    "GGGGy/M/d",
-                    "GGGGy/M/d",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy/M/d",
-                    "Gy/M/d",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "GGGGy\u5e74M\u6708d\u65e5EEEE",
-                    "GGGGy\u5e74M\u6708d\u65e5",
-                    "GGGGy/M/d",
-                    "GGGGy/M/d",
-                }
-            },
-            { "calendarname.islamic-civil", "\u4f0a\u65af\u862d\u57ce\u5e02\u66c6\u6cd5" },
-            { "calendarname.islamicc", "\u4f0a\u65af\u862d\u57ce\u5e02\u66c6\u6cd5" },
-            { "calendarname.islamic", "\u4f0a\u65af\u862d\u66c6\u6cd5" },
-            { "calendarname.japanese", "\u65e5\u672c\u66c6\u6cd5" },
-            { "calendarname.gregorian", "\u516c\u66c6" },
-            { "calendarname.gregory", "\u516c\u66c6" },
-            { "calendarname.roc", "\u6c11\u570b\u66c6" },
-            { "calendarname.buddhist", "\u4f5b\u6559\u66c6\u6cd5" },
-            { "field.era", "\u5e74\u4ee3" },
-            { "field.year", "\u5e74" },
-            { "field.month", "\u6708" },
-            { "field.week", "\u9031" },
-            { "field.weekday", "\u9031\u5929" },
-            { "field.dayperiod", "\u4e0a\u5348/\u4e0b\u5348" },
-            { "field.hour", "\u5c0f\u6642" },
-            { "field.minute", "\u5206\u9418" },
-            { "field.second", "\u79d2" },
         };
     }
 }

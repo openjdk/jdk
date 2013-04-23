@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package javax.xml.ws.soap;
 
 import javax.xml.ws.WebServiceFeature;
 import javax.xml.ws.WebServiceException;
-import javax.xml.ws.Dispatch;
 import javax.xml.ws.Endpoint;
 import javax.xml.ws.Service;
 
@@ -36,7 +35,7 @@ import javax.xml.ws.Service;
  * web service.
  *
  * This feature can be used during the creation of SEI proxy, and
- * {@link Dispatch} instances on the client side and {@link Endpoint}
+ * {@link javax.xml.ws.Dispatch} instances on the client side and {@link Endpoint}
  * instances on the server side. This feature cannot be used for {@link Service}
  * instance creation on the client side.
  *
@@ -70,7 +69,8 @@ public final class MTOMFeature extends WebServiceFeature {
      * as attachment.
      * The value of this property MUST always be >= 0. Default value is 0.
      */
-    protected int threshold = 0;
+    // should be changed to private final, keeping original modifier to keep backwards compatibility
+    protected int threshold;
 
 
     /**
@@ -79,6 +79,7 @@ public final class MTOMFeature extends WebServiceFeature {
      */
     public MTOMFeature() {
         this.enabled = true;
+        this.threshold = 0;
     }
 
     /**
@@ -88,6 +89,7 @@ public final class MTOMFeature extends WebServiceFeature {
      */
     public MTOMFeature(boolean enabled) {
         this.enabled = enabled;
+        this.threshold = 0;
     }
 
 

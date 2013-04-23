@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,8 @@ public abstract class BaseFileManager {
     protected ClassLoader getClassLoader(URL[] urls) {
         ClassLoader thisClassLoader = getClass().getClassLoader();
 
-        // Bug: 6558476
-        // Ideally, ClassLoader should be Closeable, but before JDK7 it is not.
-        // On older versions, try the following, to get a closeable classloader.
+        // Allow the following to specify a closeable classloader
+        // other than URLClassLoader.
 
         // 1: Allow client to specify the class to use via hidden option
         if (classLoaderClass != null) {
@@ -128,19 +127,6 @@ public abstract class BaseFileManager {
                 // ignore errors loading user-provided class loader, fall through
             }
         }
-
-        // 2: If URLClassLoader implements Closeable, use that.
-        if (Closeable.class.isAssignableFrom(URLClassLoader.class))
-            return new URLClassLoader(urls, thisClassLoader);
-
-        // 3: Try using private reflection-based CloseableURLClassLoader
-        try {
-            return new CloseableURLClassLoader(urls, thisClassLoader);
-        } catch (Throwable t) {
-            // ignore errors loading workaround class loader, fall through
-        }
-
-        // 4: If all else fails, use plain old standard URLClassLoader
         return new URLClassLoader(urls, thisClassLoader);
     }
 

@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -50,14 +50,15 @@
 #endif
 
 #include "unicode/utypes.h"
+
+#ifdef __cplusplus
 #include "unicode/uobject.h"
+#endif
+
 #ifdef LE_USE_CMEMORY
 #include "cmemory.h"
 #endif
-#endif /* not standalone */
-
-
-U_NAMESPACE_BEGIN
+#endif
 
 /*!
  * \file
@@ -296,12 +297,14 @@ typedef UChar LEUnicode16;
  */
 typedef UChar32 LEUnicode32;
 
+#ifndef U_HIDE_DEPRECATED_API
 /**
  * Used to represent 16-bit Unicode code points.
  *
  * @deprecated since ICU 2.4. Use LEUnicode16 instead
  */
 typedef UChar LEUnicode;
+#endif  /* U_HIDE_DEPRECATED_API */
 
 /**
  * Used to hold a pair of (x, y) values which represent a point.
@@ -325,7 +328,7 @@ struct LEPoint
     float fY;
 };
 
-#ifndef XP_CPLUSPLUS
+#ifndef __cplusplus
 /**
  * Used to hold a pair of (x, y) values which represent a point.
  *
@@ -335,6 +338,39 @@ typedef struct LEPoint LEPoint;
 #endif
 
 
+#ifndef U_HIDE_INTERNAL_API
+
+#ifndef LE_ASSERT_BAD_FONT
+#define LE_ASSERT_BAD_FONT 0
+#endif
+
+#if LE_ASSERT_BAD_FONT
+#include <stdio.h>
+#define LE_DEBUG_BAD_FONT(x) fprintf(stderr,"%s:%d: BAD FONT: %s\n", __FILE__, __LINE__, (x));
+#else
+#define LE_DEBUG_BAD_FONT(x)
+#endif
+
+/**
+ * Max value representable by a uintptr
+ */
+
+#ifndef UINT32_MAX
+#define LE_UINT32_MAX 0xFFFFFFFFU
+#else
+#define LE_UINT32_MAX UINT32_MAX
+#endif
+
+#ifndef UINTPTR_MAX
+#define LE_UINTPTR_MAX LE_UINT32_MAX
+#else
+#define LE_UINTPTR_MAX UINTPTR_MAX
+#endif
+
+/**
+ * Range check for overflow
+ */
+#define LE_RANGE_CHECK(type, count, ptrfn) (( (LE_UINTPTR_MAX / sizeof(type)) < count ) ? NULL : (ptrfn))
 /**
  * A convenience macro to get the length of an array.
  *
@@ -356,7 +392,7 @@ typedef struct LEPoint LEPoint;
  *
  * @internal
  */
-#define LE_NEW_ARRAY(type, count) (type *) uprv_malloc((count) * sizeof(type))
+#define LE_NEW_ARRAY(type, count) (type *)  LE_RANGE_CHECK(type,count,uprv_malloc((count) * sizeof(type)))
 
 /**
  * Re-allocate an array of basic types. This is used to isolate the rest of
@@ -373,7 +409,52 @@ typedef struct LEPoint LEPoint;
  * @internal
  */
 #define LE_DELETE_ARRAY(array) uprv_free((void *) (array))
-#endif
+#else
+/* !LE_USE_CMEMORY - Not using ICU memory - use C std lib versions */
+
+#include <stdlib.h>
+#include <string.h>
+
+/**
+ * A convenience macro to get the length of an array.
+ *
+ * @internal
+ */
+#define LE_ARRAY_SIZE(array) (sizeof array / sizeof array[0])
+
+/**
+ * A convenience macro for copying an array.
+ *
+ * @internal
+ */
+#define LE_ARRAY_COPY(dst, src, count) memcpy((void *) (dst), (void *) (src), (count) * sizeof (src)[0])
+
+/**
+ * Allocate an array of basic types. This is used to isolate the rest of
+ * the LayoutEngine code from cmemory.h.
+ *
+ * @internal
+ */
+#define LE_NEW_ARRAY(type, count) LE_RANGE_CHECK(type,count,(type *) malloc((count) * sizeof(type)))
+
+/**
+ * Re-allocate an array of basic types. This is used to isolate the rest of
+ * the LayoutEngine code from cmemory.h.
+ *
+ * @internal
+ */
+#define LE_GROW_ARRAY(array, newSize) realloc((void *) (array), (newSize) * sizeof (array)[0])
+
+ /**
+ * Free an array of basic types. This is used to isolate the rest of
+ * the LayoutEngine code from cmemory.h.
+ *
+ * @internal
+ */
+#define LE_DELETE_ARRAY(array) free((void *) (array))
+
+#endif  /* LE_USE_CMEMORY */
+#endif  /* U_HIDE_INTERNAL_API */
 
 /**
  * A macro to construct the four-letter tags used to
@@ -536,7 +617,7 @@ enum LEFeatureTags {
     LE_RAND_FEATURE_TAG = 0x72616E64UL, /**< 'rand' */
     LE_RLIG_FEATURE_TAG = 0x726C6967UL, /**< 'rlig' */
     LE_RPHF_FEATURE_TAG = 0x72706866UL, /**< 'rphf' */
-        LE_RKRF_FEATURE_TAG = 0x726B7266UL, /**< 'rkrf' */
+    LE_RKRF_FEATURE_TAG = 0x726B7266UL, /**< 'rkrf' */
     LE_RTBD_FEATURE_TAG = 0x72746264UL, /**< 'rtbd' */
     LE_RTLA_FEATURE_TAG = 0x72746C61UL, /**< 'rtla' */
     LE_RUBY_FEATURE_TAG = 0x72756279UL, /**< 'ruby' */
@@ -588,6 +669,68 @@ enum LEFeatureTags {
 };
 
 /**
+ * @internal
+ */
+enum LEFeatureENUMs {
+  LE_Kerning_FEATURE_ENUM = 0,   /**< Requests Kerning. Formerly LayoutEngine::kTypoFlagKern */
+  LE_Ligatures_FEATURE_ENUM = 1, /**< Requests Ligatures. Formerly LayoutEngine::kTypoFlagLiga */
+  LE_NoCanon_FEATURE_ENUM = 2, /**< Requests No Canonical Processing */
+  LE_CLIG_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_DLIG_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_HLIG_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_LIGA_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_RLIG_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SMCP_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_FRAC_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_AFRC_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_ZERO_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SWSH_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_CSWH_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SALT_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_NALT_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_RUBY_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SS01_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SS02_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SS03_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SS04_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SS05_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SS06_FEATURE_ENUM,  /**< Feature specific enum */
+  LE_SS07_FEATURE_ENUM,   /**< Feature specific enum */
+
+  LE_CHAR_FILTER_FEATURE_ENUM = 31, /**< Apply CharSubstitutionFilter */
+  LE_FEATURE_ENUM_MAX = LE_CHAR_FILTER_FEATURE_ENUM
+};
+
+#define LE_Kerning_FEATURE_FLAG   (1 << LE_Kerning_FEATURE_ENUM)
+#define LE_Ligatures_FEATURE_FLAG (1 << LE_Ligatures_FEATURE_ENUM)
+#define LE_NoCanon_FEATURE_FLAG (1 << LE_NoCanon_FEATURE_ENUM)
+#define LE_CLIG_FEATURE_FLAG (1 << LE_CLIG_FEATURE_ENUM)
+#define LE_DLIG_FEATURE_FLAG (1 << LE_DLIG_FEATURE_ENUM)
+#define LE_HLIG_FEATURE_FLAG (1 << LE_HLIG_FEATURE_ENUM)
+#define LE_LIGA_FEATURE_FLAG (1 << LE_LIGA_FEATURE_ENUM)
+#define LE_RLIG_FEATURE_FLAG (1 << LE_RLIG_FEATURE_ENUM)
+#define LE_SMCP_FEATURE_FLAG (1 << LE_SMCP_FEATURE_ENUM)
+#define LE_FRAC_FEATURE_FLAG (1 << LE_FRAC_FEATURE_ENUM)
+#define LE_AFRC_FEATURE_FLAG (1 << LE_AFRC_FEATURE_ENUM)
+#define LE_ZERO_FEATURE_FLAG (1 << LE_ZERO_FEATURE_ENUM)
+#define LE_SWSH_FEATURE_FLAG (1 << LE_SWSH_FEATURE_ENUM)
+#define LE_CSWH_FEATURE_FLAG (1 << LE_CSWH_FEATURE_ENUM)
+#define LE_SALT_FEATURE_FLAG (1 << LE_SALT_FEATURE_ENUM)
+#define LE_NALT_FEATURE_FLAG (1 << LE_NALT_FEATURE_ENUM)
+#define LE_RUBY_FEATURE_FLAG (1 << LE_RUBY_FEATURE_ENUM)
+#define LE_SS01_FEATURE_FLAG (1 << LE_SS01_FEATURE_ENUM)
+#define LE_SS02_FEATURE_FLAG (1 << LE_SS02_FEATURE_ENUM)
+#define LE_SS03_FEATURE_FLAG (1 << LE_SS03_FEATURE_ENUM)
+#define LE_SS04_FEATURE_FLAG (1 << LE_SS04_FEATURE_ENUM)
+#define LE_SS05_FEATURE_FLAG (1 << LE_SS05_FEATURE_ENUM)
+#define LE_SS06_FEATURE_FLAG (1 << LE_SS06_FEATURE_ENUM)
+#define LE_SS07_FEATURE_FLAG (1 << LE_SS07_FEATURE_ENUM)
+
+#define LE_CHAR_FILTER_FEATURE_FLAG (1 << LE_CHAR_FILTER_FEATURE_ENUM)
+
+#define LE_DEFAULT_FEATURE_FLAG (LE_Kerning_FEATURE_FLAG | LE_Ligatures_FEATURE_FLAG) /**< default features */
+
+/**
  * Error codes returned by the LayoutEngine.
  *
  * @stable ICU 2.4
@@ -611,7 +754,7 @@ enum LEErrorCode {
 };
 #endif
 
-#ifndef XP_CPLUSPLUS
+#ifndef __cplusplus
 /**
  * Error codes returned by the LayoutEngine.
  *
@@ -638,7 +781,4 @@ typedef enum LEErrorCode LEErrorCode;
 #define LE_FAILURE(code) (U_FAILURE((UErrorCode)code))
 #endif
 
-U_NAMESPACE_END
-#endif
-
-
+#endif /* __LETYPES_H */

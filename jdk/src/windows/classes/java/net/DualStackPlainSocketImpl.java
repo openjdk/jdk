@@ -152,8 +152,9 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         if (!fd.valid())
             return;
 
-        close0(fdAccess.get(fd));
+        final int nativefd = fdAccess.get(fd);
         fdAccess.set(fd, -1);
+        close0(nativefd);
     }
 
     void socketShutdown(int howto) throws IOException {

@@ -271,7 +271,9 @@ public class SortingFocusTraversalPolicy
             // Null result means that we overstepped the limit of the FTP's cycle.
             // In that case we must quit the cycle, otherwise return the component found.
             if (afterComp != null) {
-                if (log.isLoggable(PlatformLogger.FINE)) log.fine("### FTP returned " + afterComp);
+                if (log.isLoggable(PlatformLogger.FINE)) {
+                    log.fine("### FTP returned " + afterComp);
+                }
                 return afterComp;
             }
             aComponent = provider;
@@ -279,7 +281,9 @@ public class SortingFocusTraversalPolicy
 
         List<Component> cycle = getFocusTraversalCycle(aContainer);
 
-        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### Cycle is " + cycle + ", component is " + aComponent);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("### Cycle is " + cycle + ", component is " + aComponent);
+        }
 
         int index = getComponentIndex(cycle, aComponent);
 
@@ -360,7 +364,9 @@ public class SortingFocusTraversalPolicy
             // Null result means that we overstepped the limit of the FTP's cycle.
             // In that case we must quit the cycle, otherwise return the component found.
             if (beforeComp != null) {
-                if (log.isLoggable(PlatformLogger.FINE)) log.fine("### FTP returned " + beforeComp);
+                if (log.isLoggable(PlatformLogger.FINE)) {
+                    log.fine("### FTP returned " + beforeComp);
+                }
                 return beforeComp;
             }
             aComponent = provider;
@@ -373,7 +379,9 @@ public class SortingFocusTraversalPolicy
 
         List<Component> cycle = getFocusTraversalCycle(aContainer);
 
-        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### Cycle is " + cycle + ", component is " + aComponent);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("### Cycle is " + cycle + ", component is " + aComponent);
+        }
 
         int index = getComponentIndex(cycle, aComponent);
 
@@ -424,7 +432,9 @@ public class SortingFocusTraversalPolicy
     public Component getFirstComponent(Container aContainer) {
         List<Component> cycle;
 
-        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### Getting first component in " + aContainer);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("### Getting first component in " + aContainer);
+        }
         if (aContainer == null) {
             throw new IllegalArgumentException("aContainer cannot be null");
         }
@@ -436,10 +446,14 @@ public class SortingFocusTraversalPolicy
         }
 
         if (cycle.size() == 0) {
-            if (log.isLoggable(PlatformLogger.FINE)) log.fine("### Cycle is empty");
+            if (log.isLoggable(PlatformLogger.FINE)) {
+                log.fine("### Cycle is empty");
+            }
             return null;
         }
-        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### Cycle is " + cycle);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("### Cycle is " + cycle);
+        }
 
         for (Component comp : cycle) {
             if (accept(comp)) {
@@ -466,7 +480,9 @@ public class SortingFocusTraversalPolicy
      */
     public Component getLastComponent(Container aContainer) {
         List<Component> cycle;
-        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### Getting last component in " + aContainer);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("### Getting last component in " + aContainer);
+        }
 
         if (aContainer == null) {
             throw new IllegalArgumentException("aContainer cannot be null");
@@ -479,10 +495,14 @@ public class SortingFocusTraversalPolicy
         }
 
         if (cycle.size() == 0) {
-            if (log.isLoggable(PlatformLogger.FINE)) log.fine("### Cycle is empty");
+            if (log.isLoggable(PlatformLogger.FINE)) {
+                log.fine("### Cycle is empty");
+            }
             return null;
         }
-        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### Cycle is " + cycle);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("### Cycle is " + cycle);
+        }
 
         for (int i= cycle.size() - 1; i >= 0; i--) {
             Component comp = cycle.get(i);

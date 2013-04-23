@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,10 +168,22 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             // Note that the MAC keys do not inherit all attributes from the
             // template, but they do inherit the sensitive/extractable/token
             // flags, which is all P11Key cares about.
-            SecretKey clientMacKey = P11Key.secretKey
+            SecretKey clientMacKey, serverMacKey;
+
+            // The MAC size may be zero for GCM mode.
+            //
+            // PKCS11 does not support GCM mode as the author made the comment,
+            // so the macBits is unlikely to be zero. It's only a place holder.
+            if (macBits != 0) {
+                clientMacKey = P11Key.secretKey
                     (session, out.hClientMacSecret, "MAC", macBits, attributes);
-            SecretKey serverMacKey = P11Key.secretKey
+                serverMacKey = P11Key.secretKey
                     (session, out.hServerMacSecret, "MAC", macBits, attributes);
+            } else {
+                clientMacKey = null;
+                serverMacKey = null;
+            }
+
             SecretKey clientCipherKey, serverCipherKey;
             if (keyBits != 0) {
                 clientCipherKey = P11Key.secretKey(session, out.hClientKey,

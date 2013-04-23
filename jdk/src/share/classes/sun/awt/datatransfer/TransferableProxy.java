@@ -102,11 +102,11 @@ public class TransferableProxy implements Transferable {
     protected final boolean isLocal;
 }
 
-class ClassLoaderObjectOutputStream extends ObjectOutputStream {
+final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
     private final Map<Set<String>, ClassLoader> map =
         new HashMap<Set<String>, ClassLoader>();
 
-    public ClassLoaderObjectOutputStream(OutputStream os) throws IOException {
+    ClassLoaderObjectOutputStream(OutputStream os) throws IOException {
         super(os);
     }
 
@@ -140,16 +140,16 @@ class ClassLoaderObjectOutputStream extends ObjectOutputStream {
         map.put(s, classLoader);
     }
 
-    public Map<Set<String>, ClassLoader> getClassLoaderMap() {
+    Map<Set<String>, ClassLoader> getClassLoaderMap() {
         return new HashMap(map);
     }
 }
 
-class ClassLoaderObjectInputStream extends ObjectInputStream {
+final class ClassLoaderObjectInputStream extends ObjectInputStream {
     private final Map<Set<String>, ClassLoader> map;
 
-    public ClassLoaderObjectInputStream(InputStream is,
-                                        Map<Set<String>, ClassLoader> map)
+    ClassLoaderObjectInputStream(InputStream is,
+                                 Map<Set<String>, ClassLoader> map)
       throws IOException {
         super(is);
         if (map == null) {
@@ -166,8 +166,11 @@ class ClassLoaderObjectInputStream extends ObjectInputStream {
         s.add(className);
 
         ClassLoader classLoader = map.get(s);
-
-        return Class.forName(className, false, classLoader);
+        if (classLoader != null) {
+            return Class.forName(className, false, classLoader);
+        } else {
+            return super.resolveClass(classDesc);
+        }
     }
 
     protected Class<?> resolveProxyClass(String[] interfaces)
@@ -179,6 +182,9 @@ class ClassLoaderObjectInputStream extends ObjectInputStream {
         }
 
         ClassLoader classLoader = map.get(s);
+        if (classLoader == null) {
+            return super.resolveProxyClass(interfaces);
+        }
 
         // The code below is mostly copied from the superclass.
         ClassLoader nonPublicLoader = null;

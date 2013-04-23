@@ -72,6 +72,7 @@ import java.lang.reflect.*;
  * <pre>java com.sun.org.apache.bcel.internal.util.JavaWrapper -Dbcel.classloader=foo.MyLoader &lt;real.class.name&gt; [arguments]</pre>
  * </p>
  *
+ * @version $Id: JavaWrapper.java,v 1.3 2007-07-19 04:34:52 ofung Exp $
  * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
  * @see ClassLoader
  */
@@ -79,7 +80,7 @@ public class JavaWrapper {
   private java.lang.ClassLoader loader;
 
   private static java.lang.ClassLoader getClassLoader() {
-    String s = System.getProperty("bcel.classloader");
+    String s = SecuritySupport.getSystemProperty("bcel.classloader");
 
     if((s == null) || "".equals(s))
       s = "com.sun.org.apache.bcel.internal.util.ClassLoader";

@@ -87,11 +87,27 @@ class BinaryConstantPool implements Constants {
                 cpool[i] = new Integer((in.readUnsignedShort() << 16) | in.readUnsignedShort());
                 break;
 
+              case CONSTANT_METHODHANDLE:
+                cpool[i] = readBytes(in, 3);
+                break;
+              case CONSTANT_METHODTYPE:
+                cpool[i] = readBytes(in, 2);
+                break;
+              case CONSTANT_INVOKEDYNAMIC:
+                cpool[i] = readBytes(in, 4);
+                break;
+
               case 0:
               default:
                 throw new ClassFormatError("invalid constant type: " + (int)types[i]);
             }
         }
+    }
+
+    private byte[] readBytes(DataInputStream in, int cnt) throws IOException {
+        byte[] b = new byte[cnt];
+        in.readFully(b);
+        return b;
     }
 
     /**
@@ -160,6 +176,9 @@ class BinaryConstantPool implements Constants {
             case CONSTANT_FLOAT:
             case CONSTANT_LONG:
             case CONSTANT_DOUBLE:
+            case CONSTANT_METHODHANDLE:
+            case CONSTANT_METHODTYPE:
+            case CONSTANT_INVOKEDYNAMIC:
                 return getValue(n);
 
             case CONSTANT_CLASS:
@@ -312,6 +331,11 @@ class BinaryConstantPool implements Constants {
                     out.writeShort(value & 0xFFFF);
                     break;
                 }
+                case CONSTANT_METHODHANDLE:
+                case CONSTANT_METHODTYPE:
+                case CONSTANT_INVOKEDYNAMIC:
+                    out.write((byte[])x, 0, ((byte[])x).length);
+                    break;
                 default:
                      throw new ClassFormatError("invalid constant type: "
                                                    + (int)types[i]);

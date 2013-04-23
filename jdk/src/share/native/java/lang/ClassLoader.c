@@ -492,24 +492,6 @@ Java_java_lang_ClassLoader_00024NativeLibrary_find
     (*env)->ReleaseStringUTFChars(env, name, cname);
     return res;
 }
-
-JNIEXPORT jobject JNICALL
-Java_java_lang_ClassLoader_getCaller(JNIEnv *env, jclass cls, jint index)
-{
-    jobjectArray jcallerStack;
-    int len;
-
-    jcallerStack = JVM_GetClassContext(env);
-    if ((*env)->ExceptionCheck(env)) {
-        return NULL;
-    }
-    len = (*env)->GetArrayLength(env, jcallerStack);
-    if (index < len) {
-        return (*env)->GetObjectArrayElement(env, jcallerStack, index);
-    }
-    return NULL;
-}
-
 /*
  * Class:     java_lang_ClassLoader_NativeLibrary
  * Method:    findBuiltinLib

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public final class JAXWSUtils {
 
     private static String escapeSpace( String url ) {
         // URLEncoder didn't work.
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         for (int i = 0; i < url.length(); i++) {
             // TODO: not sure if this is the only character that needs to be escaped.
             if (url.charAt(i) == ' ')
@@ -109,8 +109,8 @@ public final class JAXWSUtils {
         try {
             URL baseURL = new File(".").getCanonicalFile().toURL();
             return new URL(baseURL, name).toExternalForm();
-        } catch( IOException e ) {
-            ; // ignore
+        } catch( IOException e) {
+            //ignore
         }
         return name;
     }
@@ -118,6 +118,7 @@ public final class JAXWSUtils {
     /**
      * Checks if the system ID is absolute.
      */
+    @SuppressWarnings("ResultOfObjectAllocationIgnored")
     public static  void checkAbsoluteness(String systemId) {
         // we need to be able to handle system IDs like "urn:foo", which java.net.URL can't process,
         // but OTOH we also need to be able to process system IDs like "file://a b c/def.xsd",
@@ -125,10 +126,10 @@ public final class JAXWSUtils {
         // eventually we need a proper URI class that works for us.
         try {
             new URL(systemId);
-        } catch( MalformedURLException _ ) {
+        } catch( MalformedURLException mue) {
             try {
                 new URI(systemId);
-            } catch (URISyntaxException e ) {
+            } catch (URISyntaxException e) {
                 throw new IllegalArgumentException("system ID '"+systemId+"' isn't absolute",e);
             }
         }
