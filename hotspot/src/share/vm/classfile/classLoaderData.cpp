@@ -53,6 +53,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "memory/gcLocker.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
@@ -423,7 +424,7 @@ void ClassLoaderData::free_deallocate_list() {
 // These anonymous class loaders are to contain classes used for JSR292
 ClassLoaderData* ClassLoaderData::anonymous_class_loader_data(oop loader, TRAPS) {
   // Add a new class loader data to the graph.
-  return ClassLoaderDataGraph::add(NULL, loader, CHECK_NULL);
+  return ClassLoaderDataGraph::add(loader, true, CHECK_NULL);
 }
 
 const char* ClassLoaderData::loader_name() {
@@ -495,30 +496,40 @@ ClassLoaderData* ClassLoaderDataGraph::_head = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_unloading = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_saved_head = NULL;
 
-
 // Add a new class loader data node to the list.  Assign the newly created
 // ClassLoaderData into the java/lang/ClassLoader object as a hidden field
-ClassLoaderData* ClassLoaderDataGraph::add(ClassLoaderData** cld_addr, Handle loader, TRAPS) {
+ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRAPS) {
   // Not assigned a class loader data yet.
   // Create one.
-  ClassLoaderData* *list_head = &_head;
-  ClassLoaderData* next = _head;
-
-  bool is_anonymous = (cld_addr == NULL);
   ClassLoaderData* cld = new ClassLoaderData(loader, is_anonymous);
+  cld->init_dependencies(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    delete cld;
+    return NULL;
+  }
 
-  if (cld_addr != NULL) {
-    // First, Atomically set it
-    ClassLoaderData* old = (ClassLoaderData*) Atomic::cmpxchg_ptr(cld, cld_addr, NULL);
-    if (old != NULL) {
-      delete cld;
-      // Returns the data.
-      return old;
+  No_Safepoint_Verifier no_safepoints; // nothing is keeping the dependencies array in cld alive
+                                       // make sure we don't encounter a GC until we've inserted
+                                       // cld into the CLDG
+
+  if (!is_anonymous) {
+    ClassLoaderData** cld_addr = java_lang_ClassLoader::loader_data_addr(loader());
+    if (cld_addr != NULL) {
+      // First, Atomically set it
+      ClassLoaderData* old = (ClassLoaderData*) Atomic::cmpxchg_ptr(cld, cld_addr, NULL);
+      if (old != NULL) {
+        delete cld;
+        // Returns the data.
+        return old;
+      }
     }
   }
 
   // We won the race, and therefore the task of adding the data to the list of
   // class loader data
+  ClassLoaderData** list_head = &_head;
+  ClassLoaderData* next = _head;
+
   do {
     cld->set_next(next);
     ClassLoaderData* exchanged = (ClassLoaderData*)Atomic::cmpxchg_ptr(cld, list_head, next);
@@ -531,10 +542,6 @@ ClassLoaderData* ClassLoaderDataGraph::add(ClassLoaderData** cld_addr, Handle lo
                    cld->loader_name());
         tty->print_cr("]");
       }
-      // Create dependencies after the CLD is added to the list.  Otherwise,
-      // the GC GC will not find the CLD and the _class_loader field will
-      // not be updated.
-      cld->init_dependencies(CHECK_NULL);
       return cld;
     }
     next = exchanged;
