@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,14 +108,11 @@ public class Dependencies {
         return new_deps;
     }
 
-    class CompareNames implements Comparator<Name> {
+    static class CompareNames implements Comparator<Name> {
          public int compare(Name a, Name b) {
              return a.toString().compareTo(b.toString());
          }
 
-         public boolean equals(Object obj) {
-             return super.equals(obj);
-         }
     }
 
     /**

@@ -1,6 +1,6 @@
 /**
  * @test    /nodynamiccopyright/
- * @bug     7169362
+ * @bug     7169362 8001114
  * @author  sogoel
  * @summary Default case not specified for other methods in container annotation
  * @compile/fail/ref=MissingDefaultCase1.out -XDrawDiagnostics MissingDefaultCase1.java

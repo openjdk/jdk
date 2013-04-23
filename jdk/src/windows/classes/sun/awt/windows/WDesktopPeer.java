@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,15 @@ public class WDesktopPeer implements DesktopPeer {
     }
 
     public void open(File file) throws IOException {
-        this.ShellExecute(file.toURI(), ACTION_OPEN_VERB);
+        this.ShellExecute(file, ACTION_OPEN_VERB);
     }
 
     public void edit(File file) throws IOException {
-        this.ShellExecute(file.toURI(), ACTION_EDIT_VERB);
+        this.ShellExecute(file, ACTION_EDIT_VERB);
     }
 
     public void print(File file) throws IOException {
-        this.ShellExecute(file.toURI(), ACTION_PRINT_VERB);
+        this.ShellExecute(file, ACTION_PRINT_VERB);
     }
 
     public void mail(URI uri) throws IOException {
@@ -68,6 +68,13 @@ public class WDesktopPeer implements DesktopPeer {
 
     public void browse(URI uri) throws IOException {
         this.ShellExecute(uri, ACTION_OPEN_VERB);
+    }
+
+    private void ShellExecute(File file, String verb) throws IOException {
+        String errMsg = ShellExecute(file.getAbsolutePath(), verb);
+        if (errMsg != null) {
+            throw new IOException("Failed to " + verb + " " + file + ". Error message: " + errMsg);
+        }
     }
 
     private void ShellExecute(URI uri, String verb) throws IOException {
@@ -79,6 +86,6 @@ public class WDesktopPeer implements DesktopPeer {
         }
     }
 
-    private static native String ShellExecute(String uri, String verb);
+    private static native String ShellExecute(String fileOrUri, String verb);
 
 }

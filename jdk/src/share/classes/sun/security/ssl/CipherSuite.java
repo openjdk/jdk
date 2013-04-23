@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -608,9 +608,18 @@ final class CipherSuite implements Comparable<CipherSuite> {
         // size of the MAC value (and MAC key) in bytes
         final int size;
 
-        MacAlg(String name, int size) {
+        // block size of the underlying hash algorithm
+        final int hashBlockSize;
+
+        // minimal padding size of the underlying hash algorithm
+        final int minimalPaddingSize;
+
+        MacAlg(String name, int size,
+                int hashBlockSize, int minimalPaddingSize) {
             this.name = name;
             this.size = size;
+            this.hashBlockSize = hashBlockSize;
+            this.minimalPaddingSize = minimalPaddingSize;
         }
 
         /**
@@ -659,11 +668,11 @@ final class CipherSuite implements Comparable<CipherSuite> {
         new BulkCipher(CIPHER_AES_GCM,  AEAD_CIPHER,     32, 12,  4, true);
 
     // MACs
-    final static MacAlg M_NULL = new MacAlg("NULL", 0);
-    final static MacAlg M_MD5  = new MacAlg("MD5", 16);
-    final static MacAlg M_SHA  = new MacAlg("SHA", 20);
-    final static MacAlg M_SHA256  = new MacAlg("SHA256", 32);
-    final static MacAlg M_SHA384  = new MacAlg("SHA384", 48);
+    final static MacAlg M_NULL    = new MacAlg("NULL",     0,   0,   0);
+    final static MacAlg M_MD5     = new MacAlg("MD5",     16,  64,   9);
+    final static MacAlg M_SHA     = new MacAlg("SHA",     20,  64,   9);
+    final static MacAlg M_SHA256  = new MacAlg("SHA256",  32,  64,   9);
+    final static MacAlg M_SHA384  = new MacAlg("SHA384",  48, 128,  17);
 
     /**
      * PRFs (PseudoRandom Function) from TLS specifications.
@@ -956,7 +965,8 @@ final class CipherSuite implements Comparable<CipherSuite> {
          * Definition of the CipherSuites that are enabled by default.
          * They are listed in preference order, most preferred first, using
          * the following criteria:
-         * 1. Prefer Suite B compliant cipher suites, see RFC6460.
+         * 1. Prefer Suite B compliant cipher suites, see RFC6460 (To be
+         *    changed later, see below).
          * 2. Prefer the stronger bulk cipher, in the order of AES_256(GCM),
          *    AES_128(GCM), AES_256, AES_128, RC-4, 3DES-EDE.
          * 3. Prefer the stronger MAC algorithm, in the order of SHA384,

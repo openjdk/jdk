@@ -64,6 +64,10 @@ HOTSPOT_AVAILABLE := $(if $(wildcard $(root_dir)/hotspot),true,false)
 # Build with the configure bridge. After running configure, restart make
 # to parse the new spec file.
 BRIDGE_TARGETS := all
+# Add bootcycle-images target if legacy variable is set.
+ifeq ($(SKIP_BOOT_CYCLE),false)
+  BRIDGE_TARGETS += bootcycle-images
+endif
 bridgeBuild: bridge2configure
 	@cd $(root_dir) && $(MAKE) -f NewMakefile.gmk $(BRIDGE_TARGETS)
 
@@ -98,6 +102,9 @@ ifdef ALT_CUPS_HEADERS_PATH
 endif
 ifdef ALT_FREETYPE_HEADERS_PATH
 	@$(ECHO) " --with-freetype=$(call UnixPath,$(ALT_FREETYPE_HEADERS_PATH)/..) " >> $@.tmp
+endif
+ifdef ENABLE_SJAVAC
+	@$(ECHO) " --enable-sjavac" >> $@.tmp
 endif
 ifeq ($(HOTSPOT_AVAILABLE),false)
   ifdef ALT_JDK_IMPORT_PATH

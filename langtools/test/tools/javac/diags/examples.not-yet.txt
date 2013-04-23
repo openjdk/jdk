@@ -110,4 +110,5 @@ compiler.warn.unchecked.cast.to.type                    # DEAD, replaced by comp
 compiler.warn.unexpected.archive.file                   # Paths: zip file with unknown extn
 compiler.warn.unknown.enum.constant                     # in bad class file
 compiler.warn.unknown.enum.constant.reason              # in bad class file
+compiler.warn.override.equals.but.not.hashcode          # when a class overrides equals but not hashCode method from Object
 

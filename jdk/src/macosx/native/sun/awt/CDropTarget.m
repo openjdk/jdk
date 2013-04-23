@@ -81,9 +81,8 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
         fComponent = JNFNewGlobalRef(env, jcomponent);
         fDropTarget = JNFNewGlobalRef(env, jdropTarget);
 
-        AWTView *awtView = [((NSWindow *) control) contentView];
-        fView = [awtView retain];
-        [awtView setDropTarget:self];
+        fView = [((AWTView *) control) retain];
+        [fView setDropTarget:self];
 
 
     } else {
@@ -176,6 +175,10 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
 - (void)dealloc
 {
     DLog2(@"[CDropTarget dealloc]: %@\n", self);
+
+    if(sCurrentDropTarget == self) {
+        sCurrentDropTarget = nil;
+    }
 
     [fView release];
     fView = nil;
@@ -390,8 +393,7 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
 
     // Release dragging data if any when Java's AWT event thread is all finished.
     // Make sure dragging data is released on the native event thread.
-    [ThreadUtilities performOnMainThread:@selector(safeReleaseDraggingData:) onObject:self
-                              withObject:draggingSequenceNumberID waitUntilDone:NO awtMode:NO];
+    [ThreadUtilities performOnMainThread:@selector(safeReleaseDraggingData:) on:self withObject:draggingSequenceNumberID waitUntilDone:NO];
 }
 
 - (jint)currentJavaActions {
@@ -491,7 +493,10 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
         JNF_MEMBER_CACHE(handleEnterMessageMethod, jc_CDropTargetContextPeer, "handleEnterMessage", "(Ljava/awt/Component;IIII[JJ)I");
         if (sDraggingError == FALSE) {
             // Double-casting self gets rid of 'different size' compiler warning:
-            actions = JNFCallIntMethod(env, fDropTargetContextPeer, handleEnterMessageMethod, fComponent, (jint) javaLocation.x, (jint) javaLocation.y, dropAction, actions, formats, ptr_to_jlong(self)); // AWT_THREADING Safe (CToolkitThreadBlockedHandler)
+            // AWT_THREADING Safe (CToolkitThreadBlockedHandler)
+            actions = JNFCallIntMethod(env, fDropTargetContextPeer, handleEnterMessageMethod,
+                                       fComponent, (jint) javaLocation.x, (jint) javaLocation.y,
+                                       dropAction, actions, formats, ptr_to_jlong(self));
         }
 
         if (sDraggingError == FALSE) {
@@ -510,11 +515,6 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
 
             // Remember the dragOp for no-op'd update messages:
             sUpdateOperation = dragOp;
-        }
-
-        // If we are in the same process as the sender, make the sender post the appropriate message
-        if (sender) {
-            [[CDragSource currentDragSource] postDragEnter];
         }
     }
 
@@ -609,11 +609,9 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
         JNF_MEMBER_CACHE(handleExitMessageMethod, jc_CDropTargetContextPeer, "handleExitMessage", "(Ljava/awt/Component;J)V");
         if (sDraggingError == FALSE) {
             DLog3(@"  - dragExit: loc native %f, %f\n", sDraggingLocation.x, sDraggingLocation.y);
-            JNFCallVoidMethod(env, fDropTargetContextPeer, handleExitMessageMethod, fComponent, ptr_to_jlong(self)); // AWT_THREADING Safe (CToolkitThreadBlockedHandler)
-            // If we are in the same process as the sender, make the sender post the appropriate message
-            if (sender) {
-                [[CDragSource currentDragSource] postDragExit];
-            }
+             // AWT_THREADING Safe (CToolkitThreadBlockedHandler) 
+            JNFCallVoidMethod(env, fDropTargetContextPeer,
+                              handleExitMessageMethod, fComponent, ptr_to_jlong(self));
         }
 
         // 5-27-03 Note: [Radar 3270455]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.util;
+
+import java.util.function.UnaryOperator;
 
 /**
  * An ordered collection (also known as a <i>sequence</i>).  The user of this
@@ -375,6 +377,64 @@ public interface List<E> extends Collection<E> {
     boolean retainAll(Collection<?> c);
 
     /**
+     * Replaces each element of this list with the result of applying the
+     * operator to that element.  Errors or runtime exceptions thrown by
+     * the operator are relayed to the caller.
+     *
+     * @implSpec
+     * The default implementation is equivalent to, for this {@code list}:
+     * <pre>
+     * final ListIterator<E> li = list.listIterator();
+     * while (li.hasNext()) {
+     *   li.set(operator.apply(li.next()));
+     * }
+     * </pre>
+     * If the list's list-iterator does not support the {@code set} operation
+     * then an {@code UnsupportedOperationException} will be thrown when
+     * replacing the first element.
+     *
+     * @param operator the operator to apply to each element
+     * @throws UnsupportedOperationException if the {@code set}
+     *         operation is not supported by this list
+     * @throws NullPointerException if the specified operator is null or
+     *         if the element is replaced with a null value and this list
+     *         does not permit null elements
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
+     * @since 1.8
+     */
+    default void replaceAll(UnaryOperator<E> operator) {
+        Objects.requireNonNull(operator);
+        final ListIterator<E> li = this.listIterator();
+        while (li.hasNext()) {
+            li.set(operator.apply(li.next()));
+        }
+    }
+
+    /**
+     * Sorts this list using the supplied {@code Comparator} to compare elements.
+     *
+     * @implSpec
+     * The default implementation is equivalent to, for this {@code list}:
+     * <pre>Collections.sort(list, c)</pre>
+     *
+     * @param c the {@code Comparator} used to compare list elements.
+     *          A {@code null} value indicates that the elements'
+     *          {@linkplain Comparable natural ordering} should be used
+     * @throws ClassCastException if the list contains elements that are not
+     *         <i>mutually comparable</i> using the specified comparator
+     * @throws UnsupportedOperationException if the list's list-iterator does
+     *         not support the {@code set} operation
+     * @throws IllegalArgumentException
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
+     *         if the comparator is found to violate the {@link Comparator}
+     *         contract
+     * @since 1.8
+     */
+    default void sort(Comparator<? super E> c) {
+        Collections.sort(this, c);
+    }
+
+    /**
      * Removes all of the elements from this list (optional operation).
      * The list will be empty after this call returns.
      *
@@ -597,4 +657,30 @@ public interface List<E> extends Collection<E> {
      *         fromIndex &gt; toIndex</tt>)
      */
     List<E> subList(int fromIndex, int toIndex);
+
+    /**
+     * Creates a {@link Spliterator} over the elements in this list.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
+     * {@link Spliterator#ORDERED}.  Implementations should document the
+     * reporting of additional characteristic values.
+     *
+     * @implSpec
+     * The default implementation creates a
+     * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
+     * from the list's {@code Iterator}.  The spliterator inherits the
+     * <em>fail-fast</em> properties of the collection's iterator.
+     *
+     * @implNote
+     * The created {@code Spliterator} additionally reports
+     * {@link Spliterator#SUBSIZED}.
+     *
+     * @return a {@code Spliterator} over the elements in this list
+     * @since 1.8
+     */
+    @Override
+    default Spliterator<E> spliterator() {
+        return Spliterators.spliterator(this, Spliterator.ORDERED);
+    }
 }
+

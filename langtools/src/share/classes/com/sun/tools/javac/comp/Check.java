@@ -285,7 +285,7 @@ public class Check {
      *  @param ex         The failure to report.
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
-        log.error(pos, "cant.access", ex.sym, ex.getDetailValue());
+        log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, pos, "cant.access", ex.sym, ex.getDetailValue());
         if (ex instanceof ClassReader.BadClassFile
                 && !suppressAbortOnBadClassFile) throw new Abort();
         else return syms.errType;
@@ -670,10 +670,17 @@ public class Check {
         t = checkClassOrArrayType(pos, t);
         if (t.hasTag(CLASS)) {
             if ((t.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
-                log.error(pos, "abstract.cant.be.instantiated");
+                log.error(pos, "abstract.cant.be.instantiated", t.tsym);
                 t = types.createErrorType(t);
             } else if ((t.tsym.flags() & ENUM) != 0) {
                 log.error(pos, "enum.cant.be.instantiated");
+                t = types.createErrorType(t);
+            } else {
+                t = checkClassType(pos, t, true);
+            }
+        } else if (t.hasTag(ARRAY)) {
+            if (!types.isReifiable(((ArrayType)t).elemtype)) {
+                log.error(pos, "generic.array.creation");
                 t = types.createErrorType(t);
             }
         }
@@ -1591,6 +1598,7 @@ public class Check {
                    (other.flags() & STATIC) == 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.static",
                       cannotOverride(m, other));
+            m.flags_field |= BAD_OVERRIDE;
             return;
         }
 
@@ -1602,6 +1610,7 @@ public class Check {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.meth",
                       cannotOverride(m, other),
                       asFlagSet(other.flags() & (FINAL | STATIC)));
+            m.flags_field |= BAD_OVERRIDE;
             return;
         }
 
@@ -1618,6 +1627,7 @@ public class Check {
                       other.flags() == 0 ?
                           Flag.PACKAGE :
                           asFlagSet(other.flags() & AccessFlags));
+            m.flags_field |= BAD_OVERRIDE;
             return;
         }
 
@@ -1645,6 +1655,7 @@ public class Check {
                           "override.incompatible.ret",
                           cannotOverride(m, other),
                           mtres, otres);
+                m.flags_field |= BAD_OVERRIDE;
                 return;
             }
         } else if (overrideWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
@@ -1664,6 +1675,7 @@ public class Check {
                       "override.meth.doesnt.throw",
                       cannotOverride(m, other),
                       unhandledUnerased.head);
+            m.flags_field |= BAD_OVERRIDE;
             return;
         }
         else if (unhandledUnerased.nonEmpty()) {
@@ -1959,6 +1971,52 @@ public class Check {
         }
     }
 
+    private Filter<Symbol> equalsHasCodeFilter = new Filter<Symbol>() {
+        public boolean accepts(Symbol s) {
+            return MethodSymbol.implementation_filter.accepts(s) &&
+                    (s.flags() & BAD_OVERRIDE) == 0;
+
+        }
+    };
+
+    public void checkClassOverrideEqualsAndHashIfNeeded(DiagnosticPosition pos,
+            ClassSymbol someClass) {
+        /* At present, annotations cannot possibly have a method that is override
+         * equivalent with Object.equals(Object) but in any case the condition is
+         * fine for completeness.
+         */
+        if (someClass == (ClassSymbol)syms.objectType.tsym ||
+            someClass.isInterface() || someClass.isEnum() ||
+            (someClass.flags() & ANNOTATION) != 0 ||
+            (someClass.flags() & ABSTRACT) != 0) return;
+        //anonymous inner classes implementing interfaces need especial treatment
+        if (someClass.isAnonymous()) {
+            List<Type> interfaces =  types.interfaces(someClass.type);
+            if (interfaces != null && !interfaces.isEmpty() &&
+                interfaces.head.tsym == syms.comparatorType.tsym) return;
+        }
+        checkClassOverrideEqualsAndHash(pos, someClass);
+    }
+
+    private void checkClassOverrideEqualsAndHash(DiagnosticPosition pos,
+            ClassSymbol someClass) {
+        if (lint.isEnabled(LintCategory.OVERRIDES)) {
+            MethodSymbol equalsAtObject = (MethodSymbol)syms.objectType
+                    .tsym.members().lookup(names.equals).sym;
+            MethodSymbol hashCodeAtObject = (MethodSymbol)syms.objectType
+                    .tsym.members().lookup(names.hashCode).sym;
+            boolean overridesEquals = types.implementation(equalsAtObject,
+                someClass, false, equalsHasCodeFilter).owner == someClass;
+            boolean overridesHashCode = types.implementation(hashCodeAtObject,
+                someClass, false, equalsHasCodeFilter) != hashCodeAtObject;
+
+            if (overridesEquals && !overridesHashCode) {
+                log.warning(LintCategory.OVERRIDES, pos,
+                        "override.equals.but.not.hashcode", someClass);
+            }
+        }
+    }
+
     private boolean checkNameClash(ClassSymbol origin, Symbol s1, Symbol s2) {
         ClashFilter cf = new ClashFilter(origin.type);
         return (cf.accepts(s1) &&
@@ -2235,10 +2293,13 @@ public class Check {
     void checkFunctionalInterface(JCTree tree, Type funcInterface) {
         ClassType c = new ClassType(Type.noType, List.<Type>nil(), null);
         ClassSymbol csym = new ClassSymbol(0, names.empty, c, syms.noSymbol);
-        c.interfaces_field = List.of(funcInterface);
+        c.interfaces_field = List.of(types.removeWildcards(funcInterface));
         c.supertype_field = syms.objectType;
         c.tsym = csym;
         csym.members_field = new Scope(csym);
+        Symbol descSym = types.findDescriptorSymbol(funcInterface.tsym);
+        Type descType = types.findDescriptorType(funcInterface);
+        csym.members_field.enter(new MethodSymbol(PUBLIC, descSym.name, descType, csym));
         csym.completer = null;
         checkImplementations(tree, csym, csym);
     }
@@ -2718,25 +2779,17 @@ public class Check {
     }
 
     private void validateTarget(Symbol container, Symbol contained, DiagnosticPosition pos) {
-        Attribute.Array containedTarget = getAttributeTargetAttribute(contained);
+        // The set of targets the container is applicable to must be a subset
+        // (with respect to annotation target semantics) of the set of targets
+        // the contained is applicable to. The target sets may be implicit or
+        // explicit.
 
-        // If contained has no Target, we are done
-        if (containedTarget == null) {
-            return;
-        }
-
-        // If contained has Target m1, container must have a Target
-        // annotation, m2, and m2 must be a subset of m1. (This is
-        // trivially true if contained has no target as per above).
-
-        // contained has target, but container has not, error
+        Set<Name> containerTargets;
         Attribute.Array containerTarget = getAttributeTargetAttribute(container);
         if (containerTarget == null) {
-            log.error(pos, "invalid.repeatable.annotation.incompatible.target", container, contained);
-            return;
-        }
-
-        Set<Name> containerTargets = new HashSet<Name>();
+            containerTargets = getDefaultTargetSet();
+        } else {
+            containerTargets = new HashSet<Name>();
         for (Attribute app : containerTarget.values) {
             if (!(app instanceof Attribute.Enum)) {
                 continue; // recovery
@@ -2744,8 +2797,14 @@ public class Check {
             Attribute.Enum e = (Attribute.Enum)app;
             containerTargets.add(e.value.name);
         }
+        }
 
-        Set<Name> containedTargets = new HashSet<Name>();
+        Set<Name> containedTargets;
+        Attribute.Array containedTarget = getAttributeTargetAttribute(contained);
+        if (containedTarget == null) {
+            containedTargets = getDefaultTargetSet();
+        } else {
+            containedTargets = new HashSet<Name>();
         for (Attribute app : containedTarget.values) {
             if (!(app instanceof Attribute.Enum)) {
                 continue; // recovery
@@ -2753,20 +2812,42 @@ public class Check {
             Attribute.Enum e = (Attribute.Enum)app;
             containedTargets.add(e.value.name);
         }
+        }
 
-        if (!isTargetSubset(containedTargets, containerTargets)) {
+        if (!isTargetSubsetOf(containerTargets, containedTargets)) {
             log.error(pos, "invalid.repeatable.annotation.incompatible.target", container, contained);
         }
     }
 
-    /** Checks that t is a subset of s, with respect to ElementType
+    /* get a set of names for the default target */
+    private Set<Name> getDefaultTargetSet() {
+        if (defaultTargets == null) {
+            Set<Name> targets = new HashSet<Name>();
+            targets.add(names.ANNOTATION_TYPE);
+            targets.add(names.CONSTRUCTOR);
+            targets.add(names.FIELD);
+            targets.add(names.LOCAL_VARIABLE);
+            targets.add(names.METHOD);
+            targets.add(names.PACKAGE);
+            targets.add(names.PARAMETER);
+            targets.add(names.TYPE);
+
+            defaultTargets = java.util.Collections.unmodifiableSet(targets);
+        }
+
+        return defaultTargets;
+    }
+    private Set<Name> defaultTargets;
+
+
+    /** Checks that s is a subset of t, with respect to ElementType
      * semantics, specifically {ANNOTATION_TYPE} is a subset of {TYPE}
      */
-    private boolean isTargetSubset(Set<Name> s, Set<Name> t) {
-        // Check that all elements in t are present in s
-        for (Name n2 : t) {
+    private boolean isTargetSubsetOf(Set<Name> s, Set<Name> t) {
+        // Check that all elements in s are present in t
+        for (Name n2 : s) {
             boolean currentElementOk = false;
-            for (Name n1 : s) {
+            for (Name n1 : t) {
                 if (n1 == n2) {
                     currentElementOk = true;
                     break;

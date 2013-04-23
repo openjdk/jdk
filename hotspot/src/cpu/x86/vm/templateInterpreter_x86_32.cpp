@@ -1080,22 +1080,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // result potentially in rdx:rax or ST0
 
-  // Either restore the MXCSR register after returning from the JNI Call
-  // or verify that it wasn't changed.
-  if (VM_Version::supports_sse()) {
-    if (RestoreMXCSROnJNICalls) {
-      __ ldmxcsr(ExternalAddress(StubRoutines::addr_mxcsr_std()));
-    }
-    else if (CheckJNICalls ) {
-      __ call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
-    }
-  }
-
-  // Either restore the x87 floating pointer control word after returning
-  // from the JNI call or verify that it wasn't changed.
-  if (CheckJNICalls) {
-    __ call(RuntimeAddress(StubRoutines::x86::verify_fpu_cntrl_wrd_entry()));
-  }
+  // Verify or restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni();
 
   // save potential result in ST(0) & rdx:rax
   // (if result handler is the T_FLOAT or T_DOUBLE handler, result must be in ST0 -
@@ -1585,7 +1571,8 @@ int AbstractInterpreter::layout_activation(Method* method,
                                            int callee_locals,
                                            frame* caller,
                                            frame* interpreter_frame,
-                                           bool is_top_frame) {
+                                           bool is_top_frame,
+                                           bool is_bottom_frame) {
   // Note: This calculation must exactly parallel the frame setup
   // in AbstractInterpreterGenerator::generate_method_entry.
   // If interpreter_frame!=NULL, set up the method, locals, and monitors.

@@ -59,17 +59,16 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.testng.Assert.assertEquals;
 
-import java.util.Locale;
-
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.time.temporal.TemporalField;
+import java.util.Locale;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -77,7 +76,7 @@ import org.testng.annotations.Test;
 /**
  * Test SimpleDateTimeTextProvider.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestDateTimeTextProvider extends AbstractTestPrinterParser {
 
     Locale enUS = new Locale("en", "US");

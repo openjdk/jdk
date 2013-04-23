@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,14 @@ final class MAC extends Authenticator {
     // Value of the null MAC is fixed
     private static final byte nullMAC[] = new byte[0];
 
-    // stuff defined by the kind of MAC algorithm
-    private final int           macSize;
+    // internal identifier for the MAC algorithm
+    private final MacAlg        macAlg;
 
     // JCE Mac object
     private final Mac mac;
 
     private MAC() {
-        macSize = 0;
+        macAlg = M_NULL;
         mac = null;
     }
 
@@ -71,8 +71,7 @@ final class MAC extends Authenticator {
     MAC(MacAlg macAlg, ProtocolVersion protocolVersion, SecretKey key)
             throws NoSuchAlgorithmException, InvalidKeyException {
         super(protocolVersion);
-
-        this.macSize = macAlg.size;
+        this.macAlg = macAlg;
 
         String algorithm;
         boolean tls = (protocolVersion.v >= ProtocolVersion.TLS10.v);
@@ -97,7 +96,21 @@ final class MAC extends Authenticator {
      * Returns the length of the MAC.
      */
     int MAClen() {
-        return macSize;
+        return macAlg.size;
+    }
+
+    /**
+     * Returns the hash function block length of the MAC alorithm.
+     */
+    int hashBlockLen() {
+        return macAlg.hashBlockSize;
+    }
+
+    /**
+     * Returns the hash function minimal padding length of the MAC alorithm.
+     */
+    int minimalPaddingLen() {
+        return macAlg.minimalPaddingSize;
     }
 
     /**
@@ -107,14 +120,18 @@ final class MAC extends Authenticator {
      * @param buf compressed record on which the MAC is computed
      * @param offset start of compressed record data
      * @param len the size of the compressed record
+     * @param isSimulated if true, simulate the the MAC computation
      */
-    final byte[] compute(byte type, byte buf[], int offset, int len) {
-        if (macSize == 0) {
+    final byte[] compute(byte type, byte buf[],
+            int offset, int len, boolean isSimulated) {
+        if (macAlg.size == 0) {
             return nullMAC;
         }
 
-        byte[] additional = acquireAuthenticationBytes(type, len);
-        mac.update(additional);
+        if (!isSimulated) {
+            byte[] additional = acquireAuthenticationBytes(type, len);
+            mac.update(additional);
+        }
         mac.update(buf, offset, len);
 
         return mac.doFinal();
@@ -130,17 +147,22 @@ final class MAC extends Authenticator {
      * @param type record type
      * @param bb a ByteBuffer in which the position and limit
      *          demarcate the data to be MAC'd.
+     * @param isSimulated if true, simulate the the MAC computation
      */
-    final byte[] compute(byte type, ByteBuffer bb) {
-        if (macSize == 0) {
+    final byte[] compute(byte type, ByteBuffer bb, boolean isSimulated) {
+        if (macAlg.size == 0) {
             return nullMAC;
         }
 
-        byte[] additional = acquireAuthenticationBytes(type, bb.remaining());
-        mac.update(additional);
+        if (!isSimulated) {
+            byte[] additional =
+                    acquireAuthenticationBytes(type, bb.remaining());
+            mac.update(additional);
+        }
         mac.update(bb);
 
         return mac.doFinal();
     }
 
 }
+

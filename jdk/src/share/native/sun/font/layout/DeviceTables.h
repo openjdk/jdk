@@ -57,6 +57,7 @@ private:
     static const le_uint16 fieldSignBits[];
     static const le_uint16 fieldBits[];
 };
+LE_VAR_ARRAY(DeviceTable, deltaValues)
 
 U_NAMESPACE_END
 #endif

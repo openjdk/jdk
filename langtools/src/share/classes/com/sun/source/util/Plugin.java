@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javax.tools.StandardLocation;
  *
  * <p>Plug-ins are located via a {@link ServiceLoader},
  * using the same class path as annotation processors (i.e.
- * {@link StandardLocation#PROCESSOR_PATH PROCESSOR_PATH} or
+ * {@link StandardLocation#ANNOTATION_PROCESSOR_PATH ANNOTATION_PROCESSOR_PATH} or
  * {@code -processorpath}).
  *
  * <p>It is expected that a typical plug-in will simply register a
@@ -48,6 +48,7 @@ import javax.tools.StandardLocation;
  *
  * @since 1.8
  */
+@jdk.Supported
 public interface Plugin {
     /**
      * Get the user-friendly name of this plug-in.

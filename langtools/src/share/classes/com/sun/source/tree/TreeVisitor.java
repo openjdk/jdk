@@ -56,6 +56,7 @@ package com.sun.source.tree;
  *
  * @since 1.6
  */
+@jdk.Supported
 public interface TreeVisitor<R,P> {
     R visitAnnotatedType(AnnotatedTypeTree node, P p);
     R visitAnnotation(AnnotationTree node, P p);

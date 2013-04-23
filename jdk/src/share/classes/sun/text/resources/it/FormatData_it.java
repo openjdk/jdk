@@ -76,11 +76,11 @@
 
 package sun.text.resources.it;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_it extends ListResourceBundle {
+public class FormatData_it extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -135,6 +135,40 @@ public class FormatData_it extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "G",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "G",
+                    "L",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "G",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "G",
+                    "L",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "domenica", // Sunday
@@ -144,6 +178,17 @@ public class FormatData_it extends ListResourceBundle {
                     "gioved\u00ec", // Thursday
                     "venerd\u00ec", // Friday
                     "sabato" // Saturday
+                }
+            },
+            { "standalone.DayNames",
+                new String[] {
+                    "Domenica",
+                    "Luned\u00ec",
+                    "Marted\u00ec",
+                    "Mercoled\u00ec",
+                    "Gioved\u00ec",
+                    "Venerd\u00ec",
+                    "Sabato",
                 }
             },
             { "DayAbbreviations",
@@ -172,6 +217,12 @@ public class FormatData_it extends ListResourceBundle {
                 new String[] { // era strings
                     "BC",
                     "dopo Cristo"
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "aC",
+                    "dC",
                 }
             },
             { "NumberElements",
@@ -211,71 +262,6 @@ public class FormatData_it extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "dd MMMM y G",
-                    "dd/MMM/y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "dd MMMM y G",
-                    "dd/MMM/y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "dd MMMM y G",
-                    "dd/MMM/y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y GGGG",
-                    "dd MMMM y GGGG",
-                    "dd/MMM/y GGGG",
-                    "dd/MM/y GGGG",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "dd MMMM y G",
-                    "dd/MMM/y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y GGGG",
-                    "dd MMMM y GGGG",
-                    "dd/MMM/y GGGG",
-                    "dd/MM/y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "calendario civile islamico" },
-            { "calendarname.islamicc", "calendario civile islamico" },
-            { "calendarname.islamic", "calendario islamico" },
-            { "calendarname.buddhist", "calendario buddista" },
-            { "calendarname.japanese", "calendario giapponese" },
-            { "calendarname.gregorian", "calendario gregoriano" },
-            { "calendarname.gregory", "calendario gregoriano" },
-            { "field.era", "era" },
-            { "field.year", "anno" },
-            { "field.month", "mese" },
-            { "field.week", "settimana" },
-            { "field.weekday", "giorno della settimana" },
-            { "field.dayperiod", "periodo del giorno" },
-            { "field.hour", "ora" },
-            { "field.minute", "minuto" },
-            { "field.second", "secondo" },
-            { "field.zone", "zona" },
         };
     }
 }

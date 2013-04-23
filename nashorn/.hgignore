@@ -1,0 +1,25 @@
+syntax: glob
+
+^.hgtip
+build/*
+dist/*
+/nbproject/private/
+private.xml
+private.properties
+webrev/*
+webrev.zip
+*.class
+*.clazz
+*.log
+*.orig
+genfiles.properties
+hotspot.log
+.DS_Store*
+TEST-*.xml
+TESTS-*.xml
+report.xml
+CC/*
+jcov2/*
+.idea/*
+test/lib/testng.jar
+test/script/external/*

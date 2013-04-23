@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,17 +49,16 @@ Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS
 
   Symbol* sym;
 
-  if (c_heap) {
+  if (DumpSharedSpaces) {
+    // Allocate all symbols to CLD shared metaspace
+    sym = new (len, ClassLoaderData::the_null_class_loader_data(), THREAD) Symbol(name, len, -1);
+  } else if (c_heap) {
     // refcount starts as 1
-    assert(!DumpSharedSpaces, "never allocate to C heap");
     sym = new (len, THREAD) Symbol(name, len, 1);
     assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
   } else {
-    if (DumpSharedSpaces) {
-      sym = new (len, ClassLoaderData::the_null_class_loader_data(), THREAD) Symbol(name, len, -1);
-  } else {
+    // Allocate to global arena
     sym = new (len, arena(), THREAD) Symbol(name, len, -1);
-  }
   }
   return sym;
 }
@@ -678,9 +677,14 @@ oop StringTable::lookup(Symbol* symbol) {
   ResourceMark rm;
   int length;
   jchar* chars = symbol->as_unicode(length);
-  unsigned int hashValue = hash_string(chars, length);
-  int index = the_table()->hash_to_index(hashValue);
-  return the_table()->lookup(index, chars, length, hashValue);
+  return lookup(chars, length);
+}
+
+
+oop StringTable::lookup(jchar* name, int len) {
+  unsigned int hash = hash_string(name, len);
+  int index = the_table()->hash_to_index(hash);
+  return the_table()->lookup(index, name, len, hash);
 }
 
 

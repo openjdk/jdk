@@ -266,6 +266,9 @@ class Bundle {
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "DayNarrows");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "AmPmMarkers");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "narrow.AmPmMarkers");
+            handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "QuarterNames");
+            handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "QuarterAbbreviations");
+            handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "QuarterNarrows");
 
             adjustEraNames(myMap, calendarType);
 
@@ -484,25 +487,33 @@ class Bundle {
         for (String k : patternKeys) {
             if (myMap.containsKey(calendarPrefix + k)) {
                 int len = patternKeys.length;
-                List<String> rawPatterns = new ArrayList<>();
-                List<String> patterns = new ArrayList<>();
+                List<String> rawPatterns = new ArrayList<>(len);
+                List<String> patterns = new ArrayList<>(len);
                 for (int i = 0; i < len; i++) {
                     String key = calendarPrefix + patternKeys[i];
                     String pattern = (String) myMap.remove(key);
                     if (pattern == null) {
                         pattern = (String) parentsMap.remove(key);
                     }
+                    rawPatterns.add(i, pattern);
                     if (pattern != null) {
-                        rawPatterns.add(i, pattern);
                         patterns.add(i, translateDateFormatLetters(calendarType, pattern));
+                    } else {
+                        patterns.add(i, null);
                     }
                 }
+                // If patterns is empty or has any nulls, discard patterns.
                 if (patterns.isEmpty()) {
                     return;
                 }
+                for (String p : patterns) {
+                    if (p == null) {
+                        return;
+                    }
+                }
                 String key = calendarPrefix + name;
                 if (!rawPatterns.equals(patterns)) {
-                    myMap.put("cldr." + key, rawPatterns.toArray(new String[len]));
+                    myMap.put("java.time." + key, rawPatterns.toArray(new String[len]));
                 }
                 myMap.put(key, patterns.toArray(new String[len]));
                 break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,13 @@
 package com.sun.tools.sjavac;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import com.sun.tools.sjavac.server.JavacServer;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.sun.tools.sjavac.server.JavacServer;
 
 /**
  * The main class of the smart javac wrapper tool.
@@ -268,12 +263,12 @@ public class Main {
             // Find all class files allowable for linking.
             // And pickup knowledge of all modules found here.
             // This cannot currently filter classes inside jar files.
-            Map<String,Source> classes_to_link_to = new HashMap<String,Source>();
+//          Map<String,Source> classes_to_link_to = new HashMap<String,Source>();
 //          findFiles(args, "-classpath", Util.set(".class"), classes_to_link_to, modules, current_module, true);
 
             // Find all module sources allowable for linking.
-            Map<String,Source> modules_to_link_to = new HashMap<String,Source>();
- //         findFiles(args, "-modulepath", Util.set(".class"), modules_to_link_to, modules, current_module, true);
+//          Map<String,Source> modules_to_link_to = new HashMap<String,Source>();
+//          findFiles(args, "-modulepath", Util.set(".class"), modules_to_link_to, modules, current_module, true);
 
             // Add the set of sources to the build database.
             javac_state.now().collectPackagesSourcesAndArtifacts(modules);
@@ -443,7 +438,7 @@ public class Main {
                     out[source_path+1] = out[source_path+1]+File.pathSeparatorChar+args[i+1];
                     i++;
                 }
-            } else if (args[i].equals("-classpath")) {
+            } else if (args[i].equals("-classpath") || args[i].equals("-cp")) {
                 if (class_path == -1) {
                     class_path = j;
                     out[j] = args[i];
@@ -663,6 +658,7 @@ public class Main {
                o.equals("-d") ||
                o.equals("-sourcepath") ||
                o.equals("-classpath") ||
+               o.equals("-cp") ||
                o.equals("-bootclasspath") ||
                o.equals("-src");
     }
@@ -934,13 +930,13 @@ public class Main {
                     if (roots.contains(root)) {
                         throw new ProblemException("\""+r+"\" has already been used for "+option);
                     }
-                    if (roots.equals(bin_dir)) {
+                    if (root.equals(bin_dir)) {
                         throw new ProblemException("\""+r+"\" cannot be used both for "+option+" and -d");
                     }
-                    if (roots.equals(gensrc_dir)) {
+                    if (root.equals(gensrc_dir)) {
                         throw new ProblemException("\""+r+"\" cannot be used both for "+option+" and -s");
                     }
-                    if (roots.equals(header_dir)) {
+                    if (root.equals(header_dir)) {
                         throw new ProblemException("\""+r+"\" cannot be used both for "+option+" and -h");
                     }
                     roots.add(root);
@@ -953,7 +949,8 @@ public class Main {
             if (args[i].equals("-src") ||
                 args[i].equals("-sourcepath") ||
                 args[i].equals("-modulepath") ||
-                args[i].equals("-classpath"))
+                args[i].equals("-classpath") ||
+                args[i].equals("-cp"))
             {
                 // Reset the includes,excludes and excludefiles after they have been used.
                 includes = new LinkedList<String>();

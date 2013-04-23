@@ -280,6 +280,7 @@ public:
   // stackmap table data
   Array<u1>* stackmap_data() const { return _stackmap_data; }
   void set_stackmap_data(Array<u1>* sd) { _stackmap_data = sd; }
+  void copy_stackmap_data(ClassLoaderData* loader_data, u1* sd, int length, TRAPS);
   bool has_stackmap_table() const { return _stackmap_data != NULL; }
 
   void init_fingerprint() {
@@ -439,6 +440,9 @@ public:
   int default_annotations_length() const {
     return has_default_annotations() ? default_annotations()->length() : 0;
   }
+
+  // Copy annotations from other ConstMethod
+  void copy_annotations_from(ConstMethod* cm);
 
   // byte codes
   void    set_code(address code) {

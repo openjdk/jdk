@@ -1079,15 +1079,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   __ call(rax);
   // result potentially in rax or xmm0
 
-  // Depending on runtime options, either restore the MXCSR
-  // register after returning from the JNI Call or verify that
-  // it wasn't changed during -Xcheck:jni.
-  if (RestoreMXCSROnJNICalls) {
-    __ ldmxcsr(ExternalAddress(StubRoutines::x86::mxcsr_std()));
-  }
-  else if (CheckJNICalls) {
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::verify_mxcsr_entry())));
-  }
+  // Verify or restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni();
 
   // NOTE: The order of these pushes is known to frame::interpreter_frame_result
   // in order to extract the result of a method call. If the order of these
@@ -1599,7 +1592,8 @@ int AbstractInterpreter::layout_activation(Method* method,
                                            int callee_locals,
                                            frame* caller,
                                            frame* interpreter_frame,
-                                           bool is_top_frame) {
+                                           bool is_top_frame,
+                                           bool is_bottom_frame) {
   // Note: This calculation must exactly parallel the frame setup
   // in AbstractInterpreterGenerator::generate_method_entry.
   // If interpreter_frame!=NULL, set up the method, locals, and monitors.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package java.lang;
 
 import java.io.*;
 import java.util.StringTokenizer;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
 
 /**
  * Every Java application has a single instance of class
@@ -749,10 +751,21 @@ public class Runtime {
     public native void traceMethodCalls(boolean on);
 
     /**
-     * Loads the specified filename as a dynamic library. The filename
-     * argument must be a complete path name,
+     * Loads the native library specified by the filename argument.  The filename
+     * argument must be an absolute path name.
      * (for example
      * <code>Runtime.getRuntime().load("/home/avh/lib/libX11.so");</code>).
+     *
+     * If the filename argument, when stripped of any platform-specific library
+     * prefix, path, and file extension, indicates a library whose name is,
+     * for example, L, and a native library called L is statically linked
+     * with the VM, then the JNI_OnLoad_L function exported by the library
+     * is invoked rather than attempting to load a dynamic library.
+     * A filename matching the argument does not have to exist in the file
+     * system. See the JNI Specification for more details.
+     *
+     * Otherwise, the filename argument is mapped to a native library image in
+     * an implementation-dependent manner.
      * <p>
      * First, if there is a security manager, its <code>checkLink</code>
      * method is called with the <code>filename</code> as its argument.
@@ -769,15 +782,19 @@ public class Runtime {
      * @exception  SecurityException  if a security manager exists and its
      *             <code>checkLink</code> method doesn't allow
      *             loading of the specified dynamic library
-     * @exception  UnsatisfiedLinkError  if the file does not exist.
+     * @exception  UnsatisfiedLinkError  if either the filename is not an
+     *             absolute path name, the native library is not statically
+     *             linked with the VM, or the library cannot be mapped to
+     *             a native library image by the host system.
      * @exception  NullPointerException if <code>filename</code> is
      *             <code>null</code>
      * @see        java.lang.Runtime#getRuntime()
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
+    @CallerSensitive
     public void load(String filename) {
-        load0(System.getCallerClass(), filename);
+        load0(Reflection.getCallerClass(), filename);
     }
 
     synchronized void load0(Class<?> fromClass, String filename) {
@@ -793,12 +810,16 @@ public class Runtime {
     }
 
     /**
-     * Loads the dynamic library with the specified library name.
-     * A file containing native code is loaded from the local file system
-     * from a place where library files are conventionally obtained. The
-     * details of this process are implementation-dependent. The
-     * mapping from a library name to a specific filename is done in a
-     * system-specific manner.
+     * Loads the native library specified by the <code>libname</code>
+     * argument.  The <code>libname</code> argument must not contain any platform
+     * specific prefix, file extension or path. If a native library
+     * called <code>libname</code> is statically linked with the VM, then the
+     * JNI_OnLoad_<code>libname</code> function exported by the library is invoked.
+     * See the JNI Specification for more details.
+     *
+     * Otherwise, the libname argument is loaded from a system library
+     * location and mapped to a native library image in an implementation-
+     * dependent manner.
      * <p>
      * First, if there is a security manager, its <code>checkLink</code>
      * method is called with the <code>libname</code> as its argument.
@@ -823,14 +844,18 @@ public class Runtime {
      * @exception  SecurityException  if a security manager exists and its
      *             <code>checkLink</code> method doesn't allow
      *             loading of the specified dynamic library
-     * @exception  UnsatisfiedLinkError  if the library does not exist.
+     * @exception  UnsatisfiedLinkError if either the libname argument
+     *             contains a file path, the native library is not statically
+     *             linked with the VM,  or the library cannot be mapped to a
+     *             native library image by the host system.
      * @exception  NullPointerException if <code>libname</code> is
      *             <code>null</code>
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
+    @CallerSensitive
     public void loadLibrary(String libname) {
-        loadLibrary0(System.getCallerClass(), libname);
+        loadLibrary0(Reflection.getCallerClass(), libname);
     }
 
     synchronized void loadLibrary0(Class<?> fromClass, String libname) {

@@ -44,6 +44,7 @@
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -57,10 +58,12 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
+#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/elfFile.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
 
@@ -189,20 +192,6 @@ julong os::Linux::available_memory() {
 
 julong os::physical_memory() {
   return Linux::physical_memory();
-}
-
-julong os::allocatable_physical_memory(julong size) {
-#ifdef _LP64
-  return size;
-#else
-  julong result = MIN2(size, (julong)3800*M);
-   if (!is_allocatable(result)) {
-     // See comments under solaris for alignment considerations
-     julong reasonable_size = (julong)2*G - 2 * os::vm_page_size();
-     result =  MIN2(size, reasonable_size);
-   }
-   return result;
-#endif // _LP64
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1796,20 +1785,101 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   // in case of error it checks if .dll/.so was built for the
   // same architecture as Hotspot is running on
 
+
+// Remember the stack's state. The Linux dynamic linker will change
+// the stack to 'executable' at most once, so we must safepoint only once.
+bool os::Linux::_stack_is_executable = false;
+
+// VM operation that loads a library.  This is necessary if stack protection
+// of the Java stacks can be lost during loading the library.  If we
+// do not stop the Java threads, they can stack overflow before the stacks
+// are protected again.
+class VM_LinuxDllLoad: public VM_Operation {
+ private:
+  const char *_filename;
+  char *_ebuf;
+  int _ebuflen;
+  void *_lib;
+ public:
+  VM_LinuxDllLoad(const char *fn, char *ebuf, int ebuflen) :
+    _filename(fn), _ebuf(ebuf), _ebuflen(ebuflen), _lib(NULL) {}
+  VMOp_Type type() const { return VMOp_LinuxDllLoad; }
+  void doit() {
+    _lib = os::Linux::dll_load_in_vmthread(_filename, _ebuf, _ebuflen);
+    os::Linux::_stack_is_executable = true;
+  }
+  void* loaded_library() { return _lib; }
+};
+
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
 {
-  void * result= ::dlopen(filename, RTLD_LAZY);
+  void * result = NULL;
+  bool load_attempted = false;
+
+  // Check whether the library to load might change execution rights
+  // of the stack. If they are changed, the protection of the stack
+  // guard pages will be lost. We need a safepoint to fix this.
+  //
+  // See Linux man page execstack(8) for more info.
+  if (os::uses_stack_guard_pages() && !os::Linux::_stack_is_executable) {
+    ElfFile ef(filename);
+    if (!ef.specifies_noexecstack()) {
+      if (!is_init_completed()) {
+        os::Linux::_stack_is_executable = true;
+        // This is OK - No Java threads have been created yet, and hence no
+        // stack guard pages to fix.
+        //
+        // This should happen only when you are building JDK7 using a very
+        // old version of JDK6 (e.g., with JPRT) and running test_gamma.
+        //
+        // Dynamic loader will make all stacks executable after
+        // this function returns, and will not do that again.
+        assert(Threads::first() == NULL, "no Java threads should exist yet.");
+      } else {
+        warning("You have loaded library %s which might have disabled stack guard. "
+                "The VM will try to fix the stack guard now.\n"
+                "It's highly recommended that you fix the library with "
+                "'execstack -c <libfile>', or link it with '-z noexecstack'.",
+                filename);
+
+        assert(Thread::current()->is_Java_thread(), "must be Java thread");
+        JavaThread *jt = JavaThread::current();
+        if (jt->thread_state() != _thread_in_native) {
+          // This happens when a compiler thread tries to load a hsdis-<arch>.so file
+          // that requires ExecStack. Cannot enter safe point. Let's give up.
+          warning("Unable to fix stack guard. Giving up.");
+        } else {
+          if (!LoadExecStackDllInVMThread) {
+            // This is for the case where the DLL has an static
+            // constructor function that executes JNI code. We cannot
+            // load such DLLs in the VMThread.
+            result = os::Linux::dlopen_helper(filename, ebuf, ebuflen);
+          }
+
+          ThreadInVMfromNative tiv(jt);
+          debug_only(VMNativeEntryWrapper vew;)
+
+          VM_LinuxDllLoad op(filename, ebuf, ebuflen);
+          VMThread::execute(&op);
+          if (LoadExecStackDllInVMThread) {
+            result = op.loaded_library();
+          }
+          load_attempted = true;
+        }
+      }
+    }
+  }
+
+  if (!load_attempted) {
+    result = os::Linux::dlopen_helper(filename, ebuf, ebuflen);
+  }
+
   if (result != NULL) {
     // Successful loading
     return result;
   }
 
   Elf32_Ehdr elf_head;
-
-  // Read system error message into ebuf
-  // It may or may not be overwritten below
-  ::strncpy(ebuf, ::dlerror(), ebuflen-1);
-  ebuf[ebuflen-1]='\0';
   int diag_msg_max_length=ebuflen-strlen(ebuf);
   char* diag_msg_buf=ebuf+strlen(ebuf);
 
@@ -1950,6 +2020,47 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   }
 
   return NULL;
+}
+
+void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
+  void * result = ::dlopen(filename, RTLD_LAZY);
+  if (result == NULL) {
+    ::strncpy(ebuf, ::dlerror(), ebuflen - 1);
+    ebuf[ebuflen-1] = '\0';
+  }
+  return result;
+}
+
+void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf, int ebuflen) {
+  void * result = NULL;
+  if (LoadExecStackDllInVMThread) {
+    result = dlopen_helper(filename, ebuf, ebuflen);
+  }
+
+  // Since 7019808, libjvm.so is linked with -noexecstack. If the VM loads a
+  // library that requires an executable stack, or which does not have this
+  // stack attribute set, dlopen changes the stack attribute to executable. The
+  // read protection of the guard pages gets lost.
+  //
+  // Need to check _stack_is_executable again as multiple VM_LinuxDllLoad
+  // may have been queued at the same time.
+
+  if (!_stack_is_executable) {
+    JavaThread *jt = Threads::first();
+
+    while (jt) {
+      if (!jt->stack_guard_zone_unused() &&        // Stack not yet fully initialized
+          jt->stack_yellow_zone_enabled()) {       // No pending stack overflow exceptions
+        if (!os::guard_memory((char *) jt->stack_red_zone_base() - jt->stack_red_zone_size(),
+                              jt->stack_yellow_zone_size() + jt->stack_red_zone_size())) {
+          warning("Attempt to reguard stack yellow zone failed.");
+        }
+      }
+      jt = jt->next();
+    }
+  }
+
+  return result;
 }
 
 /*
@@ -3094,13 +3205,24 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
     numa_make_global(addr, bytes);
   }
 
+  // The memory is committed
+  address pc = CALLER_PC;
+  MemTracker::record_virtual_memory_reserve((address)addr, bytes, pc);
+  MemTracker::record_virtual_memory_commit((address)addr, bytes, pc);
+
   return addr;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
   // detaching the SHM segment will also delete it, see reserve_memory_special()
   int rslt = shmdt(base);
-  return rslt == 0;
+  if (rslt == 0) {
+    MemTracker::record_virtual_memory_uncommit((address)base, bytes);
+    MemTracker::record_virtual_memory_release((address)base, bytes);
+    return true;
+  } else {
+   return false;
+  }
 }
 
 size_t os::large_page_size() {
@@ -3461,7 +3583,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   assert(thread->is_VM_thread(), "Must be VMThread");
   // read current suspend action
   int action = osthread->sr.suspend_action();
-  if (action == SR_SUSPEND) {
+  if (action == os::Linux::SuspendResume::SR_SUSPEND) {
     suspend_save_context(osthread, siginfo, context);
 
     // Notify the suspend action is about to be completed. do_suspend()
@@ -3483,12 +3605,12 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
     do {
       sigsuspend(&suspend_set);
       // ignore all returns until we get a resume signal
-    } while (osthread->sr.suspend_action() != SR_CONTINUE);
+    } while (osthread->sr.suspend_action() != os::Linux::SuspendResume::SR_CONTINUE);
 
     resume_clear_context(osthread);
 
   } else {
-    assert(action == SR_CONTINUE, "unexpected sr action");
+    assert(action == os::Linux::SuspendResume::SR_CONTINUE, "unexpected sr action");
     // nothing special to do - just leave the handler
   }
 
@@ -3542,7 +3664,7 @@ static int SR_finalize() {
 // but this seems the normal response to library errors
 static bool do_suspend(OSThread* osthread) {
   // mark as suspended and send signal
-  osthread->sr.set_suspend_action(SR_SUSPEND);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_SUSPEND);
   int status = pthread_kill(osthread->pthread_id(), SR_signum);
   assert_status(status == 0, status, "pthread_kill");
 
@@ -3551,18 +3673,18 @@ static bool do_suspend(OSThread* osthread) {
     for (int i = 0; !osthread->sr.is_suspended(); i++) {
       os::yield_all(i);
     }
-    osthread->sr.set_suspend_action(SR_NONE);
+    osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
     return true;
   }
   else {
-    osthread->sr.set_suspend_action(SR_NONE);
+    osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
     return false;
   }
 }
 
 static void do_resume(OSThread* osthread) {
   assert(osthread->sr.is_suspended(), "thread should be suspended");
-  osthread->sr.set_suspend_action(SR_CONTINUE);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_CONTINUE);
 
   int status = pthread_kill(osthread->pthread_id(), SR_signum);
   assert_status(status == 0, status, "pthread_kill");
@@ -3572,7 +3694,7 @@ static void do_resume(OSThread* osthread) {
       os::yield_all(i);
     }
   }
-  osthread->sr.set_suspend_action(SR_NONE);
+  osthread->sr.set_suspend_action(os::Linux::SuspendResume::SR_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

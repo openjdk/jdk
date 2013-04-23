@@ -3423,12 +3423,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // real raw monitor. VM is setup enough here for raw monitor enter.
   JvmtiExport::transition_pending_onload_raw_monitors();
 
-  if (VerifyBeforeGC &&
-      Universe::heap()->total_collections() >= VerifyGCStartAt) {
-    Universe::heap()->prepare_for_verify();
-    Universe::verify();   // make sure we're starting with a clean slate
-  }
-
   // Fully start NMT
   MemTracker::start();
 
@@ -3452,6 +3446,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   assert (Universe::is_fully_initialized(), "not initialized");
+  if (VerifyBeforeGC && VerifyGCStartAt == 0) {
+    Universe::heap()->prepare_for_verify();
+    Universe::verify();   // make sure we're starting with a clean slate
+  }
+
   EXCEPTION_MARK;
 
   // At this point, the Universe is initialized, but we have not executed
@@ -4061,6 +4060,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_1_2) return JNI_TRUE;
   if (version == JNI_VERSION_1_4) return JNI_TRUE;
   if (version == JNI_VERSION_1_6) return JNI_TRUE;
+  if (version == JNI_VERSION_1_8) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -4285,7 +4285,9 @@ JavaThread *Threads::owning_thread_from_monitor_owner(address owner, bool doLock
       if (owner == (address)p) return p;
     }
   }
-  assert(UseHeavyMonitors == false, "Did not find owning Java thread with UseHeavyMonitors enabled");
+  // Cannot assert on lack of success here since this function may be
+  // used by code that is trying to report useful problem information
+  // like deadlock detection.
   if (UseHeavyMonitors) return NULL;
 
   //
@@ -4303,7 +4305,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(address owner, bool doLock
       }
     }
   }
-  assert(the_owner != NULL, "Did not find owning Java thread for lock word address");
+  // cannot assert on lack of success here; see above comment
   return the_owner;
 }
 

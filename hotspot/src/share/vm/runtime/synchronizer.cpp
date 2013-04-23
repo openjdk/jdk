@@ -813,6 +813,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(Handle h_obj, bool doLock) {
   }
 
   if (owner != NULL) {
+    // owning_thread_from_monitor_owner() may also return NULL here
     return Threads::owning_thread_from_monitor_owner(owner, doLock);
   }
 

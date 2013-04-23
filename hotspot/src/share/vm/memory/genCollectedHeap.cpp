@@ -554,6 +554,8 @@ void GenCollectedHeap::do_collection(bool  full,
     }
 
     if (complete) {
+      // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+      ClassLoaderDataGraph::purge();
       // Resize the metaspace capacity after full collections
       MetaspaceGC::compute_new_size();
       update_full_collections_completed();
@@ -563,11 +565,6 @@ void GenCollectedHeap::do_collection(bool  full,
     MemoryService::track_memory_usage();
 
     gc_epilogue(complete);
-
-    // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-    if (complete) {
-      ClassLoaderDataGraph::purge();
-    }
 
     if (must_restore_marks_for_biased_locking) {
       BiasedLocking::restore_marks();

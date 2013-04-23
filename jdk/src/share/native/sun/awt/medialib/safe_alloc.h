@@ -41,5 +41,4 @@
     (((w) > 0) && ((h) > 0) && ((sz) > 0) &&                               \
      (((0xffffffffu / ((juint)(w))) / ((juint)(h))) > ((juint)(sz))))
 
-
 #endif // __SAFE_ALLOC_H__

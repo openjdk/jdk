@@ -3,7 +3,7 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#   PC       PU        OC          OU       YGC    FGC    FGCT     GCT   
+#   MC       MU        OC          OU       YGC    FGC    FGCT     GCT   
 #  8192.0   1877.3      6016.0       180.8      1     0    0.000    0.030
 
 
@@ -11,7 +11,7 @@ BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^   PC       PU        OC          OU       YGC    FGC    FGCT     GCT   $/	{
+/^   MC       MU        OC          OU       YGC    FGC    FGCT     GCT   $/	{
 	    headerlines++;
 	}
 

@@ -509,6 +509,16 @@ public class RichDiagnosticFormatter extends
                     visit(supertype);
                     visit(interfaces);
                 }
+            } else if (t.tsym.name.isEmpty()) {
+                //anon class
+                ClassType norm = (ClassType) t.tsym.type;
+                if (norm != null) {
+                    if (norm.interfaces_field != null && norm.interfaces_field.nonEmpty()) {
+                        visit(norm.interfaces_field.head);
+                    } else {
+                        visit(norm.supertype_field);
+                    }
+                }
             }
             nameSimplifier.addUsage(t.tsym);
             visit(t.getTypeArguments());
@@ -562,7 +572,7 @@ public class RichDiagnosticFormatter extends
     // <editor-fold defaultstate="collapsed" desc="symbol scanner">
     /**
      * Preprocess a given symbol looking for (i) additional info (where clauses) to be
-     * asdded to the main diagnostic (ii) names to be compacted
+     * added to the main diagnostic (ii) names to be compacted
      */
     protected void preprocessSymbol(Symbol s) {
         symbolPreprocessor.visit(s, null);

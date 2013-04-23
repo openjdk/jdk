@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import sun.misc.CompoundEnumeration;
 import sun.misc.Resource;
 import sun.misc.URLClassPath;
 import sun.misc.VM;
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
@@ -1159,11 +1160,6 @@ public abstract class ClassLoader {
         return java.util.Collections.emptyEnumeration();
     }
 
-    // index 0: java.lang.ClassLoader.class
-    // index 1: the immediate caller of index 0.
-    // index 2: the immediate caller of index 1.
-    private static native Class<? extends ClassLoader> getCaller(int index);
-
     /**
      * Registers the caller as parallel capable.</p>
      * The registration succeeds if and only if all of the following
@@ -1179,8 +1175,11 @@ public abstract class ClassLoader {
      *
      * @since   1.7
      */
+    @CallerSensitive
     protected static boolean registerAsParallelCapable() {
-        return ParallelLoaders.register(getCaller(1));
+        Class<? extends ClassLoader> callerClass =
+            Reflection.getCallerClass().asSubclass(ClassLoader.class);
+        return ParallelLoaders.register(callerClass);
     }
 
     /**
@@ -1340,15 +1339,13 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
+    @CallerSensitive
     public final ClassLoader getParent() {
         if (parent == null)
             return null;
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            ClassLoader ccl = getCallerClassLoader();
-            if (needsClassLoaderPermissionCheck(ccl, this)) {
-                sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-            }
+            checkClassLoaderPermission(this, Reflection.getCallerClass());
         }
         return parent;
     }
@@ -1408,6 +1405,7 @@ public abstract class ClassLoader {
      *
      * @revised  1.4
      */
+    @CallerSensitive
     public static ClassLoader getSystemClassLoader() {
         initSystemClassLoader();
         if (scl == null) {
@@ -1415,10 +1413,7 @@ public abstract class ClassLoader {
         }
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            ClassLoader ccl = getCallerClassLoader();
-            if (needsClassLoaderPermissionCheck(ccl, scl)) {
-                sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-            }
+            checkClassLoaderPermission(scl, Reflection.getCallerClass());
         }
         return scl;
     }
@@ -1471,8 +1466,8 @@ public abstract class ClassLoader {
     // class loader 'from' is same as class loader 'to' or an ancestor
     // of 'to'.  The class loader in a system domain can access
     // any class loader.
-    static boolean needsClassLoaderPermissionCheck(ClassLoader from,
-                                                   ClassLoader to)
+    private static boolean needsClassLoaderPermissionCheck(ClassLoader from,
+                                                           ClassLoader to)
     {
         if (from == to)
             return false;
@@ -1483,19 +1478,25 @@ public abstract class ClassLoader {
         return !to.isAncestor(from);
     }
 
-    // Returns the invoker's class loader, or null if none.
-    // NOTE: This must always be invoked when there is exactly one intervening
-    // frame from the core libraries on the stack between this method's
-    // invocation and the desired invoker.
-    static ClassLoader getCallerClassLoader() {
-        // NOTE use of more generic Reflection.getCallerClass()
-        Class<?> caller = Reflection.getCallerClass(3);
+    // Returns the class's class loader, or null if none.
+    static ClassLoader getClassLoader(Class<?> caller) {
         // This can be null if the VM is requesting it
         if (caller == null) {
             return null;
         }
         // Circumvent security check since this is package-private
         return caller.getClassLoader0();
+    }
+
+    static void checkClassLoaderPermission(ClassLoader cl, Class<?> caller) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // caller can be null if the VM is requesting it
+            ClassLoader ccl = getClassLoader(caller);
+            if (needsClassLoaderPermissionCheck(ccl, cl)) {
+                sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
+            }
+        }
     }
 
     // The class loader for the system
@@ -1683,22 +1684,29 @@ public abstract class ClassLoader {
         private int jniVersion;
         // the class from which the library is loaded, also indicates
         // the loader this native library belongs.
-        private Class<?> fromClass;
+        private final Class<?> fromClass;
         // the canonicalized name of the native library.
+        // or static library name
         String name;
+        // Indicates if the native library is linked into the VM
+        boolean isBuiltin;
+        // Indicates if the native library is loaded
+        boolean loaded;
+        native void load(String name, boolean isBuiltin);
 
-        native void load(String name);
         native long find(String name);
-        native void unload();
+        native void unload(String name, boolean isBuiltin);
+        static native String findBuiltinLib(String name);
 
-        public NativeLibrary(Class<?> fromClass, String name) {
+        public NativeLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
             this.name = name;
             this.fromClass = fromClass;
+            this.isBuiltin = isBuiltin;
         }
 
         protected void finalize() {
             synchronized (loadedLibraryNames) {
-                if (fromClass.getClassLoader() != null && handle != 0) {
+                if (fromClass.getClassLoader() != null && loaded) {
                     /* remove the native library name */
                     int size = loadedLibraryNames.size();
                     for (int i = 0; i < size; i++) {
@@ -1710,7 +1718,7 @@ public abstract class ClassLoader {
                     /* unload the library. */
                     ClassLoader.nativeLibraryContext.push(this);
                     try {
-                        unload();
+                        unload(name, isBuiltin);
                     } finally {
                         ClassLoader.nativeLibraryContext.pop();
                     }
@@ -1830,20 +1838,24 @@ public abstract class ClassLoader {
     }
 
     private static boolean loadLibrary0(Class<?> fromClass, final File file) {
-        boolean exists = AccessController.doPrivileged(
-            new PrivilegedAction<Object>() {
-                public Object run() {
-                    return file.exists() ? Boolean.TRUE : null;
-                }})
-            != null;
-        if (!exists) {
-            return false;
-        }
-        String name;
-        try {
-            name = file.getCanonicalPath();
-        } catch (IOException e) {
-            return false;
+        // Check to see if we're attempting to access a static library
+        String name = NativeLibrary.findBuiltinLib(file.getName());
+        boolean isBuiltin = (name != null);
+        if (!isBuiltin) {
+            boolean exists = AccessController.doPrivileged(
+                new PrivilegedAction<Object>() {
+                    public Object run() {
+                        return file.exists() ? Boolean.TRUE : null;
+                    }})
+                != null;
+            if (!exists) {
+                return false;
+            }
+            try {
+                name = file.getCanonicalPath();
+            } catch (IOException e) {
+                return false;
+            }
         }
         ClassLoader loader =
             (fromClass == null) ? null : fromClass.getClassLoader();
@@ -1891,14 +1903,14 @@ public abstract class ClassLoader {
                         }
                     }
                 }
-                NativeLibrary lib = new NativeLibrary(fromClass, name);
+                NativeLibrary lib = new NativeLibrary(fromClass, name, isBuiltin);
                 nativeLibraryContext.push(lib);
                 try {
-                    lib.load(name);
+                    lib.load(name, isBuiltin);
                 } finally {
                     nativeLibraryContext.pop();
                 }
-                if (lib.handle != 0) {
+                if (lib.loaded) {
                     loadedLibraryNames.addElement(name);
                     libs.addElement(lib);
                     return true;

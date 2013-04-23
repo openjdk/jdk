@@ -191,6 +191,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool is_the_null_class_loader_data() const {
     return this == _the_null_class_loader_data;
   }
+  bool is_ext_class_loader_data() const;
 
   // The Metaspace is created lazily so may be NULL.  This
   // method will allocate a Metaspace if needed.
@@ -234,6 +235,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void add_to_deallocate_list(Metadata* m);
 
   static ClassLoaderData* class_loader_data(oop loader);
+  static ClassLoaderData* class_loader_data_or_null(oop loader);
   static ClassLoaderData* anonymous_class_loader_data(oop loader, TRAPS);
   static void print_loader(ClassLoaderData *loader_data, outputStream *out);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 import com.sun.tools.classfile.Dependency;
-import com.sun.tools.classfile.Dependency.Location;
 import java.io.*;
 import java.text.MessageFormat;
 import java.util.*;
@@ -39,10 +38,10 @@ import java.util.regex.Pattern;
  * Implementation for the jdeps tool for static class dependency analysis.
  */
 class JdepsTask {
-    class BadArgs extends Exception {
+    static class BadArgs extends Exception {
         static final long serialVersionUID = 8765093759964640721L;
         BadArgs(String key, Object... args) {
-            super(JdepsTask.this.getMessage(key, args));
+            super(JdepsTask.getMessage(key, args));
             this.key = key;
             this.args = args;
         }
@@ -105,25 +104,22 @@ class JdepsTask {
         new Option(false, "-s", "--summary") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.showSummary = true;
-                task.options.verbose = Options.Verbose.SUMMARY;
+                task.options.verbose = Analyzer.Type.SUMMARY;
             }
         },
         new Option(false, "-v", "--verbose") {
             void process(JdepsTask task, String opt, String arg) {
-                task.options.verbose = Options.Verbose.VERBOSE;
+                task.options.verbose = Analyzer.Type.VERBOSE;
             }
         },
         new Option(true, "-V", "--verbose-level") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                switch (arg) {
-                    case "package":
-                        task.options.verbose = Options.Verbose.PACKAGE;
-                        break;
-                    case "class":
-                        task.options.verbose = Options.Verbose.CLASS;
-                        break;
-                    default:
-                        throw task.new BadArgs("err.invalid.arg.for.option", opt);
+                if ("package".equals(arg)) {
+                    task.options.verbose = Analyzer.Type.PACKAGE;
+                } else if ("class".equals(arg)) {
+                    task.options.verbose = Analyzer.Type.CLASS;
+                } else {
+                    throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
             }
         },
@@ -143,8 +139,11 @@ class JdepsTask {
             }
         },
         new Option(false, "-P", "--profile") {
-            void process(JdepsTask task, String opt, String arg) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.showProfile = true;
+                if (Profiles.getProfileCount() == 0) {
+                    throw new BadArgs("err.option.unsupported", opt, getMessage("err.profiles.msg"));
+                }
             }
         },
         new Option(false, "-R", "--recursive") {
@@ -157,7 +156,7 @@ class JdepsTask {
                 try {
                     task.options.depth = Integer.parseInt(arg);
                 } catch (NumberFormatException e) {
-                    throw task.new BadArgs("err.invalid.arg.for.option", opt);
+                    throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
             }
         },
@@ -171,7 +170,6 @@ class JdepsTask {
                 task.options.fullVersion = true;
             }
         },
-
     };
 
     private static final String PROGNAME = "jdeps";
@@ -216,7 +214,7 @@ class JdepsTask {
                 showHelp();
                 return EXIT_CMDERR;
             }
-            if (options.showSummary && options.verbose != Options.Verbose.SUMMARY) {
+            if (options.showSummary && options.verbose != Analyzer.Type.SUMMARY) {
                 showHelp();
                 return EXIT_CMDERR;
             }
@@ -236,26 +234,14 @@ class JdepsTask {
     }
 
     private final List<Archive> sourceLocations = new ArrayList<Archive>();
-    private final Archive NOT_FOUND = new Archive(getMessage("artifact.not.found"));
     private boolean run() throws IOException {
         findDependencies();
-        switch (options.verbose) {
-            case VERBOSE:
-            case CLASS:
-                printClassDeps(log);
-                break;
-            case PACKAGE:
-                printPackageDeps(log);
-                break;
-            case SUMMARY:
-                for (Archive origin : sourceLocations) {
-                    for (Archive target : origin.getRequiredArchives()) {
-                        log.format("%-30s -> %s%n", origin, target);
-                    }
-                }
-                break;
-            default:
-                throw new InternalError("Should not reach here");
+        Analyzer analyzer = new Analyzer(options.verbose);
+        analyzer.run(sourceLocations);
+        if (options.verbose == Analyzer.Type.SUMMARY) {
+            printSummary(log, analyzer);
+        } else {
+            printDependencies(log, analyzer);
         }
         return true;
     }
@@ -331,7 +317,7 @@ class JdepsTask {
                 } catch (ConstantPoolException e) {
                     throw new ClassFileError(e);
                 }
-                a.addClass(classFileName);
+
                 if (!doneClasses.contains(classFileName)) {
                     doneClasses.add(classFileName);
                 }
@@ -341,7 +327,7 @@ class JdepsTask {
                         if (!doneClasses.contains(cn) && !deque.contains(cn)) {
                             deque.add(cn);
                         }
-                        a.addDependency(d);
+                        a.addClass(d.getOrigin(), d.getTarget());
                     }
                 }
             }
@@ -367,19 +353,20 @@ class JdepsTask {
                         } catch (ConstantPoolException e) {
                             throw new ClassFileError(e);
                         }
-                        a.addClass(classFileName);
                         if (!doneClasses.contains(classFileName)) {
                             // if name is a fully-qualified class name specified
                             // from command-line, this class might already be parsed
                             doneClasses.add(classFileName);
-                            if (depth > 0) {
-                                for (Dependency d : finder.findDependencies(cf)) {
-                                    if (filter.accepts(d)) {
-                                        String cn = d.getTarget().getName();
-                                        if (!doneClasses.contains(cn) && !deque.contains(cn)) {
-                                            deque.add(cn);
-                                        }
-                                        a.addDependency(d);
+                            for (Dependency d : finder.findDependencies(cf)) {
+                                if (depth == 0) {
+                                    // ignore the dependency
+                                    a.addClass(d.getOrigin());
+                                    break;
+                                } else if (filter.accepts(d)) {
+                                    a.addClass(d.getOrigin(), d.getTarget());
+                                    String cn = d.getTarget().getName();
+                                    if (!doneClasses.contains(cn) && !deque.contains(cn)) {
+                                        deque.add(cn);
                                     }
                                 }
                             }
@@ -388,7 +375,7 @@ class JdepsTask {
                     }
                 }
                 if (cf == null) {
-                    NOT_FOUND.addClass(name);
+                    doneClasses.add(name);
                 }
             }
             unresolved = deque;
@@ -396,96 +383,42 @@ class JdepsTask {
         } while (!unresolved.isEmpty() && depth-- > 0);
     }
 
-    private void printPackageDeps(PrintWriter out) {
-        for (Archive source : sourceLocations) {
-            SortedMap<Location, SortedSet<Location>> deps = source.getDependencies();
-            if (deps.isEmpty())
-                continue;
-
-            for (Archive target : source.getRequiredArchives()) {
-                out.format("%s -> %s%n", source, target);
-            }
-
-            Map<String, Archive> pkgs = new TreeMap<String, Archive>();
-            SortedMap<String, Archive> targets = new TreeMap<String, Archive>();
-            String pkg = "";
-            for (Map.Entry<Location, SortedSet<Location>> e : deps.entrySet()) {
-                String cn = e.getKey().getClassName();
-                String p = packageOf(e.getKey());
-                Archive origin = Archive.find(e.getKey());
-                assert origin != null;
-                if (!pkgs.containsKey(p)) {
-                    pkgs.put(p, origin);
-                } else if (pkgs.get(p) != origin) {
-                    warning("warn.split.package", p, origin, pkgs.get(p));
-                }
-
-                if (!p.equals(pkg)) {
-                    printTargets(out, targets);
-                    pkg = p;
-                    targets.clear();
-                    out.format("   %s (%s)%n", p, origin.getFileName());
-                }
-
-                for (Location t : e.getValue()) {
-                    p = packageOf(t);
-                    Archive target = Archive.find(t);
-                    if (!targets.containsKey(p)) {
-                        targets.put(p, target);
-                    }
+    private void printSummary(final PrintWriter out, final Analyzer analyzer) {
+        Analyzer.Visitor visitor = new Analyzer.Visitor() {
+            public void visit(String origin, String target, String profile) {
+                if (options.showProfile) {
+                    out.format("%-30s -> %s%n", origin, target);
                 }
             }
-            printTargets(out, targets);
-            out.println();
-        }
-    }
-
-    private void printTargets(PrintWriter out, Map<String, Archive> targets) {
-        for (Map.Entry<String, Archive> t : targets.entrySet()) {
-            String pn = t.getKey();
-            out.format("      -> %-40s %s%n", pn, getPackageInfo(pn, t.getValue()));
-        }
-    }
-
-    private String getPackageInfo(String pn, Archive source) {
-        if (PlatformClassPath.contains(source)) {
-            String name = PlatformClassPath.getProfileName(pn);
-            if (name.isEmpty()) {
-                return "JDK internal API (" + source.getFileName() + ")";
-            }
-            return options.showProfile ? name : "";
-        }
-        return source.getFileName();
-    }
-
-    private static String packageOf(Location loc) {
-        String pkg = loc.getPackageName();
-        return pkg.isEmpty() ? "<unnamed>" : pkg;
-    }
-
-    private void printClassDeps(PrintWriter out) {
-        for (Archive source : sourceLocations) {
-            SortedMap<Location, SortedSet<Location>> deps = source.getDependencies();
-            if (deps.isEmpty())
-                continue;
-
-            for (Archive target : source.getRequiredArchives()) {
-                out.format("%s -> %s%n", source, target);
-            }
-            out.format("%s%n", source);
-            for (Map.Entry<Location, SortedSet<Location>> e : deps.entrySet()) {
-                String cn = e.getKey().getClassName();
-                Archive origin = Archive.find(e.getKey());
-                out.format("   %s (%s)%n", cn, origin.getFileName());
-                for (Location t : e.getValue()) {
-                    cn = t.getClassName();
-                    Archive target = Archive.find(t);
-                    out.format("      -> %-60s %s%n", cn, getPackageInfo(t.getPackageName(), target));
+            public void visit(Archive origin, Archive target) {
+                if (!options.showProfile) {
+                    out.format("%-30s -> %s%n", origin, target);
                 }
             }
-            out.println();
-        }
+        };
+        analyzer.visitSummary(visitor);
     }
+
+    private void printDependencies(final PrintWriter out, final Analyzer analyzer) {
+        Analyzer.Visitor visitor = new Analyzer.Visitor() {
+            private String pkg = "";
+            public void visit(String origin, String target, String profile) {
+                if (!origin.equals(pkg)) {
+                    pkg = origin;
+                    out.format("   %s (%s)%n", origin, analyzer.getArchive(origin).getFileName());
+                }
+                out.format("      -> %-50s %s%n", target,
+                           (options.showProfile && !profile.isEmpty())
+                               ? profile
+                               : analyzer.getArchiveName(target, profile));
+            }
+            public void visit(Archive origin, Archive target) {
+                out.format("%s -> %s%n", origin, target);
+            }
+        };
+        analyzer.visit(visitor);
+    }
+
     public void handleOptions(String[] args) throws BadArgs {
         // process options
         for (int i=0; i < args.length; i++) {
@@ -570,7 +503,7 @@ class JdepsTask {
         }
     }
 
-    public String getMessage(String key, Object... args) {
+    static String getMessage(String key, Object... args) {
         try {
             return MessageFormat.format(ResourceBundleHelper.bundle.getString(key), args);
         } catch (MissingResourceException e) {
@@ -579,24 +512,16 @@ class JdepsTask {
     }
 
     private static class Options {
-        enum Verbose {
-            CLASS,
-            PACKAGE,
-            SUMMARY,
-            VERBOSE
-        };
-
         boolean help;
         boolean version;
         boolean fullVersion;
-        boolean showFlags;
         boolean showProfile;
         boolean showSummary;
         boolean wildcard;
         String regex;
         String classpath = "";
         int depth = 1;
-        Verbose verbose = Verbose.PACKAGE;
+        Analyzer.Type verbose = Analyzer.Type.PACKAGE;
         Set<String> packageNames = new HashSet<String>();
     }
 

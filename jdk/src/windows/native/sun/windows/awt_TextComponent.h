@@ -28,7 +28,6 @@
 
 #include "awt_Component.h"
 
-#include "java_awt_TextComponent.h"
 #include "sun_awt_windows_WTextComponentPeer.h"
 
 #include <ole2.h>
@@ -42,8 +41,7 @@
 
 class AwtTextComponent : public AwtComponent {
 public:
-    /* java.awt.TextComponent canAccessClipboard field ID */
-    static jfieldID canAccessClipboardID;
+    static jmethodID canAccessClipboardMID;
 
     AwtTextComponent();
 

@@ -29,7 +29,13 @@
  */
 public class RedefineMethodWithAnnotationsTarget {
     public void annotatedMethod(@ParameterAnnotation(
-            value = ParameterAnnotation.INT_VALUE_2) int parameter) { }
+            value = ParameterAnnotation.INT_VALUE_2) int parameter) {
+        System.out.println("Second version of annotatedMethod(int)");
+        System.out.println("parameter is " + parameter);
+     }
     public void annotatedMethod(@ParameterAnnotation(
-            value = ParameterAnnotation.STRING_VALUE_2) String parameter) { }
+            value = ParameterAnnotation.STRING_VALUE_2) String parameter) {
+        System.out.println("Second version of annotatedMethod(String)");
+        System.out.println("parameter is " + parameter);
+    }
 }

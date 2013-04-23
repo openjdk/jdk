@@ -146,6 +146,17 @@ bool SystemDictionary::is_parallelDefine(Handle class_loader) {
    }
    return false;
 }
+
+/**
+ * Returns true if the passed class loader is the extension class loader.
+ */
+bool SystemDictionary::is_ext_class_loader(Handle class_loader) {
+  if (class_loader.is_null()) {
+    return false;
+  }
+  return (class_loader->klass()->name() == vmSymbols::sun_misc_Launcher_ExtClassLoader());
+}
+
 // ----------------------------------------------------------------------------
 // Resolving of classes
 
@@ -804,6 +815,47 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
       }
     } // load_instance_class loop
 
+    if (HAS_PENDING_EXCEPTION) {
+      // An exception, such as OOM could have happened at various places inside
+      // load_instance_class. We might have partially initialized a shared class
+      // and need to clean it up.
+      if (class_loader.is_null()) {
+        // In some cases k may be null. Let's find the shared class again.
+        instanceKlassHandle ik(THREAD, find_shared_class(name));
+        if (ik.not_null()) {
+          if (ik->class_loader_data() == NULL) {
+            // We didn't go as far as Klass::restore_unshareable_info(),
+            // so nothing to clean up.
+          } else {
+            Klass *kk;
+            {
+              MutexLocker mu(SystemDictionary_lock, THREAD);
+              kk = find_class(name, ik->class_loader_data());
+            }
+            if (kk != NULL) {
+              // No clean up is needed if the shared class has been entered
+              // into system dictionary, as load_shared_class() won't be called
+              // again.
+            } else {
+              // This must be done outside of the SystemDictionary_lock to
+              // avoid deadlock.
+              //
+              // Note that Klass::restore_unshareable_info (called via
+              // load_instance_class above) is also called outside
+              // of SystemDictionary_lock. Other threads are blocked from
+              // loading this class because they are waiting on the
+              // SystemDictionary_lock until this thread removes
+              // the placeholder below.
+              //
+              // This need to be re-thought when parallel-capable non-boot
+              // classloaders are supported by CDS (today they're not).
+              clean_up_shared_class(ik, class_loader, THREAD);
+            }
+          }
+        }
+      }
+    }
+
     if (load_instance_added == true) {
       // clean up placeholder entries for LOAD_INSTANCE success or error
       // This brackets the SystemDictionary updates for both defining
@@ -866,16 +918,22 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
 // the new entry.
 
 Klass* SystemDictionary::find(Symbol* class_name,
-                                Handle class_loader,
-                                Handle protection_domain,
-                                TRAPS) {
+                              Handle class_loader,
+                              Handle protection_domain,
+                              TRAPS) {
 
   // UseNewReflection
   // The result of this call should be consistent with the result
   // of the call to resolve_instance_class_or_null().
   // See evaluation 6790209 and 4474172 for more details.
   class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
-  ClassLoaderData* loader_data = register_loader(class_loader, CHECK_NULL);
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader());
+
+  if (loader_data == NULL) {
+    // If the ClassLoaderData has not been setup,
+    // then the class loader has no entries in the dictionary.
+    return NULL;
+  }
 
   unsigned int d_hash = dictionary()->compute_hash(class_name, loader_data);
   int d_index = dictionary()->hash_to_index(d_hash);
@@ -1134,11 +1192,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(
   return load_shared_class(ik, class_loader, THREAD);
 }
 
-// Note well!  Changes to this method may affect oop access order
-// in the shared archive.  Please take care to not make changes that
-// adversely affect cold start time by changing the oop access order
-// that is specified in dump.cpp MarkAndMoveOrderedReadOnly and
-// MarkAndMoveOrderedReadWrite closures.
 instanceKlassHandle SystemDictionary::load_shared_class(
                  instanceKlassHandle ik, Handle class_loader, TRAPS) {
   assert(class_loader.is_null(), "non-null classloader for shared class?");
@@ -1199,6 +1252,19 @@ instanceKlassHandle SystemDictionary::load_shared_class(
   return ik;
 }
 
+void SystemDictionary::clean_up_shared_class(instanceKlassHandle ik, Handle class_loader, TRAPS) {
+  // Updating methods must be done under a lock so multiple
+  // threads don't update these in parallel
+  // Shared classes are all currently loaded by the bootstrap
+  // classloader, so this will never cause a deadlock on
+  // a custom class loader lock.
+  {
+    Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
+    check_loader_lock_contention(lockObject, THREAD);
+    ObjectLocker ol(lockObject, THREAD, true);
+    ik->remove_unshareable_info();
+  }
+}
 
 instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
@@ -2145,10 +2211,9 @@ Symbol* SystemDictionary::find_resolution_error(constantPoolHandle pool, int whi
 // Make sure all class components (including arrays) in the given
 // signature will be resolved to the same class in both loaders.
 // Returns the name of the type that failed a loader constraint check, or
-// NULL if no constraint failed. The returned C string needs cleaning up
-// with a ResourceMark in the caller.  No exception except OOME is thrown.
+// NULL if no constraint failed.  No exception except OOME is thrown.
 // Arrays are not added to the loader constraint table, their elements are.
-char* SystemDictionary::check_signature_loaders(Symbol* signature,
+Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
                                                Handle loader1, Handle loader2,
                                                bool is_method, TRAPS)  {
   // Nothing to do if loaders are the same.
@@ -2156,14 +2221,12 @@ char* SystemDictionary::check_signature_loaders(Symbol* signature,
     return NULL;
   }
 
-  ResourceMark rm(THREAD);
   SignatureStream sig_strm(signature, is_method);
   while (!sig_strm.is_done()) {
     if (sig_strm.is_object()) {
-      Symbol* s = sig_strm.as_symbol(CHECK_NULL);
-      Symbol*  sig  = s;
+      Symbol* sig = sig_strm.as_symbol(CHECK_NULL);
       if (!add_loader_constraint(sig, loader1, loader2, THREAD)) {
-        return sig->as_C_string();
+        return sig;
       }
     }
     sig_strm.next();

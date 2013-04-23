@@ -65,7 +65,7 @@ class MessageFile {
         }
 
         void insertAfter(Line l) {
-            assert prev == null && next == null;
+            assert l.prev == null && l.next == null;
             l.prev = this;
             l.next = next;
             if (next == null)
@@ -82,7 +82,7 @@ class MessageFile {
         }
 
         void insertBefore(Line l) {
-            assert prev == null && next == null;
+            assert l.prev == null && l.next == null;
             l.prev = prev;
             l.next = this;
             if (prev == null)

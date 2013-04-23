@@ -51,7 +51,7 @@
 U_NAMESPACE_BEGIN
 
 GlyphSubstitutionLookupProcessor::GlyphSubstitutionLookupProcessor(
-        const GlyphSubstitutionTableHeader *glyphSubstitutionTableHeader,
+        const LEReferenceTo<GlyphSubstitutionTableHeader> &glyphSubstitutionTableHeader,
         LETag scriptTag,
         LETag languageTag,
         const LEGlyphFilter *filter,
@@ -60,7 +60,7 @@ GlyphSubstitutionLookupProcessor::GlyphSubstitutionLookupProcessor(
         le_bool featureOrder,
         LEErrorCode& success)
     : LookupProcessor(
-                      (char *) glyphSubstitutionTableHeader,
+                      glyphSubstitutionTableHeader,
                       SWAPW(glyphSubstitutionTableHeader->scriptListOffset),
                       SWAPW(glyphSubstitutionTableHeader->featureListOffset),
                       SWAPW(glyphSubstitutionTableHeader->lookupListOffset),
@@ -73,7 +73,7 @@ GlyphSubstitutionLookupProcessor::GlyphSubstitutionLookupProcessor()
 {
 }
 
-le_uint32 GlyphSubstitutionLookupProcessor::applySubtable(const LookupSubtable *lookupSubtable, le_uint16 lookupType,
+le_uint32 GlyphSubstitutionLookupProcessor::applySubtable(const LEReferenceTo<LookupSubtable> &lookupSubtable, le_uint16 lookupType,
                                                        GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode& success) const
 {
     if (LE_FAILURE(success)) {
@@ -89,39 +89,39 @@ le_uint32 GlyphSubstitutionLookupProcessor::applySubtable(const LookupSubtable *
 
     case gsstSingle:
     {
-        const SingleSubstitutionSubtable *subtable = (const SingleSubstitutionSubtable *) lookupSubtable;
+        const LEReferenceTo<SingleSubstitutionSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(glyphIterator, fFilter);
+        delta = subtable->process(subtable, glyphIterator, success, fFilter);
         break;
     }
 
     case gsstMultiple:
     {
-        const MultipleSubstitutionSubtable *subtable = (const MultipleSubstitutionSubtable *) lookupSubtable;
+        const LEReferenceTo<MultipleSubstitutionSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(glyphIterator, success, fFilter);
+        delta = subtable->process(subtable, glyphIterator, success, fFilter);
         break;
     }
 
     case gsstAlternate:
     {
-        const AlternateSubstitutionSubtable *subtable = (const AlternateSubstitutionSubtable *) lookupSubtable;
+        const LEReferenceTo<AlternateSubstitutionSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(glyphIterator, fFilter);
+        delta = subtable->process(subtable, glyphIterator, success, fFilter);
         break;
     }
 
     case gsstLigature:
     {
-        const LigatureSubstitutionSubtable *subtable = (const LigatureSubstitutionSubtable *) lookupSubtable;
+        const LEReferenceTo<LigatureSubstitutionSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(glyphIterator, fFilter);
+        delta = subtable->process(subtable, glyphIterator, success, fFilter);
         break;
     }
 
     case gsstContext:
     {
-        const ContextualSubstitutionSubtable *subtable = (const ContextualSubstitutionSubtable *) lookupSubtable;
+        const LEReferenceTo<ContextualSubstitutionSubtable> subtable(lookupSubtable, success);
 
         delta = subtable->process(this, glyphIterator, fontInstance, success);
         break;
@@ -129,7 +129,7 @@ le_uint32 GlyphSubstitutionLookupProcessor::applySubtable(const LookupSubtable *
 
     case gsstChainingContext:
     {
-        const ChainingContextualSubstitutionSubtable *subtable = (const ChainingContextualSubstitutionSubtable *) lookupSubtable;
+        const LEReferenceTo<ChainingContextualSubstitutionSubtable> subtable(lookupSubtable, success);
 
         delta = subtable->process(this, glyphIterator, fontInstance, success);
         break;
@@ -137,7 +137,7 @@ le_uint32 GlyphSubstitutionLookupProcessor::applySubtable(const LookupSubtable *
 
     case gsstExtension:
     {
-        const ExtensionSubtable *subtable = (const ExtensionSubtable *) lookupSubtable;
+        const LEReferenceTo<ExtensionSubtable> subtable(lookupSubtable, success);
 
         delta = subtable->process(this, lookupType, glyphIterator, fontInstance, success);
         break;

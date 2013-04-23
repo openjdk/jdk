@@ -163,6 +163,12 @@ public class Lower extends TreeTranslator {
      */
     JCTree outermostMemberDef;
 
+    /** A map from local variable symbols to their translation (as per LambdaToMethod).
+     * This is required when a capturing local class is created from a lambda (in which
+     * case the captured symbols should be replaced with the translated lambda symbols).
+     */
+    Map<Symbol, Symbol> lambdaTranslationMap = null;
+
     /** A navigator class for assembling a mapping from local class symbols
      *  to class definition trees.
      *  There is only one case; all other cases simply traverse down the tree.
@@ -206,10 +212,51 @@ public class Lower extends TreeTranslator {
     Map<ClassSymbol,List<VarSymbol>> freevarCache;
 
     /** A navigator class for collecting the free variables accessed
-     *  from a local class.
-     *  There is only one case; all other cases simply traverse down the tree.
+     *  from a local class. There is only one case; all other cases simply
+     *  traverse down the tree. This class doesn't deal with the specific
+     *  of Lower - it's an abstract visitor that is meant to be reused in
+     *  order to share the local variable capture logic.
      */
-    class FreeVarCollector extends TreeScanner {
+    abstract class BasicFreeVarCollector extends TreeScanner {
+
+        /** Add all free variables of class c to fvs list
+         *  unless they are already there.
+         */
+        abstract void addFreeVars(ClassSymbol c);
+
+        /** If tree refers to a variable in owner of local class, add it to
+         *  free variables list.
+         */
+        public void visitIdent(JCIdent tree) {
+            visitSymbol(tree.sym);
+        }
+        // where
+        abstract void visitSymbol(Symbol _sym);
+
+        /** If tree refers to a class instance creation expression
+         *  add all free variables of the freshly created class.
+         */
+        public void visitNewClass(JCNewClass tree) {
+            ClassSymbol c = (ClassSymbol)tree.constructor.owner;
+            addFreeVars(c);
+            super.visitNewClass(tree);
+        }
+
+        /** If tree refers to a superclass constructor call,
+         *  add all free variables of the superclass.
+         */
+        public void visitApply(JCMethodInvocation tree) {
+            if (TreeInfo.name(tree.meth) == names._super) {
+                addFreeVars((ClassSymbol) TreeInfo.symbol(tree.meth).owner);
+            }
+            super.visitApply(tree);
+        }
+    }
+
+    /**
+     * Lower-specific subclass of {@code BasicFreeVarCollector}.
+     */
+    class FreeVarCollector extends BasicFreeVarCollector {
 
         /** The owner of the local class.
          */
@@ -238,10 +285,8 @@ public class Lower extends TreeTranslator {
             fvs = fvs.prepend(v);
         }
 
-        /** Add all free variables of class c to fvs list
-         *  unless they are already there.
-         */
-        private void addFreeVars(ClassSymbol c) {
+        @Override
+        void addFreeVars(ClassSymbol c) {
             List<VarSymbol> fvs = freevarCache.get(c);
             if (fvs != null) {
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
@@ -250,15 +295,8 @@ public class Lower extends TreeTranslator {
             }
         }
 
-        /** If tree refers to a variable in owner of local class, add it to
-         *  free variables list.
-         */
-        public void visitIdent(JCIdent tree) {
-            result = tree;
-            visitSymbol(tree.sym);
-        }
-        // where
-        private void visitSymbol(Symbol _sym) {
+        @Override
+        void visitSymbol(Symbol _sym) {
             Symbol sym = _sym;
             if (sym.kind == VAR || sym.kind == MTH) {
                 while (sym != null && sym.owner != owner)
@@ -281,7 +319,6 @@ public class Lower extends TreeTranslator {
          */
         public void visitNewClass(JCNewClass tree) {
             ClassSymbol c = (ClassSymbol)tree.constructor.owner;
-            addFreeVars(c);
             if (tree.encl == null &&
                 c.hasOuterInstance() &&
                 outerThisStack.head != null)
@@ -306,7 +343,6 @@ public class Lower extends TreeTranslator {
          */
         public void visitApply(JCMethodInvocation tree) {
             if (TreeInfo.name(tree.meth) == names._super) {
-                addFreeVars((ClassSymbol) TreeInfo.symbol(tree.meth).owner);
                 Symbol constructor = TreeInfo.symbol(tree.meth);
                 ClassSymbol c = (ClassSymbol)constructor.owner;
                 if (c.hasOuterInstance() &&
@@ -1170,6 +1206,14 @@ public class Lower extends TreeTranslator {
                         return make.at(tree.pos).Select(
                             accessBase(tree.pos(), sym), sym).setType(tree.type);
                     }
+                }
+            } else if (sym.owner.kind == MTH && lambdaTranslationMap != null) {
+                //sym is a local variable - check the lambda translation map to
+                //see if sym has been translated to something else in the current
+                //scope (by LambdaToMethod)
+                Symbol translatedSym = lambdaTranslationMap.get(sym);
+                if (translatedSym != null) {
+                    tree = make.at(tree.pos).Ident(translatedSym);
                 }
             }
         }
@@ -2560,11 +2604,6 @@ public class Lower extends TreeTranslator {
 
         enumDefs.appendList(otherDefs.toList());
         tree.defs = enumDefs.toList();
-
-        // Add the necessary members for the EnumCompatibleMode
-        if (target.compilerBootstrap(tree.sym)) {
-            addEnumCompatibleMembers(tree);
-        }
     }
         // where
         private MethodSymbol systemArraycopyMethod;
@@ -2613,30 +2652,6 @@ public class Lower extends TreeTranslator {
                 olderasure.getReturnType(),
                 olderasure.getThrownTypes(),
                 syms.methodClass);
-
-            if (target.compilerBootstrap(m.owner)) {
-                // Initialize synthetic name field
-                Symbol nameVarSym = lookupSynthetic(names.fromString("$name"),
-                                                    tree.sym.owner.members());
-                JCIdent nameIdent = make.Ident(nameParam.sym);
-                JCIdent id1 = make.Ident(nameVarSym);
-                JCAssign newAssign = make.Assign(id1, nameIdent);
-                newAssign.type = id1.type;
-                JCExpressionStatement nameAssign = make.Exec(newAssign);
-                nameAssign.type = id1.type;
-                tree.body.stats = tree.body.stats.prepend(nameAssign);
-
-                // Initialize synthetic ordinal field
-                Symbol ordinalVarSym = lookupSynthetic(names.fromString("$ordinal"),
-                                                       tree.sym.owner.members());
-                JCIdent ordIdent = make.Ident(ordParam.sym);
-                id1 = make.Ident(ordinalVarSym);
-                newAssign = make.Assign(id1, ordIdent);
-                newAssign.type = id1.type;
-                JCExpressionStatement ordinalAssign = make.Exec(newAssign);
-                ordinalAssign.type = id1.type;
-                tree.body.stats = tree.body.stats.prepend(ordinalAssign);
-            }
         }
 
         JCMethodDecl prevMethodDef = currentMethodDef;
@@ -2725,10 +2740,30 @@ public class Lower extends TreeTranslator {
 
             outerThisStack = prevOuterThisStack;
         } else {
-            super.visitMethodDef(tree);
+            Map<Symbol, Symbol> prevLambdaTranslationMap =
+                    lambdaTranslationMap;
+            try {
+                lambdaTranslationMap = (tree.sym.flags() & SYNTHETIC) != 0 &&
+                        tree.sym.name.startsWith(names.lambda) ?
+                        makeTranslationMap(tree) : null;
+                super.visitMethodDef(tree);
+            } finally {
+                lambdaTranslationMap = prevLambdaTranslationMap;
+            }
         }
         result = tree;
     }
+    //where
+        private Map<Symbol, Symbol> makeTranslationMap(JCMethodDecl tree) {
+            Map<Symbol, Symbol> translationMap = new HashMap<Symbol,Symbol>();
+            for (JCVariableDecl vd : tree.params) {
+                Symbol p = vd.sym;
+                if (p != p.baseSymbol()) {
+                    translationMap.put(p.baseSymbol(), p);
+                }
+            }
+            return translationMap;
+        }
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         // No need to retain type annotations any longer.
@@ -3094,38 +3129,59 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitAssignop(final JCAssignOp tree) {
+        JCTree lhsAccess = access(TreeInfo.skipParens(tree.lhs));
         final boolean boxingReq = !tree.lhs.type.isPrimitive() &&
             tree.operator.type.getReturnType().isPrimitive();
 
-        // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
-        // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
-        // (but without recomputing x)
-        JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
-                public JCTree build(final JCTree lhs) {
-                    JCTree.Tag newTag = tree.getTag().noAssignOp();
-                    // Erasure (TransTypes) can change the type of
-                    // tree.lhs.  However, we can still get the
-                    // unerased type of tree.lhs as it is stored
-                    // in tree.type in Attr.
-                    Symbol newOperator = rs.resolveBinaryOperator(tree.pos(),
-                                                                  newTag,
-                                                                  attrEnv,
-                                                                  tree.type,
-                                                                  tree.rhs.type);
-                    JCExpression expr = (JCExpression)lhs;
-                    if (expr.type != tree.type)
-                        expr = make.TypeCast(tree.type, expr);
-                    JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
-                    opResult.operator = newOperator;
-                    opResult.type = newOperator.type.getReturnType();
-                    JCExpression newRhs = boxingReq ?
-                            make.TypeCast(types.unboxedType(tree.type),
-                                                      opResult) :
+        if (boxingReq || lhsAccess.hasTag(APPLY)) {
+            // boxing required; need to rewrite as x = (unbox typeof x)(x op y);
+            // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
+            // (but without recomputing x)
+            JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
+                    public JCTree build(final JCTree lhs) {
+                        JCTree.Tag newTag = tree.getTag().noAssignOp();
+                        // Erasure (TransTypes) can change the type of
+                        // tree.lhs.  However, we can still get the
+                        // unerased type of tree.lhs as it is stored
+                        // in tree.type in Attr.
+                        Symbol newOperator = rs.resolveBinaryOperator(tree.pos(),
+                                                                      newTag,
+                                                                      attrEnv,
+                                                                      tree.type,
+                                                                      tree.rhs.type);
+                        JCExpression expr = (JCExpression)lhs;
+                        if (expr.type != tree.type)
+                            expr = make.TypeCast(tree.type, expr);
+                        JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
+                        opResult.operator = newOperator;
+                        opResult.type = newOperator.type.getReturnType();
+                        JCExpression newRhs = boxingReq ?
+                            make.TypeCast(types.unboxedType(tree.type), opResult) :
                             opResult;
-                    return make.Assign((JCExpression)lhs, newRhs).setType(tree.type);
-                }
-            });
-        result = translate(newTree);
+                        return make.Assign((JCExpression)lhs, newRhs).setType(tree.type);
+                    }
+                });
+            result = translate(newTree);
+            return;
+        }
+        tree.lhs = translate(tree.lhs, tree);
+        tree.rhs = translate(tree.rhs, tree.operator.type.getParameterTypes().tail.head);
+
+        // If translated left hand side is an Apply, we are
+        // seeing an access method invocation. In this case, append
+        // right hand side as last argument of the access method.
+        if (tree.lhs.hasTag(APPLY)) {
+            JCMethodInvocation app = (JCMethodInvocation)tree.lhs;
+            // if operation is a += on strings,
+            // make sure to convert argument to string
+            JCExpression rhs = (((OperatorSymbol)tree.operator).opcode == string_add)
+              ? makeString(tree.rhs)
+              : tree.rhs;
+            app.args = List.of(rhs).prependList(app.args);
+            result = app;
+        } else {
+            result = tree;
+        }
     }
 
     /** Lower a tree of the form e++ or e-- where e is an object type */
@@ -3349,14 +3405,16 @@ public class Lower extends TreeTranslator {
                 tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);
             Symbol iterator = lookupMethod(tree.expr.pos(),
                                            names.iterator,
-                                           types.erasure(syms.iterableType),
+                                           eType,
                                            List.<Type>nil());
             VarSymbol itvar = new VarSymbol(0, names.fromString("i" + target.syntheticNameChar()),
                                             types.erasure(iterator.type.getReturnType()),
                                             currentMethodSym);
-            JCStatement init = make.
-                VarDef(itvar,
-                       make.App(make.Select(tree.expr, iterator)));
+
+             JCStatement init = make.
+                VarDef(itvar, make.App(make.Select(tree.expr, iterator)
+                     .setType(types.erasure(iterator.type))));
+
             Symbol hasNext = lookupMethod(tree.expr.pos(),
                                           names.hasNext,
                                           itvar.type,
@@ -3722,8 +3780,16 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitTry(JCTry tree) {
+        /* special case of try without catchers and with finally emtpy.
+         * Don't give it a try, translate only the body.
+         */
         if (tree.resources.isEmpty()) {
-            super.visitTry(tree);
+            if (tree.catchers.isEmpty() &&
+                tree.finalizer.getStatements().isEmpty()) {
+                result = translate(tree.body);
+            } else {
+                super.visitTry(tree);
+            }
         } else {
             result = makeTwrTry(tree);
         }
@@ -3793,168 +3859,4 @@ public class Lower extends TreeTranslator {
         }
         return translated.toList();
     }
-
-    //////////////////////////////////////////////////////////////
-    // The following contributed by Borland for bootstrapping purposes
-    //////////////////////////////////////////////////////////////
-    private void addEnumCompatibleMembers(JCClassDecl cdef) {
-        make_at(null);
-
-        // Add the special enum fields
-        VarSymbol ordinalFieldSym = addEnumOrdinalField(cdef);
-        VarSymbol nameFieldSym = addEnumNameField(cdef);
-
-        // Add the accessor methods for name and ordinal
-        MethodSymbol ordinalMethodSym = addEnumFieldOrdinalMethod(cdef, ordinalFieldSym);
-        MethodSymbol nameMethodSym = addEnumFieldNameMethod(cdef, nameFieldSym);
-
-        // Add the toString method
-        addEnumToString(cdef, nameFieldSym);
-
-        // Add the compareTo method
-        addEnumCompareTo(cdef, ordinalFieldSym);
-    }
-
-    private VarSymbol addEnumOrdinalField(JCClassDecl cdef) {
-        VarSymbol ordinal = new VarSymbol(PRIVATE|FINAL|SYNTHETIC,
-                                          names.fromString("$ordinal"),
-                                          syms.intType,
-                                          cdef.sym);
-        cdef.sym.members().enter(ordinal);
-        cdef.defs = cdef.defs.prepend(make.VarDef(ordinal, null));
-        return ordinal;
-    }
-
-    private VarSymbol addEnumNameField(JCClassDecl cdef) {
-        VarSymbol name = new VarSymbol(PRIVATE|FINAL|SYNTHETIC,
-                                          names.fromString("$name"),
-                                          syms.stringType,
-                                          cdef.sym);
-        cdef.sym.members().enter(name);
-        cdef.defs = cdef.defs.prepend(make.VarDef(name, null));
-        return name;
-    }
-
-    private MethodSymbol addEnumFieldOrdinalMethod(JCClassDecl cdef, VarSymbol ordinalSymbol) {
-        // Add the accessor methods for ordinal
-        Symbol ordinalSym = lookupMethod(cdef.pos(),
-                                         names.ordinal,
-                                         cdef.type,
-                                         List.<Type>nil());
-
-        Assert.check(ordinalSym instanceof MethodSymbol);
-
-        JCStatement ret = make.Return(make.Ident(ordinalSymbol));
-        cdef.defs = cdef.defs.append(make.MethodDef((MethodSymbol)ordinalSym,
-                                                    make.Block(0L, List.of(ret))));
-
-        return (MethodSymbol)ordinalSym;
-    }
-
-    private MethodSymbol addEnumFieldNameMethod(JCClassDecl cdef, VarSymbol nameSymbol) {
-        // Add the accessor methods for name
-        Symbol nameSym = lookupMethod(cdef.pos(),
-                                   names._name,
-                                   cdef.type,
-                                   List.<Type>nil());
-
-        Assert.check(nameSym instanceof MethodSymbol);
-
-        JCStatement ret = make.Return(make.Ident(nameSymbol));
-
-        cdef.defs = cdef.defs.append(make.MethodDef((MethodSymbol)nameSym,
-                                                    make.Block(0L, List.of(ret))));
-
-        return (MethodSymbol)nameSym;
-    }
-
-    private MethodSymbol addEnumToString(JCClassDecl cdef,
-                                         VarSymbol nameSymbol) {
-        Symbol toStringSym = lookupMethod(cdef.pos(),
-                                          names.toString,
-                                          cdef.type,
-                                          List.<Type>nil());
-
-        JCTree toStringDecl = null;
-        if (toStringSym != null)
-            toStringDecl = TreeInfo.declarationFor(toStringSym, cdef);
-
-        if (toStringDecl != null)
-            return (MethodSymbol)toStringSym;
-
-        JCStatement ret = make.Return(make.Ident(nameSymbol));
-
-        JCTree resTypeTree = make.Type(syms.stringType);
-
-        MethodType toStringType = new MethodType(List.<Type>nil(),
-                                                 syms.stringType,
-                                                 List.<Type>nil(),
-                                                 cdef.sym);
-        toStringSym = new MethodSymbol(PUBLIC,
-                                       names.toString,
-                                       toStringType,
-                                       cdef.type.tsym);
-        toStringDecl = make.MethodDef((MethodSymbol)toStringSym,
-                                      make.Block(0L, List.of(ret)));
-
-        cdef.defs = cdef.defs.prepend(toStringDecl);
-        cdef.sym.members().enter(toStringSym);
-
-        return (MethodSymbol)toStringSym;
-    }
-
-    private MethodSymbol addEnumCompareTo(JCClassDecl cdef, VarSymbol ordinalSymbol) {
-        Symbol compareToSym = lookupMethod(cdef.pos(),
-                                   names.compareTo,
-                                   cdef.type,
-                                   List.of(cdef.sym.type));
-
-        Assert.check(compareToSym instanceof MethodSymbol);
-
-        JCMethodDecl compareToDecl = (JCMethodDecl) TreeInfo.declarationFor(compareToSym, cdef);
-
-        ListBuffer<JCStatement> blockStatements = new ListBuffer<JCStatement>();
-
-        JCModifiers mod1 = make.Modifiers(0L);
-        Name oName = names.fromString("o");
-        JCVariableDecl par1 = make.Param(oName, cdef.type, compareToSym);
-
-        JCIdent paramId1 = make.Ident(names.java_lang_Object);
-        paramId1.type = cdef.type;
-        paramId1.sym = par1.sym;
-
-        ((MethodSymbol)compareToSym).params = List.of(par1.sym);
-
-        JCIdent par1UsageId = make.Ident(par1.sym);
-        JCIdent castTargetIdent = make.Ident(cdef.sym);
-        JCTypeCast cast = make.TypeCast(castTargetIdent, par1UsageId);
-        cast.setType(castTargetIdent.type);
-
-        Name otherName = names.fromString("other");
-
-        VarSymbol otherVarSym = new VarSymbol(mod1.flags,
-                                              otherName,
-                                              cdef.type,
-                                              compareToSym);
-        JCVariableDecl otherVar = make.VarDef(otherVarSym, cast);
-        blockStatements.append(otherVar);
-
-        JCIdent id1 = make.Ident(ordinalSymbol);
-
-        JCIdent fLocUsageId = make.Ident(otherVarSym);
-        JCExpression sel = make.Select(fLocUsageId, ordinalSymbol);
-        JCBinary bin = makeBinary(MINUS, id1, sel);
-        JCReturn ret = make.Return(bin);
-        blockStatements.append(ret);
-        JCMethodDecl compareToMethod = make.MethodDef((MethodSymbol)compareToSym,
-                                                   make.Block(0L,
-                                                              blockStatements.toList()));
-        compareToMethod.params = List.of(par1);
-        cdef.defs = cdef.defs.append(compareToMethod);
-
-        return (MethodSymbol)compareToSym;
-    }
-    //////////////////////////////////////////////////////////////
-    // The above contributed by Borland for bootstrapping purposes
-    //////////////////////////////////////////////////////////////
 }

@@ -885,6 +885,8 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // the actual alignment depends on its size.
   Universe::set_class_metaspace_size(align_size_up(ClassMetaspaceSize, alignment));
   size_t total_reserved = align_size_up(heap_size + Universe::class_metaspace_size(), alignment);
+  assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
+      "heap size is too big for compressed oops");
   char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
 
   ReservedHeapSpace total_rs(total_reserved, alignment, UseLargePages, addr);
@@ -951,15 +953,6 @@ void Universe::update_heap_info_at_gc() {
 void universe2_init() {
   EXCEPTION_MARK;
   Universe::genesis(CATCH);
-  // Although we'd like to verify here that the state of the heap
-  // is good, we can't because the main thread has not yet added
-  // itself to the threads list (so, using current interfaces
-  // we can't "fill" its TLAB), unless TLABs are disabled.
-  if (VerifyBeforeGC && !UseTLAB &&
-      Universe::heap()->total_collections() >= VerifyGCStartAt) {
-     Universe::heap()->prepare_for_verify();
-     Universe::verify();   // make sure we're starting with a clean slate
-  }
 }
 
 

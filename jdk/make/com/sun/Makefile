@@ -45,7 +45,7 @@ SUBDIRS_management = jmx
 SUBDIRS_desktop    = image
 SUBDIRS_enterprise = crypto/provider jndi \
                      org rowset net/httpserver
-SUBDIRS_misc       = $(SCRIPT_SUBDIR) tracing servicetag nio demo
+SUBDIRS_misc       = $(SCRIPT_SUBDIR) tracing nio demo
 
 SUBDIRS_tools      = tools
 

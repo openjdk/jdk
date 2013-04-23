@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,23 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Currency;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle.Control;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.spi.CalendarDataProvider;
 import java.util.spi.CalendarNameProvider;
+import java.util.spi.CurrencyNameProvider;
+import java.util.spi.LocaleNameProvider;
+import sun.util.spi.CalendarProvider;
 
 /**
  * LocaleProviderdapter implementation for the Windows locale data.
@@ -68,6 +74,14 @@ public class HostLocaleProviderAdapterImpl {
     // CalendarData value types
     private static final int CD_FIRSTDAYOFWEEK = 0;
     private static final int CD_MINIMALDAYSINFIRSTWEEK = 1;
+
+    // Currency/Locale display name types
+    private static final int DN_CURRENCY_NAME   = 0;
+    private static final int DN_CURRENCY_SYMBOL = 1;
+    private static final int DN_LOCALE_LANGUAGE = 2;
+    private static final int DN_LOCALE_SCRIPT   = 3;
+    private static final int DN_LOCALE_REGION   = 4;
+    private static final int DN_LOCALE_VARIANT  = 5;
 
     // Native Calendar ID to LDML calendar type map
     private static final String[] calIDToLDML = {
@@ -93,15 +107,25 @@ public class HostLocaleProviderAdapterImpl {
     private static ConcurrentMap<Locale, SoftReference<DecimalFormatSymbols>> decimalFormatSymbolsCache = new ConcurrentHashMap<>();
 
     private static final Set<Locale> supportedLocaleSet;
+    private static final String nativeDisplayLanguage;
     static {
         Set<Locale> tmpSet = new HashSet<>();
         if (initialize()) {
             // Assuming the default locales do not include any extensions, so
             // no stripping is needed here.
-            Locale l = Locale.forLanguageTag(getDefaultLocale(CAT_FORMAT).replaceAll("_","-"));
-            tmpSet.addAll(Control.getNoFallbackControl(Control.FORMAT_DEFAULT).getCandidateLocales("", l));
-            l = Locale.forLanguageTag(getDefaultLocale(CAT_DISPLAY).replaceAll("_","-"));
-            tmpSet.addAll(Control.getNoFallbackControl(Control.FORMAT_DEFAULT).getCandidateLocales("", l));
+            Control c = Control.getNoFallbackControl(Control.FORMAT_DEFAULT);
+            String displayLocale = getDefaultLocale(CAT_DISPLAY);
+            Locale l = Locale.forLanguageTag(displayLocale.replace('_', '-'));
+            tmpSet.addAll(c.getCandidateLocales("", l));
+            nativeDisplayLanguage = l.getLanguage();
+
+            String formatLocale = getDefaultLocale(CAT_FORMAT);
+            if (!formatLocale.equals(displayLocale)) {
+                l = Locale.forLanguageTag(formatLocale.replace('_', '-'));
+                tmpSet.addAll(c.getCandidateLocales("", l));
+            }
+        } else {
+            nativeDisplayLanguage = "";
         }
         supportedLocaleSet = Collections.unmodifiableSet(tmpSet);
     }
@@ -173,24 +197,12 @@ public class HostLocaleProviderAdapterImpl {
 
             @Override
             public Locale[] getAvailableLocales() {
-                if (isSupportedLocale(Locale.getDefault(Locale.Category.FORMAT))) {
-                    return supportedLocale;
-                }
-
-                return new Locale[0];
+                return getSupportedCalendarLocales();
             }
 
             @Override
             public boolean isSupportedLocale(Locale locale) {
-                // Only supports the locale with Gregorian calendar
-                if (supportedLocale.length != 0) {
-                    int calid = getCalendarID(locale.toLanguageTag());
-                    if (calid > 0 && calid < calIDToLDML.length) {
-                        return calIDToLDML[calid].startsWith("gregory");
-                    }
-                }
-
-                return false;
+                return isSupportedCalendarLocale(locale);
             }
 
             @Override
@@ -312,9 +324,7 @@ public class HostLocaleProviderAdapterImpl {
                     dfs.setNaN(getNaN(langTag, dfs.getNaN()));
                     dfs.setPercent(getPercent(langTag, dfs.getPercent()));
                     dfs.setPerMill(getPerMill(langTag, dfs.getPerMill()));
-                    if (isNativeDigit(langTag)) {
-                        dfs.setZeroDigit(getZeroDigit(langTag, dfs.getZeroDigit()));
-                    }
+                    dfs.setZeroDigit(getZeroDigit(langTag, dfs.getZeroDigit()));
                     ref = new SoftReference<>(dfs);
                     decimalFormatSymbolsCache.put(locale, ref);
                 }
@@ -380,6 +390,119 @@ public class HostLocaleProviderAdapterImpl {
         };
     }
 
+    public static CalendarProvider getCalendarProvider() {
+        return new CalendarProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return getSupportedCalendarLocales();
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                return isSupportedCalendarLocale(locale);
+            }
+
+            @Override
+            public Calendar getInstance(TimeZone zone, Locale locale) {
+                return new Calendar.Builder()
+                             .setLocale(getCalendarLocale(locale))
+                             .setTimeZone(zone)
+                             .setInstant(System.currentTimeMillis())
+                             .build();
+            }
+        };
+    }
+
+    public static CurrencyNameProvider getCurrencyNameProvider() {
+        return new CurrencyNameProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return supportedLocale;
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                // Ignore the extensions for now
+                return supportedLocaleSet.contains(locale.stripExtensions()) &&
+                       locale.getLanguage().equals(nativeDisplayLanguage);
+            }
+
+            @Override
+            public String getSymbol(String currencyCode, Locale locale) {
+                // Retrieves the currency symbol by calling
+                // GetLocaleInfoEx(LOCALE_SCURRENCY).
+                // It only works with the "locale"'s currency in its native
+                // language.
+                try {
+                    if (Currency.getInstance(locale).getCurrencyCode()
+                        .equals(currencyCode)) {
+                        return getDisplayString(locale.toLanguageTag(),
+                                DN_CURRENCY_SYMBOL, currencyCode);
+                    }
+                } catch (IllegalArgumentException iae) {}
+                return null;
+            }
+
+            @Override
+            public String getDisplayName(String currencyCode, Locale locale) {
+                // Retrieves the display name by calling
+                // GetLocaleInfoEx(LOCALE_SNATIVECURRNAME).
+                // It only works with the "locale"'s currency in its native
+                // language.
+                try {
+                    if (Currency.getInstance(locale).getCurrencyCode()
+                        .equals(currencyCode)) {
+                        return getDisplayString(locale.toLanguageTag(),
+                                DN_CURRENCY_NAME, currencyCode);
+                    }
+                } catch (IllegalArgumentException iae) {}
+                return null;
+            }
+        };
+    }
+
+    public static LocaleNameProvider getLocaleNameProvider() {
+        return new LocaleNameProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return supportedLocale;
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                return supportedLocaleSet.contains(locale.stripExtensions()) &&
+                       locale.getLanguage().equals(nativeDisplayLanguage);
+            }
+
+            @Override
+            public String getDisplayLanguage(String languageCode, Locale locale) {
+                // Retrieves the display language name by calling
+                // GetLocaleInfoEx(LOCALE_SLOCALIZEDLANGUAGENAME).
+                return getDisplayString(locale.toLanguageTag(),
+                            DN_LOCALE_LANGUAGE, languageCode);
+            }
+
+            @Override
+            public String getDisplayCountry(String countryCode, Locale locale) {
+                // Retrieves the display country name by calling
+                // GetLocaleInfoEx(LOCALE_SLOCALIZEDCOUNTRYNAME).
+                return getDisplayString(locale.toLanguageTag(),
+                            DN_LOCALE_REGION, nativeDisplayLanguage+"-"+countryCode);
+            }
+
+            @Override
+            public String getDisplayScript(String scriptCode, Locale locale) {
+                return null;
+            }
+
+            @Override
+            public String getDisplayVariant(String variantCode, Locale locale) {
+                return null;
+            }
+        };
+    }
+
+
     private static String convertDateTimePattern(String winPattern) {
         String ret = winPattern.replaceAll("dddd", "EEEE");
         ret = ret.replaceAll("ddd", "EEE");
@@ -401,24 +524,34 @@ public class HostLocaleProviderAdapterImpl {
     }
 
     private static boolean isSupportedCalendarLocale(Locale locale) {
-        // special case for ja_JP_JP
-        if (JRELocaleConstants.JA_JP_JP.equals(locale)) {
-            return isJapaneseCalendar();
+        Locale base = locale;
+
+        if (base.hasExtensions() || base.getVariant() != "") {
+            // strip off extensions and variant.
+            base = new Locale.Builder()
+                            .setLocale(locale)
+                            .clearExtensions()
+                            .build();
         }
 
-        Locale base = locale.stripExtensions();
         if (!supportedLocaleSet.contains(base)) {
             return false;
         }
 
-        String caltype = locale.getUnicodeLocaleType("ca");
-        if (caltype == null) {
-            return true;
+        int calid = getCalendarID(base.toLanguageTag());
+        if (calid <= 0 || calid >= calIDToLDML.length) {
+            return false;
         }
 
-        return caltype.equals(
-            calIDToLDML[getCalendarID(locale.toLanguageTag())]
-            .replaceFirst("_.*", ""));
+        String requestedCalType = locale.getUnicodeLocaleType("ca");
+        String nativeCalType = calIDToLDML[calid]
+                .replaceFirst("_.*", ""); // remove locale part.
+
+        if (requestedCalType == null) {
+            return Calendar.getAvailableCalendarTypes().contains(nativeCalType);
+        } else {
+            return requestedCalType.equals(nativeCalType);
+        }
     }
 
     private static Locale[] getSupportedNativeDigitLocales() {
@@ -533,4 +666,7 @@ public class HostLocaleProviderAdapterImpl {
 
     // For CalendarDataProvider
     private static native int getCalendarDataValue(String langTag, int type);
+
+    // For Locale/CurrencyNameProvider
+    private static native String getDisplayString(String langTag, int key, String value);
 }

@@ -161,7 +161,8 @@ public class PKCS7 {
             } catch (IOException ioe1) {
                 ParsingException pe = new ParsingException(
                     ioe1.getMessage());
-                pe.initCause(ioe1);
+                pe.initCause(ioe);
+                pe.addSuppressed(ioe1);
                 throw pe;
             }
         }
@@ -310,19 +311,26 @@ public class PKCS7 {
 
             len = certVals.length;
             certificates = new X509Certificate[len];
+            int count = 0;
 
             for (int i = 0; i < len; i++) {
                 ByteArrayInputStream bais = null;
                 try {
-                    if (certfac == null)
-                        certificates[i] = new X509CertImpl(certVals[i]);
-                    else {
-                        byte[] encoded = certVals[i].toByteArray();
-                        bais = new ByteArrayInputStream(encoded);
-                        certificates[i] =
-                            (X509Certificate)certfac.generateCertificate(bais);
-                        bais.close();
-                        bais = null;
+                    byte tag = certVals[i].getTag();
+                    // We only parse the normal certificate. Other types of
+                    // CertificateChoices ignored.
+                    if (tag == DerValue.tag_Sequence) {
+                        if (certfac == null) {
+                            certificates[count] = new X509CertImpl(certVals[i]);
+                        } else {
+                            byte[] encoded = certVals[i].toByteArray();
+                            bais = new ByteArrayInputStream(encoded);
+                            certificates[count] =
+                                (X509Certificate)certfac.generateCertificate(bais);
+                            bais.close();
+                            bais = null;
+                        }
+                        count++;
                     }
                 } catch (CertificateException ce) {
                     ParsingException pe = new ParsingException(ce.getMessage());
@@ -336,6 +344,9 @@ public class PKCS7 {
                     if (bais != null)
                         bais.close();
                 }
+            }
+            if (count != len) {
+                certificates = Arrays.copyOf(certificates, count);
             }
         }
 
@@ -773,6 +784,9 @@ public class PKCS7 {
      * @param signatureAlgorithm the name of the signature algorithm
      * @param tsaURI the URI of the Timestamping Authority; or null if no
      *         timestamp is requested
+     * @param tSAPolicyID the TSAPolicyID of the Timestamping Authority as a
+     *         numerical object identifier; or null if we leave the TSA server
+     *         to choose one. This argument is only used when tsaURI is provided
      * @return the bytes of the encoded PKCS #7 signed data message
      * @throws NoSuchAlgorithmException The exception is thrown if the signature
      *         algorithm is unrecognised.
@@ -787,7 +801,8 @@ public class PKCS7 {
                                             X509Certificate[] signerChain,
                                             byte[] content,
                                             String signatureAlgorithm,
-                                            URI tsaURI)
+                                            URI tsaURI,
+                                            String tSAPolicyID)
         throws CertificateException, IOException, NoSuchAlgorithmException
     {
 
@@ -796,7 +811,7 @@ public class PKCS7 {
         if (tsaURI != null) {
             // Timestamp the signature
             HttpTimestamper tsa = new HttpTimestamper(tsaURI);
-            byte[] tsToken = generateTimestampToken(tsa, signature);
+            byte[] tsToken = generateTimestampToken(tsa, tSAPolicyID, signature);
 
             // Insert the timestamp token into the PKCS #7 signer info element
             // (as an unsigned attribute)
@@ -840,14 +855,20 @@ public class PKCS7 {
      * set to true.
      *
      * @param tsa the timestamping authority to use
+     * @param tSAPolicyID the TSAPolicyID of the Timestamping Authority as a
+     *         numerical object identifier; or null if we leave the TSA server
+     *         to choose one
      * @param toBeTimestamped the token that is to be timestamped
      * @return the encoded timestamp token
      * @throws IOException The exception is thrown if an error occurs while
-     *                     communicating with the TSA.
+     *                     communicating with the TSA, or a non-null
+     *                     TSAPolicyID is specified in the request but it
+     *                     does not match the one in the reply
      * @throws CertificateException The exception is thrown if the TSA's
      *                     certificate is not permitted for timestamping.
      */
     private static byte[] generateTimestampToken(Timestamper tsa,
+                                                 String tSAPolicyID,
                                                  byte[] toBeTimestamped)
         throws IOException, CertificateException
     {
@@ -857,7 +878,7 @@ public class PKCS7 {
         try {
             // SHA-1 is always used.
             messageDigest = MessageDigest.getInstance("SHA-1");
-            tsQuery = new TSRequest(toBeTimestamped, messageDigest);
+            tsQuery = new TSRequest(tSAPolicyID, toBeTimestamped, messageDigest);
         } catch (NoSuchAlgorithmException e) {
             // ignore
         }
@@ -877,6 +898,12 @@ public class PKCS7 {
             throw new IOException("Error generating timestamp: " +
                 tsReply.getStatusCodeAsText() + " " +
                 tsReply.getFailureCodeAsText());
+        }
+
+        if (tSAPolicyID != null &&
+                !tSAPolicyID.equals(tsReply.getTimestampToken().getPolicyID())) {
+            throw new IOException("TSAPolicyID changed in "
+                    + "timestamp token");
         }
         PKCS7 tsToken = tsReply.getToken();
 
