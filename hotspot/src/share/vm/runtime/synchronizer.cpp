@@ -449,8 +449,6 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
 // and explicit fences (barriers) to control for architectural reordering performed
 // by the CPU(s) or platform.
 
-static int  MBFence (int x) { OrderAccess::fence(); return x; }
-
 struct SharedGlobals {
     // These are highly shared mostly-read variables.
     // To avoid false-sharing they need to be the sole occupants of a $ line.
@@ -1638,11 +1636,6 @@ void ObjectSynchronizer::release_monitors_owned_by_thread(TRAPS) {
 // Non-product code
 
 #ifndef PRODUCT
-
-void ObjectSynchronizer::trace_locking(Handle locking_obj, bool is_compiled,
-                                       bool is_method, bool is_locking) {
-  // Don't know what to do here
-}
 
 // Verify all monitors in the monitor cache, the verification is weak.
 void ObjectSynchronizer::verify() {

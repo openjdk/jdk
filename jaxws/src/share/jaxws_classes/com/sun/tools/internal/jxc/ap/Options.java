@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,16 @@ import com.sun.tools.internal.xjc.BadCommandLineException;
  */
 public class Options  {
 
+    public static final String DISABLE_XML_SECURITY = "-disableXmlSecurity";
+
     // honor CLASSPATH environment variable, but it will be overrided by -cp
     public String classpath = System.getenv("CLASSPATH");
 
     public File targetDir = null;
 
     public File episodeFile = null;
+
+    private boolean disableXmlSecurity = false;
 
     // encoding is not required for JDK5, 6, but JDK 7 javac is much more strict - see issue 6859289
     public String encoding = null;
@@ -85,6 +89,14 @@ public class Options  {
             return 1;
         }
 
+        if (args[i].equals(DISABLE_XML_SECURITY)) {
+            if (i == args.length - 1)
+                throw new BadCommandLineException(
+                        (Messages.OPERAND_MISSING.format(args[i])));
+            disableXmlSecurity = true;
+            return 1;
+        }
+
         if (args[i].equals("-encoding")) {
             if (i == args.length - 1)
                 throw new BadCommandLineException(
@@ -105,6 +117,14 @@ public class Options  {
         return 0;
 
     }
+
+    /**
+     * @return the disableXmlSecurity
+     */
+    public boolean isDisableXmlSecurity() {
+        return disableXmlSecurity;
+    }
+
 
 
 }

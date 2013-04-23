@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import com.sun.istack.internal.Nullable;
 import com.sun.tools.internal.ws.resources.WscompileMessages;
 import com.sun.tools.internal.ws.resources.WsdlMessages;
 import com.sun.tools.internal.ws.wscompile.AbortException;
-import com.sun.tools.internal.ws.wscompile.DefaultAuthenticator;
 import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
 import com.sun.tools.internal.ws.wscompile.WsimportOptions;
 import com.sun.tools.internal.ws.wsdl.document.WSDLConstants;
@@ -69,28 +68,31 @@ public final class MetadataFinder extends DOMForest{
 
     public boolean isMexMetadata;
     private String rootWSDL;
-    private Set<String> rootWsdls = new HashSet<String>();
+    private final Set<String> rootWsdls = new HashSet<String>();
 
     public MetadataFinder(InternalizationLogic logic, WsimportOptions options, ErrorReceiver errReceiver) {
         super(logic, new WSEntityResolver(options,errReceiver), options, errReceiver);
 
     }
 
+    @SuppressWarnings("element-type-mismatch")
     public void parseWSDL(){
         // parse source grammars
         for (InputSource value : options.getWSDLs()) {
             String systemID = value.getSystemId();
             errorReceiver.pollAbort();
 
-            Document dom ;
-            Element doc = null;
+            Document dom;
+            Element doc;
 
             try {
-            //if there is entity resolver use it
-            if (options.entityResolver != null)
-                value = options.entityResolver.resolveEntity(null, systemID);
-            if (value == null)
-                value = new InputSource(systemID);
+                //if there is entity resolver use it
+                if (options.entityResolver != null) {
+                    value = options.entityResolver.resolveEntity(null, systemID);
+                }
+                if (value == null) {
+                    value = new InputSource(systemID);
+                }
                 dom = parse(value, true);
 
                 doc = dom.getDocumentElement();
@@ -100,9 +102,9 @@ public final class MetadataFinder extends DOMForest{
                 //if its not a WSDL document, retry with MEX
                 if (doc.getNamespaceURI() == null || !doc.getNamespaceURI().equals(WSDLConstants.NS_WSDL) || !doc.getLocalName().equals("definitions")) {
                     throw new SAXParseException(WsdlMessages.INVALID_WSDL(systemID,
-                        com.sun.xml.internal.ws.wsdl.parser.WSDLConstants.QNAME_DEFINITIONS, doc.getNodeName(), locatorTable.getStartLocation(doc).getLineNumber()), locatorTable.getStartLocation(doc));
+                            com.sun.xml.internal.ws.wsdl.parser.WSDLConstants.QNAME_DEFINITIONS, doc.getNodeName(), locatorTable.getStartLocation(doc).getLineNumber()), locatorTable.getStartLocation(doc));
                 }
-            } catch(FileNotFoundException e){
+            } catch (FileNotFoundException e) {
                 errorReceiver.error(WsdlMessages.FILE_NOT_FOUND(systemID), e);
                 return;
             } catch (IOException e) {
@@ -119,24 +121,27 @@ public final class MetadataFinder extends DOMForest{
 
             NodeList schemas = doc.getElementsByTagNameNS(SchemaConstants.NS_XSD, "schema");
             for (int i = 0; i < schemas.getLength(); i++) {
-                if(!inlinedSchemaElements.contains(schemas.item(i)))
+                if (!inlinedSchemaElements.contains(schemas.item(i))) {
                     inlinedSchemaElements.add((Element) schemas.item(i));
+                }
             }
         }
         identifyRootWsdls();
     }
 
     public static class WSEntityResolver implements EntityResolver {
-        EntityResolver parentResolver;
         WsimportOptions options;
         ErrorReceiver errorReceiver;
 
+        private URLConnection c = null;
+        private boolean doReset = false;
+
         public WSEntityResolver(WsimportOptions options, ErrorReceiver errReceiver) {
-            this.parentResolver = options.entityResolver;
             this.options = options;
             this.errorReceiver = errReceiver;
         }
 
+        @Override
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
             InputSource inputSource = null;
 
@@ -161,6 +166,14 @@ public final class MetadataFinder extends DOMForest{
                         ((HttpURLConnection) conn).setInstanceFollowRedirects(false);
                     }
 
+                    if (conn instanceof JarURLConnection) {
+                        if (conn.getUseCaches()) {
+                            doReset = true;
+                            conn.setDefaultUseCaches(false);
+                            c = conn;
+                        }
+                    }
+
                     try {
                         is = conn.getInputStream();
                         //is = sun.net.www.protocol.http.HttpURLConnection.openConnectionCheckRedirects(conn);
@@ -170,7 +183,7 @@ public final class MetadataFinder extends DOMForest{
                             int code = httpConn.getResponseCode();
                             if (code == 401) {
                                 errorReceiver.error(new SAXParseException(WscompileMessages.WSIMPORT_AUTH_INFO_NEEDED(e.getMessage(),
-                                        systemId, DefaultAuthenticator.defaultAuthfile), null, e));
+                                        systemId, WsimportOptions.defaultAuthfile), null, e));
                                 throw new AbortException();
                             }
                             //FOR other code we will retry with MEX
@@ -211,11 +224,19 @@ public final class MetadataFinder extends DOMForest{
             return inputSource;
         }
 
+        @Override
+        protected void finalize() throws Throwable {
+            //see http://java.net/jira/browse/JAX_WS-1087
+            if (doReset) {
+                c.setDefaultUseCaches(true);
+            }
+        }
     }
 
     // overide default SSL HttpClientVerifier to always return true
     // effectively overiding Hostname client verification when using SSL
     private static class HttpClientVerifier implements HostnameVerifier {
+        @Override
         public boolean verify(String s, SSLSession sslSession) {
             return true;
         }
@@ -263,7 +284,7 @@ public final class MetadataFinder extends DOMForest{
         }
         //no wsdl with wsdl:service found, throw error
         if(rootWSDL == null){
-            StringBuffer strbuf = new StringBuffer();
+            StringBuilder strbuf = new StringBuilder();
             for(String str : rootWsdls){
                 strbuf.append(str);
                 strbuf.append('\n');

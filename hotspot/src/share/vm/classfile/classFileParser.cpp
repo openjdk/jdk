@@ -1723,9 +1723,6 @@ void ClassFileParser::parse_annotations(u1* buffer, int limit,
       } else {
         coll->set_contended_group(0); // default contended group
       }
-      coll->set_contended(true);
-    } else {
-      coll->set_contended(false);
     }
   }
 }

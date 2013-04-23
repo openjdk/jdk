@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -112,7 +113,6 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
 
             QName qname = new QName(namespace, localName);
             if (field.getType().equals(JAXBElement.class)) {
-                Class elementDeclaredType = Object.class;
                 if (field.getGenericType() instanceof ParameterizedType) {
                     Type arg = ((ParameterizedType) field.getGenericType())
                             .getActualTypeArguments()[0];
@@ -161,7 +161,7 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
     static protected List<Field> getAllFields(Class<?> clz) {
         List<Field> list = new ArrayList<Field>();
         while (!Object.class.equals(clz)) {
-            for (Field f : getDeclaredFields(clz)) list.add(f);
+            list.addAll(Arrays.asList(getDeclaredFields(clz)));
             clz = clz.getSuperclass();
         }
         return list;
@@ -171,6 +171,7 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
         try {
             return (System.getSecurityManager() == null) ? clz .getDeclaredFields() :
                 AccessController.doPrivileged(new PrivilegedExceptionAction<Field[]>() {
+                        @Override
                         public Field[] run() throws IllegalAccessException {
                             return clz.getDeclaredFields();
                         }
@@ -186,9 +187,7 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
         if (!field.isAccessible()) {
             if (getMethod != null) {
                 MethodGetter methodGetter = new MethodGetter(getMethod);
-                if (!methodGetter.getType().toString().equals(field.getType().toString())) {
-                    methodGetter = null;
-                } else {
+                if (methodGetter.getType().toString().equals(field.getType().toString())) {
                     return methodGetter;
                 }
             }
@@ -201,9 +200,7 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
         if (!field.isAccessible()) {
             if (setter != null) {
                 MethodSetter injection = new MethodSetter(setter);
-                if (!injection.getType().toString().equals(field.getType().toString())) {
-                    injection = null;
-                } else {
+                if (injection.getType().toString().equals(field.getType().toString())) {
                     return injection;
                 }
             }
@@ -217,6 +214,7 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
         return elementDeclaredTypes.get(key);
     }
 
+    @Override
     public PropertyAccessor getPropertyAccessor(String ns, String name) {
         final QName n = new QName(ns, name);
         final PropertySetter setter = getPropertySetter(n);
@@ -228,8 +226,9 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
         final Class elementDeclaredType = isJAXBElement ? getElementDeclaredType(n)
                 : null;
         return new PropertyAccessor() {
+            @Override
             public Object get(Object bean) throws DatabindingException {
-                Object val = null;
+                Object val;
                 if (isJAXBElement) {
                     JAXBElement<Object> jaxbElement = (JAXBElement<Object>) getter.get(bean);
                     val = (jaxbElement == null) ? null : jaxbElement.getValue();
@@ -243,6 +242,7 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
                 return val;
             }
 
+            @Override
             public void set(Object bean, Object value) throws DatabindingException {
                 if (isJAXBElement) {
                     JAXBElement<Object> jaxbElement = new JAXBElement<Object>(

@@ -806,11 +806,15 @@ public class WrapperGenerator {
             }
         }
         if (s_size_32 != null && !s_size_32.equals(Integer.toString(acc_size_32))) {
-            log.fine("32 bits: The size of the structure " + stp.getName() + " " + s_size_32 +
+            if (log.isLoggable(Level.FINE)) {
+                log.fine("32 bits: The size of the structure " + stp.getName() + " " + s_size_32 +
                         " is not equal to the accumulated size " +acc_size_32 + " of the fields");
+            }
         } else if (s_size_64 != null && !s_size_64.equals(Integer.toString(acc_size_64))) {
-            log.fine("64 bits: The size of the structure " + stp.getName() + " " +s_size_64+
+            if (log.isLoggable(Level.FINE)) {
+                log.fine("64 bits: The size of the structure " + stp.getName() + " " +s_size_64+
                         " is not equal to the accumulated size " +acc_size_64+" of the fields");
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,13 @@ package com.sun.xml.internal.ws.message;
 
 import com.sun.xml.internal.bind.api.Bridge;
 import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.message.HeaderList;
+import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
+import com.sun.xml.internal.ws.api.message.MessageWritable;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.message.saaj.SAAJFactory;
+import com.sun.xml.internal.ws.message.saaj.SAAJMessage;
 import com.sun.xml.internal.ws.spi.db.XMLBridge;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
@@ -46,6 +49,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
+
 import java.util.List;
 import java.util.Map;
 
@@ -80,6 +84,9 @@ public abstract class AbstractMessageImpl extends Message {
         this.soapVersion = soapVersion;
     }
 
+    public SOAPVersion getSOAPVersion() {
+        return soapVersion;
+    }
     /**
      * Copy constructor.
      */
@@ -121,10 +128,9 @@ public abstract class AbstractMessageImpl extends Message {
         w.writeNamespace("S",soapNsUri);
         if(hasHeaders()) {
             w.writeStartElement("S","Header",soapNsUri);
-            HeaderList headers = getHeaders();
-            int len = headers.size();
-            for( int i=0; i<len; i++ ) {
-                headers.get(i).writeTo(w);
+            MessageHeaders headers = getHeaders();
+            for (Header h : headers.asList()) {
+                h.writeTo(w);
             }
             w.writeEndElement();
         }
@@ -150,11 +156,9 @@ public abstract class AbstractMessageImpl extends Message {
         contentHandler.startElement(soapNsUri,"Envelope","S:Envelope",EMPTY_ATTS);
         if(hasHeaders()) {
             contentHandler.startElement(soapNsUri,"Header","S:Header",EMPTY_ATTS);
-            HeaderList headers = getHeaders();
-            int len = headers.size();
-            for( int i=0; i<len; i++ ) {
-                // shouldn't JDK be smart enough to use array-style indexing for this foreach!?
-                headers.get(i).writeTo(contentHandler,errorHandler);
+            MessageHeaders headers = getHeaders();
+            for (Header h : headers.asList()) {
+                h.writeTo(contentHandler,errorHandler);
             }
             contentHandler.endElement(soapNsUri,"Header","S:Header");
         }
@@ -175,6 +179,15 @@ public abstract class AbstractMessageImpl extends Message {
      */
     protected abstract void writePayloadTo(ContentHandler contentHandler, ErrorHandler errorHandler, boolean fragment) throws SAXException;
 
+    public Message toSAAJ(Packet p, Boolean inbound) throws SOAPException {
+        SAAJMessage message = SAAJFactory.read(p);
+        if (message instanceof MessageWritable)
+            ((MessageWritable) message)
+                    .setMTOMConfiguration(p.getMtomFeature());
+        if (inbound != null) transportHeaders(p, inbound, message.readAsSOAPMessage());
+        return message;
+    }
+
     /**
      * Default implementation that uses {@link #writeTo(ContentHandler, ErrorHandler)}
      */
@@ -186,27 +199,18 @@ public abstract class AbstractMessageImpl extends Message {
      *
      */
     public SOAPMessage readAsSOAPMessage(Packet packet, boolean inbound) throws SOAPException {
-        SOAPMessage msg = readAsSOAPMessage();
-        Map<String, List<String>> headers = null;
-        String key = inbound ? Packet.INBOUND_TRANSPORT_HEADERS : Packet.OUTBOUND_TRANSPORT_HEADERS;
-        if (packet.supports(key)) {
-            headers = (Map<String, List<String>>)packet.get(key);
-        }
-        if (headers != null) {
-            for(Map.Entry<String, List<String>> e : headers.entrySet()) {
-                if (!e.getKey().equalsIgnoreCase("Content-Type")) {
-                    for(String value : e.getValue()) {
-                        msg.getMimeHeaders().addHeader(e.getKey(), value);
-                    }
-                }
-            }
-        }
-
-        if (msg.saveRequired())
-                msg.saveChanges();
+        SOAPMessage msg = SAAJFactory.read(soapVersion, this, packet);
+        transportHeaders(packet, inbound, msg);
         return msg;
     }
 
+    private void transportHeaders(Packet packet, boolean inbound, SOAPMessage msg) throws SOAPException {
+        Map<String, List<String>> headers = getTransportHeaders(packet, inbound);
+        if (headers != null) {
+            addSOAPMimeHeaders(msg.getMimeHeaders(), headers);
+        }
+        if (msg.saveRequired()) msg.saveChanges();
+    }
 
     protected static final AttributesImpl EMPTY_ATTS = new AttributesImpl();
     protected static final LocatorImpl NULL_LOCATOR = new LocatorImpl();

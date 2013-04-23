@@ -36,23 +36,23 @@ public class SetDontInlineMethodTest extends CompilerWhiteBoxTest {
     }
 
     protected void test() throws Exception {
-        if (WHITE_BOX.setDontInlineMethod(METHOD, true)) {
+        if (WHITE_BOX.testSetDontInlineMethod(METHOD, true)) {
             throw new RuntimeException("on start " + METHOD
                     + " must be inlineable");
         }
-        if (!WHITE_BOX.setDontInlineMethod(METHOD, true)) {
+        if (!WHITE_BOX.testSetDontInlineMethod(METHOD, true)) {
             throw new RuntimeException("after first change to true " + METHOD
                     + " must be not inlineable");
         }
-        if (!WHITE_BOX.setDontInlineMethod(METHOD, false)) {
+        if (!WHITE_BOX.testSetDontInlineMethod(METHOD, false)) {
             throw new RuntimeException("after second change to true " + METHOD
                     + " must be still not inlineable");
         }
-        if (WHITE_BOX.setDontInlineMethod(METHOD, false)) {
+        if (WHITE_BOX.testSetDontInlineMethod(METHOD, false)) {
             throw new RuntimeException("after first change to false" + METHOD
                     + " must be inlineable");
         }
-        if (WHITE_BOX.setDontInlineMethod(METHOD, false)) {
+        if (WHITE_BOX.testSetDontInlineMethod(METHOD, false)) {
             throw new RuntimeException("after second change to false " + METHOD
                     + " must be inlineable");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  * questions.
  */
 
-
 package com.sun.tools.internal.ws.resources;
 
-import com.sun.xml.internal.ws.util.localization.Localizable;
-import com.sun.xml.internal.ws.util.localization.LocalizableMessageFactory;
-import com.sun.xml.internal.ws.util.localization.Localizer;
+import com.sun.istack.internal.localization.Localizable;
+import com.sun.istack.internal.localization.LocalizableMessageFactory;
+import com.sun.istack.internal.localization.Localizer;
 
 
 /**
@@ -213,7 +212,7 @@ public final class WscompileMessages {
     }
 
     /**
-     * You are running on JDK6 which comes with JAX-WS {0} API, but this tool requires JAX-WS {1} API. Use the endorsed standards override mechanism (http://java.sun.com/javase/6/docs/technotes/guides/standards/), or use -Xendorsed option.
+     * You are running on JDK6 which comes with JAX-WS {0} API, but this tool requires JAX-WS {1} API. Use the endorsed standards override mechanism (http://docs.oracle.com/javase/6/docs/technotes/guides/standards/), or use -Xendorsed option.
      *
      */
     public static String INVOKER_NEED_ENDORSED(Object arg0, Object arg1) {
@@ -331,7 +330,8 @@ public final class WscompileMessages {
      *                             result in applications that are not portable or
      *                             may not interoperate with other implementations
      *   -help                     display help
-     *   -httpproxy:<host>:<port>  specify a HTTP proxy server (port defaults to 8080)
+     *   -httpproxy:<proxy>        set a HTTP proxy. Format is [user[:password]@]proxyHost:proxyPort
+     *                             (port defaults to 8080)
      *   -keep                     keep generated files
      *   -p <pkg>                  specifies the target package
      *   -quiet                    suppress wsimport output
@@ -568,7 +568,7 @@ public final class WscompileMessages {
     }
 
     /**
-     * You are running on JDK6 which comes with JAX-WS {0} API, but this tool requires JAX-WS {1} API. Use the endorsed standards override mechanism (http://java.sun.com/javase/6/docs/technotes/guides/standards/), or set xendorsed="true" on <{2}>.
+     * You are running on JDK6 which comes with JAX-WS {0} API, but this tool requires JAX-WS {1} API. Use the endorsed standards override mechanism (http://docs.oracle.com/javase/6/docs/technotes/guides/standards/), or set xendorsed="true" on <{2}>.
      *
      */
     public static String WRAPPER_TASK_NEED_ENDORSED(Object arg0, Object arg1, Object arg2) {
@@ -908,6 +908,18 @@ public final class WscompileMessages {
      */
     public static String WSIMPORT_ILLEGAL_TARGET_VERSION(Object arg0) {
         return localizer.localize(localizableWSIMPORT_ILLEGAL_TARGET_VERSION(arg0));
+    }
+
+    public static Localizable localizableWSIMPORT_ILLEGAL_PROXY(Object arg0) {
+        return messageFactory.getMessage("wsimport.ILLEGAL_PROXY", arg0);
+    }
+
+    /**
+     * "{0}" is not a valid proxy format. The format is [user[:password]@]proxyHost:proxyPort
+     *
+     */
+    public static String WSIMPORT_ILLEGAL_PROXY(Object arg0) {
+        return localizer.localize(localizableWSIMPORT_ILLEGAL_PROXY(arg0));
     }
 
     public static Localizable localizableWSGEN_PORTNAME_MISSING_LOCALNAME(Object arg0) {

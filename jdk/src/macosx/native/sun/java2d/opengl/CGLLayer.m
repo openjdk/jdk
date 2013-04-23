@@ -61,6 +61,19 @@ AWT_ASSERT_APPKIT_THREAD;
     //Layer backed view
     //self.needsDisplayOnBoundsChange = YES;
     //self.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+
+    //Disable CALayer's default animation
+    NSMutableDictionary * actions = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                    [NSNull null], @"bounds",
+                                    [NSNull null], @"contents",
+                                    [NSNull null], @"contentsScale",
+                                    [NSNull null], @"onOrderIn",
+                                    [NSNull null], @"onOrderOut",
+                                    [NSNull null], @"sublayers",
+                                    nil];
+    self.actions = actions;
+    [actions release];
+
     textureID = 0; // texture will be created by rendering pipe
     target = 0;
 
@@ -121,8 +134,12 @@ AWT_ASSERT_APPKIT_THREAD;
     // Set the current context to the one given to us.
     CGLSetCurrentContext(glContext);
 
-    glViewport(0, 0, textureWidth, textureHeight);
+    // Should clear the whole CALayer, because it can be larger than our texture.
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
 
+    glViewport(0, 0, textureWidth, textureHeight);
+    
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     static JNF_CLASS_CACHE(jc_JavaLayer, "sun/java2d/opengl/CGLLayer");
     static JNF_MEMBER_CACHE(jm_drawInCGLContext, jc_JavaLayer, "drawInCGLContext", "()V");
@@ -168,7 +185,7 @@ JNF_COCOA_EXIT(env);
 // Must be called under the RQ lock.
 JNIEXPORT void JNICALL
 Java_sun_java2d_opengl_CGLLayer_validate
-(JNIEnv *env, jobject obj, jlong layerPtr, jobject surfaceData)
+(JNIEnv *env, jclass cls, jlong layerPtr, jobject surfaceData)
 {
     CGLLayer *layer = OBJC(layerPtr);
 
@@ -186,9 +203,21 @@ Java_sun_java2d_opengl_CGLLayer_validate
 // Must be called on the AppKit thread and under the RQ lock.
 JNIEXPORT void JNICALL
 Java_sun_java2d_opengl_CGLLayer_blitTexture
-(JNIEnv *env, jobject obj, jlong layerPtr)
+(JNIEnv *env, jclass cls, jlong layerPtr)
 {
     CGLLayer *layer = jlong_to_ptr(layerPtr);
 
     [layer blitTexture];
+}
+
+JNIEXPORT void JNICALL
+Java_sun_java2d_opengl_CGLLayer_nativeSetScale
+(JNIEnv *env, jclass cls, jlong layerPtr, jdouble scale)
+{
+    JNF_COCOA_ENTER(env);
+    CGLLayer *layer = jlong_to_ptr(layerPtr);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        layer.contentsScale = scale;
+    }];
+    JNF_COCOA_EXIT(env);
 }

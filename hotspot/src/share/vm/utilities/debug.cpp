@@ -608,18 +608,6 @@ extern "C" nmethod* findnm(intptr_t addr) {
   return  CodeCache::find_nmethod((address)addr);
 }
 
-static address same_page(address x, address y) {
-  intptr_t page_bits = -os::vm_page_size();
-  if ((intptr_t(x) & page_bits) == (intptr_t(y) & page_bits)) {
-    return x;
-  } else if (x > y) {
-    return (address)(intptr_t(y) | ~page_bits) + 1;
-  } else {
-    return (address)(intptr_t(y) & page_bits);
-  }
-}
-
-
 // Another interface that isn't ambiguous in dbx.
 // Can we someday rename the other find to hsfind?
 extern "C" void hsfind(intptr_t x) {

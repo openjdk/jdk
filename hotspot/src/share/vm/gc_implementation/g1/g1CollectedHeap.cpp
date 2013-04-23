@@ -3427,6 +3427,15 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
   heap_region_iterate(&blk);
 }
 
+void G1CollectedHeap::print_on_error(outputStream* st) const {
+  this->CollectedHeap::print_on_error(st);
+
+  if (_cm != NULL) {
+    st->cr();
+    _cm->print_on_error(st);
+  }
+}
+
 void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     workers()->print_worker_threads_on(st);
