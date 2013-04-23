@@ -192,9 +192,8 @@ oop MethodHandles::init_method_MemberName(Handle mname, Method* m, bool do_dispa
     flags |= IS_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
   } else if (mods.is_static()) {
     flags |= IS_METHOD | (JVM_REF_invokeStatic << REFERENCE_KIND_SHIFT);
-     // Check if this method is a lambda method that is generated as
-     // private static method.
-     if (m->is_private() && m->method_holder()->is_interface()) {
+     // Get vindex from itable if method holder is an interface.
+     if (m->method_holder()->is_interface()) {
        vmindex = klassItable::compute_itable_index(m);
      }
   } else if (receiver_limit != mklass &&
