@@ -123,7 +123,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     }
 
     void initDispatching() {
-        if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Init embedding for " + Long.toHexString(xembed.handle));
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+            xembedLog.fine("Init embedding for " + Long.toHexString(xembed.handle));
+        }
         XToolkit.awtLock();
         try {
             XToolkit.addEventDispatcher(xembed.handle, xembed);
@@ -140,7 +142,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     }
 
     void endDispatching() {
-        xembedLog.fine("End dispatching for " + Long.toHexString(xembed.handle));
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+            xembedLog.fine("End dispatching for " + Long.toHexString(xembed.handle));
+        }
         XToolkit.awtLock();
         try {
             XDropTargetRegistry.getRegistry().unregisterXEmbedClient(getWindow(), xembed.handle);
@@ -160,7 +164,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     }
 
     void childDestroyed() {
-        xembedLog.fine("Child " + Long.toHexString(xembed.handle) + " has self-destroyed.");
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+            xembedLog.fine("Child " + Long.toHexString(xembed.handle) + " has self-destroyed.");
+        }
         endDispatching();
         xembed.handle = 0;
     }
@@ -382,7 +388,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     }
 
     void detachChild() {
-        if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Detaching child " + Long.toHexString(xembed.handle));
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+            xembedLog.fine("Detaching child " + Long.toHexString(xembed.handle));
+        }
         /**
          *  XEmbed specification:
          *  "The embedder can unmap the client and reparent the client window to the root window. If the
@@ -463,7 +471,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         try {
             XKeyEvent ke = new XKeyEvent(data);
             ke.set_window(xembed.handle);
-            if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Forwarding native key event: " + ke);
+            if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                xembedLog.fine("Forwarding native key event: " + ke);
+            }
             XToolkit.awtLock();
             try {
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(), xembed.handle, false, XConstants.NoEventMask, data);
@@ -494,7 +504,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         postEvent(new InvocationEvent(target, new Runnable() {
                 public void run() {
                     GrabbedKey grab = new GrabbedKey(keysym, modifiers);
-                    if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Grabbing key: " + grab);
+                    if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                        xembedLog.fine("Grabbing key: " + grab);
+                    }
                     synchronized(GRAB_LOCK) {
                         grabbed_keys.add(grab);
                     }
@@ -506,7 +518,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         postEvent(new InvocationEvent(target, new Runnable() {
                 public void run() {
                     GrabbedKey grab = new GrabbedKey(keysym, modifiers);
-                    if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("UnGrabbing key: " + grab);
+                    if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                        xembedLog.fine("UnGrabbing key: " + grab);
+                    }
                     synchronized(GRAB_LOCK) {
                         grabbed_keys.remove(grab);
                     }
@@ -519,7 +533,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
                 public void run() {
                     AWTKeyStroke stroke = xembed.getKeyStrokeForKeySym(keysym, modifiers);
                     if (stroke != null) {
-                        if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Registering accelerator " + accel_id + " for " + stroke);
+                        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                            xembedLog.fine("Registering accelerator " + accel_id + " for " + stroke);
+                        }
                         synchronized(ACCEL_LOCK) {
                             accelerators.put(accel_id, stroke);
                             accel_lookup.put(stroke, accel_id);
@@ -537,7 +553,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
                     synchronized(ACCEL_LOCK) {
                         stroke = accelerators.get(accel_id);
                         if (stroke != null) {
-                            if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Unregistering accelerator: " + accel_id);
+                            if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                                xembedLog.fine("Unregistering accelerator: " + accel_id);
+                            }
                             accelerators.remove(accel_id);
                             accel_lookup.remove(stroke); // FIXME: How about several accelerators with the same stroke?
                         }
@@ -583,7 +601,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
 
         boolean result = false;
 
-        if (xembedLog.isLoggable(PlatformLogger.FINER)) xembedLog.finer("Post-processing event " + e);
+        if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+            xembedLog.finer("Post-processing event " + e);
+        }
 
         // Process ACCELERATORS
         AWTKeyStroke stroke = AWTKeyStroke.getAWTKeyStrokeForEvent(e);
@@ -596,7 +616,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
             }
         }
         if (exists) {
-            if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Activating accelerator " + accel_id);
+            if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                xembedLog.fine("Activating accelerator " + accel_id);
+            }
             xembed.sendMessage(xembed.handle, XEMBED_ACTIVATE_ACCELERATOR, accel_id, 0, 0); // FIXME: How about overloaded?
             result = true;
         }
@@ -608,7 +630,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
             exists = grabbed_keys.contains(key);
         }
         if (exists) {
-            if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Forwarding grabbed key " + e);
+            if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                xembedLog.fine("Forwarding grabbed key " + e);
+            }
             forwardKeyEvent(e);
             result = true;
         }
@@ -627,9 +651,13 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     public void handleClientMessage(XEvent xev) {
         super.handleClientMessage(xev);
         XClientMessageEvent msg = xev.get_xclient();
-        if (xembedLog.isLoggable(PlatformLogger.FINER)) xembedLog.finer("Client message to embedder: " + msg);
+        if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+            xembedLog.finer("Client message to embedder: " + msg);
+        }
         if (msg.get_message_type() == xembed.XEmbed.getAtom()) {
-            if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine(xembed.XEmbedMessageToString(msg));
+            if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                xembedLog.fine(xembed.XEmbedMessageToString(msg));
+            }
         }
         if (isXEmbedActive()) {
             switch ((int)msg.get_data(1)) {
@@ -730,8 +758,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
                 boolean new_mapped = (flags & XEMBED_MAPPED) != 0;
                 boolean currently_mapped = XlibUtil.getWindowMapState(handle) != XConstants.IsUnmapped;
                 if (new_mapped != currently_mapped) {
-                    if (xembedLog.isLoggable(PlatformLogger.FINER))
-                        xembedLog.fine("Mapping state of the client has changed, old state: " + currently_mapped + ", new state: " + new_mapped);
+                    if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                        xembedLog.finer("Mapping state of the client has changed, old state: " + currently_mapped + ", new state: " + new_mapped);
+                    }
                     if (new_mapped) {
                         XToolkit.awtLock();
                         try {
@@ -748,7 +777,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
                         }
                     }
                 } else {
-                    xembedLog.finer("Mapping state didn't change, mapped: " + currently_mapped);
+                    if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                        xembedLog.finer("Mapping state didn't change, mapped: " + currently_mapped);
+                    }
                 }
                 return true;
             } finally {
@@ -759,7 +790,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         public void handlePropertyNotify(XEvent xev) {
             if (isXEmbedActive()) {
                 XPropertyEvent ev = xev.get_xproperty();
-                if (xembedLog.isLoggable(PlatformLogger.FINER)) xembedLog.finer("Property change on client: " + ev);
+                if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                    xembedLog.finer("Property change on client: " + ev);
+                }
                 if (ev.get_atom() == XAtom.XA_WM_NORMAL_HINTS) {
                     childResized();
                 } else if (ev.get_atom() == XEmbedInfo.getAtom()) {
@@ -780,7 +813,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         void handleConfigureNotify(XEvent xev) {
             if (isXEmbedActive()) {
                 XConfigureEvent ev = xev.get_xconfigure();
-                if (xembedLog.isLoggable(PlatformLogger.FINER)) xembedLog.finer("Bounds change on client: " + ev);
+                if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                    xembedLog.finer("Bounds change on client: " + ev);
+                }
                 if (xev.get_xany().get_window() == handle) {
                     childResized();
                 }
@@ -831,7 +866,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
 
                 // We recognize only these masks
                 modifiers = ke.get_state() & (XConstants.ShiftMask | XConstants.ControlMask | XConstants.LockMask);
-                if (xembedLog.isLoggable(PlatformLogger.FINEST)) xembedLog.finest("Mapped " + e + " to " + this);
+                if (xembedLog.isLoggable(PlatformLogger.FINEST)) {
+                    xembedLog.finest("Mapped " + e + " to " + this);
+                }
             } finally {
                 XlibWrapper.unsafe.freeMemory(data);
             }

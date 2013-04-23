@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ public class AbstractCreator extends AbstractCreatorProcessor {
         }
 
         if (length < CHAR_ARRAY_LENGTH_SMALL_SIZE) {
-            storeStructure(type | CHAR_ARRAY_LENGTH_SMALL);
+            storeStructure(type);
             storeStructure(length);
             System.arraycopy(ch, start, _contentCharactersBuffer, _contentCharactersBufferPtr, length);
             _contentCharactersBufferPtr += length;

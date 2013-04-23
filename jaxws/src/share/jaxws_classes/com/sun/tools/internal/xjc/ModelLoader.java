@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,11 @@ import com.sun.tools.internal.xjc.reader.xmlschema.parser.IncorrectNamespaceURIC
 import com.sun.tools.internal.xjc.reader.xmlschema.parser.SchemaConstraintChecker;
 import com.sun.tools.internal.xjc.reader.xmlschema.parser.XMLSchemaInternalizationLogic;
 import com.sun.tools.internal.xjc.util.ErrorReceiverFilter;
+import com.sun.xml.internal.bind.v2.util.XmlFactory;
 import com.sun.xml.internal.xsom.XSSchemaSet;
 import com.sun.xml.internal.xsom.parser.JAXPParser;
 import com.sun.xml.internal.xsom.parser.XMLParser;
 import com.sun.xml.internal.xsom.parser.XSOMParser;
-import java.net.URI;
-import java.net.URISyntaxException;
 import javax.xml.XMLConstants;
 
 import com.sun.xml.internal.rngom.ast.builder.SchemaBuilder;
@@ -298,7 +297,7 @@ public final class ModelLoader {
         throws SAXException {
 
         // parse into DOM forest
-        DOMForest forest = new DOMForest(logic);
+        DOMForest forest = new DOMForest(logic, opt);
 
         forest.setErrorHandler(errorReceiver);
         if(opt.entityResolver!=null)
@@ -343,7 +342,7 @@ public final class ModelLoader {
      */
     public XSSchemaSet loadXMLSchema() throws SAXException {
 
-        if( opt.strictCheck && !SchemaConstraintChecker.check(opt.getGrammars(),errorReceiver,opt.entityResolver)) {
+        if( opt.strictCheck && !SchemaConstraintChecker.check(opt.getGrammars(),errorReceiver,opt.entityResolver, opt.disableXmlSecurity)) {
             // schema error. error should have been reported
             return null;
         }
@@ -353,7 +352,7 @@ public final class ModelLoader {
             // which is faster if the speculation succeeds.
             try {
                 return createXSOMSpeculative();
-            } catch( SpeculationFailure _ ) {
+            } catch( SpeculationFailure e) {
                 // failed. go the slow way
             }
         }
@@ -411,6 +410,13 @@ public final class ModelLoader {
         return BGMBuilder.build(xs, codeModel, errorReceiver, opt);
     }
 
+    /**
+     * Potentially problematic - make sure the parser instance passed is initialized
+     * with proper security feature.
+     *
+     * @param parser
+     * @return
+     */
     public XSOMParser createXSOMParser(XMLParser parser) {
         // set up other parameters to XSOMParser
         XSOMParser reader = new XSOMParser(new XMLSchemaParser(parser));
@@ -465,7 +471,7 @@ public final class ModelLoader {
         // check if the schema contains external binding files. If so, speculation is a failure.
 
         XMLParser parser = new XMLParser() {
-            private final JAXPParser base = new JAXPParser();
+            private final JAXPParser base = new JAXPParser(XmlFactory.createParserFactory(opt.disableXmlSecurity));
 
             public void parse(InputSource source, ContentHandler handler,
                 ErrorHandler errorHandler, EntityResolver entityResolver ) throws SAXException, IOException {

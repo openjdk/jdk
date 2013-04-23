@@ -122,4 +122,6 @@ const le_uint8 ArabicShaping::shapingTypeTable[] = {
     0x00, 0x05, 0xFE, 0xFF, 0xFE, 0xFF, 0x00, 0x05, 0xFF, 0xF9, 0xFF, 0xFB, 0x00, 0x05
 };
 
+const size_t ArabicShaping::shapingTypeTableLen = sizeof(shapingTypeTable)/sizeof(shapingTypeTable[0]);
+
 U_NAMESPACE_END

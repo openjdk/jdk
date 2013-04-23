@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -52,15 +52,30 @@ struct LigatureSubstitutionHeader : MorphStateTableHeader
     ByteOffset ligatureTableOffset;
 };
 
+struct LigatureSubstitutionHeader2 : MorphStateTableHeader2
+{
+    le_uint32 ligActionOffset;
+    le_uint32 componentOffset;
+    le_uint32 ligatureOffset;
+};
+
 enum LigatureSubstitutionFlags
 {
     lsfSetComponent     = 0x8000,
     lsfDontAdvance      = 0x4000,
-    lsfActionOffsetMask = 0x3FFF
+    lsfActionOffsetMask = 0x3FFF, // N/A in morx
+    lsfPerformAction    = 0x2000
 };
 
 struct LigatureSubstitutionStateEntry : StateEntry
 {
+};
+
+struct LigatureSubstitutionStateEntry2
+{
+    le_uint16 nextStateIndex;
+    le_uint16 entryFlags;
+    le_uint16 ligActionIndex;
 };
 
 typedef le_uint32 LigatureActionEntry;

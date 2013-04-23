@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,20 @@ package sun.nio.ch.sctp;
 
 import com.sun.nio.sctp.Association;
 import com.sun.nio.sctp.AssociationChangeNotification;
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * An implementation of AssociationChangeNotification
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class AssociationChange extends AssociationChangeNotification
     implements SctpNotification
 {
     /* static final ints so that they can be referenced from native */
-    private final static int SCTP_COMM_UP = 1;
-    private final static int SCTP_COMM_LOST = 2;
-    private final static int SCTP_RESTART = 3;
-    private final static int SCTP_SHUTDOWN = 4;
-    private final static int SCTP_CANT_START = 5;
+    @Native private final static int SCTP_COMM_UP = 1;
+    @Native private final static int SCTP_COMM_LOST = 2;
+    @Native private final static int SCTP_RESTART = 3;
+    @Native private final static int SCTP_SHUTDOWN = 4;
+    @Native private final static int SCTP_CANT_START = 5;
 
     private Association association;
 

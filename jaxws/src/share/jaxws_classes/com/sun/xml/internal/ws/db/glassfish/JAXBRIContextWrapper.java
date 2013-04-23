@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,129 +29,152 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.Binder;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.JAXBIntrospector;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
-import javax.xml.transform.Result;
-
-import org.w3c.dom.Node;
-
-import com.sun.xml.internal.bind.api.BridgeContext;
-import com.sun.xml.internal.bind.api.CompositeStructure;
 import com.sun.xml.internal.bind.api.JAXBRIContext;
 import com.sun.xml.internal.bind.api.TypeReference;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeTypeInfoSet;
-import com.sun.xml.internal.bind.api.Bridge;
 import com.sun.xml.internal.ws.spi.db.BindingContext;
 import com.sun.xml.internal.ws.spi.db.XMLBridge;
-import com.sun.xml.internal.ws.spi.db.PropertyAccessor;
 import com.sun.xml.internal.ws.spi.db.TypeInfo;
 import com.sun.xml.internal.ws.spi.db.WrapperComposite;
 
 class JAXBRIContextWrapper implements BindingContext {
 
-        private Map<TypeInfo, TypeReference> typeRefs;
-        private Map<TypeReference, TypeInfo> typeInfos;
-        private JAXBRIContext context;
+    private Map<TypeInfo, TypeReference> typeRefs;
+    private Map<TypeReference, TypeInfo> typeInfos;
+    private JAXBRIContext context;
 
-        JAXBRIContextWrapper(JAXBRIContext cxt, Map<TypeInfo, TypeReference> refs) {
-                context = cxt;
-                typeRefs = refs;
-                if (refs != null) {
-                        typeInfos = new java.util.HashMap<TypeReference, TypeInfo>();
-                        for (TypeInfo ti : refs.keySet()) typeInfos.put(typeRefs.get(ti), ti);
-                }
+    JAXBRIContextWrapper(JAXBRIContext cxt, Map<TypeInfo, TypeReference> refs) {
+        context = cxt;
+        typeRefs = refs;
+        if (refs != null) {
+            typeInfos = new java.util.HashMap<TypeReference, TypeInfo>();
+            for (TypeInfo ti : refs.keySet()) {
+                typeInfos.put(typeRefs.get(ti), ti);
+            }
         }
+    }
 
-        TypeReference typeReference(TypeInfo ti) {
-                return (typeRefs != null)? typeRefs.get(ti) : null;
+    TypeReference typeReference(TypeInfo ti) {
+        return (typeRefs != null) ? typeRefs.get(ti) : null;
+    }
+
+    TypeInfo typeInfo(TypeReference tr) {
+        return (typeInfos != null) ? typeInfos.get(tr) : null;
+    }
+
+    @Override
+    public Marshaller createMarshaller() throws JAXBException {
+        return context.createMarshaller();
+    }
+
+    @Override
+    public Unmarshaller createUnmarshaller() throws JAXBException {
+        return context.createUnmarshaller();
+    }
+
+    @Override
+    public void generateSchema(SchemaOutputResolver outputResolver)
+            throws IOException {
+        context.generateSchema(outputResolver);
+    }
+
+    @Override
+    public String getBuildId() {
+        return context.getBuildId();
+    }
+
+    @Override
+    public QName getElementName(Class o) throws JAXBException {
+        return context.getElementName(o);
+    }
+
+    @Override
+    public QName getElementName(Object o) throws JAXBException {
+        return context.getElementName(o);
+    }
+
+    @Override
+    public <B, V> com.sun.xml.internal.ws.spi.db.PropertyAccessor<B, V> getElementPropertyAccessor(
+            Class<B> wrapperBean, String nsUri, String localName)
+            throws JAXBException {
+        return new RawAccessorWrapper(context.getElementPropertyAccessor(wrapperBean, nsUri, localName));
+    }
+
+    @Override
+    public List<String> getKnownNamespaceURIs() {
+        return context.getKnownNamespaceURIs();
+    }
+
+    public RuntimeTypeInfoSet getRuntimeTypeInfoSet() {
+        return context.getRuntimeTypeInfoSet();
+    }
+
+    public QName getTypeName(com.sun.xml.internal.bind.api.TypeReference tr) {
+        return context.getTypeName(tr);
+    }
+
+    @Override
+    public int hashCode() {
+        return context.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
         }
-
-        TypeInfo typeInfo(TypeReference tr) {
-                return (typeInfos != null)? typeInfos.get(tr) : null;
+        if (getClass() != obj.getClass()) {
+            return false;
         }
-
-        public Marshaller createMarshaller() throws JAXBException {
-                return context.createMarshaller();
+        final JAXBRIContextWrapper other = (JAXBRIContextWrapper) obj;
+        if (this.context != other.context && (this.context == null || !this.context.equals(other.context))) {
+            return false;
         }
+        return true;
+    }
 
-        public Unmarshaller createUnmarshaller() throws JAXBException {
-                return context.createUnmarshaller();
-        }
+    @Override
+    public boolean hasSwaRef() {
+        return context.hasSwaRef();
+    }
 
-        public void generateSchema(SchemaOutputResolver outputResolver)
-                        throws IOException {
-                context.generateSchema(outputResolver);
-        }
+    @Override
+    public String toString() {
+        return JAXBRIContextWrapper.class.getName() + " : " + context.toString();
+    }
 
-        public String getBuildId() {
-                return context.getBuildId();
-        }
+    @Override
+    public XMLBridge createBridge(TypeInfo ti) {
+        TypeReference tr = typeRefs.get(ti);
+        com.sun.xml.internal.bind.api.Bridge b = context.createBridge(tr);
+        return WrapperComposite.class.equals(ti.type)
+                ? new WrapperBridge(this, b)
+                : new BridgeWrapper(this, b);
+    }
 
-        public QName getElementName(Class o) throws JAXBException {
-                return context.getElementName(o);
-        }
+    @Override
+    public JAXBContext getJAXBContext() {
+        return context;
+    }
 
-        public QName getElementName(Object o) throws JAXBException {
-                return context.getElementName(o);
-        }
+    @Override
+    public QName getTypeName(TypeInfo ti) {
+        TypeReference tr = typeRefs.get(ti);
+        return context.getTypeName(tr);
+    }
 
-        public <B, V> com.sun.xml.internal.ws.spi.db.PropertyAccessor<B, V> getElementPropertyAccessor(
-                        Class<B> wrapperBean, String nsUri, String localName)
-                        throws JAXBException {
-                return new RawAccessorWrapper(context.getElementPropertyAccessor(wrapperBean, nsUri, localName));
-        }
+    @Override
+    public XMLBridge createFragmentBridge() {
+        return new MarshallerBridge((com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl) context);
+    }
 
-        public List<String> getKnownNamespaceURIs() {
-                return context.getKnownNamespaceURIs();
-        }
-
-        public RuntimeTypeInfoSet getRuntimeTypeInfoSet() {
-                return context.getRuntimeTypeInfoSet();
-        }
-
-        public QName getTypeName(com.sun.xml.internal.bind.api.TypeReference tr) {
-                return context.getTypeName(tr);
-        }
-
-        public int hashCode() {
-                return context.hashCode();
-        }
-
-        public boolean hasSwaRef() {
-                return context.hasSwaRef();
-        }
-
-        public String toString() {
-                return JAXBRIContextWrapper.class.getName() + " : " + context.toString();
-        }
-
-        public XMLBridge createBridge(TypeInfo ti) {
-                TypeReference tr = typeRefs.get(ti);
-                com.sun.xml.internal.bind.api.Bridge b = context.createBridge(tr);
-                return WrapperComposite.class.equals(ti.type) ?
-                                new WrapperBridge(this, b) :
-                                new BridgeWrapper(this, b);
-        }
-
-        public JAXBContext getJAXBContext() {
-                return context;
-        }
-
-        public QName getTypeName(TypeInfo ti) {
-                TypeReference tr = typeRefs.get(ti);
-                return context.getTypeName(tr);
-        }
-
-        public XMLBridge createFragmentBridge() {
-                return new MarshallerBridge((com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl)context);
-        }
-
+    @Override
     public Object newWrapperInstace(Class<?> wrapperType)
             throws InstantiationException, IllegalAccessException {
         return wrapperType.newInstance();

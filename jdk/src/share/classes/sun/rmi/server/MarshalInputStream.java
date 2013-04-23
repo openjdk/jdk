@@ -55,13 +55,19 @@ import java.rmi.server.RMIClassLoader;
 public class MarshalInputStream extends ObjectInputStream {
 
     /**
-     * value of "java.rmi.server.useCodebaseOnly" property,
+     * Value of "java.rmi.server.useCodebaseOnly" property,
      * as cached at class initialization time.
+     *
+     * The default value is true. That is, the value is true
+     * if the property is absent or is not equal to "false".
+     * The value is only false when the property is present
+     * and is equal to "false".
      */
     private static final boolean useCodebaseOnlyProperty =
-        java.security.AccessController.doPrivileged(
-            new sun.security.action.GetBooleanAction(
-                "java.rmi.server.useCodebaseOnly")).booleanValue();
+        ! java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction(
+                "java.rmi.server.useCodebaseOnly", "true"))
+            .equalsIgnoreCase("false");
 
     /** table to hold sun classes to which access is explicitly permitted */
     protected static Map<String, Class<?>> permittedSunClasses

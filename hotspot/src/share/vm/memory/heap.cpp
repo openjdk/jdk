@@ -79,13 +79,6 @@ static size_t align_to_page_size(size_t size) {
 }
 
 
-static size_t align_to_allocation_size(size_t size) {
-  const size_t alignment = (size_t)os::vm_allocation_granularity();
-  assert(is_power_of_2(alignment), "no kidding ???");
-  return (size + alignment - 1) & ~(alignment - 1);
-}
-
-
 void CodeHeap::on_code_mapping(char* base, size_t size) {
 #ifdef LINUX
   extern void linux_wrap_code(char* base, size_t size);

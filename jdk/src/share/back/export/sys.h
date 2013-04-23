@@ -37,7 +37,7 @@
 
 /* Implemented in linker_md.c */
 
-void    dbgsysBuildLibName(char *, int, char *, char *);
+void    dbgsysBuildLibName(char *, int, const char *, const char *);
 void *  dbgsysLoadLibrary(const char *, char *err_buf, int err_buflen);
 void    dbgsysUnloadLibrary(void *);
 void *  dbgsysFindLibraryEntry(void *, const char *);

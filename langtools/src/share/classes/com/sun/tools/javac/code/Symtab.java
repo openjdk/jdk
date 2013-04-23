@@ -404,12 +404,11 @@ public class Symtab {
                     return messages.getLocalizedString("compiler.misc.unnamed.package");
                 }
             };
-        noSymbol = new TypeSymbol(0, names.empty, Type.noType, rootPackage) {
+        noSymbol = new TypeSymbol(Kinds.NIL, 0, names.empty, Type.noType, rootPackage) {
             public <R, P> R accept(ElementVisitor<R, P> v, P p) {
                 return v.visitUnknown(this, p);
             }
         };
-        noSymbol.kind = Kinds.NIL;
 
         // create the error symbols
         errSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.any, null, rootPackage);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,20 +80,30 @@ public class WhiteBox {
   public native Object[]    parseCommandLine(String commandline, DiagnosticCommand[] args);
 
   // NMT
-  public native boolean NMTAllocTest();
-  public native boolean NMTFreeTestMemory();
+  public native long NMTMalloc(long size);
+  public native void NMTFree(long mem);
+  public native long NMTReserveMemory(long size);
+  public native void NMTCommitMemory(long addr, long size);
+  public native void NMTUncommitMemory(long addr, long size);
+  public native void NMTReleaseMemory(long addr, long size);
   public native boolean NMTWaitForDataMerge();
 
   // Compiler
   public native void    deoptimizeAll();
   public native boolean isMethodCompiled(Method method);
-  public native boolean isMethodCompilable(Method method);
+  public boolean isMethodCompilable(Method method) {
+      return isMethodCompilable(method, -1 /*any*/);
+  }
+  public native boolean isMethodCompilable(Method method, int compLevel);
   public native boolean isMethodQueuedForCompilation(Method method);
   public native int     deoptimizeMethod(Method method);
   public native void    makeMethodNotCompilable(Method method);
   public native int     getMethodCompilationLevel(Method method);
-  public native boolean setDontInlineMethod(Method method, boolean value);
+  public native boolean testSetDontInlineMethod(Method method, boolean value);
   public native int     getCompileQueuesSize();
+  public native boolean testSetForceInlineMethod(Method method, boolean value);
+  public native boolean enqueueMethodForCompilation(Method method, int compLevel);
+  public native void    clearMethodState(Method method);
 
   //Intered strings
   public native boolean isInStringTable(String str);

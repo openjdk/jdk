@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
@@ -531,12 +532,13 @@ public class DeferredAttr extends JCTree.Visitor {
                             attr.memberReferenceQualifierResult(tree));
                     ListBuffer<Type> argtypes = ListBuffer.lb();
                     for (Type t : types.findDescriptorType(pt).getParameterTypes()) {
-                        argtypes.append(syms.errType);
+                        argtypes.append(Type.noType);
                     }
                     JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
                     mref2.expr = exprTree;
                     Pair<Symbol, ?> lookupRes =
-                            rs.resolveMemberReference(tree, env, mref2, exprTree.type, tree.name, argtypes.toList(), null, true);
+                            rs.resolveMemberReference(tree, env, mref2, exprTree.type,
+                                tree.name, argtypes.toList(), null, true, rs.arityMethodCheck);
                     switch (lookupRes.fst.kind) {
                         //note: as argtypes are erroneous types, type-errors must
                         //have been caused by arity mismatch
@@ -798,4 +800,219 @@ public class DeferredAttr extends JCTree.Visitor {
             }
         }
     }
+
+    /**
+     * Does the argument expression {@code expr} need speculative type-checking?
+     */
+    boolean isDeferred(Env<AttrContext> env, JCExpression expr) {
+        DeferredChecker dc = new DeferredChecker(env);
+        dc.scan(expr);
+        return dc.result.isPoly();
+    }
+
+    /**
+     * The kind of an argument expression. This is used by the analysis that
+     * determines as to whether speculative attribution is necessary.
+     */
+    enum ArgumentExpressionKind {
+
+        /** kind that denotes poly argument expression */
+        POLY,
+        /** kind that denotes a standalone expression */
+        NO_POLY,
+        /** kind that denotes a primitive/boxed standalone expression */
+        PRIMITIVE;
+
+        /**
+         * Does this kind denote a poly argument expression
+         */
+        public final boolean isPoly() {
+            return this == POLY;
+        }
+
+        /**
+         * Does this kind denote a primitive standalone expression
+         */
+        public final boolean isPrimitive() {
+            return this == PRIMITIVE;
+        }
+
+        /**
+         * Compute the kind of a standalone expression of a given type
+         */
+        static ArgumentExpressionKind standaloneKind(Type type, Types types) {
+            return types.unboxedTypeOrType(type).isPrimitive() ?
+                    ArgumentExpressionKind.PRIMITIVE :
+                    ArgumentExpressionKind.NO_POLY;
+        }
+
+        /**
+         * Compute the kind of a method argument expression given its symbol
+         */
+        static ArgumentExpressionKind methodKind(Symbol sym, Types types) {
+            Type restype = sym.type.getReturnType();
+            if (sym.type.hasTag(FORALL) &&
+                    restype.containsAny(((ForAll)sym.type).tvars)) {
+                return ArgumentExpressionKind.POLY;
+            } else {
+                return ArgumentExpressionKind.standaloneKind(restype, types);
+            }
+        }
+    }
+
+    /**
+     * Tree scanner used for checking as to whether an argument expression
+     * requires speculative attribution
+     */
+    final class DeferredChecker extends FilterScanner {
+
+        Env<AttrContext> env;
+        ArgumentExpressionKind result;
+
+        public DeferredChecker(Env<AttrContext> env) {
+            super(deferredCheckerTags);
+            this.env = env;
+        }
+
+        @Override
+        public void visitLambda(JCLambda tree) {
+            //a lambda is always a poly expression
+            result = ArgumentExpressionKind.POLY;
+        }
+
+        @Override
+        public void visitReference(JCMemberReference tree) {
+            //a method reference is always a poly expression
+            result = ArgumentExpressionKind.POLY;
+        }
+
+        @Override
+        public void visitTypeCast(JCTypeCast tree) {
+            //a cast is always a standalone expression
+            result = ArgumentExpressionKind.NO_POLY;
+        }
+
+        @Override
+        public void visitConditional(JCConditional tree) {
+            scan(tree.truepart);
+            if (!result.isPrimitive()) {
+                result = ArgumentExpressionKind.POLY;
+                return;
+            }
+            scan(tree.falsepart);
+            result = reduce(ArgumentExpressionKind.PRIMITIVE);
+        }
+
+        @Override
+        public void visitNewClass(JCNewClass tree) {
+            result = (TreeInfo.isDiamond(tree) || attr.findDiamonds) ?
+                    ArgumentExpressionKind.POLY : ArgumentExpressionKind.NO_POLY;
+        }
+
+        @Override
+        public void visitApply(JCMethodInvocation tree) {
+            Name name = TreeInfo.name(tree.meth);
+
+            //fast path
+            if (tree.typeargs.nonEmpty() ||
+                    name == name.table.names._this ||
+                    name == name.table.names._super) {
+                result = ArgumentExpressionKind.NO_POLY;
+                return;
+            }
+
+            //slow path
+            final JCExpression rec = tree.meth.hasTag(SELECT) ?
+                    ((JCFieldAccess)tree.meth).selected :
+                    null;
+
+            if (rec != null && !isSimpleReceiver(rec)) {
+                //give up if receiver is too complex (to cut down analysis time)
+                result = ArgumentExpressionKind.POLY;
+                return;
+            }
+
+            Type site = rec != null ?
+                    attribSpeculative(rec, env, attr.unknownTypeExprInfo).type :
+                    env.enclClass.sym.type;
+
+            ListBuffer<Type> args = ListBuffer.lb();
+            for (int i = 0; i < tree.args.length(); i ++) {
+                args.append(Type.noType);
+            }
+
+            Resolve.LookupHelper lh = rs.new LookupHelper(name, site, args.toList(), List.<Type>nil(), MethodResolutionPhase.VARARITY) {
+                @Override
+                Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                    return rec == null ?
+                        rs.findFun(env, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
+                        rs.findMethod(env, site, name, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired(), false);
+                }
+                @Override
+                Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+                    return sym;
+                }
+            };
+
+            Symbol sym = rs.lookupMethod(env, tree, site.tsym, rs.arityMethodCheck, lh);
+
+            if (sym.kind == Kinds.AMBIGUOUS) {
+                Resolve.AmbiguityError err = (Resolve.AmbiguityError)sym.baseSymbol();
+                result = ArgumentExpressionKind.PRIMITIVE;
+                for (List<Symbol> ambigousSyms = err.ambiguousSyms ;
+                        ambigousSyms.nonEmpty() && !result.isPoly() ;
+                        ambigousSyms = ambigousSyms.tail) {
+                    Symbol s = ambigousSyms.head;
+                    if (s.kind == Kinds.MTH) {
+                        result = reduce(ArgumentExpressionKind.methodKind(s, types));
+                    }
+                }
+            } else {
+                result = (sym.kind == Kinds.MTH) ?
+                    ArgumentExpressionKind.methodKind(sym, types) :
+                    ArgumentExpressionKind.NO_POLY;
+            }
+        }
+        //where
+            private boolean isSimpleReceiver(JCTree rec) {
+                switch (rec.getTag()) {
+                    case IDENT:
+                        return true;
+                    case SELECT:
+                        return isSimpleReceiver(((JCFieldAccess)rec).selected);
+                    case TYPEAPPLY:
+                    case TYPEARRAY:
+                        return true;
+                    case ANNOTATED_TYPE:
+                        return isSimpleReceiver(((JCAnnotatedType)rec).underlyingType);
+                    default:
+                        return false;
+                }
+            }
+            private ArgumentExpressionKind reduce(ArgumentExpressionKind kind) {
+                switch (result) {
+                    case PRIMITIVE: return kind;
+                    case NO_POLY: return kind.isPoly() ? kind : result;
+                    case POLY: return result;
+                    default:
+                        Assert.error();
+                        return null;
+                }
+            }
+
+        @Override
+        public void visitLiteral(JCLiteral tree) {
+            Type litType = attr.litType(tree.typetag);
+            result = ArgumentExpressionKind.standaloneKind(litType, types);
+        }
+
+        @Override
+        void skip(JCTree tree) {
+            result = ArgumentExpressionKind.NO_POLY;
+        }
+    }
+    //where
+    private EnumSet<JCTree.Tag> deferredCheckerTags =
+            EnumSet.of(LAMBDA, REFERENCE, PARENS, TYPECAST,
+                    CONDEXPR, NEWCLASS, APPLY, LITERAL);
 }
