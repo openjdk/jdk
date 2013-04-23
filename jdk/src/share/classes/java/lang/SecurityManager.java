@@ -36,10 +36,10 @@ import java.net.SocketPermission;
 import java.net.NetPermission;
 import java.util.Hashtable;
 import java.net.InetAddress;
-import java.lang.reflect.Member;
 import java.lang.reflect.*;
 import java.net.URL;
 
+import sun.reflect.CallerSensitive;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -1679,6 +1679,7 @@ class SecurityManager {
      * @since JDK1.1
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
+    @CallerSensitive
     public void checkMemberAccess(Class<?> clazz, int which) {
         if (clazz == null) {
             throw new NullPointerException("class can't be null");

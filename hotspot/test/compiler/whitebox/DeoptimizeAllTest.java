@@ -33,7 +33,7 @@ public class DeoptimizeAllTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
         // to prevent inlining #method into #compile()
-        WHITE_BOX.setDontInlineMethod(METHOD, true);
+        WHITE_BOX.testSetDontInlineMethod(METHOD, true);
         new DeoptimizeAllTest().runTest();
     }
 

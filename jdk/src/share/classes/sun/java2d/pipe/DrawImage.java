@@ -27,9 +27,7 @@ package sun.java2d.pipe;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
@@ -38,15 +36,13 @@ import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
-import java.awt.image.DirectColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.awt.image.VolatileImage;
-import java.awt.image.WritableRaster;
-import java.awt.image.ImagingOpException;
 import sun.awt.SunHints;
 import sun.awt.image.ImageRepresentation;
+import sun.awt.image.SurfaceManager;
 import sun.awt.image.ToolkitImage;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
@@ -323,15 +319,17 @@ public class DrawImage implements DrawImagePipe
     BufferedImage makeBufferedImage(Image img, Color bgColor, int type,
                                     int sx1, int sy1, int sx2, int sy2)
     {
-        BufferedImage bimg = new BufferedImage(sx2-sx1, sy2-sy1, type);
-        Graphics2D g2d = bimg.createGraphics();
+        final int width = sx2 - sx1;
+        final int height = sy2 - sy1;
+        final BufferedImage bimg = new BufferedImage(width, height, type);
+        final SunGraphics2D g2d = (SunGraphics2D) bimg.createGraphics();
         g2d.setComposite(AlphaComposite.Src);
         if (bgColor != null) {
             g2d.setColor(bgColor);
-            g2d.fillRect(0, 0, sx2-sx1, sy2-sy1);
+            g2d.fillRect(0, 0, width, height);
             g2d.setComposite(AlphaComposite.SrcOver);
         }
-        g2d.drawImage(img, -sx1, -sy1, null);
+        g2d.copyImage(img, 0, 0, sx1, sy1, width, height, null, null);
         g2d.dispose();
         return bimg;
     }
@@ -737,8 +735,9 @@ public class DrawImage implements DrawImagePipe
         atfm.scale(m00, m11);
         atfm.translate(srcX-sx1, srcY-sy1);
 
-        int imgW = img.getWidth(null);
-        int imgH = img.getHeight(null);
+        final int scale = SurfaceManager.getImageScale(img);
+        final int imgW = img.getWidth(null) * scale;
+        final int imgH = img.getHeight(null) * scale;
         srcW += srcX;
         srcH += srcY;
         // Make sure we are not out of bounds

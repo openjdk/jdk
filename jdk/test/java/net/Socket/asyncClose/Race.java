@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8006395
- * @summary Race in async socket close on Linux
+ * @bug 8006395 8012244
+ * @summary Tests racing code that reads and closes a Socket
  */
 
 import java.io.InputStream;
@@ -58,7 +58,7 @@ public class Race {
                                     Thread.sleep(50);
                             } catch (Exception x) {
                                 if (!(x instanceof SocketException
-                                      && x.getMessage().equals("Socket closed")))
+                                      && x.getMessage().equalsIgnoreCase("socket closed")))
                                     x.printStackTrace();
                                 // ok, expect Socket closed
                             }

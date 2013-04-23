@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 
 package sun.security.pkcs11;
 
-import java.util.*;
 import java.io.*;
 import java.security.*;
-
 import sun.security.pkcs11.wrapper.*;
-import sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * SecureRandom implementation class. Some tokens support only
@@ -88,6 +85,7 @@ final class P11SecureRandom extends SecureRandomSpi {
     }
 
     // see JCA spec
+    @Override
     protected synchronized void engineSetSeed(byte[] seed) {
         if (seed == null) {
             throw new NullPointerException("seed must not be null");
@@ -119,6 +117,7 @@ final class P11SecureRandom extends SecureRandomSpi {
     }
 
     // see JCA spec
+    @Override
     protected void engineNextBytes(byte[] bytes) {
         if ((bytes == null) || (bytes.length == 0)) {
             return;
@@ -149,6 +148,7 @@ final class P11SecureRandom extends SecureRandomSpi {
     }
 
     // see JCA spec
+    @Override
     protected byte[] engineGenerateSeed(int numBytes) {
         byte[] b = new byte[numBytes];
         engineNextBytes(b);

@@ -25,14 +25,12 @@
 
 package javax.xml.stream;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.File;
-import java.io.FileInputStream;
-
-import java.util.Properties;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Properties;
 
 /**
  * <p>Implements pluggable Datatypes.</p>
@@ -43,6 +41,8 @@ import java.io.InputStreamReader;
  * @author Santiago.PericasGeertsen@sun.com
  */
 class FactoryFinder {
+    // Check we have access to package.
+    private static final String DEFAULT_PACKAGE = "com.sun.xml.internal.";
 
     /**
      * Internal debug flag.
@@ -94,18 +94,24 @@ class FactoryFinder {
      * If the class loader supplied is <code>null</code>, first try using the
      * context class loader followed by the current (i.e. bootstrap) class
      * loader.
+     *
+     * Use bootstrap classLoader if cl = null and useBSClsLoader is true
      */
     static private Class getProviderClass(String className, ClassLoader cl,
-            boolean doFallback) throws ClassNotFoundException
+            boolean doFallback, boolean useBSClsLoader) throws ClassNotFoundException
     {
         try {
             if (cl == null) {
-                cl = ss.getContextClassLoader();
-                if (cl == null) {
-                    throw new ClassNotFoundException();
-                }
-                else {
-                    return cl.loadClass(className);
+                if (useBSClsLoader) {
+                    return Class.forName(className, true, FactoryFinder.class.getClassLoader());
+                } else {
+                    cl = ss.getContextClassLoader();
+                    if (cl == null) {
+                        throw new ClassNotFoundException();
+                    }
+                    else {
+                        return cl.loadClass(className);
+                    }
                 }
             }
             else {
@@ -130,8 +136,8 @@ class FactoryFinder {
      * @param className Name of the concrete class corresponding to the
      * service provider
      *
-     * @param cl ClassLoader to use to load the class, null means to use
-     * the bootstrap ClassLoader
+     * @param cl <code>ClassLoader</code> used to load the factory class. If <code>null</code>
+     * current <code>Thread</code>'s context classLoader is used to load the factory class.
      *
      * @param doFallback True if the current ClassLoader should be tried as
      * a fallback if the class is not found using cl
@@ -139,8 +145,38 @@ class FactoryFinder {
     static Object newInstance(String className, ClassLoader cl, boolean doFallback)
         throws ConfigurationError
     {
+        return newInstance(className, cl, doFallback, false);
+    }
+
+    /**
+     * Create an instance of a class. Delegates to method
+     * <code>getProviderClass()</code> in order to load the class.
+     *
+     * @param className Name of the concrete class corresponding to the
+     * service provider
+     *
+     * @param cl <code>ClassLoader</code> used to load the factory class. If <code>null</code>
+     * current <code>Thread</code>'s context classLoader is used to load the factory class.
+     *
+     * @param doFallback True if the current ClassLoader should be tried as
+     * a fallback if the class is not found using cl
+     *
+     * @param useBSClsLoader True if cl=null actually meant bootstrap classLoader. This parameter
+     * is needed since DocumentBuilderFactory/SAXParserFactory defined null as context classLoader.
+     */
+    static Object newInstance(String className, ClassLoader cl, boolean doFallback, boolean useBSClsLoader)
+        throws ConfigurationError
+    {
+        // make sure we have access to restricted packages
+        if (System.getSecurityManager() != null) {
+            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
+                cl = null;
+                useBSClsLoader = true;
+            }
+        }
+
         try {
-            Class providerClass = getProviderClass(className, cl, doFallback);
+            Class providerClass = getProviderClass(className, cl, doFallback, useBSClsLoader);
             Object instance = providerClass.newInstance();
             if (debug) {    // Extra check to avoid computing cl strings
                 dPrint("created new instance of " + providerClass +
@@ -233,9 +269,9 @@ class FactoryFinder {
                             if (ss.doesFileExist(f)) {
                                 dPrint("Read properties file "+f);
                                 cacheProps.load(ss.getFileInputStream(f));
-                            }
-                        }
                     }
+                }
+            }
                 }
             }
             factoryClassName = cacheProps.getProperty(factoryId);
@@ -276,6 +312,7 @@ class FactoryFinder {
 
         // First try the Context ClassLoader
         ClassLoader cl = ss.getContextClassLoader();
+        boolean useBSClsLoader = false;
         if (cl != null) {
             is = ss.getResourceAsStream(cl, serviceId);
 
@@ -283,11 +320,13 @@ class FactoryFinder {
             if (is == null) {
                 cl = FactoryFinder.class.getClassLoader();
                 is = ss.getResourceAsStream(cl, serviceId);
+                useBSClsLoader = true;
             }
         } else {
             // No Context ClassLoader, try the current ClassLoader
             cl = FactoryFinder.class.getClassLoader();
             is = ss.getResourceAsStream(cl, serviceId);
+            useBSClsLoader = true;
         }
 
         if (is == null) {
@@ -325,7 +364,7 @@ class FactoryFinder {
             // ClassLoader because we want to avoid the case where the
             // resource file was found using one ClassLoader and the
             // provider class was instantiated using a different one.
-            return newInstance(factoryClassName, cl, false);
+            return newInstance(factoryClassName, cl, false, useBSClsLoader);
         }
 
         // No provider found

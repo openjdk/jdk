@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,30 +27,21 @@ package com.sun.xml.internal.ws.client.sei;
 
 //import com.sun.tools.internal.ws.wsdl.document.soap.SOAPBinding;
 
+import com.oracle.webservices.internal.api.databinding.JavaCallInfo;
 import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
-import com.sun.xml.internal.ws.api.databinding.ClientCallBridge;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.Fiber;
-import com.sun.xml.internal.ws.api.pipe.FiberContextSwitchInterceptor;
 import com.sun.xml.internal.ws.client.AsyncInvoker;
 import com.sun.xml.internal.ws.client.AsyncResponseImpl;
 import com.sun.xml.internal.ws.client.RequestContext;
 import com.sun.xml.internal.ws.client.ResponseContext;
-import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
-import com.sun.xml.internal.ws.model.JavaMethodImpl;
-import com.sun.xml.internal.ws.model.ParameterImpl;
-import com.sun.xml.internal.ws.model.WrapperParameter;
-import com.sun.xml.internal.org.jvnet.ws.databinding.JavaCallInfo;
 
-import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.ws.AsyncHandler;
 import javax.xml.ws.Response;
 import javax.xml.ws.WebServiceException;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 /**
  * Common part between {@link CallbackMethodHandler} and {@link PollingMethodHandler}.

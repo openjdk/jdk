@@ -328,10 +328,9 @@ final class UNIXProcess extends Process {
 
     }
 
-    /* This routine initializes JNI field offsets for the class */
-    private static native void initIDs();
+    private static native void init();
 
     static {
-        initIDs();
+        init();
     }
 }

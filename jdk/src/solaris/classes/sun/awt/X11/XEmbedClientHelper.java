@@ -95,9 +95,13 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
 
     void handleClientMessage(XEvent xev) {
         XClientMessageEvent msg = xev.get_xclient();
-        if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine(msg.toString());
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+            xembedLog.fine(msg.toString());
+        }
         if (msg.get_message_type() == XEmbed.getAtom()) {
-            if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Embedded message: " + msgidToString((int)msg.get_data(1)));
+            if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                xembedLog.fine("Embedded message: " + msgidToString((int)msg.get_data(1)));
+            }
             switch ((int)msg.get_data(1)) {
               case XEMBED_EMBEDDED_NOTIFY: // Notification about embedding protocol start
                   active = true;

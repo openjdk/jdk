@@ -76,7 +76,9 @@ public abstract class Negotiator {
 
     private static void finest(Exception e) {
         PlatformLogger logger = HttpURLConnection.getHttpLogger();
-        logger.finest("NegotiateAuthentication: " + e);
+        if (logger.isLoggable(PlatformLogger.FINEST)) {
+            logger.finest("NegotiateAuthentication: " + e);
+        }
     }
 }
 

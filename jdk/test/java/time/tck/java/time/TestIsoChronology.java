@@ -59,8 +59,8 @@
  */
 package tck.java.time;
 
-import static java.time.chrono.IsoChronology.ERA_BCE;
-import static java.time.chrono.IsoChronology.ERA_CE;
+import static java.time.chrono.IsoEra.BCE;
+import static java.time.chrono.IsoEra.CE;
 import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
@@ -73,13 +73,14 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
-import java.time.temporal.Adjusters;
-import java.time.temporal.ChronoField;
-import java.time.chrono.HijrahChronology;
 import java.time.chrono.Chronology;
-import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Era;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.HijrahEra;
 import java.time.chrono.IsoChronology;
+import java.time.chrono.IsoEra;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAdjuster;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -94,7 +95,7 @@ public class TestIsoChronology {
     //-----------------------------------------------------------------------
     // Chronology.ofName("ISO")  Lookup by name
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_chrono_byName() {
         Chronology c = IsoChronology.INSTANCE;
         Chronology test = Chronology.of("ISO");
@@ -107,7 +108,7 @@ public class TestIsoChronology {
     //-----------------------------------------------------------------------
     // Lookup by Singleton
     //-----------------------------------------------------------------------
-    @Test(groups="tck")
+    @Test
     public void instanceNotNull() {
         assertNotNull(IsoChronology.INSTANCE);
     }
@@ -115,10 +116,10 @@ public class TestIsoChronology {
     //-----------------------------------------------------------------------
     // Era creation
     //-----------------------------------------------------------------------
-    @Test(groups="tck")
+    @Test
     public void test_eraOf() {
-        assertEquals(IsoChronology.INSTANCE.eraOf(0), ERA_BCE);
-        assertEquals(IsoChronology.INSTANCE.eraOf(1), ERA_CE);
+        assertEquals(IsoChronology.INSTANCE.eraOf(0), BCE);
+        assertEquals(IsoChronology.INSTANCE.eraOf(1), CE);
     }
 
     //-----------------------------------------------------------------------
@@ -144,12 +145,12 @@ public class TestIsoChronology {
         };
     }
 
-    @Test(dataProvider="samples", groups={"tck"})
+    @Test(dataProvider="samples")
     public void test_toLocalDate(LocalDate isoDate, LocalDate iso) {
         assertEquals(LocalDate.from(isoDate), iso);
     }
 
-    @Test(dataProvider="samples", groups={"tck"})
+    @Test(dataProvider="samples")
     public void test_fromCalendrical(LocalDate isoDate, LocalDate iso) {
         assertEquals(IsoChronology.INSTANCE.date(iso), isoDate);
     }
@@ -174,18 +175,18 @@ public class TestIsoChronology {
         };
     }
 
-    @Test(dataProvider="badDates", groups={"tck"}, expectedExceptions=DateTimeException.class)
+    @Test(dataProvider="badDates", expectedExceptions=DateTimeException.class)
     public void test_badDates(int year, int month, int dom) {
         IsoChronology.INSTANCE.date(year, month, dom);
     }
 
-    @Test(groups="tck")
+    @Test
     public void test_date_withEra() {
         int year = 5;
         int month = 5;
         int dayOfMonth = 5;
-        LocalDate test = IsoChronology.INSTANCE.date(ERA_BCE, year, month, dayOfMonth);
-        assertEquals(test.getEra(), ERA_BCE);
+        LocalDate test = IsoChronology.INSTANCE.date(IsoEra.BCE, year, month, dayOfMonth);
+        assertEquals(test.getEra(), IsoEra.BCE);
         assertEquals(test.get(ChronoField.YEAR_OF_ERA), year);
         assertEquals(test.get(ChronoField.MONTH_OF_YEAR), month);
         assertEquals(test.get(ChronoField.DAY_OF_MONTH), dayOfMonth);
@@ -196,39 +197,39 @@ public class TestIsoChronology {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    @Test(expectedExceptions=DateTimeException.class, groups="tck")
+    @Test(expectedExceptions=ClassCastException.class)
     public void test_date_withEra_withWrongEra() {
-        IsoChronology.INSTANCE.date((Era) HijrahChronology.ERA_AH, 1, 1, 1);
+        IsoChronology.INSTANCE.date((Era) HijrahEra.AH, 1, 1, 1);
     }
 
     //-----------------------------------------------------------------------
     // with(DateTimeAdjuster)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_adjust1() {
         LocalDate base = IsoChronology.INSTANCE.date(1728, 10, 28);
-        LocalDate test = base.with(Adjusters.lastDayOfMonth());
+        LocalDate test = base.with(TemporalAdjuster.lastDayOfMonth());
         assertEquals(test, IsoChronology.INSTANCE.date(1728, 10, 31));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_adjust2() {
         LocalDate base = IsoChronology.INSTANCE.date(1728, 12, 2);
-        LocalDate test = base.with(Adjusters.lastDayOfMonth());
+        LocalDate test = base.with(TemporalAdjuster.lastDayOfMonth());
         assertEquals(test, IsoChronology.INSTANCE.date(1728, 12, 31));
     }
 
     //-----------------------------------------------------------------------
     // ISODate.with(Local*)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_adjust_toLocalDate() {
         LocalDate isoDate = IsoChronology.INSTANCE.date(1726, 1, 4);
         LocalDate test = isoDate.with(LocalDate.of(2012, 7, 6));
         assertEquals(test, IsoChronology.INSTANCE.date(2012, 7, 6));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_adjust_toMonth() {
         LocalDate isoDate = IsoChronology.INSTANCE.date(1726, 1, 4);
         assertEquals(IsoChronology.INSTANCE.date(1726, 4, 4), isoDate.with(Month.APRIL));
@@ -237,14 +238,14 @@ public class TestIsoChronology {
     //-----------------------------------------------------------------------
     // LocalDate.with(ISODate)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_LocalDate_adjustToISODate() {
         LocalDate isoDate = IsoChronology.INSTANCE.date(1728, 10, 29);
         LocalDate test = LocalDate.MIN.with(isoDate);
         assertEquals(test, LocalDate.of(1728, 10, 29));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_LocalDateTime_adjustToISODate() {
         LocalDate isoDate = IsoChronology.INSTANCE.date(1728, 10, 29);
         LocalDateTime test = LocalDateTime.MIN.with(isoDate);
@@ -266,7 +267,7 @@ public class TestIsoChronology {
         };
     }
 
-    @Test(dataProvider="leapYears", groups="tck")
+    @Test(dataProvider="leapYears")
     public void test_isLeapYear(int year, boolean isLeapYear) {
         assertEquals(IsoChronology.INSTANCE.isLeapYear(year), isLeapYear);
     }
@@ -274,7 +275,7 @@ public class TestIsoChronology {
     //-----------------------------------------------------------------------
     // toString()
     //-----------------------------------------------------------------------
-    @Test(groups="tck")
+    @Test
     public void test_now() {
         assertEquals(LocalDate.from(IsoChronology.INSTANCE.dateNow()), LocalDate.now());
     }
@@ -293,7 +294,7 @@ public class TestIsoChronology {
         };
     }
 
-    @Test(dataProvider="toString", groups={"tck"})
+    @Test(dataProvider="toString")
     public void test_toString(LocalDate isoDate, String expected) {
         assertEquals(isoDate.toString(), expected);
     }
@@ -301,12 +302,12 @@ public class TestIsoChronology {
     //-----------------------------------------------------------------------
     // equals()
     //-----------------------------------------------------------------------
-    @Test(groups="tck")
+    @Test
     public void test_equals_true() {
         assertTrue(IsoChronology.INSTANCE.equals(IsoChronology.INSTANCE));
     }
 
-    @Test(groups="tck")
+    @Test
     public void test_equals_false() {
         assertFalse(IsoChronology.INSTANCE.equals(HijrahChronology.INSTANCE));
     }

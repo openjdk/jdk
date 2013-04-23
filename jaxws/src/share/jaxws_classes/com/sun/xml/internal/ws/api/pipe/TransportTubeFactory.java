@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,10 @@ import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.pipe.helper.PipeAdapter;
-import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.transport.http.client.HttpTransportPipe;
 import com.sun.xml.internal.ws.util.ServiceFinder;
 import com.sun.xml.internal.ws.util.pipe.StandaloneTubeAssembler;
+import java.util.logging.Level;
 
 import javax.xml.ws.WebServiceException;
 import java.util.logging.Logger;
@@ -68,7 +68,7 @@ import java.util.logging.Logger;
  * <p>
  * {@link TransportTubeFactory} look-up follows the standard service
  * discovery mechanism, so you need
- * {@code META-INF/services/com.sun.xml.internal.ws.api.pipe.TransportTubeFactory}.
+ * {@code META-INF/services/com.sun.xml.internal.ws.api.pipe.BasicTransportTubeFactory}.
  *
  * @author Jitendra Kotamraju
  * @see StandaloneTubeAssembler
@@ -116,8 +116,10 @@ public abstract class TransportTubeFactory {
     public static Tube create(@Nullable ClassLoader classLoader, @NotNull ClientTubeAssemblerContext context) {
         for (TransportTubeFactory factory : ServiceFinder.find(TransportTubeFactory.class,classLoader, context.getContainer())) {
             Tube tube = factory.doCreate(context);
-            if(tube !=null) {
-                TransportTubeFactory.logger.fine(factory.getClass()+" successfully created "+tube);
+            if (tube !=null) {
+                if (logger.isLoggable(Level.FINE)) {
+                    TransportTubeFactory.logger.log(Level.FINE, "{0} successfully created {1}", new Object[]{factory.getClass(), tube});
+                }
                 return tube;
             }
         }
@@ -130,7 +132,9 @@ public abstract class TransportTubeFactory {
         for (TransportPipeFactory factory : ServiceFinder.find(TransportPipeFactory.class,classLoader)) {
             Pipe pipe = factory.doCreate(ctxt);
             if (pipe!=null) {
-                logger.fine(factory.getClass()+" successfully created "+pipe);
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "{0} successfully created {1}", new Object[]{factory.getClass(), pipe});
+                }
                 return PipeAdapter.adapt(pipe);
             }
         }

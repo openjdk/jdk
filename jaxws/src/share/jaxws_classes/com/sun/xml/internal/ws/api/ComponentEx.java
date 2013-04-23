@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public interface ComponentEx extends Component {
      * <p>
      * This method works as a kind of directory service
      * for SPIs, allowing various components to define private contract
-     * and talk to each other.  However unlike {@link Component.getSPI}, this
+     * and talk to each other.  However unlike {@link Component#getSPI(java.lang.Class)}, this
      * method can support cases where there is an ordered collection (defined
      * by {@link Iterable} of implementations.  The SPI contract should define
      * whether lookups are for the first appropriate implementation or whether

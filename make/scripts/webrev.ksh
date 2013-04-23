@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=23.18-hg+jbs
+WEBREV_UPDATED=24.0-hg+jbs
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1436,17 +1436,17 @@ function flist_from_mercurial_forest
 {
     rm -f $FLIST
     if [ -z "$Nflag" ]; then
-	print " File list from hg foutgoing $PWS ..."
+        print " File list from hg foutgoing $PWS ..."
         outgoing_from_mercurial_forest
         HG_LIST_FROM_COMMIT=1
     fi
     if [ ! -f $FLIST ]; then
         # hg commit hasn't been run see what is lying around
-	print "\n No outgoing, perhaps you haven't commited."
-	print " File list from hg fstatus -mard ...\c"
+        print "\n No outgoing, perhaps you haven't commited."
+        print " File list from hg fstatus -mard ...\c"
         FSTAT_OPT=
         fstatus
-        HG_LIST_FROM_COMMIT=0
+        HG_LIST_FROM_COMMIT=
     fi
     print " Done."
 }
@@ -1466,7 +1466,7 @@ function treestatus
     done >> $FLIST
 
     # Then all the added files
-    # But some of these could have been "moved" or renamed ones
+    # But some of these could have been "moved" or renamed ones or copied ones
     # so let's make sure we get the proper info
     # hg status -aC will produce something like:
     #	A subdir/File3
@@ -1474,8 +1474,11 @@ function treestatus
     #	  File4
     #	A subdir/File5
     # The first and last are simple addition while the middle one
-    # is a move/rename
-
+    # is a move/rename or a copy.  We can't distinguish from a rename vs a copy
+    # without also getting the status of removed files.  The middle case above
+    # is a rename if File4 is also shown a being removed.  If File4 is not a 
+    # removed file, then the middle case is a copy from File4 to subdir/File4
+    # FIXME - we're not distinguishing copy from rename
     $HGCMD -aC | $FILTER | while read LINE; do
 	ldone=""
 	while [ -z "$ldone" ]; do
@@ -1638,8 +1641,12 @@ function flist_from_mercurial
 	#	A subdir/File4
 	#	  File4
 	#	A subdir/File5
-	# The first and last are simple addition while the middle one
-	# is a move/rename
+        # The first and last are simple addition while the middle one
+        # is a move/rename or a copy.  We can't distinguish from a rename vs a copy
+        # without also getting the status of removed files.  The middle case above
+        # is a rename if File4 is also shown a being removed.  If File4 is not a 
+        # removed file, then the middle case is a copy from File4 to subdir/File4
+        # FIXME - we're not distinguishing copy from rename
 
 	hg status $STATUS_REV -aC | $FILTER >$FLIST.temp
 	while read LINE; do
@@ -1905,7 +1912,7 @@ function build_old_new_mercurial
 		fi
 	    fi
 	else
-	    # It's a rename (or a move), so let's make sure we move
+	    # It's a rename (or a move), or a copy, so let's make sure we move
 	    # to the right directory first, then restore it once done
 	    current_dir=`pwd`
 	    cd $CWS/$PDIR
@@ -2103,6 +2110,7 @@ do
 done
 
 FLIST=/tmp/$$.flist
+HG_LIST_FROM_COMMIT=
 
 if [[ -n $wflag && -n $lflag ]]; then
 	usage
@@ -2545,6 +2553,7 @@ SACURL='http://sac.eng.sun.com'
     SACURL='http://www.opensolaris.org/os/community/arc/caselog'
 
 rm -f $WDIR/$WNAME.patch
+rm -f $WDIR/$WNAME.changeset
 rm -f $WDIR/$WNAME.ps
 rm -f $WDIR/$WNAME.pdf
 
@@ -2774,34 +2783,39 @@ do
 	    cleanse_rmfile="sed 's/^\(@@ [0-9+,-]*\) [0-9+,-]* @@$/\1 +0,0 @@/'"
 	    cleanse_newfile="sed 's/^@@ [0-9+,-]* \([0-9+,-]* @@\)$/@@ -0,0 \1/'"
 
-	    rm -f $WDIR/$DIR/$F.patch
-	    if [[ -z $rename ]]; then
-		if [ ! -f $ofile ]; then
-		    diff -u /dev/null $nfile | sh -c "$cleanse_newfile" \
-			> $WDIR/$DIR/$F.patch
-		elif [ ! -f $nfile ]; then
-		    diff -u $ofile /dev/null | sh -c "$cleanse_rmfile" \
-			> $WDIR/$DIR/$F.patch
-		else
-		    diff -u $ofile $nfile > $WDIR/$DIR/$F.patch
-		fi
-	    else
-		diff -u $ofile /dev/null | sh -c "$cleanse_rmfile" \
-		    > $WDIR/$DIR/$F.patch
+            if [[ ! "$HG_LIST_FROM_COMMIT" -eq 1 || ! $flist_mode == "auto" ]];
+            then
+              # Only need to generate a patch file here if there are no commits in outgoing
+              # or if we've specified a file list
+              rm -f $WDIR/$DIR/$F.patch
+              if [[ -z $rename ]]; then
+                  if [ ! -f $ofile ]; then
+                      diff -u /dev/null $nfile | sh -c "$cleanse_newfile" \
+                          > $WDIR/$DIR/$F.patch
+                  elif [ ! -f $nfile ]; then
+                      diff -u $ofile /dev/null | sh -c "$cleanse_rmfile" \
+                          > $WDIR/$DIR/$F.patch
+                  else
+                      diff -u $ofile $nfile > $WDIR/$DIR/$F.patch
+                  fi
+              else
+                  diff -u $ofile /dev/null | sh -c "$cleanse_rmfile" \
+                      > $WDIR/$DIR/$F.patch
 
-		diff -u /dev/null $nfile | sh -c "$cleanse_newfile" \
-		    >> $WDIR/$DIR/$F.patch
+                  diff -u /dev/null $nfile | sh -c "$cleanse_newfile" \
+                      >> $WDIR/$DIR/$F.patch
 
-	    fi
+              fi
 
 
-	#
-	# Tack the patch we just made onto the accumulated patch for the
-	# whole wad.
-	#
-	    cat $WDIR/$DIR/$F.patch >> $WDIR/$WNAME.patch
+            #
+            # Tack the patch we just made onto the accumulated patch for the
+            # whole wad.
+            #
+              cat $WDIR/$DIR/$F.patch >> $WDIR/$WNAME.patch
+            fi
 
-	    print " patch\c"
+            print " patch\c"
 
 	    if [[ -f $ofile && -f $nfile && -z $mv_but_nodiff ]]; then
 
@@ -2893,6 +2907,32 @@ do
 
 	print
 done < $FLIST
+
+# Create the new style mercurial patch here using hg export -r [all-revs] -g -o $CHANGESETPATH
+if [[ $SCM_MODE == "mercurial" ]]; then
+  if [[ "$HG_LIST_FROM_COMMIT" -eq 1 && $flist_mode == "auto" ]]; then
+    EXPORTCHANGESET="$WNAME.changeset"
+    CHANGESETPATH=${WDIR}/${EXPORTCHANGESET}
+    rm -f $CHANGESETPATH
+    touch $CHANGESETPATH
+    if [[ -n $ALL_CREV ]]; then
+      rev_opt=
+      for rev in $ALL_CREV; do
+        rev_opt="$rev_opt --rev $rev"
+      done
+    elif [[ -n $FIRST_CREV ]]; then
+      rev_opt="--rev $FIRST_CREV"
+    fi
+
+    if [[ -n $rev_opt ]]; then
+      (cd $CWS;hg export -g $rev_opt -o $CHANGESETPATH)
+      echo "Created changeset: $CHANGESETPATH" 1>&2
+      # Use it in place of the jdk.patch created above
+      rm -f $WDIR/$WNAME.patch
+    fi
+  set +x
+  fi
+fi
 
 frame_nav_js > $WDIR/ancnav.js
 frame_navigation > $WDIR/ancnav.html
@@ -2989,9 +3029,13 @@ printCI $TOTL $TINS $TDEL $TMOD $TUNC
 print "</td></tr>"
 
 if [[ -f $WDIR/$WNAME.patch ]]; then
-	print "<tr><th>Patch of changes:</th><td>"
-	print "<a href=\"$WNAME.patch\">$WNAME.patch</a></td></tr>"
+  print "<tr><th>Patch of changes:</th><td>"
+  print "<a href=\"$WNAME.patch\">$WNAME.patch</a></td></tr>"
+elif [[ -f $CHANGESETPATH ]]; then
+  print "<tr><th>Changeset:</th><td>"
+  print "<a href=\"$EXPORTCHANGESET\">$EXPORTCHANGESET</a></td></tr>"
 fi
+
 if [[ -f $WDIR/$WNAME.pdf ]]; then
 	print "<tr><th>Printable review:</th><td>"
 	print "<a href=\"$WNAME.pdf\">$WNAME.pdf</a></td></tr>"

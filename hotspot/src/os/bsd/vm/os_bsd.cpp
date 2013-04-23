@@ -152,7 +152,6 @@ sigset_t SR_sigset;
 // utility functions
 
 static int SR_initialize();
-static int SR_finalize();
 
 julong os::available_memory() {
   return Bsd::available_memory();
@@ -1200,6 +1199,9 @@ bool os::dll_build_name(char* buffer, size_t buflen,
   } else if (strchr(pname, *os::path_separator()) != NULL) {
     int n;
     char** pelements = split_path(pname, &n);
+    if (pelements == NULL) {
+      return false;
+    }
     for (int i = 0 ; i < n ; i++) {
       // Really shouldn't be NULL, but check can't hurt
       if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
@@ -2766,10 +2768,6 @@ static int SR_initialize() {
   return 0;
 }
 
-static int SR_finalize() {
-  return 0;
-}
-
 
 // returns true on success and false on error - really an error is fatal
 // but this seems the normal response to library errors
@@ -3578,16 +3576,6 @@ int os::Bsd::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex,
 ////////////////////////////////////////////////////////////////////////////////
 // debug support
 
-static address same_page(address x, address y) {
-  int page_bits = -os::vm_page_size();
-  if ((intptr_t(x) & page_bits) == (intptr_t(y) & page_bits))
-    return x;
-  else if (x > y)
-    return (address)(intptr_t(y) | ~page_bits) + 1;
-  else
-    return (address)(intptr_t(y) & page_bits);
-}
-
 bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
@@ -3611,8 +3599,8 @@ bool os::find(address addr, outputStream* st) {
 
     if (Verbose) {
       // decode some bytes around the PC
-      address begin = same_page(addr-40, addr);
-      address end   = same_page(addr+40, addr);
+      address begin = clamp_address_in_page(addr-40, addr, os::vm_page_size());
+      address end   = clamp_address_in_page(addr+40, addr, os::vm_page_size());
       address       lowest = (address) dlinfo.dli_sname;
       if (!lowest)  lowest = (address) dlinfo.dli_fbase;
       if (begin < lowest)  begin = lowest;

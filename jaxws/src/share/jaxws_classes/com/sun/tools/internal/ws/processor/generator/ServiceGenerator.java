@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import com.sun.xml.internal.ws.util.ServiceFinder;
+import java.util.Locale;
 
 /**
  * @author WS Development Team
@@ -100,7 +101,7 @@ public class ServiceGenerator extends GeneratorBase {
         }
 
         cls._extends(javax.xml.ws.Service.class);
-        String serviceFieldName = BindingHelper.mangleNameToClassName(service.getName().getLocalPart()).toUpperCase();
+        String serviceFieldName = BindingHelper.mangleNameToClassName(service.getName().getLocalPart()).toUpperCase(Locale.ENGLISH);
         String wsdlLocationName = serviceFieldName + "_WSDL_LOCATION";
         JFieldVar urlField = cls.field(JMod.PRIVATE | JMod.STATIC | JMod.FINAL, URL.class, wsdlLocationName);
 
@@ -219,8 +220,9 @@ public class ServiceGenerator extends GeneratorBase {
                 Locator loc = null;
                 if (portTypeName != null) {
                     PortType pt = port.portTypes.get(portTypeName);
-                    if (pt != null)
+                    if (pt != null) {
                         loc = pt.getLocator();
+                    }
                 }
                 receiver.error(loc, GeneratorMessages.GENERATOR_SEI_CLASS_ALREADY_EXIST(port.getJavaInterface().getName(), portTypeName));
                 return;
@@ -230,8 +232,9 @@ public class ServiceGenerator extends GeneratorBase {
             writeDefaultGetPort(port, retType, cls);
 
             //write getXyzPort(WebServicesFeature...)
-            if (options.target.isLaterThan(Options.Target.V2_1))
+            if (options.target.isLaterThan(Options.Target.V2_1)) {
                 writeGetPort(port, retType, cls);
+            }
         }
 
         writeGetWsdlLocation(cm.ref(URL.class), cls, urlField, exField);
@@ -240,8 +243,9 @@ public class ServiceGenerator extends GeneratorBase {
     private void writeGetPort(Port port, JType retType, JDefinedClass cls) {
         JMethod m = cls.method(JMod.PUBLIC, retType, port.getPortGetter());
         JDocComment methodDoc = m.javadoc();
-        if (port.getJavaDoc() != null)
+        if (port.getJavaDoc() != null) {
             methodDoc.add(port.getJavaDoc());
+        }
         JCommentPart ret = methodDoc.addReturn();
         JCommentPart paramDoc = methodDoc.addParam("features");
         paramDoc.append("A list of ");
@@ -250,7 +254,7 @@ public class ServiceGenerator extends GeneratorBase {
         ret.add("returns " + retType.name());
         m.varParam(WebServiceFeature.class, "features");
         JBlock body = m.body();
-        StringBuffer statement = new StringBuffer("return ");
+        StringBuilder statement = new StringBuilder("return ");
         statement.append("super.getPort(new QName(\"").append(port.getName().getNamespaceURI()).append("\", \"").append(port.getName().getLocalPart()).append("\"), ");
         statement.append(retType.name());
         statement.append(".class, features);");
@@ -389,12 +393,13 @@ public class ServiceGenerator extends GeneratorBase {
         String portGetter = port.getPortGetter();
         JMethod m = cls.method(JMod.PUBLIC, retType, portGetter);
         JDocComment methodDoc = m.javadoc();
-        if (port.getJavaDoc() != null)
+        if (port.getJavaDoc() != null) {
             methodDoc.add(port.getJavaDoc());
+        }
         JCommentPart ret = methodDoc.addReturn();
         ret.add("returns " + retType.name());
         JBlock body = m.body();
-        StringBuffer statement = new StringBuffer("return ");
+        StringBuilder statement = new StringBuilder("return ");
         statement.append("super.getPort(new QName(\"").append(port.getName().getNamespaceURI()).append("\", \"").append(port.getName().getLocalPart()).append("\"), ");
         statement.append(retType.name());
         statement.append(".class);");

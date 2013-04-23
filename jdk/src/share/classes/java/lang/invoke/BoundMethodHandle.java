@@ -709,7 +709,9 @@ import jdk.internal.org.objectweb.asm.Type;
             InvokerBytecodeGenerator.maybeDump(className, classFile);
             Class<? extends BoundMethodHandle> bmhClass =
                 //UNSAFE.defineAnonymousClass(BoundMethodHandle.class, classFile, null).asSubclass(BoundMethodHandle.class);
-                UNSAFE.defineClass(className, classFile, 0, classFile.length).asSubclass(BoundMethodHandle.class);
+                UNSAFE.defineClass(className, classFile, 0, classFile.length,
+                                   BoundMethodHandle.class.getClassLoader(), null)
+                    .asSubclass(BoundMethodHandle.class);
             UNSAFE.ensureClassInitialized(bmhClass);
 
             return bmhClass;

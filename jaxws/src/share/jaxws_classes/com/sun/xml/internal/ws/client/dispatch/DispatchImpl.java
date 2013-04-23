@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,15 @@ import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 import com.sun.xml.internal.ws.api.client.WSPortInfo;
+import com.sun.xml.internal.ws.api.message.AddressingUtils;
 import com.sun.xml.internal.ws.api.message.Attachment;
 import com.sun.xml.internal.ws.api.message.AttachmentSet;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.Fiber;
 import com.sun.xml.internal.ws.api.pipe.Tube;
-import com.sun.xml.internal.ws.api.pipe.FiberContextSwitchInterceptor;
+import com.sun.xml.internal.ws.api.server.Container;
+import com.sun.xml.internal.ws.api.server.ContainerResolver;
 import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.client.*;
 import com.sun.xml.internal.ws.encoding.soap.DeserializationException;
@@ -63,8 +65,6 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.http.HTTPBinding;
 import javax.xml.ws.soap.SOAPBinding;
 import javax.xml.ws.soap.SOAPFaultException;
-import javax.xml.ws.WebServiceClient;
-import javax.xml.ws.WebEndpoint;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -74,11 +74,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -152,9 +148,8 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
     }
     /**
      *
-     * @param port    dispatch instance is associated with this wsdl port qName
+     * @param portportInfo dispatch instance is associated with this wsdl port qName
      * @param mode    Service.mode associated with this Dispatch instance - Service.mode.MESSAGE or Service.mode.PAYLOAD
-     * @param owner   Service that created the Dispatch
      * @param pipe    Master pipe for the pipeline
      * @param binding Binding of this Dispatch instance, current one of SOAP/HTTP or XML/HTTP
      * @param allowFaultResponseMsg A packet containing a SOAP fault message is allowed as the response to a request on this dispatch instance.
@@ -180,14 +175,19 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
     abstract T toReturnValue(Packet response);
 
     public final Response<T> invokeAsync(T param) {
-        if (LOGGER.isLoggable(Level.FINE)) {
-          dumpParam(param, "invokeAsync(T)");
+        Container old = ContainerResolver.getDefault().enterContainer(owner.getContainer());
+        try {
+            if (LOGGER.isLoggable(Level.FINE)) {
+              dumpParam(param, "invokeAsync(T)");
+            }
+            AsyncInvoker invoker = new DispatchAsyncInvoker(param);
+            AsyncResponseImpl<T> ft = new AsyncResponseImpl<T>(invoker,null);
+            invoker.setReceiver(ft);
+            ft.run();
+            return ft;
+        } finally {
+            ContainerResolver.getDefault().exitContainer(old);
         }
-        AsyncInvoker invoker = new DispatchAsyncInvoker(param);
-        AsyncResponseImpl<T> ft = new AsyncResponseImpl<T>(invoker,null);
-        invoker.setReceiver(ft);
-        ft.run();
-        return ft;
     }
 
     private void dumpParam(T param, String method) {
@@ -201,10 +201,10 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
           SOAPVersion sv = DispatchImpl.this.getBinding().getSOAPVersion();
           action =
             av != null && message.getMessage() != null ?
-              message.getMessage().getHeaders().getAction(av, sv) : null;
+              AddressingUtils.getAction(message.getMessage().getHeaders(), av, sv) : null;
           msgId =
             av != null && message.getMessage() != null ?
-              message.getMessage().getHeaders().getMessageID(av, sv) : null;
+              AddressingUtils.getMessageID(message.getMessage().getHeaders(), av, sv) : null;
           LOGGER.fine("In DispatchImpl." + method + " for message with action: " + action + " and msg ID: " + msgId + " msg: " + message.getMessage());
 
           if (message.getMessage() == null) {
@@ -214,16 +214,21 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
       }
     }
     public final Future<?> invokeAsync(T param, AsyncHandler<T> asyncHandler) {
-        if (LOGGER.isLoggable(Level.FINE)) {
-          dumpParam(param, "invokeAsync(T, AsyncHandler<T>)");
-        }
-        AsyncInvoker invoker = new DispatchAsyncInvoker(param);
-        AsyncResponseImpl<T> ft = new AsyncResponseImpl<T>(invoker,asyncHandler);
-        invoker.setReceiver(ft);
-        invoker.setNonNullAsyncHandlerGiven(asyncHandler != null);
+        Container old = ContainerResolver.getDefault().enterContainer(owner.getContainer());
+        try {
+            if (LOGGER.isLoggable(Level.FINE)) {
+              dumpParam(param, "invokeAsync(T, AsyncHandler<T>)");
+            }
+            AsyncInvoker invoker = new DispatchAsyncInvoker(param);
+            AsyncResponseImpl<T> ft = new AsyncResponseImpl<T>(invoker,asyncHandler);
+            invoker.setReceiver(ft);
+            invoker.setNonNullAsyncHandlerGiven(asyncHandler != null);
 
-        ft.run();
-        return ft;
+            ft.run();
+            return ft;
+        } finally {
+            ContainerResolver.getDefault().exitContainer(old);
+        }
     }
 
     /**
@@ -239,6 +244,7 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
                     checkNullAllowed(in, rc, binding, mode);
 
                     Packet message = createPacket(in);
+                    message.setState(Packet.State.ClientRequest);
                     resolveEndpointAddress(message, rc);
                     setProperties(message,true);
                     response = process(message,rc,receiver);
@@ -274,32 +280,43 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
     }
 
     public final T invoke(T in) {
-        if (LOGGER.isLoggable(Level.FINE)) {
-          dumpParam(in, "invoke(T)");
-        }
+        Container old = ContainerResolver.getDefault().enterContainer(owner.getContainer());
+        try {
+            if (LOGGER.isLoggable(Level.FINE)) {
+              dumpParam(in, "invoke(T)");
+            }
 
-        return doInvoke(in,requestContext,this);
+            return doInvoke(in,requestContext,this);
+        } finally {
+            ContainerResolver.getDefault().exitContainer(old);
+        }
     }
 
     public final void invokeOneWay(T in) {
-        if (LOGGER.isLoggable(Level.FINE)) {
-          dumpParam(in, "invokeOneWay(T)");
-        }
-
+        Container old = ContainerResolver.getDefault().enterContainer(owner.getContainer());
         try {
-            checkNullAllowed(in, requestContext, binding, mode);
+            if (LOGGER.isLoggable(Level.FINE)) {
+              dumpParam(in, "invokeOneWay(T)");
+            }
 
-            Packet request = createPacket(in);
-            setProperties(request,false);
-            Packet response = process(request,requestContext,this);
-        } catch(WebServiceException e){
-            //it could be a WebServiceException or a ProtocolException
-            throw e;
-        } catch(Throwable e){
-            // it could be a RuntimeException resulting due to some internal bug or
-            // its some other exception resulting from user error, wrap it in
-            // WebServiceException
-            throw new WebServiceException(e);
+            try {
+                checkNullAllowed(in, requestContext, binding, mode);
+
+                Packet request = createPacket(in);
+                request.setState(Packet.State.ClientRequest);
+                setProperties(request,false);
+                process(request,requestContext,this);
+            } catch(WebServiceException e){
+                //it could be a WebServiceException or a ProtocolException
+                throw e;
+            } catch(Throwable e){
+                // it could be a RuntimeException resulting due to some internal bug or
+                // its some other exception resulting from user error, wrap it in
+                // WebServiceException
+                throw new WebServiceException(e);
+            }
+        } finally {
+            ContainerResolver.getDefault().exitContainer(old);
         }
     }
 
@@ -358,36 +375,54 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
         return portname;
     }
 
-    void resolveEndpointAddress(@NotNull Packet message, @NotNull RequestContext requestContext) {
+    void resolveEndpointAddress(@NotNull final Packet message, @NotNull final RequestContext requestContext) {
+        final boolean p = message.packetTakesPriorityOverRequestContext;
+
         //resolve endpoint look for query parameters, pathInfo
-        String endpoint = (String) requestContext.get(BindingProvider.ENDPOINT_ADDRESS_PROPERTY);
+        String endpoint;
+        if (p && message.endpointAddress != null) {
+            endpoint = message.endpointAddress.toString();
+        } else {
+            endpoint = (String) requestContext.get(BindingProvider.ENDPOINT_ADDRESS_PROPERTY);
+        }
+        // This is existing before packetTakesPriorityOverRequestContext so leaving in place.
         if (endpoint == null)
             endpoint = message.endpointAddress.toString();
 
         String pathInfo = null;
         String queryString = null;
-        if (requestContext.get(MessageContext.PATH_INFO) != null)
+        if (p && message.invocationProperties.get(MessageContext.PATH_INFO) != null) {
+            pathInfo = (String) message.invocationProperties.get(MessageContext.PATH_INFO);
+        } else if (requestContext.get(MessageContext.PATH_INFO) != null) {
             pathInfo = (String) requestContext.get(MessageContext.PATH_INFO);
+        }
 
-        if (requestContext.get(MessageContext.QUERY_STRING) != null)
+        if (p && message.invocationProperties.get(MessageContext.QUERY_STRING) != null) {
+            queryString = (String) message.invocationProperties.get(MessageContext.QUERY_STRING);
+        } else if (requestContext.get(MessageContext.QUERY_STRING) != null) {
             queryString = (String) requestContext.get(MessageContext.QUERY_STRING);
+        }
 
-
-        String resolvedEndpoint = null;
         if (pathInfo != null || queryString != null) {
             pathInfo = checkPath(pathInfo);
             queryString = checkQuery(queryString);
             if (endpoint != null) {
                 try {
                     final URI endpointURI = new URI(endpoint);
-                    resolvedEndpoint = resolveURI(endpointURI, pathInfo, queryString);
+                    endpoint = resolveURI(endpointURI, pathInfo, queryString);
                 } catch (URISyntaxException e) {
                     throw new WebServiceException(DispatchMessages.INVALID_URI(endpoint));
                 }
             }
-            requestContext.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, resolvedEndpoint);
-            //message.endpointAddress = EndpointAddress.create(resolvedEndpoint);
         }
+        // These two lines used to be inside the above if.  It is outside so:
+        // - in cases where there is no setting of address on a Packet before invocation or no pathInfo/queryString
+        //   this will just put back what it found in the requestContext - basically a noop.
+        // - but when info is in the Packet this will update so it will get used later.
+        // Remember - we are operating on a copied RequestContext at this point - not the sticky one in the Stub.
+        requestContext.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, endpoint);
+        // This is not necessary because a later step will copy the resolvedEndpoint put above into message.
+        //message.endpointAddress = EndpointAddress.create(endpoint);
     }
 
     protected @NotNull String resolveURI(@NotNull URI endpointURI, @Nullable String pathInfo, @Nullable String queryString) {
@@ -521,6 +556,7 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
         public void do_run () {
             checkNullAllowed(param, rc, binding, mode);
             final Packet message = createPacket(param);
+            message.setState(Packet.State.ClientRequest);
             message.nonNullAsyncHandlerGiven = this.nonNullAsyncHandlerGiven;
             resolveEndpointAddress(message, rc);
             setProperties(message,true);
@@ -532,10 +568,10 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
               SOAPVersion sv = DispatchImpl.this.getBinding().getSOAPVersion();
               action =
                 av != null && message.getMessage() != null ?
-                  message.getMessage().getHeaders().getAction(av, sv) : null;
+                  AddressingUtils.getAction(message.getMessage().getHeaders(), av, sv) : null;
               msgId =
                 av != null&& message.getMessage() != null ?
-                  message.getMessage().getHeaders().getMessageID(av, sv) : null;
+                  AddressingUtils.getMessageID(message.getMessage().getHeaders(), av, sv) : null;
               LOGGER.fine("In DispatchAsyncInvoker.do_run for async message with action: " + action + " and msg ID: " + msgId);
             }
 
