@@ -41,21 +41,17 @@ package com.sun.tools.hat.internal.server;
 
 
 import java.net.Socket;
-import java.net.ServerSocket;
-import java.net.InetAddress;
 
 import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.Writer;
 import java.io.BufferedWriter;
 import java.io.PrintWriter;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.BufferedOutputStream;
 
 import com.sun.tools.hat.internal.model.Snapshot;
 import com.sun.tools.hat.internal.oql.OQLEngine;
+import com.sun.tools.hat.internal.util.Misc;
 
 public class HttpReader implements Runnable {
 
@@ -87,7 +83,7 @@ public class HttpReader implements Runnable {
                 outputError("Protocol error");
             }
             int data;
-            StringBuffer queryBuf = new StringBuffer();
+            StringBuilder queryBuf = new StringBuilder();
             while ((data = in.read()) != -1 && data != ' ') {
                 char ch = (char) data;
                 queryBuf.append(ch);
@@ -217,7 +213,7 @@ public class HttpReader implements Runnable {
     private void outputError(String msg) {
         out.println();
         out.println("<html><body bgcolor=\"#ffffff\">");
-        out.println(msg);
+        out.println(Misc.encodeHtml(msg));
         out.println("</body></html>");
     }
 
