@@ -29,8 +29,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import java.util.function.Consumer;
-
 /**
  * The {@code Vector} class implements a growable array of
  * objects. Like an array, it contains components that can be
@@ -1161,7 +1159,7 @@ public class Vector<E>
         public void forEachRemaining(Consumer<? super E> action) {
             Objects.requireNonNull(action);
             synchronized (Vector.this) {
-                final int size = Vector.this.elementCount;
+                final int size = elementCount;
                 int i = cursor;
                 if (i >= size) {
                     return;
