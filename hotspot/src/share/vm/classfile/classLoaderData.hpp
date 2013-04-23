@@ -62,7 +62,7 @@ class ClassLoaderDataGraph : public AllStatic {
   // CMS support.
   static ClassLoaderData* _saved_head;
 
-  static ClassLoaderData* add(ClassLoaderData** loader_data_addr, Handle class_loader, TRAPS);
+  static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
  public:
   static ClassLoaderData* find_or_create(Handle class_loader, TRAPS);
   static void purge();
