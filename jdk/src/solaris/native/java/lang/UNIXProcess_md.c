@@ -52,6 +52,19 @@
 #ifdef __APPLE__
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
+#else
+/* This is one of the rare times it's more portable to declare an
+ * external symbol explicitly, rather than via a system header.
+ * The declaration is standardized as part of UNIX98, but there is
+ * no standard (not even de-facto) header file where the
+ * declaration is to be found.  See:
+ * http://www.opengroup.org/onlinepubs/009695399/functions/environ.html
+ * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
+ *
+ * "All identifiers in this volume of IEEE Std 1003.1-2001, except
+ * environ, are defined in at least one of the headers" (!)
+ */
+extern char **environ;
 #endif
 
 /*
@@ -152,19 +165,6 @@
   } while((_result == -1) && (errno == EINTR)); \
 } while(0)
 
-/* This is one of the rare times it's more portable to declare an
- * external symbol explicitly, rather than via a system header.
- * The declaration is standardized as part of UNIX98, but there is
- * no standard (not even de-facto) header file where the
- * declaration is to be found.  See:
- * http://www.opengroup.org/onlinepubs/009695399/functions/environ.html
- * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
- *
- * "All identifiers in this volume of IEEE Std 1003.1-2001, except
- * environ, are defined in at least one of the headers" (!)
- */
-extern char **environ;
-
 
 static void
 setSIGCHLDHandler(JNIEnv *env)
@@ -241,52 +241,41 @@ countOccurrences(const char *s, char c)
 }
 
 static const char * const *
-splitPath(JNIEnv *env, const char *path)
+effectivePathv(JNIEnv *env)
 {
-    const char *p, *q;
-    char **pathv;
+    char *p;
     int i;
+    const char *path = effectivePath();
     int count = countOccurrences(path, ':') + 1;
+    size_t pathvsize = sizeof(const char *) * (count+1);
+    size_t pathsize = strlen(path) + 1;
+    const char **pathv = (const char **) xmalloc(env, pathvsize + pathsize);
 
-    pathv = NEW(char*, count+1);
-    pathv[count] = NULL;
-    for (p = path, i = 0; i < count; i++, p = q + 1) {
-        for (q = p; (*q != ':') && (*q != '\0'); q++)
-            ;
-        if (q == p)             /* empty PATH component => "." */
-            pathv[i] = "./";
-        else {
-            int addSlash = ((*(q - 1)) != '/');
-            pathv[i] = NEW(char, q - p + addSlash + 1);
-            memcpy(pathv[i], p, q - p);
-            if (addSlash)
-                pathv[i][q - p] = '/';
-            pathv[i][q - p + addSlash] = '\0';
-        }
+    if (pathv == NULL)
+        return NULL;
+    p = (char *) pathv + pathvsize;
+    memcpy(p, path, pathsize);
+    /* split PATH by replacing ':' with NULs; empty components => "." */
+    for (i = 0; i < count; i++) {
+        char *q = p + strcspn(p, ":");
+        pathv[i] = (p == q) ? "." : p;
+        *q = '\0';
+        p = q + 1;
     }
-    return (const char * const *) pathv;
+    pathv[count] = NULL;
+    return pathv;
 }
 
 /**
- * Cached value of JVM's effective PATH.
+ * The cached and split version of the JDK's effective PATH.
  * (We don't support putenv("PATH=...") in native code)
- */
-static const char *parentPath;
-
-/**
- * Split, canonicalized version of parentPath
  */
 static const char * const *parentPathv;
 
-static jfieldID field_exitcode;
-
 JNIEXPORT void JNICALL
-Java_java_lang_UNIXProcess_initIDs(JNIEnv *env, jclass clazz)
+Java_java_lang_UNIXProcess_init(JNIEnv *env, jclass clazz)
 {
-    field_exitcode = (*env)->GetFieldID(env, clazz, "exitcode", "I");
-
-    parentPath  = effectivePath();
-    parentPathv = splitPath(env, parentPath);
+    parentPathv = effectivePathv(env);
 
     setSIGCHLDHandler(env);
 }
@@ -486,6 +475,9 @@ throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
     }
     /* ASCII Decimal representation uses 2.4 times as many bits as binary. */
     errmsg = NEW(char, strlen(format) + strlen(detail) + 3 * sizeof(errnum));
+    if (errmsg == NULL)
+        return;
+
     sprintf(errmsg, format, errnum, detail);
     s = JNU_NewStringPlatform(env, errmsg);
     if (s != NULL) {
@@ -590,11 +582,13 @@ JDK_execvpe(const char *file,
         for (dirs = parentPathv; *dirs; dirs++) {
             const char * dir = *dirs;
             int dirlen = strlen(dir);
-            if (filelen + dirlen + 1 >= PATH_MAX) {
+            if (filelen + dirlen + 2 >= PATH_MAX) {
                 errno = ENAMETOOLONG;
                 continue;
             }
             memcpy(expanded_file, dir, dirlen);
+            if (expanded_file[dirlen - 1] != '/')
+                expanded_file[dirlen++] = '/';
             memcpy(expanded_file + dirlen, file, filelen);
             expanded_file[dirlen + filelen] = '\0';
             execve_with_shell_fallback(expanded_file, argv, envp);

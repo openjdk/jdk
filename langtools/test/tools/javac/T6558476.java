@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 /*
  * @test
+ * @bug 6558476
+ * @summary com/sun/tools/javac/Main.compile don't release file handles on return
  * @run main/othervm -Xmx512m -Xms512m  T6558476
  */
 
@@ -70,8 +72,7 @@ public class T6558476 {
 
     public static void main(String[] args) throws IOException {
         File javaHomeDir = new File(System.getProperty("java.home"));
-        File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-        File outputDir = new File(tmpDir, "outputDir" + new Random().nextInt(65536));
+        File outputDir = new File("outputDir" + new Random().nextInt(65536));
         outputDir.mkdir();
         outputDir.deleteOnExit();
 

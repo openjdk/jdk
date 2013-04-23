@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /**
  * @test
  * @bug 6840752
@@ -30,7 +35,7 @@
  * @library ../pkcs11/sslecc
  * @library ../../../java/security/testlibrary
  * @compile -XDignore.symbol.file TestEC.java
- * @run main TestEC
+ * @run main/othervm TestEC
  */
 
 import java.security.NoSuchProviderException;

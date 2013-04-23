@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,11 @@ public enum Modifier {
     /** The modifier {@code protected} */       PROTECTED,
     /** The modifier {@code private} */         PRIVATE,
     /** The modifier {@code abstract} */        ABSTRACT,
+    /**
+     * The modifier {@code default}
+     * @since 1.8
+     */
+     DEFAULT,
     /** The modifier {@code static} */          STATIC,
     /** The modifier {@code final} */           FINAL,
     /** The modifier {@code transient} */       TRANSIENT,

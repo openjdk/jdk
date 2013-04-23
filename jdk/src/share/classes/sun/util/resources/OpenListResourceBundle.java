@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
 
     // Implements java.util.ResourceBundle.handleGetObject; inherits javadoc specification.
     @Override
-    public Object handleGetObject(String key) {
+    protected Object handleGetObject(String key) {
         if (key == null) {
             throw new NullPointerException();
         }
@@ -82,18 +82,18 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
      */
     @Override
     public Enumeration<String> getKeys() {
-        ResourceBundle parent = this.parent;
-        return new ResourceBundleEnumeration(handleGetKeys(),
-                (parent != null) ? parent.getKeys() : null);
-    }
+        ResourceBundle parentBundle = this.parent;
+        return new ResourceBundleEnumeration(handleKeySet(),
+                (parentBundle != null) ? parentBundle.getKeys() : null);
+     }
 
     /**
      * Returns a set of keys provided in this resource bundle,
      * including no parents.
      */
-    public Set<String> handleGetKeys() {
+    @Override
+    protected Set<String> handleKeySet() {
         loadLookupTablesIfNecessary();
-
         return lookup.keySet();
     }
 
@@ -103,7 +103,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
             return keyset;
         }
         Set<String> ks = createSet();
-        ks.addAll(handleGetKeys());
+        ks.addAll(handleKeySet());
         if (parent != null) {
             ks.addAll(parent.keySet());
         }

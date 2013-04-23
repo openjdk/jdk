@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ import com.sun.xml.internal.stream.buffer.XMLStreamBuffer;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.WSFeatureList;
+import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.ContentType;
-import com.sun.xml.internal.ws.message.stream.StreamHeader;
 import com.sun.xml.internal.ws.message.stream.StreamHeader11;
 
 import javax.xml.stream.XMLStreamReader;
@@ -44,6 +44,13 @@ import java.util.List;
  * @author Paul.Sandoz@Sun.Com
  */
 final class StreamSOAP11Codec extends StreamSOAPCodec {
+    static final StreamHeaderDecoder SOAP11StreamHeaderDecoder = new StreamHeaderDecoder() {
+        @Override
+        public Header decodeHeader(XMLStreamReader reader, XMLStreamBuffer mark) {
+            return new StreamHeader11(reader, mark);
+        }
+    };
+
     public static final String SOAP11_MIME_TYPE = "text/xml";
     public static final String DEFAULT_SOAP11_CONTENT_TYPE =
             SOAP11_MIME_TYPE+"; charset="+SOAPBindingCodec.DEFAULT_ENCODING;
@@ -64,11 +71,6 @@ final class StreamSOAP11Codec extends StreamSOAPCodec {
 
     public String getMimeType() {
         return SOAP11_MIME_TYPE;
-    }
-
-    @Override
-    protected final StreamHeader createHeader(XMLStreamReader reader, XMLStreamBuffer mark) {
-        return new StreamHeader11(reader, mark);
     }
 
     @Override

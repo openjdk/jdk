@@ -313,6 +313,12 @@ PROPS = content-types.properties
 CAL_PROPS = calendars.properties
 
 #
+# Rule to copy Hijrah-umalqura calendar properties file.
+#
+HIJRAH_UMALQURA_PROPS = hijrah-config-umalqura.properties
+
+
+#
 # Rule to copy tzmappings file on Windows
 #
 ifeq ($(PLATFORM), windows)
@@ -324,12 +330,15 @@ $(TZMAP): $(TZMAPFILE)
 	$(call chmod-file, 444)
 endif
 
-build: $(LIBDIR)/$(PROPS) $(LIBDIR)/$(CAL_PROPS) $(TZMAP)
+build: $(LIBDIR)/$(PROPS) $(LIBDIR)/$(CAL_PROPS) $(LIBDIR)/$(HIJRAH_UMALQURA_PROPS) $(TZMAP)
 
 $(LIBDIR)/$(PROPS): $(PLATFORM_SRC)/lib/$(PROPS)
 	$(install-file)
 
 $(LIBDIR)/$(CAL_PROPS): $(SHARE_SRC)/lib/$(CAL_PROPS)
+	$(install-file)
+
+$(LIBDIR)/$(HIJRAH_UMALQURA_PROPS): $(SHARE_SRC)/lib/$(HIJRAH_UMALQURA_PROPS)
 	$(install-file)
 
 clean:: 

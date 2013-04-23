@@ -838,14 +838,12 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object split(final Object self, final Object separator, final Object limit) {
-
         final String str = checkObjectToString(self);
+        final long lim = (limit == UNDEFINED) ? JSType.MAX_UINT : JSType.toUint32(limit);
 
         if (separator == UNDEFINED) {
             return new NativeArray(new Object[]{str});
         }
-
-        final long lim = (limit == UNDEFINED) ? JSType.MAX_UINT : JSType.toUint32(limit);
 
         if (separator instanceof NativeRegExp) {
             return ((NativeRegExp) separator).split(str, lim);

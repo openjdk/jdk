@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,12 +96,10 @@ public class DirectoryUtil  {
 
     }
 
-    private static void ensureDirectory(File dir)
-        throws GeneratorException {
-
+    private static void ensureDirectory(File dir) throws GeneratorException {
         if (!dir.exists()) {
-            dir.mkdirs();
-            if (!dir.exists()) {
+            boolean created = dir.mkdirs();
+            if (!created || !dir.exists()) {
                 throw new GeneratorException("generator.cannot.create.dir",
                     dir.getAbsolutePath());
             }
