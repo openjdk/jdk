@@ -102,7 +102,7 @@ class InstancesCountQuery extends QueryHandler {
             int count = clazz.getInstancesCount(false);
             print("" + count);
             printAnchorStart();
-            out.print("instances/" + encodeForURL(classes[i]));
+            print("instances/" + encodeForURL(classes[i]));
             out.print("\"> ");
             if (count == 1) {
                 print("instance");
@@ -121,7 +121,7 @@ class InstancesCountQuery extends QueryHandler {
                 }
                 print("(");
                 printAnchorStart();
-                out.print("newInstances/" + encodeForURL(classes[i]));
+                print("newInstances/" + encodeForURL(classes[i]));
                 out.print("\">");
                 print("" + newInst + " new");
                 out.print("</a>) ");
