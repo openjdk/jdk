@@ -479,7 +479,7 @@ public final class Long extends Number implements Comparable<Long> {
      * of the string as a type indicator, as would be permitted in
      * Java programming language source code - except that either
      * {@code L} or {@code l} may appear as a digit for a
-     * radix greater than 22.
+     * radix greater than or equal to 22.
      *
      * <p>An exception of type {@code NumberFormatException} is
      * thrown if any of the following situations occurs:

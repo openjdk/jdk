@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.KeyFactory;
 import java.security.InvalidKeyException;
-import java.security.NoSuchProviderException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -66,7 +65,8 @@ final class ConstructKeys {
 
         try {
             KeyFactory keyFactory =
-                KeyFactory.getInstance(encodedKeyAlgorithm, "SunJCE");
+                KeyFactory.getInstance(encodedKeyAlgorithm,
+                    SunJCE.getInstance());
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encodedKey);
             key = keyFactory.generatePublic(keySpec);
         } catch (NoSuchAlgorithmException nsae) {
@@ -94,8 +94,6 @@ final class ConstructKeys {
                 new InvalidKeyException("Cannot construct public key");
             ike.initCause(ikse);
             throw ike;
-        } catch (NoSuchProviderException nspe) {
-            // Should never happen.
         }
 
         return key;
@@ -118,7 +116,8 @@ final class ConstructKeys {
 
         try {
             KeyFactory keyFactory =
-                KeyFactory.getInstance(encodedKeyAlgorithm, "SunJCE");
+                KeyFactory.getInstance(encodedKeyAlgorithm,
+                    SunJCE.getInstance());
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encodedKey);
             return keyFactory.generatePrivate(keySpec);
         } catch (NoSuchAlgorithmException nsae) {
@@ -146,8 +145,6 @@ final class ConstructKeys {
                 new InvalidKeyException("Cannot construct private key");
             ike.initCause(ikse);
             throw ike;
-        } catch (NoSuchProviderException nspe) {
-            // Should never happen.
         }
 
         return key;

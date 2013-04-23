@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,11 @@ final class JsseJce {
      * without padding.
      */
     final static String CIPHER_AES = "AES/CBC/NoPadding";
+    /**
+     * JCE transformation string for AES in GCM mode
+     * without padding.
+     */
+    final static String CIPHER_AES_GCM = "AES/GCM/NoPadding";
     /**
      * JCA identifier string for DSA, i.e. a DSA with SHA-1.
      */

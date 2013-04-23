@@ -40,7 +40,7 @@ class Inet4AddressImpl implements InetAddressImpl {
     public synchronized InetAddress anyLocalAddress() {
         if (anyLocalAddress == null) {
             anyLocalAddress = new Inet4Address(); // {0x00,0x00,0x00,0x00}
-            anyLocalAddress.hostName = "0.0.0.0";
+            anyLocalAddress.holder().hostName = "0.0.0.0";
         }
         return anyLocalAddress;
     }
