@@ -87,55 +87,55 @@ public enum CompilerConstants {
     THIS("this"),
 
     /** this debugger symbol */
-    THIS_DEBUGGER("__this__"),
+    THIS_DEBUGGER(":this"),
 
     /** scope name, type and slot */
-    SCOPE("__scope__", ScriptObject.class, 2),
+    SCOPE(":scope", ScriptObject.class, 2),
 
     /** the return value variable name were intermediate results are stored for scripts */
-    RETURN("__return__"),
+    RETURN(":return"),
 
     /** the callee value variable when necessary */
-    CALLEE("__callee__", ScriptFunction.class),
+    CALLEE(":callee", ScriptFunction.class),
 
     /** the varargs variable when necessary */
-    VARARGS("__varargs__"),
+    VARARGS(":varargs"),
 
     /** the arguments vector when necessary and the slot */
     ARGUMENTS("arguments", Object.class, 2),
 
     /** prefix for iterators for for (x in ...) */
-    ITERATOR_PREFIX("$iter"),
+    ITERATOR_PREFIX(":iter"),
 
     /** prefix for tag variable used for switch evaluation */
-    SWITCH_TAG_PREFIX("$tag"),
+    SWITCH_TAG_PREFIX(":tag"),
 
     /** prefix for all exceptions */
-    EXCEPTION_PREFIX("$exception"),
+    EXCEPTION_PREFIX(":exception"),
 
     /** prefix for quick slots generated in Store */
-    QUICK_PREFIX("$quick"),
+    QUICK_PREFIX(":quick"),
 
     /** prefix for temporary variables */
-    TEMP_PREFIX("$temp"),
+    TEMP_PREFIX(":temp"),
 
     /** prefix for literals */
-    LITERAL_PREFIX("$lit"),
-
-    /** prefix for map */
-    MAP("$map", 1),
+    LITERAL_PREFIX(":lit"),
 
     /** prefix for regexps */
-    REGEX_PREFIX("$regex"),
+    REGEX_PREFIX(":regex"),
 
     /** "this" used in non-static Java methods; always in slot 0 */
-    JAVA_THIS("this", 0),
+    JAVA_THIS(null, 0),
 
-    /** init scope */
-    INIT_SCOPE("$scope", 2),
+    /** Map parameter in scope object constructors; always in slot 1 */
+    INIT_MAP(null, 1),
 
-    /** init arguments */
-    INIT_ARGUMENTS("$arguments", 3),
+    /** Parent scope parameter in scope object constructors; always in slot 2 */
+    INIT_SCOPE(null, 2),
+
+    /** Arguments parameter in scope object constructors; in slot 3 when present */
+    INIT_ARGUMENTS(null, 3),
 
     /** prefix for all ScriptObject subclasses with fields, @see ObjectGenerator */
     JS_OBJECT_PREFIX("JO"),

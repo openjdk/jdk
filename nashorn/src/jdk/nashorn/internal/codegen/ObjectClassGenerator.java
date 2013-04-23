@@ -28,10 +28,10 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.Compiler.SCRIPTS_PACKAGE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.ALLOCATE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_ARGUMENTS;
+import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JAVA_THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_PREFIX;
-import static jdk.nashorn.internal.codegen.CompilerConstants.MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
@@ -387,7 +387,7 @@ public final class ObjectClassGenerator {
         final MethodEmitter init = classEmitter.init(PropertyMap.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
-        init.load(Type.OBJECT, MAP.slot());
+        init.load(Type.OBJECT, INIT_MAP.slot());
         init.invoke(constructorNoLookup(ScriptObject.class, PropertyMap.class));
 
         return init;
@@ -402,7 +402,7 @@ public final class ObjectClassGenerator {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
-        init.load(Type.OBJECT, MAP.slot());
+        init.load(Type.OBJECT, INIT_MAP.slot());
         init.load(Type.OBJECT, INIT_SCOPE.slot());
         init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class));
 
@@ -418,7 +418,7 @@ public final class ObjectClassGenerator {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, Object.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
-        init.load(Type.OBJECT, MAP.slot());
+        init.load(Type.OBJECT, INIT_MAP.slot());
         init.load(Type.OBJECT, INIT_SCOPE.slot());
         init.load(Type.OBJECT, INIT_ARGUMENTS.slot());
         init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class, Object.class));
