@@ -906,4 +906,26 @@ public class ScriptEngineTest {
             fail(se.getMessage());
         }
     }
+
+    @Test
+    /**
+     * Tests whether invocation of a JavaScript method through a variable arity Java method will pass the vararg array.
+     * Both non-vararg and vararg JavaScript methods are tested.
+     * @throws ScriptException
+     */
+    public void variableArityInterfaceTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        e.eval(
+            "function test1(i, strings) {" +
+            "    return 'i == ' + i + ', strings instanceof java.lang.String[] == ' + (strings instanceof Java.type('java.lang.String[]')) + ', strings == ' + java.util.Arrays.toString(strings)" +
+            "}" +
+            "function test2() {" +
+            "    return 'arguments[0] == ' + arguments[0] + ', arguments[1] instanceof java.lang.String[] == ' + (arguments[1] instanceof Java.type('java.lang.String[]')) + ', arguments[1] == ' + java.util.Arrays.toString(arguments[1])" +
+            "}"
+        );
+        final VariableArityTestInterface itf = ((Invocable)e).getInterface(VariableArityTestInterface.class);
+        Assert.assertEquals(itf.test1(42, "a", "b"), "i == 42, strings instanceof java.lang.String[] == true, strings == [a, b]");
+        Assert.assertEquals(itf.test2(44, "c", "d", "e"), "arguments[0] == 44, arguments[1] instanceof java.lang.String[] == true, arguments[1] == [c, d, e]");
+    }
 }

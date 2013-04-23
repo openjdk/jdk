@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.CONFIGURABLE;
@@ -39,7 +40,6 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndexNoThrow;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -61,12 +61,13 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
+import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.AccessorPropertyDescriptor;
 import jdk.nashorn.internal.objects.DataPropertyDescriptor;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
@@ -2139,8 +2140,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      *
      * Make sure arguments are paired correctly.
      * @param methodHandle MethodHandle to adjust.
-     * @param callType     MethodType of caller.
-     * @param callerVarArg true if the caller is vararg, false otherwise, null if it should be inferred.
+     * @param callType     MethodType of the call site.
+     * @param callerVarArg true if the caller is vararg, false otherwise, null if it should be inferred from the
+     * {@code callType}; basically, if the last parameter type of the call site is an array, it'll be considered a
+     * variable arity call site. These are ordinarily rare; Nashorn code generator creates variable arity call sites
+     * when the call has more than {@link LinkerCallSite#ARGLIMIT} parameters.
      *
      * @return method handle with adjusted arguments
      */
@@ -2155,7 +2159,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final int callCount      = callType.parameterCount();
 
         final boolean isCalleeVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
-        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : (callCount > 1 &&
+        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : (callCount > 0 &&
                 callType.parameterType(callCount - 1).isArray());
 
         if (callCount < parameterCount) {

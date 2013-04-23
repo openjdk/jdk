@@ -664,7 +664,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
                     final int useCount = symbol.getUseCount();
 
                     // Threshold for generating shared scope callsite is lower for fast scope symbols because we know
-                    // we can dial in the correct scope. However, we als need to enable it for non-fast scopes to
+                    // we can dial in the correct scope. However, we also need to enable it for non-fast scopes to
                     // support huge scripts like mandreel.js.
                     if (callNode.isEval()) {
                         evalCall(node, flags);
