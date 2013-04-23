@@ -3426,8 +3426,9 @@ bool ConcurrentMarkSweepGeneration::grow_to_reserved() {
 void ConcurrentMarkSweepGeneration::shrink_free_list_by(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   assert_lock_strong(freelistLock());
-  // XXX Fix when compaction is implemented.
-  warning("Shrinking of CMS not yet implemented");
+  if (PrintGCDetails && Verbose) {
+    warning("Shrinking of CMS not yet implemented");
+  }
   return;
 }
 
