@@ -39,9 +39,11 @@ import java.util.Set;
 import java.util.Stack;
 
 import javax.activation.MimeTypeParseException;
+import javax.xml.bind.DatatypeConverter;
 
 import com.sun.codemodel.internal.JJavaName;
 import com.sun.codemodel.internal.util.JavadocEscapeWriter;
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.tools.internal.xjc.ErrorReceiver;
 import com.sun.tools.internal.xjc.model.CBuiltinLeafInfo;
 import com.sun.tools.internal.xjc.model.CClassInfo;
@@ -62,10 +64,10 @@ import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIProperty;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BindInfo;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.EnumMemberMode;
 import com.sun.tools.internal.xjc.util.MimeTypeRange;
-import com.sun.xml.internal.bind.DatatypeConverterImpl;
-import com.sun.xml.internal.bind.v2.WellKnownNamespace;
+
 import static com.sun.xml.internal.bind.v2.WellKnownNamespace.XML_MIME_URI;
-import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapter;
+
+import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapterMarker;
 import com.sun.xml.internal.xsom.XSAttributeDecl;
 import com.sun.xml.internal.xsom.XSComplexType;
 import com.sun.xml.internal.xsom.XSComponent;
@@ -393,7 +395,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
         if(type.getTargetNamespace().equals(WellKnownNamespace.SWA_URI)) {
             String name = type.getName();
             if(name!=null && name.equals("swaRef"))
-                return CBuiltinLeafInfo.STRING.makeAdapted(SwaRefAdapter.class,false);
+                return CBuiltinLeafInfo.STRING.makeAdapted(SwaRefAdapterMarker.class,false);
         }
 
 
@@ -668,7 +670,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
 
                 if (mem!=null) {
                     name = mem.name;
-                    if (mdoc != null) {
+                    if (mdoc == null) {
                         mdoc = mem.javadoc;
                     }
                 }
@@ -846,7 +848,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
         XSFacet me = initiatingType.getFacet(facetName);
         if(me==null)
             return null;
-        BigInteger bi = DatatypeConverterImpl._parseInteger(me.getValue().value);
+        BigInteger bi = DatatypeConverter.parseInteger(me.getValue().value);
         if(offset!=0)
             bi = bi.add(BigInteger.valueOf(offset));
         return bi;

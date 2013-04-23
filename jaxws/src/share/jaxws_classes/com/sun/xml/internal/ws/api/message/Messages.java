@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import com.sun.xml.internal.ws.message.EmptyMessageImpl;
 import com.sun.xml.internal.ws.message.ProblemActionHeader;
 import com.sun.xml.internal.ws.message.stream.PayloadStreamReaderMessage;
 import com.sun.xml.internal.ws.message.jaxb.JAXBMessage;
-import com.sun.xml.internal.ws.message.saaj.SAAJMessage;
 import com.sun.xml.internal.ws.message.source.PayloadSourceMessage;
 import com.sun.xml.internal.ws.message.source.ProtocolSourceMessage;
 import com.sun.xml.internal.ws.spi.db.BindingContextFactory;
@@ -222,7 +221,7 @@ public abstract class Messages {
             for( Node n=header.getFirstChild(); n!=null; n=n.getNextSibling() ) {
                 if(n.getNodeType()==Node.ELEMENT_NODE) {
                     if(headers==null)
-                        headers = new HeaderList();
+                        headers = new HeaderList(ver);
                     headers.add(Headers.create((Element)n));
                 }
             }

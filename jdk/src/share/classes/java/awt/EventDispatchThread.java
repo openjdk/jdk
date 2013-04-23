@@ -138,7 +138,9 @@ class EventDispatchThread extends Thread {
     }
 
     void addEventFilter(EventFilter filter) {
-        eventLog.finest("adding the event filter: " + filter);
+        if (eventLog.isLoggable(PlatformLogger.FINEST)) {
+            eventLog.finest("adding the event filter: " + filter);
+        }
         synchronized (eventFilters) {
             if (!eventFilters.contains(filter)) {
                 if (filter instanceof ModalEventFilter) {
@@ -162,7 +164,9 @@ class EventDispatchThread extends Thread {
     }
 
     void removeEventFilter(EventFilter filter) {
-        eventLog.finest("removing the event filter: " + filter);
+        if (eventLog.isLoggable(PlatformLogger.FINEST)) {
+            eventLog.finest("removing the event filter: " + filter);
+        }
         synchronized (eventFilters) {
             eventFilters.remove(filter);
         }

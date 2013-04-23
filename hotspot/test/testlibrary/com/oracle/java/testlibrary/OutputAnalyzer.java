@@ -24,6 +24,8 @@
 package com.oracle.java.testlibrary;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class OutputAnalyzer {
 
@@ -142,15 +144,112 @@ public final class OutputAnalyzer {
   }
 
   /**
+   * Verify that the stdout and stderr contents of output buffer matches
+   * the pattern
+   *
+   * @param pattern
+   * @throws RuntimeException If the pattern was not found
+   */
+  public void shouldMatch(String pattern) {
+      Matcher stdoutMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+      Matcher stderrMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+      if (!stdoutMatcher.find() && !stderrMatcher.find()) {
+          throw new RuntimeException("'" + pattern
+                  + "' missing from stdout/stderr: [" + stdout + stderr
+                  + "]\n");
+      }
+  }
+
+  /**
+   * Verify that the stdout contents of output buffer matches the
+   * pattern
+   *
+   * @param pattern
+   * @throws RuntimeException If the pattern was not found
+   */
+  public void stdoutShouldMatch(String pattern) {
+      Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+      if (!matcher.find()) {
+          throw new RuntimeException("'" + pattern
+                  + "' missing from stdout: [" + stdout + "]\n");
+      }
+  }
+
+  /**
+   * Verify that the stderr contents of output buffer matches the
+   * pattern
+   *
+   * @param pattern
+   * @throws RuntimeException If the pattern was not found
+   */
+  public void stderrShouldMatch(String pattern) {
+      Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+      if (!matcher.find()) {
+          throw new RuntimeException("'" + pattern
+                  + "' missing from stderr: [" + stderr + "]\n");
+      }
+  }
+
+  /**
+   * Verify that the stdout and stderr contents of output buffer does not
+   * match the pattern
+   *
+   * @param pattern
+   * @throws RuntimeException If the pattern was found
+   */
+  public void shouldNotMatch(String pattern) {
+      Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+      if (matcher.find()) {
+          throw new RuntimeException("'" + pattern
+                  + "' found in stdout: [" + stdout + "]\n");
+      }
+      matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+      if (matcher.find()) {
+          throw new RuntimeException("'" + pattern
+                  + "' found in stderr: [" + stderr + "]\n");
+      }
+  }
+
+  /**
+   * Verify that the stdout contents of output buffer does not match the
+   * pattern
+   *
+   * @param pattern
+   * @throws RuntimeException If the pattern was found
+   */
+  public void stdoutShouldNotMatch(String pattern) {
+      Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+      if (matcher.find()) {
+          throw new RuntimeException("'" + pattern
+                  + "' found in stdout: [" + stdout + "]\n");
+      }
+  }
+
+  /**
+   * Verify that the stderr contents of output buffer does not match the
+   * pattern
+   *
+   * @param pattern
+   * @throws RuntimeException If the pattern was found
+   */
+  public void stderrShouldNotMatch(String pattern) {
+      Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+      if (matcher.find()) {
+          throw new RuntimeException("'" + pattern
+                  + "' found in stderr: [" + stderr + "]\n");
+      }
+  }
+
+  /**
    * Verifiy the exit value of the process
    *
    * @param expectedExitValue Expected exit value from process
    * @throws RuntimeException If the exit value from the process did not match the expected value
    */
   public void shouldHaveExitValue(int expectedExitValue) {
-    if (getExitValue() != expectedExitValue) {
-      throw new RuntimeException("Exit value " + getExitValue() + " , expected to get " + expectedExitValue);
-    }
+      if (getExitValue() != expectedExitValue) {
+          throw new RuntimeException("Exit value " + getExitValue() + " , expected to get " + expectedExitValue);
+      }
   }
 
   /**

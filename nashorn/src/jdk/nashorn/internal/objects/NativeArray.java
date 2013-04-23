@@ -76,7 +76,7 @@ public final class NativeArray extends ScriptObject {
 
     private static final MethodHandle REDUCE_CALLBACK_INVOKER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
             Object.class, Undefined.class, Object.class, Object.class, int.class, Object.class);
-    private static final MethodHandle CALL_CMP                = Bootstrap.createDynamicInvoker("dyn:call", int.class,
+    private static final MethodHandle CALL_CMP                = Bootstrap.createDynamicInvoker("dyn:call", double.class,
             ScriptFunction.class, Object.class, Object.class, Object.class);
 
     private static final InvokeByName TO_LOCALE_STRING = new InvokeByName("toLocaleString", ScriptObject.class, String.class);
@@ -160,7 +160,7 @@ public final class NativeArray extends ScriptObject {
         if ("length".equals(key)) {
             // Step 3a
             if (!desc.has(VALUE)) {
-                return super.defineOwnProperty("length", propertyDesc, reject);
+                return super.defineOwnProperty("length", desc, reject);
             }
 
             // Step 3b
@@ -242,7 +242,7 @@ public final class NativeArray extends ScriptObject {
 
             // Step 4c
             // set the new array element
-            final boolean succeeded = super.defineOwnProperty(key, propertyDesc, false);
+            final boolean succeeded = super.defineOwnProperty(key, desc, false);
 
             // Step 4d
             if (!succeeded) {
@@ -263,7 +263,7 @@ public final class NativeArray extends ScriptObject {
         }
 
         // not an index property
-        return super.defineOwnProperty(key, propertyDesc, reject);
+        return super.defineOwnProperty(key, desc, reject);
     }
 
     /**
@@ -337,8 +337,9 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toString(final Object self) {
-        if (self instanceof ScriptObject) {
-            final ScriptObject sobj = (ScriptObject) self;
+        final Object obj = Global.toObject(self);
+        if (obj instanceof ScriptObject) {
+            final ScriptObject sobj = (ScriptObject)obj;
             try {
                 final Object join = JOIN.getGetter().invokeExact(sobj);
                 if (join instanceof ScriptFunction) {
@@ -573,9 +574,9 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object join(final Object self, final Object separator) {
-        final String           sep  = separator == ScriptRuntime.UNDEFINED ? "," : JSType.toString(separator);
         final StringBuilder    sb   = new StringBuilder();
         final Iterator<Object> iter = arrayLikeIterator(self, true);
+        final String           sep  = separator == ScriptRuntime.UNDEFINED ? "," : JSType.toString(separator);
 
         while (iter.hasNext()) {
             final Object obj = iter.next();
@@ -754,8 +755,9 @@ public final class NativeArray extends ScriptObject {
         final Object       obj                 = Global.toObject(self);
         final ScriptObject sobj                = (ScriptObject)obj;
         final long         len                 = JSType.toUint32(sobj.getLength());
-        final long         relativeStartUint32 = JSType.toUint32(start);
-        final long         relativeStart       = JSType.toInteger(start);
+        final double       startNum            = JSType.toNumber(start);
+        final long         relativeStartUint32 = JSType.toUint32(startNum);
+        final long         relativeStart       = JSType.toInteger(startNum);
 
         long k = relativeStart < 0 ?
                 Math.max(len + relativeStart, 0) :
@@ -763,8 +765,9 @@ public final class NativeArray extends ScriptObject {
                     Math.max(relativeStartUint32, relativeStart),
                     len);
 
-        final long relativeEndUint32 = end == ScriptRuntime.UNDEFINED ? len : JSType.toUint32(end);
-        final long relativeEnd       = end == ScriptRuntime.UNDEFINED ? len : JSType.toInteger(end);
+        final double endNum = (end == ScriptRuntime.UNDEFINED)? Double.NaN : JSType.toNumber(end);
+        final long relativeEndUint32 = (end == ScriptRuntime.UNDEFINED)? len : JSType.toUint32(endNum);
+        final long relativeEnd       = (end == ScriptRuntime.UNDEFINED)? len : JSType.toInteger(endNum);
 
         final long finale = relativeEnd < 0 ?
                 Math.max(len + relativeEnd, 0) :
@@ -790,11 +793,15 @@ public final class NativeArray extends ScriptObject {
     }
 
     private static ScriptFunction compareFunction(final Object comparefn) {
-        try {
-            return (ScriptFunction)comparefn;
-        } catch (final ClassCastException e) {
-            return null; //undefined or null
+        if (comparefn == ScriptRuntime.UNDEFINED) {
+            return null;
         }
+
+        if (! (comparefn instanceof ScriptFunction)) {
+            throw typeError("not.a.function", ScriptRuntime.safeToString(comparefn));
+        }
+
+        return (ScriptFunction)comparefn;
     }
 
     private static Object[] sort(final Object[] array, final Object comparefn) {
@@ -816,7 +823,7 @@ public final class NativeArray extends ScriptObject {
 
                 if (cmp != null) {
                     try {
-                        return (int)CALL_CMP.invokeExact(cmp, cmpThis, x, y);
+                        return (int)Math.signum((double)CALL_CMP.invokeExact(cmp, cmpThis, x, y));
                     } catch (final RuntimeException | Error e) {
                         throw e;
                     } catch (final Throwable t) {
@@ -846,16 +853,25 @@ public final class NativeArray extends ScriptObject {
             final long         len     = JSType.toUint32(sobj.getLength());
 
             if (len > 1) {
-                final Object[] src = new Object[(int) len];
-                for (int i = 0; i < src.length; i++) {
-                    src[i] = sobj.get(i);
+                // Get only non-missing elements. Missing elements go at the end
+                // of the sorted array. So, just don't copy these to sort input.
+
+                final ArrayList<Object> src = new ArrayList<>();
+                for (int i = 0; i < (int)len; i++) {
+                    if (sobj.has(i)) {
+                        src.add(sobj.get(i));
+                    }
                 }
 
-                final Object[] sorted = sort(src, comparefn);
-                assert sorted.length == src.length;
+                final Object[] sorted = sort(src.toArray(), comparefn);
 
                 for (int i = 0; i < sorted.length; i++) {
                     sobj.set(i, sorted[i], strict);
+                }
+
+                // delete missing elements - which are at the end of sorted array
+                for (int j = sorted.length; j < (int)len; j++) {
+                    sobj.delete(j, strict);
                 }
             }
 
@@ -895,8 +911,9 @@ public final class NativeArray extends ScriptObject {
         final ScriptObject sobj                = (ScriptObject)obj;
         final boolean      strict              = Global.isStrict();
         final long         len                 = JSType.toUint32(sobj.getLength());
-        final long         relativeStartUint32 = JSType.toUint32(start);
-        final long         relativeStart       = JSType.toInteger(start);
+        final double       startNum            = JSType.toNumber(start);
+        final long         relativeStartUint32 = JSType.toUint32(startNum);
+        final long         relativeStart       = JSType.toInteger(startNum);
 
         //TODO: workaround overflow of relativeStart for start > Integer.MAX_VALUE
         final long actualStart = relativeStart < 0 ?

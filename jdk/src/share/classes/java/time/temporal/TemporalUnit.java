@@ -143,10 +143,12 @@ public interface TemporalUnit {
      * @param temporal  the temporal object to check, not null
      * @return true if the unit is supported
      */
-    public default boolean isSupportedBy(Temporal temporal) {
+    default boolean isSupportedBy(Temporal temporal) {
         try {
             temporal.plus(1, this);
             return true;
+        } catch (UnsupportedTemporalTypeException ex) {
+            return false;
         } catch (RuntimeException ex) {
             try {
                 temporal.plus(-1, this);
@@ -178,7 +180,7 @@ public interface TemporalUnit {
      * <p>
      * Implementations should perform any queries or calculations using the units
      * available in {@link ChronoUnit} or the fields available in {@link ChronoField}.
-     * If the unit is not supported a {@code DateTimeException} must be thrown.
+     * If the unit is not supported an {@code UnsupportedTemporalTypeException} must be thrown.
      * <p>
      * Implementations must not alter the specified temporal object.
      * Instead, an adjusted copy of the original must be returned.
@@ -189,6 +191,7 @@ public interface TemporalUnit {
      * @param amount  the amount of this unit to add, positive or negative
      * @return the adjusted temporal object, not null
      * @throws DateTimeException if the period cannot be added
+     * @throws UnsupportedTemporalTypeException if the unit is not supported by the temporal
      */
     <R extends Temporal> R addTo(R temporal, long amount);
 
@@ -214,8 +217,8 @@ public interface TemporalUnit {
      * The second is to use {@link Temporal#periodUntil(Temporal, TemporalUnit)}:
      * <pre>
      *   // these two lines are equivalent
-     *   temporal = thisUnit.between(start, end);
-     *   temporal = start.periodUntil(end, thisUnit);
+     *   between = thisUnit.between(start, end);
+     *   between = start.periodUntil(end, thisUnit);
      * </pre>
      * The choice should be made based on which makes the code more readable.
      * <p>
@@ -229,14 +232,15 @@ public interface TemporalUnit {
      * <p>
      * Implementations should perform any queries or calculations using the units
      * available in {@link ChronoUnit} or the fields available in {@link ChronoField}.
-     * If the unit is not supported a {@code DateTimeException} must be thrown.
+     * If the unit is not supported an {@code UnsupportedTemporalTypeException} must be thrown.
      * Implementations must not alter the specified temporal objects.
      *
      * @param temporal1  the base temporal object, not null
      * @param temporal2  the other temporal object, not null
-     * @return the period between datetime1 and datetime2 in terms of this unit;
-     *  positive if datetime2 is later than datetime1, negative if earlier
+     * @return the period between temporal1 and temporal2 in terms of this unit;
+     *  positive if temporal2 is later than temporal1, negative if earlier
      * @throws DateTimeException if the period cannot be calculated
+     * @throws UnsupportedTemporalTypeException if the unit is not supported by the temporal
      * @throws ArithmeticException if numeric overflow occurs
      */
     long between(Temporal temporal1, Temporal temporal2);

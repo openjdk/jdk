@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,11 +100,11 @@ public abstract class MessageFactory {
         throws SOAPException {
         try {
             MessageFactory factory = (MessageFactory)
-                FactoryFinder.find(MESSAGE_FACTORY_PROPERTY);
+                FactoryFinder.find(MESSAGE_FACTORY_PROPERTY,
+                        DEFAULT_MESSAGE_FACTORY, false);
 
             if (factory != null)
                 return factory;
-
             return newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
         } catch (Exception ex) {
             throw new SOAPException(

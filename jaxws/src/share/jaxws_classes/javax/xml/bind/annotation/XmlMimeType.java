@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package javax.xml.bind.annotation;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.awt.*;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
@@ -40,7 +39,7 @@ import javax.xml.transform.Source;
  *
  * <p>
  * This annotation is used in conjunction with datatypes such as
- * {@link Image} or {@link Source} that are bound to base64-encoded binary in XML.
+ * {@link java.awt.Image} or {@link Source} that are bound to base64-encoded binary in XML.
  *
  * <p>
  * If a property that has this annotation has a sibling property bound to

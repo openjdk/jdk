@@ -52,25 +52,28 @@ public class CMSManager {
             return cmmImpl;
         }
 
-        cmmImpl = (PCMM)AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                String cmmClass = System.getProperty(
-                    "sun.java2d.cmm", "sun.java2d.cmm.kcms.CMM");
+        CMMServiceProvider spi = AccessController.doPrivileged(
+                new PrivilegedAction<CMMServiceProvider>() {
+                    public CMMServiceProvider run() {
+                        String cmmClass = System.getProperty(
+                            "sun.java2d.cmm", "sun.java2d.cmm.lcms.LcmsServiceProvider");
 
-                ServiceLoader<PCMM> cmmLoader
-                    = ServiceLoader.loadInstalled(PCMM.class);
+                    ServiceLoader<CMMServiceProvider> cmmLoader
+                    = ServiceLoader.loadInstalled(CMMServiceProvider.class);
 
-                PCMM service = null;
+                CMMServiceProvider spi = null;
 
-                for (PCMM cmm : cmmLoader) {
-                    service = cmm;
+                for (CMMServiceProvider cmm : cmmLoader) {
+                    spi = cmm;
                     if (cmm.getClass().getName().equals(cmmClass)) {
                         break;
                     }
                 }
-                return service;
+                return spi;
             }
         });
+
+        cmmImpl = spi.getColorManagementModule();
 
         if (cmmImpl == null) {
             throw new CMMException("Cannot initialize Color Management System."+
@@ -84,6 +87,10 @@ public class CMSManager {
         }
 
         return cmmImpl;
+    }
+
+    static synchronized boolean canCreateModule() {
+        return (cmmImpl == null);
     }
 
     /* CMM trace routines */

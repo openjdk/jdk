@@ -76,11 +76,11 @@
 
 package sun.text.resources.pt;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_pt extends ListResourceBundle {
+public class FormatData_pt extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -118,6 +118,23 @@ public class FormatData_pt extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "Domingo", // Sunday
@@ -149,6 +166,18 @@ public class FormatData_pt extends ListResourceBundle {
                     "Q",
                     "S",
                     "S",
+                }
+            },
+            { "long.Eras",
+                new String[] {
+                    "Antes de Cristo",
+                    "Ano do Senhor",
+                }
+            },
+            { "Eras",
+                new String[] {
+                    "a.C.",
+                    "d.C.",
                 }
             },
             { "NumberElements",
@@ -188,64 +217,6 @@ public class FormatData_pt extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, G y MMMM dd",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "d/M/yy",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y G",
-                    "d 'de' MMMM 'de' y G",
-                    "dd/MM/yyyy G",
-                    "d/M/yyyy",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y GGGG",
-                    "d 'de' MMMM 'de' y GGGG",
-                    "dd/MM/yyyy GGGG",
-                    "d/M/yyyy",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y G",
-                    "d 'de' MMMM 'de' y G",
-                    "dd/MM/yyyy G",
-                    "d/M/yyyy",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y GGGG",
-                    "d 'de' MMMM 'de' y GGGG",
-                    "dd/MM/yyyy GGGG",
-                    "d/M/yyyy",
-                }
-            },
-            { "calendarname.islamic-civil", "Calend\u00e1rio Civil Isl\u00e2mico" },
-            { "calendarname.islamicc", "Calend\u00e1rio Civil Isl\u00e2mico" },
-            { "calendarname.islamic", "Calend\u00e1rio Isl\u00e2mico" },
-            { "calendarname.japanese", "Calend\u00e1rio Japon\u00eas" },
-            { "calendarname.gregorian", "Calend\u00e1rio Gregoriano" },
-            { "calendarname.gregory", "Calend\u00e1rio Gregoriano" },
-            { "calendarname.roc", "Calend\u00e1rio da Rep\u00fablica da China" },
-            { "calendarname.buddhist", "Calend\u00e1rio Budista" },
-            { "field.era", "Era" },
-            { "field.year", "Ano" },
-            { "field.month", "M\u00eas" },
-            { "field.week", "Semana" },
-            { "field.weekday", "Dia da semana" },
-            { "field.dayperiod", "Per\u00edodo do dia" },
-            { "field.hour", "Hora" },
-            { "field.minute", "Minuto" },
-            { "field.second", "Segundo" },
-            { "field.zone", "Fuso" },
         };
     }
 }

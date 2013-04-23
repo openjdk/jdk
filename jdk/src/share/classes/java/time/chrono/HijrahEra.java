@@ -24,6 +24,11 @@
  */
 
 /*
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file:
+ *
  * Copyright (c) 2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -56,16 +61,22 @@
  */
 package java.time.chrono;
 
+import static java.time.temporal.ChronoField.ERA;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.time.DateTimeException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalField;
+import java.time.temporal.UnsupportedTemporalTypeException;
+import java.time.temporal.ValueRange;
 
 /**
  * An era in the Hijrah calendar system.
  * <p>
- * The Hijrah calendar system has two eras.
- * The date {@code 0001-01-01 (Hijrah)} is {@code 622-06-19 (ISO)}.
+ * The Hijrah calendar system has only one era covering the
+ * proleptic years greater than zero.
  * <p>
  * <b>Do not use {@code ordinal()} to obtain the numeric representation of {@code HijrahEra}.
  * Use {@code getValue()} instead.</b>
@@ -75,80 +86,76 @@ import java.time.DateTimeException;
  *
  * @since 1.8
  */
-enum HijrahEra implements Era {
+public enum HijrahEra implements Era {
 
     /**
-     * The singleton instance for the era before the current one, 'Before Anno Hegirae',
-     * which has the value 0.
-     */
-    BEFORE_AH,
-    /**
-     * The singleton instance for the current era, 'Anno Hegirae', which has the value 1.
+     * The singleton instance for the current era, 'Anno Hegirae',
+     * which has the numeric value 1.
      */
     AH;
 
     //-----------------------------------------------------------------------
     /**
-     * Obtains an instance of {@code HijrahEra} from a value.
+     * Obtains an instance of {@code HijrahEra} from an {@code int} value.
      * <p>
-     * The current era (from ISO date 622-06-19 onwards) has the value 1
-     * The previous era has the value 0.
+     * The current era, which is the only accepted value, has the value 1
      *
-     * @param hijrahEra  the era to represent, from 0 to 1
-     * @return the HijrahEra singleton, never null
-     * @throws DateTimeException if the era is invalid
+     * @param hijrahEra  the era to represent, only 1 supported
+     * @return the HijrahEra.AH singleton, not null
+     * @throws DateTimeException if the value is invalid
      */
     public static HijrahEra of(int hijrahEra) {
-        switch (hijrahEra) {
-            case 0:
-                return BEFORE_AH;
-            case 1:
-                return AH;
-            default:
-                throw new DateTimeException("HijrahEra not valid");
+        if (hijrahEra == 1 ) {
+            return AH;
+        } else {
+            throw new DateTimeException("Invalid era: " + hijrahEra);
         }
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Gets the era numeric value.
+     * Gets the numeric era {@code int} value.
      * <p>
-     * The current era (from ISO date 622-06-19 onwards) has the value 1.
-     * The previous era has the value 0.
+     * The era AH has the value 1.
      *
-     * @return the era value, from 0 (BEFORE_AH) to 1 (AH)
+     * @return the era value, 1 (AH)
      */
     @Override
     public int getValue() {
-        return ordinal();
+        return 1;
     }
 
-    @Override
-    public HijrahChronology getChronology() {
-        return HijrahChronology.INSTANCE;
-    }
-
-    // JDK8 default methods:
     //-----------------------------------------------------------------------
-    @Override
-    public HijrahDate date(int year, int month, int day) {
-        return (HijrahDate)(getChronology().date(this, year, month, day));
-    }
-
-    @Override
-    public HijrahDate dateYearDay(int year, int dayOfYear) {
-        return (HijrahDate)(getChronology().dateYearDay(this, year, dayOfYear));
-    }
-
-    //-------------------------------------------------------------------------
     /**
-     * Returns the proleptic year from this era and year of era.
+     * Gets the range of valid values for the specified field.
+     * <p>
+     * The range object expresses the minimum and maximum valid values for a field.
+     * This era is used to enhance the accuracy of the returned range.
+     * If it is not possible to return the range, because the field is not supported
+     * or for some other reason, an exception is thrown.
+     * <p>
+     * If the field is a {@link ChronoField} then the query is implemented here.
+     * The {@code ERA} field returns the range.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
+     * <p>
+     * If the field is not a {@code ChronoField}, then the result of this method
+     * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
+     * passing {@code this} as the argument.
+     * Whether the range can be obtained is determined by the field.
+     * <p>
+     * The {@code ERA} field returns a range for the one valid Hijrah era.
      *
-     * @param yearOfEra the year of Era
-     * @return the computed prolepticYear
+     * @param field  the field to query the range for, not null
+     * @return the range of valid values for the field, not null
+     * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
-    int prolepticYear(int yearOfEra) {
-        return (this == HijrahEra.AH ? yearOfEra : 1 - yearOfEra);
+    @Override  // override as super would return range from 0 to 1
+    public ValueRange range(TemporalField field) {
+        if (field == ERA) {
+            return ValueRange.of(1, 1);
+        }
+        return Era.super.range(field);
     }
 
     //-----------------------------------------------------------------------

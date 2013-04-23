@@ -350,16 +350,21 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray dim);
 /*
  * java.lang.Class and java.lang.ClassLoader
  */
+
+#define JVM_DEPTH -1
+
 /*
- * Returns the class in which the code invoking the native method
- * belongs.
+ * Returns the immediate caller class of the native method invoking
+ * JVM_GetCallerClass.  The Method.invoke and other frames due to
+ * reflection machinery are skipped.
  *
- * Note that in JDK 1.1, native methods did not create a frame.
- * In 1.2, they do. Therefore native methods like Class.forName
- * can no longer look at the current frame for the caller class.
+ * The depth parameter must be -1 (JVM_DEPTH). The caller is expected
+ * to be marked with sun.reflect.CallerSensitive.  The JVM will throw
+ * an error if it is not marked propertly.
  */
 JNIEXPORT jclass JNICALL
-JVM_GetCallerClass(JNIEnv *env, int n);
+JVM_GetCallerClass(JNIEnv *env, int depth);
+
 
 /*
  * Find primitive classes

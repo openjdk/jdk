@@ -78,7 +78,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -86,6 +85,7 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Comparator;
@@ -436,7 +436,7 @@ public final class OffsetDateTime
      * <li>{@code ALIGNED_WEEK_OF_MONTH}
      * <li>{@code ALIGNED_WEEK_OF_YEAR}
      * <li>{@code MONTH_OF_YEAR}
-     * <li>{@code EPOCH_MONTH}
+     * <li>{@code PROLEPTIC_MONTH}
      * <li>{@code YEAR_OF_ERA}
      * <li>{@code YEAR}
      * <li>{@code ERA}
@@ -469,7 +469,7 @@ public final class OffsetDateTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return
      * appropriate range instances.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
@@ -479,6 +479,7 @@ public final class OffsetDateTime
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
     @Override
     public ValueRange range(TemporalField field) {
@@ -502,9 +503,9 @@ public final class OffsetDateTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time, except {@code NANO_OF_DAY}, {@code MICRO_OF_DAY},
-     * {@code EPOCH_DAY}, {@code EPOCH_MONTH} and {@code INSTANT_SECONDS} which are too
+     * {@code EPOCH_DAY}, {@code PROLEPTIC_MONTH} and {@code INSTANT_SECONDS} which are too
      * large to fit in an {@code int} and throw a {@code DateTimeException}.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -513,15 +514,20 @@ public final class OffsetDateTime
      *
      * @param field  the field to get, not null
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
     public int get(TemporalField field) {
         if (field instanceof ChronoField) {
             switch ((ChronoField) field) {
-                case INSTANT_SECONDS: throw new DateTimeException("Field too large for an int: " + field);
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
+                case INSTANT_SECONDS:
+                    throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
+                case OFFSET_SECONDS:
+                    return getOffset().getTotalSeconds();
             }
             return dateTime.get(field);
         }
@@ -538,7 +544,7 @@ public final class OffsetDateTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -548,6 +554,7 @@ public final class OffsetDateTime
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -790,7 +797,7 @@ public final class OffsetDateTime
      * <p>
      * A simple adjuster might simply set the one of the fields, such as the year field.
      * A more complex adjuster might set the date to the last day of the month.
-     * A selection of common adjustments is provided in {@link java.time.temporal.Adjusters}.
+     * A selection of common adjustments is provided in {@link TemporalAdjuster}.
      * These include finding the "last day of the month" and "next Wednesday".
      * Key date-time classes also implement the {@code TemporalAdjuster} interface,
      * such as {@link Month} and {@link java.time.MonthDay MonthDay}.
@@ -867,7 +874,7 @@ public final class OffsetDateTime
      * the matching method on {@link LocalDateTime#with(TemporalField, long) LocalDateTime}.
      * In this case, the offset is not part of the calculation and will be unchanged.
      * <p>
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
@@ -880,6 +887,7 @@ public final class OffsetDateTime
      * @param newValue  the new value of the field in the result
      * @return an {@code OffsetDateTime} based on {@code this} with the specified field set, not null
      * @throws DateTimeException if the field cannot be set
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1041,6 +1049,7 @@ public final class OffsetDateTime
      * @param unit  the unit to truncate to, not null
      * @return an {@code OffsetDateTime} based on this date-time with the time truncated, not null
      * @throws DateTimeException if unable to truncate
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     public OffsetDateTime truncatedTo(TemporalUnit unit) {
         return with(dateTime.truncatedTo(unit), offset);
@@ -1094,6 +1103,7 @@ public final class OffsetDateTime
      * @param unit  the unit of the amount to add, not null
      * @return an {@code OffsetDateTime} based on this date-time with the specified amount added, not null
      * @throws DateTimeException if the addition cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1285,6 +1295,7 @@ public final class OffsetDateTime
      * @param unit  the unit of the amount to subtract, not null
      * @return an {@code OffsetDateTime} based on this date-time with the specified amount subtracted, not null
      * @throws DateTimeException if the subtraction cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1453,17 +1464,17 @@ public final class OffsetDateTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.offset() || query == Queries.zone()) {
+        if (query == TemporalQuery.offset() || query == TemporalQuery.zone()) {
             return (R) getOffset();
-        } else if (query == Queries.zoneId()) {
+        } else if (query == TemporalQuery.zoneId()) {
             return null;
-        } else if (query == Queries.localDate()) {
+        } else if (query == TemporalQuery.localDate()) {
             return (R) toLocalDate();
-        } else if (query == Queries.localTime()) {
+        } else if (query == TemporalQuery.localTime()) {
             return (R) toLocalTime();
-        } else if (query == Queries.chronology()) {
+        } else if (query == TemporalQuery.chronology()) {
             return (R) IsoChronology.INSTANCE;
-        } else if (query == Queries.precision()) {
+        } else if (query == TemporalQuery.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -1479,8 +1490,8 @@ public final class OffsetDateTime
      * with the offset, date and time changed to be the same as this.
      * <p>
      * The adjustment is equivalent to using {@link Temporal#with(TemporalField, long)}
-     * three times, passing {@link ChronoField#OFFSET_SECONDS},
-     * {@link ChronoField#EPOCH_DAY} and {@link ChronoField#NANO_OF_DAY} as the fields.
+     * three times, passing {@link ChronoField#EPOCH_DAY},
+     * {@link ChronoField#NANO_OF_DAY} and {@link ChronoField#OFFSET_SECONDS} as the fields.
      * <p>
      * In most cases, it is clearer to reverse the calling pattern by using
      * {@link Temporal#with(TemporalAdjuster)}:
@@ -1499,10 +1510,14 @@ public final class OffsetDateTime
      */
     @Override
     public Temporal adjustInto(Temporal temporal) {
+        // OffsetDateTime is treated as three separate fields, not an instant
+        // this produces the most consistent set of results overall
+        // the offset is set after the date and time, as it is typically a small
+        // tweak to the result, with ZonedDateTime frequently ignoring the offset
         return temporal
-                .with(OFFSET_SECONDS, getOffset().getTotalSeconds())
                 .with(EPOCH_DAY, toLocalDate().toEpochDay())
-                .with(NANO_OF_DAY, toLocalTime().toNanoOfDay());
+                .with(NANO_OF_DAY, toLocalTime().toNanoOfDay())
+                .with(OFFSET_SECONDS, getOffset().getTotalSeconds());
     }
 
     /**
@@ -1552,6 +1567,7 @@ public final class OffsetDateTime
      * @param unit  the unit to measure the period in, not null
      * @return the amount of the period between this date-time and the end date-time
      * @throws DateTimeException if the period cannot be calculated
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1566,6 +1582,20 @@ public final class OffsetDateTime
             return dateTime.periodUntil(end.dateTime, unit);
         }
         return unit.between(this, endDateTime);
+    }
+
+    /**
+     * Formats this date-time using the specified formatter.
+     * <p>
+     * This date-time will be passed to the formatter to produce a string.
+     *
+     * @param formatter  the formatter to use, not null
+     * @return the formatted date-time string, not null
+     * @throws DateTimeException if an error occurs during printing
+     */
+    public String format(DateTimeFormatter formatter) {
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.format(this);
     }
 
     //-----------------------------------------------------------------------
@@ -1796,11 +1826,11 @@ public final class OffsetDateTime
      * <p>
      * The output will be one of the following ISO-8601 formats:
      * <p><ul>
-     * <li>{@code yyyy-MM-dd'T'HH:mmXXXXX}</li>
-     * <li>{@code yyyy-MM-dd'T'HH:mm:ssXXXXX}</li>
-     * <li>{@code yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX}</li>
-     * <li>{@code yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX}</li>
-     * <li>{@code yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSXXXXX}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mmXXXXX}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm:ssXXXXX}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSXXXXX}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSSXXXXX}</li>
      * </ul><p>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
@@ -1810,21 +1840,6 @@ public final class OffsetDateTime
     @Override
     public String toString() {
         return dateTime.toString() + offset.toString();
-    }
-
-    /**
-     * Outputs this date-time as a {@code String} using the formatter.
-     * <p>
-     * This date-time will be passed to the formatter
-     * {@link DateTimeFormatter#format(TemporalAccessor) format method}.
-     *
-     * @param formatter  the formatter to use, not null
-     * @return the formatted date-time string, not null
-     * @throws DateTimeException if an error occurs during printing
-     */
-    public String toString(DateTimeFormatter formatter) {
-        Objects.requireNonNull(formatter, "formatter");
-        return formatter.format(this);
     }
 
     //-----------------------------------------------------------------------

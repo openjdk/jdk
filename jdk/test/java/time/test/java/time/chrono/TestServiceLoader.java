@@ -60,10 +60,11 @@ package test.java.time.chrono;
 
 import static org.testng.Assert.assertNotNull;
 
+import java.time.chrono.Chronology;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.time.chrono.Chronology;
+
 import org.testng.annotations.Test;
 
 /**
@@ -73,7 +74,7 @@ import org.testng.annotations.Test;
 @Test
 public class TestServiceLoader {
 
-    @Test(groups="implementation")
+    @Test
     public void test_copticServiceLoader() {
         Map<String, Chronology> chronos = new HashMap<>();
         ServiceLoader<Chronology> loader = ServiceLoader.load(Chronology.class, null);
