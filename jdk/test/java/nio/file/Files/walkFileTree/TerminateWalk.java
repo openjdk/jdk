@@ -21,14 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @summary Unit test for Files.walkFileTree to test TERMINATE return value
+ * @compile TerminateWalk.java CreateFileTree.java
+ * @run main TerminateWalk
+ */
+
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
-
-/**
- * Unit test for Files.walkFileTree to test TERMINATE return value
- */
 
 public class TerminateWalk {
 
@@ -47,7 +50,7 @@ public class TerminateWalk {
     }
 
     public static void main(String[] args) throws Exception {
-        Path dir = Paths.get(args[0]);
+        Path dir = CreateFileTree.create();
 
         Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
             @Override

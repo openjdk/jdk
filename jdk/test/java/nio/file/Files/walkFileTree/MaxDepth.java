@@ -21,18 +21,21 @@
  * questions.
  */
 
+/*
+ * @test
+ * @summary Unit test for Files.walkFileTree to test maxDepth parameter
+ * @compile MaxDepth.java CreateFileTree.java
+ * @run main MaxDepth
+ */
+
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
 
-/**
- * Unit test for Files.walkFileTree to test maxDepth parameter
- */
-
 public class MaxDepth {
     public static void main(String[] args) throws Exception {
-        final Path top = Paths.get(args[0]);
+        final Path top = CreateFileTree.create();
 
         for (int i=0; i<5; i++) {
             Set<FileVisitOption> opts = Collections.emptySet();

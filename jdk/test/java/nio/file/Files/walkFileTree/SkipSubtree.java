@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,35 @@
 
 /*
  * @test
- * @summary Unit test for Files.walkFileTree to test SKIP_SIBLINGS return value
- * @compile SkipSiblings.java CreateFileTree.java
- * @run main SkipSiblings
+ * @summary Unit test for Files.walkFileTree to test SKIP_SUBTREE return value
+ * @compile SkipSubtree.java CreateFileTree.java
+ * @run main SkipSubtree
  */
-
 import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
 
-public class SkipSiblings {
+public class SkipSubtree {
 
     static final Random rand = new Random();
-    static final Set<Path> skipped = new HashSet<Path>();
+    static final Set<Path> skipped = new HashSet<>();
 
-    // check if this path's directory has been skipped
+    // check if this path should have been skipped
     static void check(Path path) {
-        if (skipped.contains(path.getParent()))
-            throw new RuntimeException(path + " should not have been visited");
+        do {
+            if (skipped.contains(path))
+                throw new RuntimeException(path + " should not have been visited");
+            path = path.getParent();
+        } while (path != null);
     }
 
-    // indicates if the siblings of this path should be skipped
+    // indicates if the subtree should be skipped
     static boolean skip(Path path) {
-        Path parent = path.getParent();
-        if (parent != null && rand.nextBoolean()) {
-            skipped.add(parent);
+        if (rand.nextInt(3) == 0) {
+            skipped.add(path);
             return true;
         }
         return false;
@@ -62,14 +65,12 @@ public class SkipSiblings {
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 check(dir);
                 if (skip(dir))
-                    return FileVisitResult.SKIP_SIBLINGS;
+                    return FileVisitResult.SKIP_SUBTREE;
                 return FileVisitResult.CONTINUE;
             }
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 check(file);
-                if (skip(file))
-                    return FileVisitResult.SKIP_SIBLINGS;
                 return FileVisitResult.CONTINUE;
             }
             @Override
@@ -77,11 +78,7 @@ public class SkipSiblings {
                 if (x != null)
                     throw new RuntimeException(x);
                 check(dir);
-                if (rand.nextBoolean()) {
-                    return FileVisitResult.CONTINUE;
-                } else {
-                    return FileVisitResult.SKIP_SIBLINGS;
-                }
+                return FileVisitResult.CONTINUE;
             }
         });
     }
