@@ -58,12 +58,12 @@ package build.tools.tzdb;
 
 import static build.tools.tzdb.Utils.*;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,132 +71,131 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 import java.util.SortedMap;
-import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
 import java.util.regex.Matcher;
+import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
 /**
- * A builder that can read the TZDB time-zone files and build {@code ZoneRules} instances.
+ * A compiler that reads a set of TZDB time-zone files and builds a single
+ * combined TZDB data file.
  *
  * @since 1.8
  */
 public final class TzdbZoneRulesCompiler {
 
-    private static final Matcher YEAR = Pattern.compile("(?i)(?<min>min)|(?<max>max)|(?<only>only)|(?<year>[0-9]+)").matcher("");
-    private static final Matcher MONTH = Pattern.compile("(?i)(jan)|(feb)|(mar)|(apr)|(may)|(jun)|(jul)|(aug)|(sep)|(oct)|(nov)|(dec)").matcher("");
-    private static final Matcher DOW = Pattern.compile("(?i)(mon)|(tue)|(wed)|(thu)|(fri)|(sat)|(sun)").matcher("");
-    private static final Matcher TIME = Pattern.compile("(?<neg>-)?+(?<hour>[0-9]{1,2})(:(?<minute>[0-5][0-9]))?+(:(?<second>[0-5][0-9]))?+").matcher("");
-
-    /**
-     * Constant for MJD 1972-01-01.
-     */
-    private static final long MJD_1972_01_01 = 41317L;
-
-    /**
-     * Reads a set of TZDB files and builds a single combined data file.
-     *
-     * @param args  the arguments
-     */
     public static void main(String[] args) {
+        new TzdbZoneRulesCompiler().compile(args);
+    }
+
+    private void compile(String[] args) {
         if (args.length < 2) {
             outputHelp();
             return;
         }
-
-        // parse args
+        Path srcDir = null;
+        Path dstFile = null;
         String version = null;
-        File baseSrcDir = null;
-        File dstDir = null;
-        boolean verbose = false;
-
-        // parse options
+        // parse args/options
         int i;
         for (i = 0; i < args.length; i++) {
             String arg = args[i];
-            if (arg.startsWith("-") == false) {
+            if (!arg.startsWith("-")) {
                 break;
             }
             if ("-srcdir".equals(arg)) {
-                if (baseSrcDir == null && ++i < args.length) {
-                    baseSrcDir = new File(args[i]);
+                if (srcDir == null && ++i < args.length) {
+                    srcDir = Paths.get(args[i]);
                     continue;
                 }
-            } else if ("-dstdir".equals(arg)) {
-                if (dstDir == null && ++i < args.length) {
-                    dstDir = new File(args[i]);
-                    continue;
-                }
-            } else if ("-version".equals(arg)) {
-                if (version == null && ++i < args.length) {
-                    version = args[i];
+            } else if ("-dstfile".equals(arg)) {
+                if (dstFile == null && ++i < args.length) {
+                    dstFile = Paths.get(args[i]);
                     continue;
                 }
             } else if ("-verbose".equals(arg)) {
-                if (verbose == false) {
+                if (!verbose) {
                     verbose = true;
                     continue;
                 }
-            } else if ("-help".equals(arg) == false) {
+            } else if (!"-help".equals(arg)) {
                 System.out.println("Unrecognised option: " + arg);
             }
             outputHelp();
             return;
         }
-
         // check source directory
-        if (baseSrcDir == null) {
-            System.out.println("Source directory must be specified using -srcdir: " + baseSrcDir);
-            return;
+        if (srcDir == null) {
+            System.err.println("Source directory must be specified using -srcdir");
+            System.exit(1);
         }
-        if (baseSrcDir.isDirectory() == false) {
-            System.out.println("Source does not exist or is not a directory: " + baseSrcDir);
-            return;
+        if (!Files.isDirectory(srcDir)) {
+            System.err.println("Source does not exist or is not a directory: " + srcDir);
+            System.exit(1);
         }
-        dstDir = (dstDir != null ? dstDir : baseSrcDir);
-
         // parse source file names
-        List<String> srcFileNames = Arrays.asList(Arrays.copyOfRange(args, i, args.length));
-        if (srcFileNames.isEmpty()) {
-            System.out.println("Source filenames not specified, using default set");
-            System.out.println("(africa antarctica asia australasia backward etcetera europe northamerica southamerica)");
-            srcFileNames = Arrays.asList("africa", "antarctica", "asia", "australasia", "backward",
-                    "etcetera", "europe", "northamerica", "southamerica");
+        if (i == args.length) {
+            i = 0;
+            args = new String[] {"africa", "antarctica", "asia", "australasia", "europe",
+                                 "northamerica","southamerica", "backward", "etcetera" };
+            System.out.println("Source filenames not specified, using default set ( ");
+            for (String name : args) {
+                System.out.printf(name + " ");
+            }
+            System.out.println(")");
         }
-
-        // find source directories to process
-        List<File> srcDirs = new ArrayList<>();
-        if (version != null) {
-            //  if the "version" specified, as in jdk repo, the "baseSrcDir" is
-            //  the "srcDir" that contains the tzdb data.
-            srcDirs.add(baseSrcDir);
-        } else {
-            File[] dirs = baseSrcDir.listFiles();
-            for (File dir : dirs) {
-                if (dir.isDirectory() && dir.getName().matches("[12][0-9]{3}[A-Za-z0-9._-]+")) {
-                    srcDirs.add(dir);
-                }
+        // source files in this directory
+        List<Path> srcFiles = new ArrayList<>();
+        for (; i < args.length; i++) {
+            Path file = srcDir.resolve(args[i]);
+            if (Files.exists(file)) {
+                srcFiles.add(file);
+            } else {
+                System.err.println("Source directory does not contain source file: " + args[i]);
+                System.exit(1);
             }
         }
-        if (srcDirs.isEmpty()) {
-            System.out.println("Source directory contains no valid source folders: " + baseSrcDir);
-            return;
+        // check destination file
+        if (dstFile == null) {
+            dstFile = srcDir.resolve("tzdb.dat");
+        } else {
+            Path parent = dstFile.getParent();
+            if (parent != null && !Files.exists(parent)) {
+                System.err.println("Destination directory does not exist: " + parent);
+                System.exit(1);
+            }
         }
-        // check destination directory
-        if (dstDir.exists() == false && dstDir.mkdirs() == false) {
-            System.out.println("Destination directory could not be created: " + dstDir);
-            return;
+        try {
+            // get tzdb source version
+            Matcher m = Pattern.compile("tzdata(?<ver>[0-9]{4}[A-z])")
+                               .matcher(new String(Files.readAllBytes(srcDir.resolve("VERSION")),
+                                                   "ISO-8859-1"));
+            if (m.find()) {
+                version = m.group("ver");
+            } else {
+                System.exit(1);
+                System.err.println("Source directory does not contain file: VERSION");
+            }
+            printVerbose("Compiling TZDB version " + version);
+            // parse source files
+            for (Path file : srcFiles) {
+                printVerbose("Parsing file: " + file);
+                parseFile(file);
+            }
+            // build zone rules
+            printVerbose("Building rules");
+            buildZoneRules();
+            // output to file
+            printVerbose("Outputting tzdb file: " + dstFile);
+            outputFile(dstFile, version, builtZones, links);
+        } catch (Exception ex) {
+            System.out.println("Failed: " + ex.toString());
+            ex.printStackTrace();
+            System.exit(1);
         }
-        if (dstDir.isDirectory() == false) {
-            System.out.println("Destination is not a directory: " + dstDir);
-            return;
-        }
-        process(srcDirs, srcFileNames, dstDir, version, verbose);
         System.exit(0);
     }
 
@@ -206,145 +205,35 @@ public final class TzdbZoneRulesCompiler {
     private static void outputHelp() {
         System.out.println("Usage: TzdbZoneRulesCompiler <options> <tzdb source filenames>");
         System.out.println("where options include:");
-        System.out.println("   -srcdir <directory>   Where to find source directories (required)");
-        System.out.println("   -dstdir <directory>   Where to output generated files (default srcdir)");
-        System.out.println("   -version <version>    Specify the version, such as 2009a (optional)");
+        System.out.println("   -srcdir  <directory>  Where to find tzdb source directory (required)");
+        System.out.println("   -dstfile <file>       Where to output generated file (default srcdir/tzdb.dat)");
         System.out.println("   -help                 Print this usage message");
         System.out.println("   -verbose              Output verbose information during compilation");
-        System.out.println(" There must be one directory for each version in srcdir");
-        System.out.println(" Each directory must have the name of the version, such as 2009a");
-        System.out.println(" Each directory must contain the unpacked tzdb files, such as asia or europe");
-        System.out.println(" Directories must match the regex [12][0-9][0-9][0-9][A-Za-z0-9._-]+");
-        System.out.println(" There will be one jar file for each version and one combined jar in dstdir");
-        System.out.println(" If the version is specified, only that version is processed");
-    }
-
-    /**
-     * Process to create the jar files.
-     */
-    private static void process(List<File> srcDirs, List<String> srcFileNames, File dstDir, String version, boolean verbose) {
-        // build actual jar files
-        Map<String, SortedMap<String, ZoneRules>> allBuiltZones = new TreeMap<>();
-        Set<String> allRegionIds = new TreeSet<String>();
-        Set<ZoneRules> allRules = new HashSet<ZoneRules>();
-        Map<String, Map<String, String>> allLinks = new TreeMap<>();
-
-        for (File srcDir : srcDirs) {
-            // source files in this directory
-            List<File> srcFiles = new ArrayList<>();
-            for (String srcFileName : srcFileNames) {
-                File file = new File(srcDir, srcFileName);
-                if (file.exists()) {
-                    srcFiles.add(file);
-                }
-            }
-            if (srcFiles.isEmpty()) {
-                continue;  // nothing to process
-            }
-
-            // compile
-            String loopVersion = (srcDirs.size() == 1 && version != null)
-                                 ? version : srcDir.getName();
-            TzdbZoneRulesCompiler compiler = new TzdbZoneRulesCompiler(loopVersion, srcFiles, verbose);
-            try {
-                // compile
-                compiler.compile();
-                SortedMap<String, ZoneRules> builtZones = compiler.getZones();
-
-                // output version-specific file
-                File dstFile = version == null ? new File(dstDir, "tzdb" + loopVersion + ".jar")
-                                               : new File(dstDir, "tzdb.jar");
-                if (verbose) {
-                    System.out.println("Outputting file: " + dstFile);
-                }
-                outputFile(dstFile, loopVersion, builtZones, compiler.links);
-
-                // create totals
-                allBuiltZones.put(loopVersion, builtZones);
-                allRegionIds.addAll(builtZones.keySet());
-                allRules.addAll(builtZones.values());
-                allLinks.put(loopVersion, compiler.links);
-            } catch (Exception ex) {
-                System.out.println("Failed: " + ex.toString());
-                ex.printStackTrace();
-                System.exit(1);
-            }
-        }
-
-        // output merged file
-        if (version == null) {
-            File dstFile = new File(dstDir, "tzdb-all.jar");
-            if (verbose) {
-                System.out.println("Outputting combined file: " + dstFile);
-            }
-            outputFile(dstFile, allBuiltZones, allRegionIds, allRules, allLinks);
-        }
+        System.out.println(" The source directory must contain the unpacked tzdb files, such as asia or europe");
     }
 
     /**
      * Outputs the file.
      */
-    private static void outputFile(File dstFile,
-                                   String version,
-                                   SortedMap<String, ZoneRules> builtZones,
-                                   Map<String, String> links) {
-        Map<String, SortedMap<String, ZoneRules>> loopAllBuiltZones = new TreeMap<>();
-        loopAllBuiltZones.put(version, builtZones);
-        Set<String> loopAllRegionIds = new TreeSet<String>(builtZones.keySet());
-        Set<ZoneRules> loopAllRules = new HashSet<ZoneRules>(builtZones.values());
-        Map<String, Map<String, String>> loopAllLinks = new TreeMap<>();
-        loopAllLinks.put(version, links);
-        outputFile(dstFile, loopAllBuiltZones, loopAllRegionIds, loopAllRules, loopAllLinks);
-    }
-
-    /**
-     * Outputs the file.
-     */
-    private static void outputFile(File dstFile,
-                                   Map<String, SortedMap<String, ZoneRules>> allBuiltZones,
-                                   Set<String> allRegionIds,
-                                   Set<ZoneRules> allRules,
-                                   Map<String, Map<String, String>> allLinks) {
-        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(dstFile))) {
-            outputTZEntry(jos, allBuiltZones, allRegionIds, allRules, allLinks);
-        } catch (Exception ex) {
-            System.out.println("Failed: " + ex.toString());
-            ex.printStackTrace();
-            System.exit(1);
-        }
-    }
-
-    /**
-     * Outputs the timezone entry in the JAR file.
-     */
-    private static void outputTZEntry(JarOutputStream jos,
-                                      Map<String, SortedMap<String, ZoneRules>> allBuiltZones,
-                                      Set<String> allRegionIds,
-                                      Set<ZoneRules> allRules,
-                                      Map<String, Map<String, String>> allLinks) {
-        // this format is not publicly specified
-        try {
-            jos.putNextEntry(new ZipEntry("TZDB.dat"));
-            DataOutputStream out = new DataOutputStream(jos);
-
+    private void outputFile(Path dstFile, String version,
+                            SortedMap<String, ZoneRules> builtZones,
+                            Map<String, String> links) {
+        try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(dstFile))) {
             // file version
             out.writeByte(1);
             // group
             out.writeUTF("TZDB");
             // versions
-            String[] versionArray = allBuiltZones.keySet().toArray(new String[allBuiltZones.size()]);
-            out.writeShort(versionArray.length);
-            for (String version : versionArray) {
-                out.writeUTF(version);
-            }
+            out.writeShort(1);
+            out.writeUTF(version);
             // regions
-            String[] regionArray = allRegionIds.toArray(new String[allRegionIds.size()]);
+            String[] regionArray = builtZones.keySet().toArray(new String[builtZones.size()]);
             out.writeShort(regionArray.length);
             for (String regionId : regionArray) {
                 out.writeUTF(regionId);
             }
-            // rules
-            List<ZoneRules> rulesList = new ArrayList<>(allRules);
+            // rules  -- hashset -> remove the dup
+            List<ZoneRules> rulesList = new ArrayList<>(new HashSet<>(builtZones.values()));
             out.writeShort(rulesList.size());
             ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
             for (ZoneRules rules : rulesList) {
@@ -357,27 +246,22 @@ public final class TzdbZoneRulesCompiler {
                 out.write(bytes);
             }
             // link version-region-rules
-            for (String version : allBuiltZones.keySet()) {
-                out.writeShort(allBuiltZones.get(version).size());
-                for (Map.Entry<String, ZoneRules> entry : allBuiltZones.get(version).entrySet()) {
-                     int regionIndex = Arrays.binarySearch(regionArray, entry.getKey());
-                     int rulesIndex = rulesList.indexOf(entry.getValue());
-                     out.writeShort(regionIndex);
-                     out.writeShort(rulesIndex);
-                }
+            out.writeShort(builtZones.size());
+            for (Map.Entry<String, ZoneRules> entry : builtZones.entrySet()) {
+                 int regionIndex = Arrays.binarySearch(regionArray, entry.getKey());
+                 int rulesIndex = rulesList.indexOf(entry.getValue());
+                 out.writeShort(regionIndex);
+                 out.writeShort(rulesIndex);
             }
             // alias-region
-            for (String version : allLinks.keySet()) {
-                out.writeShort(allLinks.get(version).size());
-                for (Map.Entry<String, String> entry : allLinks.get(version).entrySet()) {
-                     int aliasIndex = Arrays.binarySearch(regionArray, entry.getKey());
-                     int regionIndex = Arrays.binarySearch(regionArray, entry.getValue());
-                     out.writeShort(aliasIndex);
-                     out.writeShort(regionIndex);
-                }
+            out.writeShort(links.size());
+            for (Map.Entry<String, String> entry : links.entrySet()) {
+                 int aliasIndex = Arrays.binarySearch(regionArray, entry.getKey());
+                 int regionIndex = Arrays.binarySearch(regionArray, entry.getValue());
+                 out.writeShort(aliasIndex);
+                 out.writeShort(regionIndex);
             }
             out.flush();
-            jos.closeEntry();
         } catch (Exception ex) {
             System.out.println("Failed: " + ex.toString());
             ex.printStackTrace();
@@ -385,76 +269,30 @@ public final class TzdbZoneRulesCompiler {
         }
     }
 
-    //-----------------------------------------------------------------------
+    private static final Pattern YEAR = Pattern.compile("(?i)(?<min>min)|(?<max>max)|(?<only>only)|(?<year>[0-9]+)");
+    private static final Pattern MONTH = Pattern.compile("(?i)(jan)|(feb)|(mar)|(apr)|(may)|(jun)|(jul)|(aug)|(sep)|(oct)|(nov)|(dec)");
+    private static final Matcher DOW = Pattern.compile("(?i)(mon)|(tue)|(wed)|(thu)|(fri)|(sat)|(sun)").matcher("");
+    private static final Matcher TIME = Pattern.compile("(?<neg>-)?+(?<hour>[0-9]{1,2})(:(?<minute>[0-5][0-9]))?+(:(?<second>[0-5][0-9]))?+").matcher("");
+
     /** The TZDB rules. */
     private final Map<String, List<TZDBRule>> rules = new HashMap<>();
 
     /** The TZDB zones. */
     private final Map<String, List<TZDBZone>> zones = new HashMap<>();
-    /** The TZDB links. */
 
+    /** The TZDB links. */
     private final Map<String, String> links = new HashMap<>();
 
     /** The built zones. */
     private final SortedMap<String, ZoneRules> builtZones = new TreeMap<>();
 
-
-    /** The version to produce. */
-    private final String version;
-
-    /** The source files. */
-
-    private final List<File> sourceFiles;
-
-    /** The version to produce. */
-    private final boolean verbose;
+    /** Whether to output verbose messages. */
+    private boolean verbose;
 
     /**
-     * Creates an instance if you want to invoke the compiler manually.
-     *
-     * @param version  the version, such as 2009a, not null
-     * @param sourceFiles  the list of source files, not empty, not null
-     * @param verbose  whether to output verbose messages
+     * private contructor
      */
-    public TzdbZoneRulesCompiler(String version, List<File> sourceFiles, boolean verbose) {
-        this.version = version;
-        this.sourceFiles = sourceFiles;
-        this.verbose = verbose;
-    }
-
-    /**
-     * Compile the rules file.
-     * <p>
-     * Use {@link #getZones()} to retrieve the parsed data.
-     *
-     * @throws Exception if an error occurs
-     */
-    public void compile() throws Exception {
-        printVerbose("Compiling TZDB version " + version);
-        parseFiles();
-        buildZoneRules();
-        printVerbose("Compiled TZDB version " + version);
-    }
-
-    /**
-     * Gets the parsed zone rules.
-     *
-     * @return the parsed zone rules, not null
-     */
-    public SortedMap<String, ZoneRules> getZones() {
-        return builtZones;
-    }
-
-    /**
-     * Parses the source files.
-     *
-     * @throws Exception if an error occurs
-     */
-    private void parseFiles() throws Exception {
-        for (File file : sourceFiles) {
-            printVerbose("Parsing file: " + file);
-            parseFile(file);
-        }
+    private TzdbZoneRulesCompiler() {
     }
 
     /**
@@ -463,14 +301,14 @@ public final class TzdbZoneRulesCompiler {
      * @param file  the file being read, not null
      * @throws Exception if an error occurs
      */
-    private void parseFile(File file) throws Exception {
+    private void parseFile(Path file) throws Exception {
         int lineNumber = 1;
         String line = null;
-        BufferedReader in = null;
         try {
-            in = new BufferedReader(new FileReader(file));
+            List<String> lines = Files.readAllLines(file, StandardCharsets.ISO_8859_1);
             List<TZDBZone> openZone = null;
-            for ( ; (line = in.readLine()) != null; lineNumber++) {
+            for (; lineNumber < lines.size(); lineNumber++) {
+                line = lines.get(lineNumber);
                 int index = line.indexOf('#');  // remove comments (doesn't handle # in quotes)
                 if (index >= 0) {
                     line = line.substring(0, index);
@@ -478,41 +316,43 @@ public final class TzdbZoneRulesCompiler {
                 if (line.trim().length() == 0) {  // ignore blank lines
                     continue;
                 }
-                StringTokenizer st = new StringTokenizer(line, " \t");
-                if (openZone != null && Character.isWhitespace(line.charAt(0)) && st.hasMoreTokens()) {
-                    if (parseZoneLine(st, openZone)) {
+                Scanner s = new Scanner(line);
+                if (openZone != null && Character.isWhitespace(line.charAt(0)) && s.hasNext()) {
+                    if (parseZoneLine(s, openZone)) {
                         openZone = null;
                     }
                 } else {
-                    if (st.hasMoreTokens()) {
-                        String first = st.nextToken();
+                    if (s.hasNext()) {
+                        String first = s.next();
                         if (first.equals("Zone")) {
-                            if (st.countTokens() < 3) {
+                            openZone = new ArrayList<>();
+                            try {
+                                zones.put(s.next(), openZone);
+                                if (parseZoneLine(s, openZone)) {
+                                    openZone = null;
+                                }
+                            } catch (NoSuchElementException x) {
                                 printVerbose("Invalid Zone line in file: " + file + ", line: " + line);
                                 throw new IllegalArgumentException("Invalid Zone line");
-                            }
-                            openZone = new ArrayList<>();
-                            zones.put(st.nextToken(), openZone);
-                            if (parseZoneLine(st, openZone)) {
-                                openZone = null;
                             }
                         } else {
                             openZone = null;
                             if (first.equals("Rule")) {
-                                if (st.countTokens() < 9) {
+                                try {
+                                    parseRuleLine(s);
+                                } catch (NoSuchElementException x) {
                                     printVerbose("Invalid Rule line in file: " + file + ", line: " + line);
                                     throw new IllegalArgumentException("Invalid Rule line");
                                 }
-                                parseRuleLine(st);
-
                             } else if (first.equals("Link")) {
-                                if (st.countTokens() < 2) {
+                                try {
+                                    String realId = s.next();
+                                    String aliasId = s.next();
+                                    links.put(aliasId, realId);
+                                } catch (NoSuchElementException x) {
                                     printVerbose("Invalid Link line in file: " + file + ", line: " + line);
                                     throw new IllegalArgumentException("Invalid Link line");
                                 }
-                                String realId = st.nextToken();
-                                String aliasId = st.nextToken();
-                                links.put(aliasId, realId);
 
                             } else {
                                 throw new IllegalArgumentException("Unknown line");
@@ -522,52 +362,44 @@ public final class TzdbZoneRulesCompiler {
                 }
             }
         } catch (Exception ex) {
-            throw new Exception("Failed while processing file '" + file + "' on line " + lineNumber + " '" + line + "'", ex);
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (Exception ex) {
-                // ignore NPE and IOE
-            }
+            throw new Exception("Failed while parsing file '" + file + "' on line " + lineNumber + " '" + line + "'", ex);
         }
     }
 
     /**
      * Parses a Rule line.
      *
-     * @param st  the tokenizer, not null
+     * @param s  the line scanner, not null
      */
-    private void parseRuleLine(StringTokenizer st) {
+    private void parseRuleLine(Scanner s) {
         TZDBRule rule = new TZDBRule();
-        String name = st.nextToken();
+        String name = s.next();
         if (rules.containsKey(name) == false) {
             rules.put(name, new ArrayList<TZDBRule>());
         }
         rules.get(name).add(rule);
-        rule.startYear = parseYear(st.nextToken(), 0);
-        rule.endYear = parseYear(st.nextToken(), rule.startYear);
+        rule.startYear = parseYear(s, 0);
+        rule.endYear = parseYear(s, rule.startYear);
         if (rule.startYear > rule.endYear) {
             throw new IllegalArgumentException("Year order invalid: " + rule.startYear + " > " + rule.endYear);
         }
-        parseOptional(st.nextToken());  // type is unused
-        parseMonthDayTime(st, rule);
-        rule.savingsAmount = parsePeriod(st.nextToken());
-        rule.text = parseOptional(st.nextToken());
+        parseOptional(s.next());  // type is unused
+        parseMonthDayTime(s, rule);
+        rule.savingsAmount = parsePeriod(s.next());
+        rule.text = parseOptional(s.next());
     }
 
     /**
      * Parses a Zone line.
      *
-     * @param st  the tokenizer, not null
+     * @param s  the line scanner, not null
      * @return true if the zone is complete
      */
-    private boolean parseZoneLine(StringTokenizer st, List<TZDBZone> zoneList) {
+    private boolean parseZoneLine(Scanner s, List<TZDBZone> zoneList) {
         TZDBZone zone = new TZDBZone();
         zoneList.add(zone);
-        zone.standardOffset = parseOffset(st.nextToken());
-        String savingsRule = parseOptional(st.nextToken());
+        zone.standardOffset = parseOffset(s.next());
+        String savingsRule = parseOptional(s.next());
         if (savingsRule == null) {
             zone.fixedSavingsSecs = 0;
             zone.savingsRule = null;
@@ -580,11 +412,11 @@ public final class TzdbZoneRulesCompiler {
                 zone.savingsRule = savingsRule;
             }
         }
-        zone.text = st.nextToken();
-        if (st.hasMoreTokens()) {
-            zone.year = Integer.parseInt(st.nextToken());
-            if (st.hasMoreTokens()) {
-                parseMonthDayTime(st, zone);
+        zone.text = s.next();
+        if (s.hasNext()) {
+            zone.year = Integer.parseInt(s.next());
+            if (s.hasNext()) {
+                parseMonthDayTime(s, zone);
             }
             return false;
         } else {
@@ -595,13 +427,13 @@ public final class TzdbZoneRulesCompiler {
     /**
      * Parses a Rule line.
      *
-     * @param st  the tokenizer, not null
+     * @param s  the line scanner, not null
      * @param mdt  the object to parse into, not null
      */
-    private void parseMonthDayTime(StringTokenizer st, TZDBMonthDayTime mdt) {
-        mdt.month = parseMonth(st.nextToken());
-        if (st.hasMoreTokens()) {
-            String dayRule = st.nextToken();
+    private void parseMonthDayTime(Scanner s, TZDBMonthDayTime mdt) {
+        mdt.month = parseMonth(s);
+        if (s.hasNext()) {
+            String dayRule = s.next();
             if (dayRule.startsWith("last")) {
                 mdt.dayOfMonth = -1;
                 mdt.dayOfWeek = parseDayOfWeek(dayRule.substring(4));
@@ -621,8 +453,8 @@ public final class TzdbZoneRulesCompiler {
                 }
                 mdt.dayOfMonth = Integer.parseInt(dayRule);
             }
-            if (st.hasMoreTokens()) {
-                String timeStr = st.nextToken();
+            if (s.hasNext()) {
+                String timeStr = s.next();
                 int secsOfDay = parseSecs(timeStr);
                 if (secsOfDay == 86400) {
                     mdt.endOfDay = true;
@@ -635,30 +467,43 @@ public final class TzdbZoneRulesCompiler {
         }
     }
 
-    private int parseYear(String str, int defaultYear) {
-        if (YEAR.reset(str).matches()) {
-            if (YEAR.group("min") != null) {
-                //return YEAR_MIN_VALUE;
+    private int parseYear(Scanner s, int defaultYear) {
+        if (s.hasNext(YEAR)) {
+            s.next(YEAR);
+            MatchResult mr = s.match();
+            if (mr.group(1) != null) {
                 return 1900;  // systemv has min
-            } else if (YEAR.group("max") != null) {
+            } else if (mr.group(2) != null) {
                 return YEAR_MAX_VALUE;
-            } else if (YEAR.group("only") != null) {
+            } else if (mr.group(3) != null) {
                 return defaultYear;
             }
-            return Integer.parseInt(YEAR.group("year"));
+            return Integer.parseInt(mr.group(4));
+            /*
+            if (mr.group("min") != null) {
+                //return YEAR_MIN_VALUE;
+                return 1900;  // systemv has min
+            } else if (mr.group("max") != null) {
+                return YEAR_MAX_VALUE;
+            } else if (mr.group("only") != null) {
+                return defaultYear;
+            }
+            return Integer.parseInt(mr.group("year"));
+            */
         }
-        throw new IllegalArgumentException("Unknown year: " + str);
+        throw new IllegalArgumentException("Unknown year: " + s.next());
     }
 
-    private int parseMonth(String str) {
-        if (MONTH.reset(str).matches()) {
+    private int parseMonth(Scanner s) {
+        if (s.hasNext(MONTH)) {
+            s.next(MONTH);
             for (int moy = 1; moy < 13; moy++) {
-                if (MONTH.group(moy) != null) {
+                if (s.match().group(moy) != null) {
                     return moy;
                 }
             }
         }
-        throw new IllegalArgumentException("Unknown month: " + str);
+        throw new IllegalArgumentException("Unknown month: " + s.next());
     }
 
     private int parseDayOfWeek(String str) {
@@ -729,7 +574,6 @@ public final class TzdbZoneRulesCompiler {
         }
     }
 
-    //-----------------------------------------------------------------------
     /**
      * Build the rules, zones and links into real zones.
      *
@@ -744,8 +588,7 @@ public final class TzdbZoneRulesCompiler {
             for (TZDBZone tzdbZone : tzdbZones) {
                 bld = tzdbZone.addToBuilder(bld, rules);
             }
-            ZoneRules buildRules = bld.toRules(zoneId);
-            builtZones.put(zoneId, buildRules);
+            builtZones.put(zoneId, bld.toRules(zoneId));
         }
 
         // build aliases
@@ -758,25 +601,25 @@ public final class TzdbZoneRulesCompiler {
                 printVerbose("Relinking alias " + aliasId + " to " + realId);
                 realRules = builtZones.get(realId);
                 if (realRules == null) {
-                    throw new IllegalArgumentException("Alias '" + aliasId + "' links to invalid zone '" + realId + "' for '" + version + "'");
+                    throw new IllegalArgumentException("Alias '" + aliasId + "' links to invalid zone '" + realId);
                 }
                 links.put(aliasId, realId);
-
             }
             builtZones.put(aliasId, realRules);
         }
-
         // remove UTC and GMT
-        //builtZones.remove("UTC");
-        //builtZones.remove("GMT");
-        //builtZones.remove("GMT0");
+        // builtZones.remove("UTC");
+        // builtZones.remove("GMT");
+        // builtZones.remove("GMT0");
         builtZones.remove("GMT+0");
         builtZones.remove("GMT-0");
         links.remove("GMT+0");
         links.remove("GMT-0");
+        // remove ROC, which is not supported in j.u.tz
+        builtZones.remove("ROC");
+        links.remove("ROC");
     }
 
-    //-----------------------------------------------------------------------
     /**
      * Prints a verbose message.
      *
@@ -788,7 +631,6 @@ public final class TzdbZoneRulesCompiler {
         }
     }
 
-    //-----------------------------------------------------------------------
     /**
      * Class representing a month-day-time in the TZDB file.
      */
@@ -893,5 +735,4 @@ public final class TzdbZoneRulesCompiler {
             return ldt;
         }
     }
-
 }

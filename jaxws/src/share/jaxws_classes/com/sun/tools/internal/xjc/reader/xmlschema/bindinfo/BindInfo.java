@@ -35,6 +35,7 @@ import java.util.List;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlMixed;
@@ -46,6 +47,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import com.sun.codemodel.internal.JDocComment;
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.tools.internal.xjc.SchemaCache;
 import com.sun.tools.internal.xjc.model.CCustomizations;
 import com.sun.tools.internal.xjc.model.CPluginCustomization;
@@ -54,8 +56,6 @@ import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
 import com.sun.xml.internal.bind.annotation.XmlLocation;
 import com.sun.xml.internal.bind.marshaller.MinimumEscapeHandler;
-import com.sun.xml.internal.bind.v2.WellKnownNamespace;
-import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.xsom.XSComponent;
 
 import org.w3c.dom.Element;
@@ -69,7 +69,7 @@ import org.xml.sax.Locator;
  * @author
  *     Kohsuke Kawaguchi (kohsuke,kawaguchi@sun.com)
  */
-@XmlRootElement(namespace=WellKnownNamespace.XML_SCHEMA,name="annotation")
+@XmlRootElement(namespace= WellKnownNamespace.XML_SCHEMA,name="annotation")
 @XmlType(namespace=WellKnownNamespace.XML_SCHEMA,name="foobar")
 public final class BindInfo implements Iterable<BIDeclaration> {
 
@@ -311,33 +311,42 @@ public final class BindInfo implements Iterable<BIDeclaration> {
     /**
      * Lazily prepared {@link JAXBContext}.
      */
-    private static JAXBContextImpl customizationContext;
+    private static volatile JAXBContext customizationContext;
 
-    public static JAXBContextImpl getJAXBContext() {
-        synchronized(AnnotationParserFactoryImpl.class) {
-            try {
-                if(customizationContext==null)
-                    customizationContext = new JAXBContextImpl.JAXBContextBuilder().setClasses(
-                        new Class[] {
-                            BindInfo.class, // for xs:annotation
-                            BIClass.class,
-                            BIConversion.User.class,
-                            BIConversion.UserAdapter.class,
-                            BIDom.class,
-                            BIFactoryMethod.class,
-                            BIInlineBinaryData.class,
-                            BIXDom.class,
-                            BIXSubstitutable.class,
-                            BIEnum.class,
-                            BIEnumMember.class,
-                            BIGlobalBinding.class,
-                            BIProperty.class,
-                            BISchemaBinding.class
-                        }).build();
-                return customizationContext;
-            } catch (JAXBException e) {
-                throw new AssertionError(e);
+    public static JAXBContext getCustomizationContext() {
+        try {
+            if (customizationContext == null) {
+                synchronized (BindInfo.class) {
+                    if (customizationContext == null) {
+                        customizationContext = JAXBContext.newInstance(
+                                BindInfo.class, // for xs:annotation
+                                BIClass.class,
+                                BIConversion.User.class,
+                                BIConversion.UserAdapter.class,
+                                BIDom.class,
+                                BIFactoryMethod.class,
+                                BIInlineBinaryData.class,
+                                BIXDom.class,
+                                BIXSubstitutable.class,
+                                BIEnum.class,
+                                BIEnumMember.class,
+                                BIGlobalBinding.class,
+                                BIProperty.class,
+                                BISchemaBinding.class);
+                    }
+                }
             }
+            return customizationContext;
+        } catch (JAXBException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    public static Unmarshaller getCustomizationUnmarshaller() {
+        try {
+            return getCustomizationContext().createUnmarshaller();
+        } catch (JAXBException e) {
+            throw new AssertionError(e);
         }
     }
 

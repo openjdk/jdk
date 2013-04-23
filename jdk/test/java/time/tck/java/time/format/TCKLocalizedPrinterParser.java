@@ -63,7 +63,6 @@ import static org.testng.Assert.assertEquals;
 
 import java.text.DateFormat;
 import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;

@@ -114,9 +114,6 @@ Java_java_net_Inet4AddressImpl_getLocalHostName (JNIEnv *env, jobject this) {
 static jclass ni_iacls;
 static jclass ni_ia4cls;
 static jmethodID ni_ia4ctrID;
-static jfieldID ni_iaaddressID;
-static jfieldID ni_iahostID;
-static jfieldID ni_iafamilyID;
 static int initialized = 0;
 
 /*
@@ -149,9 +146,6 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
       ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
       ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
       ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
-      ni_iaaddressID = (*env)->GetFieldID(env, ni_iacls, "address", "I");
-      ni_iafamilyID = (*env)->GetFieldID(env, ni_iacls, "family", "I");
-      ni_iahostID = (*env)->GetFieldID(env, ni_iacls, "hostName", "Ljava/lang/String;");
       initialized = 1;
     }
 
@@ -208,8 +202,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
           ret = NULL;
           goto cleanupAndReturn;
         }
-        (*env)->SetIntField(env, iaObj, ni_iaaddressID,
-                            ntohl(address));
+        setInetAddress_addr(env, iaObj, ntohl(address));
         (*env)->SetObjectArrayElement(env, ret, 0, iaObj);
         JNU_ReleaseStringPlatformChars(env, host, hostname);
         return ret;
@@ -242,9 +235,8 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
             ret = NULL;
             goto cleanupAndReturn;
           }
-          (*env)->SetIntField(env, iaObj, ni_iaaddressID,
-                              ntohl((*addrp)->s_addr));
-          (*env)->SetObjectField(env, iaObj, ni_iahostID, host);
+          setInetAddress_addr(env, iaObj, ntohl((*addrp)->s_addr));
+          setInetAddress_hostName(env, iaObj, host);
           (*env)->SetObjectArrayElement(env, ret, i, iaObj);
           addrp++;
           i++;

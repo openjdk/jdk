@@ -25,7 +25,6 @@
 
 package javax.xml.bind;
 
-import java.awt.*;
 import java.security.BasicPermission;
 
 /**
@@ -61,7 +60,7 @@ import java.security.BasicPermission;
  *     Malicious code can set {@link DatatypeConverterInterface}, which has
  *     VM-wide singleton semantics,  before a genuine JAXB implementation sets one.
  *     This allows malicious code to gain access to objects that it may otherwise
- *     not have access to, such as {@link Frame#getFrames()} that belongs to
+ *     not have access to, such as {@link java.awt.Frame#getFrames()} that belongs to
  *     another application running in the same JVM.
  *   </td>
  * </tr>

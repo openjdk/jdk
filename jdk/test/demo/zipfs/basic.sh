@@ -22,7 +22,7 @@
 #
 # @test
 # @bug 6990846 7009092 7009085 7015391 7014948 7005986 7017840 7007596
-# 7157656
+# 7157656 8002390
 # @summary Test ZipFileSystem demo
 # @build Basic PathOps ZipFSTester
 # @run shell basic.sh

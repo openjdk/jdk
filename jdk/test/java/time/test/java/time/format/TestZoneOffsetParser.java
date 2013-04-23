@@ -73,7 +73,7 @@ import org.testng.annotations.Test;
 /**
  * Test ZoneOffsetPrinterParser.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestZoneOffsetParser extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
