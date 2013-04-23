@@ -115,6 +115,10 @@ public class TimestampToken {
         return nonce;
     }
 
+    public String getPolicyID() {
+        return policy.toString();
+    }
+
     public BigInteger getSerialNumber() {
         return serialNumber;
     }
