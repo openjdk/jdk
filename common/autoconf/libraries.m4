@@ -182,7 +182,7 @@ CFLAGS="$CFLAGS $X_CFLAGS"
 # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
 AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h],
                  [X11_A_OK=yes],
-                 [X11_A_OK=no],
+                 [X11_A_OK=no; break],
                  [ # include <X11/Xlib.h>
                    # include <X11/Xutil.h>
                  ])
@@ -499,11 +499,36 @@ AC_SUBST(USE_EXTERNAL_LIBJPEG)
 # Check for the gif library
 #
 
-USE_EXTERNAL_LIBJPEG=true
-AC_CHECK_LIB(gif, main, [],
-             [ USE_EXTERNAL_LIBGIF=false
-               AC_MSG_NOTICE([Will use gif decoder bundled with the OpenJDK source])
-             ])
+AC_ARG_WITH(giflib, [AS_HELP_STRING([--with-giflib],
+	[use giflib from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
+
+
+AC_MSG_CHECKING([for which giflib to use])
+
+# default is bundled
+DEFAULT_GIFLIB=bundled
+
+#
+# if user didn't specify, use DEFAULT_GIFLIB
+#
+if test "x${with_giflib}" = "x"; then
+    with_giflib=${DEFAULT_GIFLIB}
+fi
+
+AC_MSG_RESULT(${with_giflib})
+
+if test "x${with_giflib}" = "xbundled"; then
+    USE_EXTERNAL_LIBGIF=false
+elif test "x${with_giflib}" = "xsystem"; then
+    AC_CHECK_HEADER(gif_lib.h, [],
+             [ AC_MSG_ERROR([--with-giflib=system specified, but gif_lib.h not found!])])
+    AC_CHECK_LIB(gif, DGifGetCode, [],
+             [ AC_MSG_ERROR([--with-giflib=system specified, but no giflib found!])])
+
+    USE_EXTERNAL_LIBGIF=true
+else
+    AC_MSG_ERROR([Invalid value of --with-giflib: ${with_giflib}, use 'system' or 'bundled'])
+fi
 AC_SUBST(USE_EXTERNAL_LIBGIF)
 
 ###############################################################################
@@ -662,7 +687,7 @@ if test "x$OPENJDK_TARGET_OS" = xlinux; then
     AC_MSG_CHECKING([how to link with libstdc++])
     # If dynamic was requested, it's available since it would fail above otherwise.
     # If dynamic wasn't requested, go with static unless it isn't available.
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno; then
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
         LIBCXX="$LIBCXX -lstdc++"
         LDCXX="$CXX"
         STATIC_CXX_SETTING="STATIC_CXX=false"
@@ -675,6 +700,59 @@ if test "x$OPENJDK_TARGET_OS" = xlinux; then
     fi
 fi
 AC_SUBST(STATIC_CXX_SETTING)
+
+if test "x$JVM_VARIANT_ZERO" = xtrue || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    # Figure out LIBFFI_CFLAGS and LIBFFI_LIBS
+    PKG_CHECK_MODULES([LIBFFI], [libffi])
+
+fi
+
+if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    AC_CHECK_PROG([LLVM_CONFIG], [llvm-config], [llvm-config])
+
+    if test "x$LLVM_CONFIG" != xllvm-config; then
+        AC_MSG_ERROR([llvm-config not found in $PATH.])
+    fi
+
+    llvm_components="jit mcjit engine nativecodegen native"
+    unset LLVM_CFLAGS
+    for flag in $("$LLVM_CONFIG" --cxxflags); do
+      if echo "${flag}" | grep -q '^-@<:@ID@:>@'; then
+        if test "${flag}" != "-D_DEBUG" ; then
+          if test "${LLVM_CFLAGS}" != "" ; then
+            LLVM_CFLAGS="${LLVM_CFLAGS} "
+          fi
+          LLVM_CFLAGS="${LLVM_CFLAGS}${flag}"
+        fi
+      fi
+    done
+    llvm_version=$("${LLVM_CONFIG}" --version | sed 's/\.//; s/svn.*//')
+    LLVM_CFLAGS="${LLVM_CFLAGS} -DSHARK_LLVM_VERSION=${llvm_version}"
+
+    unset LLVM_LDFLAGS
+    for flag in $("${LLVM_CONFIG}" --ldflags); do
+      if echo "${flag}" | grep -q '^-L'; then
+        if test "${LLVM_LDFLAGS}" != ""; then
+          LLVM_LDFLAGS="${LLVM_LDFLAGS} "
+        fi
+        LLVM_LDFLAGS="${LLVM_LDFLAGS}${flag}"
+      fi
+    done
+
+    unset LLVM_LIBS
+    for flag in $("${LLVM_CONFIG}" --libs ${llvm_components}); do
+      if echo "${flag}" | grep -q '^-l'; then
+        if test "${LLVM_LIBS}" != ""; then
+          LLVM_LIBS="${LLVM_LIBS} "
+        fi
+        LLVM_LIBS="${LLVM_LIBS}${flag}"
+      fi
+    done
+
+    AC_SUBST(LLVM_CFLAGS)
+    AC_SUBST(LLVM_LDFLAGS)
+    AC_SUBST(LLVM_LIBS)
+fi
 
 # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
 if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$LIBCXX" = x; then

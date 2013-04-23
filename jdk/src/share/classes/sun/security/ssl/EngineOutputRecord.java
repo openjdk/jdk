@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ final class EngineOutputRecord extends OutputRecord {
         if (authenticator instanceof MAC) {
             MAC signer = (MAC)authenticator;
             if (signer.MAClen() != 0) {
-                byte[] hash = signer.compute(contentType(), dstBB);
+                byte[] hash = signer.compute(contentType(), dstBB, false);
 
                 /*
                  * position was advanced to limit in compute above.

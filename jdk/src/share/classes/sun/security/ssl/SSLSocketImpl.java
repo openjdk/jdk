@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -987,7 +987,6 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             try {
                 r.decrypt(readAuthenticator, readCipher);
             } catch (BadPaddingException e) {
-                // use the same alert types as for MAC failure below
                 byte alertType = (r.contentType() == Record.ct_handshake)
                                         ? Alerts.alert_handshake_failure
                                         : Alerts.alert_bad_record_mac;

@@ -1409,6 +1409,8 @@ class ConstantPool {
 
         /** Index of all CP entries of a given tag and class. */
         public Index getMemberIndex(byte tag, ClassEntry classRef) {
+            if (classRef == null)
+                throw new RuntimeException("missing class reference for " + tagName(tag));
             if (indexByTagAndClass == null)
                 indexByTagAndClass = new Index[CONSTANT_Limit][];
             Index allClasses =  getIndexByTag(CONSTANT_Class);

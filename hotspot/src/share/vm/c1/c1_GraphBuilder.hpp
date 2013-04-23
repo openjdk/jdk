@@ -301,6 +301,8 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   ValueStack* copy_state_exhandling();
   ValueStack* copy_state_for_exception_with_bci(int bci);
   ValueStack* copy_state_for_exception();
+  ValueStack* copy_state_if_bb(bool is_bb) { return (is_bb || compilation()->is_optimistic()) ? copy_state_before() : NULL; }
+  ValueStack* copy_state_indexed_access() { return compilation()->is_optimistic() ? copy_state_before() : copy_state_for_exception(); }
 
   //
   // Inlining support

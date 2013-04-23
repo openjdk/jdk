@@ -476,24 +476,6 @@ julong os::physical_memory() {
    return Solaris::physical_memory();
 }
 
-julong os::allocatable_physical_memory(julong size) {
-#ifdef _LP64
-   return size;
-#else
-   julong result = MIN2(size, (julong)3835*M);
-   if (!is_allocatable(result)) {
-     // Memory allocations will be aligned but the alignment
-     // is not known at this point.  Alignments will
-     // be at most to LargePageSizeInBytes.  Protect
-     // allocations from alignments up to illegal
-     // values. If at this point 2G is illegal.
-     julong reasonable_size = (julong)2*G - 2 * LargePageSizeInBytes;
-     result =  MIN2(size, reasonable_size);
-   }
-   return result;
-#endif
-}
-
 static hrtime_t first_hrtime = 0;
 static const hrtime_t hrtime_hz = 1000*1000*1000;
 const int LOCK_BUSY = 1;
@@ -2945,7 +2927,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   while (p < (uint64_t)end) {
     addrs[0] = p;
     size_t addrs_count = 1;
-    while (addrs_count < MAX_MEMINFO_CNT && addrs[addrs_count - 1] < (uint64_t)end) {
+    while (addrs_count < MAX_MEMINFO_CNT && addrs[addrs_count - 1] + page_size < (uint64_t)end) {
       addrs[addrs_count] = addrs[addrs_count - 1] + page_size;
       addrs_count++;
     }
@@ -3420,13 +3402,25 @@ char* os::reserve_memory_special(size_t size, char* addr, bool exec) {
   if ((retAddr != NULL) && UseNUMAInterleaving) {
     numa_make_global(retAddr, size);
   }
+
+  // The memory is committed
+  address pc = CALLER_PC;
+  MemTracker::record_virtual_memory_reserve((address)retAddr, size, pc);
+  MemTracker::record_virtual_memory_commit((address)retAddr, size, pc);
+
   return retAddr;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
   // detaching the SHM segment will also delete it, see reserve_memory_special()
   int rslt = shmdt(base);
-  return rslt == 0;
+  if (rslt == 0) {
+    MemTracker::record_virtual_memory_uncommit((address)base, bytes);
+    MemTracker::record_virtual_memory_release((address)base, bytes);
+    return true;
+  } else {
+   return false;
+  }
 }
 
 size_t os::large_page_size() {

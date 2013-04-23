@@ -89,11 +89,7 @@ STACK_SIZE=
 # AsyncGetCallTrace is not supported on IA64 yet
 AGCT_EXPORT=
 !else
-!if "$(Variant)" == "kernel"
-AGCT_EXPORT=
-!else
 AGCT_EXPORT=/export:AsyncGetCallTrace
-!endif
 !endif
 
 # If you modify exports below please do the corresponding changes in

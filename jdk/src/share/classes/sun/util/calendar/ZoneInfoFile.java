@@ -29,21 +29,13 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.Month;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.zone.ZoneRules;
-import java.time.zone.ZoneOffsetTransition;
-import java.time.zone.ZoneOffsetTransitionRule;
-import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -58,7 +50,7 @@ import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.CRC32;
-import java.util.zip.ZipFile;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Loads TZDB time-zone rules for j.u.TimeZone
@@ -72,8 +64,13 @@ public final class ZoneInfoFile {
      *
      * @return a set of time zone IDs.
      */
-    public static Set<String> getZoneIds() {
-        return zones.keySet();
+    public static String[] getZoneIds() {
+        String[] ids = Arrays.copyOf(regions, regions.length + oldMappings.length);
+        int i = regions.length;
+        for (int j = 0; j < oldMappings.length; j++) {
+            ids[i++] = oldMappings[j][0];
+        }
+        return ids;
     }
 
     /**
@@ -86,8 +83,8 @@ public final class ZoneInfoFile {
      */
     public static String[] getZoneIds(int rawOffset) {
         List<String> ids = new ArrayList<>();
-        for (String id : zones.keySet()) {
-            ZoneInfo zi = getZoneInfo0(id);
+        for (String id : getZoneIds()) {
+            ZoneInfo zi = getZoneInfo(id);
             if (zi.getRawOffset() == rawOffset) {
                 ids.add(id);
             }
@@ -102,15 +99,40 @@ public final class ZoneInfoFile {
     }
 
     public static ZoneInfo getZoneInfo(String zoneId) {
-        if (!zones.containsKey(zoneId)) {
+        if (zoneId == null) {
             return null;
         }
-        // ZoneInfo is mutable, return the copy
-
         ZoneInfo zi = getZoneInfo0(zoneId);
-        zi = (ZoneInfo)zi.clone();
-        zi.setID(zoneId);
+        if (zi != null) {
+            zi = (ZoneInfo)zi.clone();
+            zi.setID(zoneId);
+        }
         return zi;
+    }
+
+    private static ZoneInfo getZoneInfo0(String zoneId) {
+        try {
+            ZoneInfo zi = zones.get(zoneId);
+            if (zi != null) {
+                return zi;
+            }
+            String zid = zoneId;
+            if (aliases.containsKey(zoneId)) {
+                zid = aliases.get(zoneId);
+            }
+            int index = Arrays.binarySearch(regions, zid);
+            if (index < 0) {
+                return null;
+            }
+            byte[] bytes = ruleArray[indices[index]];
+            DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes));
+            zi = getZoneInfo(dis, zid);
+            zones.put(zoneId, zi);
+            return zi;
+        } catch (Exception ex) {
+            throw new RuntimeException("Invalid binary time-zone data: TZDB:" +
+                zoneId + ", version: " + versionId, ex);
+        }
     }
 
     /**
@@ -120,7 +142,7 @@ public final class ZoneInfoFile {
      * @return an unmodified alias mapping
      */
     public static Map<String, String> getAliasMap() {
-        return aliases;
+        return Collections.unmodifiableMap(aliases);
     }
 
     /**
@@ -143,23 +165,11 @@ public final class ZoneInfoFile {
     public static ZoneInfo getCustomTimeZone(String originalId, int gmtOffset) {
         String id = toCustomID(gmtOffset);
         return new ZoneInfo(id, gmtOffset);
-/*
-        ZoneInfo zi = getFromCache(id);
-        if (zi == null) {
-            zi = new ZoneInfo(id, gmtOffset);
-            zi = addToCache(id, zi);
-            if (!id.equals(originalId)) {
-                zi = addToCache(originalId, zi);
-            }
-        }
-        return (ZoneInfo) zi.clone();
-*/
     }
 
     public static String toCustomID(int gmtOffset) {
         char sign;
         int offset = gmtOffset / 60000;
-
         if (offset >= 0) {
             sign = '+';
         } else {
@@ -181,49 +191,59 @@ public final class ZoneInfoFile {
         return new String(buf);
     }
 
-
     ///////////////////////////////////////////////////////////
-
-    private static ZoneInfo getZoneInfo0(String zoneId) {
-        try {
-
-            Object obj = zones.get(zoneId);
-            if (obj instanceof byte[]) {
-                byte[] bytes = (byte[]) obj;
-                DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes));
-                obj = getZoneInfo(dis, zoneId);
-                zones.put(zoneId, obj);
-            }
-            return (ZoneInfo)obj;
-        } catch (Exception ex) {
-            throw new RuntimeException("Invalid binary time-zone data: TZDB:" +
-                zoneId + ", version: " + versionId, ex);
-        }
-    }
-
     private ZoneInfoFile() {
     }
 
     private static String versionId;
-    private final static Map<String, Object> zones = new ConcurrentHashMap<>();
+    private final static Map<String, ZoneInfo> zones = new ConcurrentHashMap<>();
     private static Map<String, String> aliases = new HashMap<>();
+
+    private static byte[][] ruleArray;
+    private static String[] regions;
+    private static int[] indices;
 
     // Flag for supporting JDK backward compatible IDs, such as "EST".
     private static final boolean USE_OLDMAPPING;
 
+    private static String[][] oldMappings = new String[][] {
+        { "ACT", "Australia/Darwin" },
+        { "AET", "Australia/Sydney" },
+        { "AGT", "America/Argentina/Buenos_Aires" },
+        { "ART", "Africa/Cairo" },
+        { "AST", "America/Anchorage" },
+        { "BET", "America/Sao_Paulo" },
+        { "BST", "Asia/Dhaka" },
+        { "CAT", "Africa/Harare" },
+        { "CNT", "America/St_Johns" },
+        { "CST", "America/Chicago" },
+        { "CTT", "Asia/Shanghai" },
+        { "EAT", "Africa/Addis_Ababa" },
+        { "ECT", "Europe/Paris" },
+        { "IET", "America/Indiana/Indianapolis" },
+        { "IST", "Asia/Kolkata" },
+        { "JST", "Asia/Tokyo" },
+        { "MIT", "Pacific/Apia" },
+        { "NET", "Asia/Yerevan" },
+        { "NST", "Pacific/Auckland" },
+        { "PLT", "Asia/Karachi" },
+        { "PNT", "America/Phoenix" },
+        { "PRT", "America/Puerto_Rico" },
+        { "PST", "America/Los_Angeles" },
+        { "SST", "Pacific/Guadalcanal" },
+        { "VST", "Asia/Ho_Chi_Minh" },
+    };
+
     static {
         String oldmapping = AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.timezone.ids.oldmapping", "false")).toLowerCase(Locale.ROOT);
+            new GetPropertyAction("sun.timezone.ids.oldmapping", "false")).toLowerCase(Locale.ROOT);
         USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 try {
-
                     String libDir = System.getProperty("java.home") + File.separator + "lib";
-                    File tzdbJar = new File(libDir, "tzdb.jar");
-                    try (ZipFile zf = new ZipFile(tzdbJar);
-                        DataInputStream dis = new DataInputStream(
-                            zf.getInputStream(zf.getEntry("TZDB.dat")))) {
+                    try (DataInputStream dis = new DataInputStream(
+                             new FileInputStream(new File(libDir, "tzdb.dat")))) {
                         load(dis);
                     }
                 } catch (Exception x) {
@@ -234,56 +254,14 @@ public final class ZoneInfoFile {
         });
     }
 
-    // Must be invoked after loading in all data
     private static void addOldMapping() {
-        String[][] oldMappings = new String[][] {
-            { "ACT", "Australia/Darwin" },
-            { "AET", "Australia/Sydney" },
-            { "AGT", "America/Argentina/Buenos_Aires" },
-            { "ART", "Africa/Cairo" },
-            { "AST", "America/Anchorage" },
-            { "BET", "America/Sao_Paulo" },
-            { "BST", "Asia/Dhaka" },
-            { "CAT", "Africa/Harare" },
-            { "CNT", "America/St_Johns" },
-            { "CST", "America/Chicago" },
-            { "CTT", "Asia/Shanghai" },
-            { "EAT", "Africa/Addis_Ababa" },
-            { "ECT", "Europe/Paris" },
-            { "IET", "America/Indiana/Indianapolis" },
-            { "IST", "Asia/Kolkata" },
-            { "JST", "Asia/Tokyo" },
-            { "MIT", "Pacific/Apia" },
-            { "NET", "Asia/Yerevan" },
-            { "NST", "Pacific/Auckland" },
-            { "PLT", "Asia/Karachi" },
-            { "PNT", "America/Phoenix" },
-            { "PRT", "America/Puerto_Rico" },
-            { "PST", "America/Los_Angeles" },
-            { "SST", "Pacific/Guadalcanal" },
-            { "VST", "Asia/Ho_Chi_Minh" },
-        };
         for (String[] alias : oldMappings) {
-            String k = alias[0];
-            String v = alias[1];
-            if (zones.containsKey(v)) {  // make sure we do have the data
-                aliases.put(k, v);
-                zones.put(k, zones.get(v));
-            }
+            aliases.put(alias[0], alias[1]);
         }
         if (USE_OLDMAPPING) {
-            if (zones.containsKey("America/New_York")) {
-                aliases.put("EST", "America/New_York");
-                zones.put("EST", zones.get("America/New_York"));
-            }
-            if (zones.containsKey("America/Denver")) {
-                aliases.put("MST", "America/Denver");
-                zones.put("MST", zones.get("America/Denver"));
-            }
-            if (zones.containsKey("Pacific/Honolulu")) {
-                aliases.put("HST", "Pacific/Honolulu");
-                zones.put("HST", zones.get("Pacific/Honolulu"));
-            }
+            aliases.put("EST", "America/New_York");
+            aliases.put("MST", "America/Denver");
+            aliases.put("HST", "Pacific/Honolulu");
         }
     }
 
@@ -316,7 +294,7 @@ public final class ZoneInfoFile {
         }
         // rules
         int ruleCount = dis.readShort();
-        Object[] ruleArray = new Object[ruleCount];
+        ruleArray = new byte[ruleCount][];
         for (int i = 0; i < ruleCount; i++) {
             byte[] bytes = new byte[dis.readShort()];
             dis.readFully(bytes);
@@ -325,11 +303,11 @@ public final class ZoneInfoFile {
         // link version-region-rules, only keep the last version, if more than one
         for (int i = 0; i < versionCount; i++) {
             regionCount = dis.readShort();
-            zones.clear();
+            regions = new String[regionCount];
+            indices = new int[regionCount];
             for (int j = 0; j < regionCount; j++) {
-                String region = regionArray[dis.readShort()];
-                Object rule = ruleArray[dis.readShort() & 0xffff];
-                zones.put(region, rule);
+                regions[j] = regionArray[dis.readShort()];
+                indices[j] = dis.readShort();
             }
         }
         // remove the following ids from the map, they
@@ -346,7 +324,6 @@ public final class ZoneInfoFile {
         }
         // old us time-zone names
         addOldMapping();
-        aliases = Collections.unmodifiableMap(aliases);
     }
 
     /////////////////////////Ser/////////////////////////////////
@@ -374,7 +351,7 @@ public final class ZoneInfoFile {
         int ruleSize = in.readByte();
         ZoneOffsetTransitionRule[] rules = new ZoneOffsetTransitionRule[ruleSize];
         for (int i = 0; i < ruleSize; i++) {
-            rules[i] = readZOTRule(in);
+            rules[i] = new ZoneOffsetTransitionRule(in);
         }
         return getZoneInfo(zoneId, stdTrans, stdOffsets, savTrans, savOffsets, rules);
     }
@@ -396,31 +373,19 @@ public final class ZoneInfoFile {
         }
     }
 
-    static ZoneOffsetTransitionRule readZOTRule(DataInput in) throws IOException {
-        int data = in.readInt();
-        Month month = Month.of(data >>> 28);
-        int dom = ((data & (63 << 22)) >>> 22) - 32;
-        int dowByte = (data & (7 << 19)) >>> 19;
-        DayOfWeek dow = dowByte == 0 ? null : DayOfWeek.of(dowByte);
-        int timeByte = (data & (31 << 14)) >>> 14;
-        TimeDefinition defn = TimeDefinition.values()[(data & (3 << 12)) >>> 12];
-        int stdByte = (data & (255 << 4)) >>> 4;
-        int beforeByte = (data & (3 << 2)) >>> 2;
-        int afterByte = (data & 3);
-        LocalTime time = (timeByte == 31 ? LocalTime.ofSecondOfDay(in.readInt()) : LocalTime.of(timeByte % 24, 0));
-        ZoneOffset std = (stdByte == 255 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds((stdByte - 128) * 900));
-        ZoneOffset before = (beforeByte == 3 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds(std.getTotalSeconds() + beforeByte * 1800));
-        ZoneOffset after = (afterByte == 3 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds(std.getTotalSeconds() + afterByte * 1800));
-        return ZoneOffsetTransitionRule.of(month, dom, dow, time, timeByte == 24, defn, std, before, after);
-    }
-
     /////////////////////////ZoneRules --> ZoneInfo/////////////////////////////////
 
     // ZoneInfo starts with UTC1900
     private static final long UTC1900 = -2208988800L;
+
     // ZoneInfo ends with   UTC2037
-    private static final long UTC2037 =
-        LocalDateTime.of(2038, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC) - 1;
+    // LocalDateTime.of(2038, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC) - 1;
+    private static final long UTC2037 = 2145916799L;
+
+    // ZoneInfo has an ending entry for 2037, this need to be offset by
+    // a "rawOffset"
+    // LocalDateTime.of(2037, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC));
+    private static final long LDT2037 = 2114380800L;
 
     /* Get a ZoneInfo instance.
      *
@@ -460,15 +425,12 @@ public final class ZoneInfoFile {
                                        // offsets.length > 16 (4-bit index limit)
             // last year in trans table
             // It should not matter to use before or after offset for year
-            int lastyear = LocalDateTime.ofEpochSecond(
-                savingsInstantTransitions[savingsInstantTransitions.length - 1], 0,
-                ZoneOffset.ofTotalSeconds(wallOffsets[savingsInstantTransitions.length - 1])).getYear();
-            // int lastyear = savingsLocalTransitions[savingsLocalTransitions.length - 1].getYear();
-
+            int lastyear = getYear(savingsInstantTransitions[savingsInstantTransitions.length - 1],
+                                   wallOffsets[savingsInstantTransitions.length - 1]);
             int i = 0, k = 1;
             while (i < savingsInstantTransitions.length &&
                    savingsInstantTransitions[i] < UTC1900) {
-                 i++;     // skip any date before UTC1900
+                i++;     // skip any date before UTC1900
             }
             if (i < savingsInstantTransitions.length) {
                 // javazic writes the last GMT offset into index 0!
@@ -478,26 +440,27 @@ public final class ZoneInfoFile {
                 }
                 // ZoneInfo has a beginning entry for 1900.
                 // Only add it if this is not the only one in table
-                nOffsets = addTrans(transitions, nTrans++, offsets, nOffsets,
+                nOffsets = addTrans(transitions, nTrans++,
+                                    offsets, nOffsets,
                                     UTC1900,
                                     wallOffsets[i],
                                     getStandardOffset(standardTransitions, standardOffsets, UTC1900));
             }
+
             for (; i < savingsInstantTransitions.length; i++) {
-                //if (savingsLocalTransitions[i * 2].getYear() > LASTYEAR) {
-                if (savingsInstantTransitions[i] > UTC2037) {
+                long trans = savingsInstantTransitions[i];
+                if (trans > UTC2037) {
                     // no trans beyond LASTYEAR
                     lastyear = LASTYEAR;
                     break;
                 }
-                long trans = savingsInstantTransitions[i];
                 while (k < standardTransitions.length) {
                     // some standard offset transitions don't exist in
                     // savingInstantTrans, if the offset "change" doesn't
                     // really change the "effectiveWallOffset". For example
                     // the 1999/2000 pair in Zone Arg/Buenos_Aires, in which
                     // the daylightsaving "happened" but it actually does
-                    //  not result in the timezone switch. ZoneInfo however
+                    // not result in the timezone switch. ZoneInfo however
                     // needs them in its transitions table
                     long trans_s = standardTransitions[k];
                     if (trans_s >= UTC1900) {
@@ -514,6 +477,7 @@ public final class ZoneInfoFile {
                                                 trans_s,
                                                 wallOffsets[i],
                                                 standardOffsets[k+1]);
+
                         }
                     }
                     k++;
@@ -528,6 +492,7 @@ public final class ZoneInfoFile {
                                     trans,
                                     wallOffsets[i + 1],
                                     getStandardOffset(standardTransitions, standardOffsets, trans));
+
             }
             // append any leftover standard trans
             while (k < standardTransitions.length) {
@@ -546,38 +511,35 @@ public final class ZoneInfoFile {
                 // fill the gap between the last trans until LASTYEAR
                 while (lastyear++ < LASTYEAR) {
                     for (ZoneOffsetTransitionRule zotr : lastRules) {
-                        ZoneOffsetTransition zot = zotr.createTransition(lastyear);
-                        //long trans = zot.getDateTimeBefore().toEpochSecond();
-                        long trans = zot.toEpochSecond();
+                        long trans = zotr.getTransitionEpochSecond(lastyear);
                         if (nOffsets + 2 >= offsets.length) {
                             offsets = Arrays.copyOf(offsets, offsets.length + 100);
                         }
                         if (nTrans + 1 >= transitions.length) {
                             transitions = Arrays.copyOf(transitions, transitions.length + 100);
                         }
-                        nOffsets = addTrans(transitions, nTrans++, offsets, nOffsets,
+                        nOffsets = addTrans(transitions, nTrans++,
+                                            offsets, nOffsets,
                                             trans,
-                                            zot.getOffsetAfter().getTotalSeconds(),
-                                            getStandardOffset(standardTransitions, standardOffsets, trans));
+                                            zotr.offsetAfter,
+                                            zotr.standardOffset);
                     }
                 }
                 ZoneOffsetTransitionRule startRule =  lastRules[lastRules.length - 2];
                 ZoneOffsetTransitionRule endRule =  lastRules[lastRules.length - 1];
                 params = new int[10];
-                if (startRule.getOffsetBefore().compareTo(startRule.getOffsetAfter()) < 0 &&
-                    endRule.getOffsetBefore().compareTo(endRule.getOffsetAfter()) > 0) {
+                if (startRule.offsetAfter - startRule.offsetBefore < 0 &&
+                    endRule.offsetAfter - endRule.offsetBefore > 0) {
                     ZoneOffsetTransitionRule tmp;
                     tmp = startRule;
                     startRule = endRule;
                     endRule = tmp;
                 }
-                params[0] = startRule.getMonth().getValue() - 1;
-                // params[1] = startRule.getDayOfMonthIndicator();
-                // params[2] = toCalendarDOW[startRule.getDayOfWeek().getValue()];
-                int       dom = startRule.getDayOfMonthIndicator();
-                DayOfWeek dow = startRule.getDayOfWeek();
-                if (dow == null) {
-                    params[1] = startRule.getDayOfMonthIndicator();
+                params[0] = startRule.month - 1;
+                int dom = startRule.dom;
+                int dow = startRule.dow;
+                if (dow == -1) {
+                    params[1] = dom;
                     params[2] = 0;
                 } else {
                     // ZoneRulesBuilder adjusts < 0 case (-1, for last, don't have
@@ -590,41 +552,38 @@ public final class ZoneInfoFile {
                     // "last", it works for now.
                     if (dom < 0 || dom >= 24) {
                         params[1] = -1;
-                        params[2] = toCalendarDOW[dow.getValue()];
+                        params[2] = toCalendarDOW[dow];
                     } else {
                         params[1] = dom;
                         // To specify a day of week on or after an exact day of month,
                         // set the month to an exact month value, day-of-month to the
                         // day on or after which the rule is applied, and day-of-week
                         // to a negative Calendar.DAY_OF_WEEK DAY_OF_WEEK field value.
-                        params[2] = -toCalendarDOW[dow.getValue()];
+                        params[2] = -toCalendarDOW[dow];
                     }
                 }
-                params[3] = startRule.getLocalTime().toSecondOfDay() * 1000;
-                params[4] = toSTZTime[startRule.getTimeDefinition().ordinal()];
-
-                params[5] = endRule.getMonth().getValue() - 1;
-                // params[6] = endRule.getDayOfMonthIndicator();
-                // params[7] = toCalendarDOW[endRule.getDayOfWeek().getValue()];
-                dom = endRule.getDayOfMonthIndicator();
-                dow = endRule.getDayOfWeek();
-                if (dow == null) {
+                params[3] = startRule.secondOfDay * 1000;
+                params[4] = toSTZTime[startRule.timeDefinition];
+                params[5] = endRule.month - 1;
+                dom = endRule.dom;
+                dow = endRule.dow;
+                if (dow == -1) {
                     params[6] = dom;
                     params[7] = 0;
                 } else {
                     // hacking: see comment above
                     if (dom < 0 || dom >= 24) {
                         params[6] = -1;
-                        params[7] = toCalendarDOW[dow.getValue()];
+                        params[7] = toCalendarDOW[dow];
                     } else {
                         params[6] = dom;
-                        params[7] = -toCalendarDOW[dow.getValue()];
+                        params[7] = -toCalendarDOW[dow];
                     }
                 }
-                params[8] = endRule.getLocalTime().toSecondOfDay() * 1000;
-                params[9] = toSTZTime[endRule.getTimeDefinition().ordinal()];
-                dstSavings = (startRule.getOffsetAfter().getTotalSeconds()
-                             - startRule.getOffsetBefore().getTotalSeconds()) * 1000;
+                params[8] = endRule.secondOfDay * 1000;
+                params[9] = toSTZTime[endRule.timeDefinition];
+                dstSavings = (startRule.offsetAfter - startRule.offsetBefore) * 1000;
+
                 // Note: known mismatching -> Asia/Amman
                 // ZoneInfo :      startDayOfWeek=5     <= Thursday
                 //                 startTime=86400000   <= 24 hours
@@ -638,14 +597,17 @@ public final class ZoneInfoFile {
             } else if (nTrans > 0) {  // only do this if there is something in table already
                 if (lastyear < LASTYEAR) {
                     // ZoneInfo has an ending entry for 2037
-                    long trans = OffsetDateTime.of(LASTYEAR, Month.JANUARY.getValue(), 1, 0, 0, 0, 0,
-                                                   ZoneOffset.ofTotalSeconds(rawOffset/1000))
-                                               .toEpochSecond();
+                    //long trans = OffsetDateTime.of(LASTYEAR, 1, 1, 0, 0, 0, 0,
+                    //                               ZoneOffset.ofTotalSeconds(rawOffset/1000))
+                    //                           .toEpochSecond();
+                    long trans = LDT2037 - rawOffset/1000;
+
                     int offsetIndex = indexOf(offsets, 0, nOffsets, rawOffset/1000);
                     if (offsetIndex == nOffsets)
                         nOffsets++;
                     transitions[nTrans++] = (trans * 1000) << TRANSITION_NSHIFT |
                                        (offsetIndex & OFFSET_MASK);
+
                 } else if (savingsInstantTransitions.length > 2) {
                     // Workaround: create the params based on the last pair for
                     // zones like Israel and Iran which have trans defined
@@ -670,40 +632,28 @@ public final class ZoneInfoFile {
                     long endTrans =  savingsInstantTransitions[m - 1];
                     int endOffset = wallOffsets[m - 1 + 1];
                     int endStd = getStandardOffset(standardTransitions, standardOffsets, endTrans);
-
                     if (startOffset > startStd && endOffset == endStd) {
-                        /*
-                        m = savingsLocalTransitions.length;
-                        LocalDateTime startLDT = savingsLocalTransitions[m -4];  //gap
-                        LocalDateTime endLDT = savingsLocalTransitions[m - 1];   //over
-                         */
                         // last - 1 trans
                         m = savingsInstantTransitions.length - 2;
                         ZoneOffset before = ZoneOffset.ofTotalSeconds(wallOffsets[m]);
                         ZoneOffset after = ZoneOffset.ofTotalSeconds(wallOffsets[m + 1]);
-                        ZoneOffsetTransition trans = ZoneOffsetTransition.of(
-                            LocalDateTime.ofEpochSecond(savingsInstantTransitions[m], 0, before),
-                            before,
-                            after);
+                        LocalDateTime ldt = LocalDateTime.ofEpochSecond(savingsInstantTransitions[m], 0, before);
                         LocalDateTime startLDT;
-                        if (trans.isGap()) {
-                            startLDT = trans.getDateTimeBefore();
+                        if (after.getTotalSeconds() > before.getTotalSeconds()) {  // isGap()
+                            startLDT = ldt;
                         } else {
-                            startLDT = trans.getDateTimeAfter();
+                            startLDT = ldt.plusSeconds(wallOffsets[m + 1] - wallOffsets[m]);
                         }
                         // last trans
                         m = savingsInstantTransitions.length - 1;
                         before = ZoneOffset.ofTotalSeconds(wallOffsets[m]);
                         after = ZoneOffset.ofTotalSeconds(wallOffsets[m + 1]);
-                        trans = ZoneOffsetTransition.of(
-                            LocalDateTime.ofEpochSecond(savingsInstantTransitions[m], 0, before),
-                            before,
-                            after);
+                        ldt = LocalDateTime.ofEpochSecond(savingsInstantTransitions[m], 0, before);
                         LocalDateTime endLDT;
-                        if (trans.isGap()) {
-                            endLDT = trans.getDateTimeAfter();
+                        if (after.getTotalSeconds() > before.getTotalSeconds()) {  // isGap()
+                            endLDT = ldt.plusSeconds(wallOffsets[m + 1] - wallOffsets[m]);
                         } else {
-                            endLDT = trans.getDateTimeBefore();
+                            endLDT = ldt;
                         }
                         params = new int[10];
                         params[0] = startLDT.getMonthValue() - 1;
@@ -722,14 +672,14 @@ public final class ZoneInfoFile {
             }
             if (transitions != null && transitions.length != nTrans) {
                 if (nTrans == 0) {
-                   transitions = null;
+                    transitions = null;
                 } else {
                     transitions = Arrays.copyOf(transitions, nTrans);
                 }
             }
             if (offsets != null && offsets.length != nOffsets) {
                 if (nOffsets == 0) {
-                   offsets = null;
+                    offsets = null;
                 } else {
                     offsets = Arrays.copyOf(offsets, nOffsets);
                 }
@@ -762,15 +712,59 @@ public final class ZoneInfoFile {
     private static int getStandardOffset(long[] standardTransitions,
                                          int[] standardOffsets,
                                          long epochSec) {
-        int index  = Arrays.binarySearch(standardTransitions, epochSec);
-        if (index < 0) {
-            // switch negative insert position to start of matched range
-            index = -index - 2;
+        // The size of stdOffsets is [0..9], with most are
+        // [1..4] entries , simple loop search is faster
+        //
+        // int index  = Arrays.binarySearch(standardTransitions, epochSec);
+        // if (index < 0) {
+        //    // switch negative insert position to start of matched range
+        //    index = -index - 2;
+        // }
+        // return standardOffsets[index + 1];
+        int index = 0;
+        for (; index < standardTransitions.length; index++) {
+            if (epochSec < standardTransitions[index]) {
+                break;
+            }
         }
-        return standardOffsets[index + 1];
+        return standardOffsets[index];
     }
 
-    private static int toCalendarDOW[] = new int[] {
+    static final int SECONDS_PER_DAY = 86400;
+    static final int DAYS_PER_CYCLE = 146097;
+    static final long DAYS_0000_TO_1970 = (DAYS_PER_CYCLE * 5L) - (30L * 365L + 7L);
+
+    private static int getYear(long epochSecond, int offset) {
+        long second = epochSecond + offset;  // overflow caught later
+        long epochDay = Math.floorDiv(second, SECONDS_PER_DAY);
+        long zeroDay = epochDay + DAYS_0000_TO_1970;
+        // find the march-based year
+        zeroDay -= 60;  // adjust to 0000-03-01 so leap day is at end of four year cycle
+        long adjust = 0;
+        if (zeroDay < 0) {
+            // adjust negative years to positive for calculation
+            long adjustCycles = (zeroDay + 1) / DAYS_PER_CYCLE - 1;
+            adjust = adjustCycles * 400;
+            zeroDay += -adjustCycles * DAYS_PER_CYCLE;
+        }
+        long yearEst = (400 * zeroDay + 591) / DAYS_PER_CYCLE;
+        long doyEst = zeroDay - (365 * yearEst + yearEst / 4 - yearEst / 100 + yearEst / 400);
+        if (doyEst < 0) {
+            // fix estimate
+            yearEst--;
+            doyEst = zeroDay - (365 * yearEst + yearEst / 4 - yearEst / 100 + yearEst / 400);
+        }
+        yearEst += adjust;  // reset any negative year
+        int marchDoy0 = (int) doyEst;
+        // convert march-based values back to january-based
+        int marchMonth0 = (marchDoy0 * 5 + 2) / 153;
+        int month = (marchMonth0 + 2) % 12 + 1;
+        int dom = marchDoy0 - (marchMonth0 * 306 + 5) / 10 + 1;
+        yearEst += marchMonth0 / 10;
+        return (int)yearEst;
+    }
+
+    private static final int toCalendarDOW[] = new int[] {
         -1,
         Calendar.MONDAY,
         Calendar.TUESDAY,
@@ -781,7 +775,7 @@ public final class ZoneInfoFile {
         Calendar.SUNDAY
     };
 
-    private static int toSTZTime[] = new int[] {
+    private static final int toSTZTime[] = new int[] {
         SimpleTimeZone.UTC_TIME,
         SimpleTimeZone.WALL_TIME,
         SimpleTimeZone.STANDARD_TIME,
@@ -823,28 +817,152 @@ public final class ZoneInfoFile {
         return nOffsets;
     }
 
-    /////////////////////////////////////////////////////////////
     // ZoneInfo checksum, copy/pasted from javazic
     private static class Checksum extends CRC32 {
         public void update(int val) {
             byte[] b = new byte[4];
-            b[0] = (byte)((val >>> 24) & 0xff);
-            b[1] = (byte)((val >>> 16) & 0xff);
-            b[2] = (byte)((val >>> 8) & 0xff);
-            b[3] = (byte)(val & 0xff);
+            b[0] = (byte)(val >>> 24);
+            b[1] = (byte)(val >>> 16);
+            b[2] = (byte)(val >>> 8);
+            b[3] = (byte)(val);
             update(b);
         }
         void update(long val) {
             byte[] b = new byte[8];
-            b[0] = (byte)((val >>> 56) & 0xff);
-            b[1] = (byte)((val >>> 48) & 0xff);
-            b[2] = (byte)((val >>> 40) & 0xff);
-            b[3] = (byte)((val >>> 32) & 0xff);
-            b[4] = (byte)((val >>> 24) & 0xff);
-            b[5] = (byte)((val >>> 16) & 0xff);
-            b[6] = (byte)((val >>> 8) & 0xff);
-            b[7] = (byte)(val & 0xff);
+            b[0] = (byte)(val >>> 56);
+            b[1] = (byte)(val >>> 48);
+            b[2] = (byte)(val >>> 40);
+            b[3] = (byte)(val >>> 32);
+            b[4] = (byte)(val >>> 24);
+            b[5] = (byte)(val >>> 16);
+            b[6] = (byte)(val >>> 8);
+            b[7] = (byte)(val);
             update(b);
+        }
+    }
+
+    // A simple/raw version of j.t.ZoneOffsetTransitionRule
+    private static class ZoneOffsetTransitionRule {
+        private final int month;
+        private final byte dom;
+        private final int dow;
+        private final int secondOfDay;
+        private final boolean timeEndOfDay;
+        private final int timeDefinition;
+        private final int standardOffset;
+        private final int offsetBefore;
+        private final int offsetAfter;
+
+        ZoneOffsetTransitionRule(DataInput in) throws IOException {
+            int data = in.readInt();
+            int dowByte = (data & (7 << 19)) >>> 19;
+            int timeByte = (data & (31 << 14)) >>> 14;
+            int stdByte = (data & (255 << 4)) >>> 4;
+            int beforeByte = (data & (3 << 2)) >>> 2;
+            int afterByte = (data & 3);
+
+            this.month = data >>> 28;
+            this.dom = (byte)(((data & (63 << 22)) >>> 22) - 32);
+            this.dow = dowByte == 0 ? -1 : dowByte;
+            this.secondOfDay = timeByte == 31 ? in.readInt() : timeByte * 3600;
+            this.timeEndOfDay = timeByte == 24;
+            this.timeDefinition = (data & (3 << 12)) >>> 12;
+
+            this.standardOffset = stdByte == 255 ? in.readInt() : (stdByte - 128) * 900;
+            this.offsetBefore = beforeByte == 3 ? in.readInt() : standardOffset + beforeByte * 1800;
+            this.offsetAfter = afterByte == 3 ? in.readInt() : standardOffset + afterByte * 1800;
+        }
+
+        long getTransitionEpochSecond(int year) {
+            long epochDay = 0;
+            if (dom < 0) {
+                epochDay = toEpochDay(year, month, lengthOfMonth(year, month) + 1 + dom);
+                if (dow != -1) {
+                    epochDay = previousOrSame(epochDay, dow);
+                }
+            } else {
+                epochDay = toEpochDay(year, month, dom);
+                if (dow != -1) {
+                    epochDay = nextOrSame(epochDay, dow);
+                }
+            }
+            if (timeEndOfDay) {
+                epochDay += 1;
+            }
+            int difference = 0;
+            switch (timeDefinition) {
+                case 0:    // UTC
+                    difference = 0;
+                    break;
+                case 1:    // WALL
+                    difference = -offsetBefore;
+                    break;
+                case 2:    //STANDARD
+                    difference = -standardOffset;
+                    break;
+            }
+            return epochDay * 86400 + secondOfDay + difference;
+        }
+
+        static final boolean isLeapYear(int year) {
+            return ((year & 3) == 0) && ((year % 100) != 0 || (year % 400) == 0);
+        }
+
+        static final int lengthOfMonth(int year, int month) {
+            switch (month) {
+                case 2:        //FEBRUARY:
+                    return isLeapYear(year)? 29 : 28;
+                case 4:        //APRIL:
+                case 6:        //JUNE:
+                case 9:        //SEPTEMBER:
+                case 11:       //NOVEMBER:
+                    return 30;
+                default:
+                    return 31;
+            }
+        }
+
+        static final long toEpochDay(int year, int month, int day) {
+            long y = year;
+            long m = month;
+            long total = 0;
+            total += 365 * y;
+            if (y >= 0) {
+                total += (y + 3) / 4 - (y + 99) / 100 + (y + 399) / 400;
+            } else {
+                total -= y / -4 - y / -100 + y / -400;
+            }
+            total += ((367 * m - 362) / 12);
+            total += day - 1;
+            if (m > 2) {
+                total--;
+                if (!isLeapYear(year)) {
+                    total--;
+                }
+            }
+            return total - DAYS_0000_TO_1970;
+        }
+
+        static final long previousOrSame(long epochDay, int dayOfWeek) {
+            return adjust(epochDay, dayOfWeek, 1);
+        }
+
+        static final long nextOrSame(long epochDay, int dayOfWeek) {
+           return adjust(epochDay, dayOfWeek, 0);
+        }
+
+        static final long adjust(long epochDay, int dow, int relative) {
+            int calDow = (int)Math.floorMod(epochDay + 3, 7L) + 1;
+            if (relative < 2 && calDow == dow) {
+                return epochDay;
+            }
+            if ((relative & 1) == 0) {
+                int daysDiff = calDow - dow;
+                return epochDay + (daysDiff >= 0 ? 7 - daysDiff : -daysDiff);
+            } else {
+                int daysDiff = dow - calDow;
+                return epochDay - (daysDiff >= 0 ? 7 - daysDiff : -daysDiff);
+            }
         }
     }
 }

@@ -60,6 +60,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
+#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
@@ -685,12 +686,17 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
-julong os::allocatable_physical_memory(julong size) {
+bool os::has_allocatable_memory_limit(julong* limit) {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
 #ifdef _LP64
-  return size;
+  *limit = (julong)ms.ullAvailVirtual;
+  return true;
 #else
   // Limit to 1400m because of the 2gb address space wall
-  return MIN2(size, (julong)1400*M);
+  *limit = MIN2((julong)1400*M, (julong)ms.ullAvailVirtual);
+  return true;
 #endif
 }
 
@@ -2836,7 +2842,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
                                 PAGE_READWRITE);
   // If reservation failed, return NULL
   if (p_buf == NULL) return NULL;
-
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -2898,6 +2904,11 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
       if (next_alloc_addr > p_buf) {
         // Some memory was committed so release it.
         size_t bytes_to_release = bytes - bytes_remaining;
+        // NMT has yet to record any individual blocks, so it
+        // need to create a dummy 'reserve' record to match
+        // the release.
+        MemTracker::record_virtual_memory_reserve((address)p_buf,
+          bytes_to_release, CALLER_PC);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -2909,10 +2920,19 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
 #endif
       return NULL;
     }
+
     bytes_remaining -= bytes_to_rq;
     next_alloc_addr += bytes_to_rq;
     count++;
   }
+  // Although the memory is allocated individually, it is returned as one.
+  // NMT records it as one block.
+  address pc = CALLER_PC;
+  MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, pc);
+  if ((flags & MEM_COMMIT) != 0) {
+    MemTracker::record_virtual_memory_commit((address)p_buf, bytes, pc);
+  }
+
   // made it this far, success
   return p_buf;
 }
@@ -3099,11 +3119,20 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
     char * res = (char *)VirtualAlloc(NULL, bytes, flag, prot);
+    if (res != NULL) {
+      address pc = CALLER_PC;
+      MemTracker::record_virtual_memory_reserve((address)res, bytes, pc);
+      MemTracker::record_virtual_memory_commit((address)res, bytes, pc);
+    }
+
     return res;
   }
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
+  assert(base != NULL, "Sanity check");
+  // Memory allocated via reserve_memory_special() is committed
+  MemTracker::record_virtual_memory_uncommit((address)base, bytes);
   return release_memory(base, bytes);
 }
 
@@ -3744,6 +3773,8 @@ extern "C" {
   }
 }
 
+static jint initSock();
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
   // Allocate a single page and mark it as readable for safepoint polling
@@ -3872,6 +3903,10 @@ jint os::init_2(void) {
     // first check whether this Windows OS supports VirtualAllocExNuma, if not ignore this flag
     bool success = numa_interleaving_init();
     if (!success) UseNUMAInterleaving = false;
+  }
+
+  if (initSock() != JNI_OK) {
+    return JNI_ERR;
   }
 
   return JNI_OK;
@@ -4870,42 +4905,24 @@ LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
 // We don't build a headless jre for Windows
 bool os::is_headless_jre() { return false; }
 
-
-typedef CRITICAL_SECTION mutex_t;
-#define mutexInit(m)    InitializeCriticalSection(m)
-#define mutexDestroy(m) DeleteCriticalSection(m)
-#define mutexLock(m)    EnterCriticalSection(m)
-#define mutexUnlock(m)  LeaveCriticalSection(m)
-
-static bool sock_initialized = FALSE;
-static mutex_t sockFnTableMutex;
-
-static void initSock() {
+static jint initSock() {
   WSADATA wsadata;
 
   if (!os::WinSock2Dll::WinSock2Available()) {
-    jio_fprintf(stderr, "Could not load Winsock 2 (error: %d)\n",
+    jio_fprintf(stderr, "Could not load Winsock (error: %d)\n",
       ::GetLastError());
-    return;
+    return JNI_ERR;
   }
-  if (sock_initialized == TRUE) return;
 
-  ::mutexInit(&sockFnTableMutex);
-  ::mutexLock(&sockFnTableMutex);
-  if (os::WinSock2Dll::WSAStartup(MAKEWORD(1,1), &wsadata) != 0) {
-      jio_fprintf(stderr, "Could not initialize Winsock\n");
+  if (os::WinSock2Dll::WSAStartup(MAKEWORD(2,2), &wsadata) != 0) {
+    jio_fprintf(stderr, "Could not initialize Winsock (error: %d)\n",
+      ::GetLastError());
+    return JNI_ERR;
   }
-  sock_initialized = TRUE;
-  ::mutexUnlock(&sockFnTableMutex);
+  return JNI_OK;
 }
 
 struct hostent* os::get_host_by_name(char* name) {
-  if (!sock_initialized) {
-    initSock();
-  }
-  if (!os::WinSock2Dll::WinSock2Available()) {
-    return NULL;
-  }
   return (struct hostent*)os::WinSock2Dll::gethostbyname(name);
 }
 

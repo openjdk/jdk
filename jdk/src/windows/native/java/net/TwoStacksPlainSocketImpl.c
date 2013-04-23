@@ -411,7 +411,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     fdObj = (*env)->GetObjectField(env, this, psi_fdID);
     fd1Obj = (*env)->GetObjectField(env, this, psi_fd1ID);
 
-    family = (*env)->GetIntField(env, iaObj, ia_familyID);
+    family = getInetAddress_family(env, iaObj);
 
     if (family == IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
@@ -724,9 +724,8 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             return;
         }
 
-        (*env)->SetIntField(env, socketAddressObj, ia_addressID,
-                            ntohl(him.him4.sin_addr.s_addr));
-        (*env)->SetIntField(env, socketAddressObj, ia_familyID, IPv4);
+        setInetAddress_addr(env, socketAddressObj, ntohl(him.him4.sin_addr.s_addr));
+        setInetAddress_family(env, socketAddressObj, IPv4);
         (*env)->SetObjectField(env, socket, psi_addressID, socketAddressObj);
     } else {
         jbyteArray addr;
@@ -754,7 +753,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
         }
         addr = (*env)->GetObjectField (env, socketAddressObj, ia6_ipaddressID);
         (*env)->SetByteArrayRegion (env, addr, 0, 16, (const char *)&him.him6.sin6_addr);
-        (*env)->SetIntField(env, socketAddressObj, ia_familyID, IPv6);
+        setInetAddress_family(env, socketAddressObj, IPv6);
         scope = him.him6.sin6_scope_id;
         (*env)->SetIntField(env, socketAddressObj, ia6_scopeidID, scope);
         if(scope>0) {

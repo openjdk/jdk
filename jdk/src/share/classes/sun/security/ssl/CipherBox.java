@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,7 +448,8 @@ final class CipherBox {
      * uniformly use the bad_record_mac alert to hide the specific type of
      * the error.
      */
-    int decrypt(byte[] buf, int offset, int len) throws BadPaddingException {
+    int decrypt(byte[] buf, int offset, int len,
+            int tagLen) throws BadPaddingException {
         if (cipher == null) {
             return len;
         }
@@ -487,8 +488,8 @@ final class CipherBox {
 
             if (cipherType == BLOCK_CIPHER) {
                 int blockSize = cipher.getBlockSize();
-                newLen = removePadding(buf, offset, newLen,
-                             blockSize, protocolVersion);
+                newLen = removePadding(
+                    buf, offset, newLen, tagLen, blockSize, protocolVersion);
 
                 if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
                     if (newLen < blockSize) {
@@ -513,7 +514,7 @@ final class CipherBox {
      *
      *  @see decrypt(byte[], int, int)
      */
-    int decrypt(ByteBuffer bb) throws BadPaddingException {
+    int decrypt(ByteBuffer bb, int tagLen) throws BadPaddingException {
 
         int len = bb.remaining();
 
@@ -569,7 +570,7 @@ final class CipherBox {
             if (cipherType == BLOCK_CIPHER) {
                 int blockSize = cipher.getBlockSize();
                 bb.position(pos);
-                newLen = removePadding(bb, blockSize, protocolVersion);
+                newLen = removePadding(bb, tagLen, blockSize, protocolVersion);
 
                 // check the explicit IV of TLS v1.1 or later
                 if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
@@ -652,6 +653,65 @@ final class CipherBox {
         return newlen;
     }
 
+    /*
+     * A constant-time check of the padding.
+     *
+     * NOTE that we are checking both the padding and the padLen bytes here.
+     *
+     * The caller MUST ensure that the len parameter is a positive number.
+     */
+    private static int[] checkPadding(
+            byte[] buf, int offset, int len, byte pad) {
+
+        if (len <= 0) {
+            throw new RuntimeException("padding len must be positive");
+        }
+
+        // An array of hits is used to prevent Hotspot optimization for
+        // the purpose of a constant-time check.
+        int[] results = {0, 0};    // {missed #, matched #}
+        for (int i = 0; i <= 256;) {
+            for (int j = 0; j < len && i <= 256; j++, i++) {     // j <= i
+                if (buf[offset + j] != pad) {
+                    results[0]++;       // mismatched padding data
+                } else {
+                    results[1]++;       // matched padding data
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /*
+     * A constant-time check of the padding.
+     *
+     * NOTE that we are checking both the padding and the padLen bytes here.
+     *
+     * The caller MUST ensure that the bb parameter has remaining.
+     */
+    private static int[] checkPadding(ByteBuffer bb, byte pad) {
+
+        if (!bb.hasRemaining()) {
+            throw new RuntimeException("hasRemaining() must be positive");
+        }
+
+        // An array of hits is used to prevent Hotspot optimization for
+        // the purpose of a constant-time check.
+        int[] results = {0, 0};    // {missed #, matched #}
+        bb.mark();
+        for (int i = 0; i <= 256; bb.reset()) {
+            for (; bb.hasRemaining() && i <= 256; i++) {
+                if (bb.get() != pad) {
+                    results[0]++;       // mismatched padding data
+                } else {
+                    results[1]++;       // matched padding data
+                }
+            }
+        }
+
+        return results;
+    }
 
     /*
      * Typical TLS padding format for a 64 bit block cipher is as follows:
@@ -664,86 +724,95 @@ final class CipherBox {
      * as it makes the data a multiple of the block size
      */
     private static int removePadding(byte[] buf, int offset, int len,
-            int blockSize, ProtocolVersion protocolVersion)
-            throws BadPaddingException {
+            int tagLen, int blockSize,
+            ProtocolVersion protocolVersion) throws BadPaddingException {
+
         // last byte is length byte (i.e. actual padding length - 1)
         int padOffset = offset + len - 1;
-        int pad = buf[padOffset] & 0x0ff;
+        int padLen = buf[padOffset] & 0xFF;
 
-        int newlen = len - (pad + 1);
-        if (newlen < 0) {
-            throw new BadPaddingException("Padding length invalid: " + pad);
+        int newLen = len - (padLen + 1);
+        if ((newLen - tagLen) < 0) {
+            // If the buffer is not long enough to contain the padding plus
+            // a MAC tag, do a dummy constant-time padding check.
+            //
+            // Note that it is a dummy check, so we won't care about what is
+            // the actual padding data.
+            checkPadding(buf, offset, len, (byte)(padLen & 0xFF));
+
+            throw new BadPaddingException("Invalid Padding length: " + padLen);
         }
 
+        // The padding data should be filled with the padding length value.
+        int[] results = checkPadding(buf, offset + newLen,
+                        padLen + 1, (byte)(padLen & 0xFF));
         if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
-            for (int i = 1; i <= pad; i++) {
-                int val = buf[padOffset - i] & 0xff;
-                if (val != pad) {
-                    throw new BadPaddingException
-                                        ("Invalid TLS padding: " + val);
-                }
+            if (results[0] != 0) {          // padding data has invalid bytes
+                throw new BadPaddingException("Invalid TLS padding data");
             }
         } else { // SSLv3
             // SSLv3 requires 0 <= length byte < block size
             // some implementations do 1 <= length byte <= block size,
             // so accept that as well
             // v3 does not require any particular value for the other bytes
-            if (pad > blockSize) {
-                throw new BadPaddingException("Invalid SSLv3 padding: " + pad);
+            if (padLen > blockSize) {
+                throw new BadPaddingException("Invalid SSLv3 padding");
             }
         }
-        return newlen;
+        return newLen;
     }
 
     /*
      * Position/limit is equal the removed padding.
      */
     private static int removePadding(ByteBuffer bb,
-            int blockSize, ProtocolVersion protocolVersion)
-            throws BadPaddingException {
+            int tagLen, int blockSize,
+            ProtocolVersion protocolVersion) throws BadPaddingException {
 
         int len = bb.remaining();
         int offset = bb.position();
 
         // last byte is length byte (i.e. actual padding length - 1)
         int padOffset = offset + len - 1;
-        int pad = bb.get(padOffset) & 0x0ff;
+        int padLen = bb.get(padOffset) & 0xFF;
 
-        int newlen = len - (pad + 1);
-        if (newlen < 0) {
-            throw new BadPaddingException("Padding length invalid: " + pad);
+        int newLen = len - (padLen + 1);
+        if ((newLen - tagLen) < 0) {
+            // If the buffer is not long enough to contain the padding plus
+            // a MAC tag, do a dummy constant-time padding check.
+            //
+            // Note that it is a dummy check, so we won't care about what is
+            // the actual padding data.
+            checkPadding(bb.duplicate(), (byte)(padLen & 0xFF));
+
+            throw new BadPaddingException("Invalid Padding length: " + padLen);
         }
 
-        /*
-         * We could zero the padding area, but not much useful
-         * information there.
-         */
+        // The padding data should be filled with the padding length value.
+        int[] results = checkPadding(
+                (ByteBuffer)bb.duplicate().position(offset + newLen),
+                (byte)(padLen & 0xFF));
         if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
-            bb.put(padOffset, (byte)0);         // zero the padding.
-            for (int i = 1; i <= pad; i++) {
-                int val = bb.get(padOffset - i) & 0xff;
-                if (val != pad) {
-                    throw new BadPaddingException
-                                        ("Invalid TLS padding: " + val);
-                }
+            if (results[0] != 0) {          // padding data has invalid bytes
+                throw new BadPaddingException("Invalid TLS padding data");
             }
         } else { // SSLv3
             // SSLv3 requires 0 <= length byte < block size
             // some implementations do 1 <= length byte <= block size,
             // so accept that as well
             // v3 does not require any particular value for the other bytes
-            if (pad > blockSize) {
-                throw new BadPaddingException("Invalid SSLv3 padding: " + pad);
+            if (padLen > blockSize) {
+                throw new BadPaddingException("Invalid SSLv3 padding");
             }
         }
 
         /*
          * Reset buffer limit to remove padding.
          */
-        bb.position(offset + newlen);
-        bb.limit(offset + newlen);
+        bb.position(offset + newLen);
+        bb.limit(offset + newLen);
 
-        return newlen;
+        return newLen;
     }
 
     /*
@@ -836,6 +905,16 @@ final class CipherBox {
             ByteBuffer bb) throws BadPaddingException {
         switch (cipherType) {
             case BLOCK_CIPHER:
+                // sanity check length of the ciphertext
+                int tagLen = (authenticator instanceof MAC) ?
+                                    ((MAC)authenticator).MAClen() : 0;
+                if (tagLen != 0) {
+                    if (!sanityCheck(tagLen, bb.remaining())) {
+                        throw new BadPaddingException(
+                                "ciphertext sanity check failed");
+                    }
+                }
+
                 // For block ciphers, the explicit IV length is of length
                 // SecurityParameters.record_iv_length, which is equal to
                 // the SecurityParameters.block_size.
@@ -998,4 +1077,37 @@ final class CipherBox {
 
         return Boolean.TRUE;
     }
+
+    /**
+     * Sanity check the length of a fragment before decryption.
+     *
+     * In CBC mode, check that the fragment length is one or multiple times
+     * of the block size of the cipher suite, and is at least one (one is the
+     * smallest size of padding in CBC mode) bigger than the tag size of the
+     * MAC algorithm except the explicit IV size for TLS 1.1 or later.
+     *
+     * In non-CBC mode, check that the fragment length is not less than the
+     * tag size of the MAC algorithm.
+     *
+     * @return true if the length of a fragment matches above requirements
+     */
+    private boolean sanityCheck(int tagLen, int fragmentLen) {
+        if (!isCBCMode()) {
+            return fragmentLen >= tagLen;
+        }
+
+        int blockSize = cipher.getBlockSize();
+        if ((fragmentLen % blockSize) == 0) {
+            int minimal = tagLen + 1;
+            minimal = (minimal >= blockSize) ? minimal : blockSize;
+            if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                minimal += blockSize;   // plus the size of the explicit IV
+            }
+
+            return (fragmentLen >= minimal);
+        }
+
+        return false;
+    }
+
 }

@@ -76,11 +76,11 @@
 
 package sun.text.resources.fi;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_fi extends ListResourceBundle {
+public class FormatData_fi extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -152,6 +152,23 @@ public class FormatData_fi extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "T",
+                    "H",
+                    "M",
+                    "H",
+                    "T",
+                    "K",
+                    "H",
+                    "E",
+                    "S",
+                    "L",
+                    "M",
+                    "J",
+                    "",
+                }
+            },
             { "standalone.MonthNarrows",
                 new String[] {
                     "T",
@@ -169,6 +186,24 @@ public class FormatData_fi extends ListResourceBundle {
                     "",
                 }
             },
+            { "long.Eras",
+                new String[] {
+                    "ennen Kristuksen syntym\u00e4\u00e4",
+                    "j\u00e4lkeen Kristuksen syntym\u00e4n",
+                }
+            },
+            { "Eras",
+                new String[] {
+                    "eKr.",
+                    "jKr.",
+                }
+            },
+            { "narrow.Eras",
+                new String[] {
+                    "eK",
+                    "jK",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "sunnuntai", // Sunday
@@ -180,6 +215,17 @@ public class FormatData_fi extends ListResourceBundle {
                     "lauantai" // Saturday
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "sunnuntai",
+                    "maanantai",
+                    "tiistai",
+                    "keskiviikko",
+                    "torstai",
+                    "perjantai",
+                    "lauantai",
+                }
+            },
             { "DayAbbreviations",
                 new String[] {
                     "su", // abb Sunday
@@ -189,6 +235,17 @@ public class FormatData_fi extends ListResourceBundle {
                     "to", // abb Thursday
                     "pe", // abb Friday
                     "la" // abb Saturday
+                }
+            },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "su",
+                    "ma",
+                    "ti",
+                    "ke",
+                    "to",
+                    "pe",
+                    "la",
                 }
             },
             { "DayNarrows",
@@ -236,14 +293,6 @@ public class FormatData_fi extends ListResourceBundle {
                     "H:mm", // short time pattern
                 }
             },
-            { "cldr.DatePatterns",
-                new String[] {
-                    "cccc, d. MMMM y",
-                    "d. MMMM y",
-                    "d.M.yyyy",
-                    "d.M.yyyy",
-                }
-            },
             { "DatePatterns",
                 new String[] {
                     "d. MMMM'ta 'yyyy", // full date pattern
@@ -270,89 +319,6 @@ public class FormatData_fi extends ListResourceBundle {
                     "ip.",
                 }
             },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "cccc d. MMMM y G",
-                    "d. MMMM y G",
-                    "d.M.y G",
-                    "d.M.y G",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "cccc d. MMMM y G",
-                    "d. MMMM y G",
-                    "d.M.y G",
-                    "d.M.y G",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "cccc d. MMMM y G",
-                    "d. MMMM y G",
-                    "d.M.y G",
-                    "d.M.y G",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y GGGG",
-                    "d. MMMM y GGGG",
-                    "d.M.y GGGG",
-                    "d.M.y GGGG",
-                }
-            },
-            { "islamic.MonthNames",
-                new String[] {
-                    "muharram",
-                    "safar",
-                    "rabi\u2019 al-awwal",
-                    "rabi\u2019 al-akhir",
-                    "d\u017eumada-l-ula",
-                    "d\u017eumada-l-akhira",
-                    "rad\u017eab",
-                    "\u0161a\u2019ban",
-                    "ramadan",
-                    "\u0161awwal",
-                    "dhu-l-qa\u2019da",
-                    "dhu-l-hidd\u017ea",
-                    "",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "cccc d. MMMM y G",
-                    "d. MMMM y G",
-                    "d.M.y G",
-                    "d.M.y G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y GGGG",
-                    "d. MMMM y GGGG",
-                    "d.M.y GGGG",
-                    "d.M.y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "islamilainen siviilikalenteri" },
-            { "calendarname.islamicc", "islamilainen siviilikalenteri" },
-            { "calendarname.islamic", "islamilainen kalenteri" },
-            { "calendarname.japanese", "japanilainen kalenteri" },
-            { "calendarname.gregorian", "gregoriaaninen kalenteri" },
-            { "calendarname.gregory", "gregoriaaninen kalenteri" },
-            { "calendarname.roc", "Kiinan tasavallan kalenteri" },
-            { "calendarname.buddhist", "buddhalainen kalenteri" },
-            { "field.era", "aikakausi" },
-            { "field.year", "vuosi" },
-            { "field.month", "kuukausi" },
-            { "field.week", "viikko" },
-            { "field.weekday", "viikonp\u00e4iv\u00e4" },
-            { "field.dayperiod", "vuorokaudenaika" },
-            { "field.hour", "tunti" },
-            { "field.minute", "minuutti" },
-            { "field.second", "sekunti" },
-            { "field.zone", "aikavy\u00f6hyke" },
         };
     }
 }

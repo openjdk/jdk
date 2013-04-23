@@ -28,7 +28,6 @@
 
 #include "awt_Component.h"
 
-#include "java_awt_List.h"
 #include "sun_awt_windows_WListPeer.h"
 
 

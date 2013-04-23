@@ -48,7 +48,8 @@ public class LWWindowPeer
         FRAME,
         DIALOG,
         EMBEDDED_FRAME,
-        VIEW_EMBEDDED_FRAME
+        VIEW_EMBEDDED_FRAME,
+        LW_FRAME
     }
 
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.lwawt.focus.LWWindowPeer");
@@ -169,7 +170,7 @@ public class LWWindowPeer
             setTitle(((Dialog) getTarget()).getTitle());
         }
 
-        setAlwaysOnTop(getTarget().isAlwaysOnTop());
+        updateAlwaysOnTopState();
         updateMinimumSize();
 
         final Shape shape = getTarget().getShape();
@@ -356,8 +357,8 @@ public class LWWindowPeer
     }
 
     @Override
-    public void setAlwaysOnTop(boolean value) {
-        platformWindow.setAlwaysOnTop(value);
+    public void updateAlwaysOnTopState() {
+        platformWindow.setAlwaysOnTop(getTarget().isAlwaysOnTop());
     }
 
     @Override
@@ -1090,7 +1091,7 @@ public class LWWindowPeer
         return platformWindow.requestWindowFocus();
     }
 
-    private boolean focusAllowedFor() {
+    protected boolean focusAllowedFor() {
         Window window = getTarget();
         // TODO: check if modal blocked
         return window.isVisible() && window.isEnabled() && isFocusableWindow();
@@ -1113,10 +1114,15 @@ public class LWWindowPeer
         return !(window instanceof Dialog || window instanceof Frame);
     }
 
+    @Override
+    public void emulateActivation(boolean activate) {
+        changeFocusedWindow(activate, null);
+    }
+
     /*
      * Changes focused window on java level.
      */
-    private void changeFocusedWindow(boolean becomesFocused, Window opposite) {
+    protected void changeFocusedWindow(boolean becomesFocused, Window opposite) {
         if (focusLog.isLoggable(PlatformLogger.FINE)) {
             focusLog.fine((becomesFocused?"gaining":"loosing") + " focus window: " + this);
         }

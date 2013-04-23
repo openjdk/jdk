@@ -59,19 +59,18 @@ package java.time.chrono;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 
 import java.io.Serializable;
 import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.chrono.Chronology;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.ChronoLocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
+import java.time.temporal.ValueRange;
+import java.util.Objects;
 
 /**
  * A date expressed in terms of a standard year-month-day calendar system.
@@ -97,12 +96,12 @@ import java.time.temporal.TemporalUnit;
  *        // Enumerate the list of available calendars and print today for each
  *        Set&lt;Chronology&gt; chronos = Chronology.getAvailableChronologies();
  *        for (Chronology chrono : chronos) {
- *            ChronoLocalDate<?> date = chrono.dateNow();
+ *            ChronoLocalDate&lt;?&gt; date = chrono.dateNow();
  *            System.out.printf("   %20s: %s%n", chrono.getID(), date.toString());
  *        }
  *
  *        // Print the Hijrah date and calendar
- *        ChronoLocalDate<?> date = Chronology.of("Hijrah").dateNow();
+ *        ChronoLocalDate&lt;?&gt; date = Chronology.of("Hijrah").dateNow();
  *        int day = date.get(ChronoField.DAY_OF_MONTH);
  *        int dow = date.get(ChronoField.DAY_OF_WEEK);
  *        int month = date.get(ChronoField.MONTH_OF_YEAR);
@@ -111,10 +110,10 @@ import java.time.temporal.TemporalUnit;
  *                dow, day, month, year);
 
  *        // Print today's date and the last day of the year
- *        ChronoLocalDate<?> now1 = Chronology.of("Hijrah").dateNow();
- *        ChronoLocalDate<?> first = now1.with(ChronoField.DAY_OF_MONTH, 1)
+ *        ChronoLocalDate&lt;?&gt; now1 = Chronology.of("Hijrah").dateNow();
+ *        ChronoLocalDate&lt;?&gt; first = now1.with(ChronoField.DAY_OF_MONTH, 1)
  *                .with(ChronoField.MONTH_OF_YEAR, 1);
- *        ChronoLocalDate<?> last = first.plus(1, ChronoUnit.YEARS)
+ *        ChronoLocalDate&lt;?&gt; last = first.plus(1, ChronoUnit.YEARS)
  *                .minus(1, ChronoUnit.DAYS);
  *        System.out.printf("  Today is %s: start: %s; end: %s%n", last.getChronology().getID(),
  *                first, last);
@@ -168,7 +167,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
                 case MILLENNIA: return plusYears(Math.multiplyExact(amountToAdd, 1000));
                 case ERAS: return with(ERA, Math.addExact(getLong(ERA), amountToAdd));
             }
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
         return ChronoLocalDate.super.plus(amountToAdd, unit);
     }
@@ -323,6 +322,8 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
      */
     @Override
     public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
+        Objects.requireNonNull(endDateTime, "endDateTime");
+        Objects.requireNonNull(unit, "unit");
         if (endDateTime instanceof ChronoLocalDate == false) {
             throw new DateTimeException("Unable to calculate period between objects of two different types");
         }
@@ -331,9 +332,33 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
             throw new DateTimeException("Unable to calculate period between two different chronologies");
         }
         if (unit instanceof ChronoUnit) {
-            return LocalDate.from(this).periodUntil(end, unit);  // TODO: this is wrong
+            switch ((ChronoUnit) unit) {
+                case DAYS: return daysUntil(end);
+                case WEEKS: return daysUntil(end) / 7;
+                case MONTHS: return monthsUntil(end);
+                case YEARS: return monthsUntil(end) / 12;
+                case DECADES: return monthsUntil(end) / 120;
+                case CENTURIES: return monthsUntil(end) / 1200;
+                case MILLENNIA: return monthsUntil(end) / 12000;
+                case ERAS: return end.getLong(ERA) - getLong(ERA);
+            }
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
         return unit.between(this, endDateTime);
+    }
+
+    private long daysUntil(ChronoLocalDate<?> end) {
+        return end.toEpochDay() - toEpochDay();  // no overflow
+    }
+
+    private long monthsUntil(ChronoLocalDate<?> end) {
+        ValueRange range = getChronology().range(MONTH_OF_YEAR);
+        if (range.getMaximum() != 12) {
+            throw new IllegalStateException("ChronoDateImpl only supports Chronologies with 12 months per year");
+        }
+        long packed1 = getLong(PROLEPTIC_MONTH) * 32L + get(DAY_OF_MONTH);  // no overflow
+        long packed2 = end.getLong(PROLEPTIC_MONTH) * 32L + end.get(DAY_OF_MONTH);  // no overflow
+        return (packed2 - packed1) / 32;
     }
 
     @Override

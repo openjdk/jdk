@@ -79,45 +79,343 @@ import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatterBuilder.CompositePrinterParser;
 import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
+import java.time.format.DateTimeFormatterBuilder.CompositePrinterParser;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Formatter for printing and parsing date-time objects.
  * <p>
  * This class provides the main application entry point for printing and parsing
  * and provides common implementations of {@code DateTimeFormatter}:
- * <p><ul>
- * <li>Using pattern letters, such as {@code yyyy-MMM-dd}
- * <li>Using localized styles, such as {@code long} or {@code medium}
- * <li>Using predefined constants, such as {@code ISO_LOCAL_DATE}
- * </ul></p>
+ * <ul>
+ * <li>Using predefined constants, such as {@link #ISO_LOCAL_DATE}</li>
+ * <li>Using pattern letters, such as {@code uuuu-MMM-dd}</li>
+ * <li>Using localized styles, such as {@code long} or {@code medium}</li>
+ * </ul>
+ * <p>
+ * More complex formatters are provided by
+ * {@link DateTimeFormatterBuilder DateTimeFormatterBuilder}.
  *
  * <p>
- * In most cases, provided formatters will be sufficient.
- * For more complex formatters, a {@link DateTimeFormatterBuilder builder} is provided.
- * The main date-time classes provide two methods - one for printing,
- * {@code toString(DateTimeFormatter formatter)}, and one for parsing,
+ * The main date-time classes provide two methods - one for formatting,
+ * {@code format(DateTimeFormatter formatter)}, and one for parsing,
  * {@code parse(CharSequence text, DateTimeFormatter formatter)}.
- * For example:
- * <pre>
+ * <p>For example:
+ * <blockquote><pre>
  *  String text = date.toString(formatter);
  *  LocalDate date = LocalDate.parse(text, formatter);
- * </pre>
- * Some aspects of formatting and parsing are dependent on the locale.
- * The locale can be changed using the {@link #withLocale(Locale)} method
- * which returns a new formatter in the requested locale.
+ * </pre></blockquote>
  * <p>
- * Some applications may need to use the older {@link Format} class for formatting.
- * The {@link #toFormat()} method returns an implementation of the old API.
+ * In addition to the format, formatters can be created with desired Locale,
+ * Chronology, ZoneId, and formatting symbols.
+ * <p>
+ * The {@link #withLocale withLocale} method returns a new formatter that
+ * overrides the locale. The locale affects some aspects of formatting and
+ * parsing. For example, the {@link #ofLocalizedDate ofLocalizedDate} provides a
+ * formatter that uses the locale specific date format.
+ * <p>
+ * The {@link #withChronology withChronology} method returns a new formatter
+ * that overrides the chronology. If overridden, the date-time value is
+ * converted to the chronology before formatting. During parsing the date-time
+ * value is converted to the chronology before it is returned.
+ * <p>
+ * The {@link #withZone withZone} method returns a new formatter that overrides
+ * the zone. If overridden, the date-time value is converted to a ZonedDateTime
+ * with the requested ZoneId before formatting. During parsing the ZoneId is
+ * applied before the value is returned.
+ * <p>
+ * The {@link #withSymbols withSymbols} method returns a new formatter that
+ * overrides the {@link DateTimeFormatSymbols}. The symbols are used for
+ * formatting and parsing.
+ * <p>
+ * Some applications may need to use the older {@link Format java.text.Format}
+ * class for formatting. The {@link #toFormat()} method returns an
+ * implementation of {@code java.text.Format}.
+ * <p>
+ * <h3 id="predefined">Predefined Formatters</h3>
+ * <table summary="Predefined Formatters" cellpadding="2" cellspacing="3" border="0" >
+ * <thead>
+ * <tr class="tableSubHeadingColor">
+ * <th class="colFirst" align="left">Formatter</th>
+ * <th class="colFirst" align="left">Description</th>
+ * <th class="colLast" align="left">Example</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr class="rowColor">
+ * <td>{@link #ofLocalizedDate ofLocalizedDate(dateStyle)} </td>
+ * <td> Formatter with date style from the locale </td>
+ * <td> '2011-12-03'</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td> {@link #ofLocalizedTime ofLocalizedTime(timeStyle)} </td>
+ * <td> Formatter with time style from the locale </td>
+ * <td> '10:15:30'</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #ofLocalizedDateTime ofLocalizedDateTime(dateTimeStyle)} </td>
+ * <td> Formatter with a style for date and time from the locale</td>
+ * <td> '3 Jun 2008 11:05:30'</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td> {@link #ofLocalizedDateTime ofLocalizedDateTime(dateStyle,timeStyle)}
+ * </td>
+ * <td> Formatter with date and time styles from the locale </td>
+ * <td> '3 Jun 2008 11:05'</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #BASIC_ISO_DATE}</td>
+ * <td>Basic ISO date </td> <td>'20111203'</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td> {@link #ISO_LOCAL_DATE}</td>
+ * <td> ISO Local Date </td>
+ * <td>'2011-12-03'</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #ISO_OFFSET_DATE}</td>
+ * <td> ISO Date with offset </td>
+ * <td>'2011-12-03+01:00'</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td> {@link #ISO_DATE}</td>
+ * <td> ISO Date with or without offset </td>
+ * <td> '2011-12-03+01:00'; '2011-12-03'</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #ISO_LOCAL_TIME}</td>
+ * <td> Time without offset </td>
+ * <td>'10:15:30'</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td> {@link #ISO_OFFSET_TIME}</td>
+ * <td> Time with offset </td>
+ * <td>'10:15:30+01:00'</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #ISO_TIME}</td>
+ * <td> Time with or without offset </td>
+ * <td>'10:15:30+01:00'; '10:15:30'</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td> {@link #ISO_LOCAL_DATE_TIME}</td>
+ * <td> ISO Local Date and Time </td>
+ * <td>'2011-12-03T10:15:30'</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #ISO_OFFSET_DATE_TIME}</td>
+ * <td> Date Time with Offset
+ * </td><td>2011-12-03T10:15:30+01:00'</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td> {@link #ISO_ZONED_DATE_TIME}</td>
+ * <td> Zoned Date Time </td>
+ * <td>'2011-12-03T10:15:30+01:00[Europe/Paris]'</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #ISO_DATE_TIME}</td>
+ * <td> Date and time with ZoneId </td>
+ * <td>'2011-12-03T10:15:30+01:00[Europe/Paris]'</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td> {@link #ISO_ORDINAL_DATE}</td>
+ * <td> Year and day of year </td>
+ * <td>'2012-337'</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #ISO_WEEK_DATE}</td>
+ * <td> Year and Week </td>
+ * <td>2012-W48-6'</td></tr>
+ * <tr class="altColor">
+ * <td> {@link #ISO_INSTANT}</td>
+ * <td> Date and Time of an Instant </td>
+ * <td>'2011-12-03T10:15:30Z' </td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td> {@link #RFC_1123_DATE_TIME}</td>
+ * <td> RFC 1123 / RFC 822 </td>
+ * <td>'Tue, 3 Jun 2008 11:05:30 GMT'</td>
+ * </tr>
+ * </tbody>
+ * </table>
+ *
+ * <h3 id="patterns">Patterns for Formatting and Parsing</h3>
+ * Patterns are based on a simple sequence of letters and symbols.
+ * A pattern is used to create a Formatter using the
+ * {@link #ofPattern(String)} and {@link #ofPattern(String, Locale)} methods.
+ * For example,
+ * {@code "d MMM uuuu"} will format 2011-12-03 as '3&nbsp;Dec&nbsp;2011'.
+ * A formatter created from a pattern can be used as many times as necessary,
+ * it is immutable and is thread-safe.
+ * <p>
+ * For example:
+ * <blockquote><pre>
+ *  DateTimeFormatter formatter = DateTimeFormatter.pattern("yyyy MM dd");
+ *  String text = date.toString(formatter);
+ *  LocalDate date = LocalDate.parse(text, formatter);
+ * </pre></blockquote>
+ * <p>
+ * All letters 'A' to 'Z' and 'a' to 'z' are reserved as pattern letters. The
+ * following pattern letters are defined:
+ * <pre>
+ *  Symbol  Meaning                     Presentation      Examples
+ *  ------  -------                     ------------      -------
+ *   G       era                         text              AD; Anno Domini; A
+ *   u       year                        year              2004; 04
+ *   y       year-of-era                 year              2004; 04
+ *   D       day-of-year                 number            189
+ *   M/L     month-of-year               number/text       7; 07; Jul; July; J
+ *   d       day-of-month                number            10
+ *
+ *   Q/q     quarter-of-year             number/text       3; 03; Q3; 3rd quarter
+ *   Y       week-based-year             year              1996; 96
+ *   w       week-of-week-based-year     number            27
+ *   W       week-of-month               number            4
+ *   E       day-of-week                 text              Tue; Tuesday; T
+ *   e/c     localized day-of-week       number/text       2; 02; Tue; Tuesday; T
+ *   F       week-of-month               number            3
+ *
+ *   a       am-pm-of-day                text              PM
+ *   h       clock-hour-of-am-pm (1-12)  number            12
+ *   K       hour-of-am-pm (0-11)        number            0
+ *   k       clock-hour-of-am-pm (1-24)  number            0
+ *
+ *   H       hour-of-day (0-23)          number            0
+ *   m       minute-of-hour              number            30
+ *   s       second-of-minute            number            55
+ *   S       fraction-of-second          fraction          978
+ *   A       milli-of-day                number            1234
+ *   n       nano-of-second              number            987654321
+ *   N       nano-of-day                 number            1234000000
+ *
+ *   V       time-zone ID                zone-id           America/Los_Angeles; Z; -08:30
+ *   z       time-zone name              zone-name         Pacific Standard Time; PST
+ *   O       localized zone-offset       offset-O          GMT+8; GMT+08:00; UTC-08:00;
+ *   X       zone-offset 'Z' for zero    offset-X          Z; -08; -0830; -08:30; -083015; -08:30:15;
+ *   x       zone-offset                 offset-x          +0000; -08; -0830; -08:30; -083015; -08:30:15;
+ *   Z       zone-offset                 offset-Z          +0000; -0800; -08:00;
+ *
+ *   p       pad next                    pad modifier      1
+ *
+ *   '       escape for text             delimiter
+ *   ''      single quote                literal           '
+ *   [       optional section start
+ *   ]       optional section end
+ *   #       reserved for future use
+ *   {       reserved for future use
+ *   }       reserved for future use
+ * </pre>
+ * <p>
+ * The count of pattern letters determines the format.
+ * <p>
+ * <b>Text</b>: The text style is determined based on the number of pattern
+ * letters used. Less than 4 pattern letters will use the
+ * {@link TextStyle#SHORT short form}. Exactly 4 pattern letters will use the
+ * {@link TextStyle#FULL full form}. Exactly 5 pattern letters will use the
+ * {@link TextStyle#NARROW narrow form}.
+ * Pattern letters 'L', 'c', and 'q' specify the stand-alone form of the text styles.
+ * <p>
+ * <b>Number</b>: If the count of letters is one, then the value is output using
+ * the minimum number of digits and without padding. Otherwise, the count of digits
+ * is used as the width of the output field, with the value zero-padded as necessary.
+ * The following pattern letters have constraints on the count of letters.
+ * Only one letter of 'c' and 'F' can be specified.
+ * Up to two letters of 'd', 'H', 'h', 'K', 'k', 'm', and 's' can be specified.
+ * Up to three letters of 'D' can be specified.
+ * <p>
+ * <b>Number/Text</b>: If the count of pattern letters is 3 or greater, use the
+ * Text rules above. Otherwise use the Number rules above.
+ * <p>
+ * <b>Fraction</b>: Outputs the nano-of-second field as a fraction-of-second.
+ * The nano-of-second value has nine digits, thus the count of pattern letters
+ * is from 1 to 9. If it is less than 9, then the nano-of-second value is
+ * truncated, with only the most significant digits being output. When parsing
+ * in strict mode, the number of parsed digits must match the count of pattern
+ * letters. When parsing in lenient mode, the number of parsed digits must be at
+ * least the count of pattern letters, up to 9 digits.
+ * <p>
+ * <b>Year</b>: The count of letters determines the minimum field width below
+ * which padding is used. If the count of letters is two, then a
+ * {@link DateTimeFormatterBuilder#appendValueReduced reduced} two digit form is
+ * used. For printing, this outputs the rightmost two digits. For parsing, this
+ * will parse using the base value of 2000, resulting in a year within the range
+ * 2000 to 2099 inclusive. If the count of letters is less than four (but not
+ * two), then the sign is only output for negative years as per
+ * {@link SignStyle#NORMAL}. Otherwise, the sign is output if the pad width is
+ * exceeded, as per {@link SignStyle#EXCEEDS_PAD}.
+ * <p>
+ * <b>ZoneId</b>: This outputs the time-zone ID, such as 'Europe/Paris'. If the
+ * count of letters is two, then the time-zone ID is output. Any other count of
+ * letters throws {@code IllegalArgumentException}.
+ * <p>
+ * <b>Zone names</b>: This outputs the display name of the time-zone ID. If the
+ * count of letters is one, two or three, then the short name is output. If the
+ * count of letters is four, then the full name is output. Five or more letters
+ * throws {@code IllegalArgumentException}.
+ * <p>
+ * <b>Offset X and x</b>: This formats the offset based on the number of pattern
+ * letters. One letter outputs just the hour, such as '+01', unless the minute
+ * is non-zero in which case the minute is also output, such as '+0130'. Two
+ * letters outputs the hour and minute, without a colon, such as '+0130'. Three
+ * letters outputs the hour and minute, with a colon, such as '+01:30'. Four
+ * letters outputs the hour and minute and optional second, without a colon,
+ * such as '+013015'. Five letters outputs the hour and minute and optional
+ * second, with a colon, such as '+01:30:15'. Six or more letters throws
+ * {@code IllegalArgumentException}. Pattern letter 'X' (upper case) will output
+ * 'Z' when the offset to be output would be zero, whereas pattern letter 'x'
+ * (lower case) will output '+00', '+0000', or '+00:00'.
+ * <p>
+ * <b>Offset O</b>: This formats the localized offset based on the number of
+ * pattern letters. One letter outputs the {@linkplain TextStyle#SHORT short}
+ * form of the localized offset, which is localized offset text, such as 'GMT',
+ * with hour without leading zero, optional 2-digit minute and second if
+ * non-zero, and colon, for example 'GMT+8'. Four letters outputs the
+ * {@linkplain TextStyle#FULL full} form, which is localized offset text,
+ * such as 'GMT, with 2-digit hour and minute field, optional second field
+ * if non-zero, and colon, for example 'GMT+08:00'. Any other count of letters
+ * throws {@code IllegalArgumentException}.
+ * <p>
+ * <b>Offset Z</b>: This formats the offset based on the number of pattern
+ * letters. One, two or three letters outputs the hour and minute, without a
+ * colon, such as '+0130'. The output will be '+0000' when the offset is zero.
+ * Four letters outputs the {@linkplain TextStyle#FULL full} form of localized
+ * offset, equivalent to four letters of Offset-O. The output will be the
+ * corresponding localized offset text if the offset is zero. Five
+ * letters outputs the hour, minute, with optional second if non-zero, with
+ * colon. It outputs 'Z' if the offset is zero.
+ * Six or more letters throws {@code IllegalArgumentException}.
+ * <p>
+ * <b>Optional section</b>: The optional section markers work exactly like
+ * calling {@link DateTimeFormatterBuilder#optionalStart()} and
+ * {@link DateTimeFormatterBuilder#optionalEnd()}.
+ * <p>
+ * <b>Pad modifier</b>: Modifies the pattern that immediately follows to be
+ * padded with spaces. The pad width is determined by the number of pattern
+ * letters. This is the same as calling
+ * {@link DateTimeFormatterBuilder#padNext(int)}.
+ * <p>
+ * For example, 'ppH' outputs the hour-of-day padded on the left with spaces to
+ * a width of 2.
+ * <p>
+ * Any unrecognized letter is an error. Any non-letter character, other than
+ * '[', ']', '{', '}', '#' and the single quote will be output directly.
+ * Despite this, it is recommended to use single quotes around all characters
+ * that you want to output directly to ensure that future changes do not break
+ * your application.
  *
  * <h3>Specification for implementors</h3>
  * This class is immutable and thread-safe.
@@ -139,6 +437,14 @@ public final class DateTimeFormatter {
      */
     private final DateTimeFormatSymbols symbols;
     /**
+     * The resolver style to use, not null.
+     */
+    private final ResolverStyle resolverStyle;
+    /**
+     * The fields to use in resolving, null for all fields.
+     */
+    private final Set<TemporalField> resolverFields;
+    /**
      * The chronology to use for formatting, null for no override.
      */
     private final Chronology chrono;
@@ -151,129 +457,17 @@ public final class DateTimeFormatter {
     /**
      * Creates a formatter using the specified pattern.
      * <p>
-     * This method will create a formatter based on a simple pattern of letters and symbols.
-     * For example, {@code d MMM yyyy} will format 2011-12-03 as '3 Dec 2011'.
+     * This method will create a formatter based on a simple
+     * <a href="#patterns">pattern of letters and symbols</a>
+     * as described in the class documentation.
+     * For example, {@code d MMM uuuu} will format 2011-12-03 as '3 Dec 2011'.
      * <p>
-     * The returned formatter will use the default locale, but this can be changed
-     * using {@link DateTimeFormatter#withLocale(Locale)}.
+     * The formatter will use the {@link Locale#getDefault(Locale.Category) default FORMAT locale}.
+     * This can be changed using {@link DateTimeFormatter#withLocale(Locale)} on the returned formatter
+     * Alternatively use the {@link #ofPattern(String, Locale)} variant of this method.
      * <p>
-     * All letters 'A' to 'Z' and 'a' to 'z' are reserved as pattern letters.
-     * The following pattern letters are defined:
-     * <pre>
-     *  Symbol  Meaning                     Presentation      Examples
-     *  ------  -------                     ------------      -------
-     *   G       era                         text              A; AD; Anno Domini
-     *   y       year                        year              2004; 04
-     *   D       day-of-year                 number            189
-     *   M       month-of-year               number/text       7; 07; Jul; July; J
-     *   d       day-of-month                number            10
-     *
-     *   Q       quarter-of-year             number/text       3; 03; Q3
-     *   Y       week-based-year             year              1996; 96
-     *   w       week-of-year                number            27
-     *   W       week-of-month               number            27
-     *   e       localized day-of-week       number            2; Tue; Tuesday; T
-     *   E       day-of-week                 number/text       2; Tue; Tuesday; T
-     *   F       week-of-month               number            3
-     *
-     *   a       am-pm-of-day                text              PM
-     *   h       clock-hour-of-am-pm (1-12)  number            12
-     *   K       hour-of-am-pm (0-11)        number            0
-     *   k       clock-hour-of-am-pm (1-24)  number            0
-     *
-     *   H       hour-of-day (0-23)          number            0
-     *   m       minute-of-hour              number            30
-     *   s       second-of-minute            number            55
-     *   S       fraction-of-second          fraction          978
-     *   A       milli-of-day                number            1234
-     *   n       nano-of-second              number            987654321
-     *   N       nano-of-day                 number            1234000000
-     *
-     *   V       time-zone ID                zone-id           America/Los_Angeles; Z; -08:30
-     *   z       time-zone name              zone-name         Pacific Standard Time; PST
-     *   X       zone-offset 'Z' for zero    offset-X          Z; -08; -0830; -08:30; -083015; -08:30:15;
-     *   x       zone-offset                 offset-x          +0000; -08; -0830; -08:30; -083015; -08:30:15;
-     *   Z       zone-offset                 offset-Z          +0000; -0800; -08:00;
-     *
-     *   p       pad next                    pad modifier      1
-     *
-     *   '       escape for text             delimiter
-     *   ''      single quote                literal           '
-     *   [       optional section start
-     *   ]       optional section end
-     *   {}      reserved for future use
-     * </pre>
-     * <p>
-     * The count of pattern letters determine the format.
-     * <p>
-     * <b>Text</b>: The text style is determined based on the number of pattern letters used.
-     * Less than 4 pattern letters will use the {@link TextStyle#SHORT short form}.
-     * Exactly 4 pattern letters will use the {@link TextStyle#FULL full form}.
-     * Exactly 5 pattern letters will use the {@link TextStyle#NARROW narrow form}.
-     * <p>
-     * <b>Number</b>: If the count of letters is one, then the value is output using the minimum number
-     * of digits and without padding as per {@link DateTimeFormatterBuilder#appendValue(java.time.temporal.TemporalField)}.
-     * Otherwise, the count of digits is used as the width of the output field as per
-     * {@link DateTimeFormatterBuilder#appendValue(java.time.temporal.TemporalField, int)}.
-     * <p>
-     * <b>Number/Text</b>: If the count of pattern letters is 3 or greater, use the Text rules above.
-     * Otherwise use the Number rules above.
-     * <p>
-     * <b>Fraction</b>: Outputs the nano-of-second field as a fraction-of-second.
-     * The nano-of-second value has nine digits, thus the count of pattern letters is from 1 to 9.
-     * If it is less than 9, then the nano-of-second value is truncated, with only the most
-     * significant digits being output.
-     * When parsing in strict mode, the number of parsed digits must match the count of pattern letters.
-     * When parsing in lenient mode, the number of parsed digits must be at least the count of pattern
-     * letters, up to 9 digits.
-     * <p>
-     * <b>Year</b>: The count of letters determines the minimum field width below which padding is used.
-     * If the count of letters is two, then a {@link DateTimeFormatterBuilder#appendValueReduced reduced}
-     * two digit form is used.
-     * For printing, this outputs the rightmost two digits. For parsing, this will parse using the
-     * base value of 2000, resulting in a year within the range 2000 to 2099 inclusive.
-     * If the count of letters is less than four (but not two), then the sign is only output for negative
-     * years as per {@link SignStyle#NORMAL}.
-     * Otherwise, the sign is output if the pad width is exceeded, as per {@link SignStyle#EXCEEDS_PAD}
-     * <p>
-     * <b>ZoneId</b>: This outputs the time-zone ID, such as 'Europe/Paris'.
-     * If the count of letters is two, then the time-zone ID is output.
-     * Any other count of letters throws {@code IllegalArgumentException}.
-     * <p>
-     * <b>Zone names</b>: This outputs the display name of the time-zone ID.
-     * If the count of letters is one, two or three, then the short name is output.
-     * If the count of letters is four, then the full name is output.
-     * Five or more letters throws {@code IllegalArgumentException}.
-     * <p>
-     * <b>Offset X and x</b>: This formats the offset based on the number of pattern letters.
-     * One letter outputs just the hour', such as '+01', unless the minute is non-zero
-     * in which case the minute is also output, such as '+0130'.
-     * Two letters outputs the hour and minute, without a colon, such as '+0130'.
-     * Three letters outputs the hour and minute, with a colon, such as '+01:30'.
-     * Four letters outputs the hour and minute and optional second, without a colon, such as '+013015'.
-     * Five letters outputs the hour and minute and optional second, with a colon, such as '+01:30:15'.
-     * Six or more letters throws {@code IllegalArgumentException}.
-     * Pattern letter 'X' (upper case) will output 'Z' when the offset to be output would be zero,
-     * whereas pattern letter 'x' (lower case) will output '+00', '+0000', or '+00:00'.
-     * <p>
-     * <b>Offset Z</b>: This formats the offset based on the number of pattern letters.
-     * One, two or three letters outputs the hour and minute, without a colon, such as '+0130'.
-     * Four or more letters throws {@code IllegalArgumentException}.
-     * The output will be '+0000' when the offset is zero.
-     * <p>
-     * <b>Optional section</b>: The optional section markers work exactly like calling
-     * {@link DateTimeFormatterBuilder#optionalStart()} and {@link DateTimeFormatterBuilder#optionalEnd()}.
-     * <p>
-     * <b>Pad modifier</b>: Modifies the pattern that immediately follows to be padded with spaces.
-     * The pad width is determined by the number of pattern letters.
-     * This is the same as calling {@link DateTimeFormatterBuilder#padNext(int)}.
-     * <p>
-     * For example, 'ppH' outputs the hour-of-day padded on the left with spaces to a width of 2.
-     * <p>
-     * Any unrecognized letter is an error.
-     * Any non-letter character, other than '[', ']', '{', '}' and the single quote will be output directly.
-     * Despite this, it is recommended to use single quotes around all characters that you want to
-     * output directly to ensure that future changes do not break your application.
+     * The returned formatter has no override chronology or zone.
+     * It uses {@link ResolverStyle#SMART SMART} resolver style.
      *
      * @param pattern  the pattern to use, not null
      * @return the formatter based on the pattern, not null
@@ -285,15 +479,18 @@ public final class DateTimeFormatter {
     }
 
     /**
-     * Creates a formatter using the specified pattern.
+     * Creates a formatter using the specified pattern and locale.
      * <p>
-     * This method will create a formatter based on a simple pattern of letters and symbols.
-     * For example, {@code d MMM yyyy} will format 2011-12-03 as '3 Dec 2011'.
+     * This method will create a formatter based on a simple
+     * <a href="#patterns">pattern of letters and symbols</a>
+     * as described in the class documentation.
+     * For example, {@code d MMM uuuu} will format 2011-12-03 as '3 Dec 2011'.
      * <p>
-     * See {@link #ofPattern(String)} for details of the pattern.
+     * The formatter will use the specified locale.
+     * This can be changed using {@link DateTimeFormatter#withLocale(Locale)} on the returned formatter
      * <p>
-     * The returned formatter will use the specified locale, but this can be changed
-     * using {@link DateTimeFormatter#withLocale(Locale)}.
+     * The returned formatter has no override chronology or zone.
+     * It uses {@link ResolverStyle#SMART SMART} resolver style.
      *
      * @param pattern  the pattern to use, not null
      * @param locale  the locale to use, not null
@@ -307,7 +504,7 @@ public final class DateTimeFormatter {
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a locale specific date format.
+     * Returns a locale specific date format for the ISO chronology.
      * <p>
      * This returns a formatter that will format or parse a date.
      * The exact format pattern used varies by locale.
@@ -320,17 +517,22 @@ public final class DateTimeFormatter {
      * Note that the localized pattern is looked up lazily.
      * This {@code DateTimeFormatter} holds the style required and the locale,
      * looking up the pattern required on demand.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#SMART SMART} resolver style.
      *
      * @param dateStyle  the formatter style to obtain, not null
      * @return the date formatter, not null
      */
     public static DateTimeFormatter ofLocalizedDate(FormatStyle dateStyle) {
         Objects.requireNonNull(dateStyle, "dateStyle");
-        return new DateTimeFormatterBuilder().appendLocalized(dateStyle, null).toFormatter();
+        return new DateTimeFormatterBuilder().appendLocalized(dateStyle, null)
+                .toFormatter(ResolverStyle.SMART, IsoChronology.INSTANCE);
     }
 
     /**
-     * Returns a locale specific time format.
+     * Returns a locale specific time format for the ISO chronology.
      * <p>
      * This returns a formatter that will format or parse a time.
      * The exact format pattern used varies by locale.
@@ -343,17 +545,22 @@ public final class DateTimeFormatter {
      * Note that the localized pattern is looked up lazily.
      * This {@code DateTimeFormatter} holds the style required and the locale,
      * looking up the pattern required on demand.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#SMART SMART} resolver style.
      *
      * @param timeStyle  the formatter style to obtain, not null
      * @return the time formatter, not null
      */
     public static DateTimeFormatter ofLocalizedTime(FormatStyle timeStyle) {
         Objects.requireNonNull(timeStyle, "timeStyle");
-        return new DateTimeFormatterBuilder().appendLocalized(null, timeStyle).toFormatter();
+        return new DateTimeFormatterBuilder().appendLocalized(null, timeStyle)
+                .toFormatter(ResolverStyle.SMART, IsoChronology.INSTANCE);
     }
 
     /**
-     * Returns a locale specific date-time formatter, which is typically of short length.
+     * Returns a locale specific date-time formatter for the ISO chronology.
      * <p>
      * This returns a formatter that will format or parse a date-time.
      * The exact format pattern used varies by locale.
@@ -366,17 +573,22 @@ public final class DateTimeFormatter {
      * Note that the localized pattern is looked up lazily.
      * This {@code DateTimeFormatter} holds the style required and the locale,
      * looking up the pattern required on demand.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#SMART SMART} resolver style.
      *
      * @param dateTimeStyle  the formatter style to obtain, not null
      * @return the date-time formatter, not null
      */
     public static DateTimeFormatter ofLocalizedDateTime(FormatStyle dateTimeStyle) {
         Objects.requireNonNull(dateTimeStyle, "dateTimeStyle");
-        return new DateTimeFormatterBuilder().appendLocalized(dateTimeStyle, dateTimeStyle).toFormatter();
+        return new DateTimeFormatterBuilder().appendLocalized(dateTimeStyle, dateTimeStyle)
+                .toFormatter(ResolverStyle.SMART, IsoChronology.INSTANCE);
     }
 
     /**
-     * Returns a locale specific date and time format.
+     * Returns a locale specific date and time format for the ISO chronology.
      * <p>
      * This returns a formatter that will format or parse a date-time.
      * The exact format pattern used varies by locale.
@@ -389,6 +601,10 @@ public final class DateTimeFormatter {
      * Note that the localized pattern is looked up lazily.
      * This {@code DateTimeFormatter} holds the style required and the locale,
      * looking up the pattern required on demand.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#SMART SMART} resolver style.
      *
      * @param dateStyle  the date formatter style to obtain, not null
      * @param timeStyle  the time formatter style to obtain, not null
@@ -397,13 +613,14 @@ public final class DateTimeFormatter {
     public static DateTimeFormatter ofLocalizedDateTime(FormatStyle dateStyle, FormatStyle timeStyle) {
         Objects.requireNonNull(dateStyle, "dateStyle");
         Objects.requireNonNull(timeStyle, "timeStyle");
-        return new DateTimeFormatterBuilder().appendLocalized(dateStyle, timeStyle).toFormatter();
+        return new DateTimeFormatterBuilder().appendLocalized(dateStyle, timeStyle)
+                .toFormatter(ResolverStyle.SMART, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses a date without an offset,
-     * such as '2011-12-03'.
+     * The ISO date formatter that formats or parses a date without an
+     * offset, such as '2011-12-03'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended local date format.
@@ -418,23 +635,27 @@ public final class DateTimeFormatter {
      * <li>A dash
      * <li>Two digits for the {@link ChronoField#DAY_OF_MONTH day-of-month}.
      *  This is pre-padded by zero to ensure two digits.
-     * </ul></p>
+     * </ul>
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_LOCAL_DATE;
     static {
         ISO_LOCAL_DATE = new DateTimeFormatterBuilder()
-            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
-            .appendLiteral('-')
-            .appendValue(MONTH_OF_YEAR, 2)
-            .appendLiteral('-')
-            .appendValue(DAY_OF_MONTH, 2)
-            .toFormatter();
+                .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+                .appendLiteral('-')
+                .appendValue(MONTH_OF_YEAR, 2)
+                .appendLiteral('-')
+                .appendValue(DAY_OF_MONTH, 2)
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses a date with an offset,
-     * such as '2011-12-03+01:00'.
+     * The ISO date formatter that formats or parses a date with an
+     * offset, such as '2011-12-03+01:00'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset date format.
@@ -444,20 +665,24 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
      *  Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_OFFSET_DATE;
     static {
         ISO_OFFSET_DATE = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_DATE)
-            .appendOffsetId()
-            .toFormatter();
+                .parseCaseInsensitive()
+                .append(ISO_LOCAL_DATE)
+                .appendOffsetId()
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses a date with the
+     * The ISO date formatter that formats or parses a date with the
      * offset if available, such as '2011-12-03' or '2011-12-03+01:00'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
@@ -469,25 +694,29 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
      *  Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
      * <p>
      * As this formatter has an optional element, it may be necessary to parse using
      * {@link DateTimeFormatter#parseBest}.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_DATE;
     static {
         ISO_DATE = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_DATE)
-            .optionalStart()
-            .appendOffsetId()
-            .toFormatter();
+                .parseCaseInsensitive()
+                .append(ISO_LOCAL_DATE)
+                .optionalStart()
+                .appendOffsetId()
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO time formatter that formats or parses a time without an offset,
-     * such as '10:15' or '10:15:30'.
+     * The ISO time formatter that formats or parses a time without an
+     * offset, such as '10:15' or '10:15:30'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended local time format.
@@ -506,26 +735,29 @@ public final class DateTimeFormatter {
      * <li>A decimal point
      * <li>One to nine digits for the {@link ChronoField#NANO_OF_SECOND nano-of-second}.
      *  As many digits will be output as required.
-     * </ul></p>
+     * </ul>
+     * <p>
+     * The returned formatter has no override chronology or zone.
+     * It uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_LOCAL_TIME;
     static {
         ISO_LOCAL_TIME = new DateTimeFormatterBuilder()
-            .appendValue(HOUR_OF_DAY, 2)
-            .appendLiteral(':')
-            .appendValue(MINUTE_OF_HOUR, 2)
-            .optionalStart()
-            .appendLiteral(':')
-            .appendValue(SECOND_OF_MINUTE, 2)
-            .optionalStart()
-            .appendFraction(NANO_OF_SECOND, 0, 9, true)
-            .toFormatter();
+                .appendValue(HOUR_OF_DAY, 2)
+                .appendLiteral(':')
+                .appendValue(MINUTE_OF_HOUR, 2)
+                .optionalStart()
+                .appendLiteral(':')
+                .appendValue(SECOND_OF_MINUTE, 2)
+                .optionalStart()
+                .appendFraction(NANO_OF_SECOND, 0, 9, true)
+                .toFormatter(ResolverStyle.STRICT, null);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO time formatter that formats or parses a time with an offset,
-     * such as '10:15+01:00' or '10:15:30+01:00'.
+     * The ISO time formatter that formats or parses a time with an
+     * offset, such as '10:15+01:00' or '10:15:30+01:00'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset time format.
@@ -535,20 +767,23 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
      *  Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
+     * <p>
+     * The returned formatter has no override chronology or zone.
+     * It uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_OFFSET_TIME;
     static {
         ISO_OFFSET_TIME = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_TIME)
-            .appendOffsetId()
-            .toFormatter();
+                .parseCaseInsensitive()
+                .append(ISO_LOCAL_TIME)
+                .appendOffsetId()
+                .toFormatter(ResolverStyle.STRICT, null);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO time formatter that formats or parses a time, with the
+     * The ISO time formatter that formats or parses a time, with the
      * offset if available, such as '10:15', '10:15:30' or '10:15:30+01:00'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
@@ -560,25 +795,28 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
      *  Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
      * <p>
      * As this formatter has an optional element, it may be necessary to parse using
      * {@link DateTimeFormatter#parseBest}.
+     * <p>
+     * The returned formatter has no override chronology or zone.
+     * It uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_TIME;
     static {
         ISO_TIME = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_TIME)
-            .optionalStart()
-            .appendOffsetId()
-            .toFormatter();
+                .parseCaseInsensitive()
+                .append(ISO_LOCAL_TIME)
+                .optionalStart()
+                .appendOffsetId()
+                .toFormatter(ResolverStyle.STRICT, null);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses a date-time
-     * without an offset, such as '2011-12-03T10:15:30'.
+     * The ISO date-time formatter that formats or parses a date-time without
+     * an offset, such as '2011-12-03T10:15:30'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset date-time format.
@@ -587,22 +825,26 @@ public final class DateTimeFormatter {
      * <li>The {@link #ISO_LOCAL_DATE}
      * <li>The letter 'T'. Parsing is case insensitive.
      * <li>The {@link #ISO_LOCAL_TIME}
-     * </ul></p>
+     * </ul>
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_LOCAL_DATE_TIME;
     static {
         ISO_LOCAL_DATE_TIME = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_DATE)
-            .appendLiteral('T')
-            .append(ISO_LOCAL_TIME)
-            .toFormatter();
+                .parseCaseInsensitive()
+                .append(ISO_LOCAL_DATE)
+                .appendLiteral('T')
+                .append(ISO_LOCAL_TIME)
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses a date-time
-     * with an offset, such as '2011-12-03T10:15:30+01:00'.
+     * The ISO date-time formatter that formats or parses a date-time with an
+     * offset, such as '2011-12-03T10:15:30+01:00'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset date-time format.
@@ -612,25 +854,30 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
      *  Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_OFFSET_DATE_TIME;
     static {
         ISO_OFFSET_DATE_TIME = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_DATE_TIME)
-            .appendOffsetId()
-            .toFormatter();
+                .parseCaseInsensitive()
+                .append(ISO_LOCAL_DATE_TIME)
+                .appendOffsetId()
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses a date-time with
+     * The ISO-like date-time formatter that formats or parses a date-time with
      * offset and zone, such as '2011-12-03T10:15:30+01:00[Europe/Paris]'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * a format that extends the ISO-8601 extended offset date-time format
      * to add the time-zone.
+     * The section in square brackets is not part of the ISO-8601 standard.
      * The format consists of:
      * <p><ul>
      * <li>The {@link #ISO_OFFSET_DATE_TIME}
@@ -639,28 +886,33 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneId#getId() zone ID}. This is not part of the ISO-8601 standard.
      *  Parsing is case sensitive.
      * <li>A close square bracket ']'.
-     * </ul></p>
+     * </ul>
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_ZONED_DATE_TIME;
     static {
         ISO_ZONED_DATE_TIME = new DateTimeFormatterBuilder()
-            .append(ISO_OFFSET_DATE_TIME)
-            .optionalStart()
-            .appendLiteral('[')
-            .parseCaseSensitive()
-            .appendZoneRegionId()
-            .appendLiteral(']')
-            .toFormatter();
+                .append(ISO_OFFSET_DATE_TIME)
+                .optionalStart()
+                .appendLiteral('[')
+                .parseCaseSensitive()
+                .appendZoneRegionId()
+                .appendLiteral(']')
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses a date-time
-     * with the offset and zone if available, such as '2011-12-03T10:15:30',
+     * The ISO-like date-time formatter that formats or parses a date-time with
+     * the offset and zone if available, such as '2011-12-03T10:15:30',
      * '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
-     * the ISO-8601 extended offset date-time format.
+     * the ISO-8601 extended local or offset date-time format, as well as the
+     * extended non-ISO form specifying the time-zone.
      * The format consists of:
      * <p><ul>
      * <li>The {@link #ISO_LOCAL_DATE_TIME}
@@ -672,28 +924,32 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneId#getId() zone ID}. This is not part of the ISO-8601 standard.
      *  Parsing is case sensitive.
      * <li>A close square bracket ']'.
-     * </ul></p>
+     * </ul>
      * <p>
      * As this formatter has an optional element, it may be necessary to parse using
      * {@link DateTimeFormatter#parseBest}.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_DATE_TIME;
     static {
         ISO_DATE_TIME = new DateTimeFormatterBuilder()
-            .append(ISO_LOCAL_DATE_TIME)
-            .optionalStart()
-            .appendOffsetId()
-            .optionalStart()
-            .appendLiteral('[')
-            .parseCaseSensitive()
-            .appendZoneRegionId()
-            .appendLiteral(']')
-            .toFormatter();
+                .append(ISO_LOCAL_DATE_TIME)
+                .optionalStart()
+                .appendOffsetId()
+                .optionalStart()
+                .appendLiteral('[')
+                .parseCaseSensitive()
+                .appendZoneRegionId()
+                .appendLiteral(']')
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses the ordinal date
+     * The ISO date formatter that formats or parses the ordinal date
      * without an offset, such as '2012-337'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
@@ -710,26 +966,30 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
      *  Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
      * <p>
      * As this formatter has an optional element, it may be necessary to parse using
      * {@link DateTimeFormatter#parseBest}.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_ORDINAL_DATE;
     static {
         ISO_ORDINAL_DATE = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
-            .appendLiteral('-')
-            .appendValue(DAY_OF_YEAR, 3)
-            .optionalStart()
-            .appendOffsetId()
-            .toFormatter();
+                .parseCaseInsensitive()
+                .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+                .appendLiteral('-')
+                .appendValue(DAY_OF_YEAR, 3)
+                .optionalStart()
+                .appendOffsetId()
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses the week-based date
+     * The ISO date formatter that formats or parses the week-based date
      * without an offset, such as '2012-W48-6'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
@@ -750,50 +1010,67 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
      *  Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
      * <p>
      * As this formatter has an optional element, it may be necessary to parse using
      * {@link DateTimeFormatter#parseBest}.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_WEEK_DATE;
     static {
         ISO_WEEK_DATE = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .appendValue(IsoFields.WEEK_BASED_YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
-            .appendLiteral("-W")
-            .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR, 2)
-            .appendLiteral('-')
-            .appendValue(DAY_OF_WEEK, 1)
-            .optionalStart()
-            .appendOffsetId()
-            .toFormatter();
+                .parseCaseInsensitive()
+                .appendValue(IsoFields.WEEK_BASED_YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+                .appendLiteral("-W")
+                .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR, 2)
+                .appendLiteral('-')
+                .appendValue(DAY_OF_WEEK, 1)
+                .optionalStart()
+                .appendOffsetId()
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO instant formatter that formats or parses an instant in UTC.
+     * The ISO instant formatter that formats or parses an instant in UTC,
+     * such as '2011-12-03T10:15:30Z'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 instant format.
+     * <p>
+     * This is a special case formatter intended to allow a human readable form
+     * of an {@link java.time.Instant}. The {@code Instant} class is designed to
+     * only represent a point in time and internally stores a value in nanoseconds
+     * from a fixed epoch of 1970-01-01Z. As such, an {@code Instant} cannot be
+     * formatted as a date or time without providing some form of time-zone.
+     * This formatter allows the {@code Instant} to be formatted, by providing
+     * a suitable conversion using {@code ZoneOffset.UTC}.
+     * <p>
      * The format consists of:
      * <p><ul>
      * <li>The {@link #ISO_OFFSET_DATE_TIME} where the instant is converted from
      *  {@link ChronoField#INSTANT_SECONDS} and {@link ChronoField#NANO_OF_SECOND}
      *  using the {@code UTC} offset. Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
+     * <p>
+     * The returned formatter has no override chronology or zone.
+     * It uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter ISO_INSTANT;
     static {
         ISO_INSTANT = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .appendInstant()
-            .toFormatter();
+                .parseCaseInsensitive()
+                .appendInstant()
+                .toFormatter(ResolverStyle.STRICT, null);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the ISO date formatter that formats or parses a date without an offset,
-     * such as '20111203'.
+     * The ISO date formatter that formats or parses a date without an
+     * offset, such as '20111203'.
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 basic local date format.
@@ -809,21 +1086,25 @@ public final class DateTimeFormatter {
      * <li>The {@link ZoneOffset#getId() offset ID} without colons. If the offset has
      *  seconds then they will be handled even though this is not part of the ISO-8601 standard.
      *  Parsing is case insensitive.
-     * </ul></p>
+     * </ul>
      * <p>
      * As this formatter has an optional element, it may be necessary to parse using
      * {@link DateTimeFormatter#parseBest}.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#STRICT STRICT} resolver style.
      */
     public static final DateTimeFormatter BASIC_ISO_DATE;
     static {
         BASIC_ISO_DATE = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .appendValue(YEAR, 4)
-            .appendValue(MONTH_OF_YEAR, 2)
-            .appendValue(DAY_OF_MONTH, 2)
-            .optionalStart()
-            .appendOffset("+HHMMss", "Z")
-            .toFormatter();
+                .parseCaseInsensitive()
+                .appendValue(YEAR, 4)
+                .appendValue(MONTH_OF_YEAR, 2)
+                .appendValue(DAY_OF_MONTH, 2)
+                .optionalStart()
+                .appendOffset("+HHMMss", "Z")
+                .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------
@@ -862,9 +1143,13 @@ public final class DateTimeFormatter {
      * <li>A space
      * <li>The {@link ZoneOffset#getId() offset ID} without colons or seconds.
      *  An offset of zero uses "GMT". North American zone names and military zone names are not handled.
-     * </ul></p>
+     * </ul>
      * <p>
      * Parsing is case insensitive.
+     * <p>
+     * The returned formatter has a chronology of ISO set to ensure dates in
+     * other calendar systems are correctly converted.
+     * It has no override zone and uses the {@link ResolverStyle#SMART SMART} resolver style.
      */
     public static final DateTimeFormatter RFC_1123_DATE_TIME;
     static {
@@ -892,28 +1177,28 @@ public final class DateTimeFormatter {
         moy.put(11L, "Nov");
         moy.put(12L, "Dec");
         RFC_1123_DATE_TIME = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .parseLenient()
-            .optionalStart()
-            .appendText(DAY_OF_WEEK, dow)
-            .appendLiteral(", ")
-            .optionalEnd()
-            .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
-            .appendLiteral(' ')
-            .appendText(MONTH_OF_YEAR, moy)
-            .appendLiteral(' ')
-            .appendValue(YEAR, 4)  // 2 digit year not handled
-            .appendLiteral(' ')
-            .appendValue(HOUR_OF_DAY, 2)
-            .appendLiteral(':')
-            .appendValue(MINUTE_OF_HOUR, 2)
-            .optionalStart()
-            .appendLiteral(':')
-            .appendValue(SECOND_OF_MINUTE, 2)
-            .optionalEnd()
-            .appendLiteral(' ')
-            .appendOffset("+HHMM", "GMT")  // should handle UT/Z/EST/EDT/CST/CDT/MST/MDT/PST/MDT
-            .toFormatter();
+                .parseCaseInsensitive()
+                .parseLenient()
+                .optionalStart()
+                .appendText(DAY_OF_WEEK, dow)
+                .appendLiteral(", ")
+                .optionalEnd()
+                .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
+                .appendLiteral(' ')
+                .appendText(MONTH_OF_YEAR, moy)
+                .appendLiteral(' ')
+                .appendValue(YEAR, 4)  // 2 digit year not handled
+                .appendLiteral(' ')
+                .appendValue(HOUR_OF_DAY, 2)
+                .appendLiteral(':')
+                .appendValue(MINUTE_OF_HOUR, 2)
+                .optionalStart()
+                .appendLiteral(':')
+                .appendValue(SECOND_OF_MINUTE, 2)
+                .optionalEnd()
+                .appendLiteral(' ')
+                .appendOffset("+HHMM", "GMT")  // should handle UT/Z/EST/EDT/CST/CDT/MST/MDT/PST/MDT
+                .toFormatter(ResolverStyle.SMART, IsoChronology.INSTANCE);
     }
 
     /**
@@ -922,14 +1207,20 @@ public final class DateTimeFormatter {
      * @param printerParser  the printer/parser to use, not null
      * @param locale  the locale to use, not null
      * @param symbols  the symbols to use, not null
+     * @param resolverStyle  the resolver style to use, not null
+     * @param resolverFields  the fields to use during resolving, null for all fields
      * @param chrono  the chronology to use, null for no override
      * @param zone  the zone to use, null for no override
      */
-    DateTimeFormatter(CompositePrinterParser printerParser, Locale locale,
-                      DateTimeFormatSymbols symbols, Chronology chrono, ZoneId zone) {
+    DateTimeFormatter(CompositePrinterParser printerParser,
+            Locale locale, DateTimeFormatSymbols symbols,
+            ResolverStyle resolverStyle, Set<TemporalField> resolverFields,
+            Chronology chrono, ZoneId zone) {
         this.printerParser = Objects.requireNonNull(printerParser, "printerParser");
+        this.resolverFields = resolverFields;
         this.locale = Objects.requireNonNull(locale, "locale");
         this.symbols = Objects.requireNonNull(symbols, "symbols");
+        this.resolverStyle = Objects.requireNonNull(resolverStyle, "resolverStyle");
         this.chrono = chrono;
         this.zone = zone;
     }
@@ -962,7 +1253,7 @@ public final class DateTimeFormatter {
         if (this.locale.equals(locale)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -987,7 +1278,7 @@ public final class DateTimeFormatter {
         if (this.symbols.equals(symbols)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -998,7 +1289,7 @@ public final class DateTimeFormatter {
      * By default, a formatter has no override chronology, returning null.
      * See {@link #withChronology(Chronology)} for more details on overriding.
      *
-     * @return the chronology of this formatter, null if no override
+     * @return the override chronology of this formatter, null if no override
      */
     public Chronology getChronology() {
         return chrono;
@@ -1013,26 +1304,35 @@ public final class DateTimeFormatter {
      * <p>
      * If an override is added, then any date that is formatted or parsed will be affected.
      * <p>
-     * When formatting, if the {@code Temporal} object contains a date then it will
+     * When formatting, if the temporal object contains a date, then it will
      * be converted to a date in the override chronology.
-     * Any time or zone will be retained unless overridden.
-     * The converted result will behave in a manner equivalent to an implementation
-     * of {@code ChronoLocalDate},{@code ChronoLocalDateTime} or {@code ChronoZonedDateTime}.
+     * Whether the temporal contains a date is determined by querying the
+     * {@link ChronoField#EPOCH_DAY EPOCH_DAY} field.
+     * Any time or zone will be retained unaltered unless overridden.
      * <p>
-     * When parsing, the override chronology will be used to interpret the
-     * {@link java.time.temporal.ChronoField fields} into a date unless the
-     * formatter directly parses a valid chronology.
+     * If the temporal object does not contain a date, but does contain one
+     * or more {@code ChronoField} date fields, then a {@code DateTimeException}
+     * is thrown. In all other cases, the override chronology is added to the temporal,
+     * replacing any previous chronology, but without changing the date/time.
+     * <p>
+     * When parsing, there are two distinct cases to consider.
+     * If a chronology has been parsed directly from the text, perhaps because
+     * {@link DateTimeFormatterBuilder#appendChronologyId()} was used, then
+     * this override chronology has no effect.
+     * If no zone has been parsed, then this override chronology will be used
+     * to interpret the {@code ChronoField} values into a date according to the
+     * date resolving rules of the chronology.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param chrono  the new chronology, not null
+     * @param chrono  the new chronology, null if no override
      * @return a formatter based on this formatter with the requested override chronology, not null
      */
     public DateTimeFormatter withChronology(Chronology chrono) {
         if (Objects.equals(this.chrono, chrono)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -1043,7 +1343,7 @@ public final class DateTimeFormatter {
      * By default, a formatter has no override zone, returning null.
      * See {@link #withZone(ZoneId)} for more details on overriding.
      *
-     * @return the chronology of this formatter, null if no override
+     * @return the override zone of this formatter, null if no override
      */
     public ZoneId getZone() {
         return zone;
@@ -1058,28 +1358,192 @@ public final class DateTimeFormatter {
      * <p>
      * If an override is added, then any instant that is formatted or parsed will be affected.
      * <p>
-     * When formatting, if the {@code Temporal} object contains an instant then it will
+     * When formatting, if the temporal object contains an instant, then it will
      * be converted to a zoned date-time using the override zone.
+     * Whether the temporal is an instant is determined by querying the
+     * {@link ChronoField#INSTANT_SECONDS INSTANT_SECONDS} field.
      * If the input has a chronology then it will be retained unless overridden.
      * If the input does not have a chronology, such as {@code Instant}, then
      * the ISO chronology will be used.
-     * The converted result will behave in a manner equivalent to an implementation
-     * of {@code ChronoZonedDateTime}.
      * <p>
-     * When parsing, the override zone will be used to interpret the
-     * {@link java.time.temporal.ChronoField fields} into an instant unless the
-     * formatter directly parses a valid zone.
+     * If the temporal object does not contain an instant, but does contain
+     * an offset then an additional check is made. If the normalized override
+     * zone is an offset that differs from the offset of the temporal, then
+     * a {@code DateTimeException} is thrown. In all other cases, the override
+     * zone is added to the temporal, replacing any previous zone, but without
+     * changing the date/time.
+     * <p>
+     * When parsing, there are two distinct cases to consider.
+     * If a zone has been parsed directly from the text, perhaps because
+     * {@link DateTimeFormatterBuilder#appendZoneId()} was used, then
+     * this override zone has no effect.
+     * If no zone has been parsed, then this override zone will be included in
+     * the result of the parse where it can be used to build instants and date-times.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param zone  the new override zone, not null
+     * @param zone  the new override zone, null if no override
      * @return a formatter based on this formatter with the requested override zone, not null
      */
     public DateTimeFormatter withZone(ZoneId zone) {
         if (Objects.equals(this.zone, zone)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Gets the resolver style to use during parsing.
+     * <p>
+     * This returns the resolver style, used during the second phase of parsing
+     * when fields are resolved into dates and times.
+     * By default, a formatter has the {@link ResolverStyle#SMART SMART} resolver style.
+     * See {@link #withResolverStyle(ResolverStyle)} for more details.
+     *
+     * @return the resolver style of this formatter, not null
+     */
+    public ResolverStyle getResolverStyle() {
+        return resolverStyle;
+    }
+
+    /**
+     * Returns a copy of this formatter with a new resolver style.
+     * <p>
+     * This returns a formatter with similar state to this formatter but
+     * with the resolver style set. By default, a formatter has the
+     * {@link ResolverStyle#SMART SMART} resolver style.
+     * <p>
+     * Changing the resolver style only has an effect during parsing.
+     * Parsing a text string occurs in two phases.
+     * Phase 1 is a basic text parse according to the fields added to the builder.
+     * Phase 2 resolves the parsed field-value pairs into date and/or time objects.
+     * The resolver style is used to control how phase 2, resolving, happens.
+     * See {@code ResolverStyle} for more information on the options available.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param resolverStyle  the new resolver style, not null
+     * @return a formatter based on this formatter with the requested resolver style, not null
+     */
+    public DateTimeFormatter withResolverStyle(ResolverStyle resolverStyle) {
+        Objects.requireNonNull(resolverStyle, "resolverStyle");
+        if (Objects.equals(this.resolverStyle, resolverStyle)) {
+            return this;
+        }
+        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Gets the resolver fields to use during parsing.
+     * <p>
+     * This returns the resolver fields, used during the second phase of parsing
+     * when fields are resolved into dates and times.
+     * By default, a formatter has no resolver fields, and thus returns null.
+     * See {@link #withResolverFields(Set)} for more details.
+     *
+     * @return the immutable set of resolver fields of this formatter, null if no fields
+     */
+    public Set<TemporalField> getResolverFields() {
+        return resolverFields;
+    }
+
+    /**
+     * Returns a copy of this formatter with a new set of resolver fields.
+     * <p>
+     * This returns a formatter with similar state to this formatter but with
+     * the resolver fields set. By default, a formatter has no resolver fields.
+     * <p>
+     * Changing the resolver fields only has an effect during parsing.
+     * Parsing a text string occurs in two phases.
+     * Phase 1 is a basic text parse according to the fields added to the builder.
+     * Phase 2 resolves the parsed field-value pairs into date and/or time objects.
+     * The resolver fields are used to filter the field-value pairs between phase 1 and 2.
+     * <p>
+     * This can be used to select between two or more ways that a date or time might
+     * be resolved. For example, if the formatter consists of year, month, day-of-month
+     * and day-of-year, then there are two ways to resolve a date.
+     * Calling this method with the arguments {@link ChronoField#YEAR YEAR} and
+     * {@link ChronoField#DAY_OF_YEAR DAY_OF_YEAR} will ensure that the date is
+     * resolved using the year and day-of-year, effectively meaning that the month
+     * and day-of-month are ignored during the resolving phase.
+     * <p>
+     * In a similar manner, this method can be used to ignore secondary fields that
+     * would otherwise be cross-checked. For example, if the formatter consists of year,
+     * month, day-of-month and day-of-week, then there is only one way to resolve a
+     * date, but the parsed value for day-of-week will be cross-checked against the
+     * resolved date. Calling this method with the arguments {@link ChronoField#YEAR YEAR},
+     * {@link ChronoField#MONTH_OF_YEAR MONTH_OF_YEAR} and
+     * {@link ChronoField#DAY_OF_MONTH DAY_OF_MONTH} will ensure that the date is
+     * resolved correctly, but without any cross-check for the day-of-week.
+     * <p>
+     * In implementation terms, this method behaves as follows. The result of the
+     * parsing phase can be considered to be a map of field to value. The behavior
+     * of this method is to cause that map to be filtered between phase 1 and 2,
+     * removing all fields other than those specified as arguments to this method.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param resolverFields  the new set of resolver fields, null if no fields
+     * @return a formatter based on this formatter with the requested resolver style, not null
+     */
+    public DateTimeFormatter withResolverFields(TemporalField... resolverFields) {
+        Objects.requireNonNull(resolverFields, "resolverFields");
+        Set<TemporalField> fields = new HashSet<>(Arrays.asList(resolverFields));
+        if (Objects.equals(this.resolverFields, fields)) {
+            return this;
+        }
+        fields = Collections.unmodifiableSet(fields);
+        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, fields, chrono, zone);
+    }
+
+    /**
+     * Returns a copy of this formatter with a new set of resolver fields.
+     * <p>
+     * This returns a formatter with similar state to this formatter but with
+     * the resolver fields set. By default, a formatter has no resolver fields.
+     * <p>
+     * Changing the resolver fields only has an effect during parsing.
+     * Parsing a text string occurs in two phases.
+     * Phase 1 is a basic text parse according to the fields added to the builder.
+     * Phase 2 resolves the parsed field-value pairs into date and/or time objects.
+     * The resolver fields are used to filter the field-value pairs between phase 1 and 2.
+     * <p>
+     * This can be used to select between two or more ways that a date or time might
+     * be resolved. For example, if the formatter consists of year, month, day-of-month
+     * and day-of-year, then there are two ways to resolve a date.
+     * Calling this method with the arguments {@link ChronoField#YEAR YEAR} and
+     * {@link ChronoField#DAY_OF_YEAR DAY_OF_YEAR} will ensure that the date is
+     * resolved using the year and day-of-year, effectively meaning that the month
+     * and day-of-month are ignored during the resolving phase.
+     * <p>
+     * In a similar manner, this method can be used to ignore secondary fields that
+     * would otherwise be cross-checked. For example, if the formatter consists of year,
+     * month, day-of-month and day-of-week, then there is only one way to resolve a
+     * date, but the parsed value for day-of-week will be cross-checked against the
+     * resolved date. Calling this method with the arguments {@link ChronoField#YEAR YEAR},
+     * {@link ChronoField#MONTH_OF_YEAR MONTH_OF_YEAR} and
+     * {@link ChronoField#DAY_OF_MONTH DAY_OF_MONTH} will ensure that the date is
+     * resolved correctly, but without any cross-check for the day-of-week.
+     * <p>
+     * In implementation terms, this method behaves as follows. The result of the
+     * parsing phase can be considered to be a map of field to value. The behavior
+     * of this method is to cause that map to be filtered between phase 1 and 2,
+     * removing all fields other than those specified as arguments to this method.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param resolverFields  the new set of resolver fields, null if no fields
+     * @return a formatter based on this formatter with the requested resolver style, not null
+     */
+    public DateTimeFormatter withResolverFields(Set<TemporalField> resolverFields) {
+        Objects.requireNonNull(resolverFields, "resolverFields");
+        if (Objects.equals(this.resolverFields, resolverFields)) {
+            return this;
+        }
+        resolverFields = Collections.unmodifiableSet(new HashSet<>(resolverFields));
+        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -1151,7 +1615,7 @@ public final class DateTimeFormatter {
     public TemporalAccessor parse(CharSequence text) {
         Objects.requireNonNull(text, "text");
         try {
-            return parseToBuilder(text, null).resolve();
+            return parseResolved0(text, null);
         } catch (DateTimeParseException ex) {
             throw ex;
         } catch (RuntimeException ex) {
@@ -1193,7 +1657,7 @@ public final class DateTimeFormatter {
         Objects.requireNonNull(text, "text");
         Objects.requireNonNull(position, "position");
         try {
-            return parseToBuilder(text, position).resolve();
+            return parseResolved0(text, position);
         } catch (DateTimeParseException | IndexOutOfBoundsException ex) {
             throw ex;
         } catch (RuntimeException ex) {
@@ -1225,8 +1689,7 @@ public final class DateTimeFormatter {
         Objects.requireNonNull(text, "text");
         Objects.requireNonNull(query, "query");
         try {
-            DateTimeBuilder builder = parseToBuilder(text, null).resolve();
-            return builder.query(query);
+            return parseResolved0(text, null).query(query);
         } catch (DateTimeParseException ex) {
             throw ex;
         } catch (RuntimeException ex) {
@@ -1238,7 +1701,7 @@ public final class DateTimeFormatter {
      * Fully parses the text producing an object of one of the specified types.
      * <p>
      * This parse method is convenient for use when the parser can handle optional elements.
-     * For example, a pattern of 'yyyy-MM-dd HH.mm[Z]]' can be fully parsed to a {@code ZonedDateTime},
+     * For example, a pattern of 'uuuu-MM-dd HH.mm[ VV]' can be fully parsed to a {@code ZonedDateTime},
      * or partially parsed to a {@code LocalDateTime}.
      * The queries must be specified in order, starting from the best matching full-parse option
      * and ending with the worst matching minimal parse option.
@@ -1272,10 +1735,10 @@ public final class DateTimeFormatter {
             throw new IllegalArgumentException("At least two queries must be specified");
         }
         try {
-            DateTimeBuilder builder = parseToBuilder(text, null).resolve();
+            TemporalAccessor resolved = parseResolved0(text, null);
             for (TemporalQuery<?> query : queries) {
                 try {
-                    return (TemporalAccessor) builder.query(query);
+                    return (TemporalAccessor) resolved.query(query);
                 } catch (RuntimeException ex) {
                     // continue
                 }
@@ -1289,7 +1752,7 @@ public final class DateTimeFormatter {
     }
 
     private DateTimeParseException createError(CharSequence text, RuntimeException ex) {
-        String abbr = "";
+        String abbr;
         if (text.length() > 64) {
             abbr = text.subSequence(0, 64).toString() + "...";
         } else {
@@ -1300,23 +1763,23 @@ public final class DateTimeFormatter {
 
     //-----------------------------------------------------------------------
     /**
-     * Parses the text to a builder.
+     * Parses and resolves the specified text.
      * <p>
-     * This parses to a {@code DateTimeBuilder} ensuring that the text is fully parsed.
-     * This method throws {@link DateTimeParseException} if unable to parse, or
-     * some other {@code DateTimeException} if another date/time problem occurs.
+     * This parses to a {@code TemporalAccessor} ensuring that the text is fully parsed.
      *
      * @param text  the text to parse, not null
      * @param position  the position to parse from, updated with length parsed
      *  and the index of any error, null if parsing whole string
-     * @return the engine representing the result of the parse, not null
+     * @return the resolved result of the parse, not null
      * @throws DateTimeParseException if the parse fails
+     * @throws DateTimeException if an error occurs while resolving the date or time
+     * @throws IndexOutOfBoundsException if the position is invalid
      */
-    private DateTimeBuilder parseToBuilder(final CharSequence text, final ParsePosition position) {
+    private TemporalAccessor parseResolved0(final CharSequence text, final ParsePosition position) {
         ParsePosition pos = (position != null ? position : new ParsePosition(0));
-        DateTimeParseContext result = parseUnresolved0(text, pos);
-        if (result == null || pos.getErrorIndex() >= 0 || (position == null && pos.getIndex() < text.length())) {
-            String abbr = "";
+        Parsed unresolved = parseUnresolved0(text, pos);
+        if (unresolved == null || pos.getErrorIndex() >= 0 || (position == null && pos.getIndex() < text.length())) {
+            String abbr;
             if (text.length() > 64) {
                 abbr = text.subSequence(0, 64).toString() + "...";
             } else {
@@ -1330,7 +1793,7 @@ public final class DateTimeFormatter {
                         pos.getIndex(), text, pos.getIndex());
             }
         }
-        return result.resolveFields().toBuilder();
+        return unresolved.resolve(resolverStyle, resolverFields);
     }
 
     /**
@@ -1376,7 +1839,7 @@ public final class DateTimeFormatter {
         return parseUnresolved0(text, position);
     }
 
-    private DateTimeParseContext parseUnresolved0(CharSequence text, ParsePosition position) {
+    private Parsed parseUnresolved0(CharSequence text, ParsePosition position) {
         Objects.requireNonNull(text, "text");
         Objects.requireNonNull(position, "position");
         DateTimeParseContext context = new DateTimeParseContext(this);
@@ -1387,7 +1850,7 @@ public final class DateTimeFormatter {
             return null;
         }
         position.setIndex(pos);  // errorIndex not updated from input
-        return context;
+        return context.toParsed();
     }
 
     //-----------------------------------------------------------------------
@@ -1496,7 +1959,7 @@ public final class DateTimeFormatter {
             Objects.requireNonNull(text, "text");
             try {
                 if (parseType == null) {
-                    return formatter.parseToBuilder(text, null).resolve();
+                    return formatter.parseResolved0(text, null);
                 }
                 return formatter.parse(text, parseType);
             } catch (DateTimeParseException ex) {
@@ -1508,7 +1971,7 @@ public final class DateTimeFormatter {
         @Override
         public Object parseObject(String text, ParsePosition pos) {
             Objects.requireNonNull(text, "text");
-            DateTimeParseContext unresolved;
+            Parsed unresolved;
             try {
                 unresolved = formatter.parseUnresolved0(text, pos);
             } catch (IndexOutOfBoundsException ex) {
@@ -1524,11 +1987,11 @@ public final class DateTimeFormatter {
                 return null;
             }
             try {
-                DateTimeBuilder builder = unresolved.resolveFields().toBuilder().resolve();
+                TemporalAccessor resolved = unresolved.resolve(formatter.resolverStyle, formatter.resolverFields);
                 if (parseType == null) {
-                    return builder;
+                    return resolved;
                 }
-                return builder.query(parseType);
+                return resolved.query(parseType);
             } catch (RuntimeException ex) {
                 pos.setErrorIndex(0);
                 return null;

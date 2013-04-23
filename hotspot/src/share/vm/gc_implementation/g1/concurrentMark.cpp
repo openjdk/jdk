@@ -784,7 +784,7 @@ void ConcurrentMark::reset_marking_state(bool clear_overflow) {
   }
 }
 
-void ConcurrentMark::set_phase(uint active_tasks, bool concurrent) {
+void ConcurrentMark::set_concurrency(uint active_tasks) {
   assert(active_tasks <= _max_worker_id, "we should not have more");
 
   _active_tasks = active_tasks;
@@ -793,6 +793,10 @@ void ConcurrentMark::set_phase(uint active_tasks, bool concurrent) {
   _terminator   = ParallelTaskTerminator((int) active_tasks, _task_queues);
   _first_overflow_barrier_sync.set_n_workers((int) active_tasks);
   _second_overflow_barrier_sync.set_n_workers((int) active_tasks);
+}
+
+void ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
+  set_concurrency(active_tasks);
 
   _concurrent = concurrent;
   // We propagate this to all tasks, not just the active ones.
@@ -806,7 +810,9 @@ void ConcurrentMark::set_phase(uint active_tasks, bool concurrent) {
     // false before we start remark. At this point we should also be
     // in a STW phase.
     assert(!concurrent_marking_in_progress(), "invariant");
-    assert(_finger == _heap_end, "only way to get here");
+    assert(_finger == _heap_end,
+           err_msg("only way to get here: _finger: "PTR_FORMAT", _heap_end: "PTR_FORMAT,
+                   _finger, _heap_end));
     update_g1_committed(true);
   }
 }
@@ -974,20 +980,28 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
     gclog_or_tty->print_cr("[%u] leaving first barrier", worker_id);
   }
 
-  // let the task associated with with worker 0 do this
-  if (worker_id == 0) {
-    // task 0 is responsible for clearing the global data structures
-    // We should be here because of an overflow. During STW we should
-    // not clear the overflow flag since we rely on it being true when
-    // we exit this method to abort the pause and restart concurent
-    // marking.
-    reset_marking_state(concurrent() /* clear_overflow */);
-    force_overflow()->update();
+  // If we're executing the concurrent phase of marking, reset the marking
+  // state; otherwise the marking state is reset after reference processing,
+  // during the remark pause.
+  // If we reset here as a result of an overflow during the remark we will
+  // see assertion failures from any subsequent set_concurrency_and_phase()
+  // calls.
+  if (concurrent()) {
+    // let the task associated with with worker 0 do this
+    if (worker_id == 0) {
+      // task 0 is responsible for clearing the global data structures
+      // We should be here because of an overflow. During STW we should
+      // not clear the overflow flag since we rely on it being true when
+      // we exit this method to abort the pause and restart concurent
+      // marking.
+      reset_marking_state(true /* clear_overflow */);
+      force_overflow()->update();
 
-    if (G1Log::fine()) {
-      gclog_or_tty->date_stamp(PrintGCDateStamps);
-      gclog_or_tty->stamp(PrintGCTimeStamps);
-      gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
+      if (G1Log::fine()) {
+        gclog_or_tty->date_stamp(PrintGCDateStamps);
+        gclog_or_tty->stamp(PrintGCTimeStamps);
+        gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
+      }
     }
   }
 
@@ -1007,7 +1021,7 @@ void ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
   if (concurrent()) {
     ConcurrentGCThread::stsJoin();
   }
-  // at this point everything should be re-initialised and ready to go
+  // at this point everything should be re-initialized and ready to go
 
   if (verbose_low()) {
     gclog_or_tty->print_cr("[%u] leaving second barrier", worker_id);
@@ -1065,8 +1079,8 @@ public:
         double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
 
         the_task->do_marking_step(mark_step_duration_ms,
-                                  true /* do_stealing    */,
-                                  true /* do_termination */);
+                                  true  /* do_termination */,
+                                  false /* is_serial*/);
 
         double end_time_sec = os::elapsedTime();
         double end_vtime_sec = os::elapsedVTime();
@@ -1222,8 +1236,8 @@ void ConcurrentMark::markFromRoots() {
 
   uint active_workers = MAX2(1U, parallel_marking_threads());
 
-  // Parallel task terminator is set in "set_phase()"
-  set_phase(active_workers, true /* concurrent */);
+  // Parallel task terminator is set in "set_concurrency_and_phase()"
+  set_concurrency_and_phase(active_workers, true /* concurrent */);
 
   CMConcurrentMarkingTask markingTask(this, cmThread());
   if (use_parallel_marking_threads()) {
@@ -1275,12 +1289,22 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   if (has_overflown()) {
     // Oops.  We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
-    // Clear the marking state because we will be restarting
-    // marking due to overflowing the global mark stack.
-    reset_marking_state();
     if (G1TraceMarkStackOverflow) {
       gclog_or_tty->print_cr("\nRemark led to restart for overflow.");
     }
+
+    // Verify the heap w.r.t. the previous marking bitmap.
+    if (VerifyDuringGC) {
+      HandleMark hm;  // handle scope
+      gclog_or_tty->print(" VerifyDuringGC:(overflow)");
+      Universe::heap()->prepare_for_verify();
+      Universe::verify(/* silent */ false,
+                       /* option */ VerifyOption_G1UsePrevMarking);
+    }
+
+    // Clear the marking state because we will be restarting
+    // marking due to overflowing the global mark stack.
+    reset_marking_state();
   } else {
     // Aggregate the per-task counting data that we have accumulated
     // while marking.
@@ -1309,11 +1333,6 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   if (_markStack.should_expand()) {
     _markStack.expand();
   }
-
-#if VERIFY_OBJS_PROCESSED
-  _scan_obj_cl.objs_processed = 0;
-  ThreadLocalObjQueue::objs_enqueued = 0;
-#endif
 
   // Statistics
   double now = os::elapsedTime();
@@ -2189,14 +2208,17 @@ bool G1CMIsAliveClosure::do_object_b(oop obj) {
 // operating on the global stack.
 
 class G1CMKeepAliveAndDrainClosure: public OopClosure {
-  ConcurrentMark*  _cm;
-  CMTask*          _task;
-  int              _ref_counter_limit;
-  int              _ref_counter;
+  ConcurrentMark* _cm;
+  CMTask*         _task;
+  int             _ref_counter_limit;
+  int             _ref_counter;
+  bool            _is_serial;
  public:
-  G1CMKeepAliveAndDrainClosure(ConcurrentMark* cm, CMTask* task) :
-    _cm(cm), _task(task), _ref_counter_limit(G1RefProcDrainInterval) {
+  G1CMKeepAliveAndDrainClosure(ConcurrentMark* cm, CMTask* task, bool is_serial) :
+    _cm(cm), _task(task), _is_serial(is_serial),
+    _ref_counter_limit(G1RefProcDrainInterval) {
     assert(_ref_counter_limit > 0, "sanity");
+    assert(!_is_serial || _task->worker_id() == 0, "only task 0 for serial code");
     _ref_counter = _ref_counter_limit;
   }
 
@@ -2235,8 +2257,8 @@ class G1CMKeepAliveAndDrainClosure: public OopClosure {
         do {
           double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
           _task->do_marking_step(mark_step_duration_ms,
-                                 false /* do_stealing    */,
-                                 false /* do_termination */);
+                                 false      /* do_termination */,
+                                 _is_serial);
         } while (_task->has_aborted() && !_cm->has_overflown());
         _ref_counter = _ref_counter_limit;
       }
@@ -2258,27 +2280,18 @@ class G1CMKeepAliveAndDrainClosure: public OopClosure {
 class G1CMDrainMarkingStackClosure: public VoidClosure {
   ConcurrentMark* _cm;
   CMTask*         _task;
-  bool            _do_stealing;
-  bool            _do_termination;
+  bool            _is_serial;
  public:
-  G1CMDrainMarkingStackClosure(ConcurrentMark* cm, CMTask* task, bool is_par) :
-    _cm(cm), _task(task) {
-    assert(is_par || _task->worker_id() == 0,
-           "Only task for worker 0 should be used if ref processing is single threaded");
-    // We only allow stealing and only enter the termination protocol
-    // in CMTask::do_marking_step() if this closure is being instantiated
-    // for parallel reference processing.
-    _do_stealing = _do_termination = is_par;
+  G1CMDrainMarkingStackClosure(ConcurrentMark* cm, CMTask* task, bool is_serial) :
+    _cm(cm), _task(task), _is_serial(is_serial) {
+    assert(!_is_serial || _task->worker_id() == 0, "only task 0 for serial code");
   }
 
   void do_void() {
     do {
       if (_cm->verbose_high()) {
-        gclog_or_tty->print_cr("\t[%u] Drain: Calling do_marking_step - "
-                               "stealing: %s, termination: %s",
-                               _task->worker_id(),
-                               BOOL_TO_STR(_do_stealing),
-                               BOOL_TO_STR(_do_termination));
+        gclog_or_tty->print_cr("\t[%u] Drain: Calling do_marking_step - serial: %s",
+                               _task->worker_id(), BOOL_TO_STR(_is_serial));
       }
 
       // We call CMTask::do_marking_step() to completely drain the local
@@ -2299,8 +2312,8 @@ class G1CMDrainMarkingStackClosure: public VoidClosure {
       // has_aborted() flag that the marking step has completed.
 
       _task->do_marking_step(1000000000.0 /* something very large */,
-                             _do_stealing,
-                             _do_termination);
+                             true         /* do_termination */,
+                             _is_serial);
     } while (_task->has_aborted() && !_cm->has_overflown());
   }
 };
@@ -2333,7 +2346,6 @@ class G1CMRefProcTaskProxy: public AbstractGangTask {
   ProcessTask&     _proc_task;
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;
-  bool             _processing_is_mt;
 
 public:
   G1CMRefProcTaskProxy(ProcessTask& proc_task,
@@ -2341,15 +2353,15 @@ public:
                      ConcurrentMark* cm) :
     AbstractGangTask("Process reference objects in parallel"),
     _proc_task(proc_task), _g1h(g1h), _cm(cm) {
-      ReferenceProcessor* rp = _g1h->ref_processor_cm();
-      _processing_is_mt = rp->processing_is_mt();
-    }
+    ReferenceProcessor* rp = _g1h->ref_processor_cm();
+    assert(rp->processing_is_mt(), "shouldn't be here otherwise");
+  }
 
   virtual void work(uint worker_id) {
-    CMTask* marking_task = _cm->task(worker_id);
+    CMTask* task = _cm->task(worker_id);
     G1CMIsAliveClosure g1_is_alive(_g1h);
-    G1CMKeepAliveAndDrainClosure g1_par_keep_alive(_cm, marking_task);
-    G1CMDrainMarkingStackClosure g1_par_drain(_cm, marking_task, _processing_is_mt);
+    G1CMKeepAliveAndDrainClosure g1_par_keep_alive(_cm, task, false /* is_serial */);
+    G1CMDrainMarkingStackClosure g1_par_drain(_cm, task, false /* is_serial */);
 
     _proc_task.work(worker_id, g1_is_alive, g1_par_keep_alive, g1_par_drain);
   }
@@ -2361,9 +2373,11 @@ void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
 
   G1CMRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm);
 
-  // We need to reset the phase for each task execution so that
-  // the termination protocol of CMTask::do_marking_step works.
-  _cm->set_phase(_active_workers, false /* concurrent */);
+  // We need to reset the concurrency level before each
+  // proxy task execution, so that the termination protocol
+  // and overflow handling in CMTask::do_marking_step() knows
+  // how many workers to wait for.
+  _cm->set_concurrency(_active_workers);
   _g1h->set_par_threads(_active_workers);
   _workers->run_task(&proc_task_proxy);
   _g1h->set_par_threads(0);
@@ -2389,12 +2403,29 @@ void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
 
   G1CMRefEnqueueTaskProxy enq_task_proxy(enq_task);
 
+  // Not strictly necessary but...
+  //
+  // We need to reset the concurrency level before each
+  // proxy task execution, so that the termination protocol
+  // and overflow handling in CMTask::do_marking_step() knows
+  // how many workers to wait for.
+  _cm->set_concurrency(_active_workers);
   _g1h->set_par_threads(_active_workers);
   _workers->run_task(&enq_task_proxy);
   _g1h->set_par_threads(0);
 }
 
 void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
+  if (has_overflown()) {
+    // Skip processing the discovered references if we have
+    // overflown the global marking stack. Reference objects
+    // only get discovered once so it is OK to not
+    // de-populate the discovered reference lists. We could have,
+    // but the only benefit would be that, when marking restarts,
+    // less reference objects are discovered.
+    return;
+  }
+
   ResourceMark rm;
   HandleMark   hm;
 
@@ -2420,26 +2451,39 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     rp->setup_policy(clear_all_soft_refs);
     assert(_markStack.isEmpty(), "mark stack should be empty");
 
-    // Non-MT instances 'Keep Alive' and 'Complete GC' oop closures.
-    G1CMKeepAliveAndDrainClosure g1_keep_alive(this, task(0));
-    G1CMDrainMarkingStackClosure g1_drain_mark_stack(this, task(0), false);
+    // Instances of the 'Keep Alive' and 'Complete GC' closures used
+    // in serial reference processing. Note these closures are also
+    // used for serially processing (by the the current thread) the
+    // JNI references during parallel reference processing.
+    //
+    // These closures do not need to synchronize with the worker
+    // threads involved in parallel reference processing as these
+    // instances are executed serially by the current thread (e.g.
+    // reference processing is not multi-threaded and is thus
+    // performed by the current thread instead of a gang worker).
+    //
+    // The gang tasks involved in parallel reference procssing create
+    // their own instances of these closures, which do their own
+    // synchronization among themselves.
+    G1CMKeepAliveAndDrainClosure g1_keep_alive(this, task(0), true /* is_serial */);
+    G1CMDrainMarkingStackClosure g1_drain_mark_stack(this, task(0), true /* is_serial */);
 
-    // We need at least one active thread. If reference processing is
-    // not multi-threaded we use the current (ConcurrentMarkThread) thread,
-    // otherwise we use the work gang from the G1CollectedHeap and we
-    // utilize all the worker threads we can.
-    uint active_workers = (rp->processing_is_mt() && g1h->workers() != NULL
-                                ? g1h->workers()->active_workers()
-                                : 1U);
-
+    // We need at least one active thread. If reference processing
+    // is not multi-threaded we use the current (VMThread) thread,
+    // otherwise we use the work gang from the G1CollectedHeap and
+    // we utilize all the worker threads we can.
+    bool processing_is_mt = rp->processing_is_mt() && g1h->workers() != NULL;
+    uint active_workers = (processing_is_mt ? g1h->workers()->active_workers() : 1U);
     active_workers = MAX2(MIN2(active_workers, _max_worker_id), 1U);
 
+    // Parallel processing task executor.
     G1CMRefProcTaskExecutor par_task_executor(g1h, this,
                                               g1h->workers(), active_workers);
+    AbstractRefProcTaskExecutor* executor = (processing_is_mt ? &par_task_executor : NULL);
 
-    AbstractRefProcTaskExecutor* executor = (rp->processing_is_mt()
-                                                ? &par_task_executor
-                                                : NULL);
+    // Set the concurrency level. The phase was already set prior to
+    // executing the remark task.
+    set_concurrency(active_workers);
 
     // Set the degree of MT processing here.  If the discovery was done MT,
     // the number of threads involved during discovery could differ from
@@ -2459,6 +2503,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
     assert(_markStack.overflow() || _markStack.isEmpty(),
             "mark stack should be empty (unless it overflowed)");
+
     if (_markStack.overflow()) {
       // This should have been done already when we tried to push an
       // entry on to the global mark stack. But let's do it again.
@@ -2487,8 +2532,8 @@ void ConcurrentMark::swapMarkBitMaps() {
 
 class CMRemarkTask: public AbstractGangTask {
 private:
-  ConcurrentMark *_cm;
-
+  ConcurrentMark* _cm;
+  bool            _is_serial;
 public:
   void work(uint worker_id) {
     // Since all available tasks are actually started, we should
@@ -2498,8 +2543,8 @@ public:
       task->record_start_time();
       do {
         task->do_marking_step(1000000000.0 /* something very large */,
-                              true /* do_stealing    */,
-                              true /* do_termination */);
+                              true         /* do_termination       */,
+                              _is_serial);
       } while (task->has_aborted() && !_cm->has_overflown());
       // If we overflow, then we do not want to restart. We instead
       // want to abort remark and do concurrent marking again.
@@ -2507,8 +2552,8 @@ public:
     }
   }
 
-  CMRemarkTask(ConcurrentMark* cm, int active_workers) :
-    AbstractGangTask("Par Remark"), _cm(cm) {
+  CMRemarkTask(ConcurrentMark* cm, int active_workers, bool is_serial) :
+    AbstractGangTask("Par Remark"), _cm(cm), _is_serial(is_serial) {
     _cm->terminator()->reset_for_reuse(active_workers);
   }
 };
@@ -2529,43 +2574,42 @@ void ConcurrentMark::checkpointRootsFinalWork() {
       active_workers = (uint) ParallelGCThreads;
       g1h->workers()->set_active_workers(active_workers);
     }
-    set_phase(active_workers, false /* concurrent */);
+    set_concurrency_and_phase(active_workers, false /* concurrent */);
     // Leave _parallel_marking_threads at it's
     // value originally calculated in the ConcurrentMark
     // constructor and pass values of the active workers
     // through the gang in the task.
 
-    CMRemarkTask remarkTask(this, active_workers);
+    CMRemarkTask remarkTask(this, active_workers, false /* is_serial */);
+    // We will start all available threads, even if we decide that the
+    // active_workers will be fewer. The extra ones will just bail out
+    // immediately.
     g1h->set_par_threads(active_workers);
     g1h->workers()->run_task(&remarkTask);
     g1h->set_par_threads(0);
   } else {
     G1CollectedHeap::StrongRootsScope srs(g1h);
-    // this is remark, so we'll use up all available threads
     uint active_workers = 1;
-    set_phase(active_workers, false /* concurrent */);
+    set_concurrency_and_phase(active_workers, false /* concurrent */);
 
-    CMRemarkTask remarkTask(this, active_workers);
-    // We will start all available threads, even if we decide that the
-    // active_workers will be fewer. The extra ones will just bail out
-    // immediately.
+    // Note - if there's no work gang then the VMThread will be
+    // the thread to execute the remark - serially. We have
+    // to pass true for the is_serial parameter so that
+    // CMTask::do_marking_step() doesn't enter the sync
+    // barriers in the event of an overflow. Doing so will
+    // cause an assert that the current thread is not a
+    // concurrent GC thread.
+    CMRemarkTask remarkTask(this, active_workers, true /* is_serial*/);
     remarkTask.work(0);
   }
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  guarantee(satb_mq_set.completed_buffers_num() == 0, "invariant");
+  guarantee(has_overflown() ||
+            satb_mq_set.completed_buffers_num() == 0,
+            err_msg("Invariant: has_overflown = %s, num buffers = %d",
+                    BOOL_TO_STR(has_overflown()),
+                    satb_mq_set.completed_buffers_num()));
 
   print_stats();
-
-#if VERIFY_OBJS_PROCESSED
-  if (_scan_obj_cl.objs_processed != ThreadLocalObjQueue::objs_enqueued) {
-    gclog_or_tty->print_cr("Processed = %d, enqueued = %d.",
-                           _scan_obj_cl.objs_processed,
-                           ThreadLocalObjQueue::objs_enqueued);
-    guarantee(_scan_obj_cl.objs_processed ==
-              ThreadLocalObjQueue::objs_enqueued,
-              "Different number of objs processed and enqueued.");
-  }
-#endif
 }
 
 #ifndef PRODUCT
@@ -3870,8 +3914,8 @@ void CMTask::print_stats() {
 
 /*****************************************************************************
 
-    The do_marking_step(time_target_ms) method is the building block
-    of the parallel marking framework. It can be called in parallel
+    The do_marking_step(time_target_ms, ...) method is the building
+    block of the parallel marking framework. It can be called in parallel
     with other invocations of do_marking_step() on different tasks
     (but only one per task, obviously) and concurrently with the
     mutator threads, or during remark, hence it eliminates the need
@@ -3881,7 +3925,7 @@ void CMTask::print_stats() {
     pauses too, since do_marking_step() ensures that it aborts before
     it needs to yield.
 
-    The data structures that is uses to do marking work are the
+    The data structures that it uses to do marking work are the
     following:
 
       (1) Marking Bitmap. If there are gray objects that appear only
@@ -3930,7 +3974,7 @@ void CMTask::print_stats() {
       (2) When a global overflow (on the global stack) has been
       triggered. Before the task aborts, it will actually sync up with
       the other tasks to ensure that all the marking data structures
-      (local queues, stacks, fingers etc.)  are re-initialised so that
+      (local queues, stacks, fingers etc.)  are re-initialized so that
       when do_marking_step() completes, the marking phase can
       immediately restart.
 
@@ -3967,11 +4011,25 @@ void CMTask::print_stats() {
     place, it was natural to piggy-back all the other conditions on it
     too and not constantly check them throughout the code.
 
+    If do_termination is true then do_marking_step will enter its
+    termination protocol.
+
+    The value of is_serial must be true when do_marking_step is being
+    called serially (i.e. by the VMThread) and do_marking_step should
+    skip any synchronization in the termination and overflow code.
+    Examples include the serial remark code and the serial reference
+    processing closures.
+
+    The value of is_serial must be false when do_marking_step is
+    being called by any of the worker threads in a work gang.
+    Examples include the concurrent marking code (CMMarkingTask),
+    the MT remark code, and the MT reference processing closures.
+
  *****************************************************************************/
 
 void CMTask::do_marking_step(double time_target_ms,
-                             bool do_stealing,
-                             bool do_termination) {
+                             bool do_termination,
+                             bool is_serial) {
   assert(time_target_ms >= 1.0, "minimum granularity is 1ms");
   assert(concurrent() == _cm->concurrent(), "they should be the same");
 
@@ -3991,6 +4049,12 @@ void CMTask::do_marking_step(double time_target_ms,
 
   _start_time_ms = os::elapsedVTime() * 1000.0;
   statsOnly( _interval_start_time_ms = _start_time_ms );
+
+  // If do_stealing is true then do_marking_step will attempt to
+  // steal work from the other CMTasks. It only makes sense to
+  // enable stealing when the termination protocol is enabled
+  // and do_marking_step() is not being called serially.
+  bool do_stealing = do_termination && !is_serial;
 
   double diff_prediction_ms =
     g1_policy->get_new_prediction(&_marking_step_diffs_ms);
@@ -4111,7 +4175,7 @@ void CMTask::do_marking_step(double time_target_ms,
         // bitmap knows by how much we need to move it as it knows its
         // granularity).
         assert(_finger < _region_limit, "invariant");
-        HeapWord* new_finger = _nextMarkBitMap->nextWord(_finger);
+        HeapWord* new_finger = _nextMarkBitMap->nextObject(_finger);
         // Check if bitmap iteration was aborted while scanning the last object
         if (new_finger >= _region_limit) {
           giveup_current_region();
@@ -4253,10 +4317,12 @@ void CMTask::do_marking_step(double time_target_ms,
     }
 
     _termination_start_time_ms = os::elapsedVTime() * 1000.0;
+
     // The CMTask class also extends the TerminatorTerminator class,
     // hence its should_exit_termination() method will also decide
     // whether to exit the termination protocol or not.
-    bool finished = _cm->terminator()->offer_termination(this);
+    bool finished = (is_serial ||
+                     _cm->terminator()->offer_termination(this));
     double termination_end_time_ms = os::elapsedVTime() * 1000.0;
     _termination_time_ms +=
       termination_end_time_ms - _termination_start_time_ms;
@@ -4336,20 +4402,28 @@ void CMTask::do_marking_step(double time_target_ms,
         gclog_or_tty->print_cr("[%u] detected overflow", _worker_id);
       }
 
-      _cm->enter_first_sync_barrier(_worker_id);
-      // When we exit this sync barrier we know that all tasks have
-      // stopped doing marking work. So, it's now safe to
-      // re-initialise our data structures. At the end of this method,
-      // task 0 will clear the global data structures.
+      if (!is_serial) {
+        // We only need to enter the sync barrier if being called
+        // from a parallel context
+        _cm->enter_first_sync_barrier(_worker_id);
+
+        // When we exit this sync barrier we know that all tasks have
+        // stopped doing marking work. So, it's now safe to
+        // re-initialise our data structures. At the end of this method,
+        // task 0 will clear the global data structures.
+      }
 
       statsOnly( ++_aborted_overflow );
 
       // We clear the local state of this task...
       clear_region_fields();
 
-      // ...and enter the second barrier.
-      _cm->enter_second_sync_barrier(_worker_id);
-      // At this point everything has bee re-initialised and we're
+      if (!is_serial) {
+        // ...and enter the second barrier.
+        _cm->enter_second_sync_barrier(_worker_id);
+      }
+      // At this point, if we're during the concurrent phase of
+      // marking, everything has been re-initialized and we're
       // ready to restart.
     }
 

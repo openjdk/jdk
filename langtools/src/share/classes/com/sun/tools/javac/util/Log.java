@@ -136,10 +136,12 @@ public class Log extends AbstractLog {
         }
 
         public void report(JCDiagnostic diag) {
-            if (filter == null || filter.accepts(diag))
+            if (!diag.isFlagSet(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE) &&
+                (filter == null || filter.accepts(diag))) {
                 deferred.add(diag);
-            else
+            } else {
                 prev.report(diag);
+            }
         }
 
         public Queue<JCDiagnostic> getDiagnostics() {

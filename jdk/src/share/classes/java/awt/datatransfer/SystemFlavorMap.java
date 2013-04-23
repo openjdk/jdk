@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -101,6 +101,11 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
     private static final String TEXT_PLAIN_BASE_TYPE = "text/plain";
 
     /**
+     * A String representing text/html MIME type.
+     */
+    private static final String HTML_TEXT_BASE_TYPE = "text/html";
+
+    /**
      * This constant is passed to flavorToNativeLookup() to indicate that a
      * a native should be synthesized, stored, and returned by encoding the
      * DataFlavor's MIME type in case if the DataFlavor is not found in
@@ -113,7 +118,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      * text DataFlavors).
      * Do not use the field directly, use getNativeToFlavor() instead.
      */
-    private Map nativeToFlavor = new HashMap();
+    private final Map<String, List<DataFlavor>> nativeToFlavor = new HashMap<>();
 
     /**
      * Accessor to nativeToFlavor map.  Since we use lazy initialization we must
@@ -122,7 +127,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      *
      * @return nativeToFlavor
      */
-    private Map getNativeToFlavor() {
+    private Map<String, List<DataFlavor>> getNativeToFlavor() {
         if (!isMapInitialized) {
             initSystemFlavorMap();
         }
@@ -134,7 +139,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      * native Strings.
      * Do not use the field directly, use getFlavorToNative() instead.
      */
-    private Map flavorToNative = new HashMap();
+    private final Map flavorToNative = new HashMap();
 
     /**
      * Accessor to flavorToNative map.  Since we use lazy initialization we must
@@ -421,14 +426,17 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                         }
                     }
 
-                    // For text/* flavors, store mappings in separate maps to
-                    // enable dynamic mapping generation at a run-time.
+                    final LinkedHashSet<DataFlavor> dfs = new LinkedHashSet<>();
+
+                    dfs.add(flavor);
+
                     if ("text".equals(flavor.getPrimaryType())) {
-                        store(value, key, getFlavorToNative());
-                        store(key, value, getNativeToFlavor());
-                    } else {
-                        store(flavor, key, getFlavorToNative());
-                        store(key, flavor, getNativeToFlavor());
+                        dfs.addAll(convertMimeTypeToDataFlavors(value));
+                    }
+
+                    for (DataFlavor df : dfs) {
+                        store(df, key, getFlavorToNative());
+                        store(key, df, getNativeToFlavor());
                     }
                 }
             }
@@ -530,7 +538,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      * only if the specified native is encoded as a Java MIME type.
      */
     private List nativeToFlavorLookup(String nat) {
-        List flavors = (List)getNativeToFlavor().get(nat);
+        List<DataFlavor> flavors = getNativeToFlavor().get(nat);
 
         if (nat != null && !disabledMappingGenerationKeys.contains(nat)) {
             DataTransferer transferer = DataTransferer.getInstance();
@@ -625,7 +633,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                 getNativesForFlavorCache.remove(flav);
                 getNativesForFlavorCache.remove(null);
 
-                List flavors = (List)getNativeToFlavor().get(encoded);
+                List<DataFlavor> flavors = getNativeToFlavor().get(encoded);
                 if (flavors == null) {
                     flavors = new ArrayList(1);
                     getNativeToFlavor().put(encoded, flavors);
@@ -681,7 +689,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         }
 
         if (flav == null) {
-            retval = new ArrayList(getNativeToFlavor().keySet());
+            retval = new ArrayList<String>(getNativeToFlavor().keySet());
         } else if (disabledMappingGenerationKeys.contains(flav)) {
             // In this case we shouldn't synthesize a native for this flavor,
             // since its mappings were explicitly specified.
@@ -809,140 +817,162 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
             }
         }
 
-        LinkedList retval = new LinkedList();
+        final LinkedHashSet <DataFlavor> returnValue =
+            new LinkedHashSet<>();
 
         if (nat == null) {
-            List natives = getNativesForFlavor(null);
-            HashSet dups = new HashSet(natives.size());
+            final List<String> natives = getNativesForFlavor(null);
 
-            for (Iterator natives_iter = natives.iterator();
-                 natives_iter.hasNext(); )
+            for (String n : natives)
             {
-                List flavors =
-                    getFlavorsForNative((String)natives_iter.next());
-                for (Iterator flavors_iter = flavors.iterator();
-                     flavors_iter.hasNext(); )
+                final List<DataFlavor> flavors = getFlavorsForNative(n);
+
+                for (DataFlavor df : flavors)
                 {
-                    Object flavor = flavors_iter.next();
-                    if (dups.add(flavor)) {
-                        retval.add(flavor);
-                    }
+                    returnValue.add(df);
                 }
             }
         } else {
-            List flavors = nativeToFlavorLookup(nat);
+
+            final List<DataFlavor> flavors = nativeToFlavorLookup(nat);
 
             if (disabledMappingGenerationKeys.contains(nat)) {
                 return flavors;
             }
 
-            HashSet dups = new HashSet(flavors.size());
+            final List<DataFlavor> flavorsAndBaseTypes =
+                nativeToFlavorLookup(nat);
 
-            List flavorsAndbaseTypes = nativeToFlavorLookup(nat);
-
-            for (Iterator flavorsAndbaseTypes_iter =
-                     flavorsAndbaseTypes.iterator();
-                 flavorsAndbaseTypes_iter.hasNext(); )
-            {
-                Object value = flavorsAndbaseTypes_iter.next();
-                if (value instanceof String) {
-                    String baseType = (String)value;
-                    String subType = null;
+            for (DataFlavor df : flavorsAndBaseTypes) {
+                returnValue.add(df);
+                if ("text".equals(df.getPrimaryType())) {
                     try {
-                        MimeType mimeType = new MimeType(baseType);
-                        subType = mimeType.getSubType();
-                    } catch (MimeTypeParseException mtpe) {
-                        // Cannot happen, since we checked all mappings
-                        // on load from flavormap.properties.
-                        assert(false);
-                    }
-                    if (DataTransferer.doesSubtypeSupportCharset(subType,
-                                                                 null)) {
-                        if (TEXT_PLAIN_BASE_TYPE.equals(baseType) &&
-                            dups.add(DataFlavor.stringFlavor))
-                        {
-                            retval.add(DataFlavor.stringFlavor);
-                        }
-
-                        for (int i = 0; i < UNICODE_TEXT_CLASSES.length; i++) {
-                            DataFlavor toAdd = null;
-                            try {
-                                toAdd = new DataFlavor
-                                    (baseType + ";charset=Unicode;class=" +
-                                     UNICODE_TEXT_CLASSES[i]);
-                            } catch (ClassNotFoundException cannotHappen) {
-                            }
-                            if (dups.add(toAdd)) {
-                                retval.add(toAdd);
-                            }
-                        }
-
-                        for (Iterator charset_iter =
-                                 DataTransferer.standardEncodings();
-                             charset_iter.hasNext(); )
-                        {
-                            String charset = (String)charset_iter.next();
-
-                            for (int i = 0; i < ENCODED_TEXT_CLASSES.length;
-                                 i++)
-                            {
-                                DataFlavor toAdd = null;
-                                try {
-                                    toAdd = new DataFlavor
-                                        (baseType + ";charset=" + charset +
-                                         ";class=" + ENCODED_TEXT_CLASSES[i]);
-                                } catch (ClassNotFoundException cannotHappen) {
-                                }
-
-                                // Check for equality to plainTextFlavor so
-                                // that we can ensure that the exact charset of
-                                // plainTextFlavor, not the canonical charset
-                                // or another equivalent charset with a
-                                // different name, is used.
-                                if (toAdd.equals(DataFlavor.plainTextFlavor)) {
-                                    toAdd = DataFlavor.plainTextFlavor;
-                                }
-
-                                if (dups.add(toAdd)) {
-                                    retval.add(toAdd);
-                                }
-                            }
-                        }
-
-                        if (TEXT_PLAIN_BASE_TYPE.equals(baseType) &&
-                            dups.add(DataFlavor.plainTextFlavor))
-                        {
-                            retval.add(DataFlavor.plainTextFlavor);
-                        }
-                    } else {
-                        // Non-charset text natives should be treated as
-                        // opaque, 8-bit data in any of its various
-                        // representations.
-                        for (int i = 0; i < ENCODED_TEXT_CLASSES.length; i++) {
-                            DataFlavor toAdd = null;
-                            try {
-                                toAdd = new DataFlavor(baseType +
-                                     ";class=" + ENCODED_TEXT_CLASSES[i]);
-                            } catch (ClassNotFoundException cannotHappen) {
-                            }
-
-                            if (dups.add(toAdd)) {
-                                retval.add(toAdd);
-                            }
-                        }
-                    }
-                } else {
-                    DataFlavor flavor = (DataFlavor)value;
-                    if (dups.add(flavor)) {
-                        retval.add(flavor);
+                        returnValue.addAll(
+                                convertMimeTypeToDataFlavors(
+                                        new MimeType(df.getMimeType()
+                                        ).getBaseType()));
+                    } catch (MimeTypeParseException e) {
+                        e.printStackTrace();
                     }
                 }
             }
+
         }
 
-        ArrayList arrayList = new ArrayList(retval);
+        final ArrayList arrayList = new ArrayList(returnValue);
         getFlavorsForNativeCache.put(nat, new SoftReference(arrayList));
         return (List)arrayList.clone();
+    }
+
+    private static LinkedHashSet<DataFlavor> convertMimeTypeToDataFlavors(
+        final String baseType) {
+
+        final LinkedHashSet<DataFlavor> returnValue =
+            new LinkedHashSet<DataFlavor>();
+
+        String subType = null;
+
+        try {
+            final MimeType mimeType = new MimeType(baseType);
+            subType = mimeType.getSubType();
+        } catch (MimeTypeParseException mtpe) {
+            // Cannot happen, since we checked all mappings
+            // on load from flavormap.properties.
+            assert(false);
+        }
+
+        if (DataTransferer.doesSubtypeSupportCharset(subType, null)) {
+            if (TEXT_PLAIN_BASE_TYPE.equals(baseType))
+            {
+                returnValue.add(DataFlavor.stringFlavor);
+            }
+
+            for (String unicodeClassName : UNICODE_TEXT_CLASSES) {
+                final String mimeType = baseType + ";charset=Unicode;class=" +
+                                            unicodeClassName;
+
+                final LinkedHashSet<String> mimeTypes =
+                    handleHtmlMimeTypes(baseType, mimeType);
+                for (String mt : mimeTypes) {
+                    DataFlavor toAdd = null;
+                    try {
+                        toAdd = new DataFlavor(mt);
+                    } catch (ClassNotFoundException cannotHappen) {
+                    }
+                    returnValue.add(toAdd);
+                }
+            }
+
+            for (String charset : DataTransferer.standardEncodings()) {
+
+                for (String encodedTextClass : ENCODED_TEXT_CLASSES) {
+                    final String mimeType =
+                            baseType + ";charset=" + charset +
+                            ";class=" + encodedTextClass;
+
+                    final LinkedHashSet<String> mimeTypes =
+                        handleHtmlMimeTypes(baseType, mimeType);
+
+                    for (String mt : mimeTypes) {
+
+                        DataFlavor df = null;
+
+                        try {
+                            df = new DataFlavor(mt);
+                            // Check for equality to plainTextFlavor so
+                            // that we can ensure that the exact charset of
+                            // plainTextFlavor, not the canonical charset
+                            // or another equivalent charset with a
+                            // different name, is used.
+                            if (df.equals(DataFlavor.plainTextFlavor)) {
+                                df = DataFlavor.plainTextFlavor;
+                            }
+                        } catch (ClassNotFoundException cannotHappen) {
+                        }
+
+                        returnValue.add(df);
+                    }
+                }
+            }
+
+            if (TEXT_PLAIN_BASE_TYPE.equals(baseType))
+            {
+                returnValue.add(DataFlavor.plainTextFlavor);
+            }
+        } else {
+            // Non-charset text natives should be treated as
+            // opaque, 8-bit data in any of its various
+            // representations.
+            for (String encodedTextClassName : ENCODED_TEXT_CLASSES) {
+                DataFlavor toAdd = null;
+                try {
+                    toAdd = new DataFlavor(baseType +
+                         ";class=" + encodedTextClassName);
+                } catch (ClassNotFoundException cannotHappen) {
+                }
+                returnValue.add(toAdd);
+            }
+        }
+        return returnValue;
+    }
+
+    private static final String [] htmlDocumntTypes =
+        new String [] {"all", "selection", "fragment"};
+
+    private static LinkedHashSet<String> handleHtmlMimeTypes(
+        String baseType, String mimeType) {
+
+        LinkedHashSet<String> returnValues = new LinkedHashSet<>();
+
+        if (HTML_TEXT_BASE_TYPE.equals(baseType)) {
+            for (String documentType : htmlDocumntTypes) {
+                returnValues.add(mimeType + ";document=" + documentType);
+            }
+        } else {
+            returnValues.add(mimeType);
+        }
+
+        return returnValues;
     }
 
     /**

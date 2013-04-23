@@ -585,11 +585,7 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
                     for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!inferenceContext.inferenceVars().contains(b1) &&
-                                !inferenceContext.inferenceVars().contains(b2) &&
-                                infer.types.asSuper(b2, b1.tsym) != null) {
-                            infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
-                        }
+                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
                     }
                 }
             }
@@ -603,11 +599,7 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
                     for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
-                        if (!inferenceContext.inferenceVars().contains(b1) &&
-                                !inferenceContext.inferenceVars().contains(b2) &&
-                                infer.types.asSuper(b2, b1.tsym) != null) {
-                            infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
-                        }
+                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
                     }
                 }
             }
@@ -621,10 +613,22 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
                     for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!inferenceContext.inferenceVars().contains(b1) &&
-                                !inferenceContext.inferenceVars().contains(b2) &&
-                                infer.types.asSuper(b2, b1.tsym) != null) {
-                            infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
+                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
+                    }
+                }
+            }
+        },
+        /**
+         * Given a bound set containing {@code alpha == S} and {@code alpha == T}
+         * perform {@code S == T} (which could lead to new bounds).
+         */
+        CROSS_EQ_EQ() {
+            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
+                Infer infer = inferenceContext.infer();
+                for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
+                    for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
+                        if (b1 != b2) {
+                            infer.types.isSameType(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
                         }
                     }
                 }
@@ -641,6 +645,8 @@ public class Infer {
                     if (inferenceContext.inferenceVars().contains(b)) {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
                         //alpha <: beta
+                        //0. set beta :> alpha
+                        uv2.addBound(InferenceBound.LOWER, uv.qtype, infer.types);
                         //1. copy alpha's lower to beta's
                         for (Type l : uv.getBounds(InferenceBound.LOWER)) {
                             uv2.addBound(InferenceBound.LOWER, inferenceContext.asInstType(l), infer.types);
@@ -664,6 +670,8 @@ public class Infer {
                     if (inferenceContext.inferenceVars().contains(b)) {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
                         //alpha :> beta
+                        //0. set beta <: alpha
+                        uv2.addBound(InferenceBound.UPPER, uv.qtype, infer.types);
                         //1. copy alpha's upper to beta's
                         for (Type u : uv.getBounds(InferenceBound.UPPER)) {
                             uv2.addBound(InferenceBound.UPPER, inferenceContext.asInstType(u), infer.types);
@@ -687,6 +695,8 @@ public class Infer {
                     if (inferenceContext.inferenceVars().contains(b)) {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
                         //alpha == beta
+                        //0. set beta == alpha
+                        uv2.addBound(InferenceBound.EQ, uv.qtype, infer.types);
                         //1. copy all alpha's bounds to beta's
                         for (InferenceBound ib : InferenceBound.values()) {
                             for (Type b2 : uv.getBounds(ib)) {
@@ -1216,7 +1226,7 @@ public class Infer {
                  * created, effectively replacing the original cyclic nodes.
              */
             void initNodes() {
-                ArrayList<Node> nodes = new ArrayList<Node>();
+                nodes = new ArrayList<Node>();
                 for (Type t : inferenceContext.restvars()) {
                     nodes.add(new Node(t));
                 }
@@ -1228,14 +1238,10 @@ public class Infer {
                         if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
                             //update i's deps
                             n_i.deps.add(n_j);
-                            //update j's deps - only if i's bounds contain _exactly_ j
-                            if (uv_i.getBounds(InferenceBound.values()).contains(j)) {
-                                n_j.deps.add(n_i);
-                            }
                         }
                     }
                 }
-                this.nodes = new ArrayList<Node>();
+                ArrayList<Node> acyclicNodes = new ArrayList<Node>();
                 for (List<? extends Node> conSubGraph : GraphUtils.tarjan(nodes)) {
                     if (conSubGraph.length() > 1) {
                         Node root = conSubGraph.head;
@@ -1244,8 +1250,9 @@ public class Infer {
                             notifyUpdate(n, root);
                         }
                     }
-                    this.nodes.add(conSubGraph.head);
+                    acyclicNodes.add(conSubGraph.head);
                 }
+                nodes = acyclicNodes;
             }
 
             /**

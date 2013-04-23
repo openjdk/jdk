@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -432,6 +432,31 @@
         </zip>
     </target>
 
+    <target name="doclint-api" depends="build-all-classes">
+        <delete dir="${build.dir}/doclint/classes"/>
+        <mkdir dir="${build.dir}/doclint/classes"/>
+        <javac fork="true"
+               executable="${boot.javac}"
+               srcdir="${src.classes.dir}:${build.gensrc.dir}"
+               destdir="${build.dir}/doclint/classes"
+               includes="javax/lang/model/** com/sun/javadoc/** com/sun/source/**"
+               excludes=""
+               sourcepath="${javac.sourcepath}"
+               classpath="${javac.classpath}"
+               includeAntRuntime="no"
+               source="${javac.source}"
+               target="${javac.target}"
+               debug="${javac.debug}"
+               debuglevel="${javac.debuglevel}">
+            <compilerarg value="-implicit:none"/>
+            <compilerarg value="-Xprefer:source"/>
+            <compilerarg value="-J-Xbootclasspath/p:${build.bootstrap.dir}/classes"/>
+            <compilerarg line="${javac.no.jdk.warnings}"/>
+            <compilerarg line="${javac.version.opt}"/>
+            <compilerarg line="-Xdoclint:all/protected,-missing"/>
+        </javac>
+    </target>
+
     <!--
     **** Debugging/diagnostic targets.
     -->
@@ -678,7 +703,7 @@
                     jarclasspath="sjavac.jar"/>
         <build-tool name="sjavac"/>
     </target>
-    
+
     <!-- (no javadoc for javap) -->
 
     <target name="jtreg-sjavac" depends="build-sjavac,-def-jtreg">

@@ -43,6 +43,20 @@ import static java.util.zip.ZipConstants64.*;
 public
 class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
+    /**
+     * Whether to use ZIP64 for zip files with more than 64k entries.
+     * Until ZIP64 support in zip implementations is ubiquitous, this
+     * system property allows the creation of zip files which can be
+     * read by legacy zip implementations which tolerate "incorrect"
+     * total entry count fields, such as the ones in jdk6, and even
+     * some in jdk7.
+     */
+    private static final boolean inhibitZip64 =
+        Boolean.parseBoolean(
+            java.security.AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction(
+                    "jdk.util.zip.inhibitZip64", "false")));
+
     private static class XEntry {
         public final ZipEntry entry;
         public final long offset;
@@ -534,8 +548,10 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         }
         int count = xentries.size();
         if (count >= ZIP64_MAGICCOUNT) {
-            count = ZIP64_MAGICCOUNT;
-            hasZip64 = true;
+            hasZip64 |= !inhibitZip64;
+            if (hasZip64) {
+                count = ZIP64_MAGICCOUNT;
+            }
         }
         if (hasZip64) {
             long off64 = written;

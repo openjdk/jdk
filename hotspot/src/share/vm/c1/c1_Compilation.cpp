@@ -33,13 +33,16 @@
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compileLog.hpp"
+#include "c1/c1_RangeCheckElimination.hpp"
 
 
 typedef enum {
   _t_compile,
   _t_setup,
-  _t_optimizeIR,
   _t_buildIR,
+  _t_optimize_blocks,
+  _t_optimize_null_checks,
+  _t_rangeCheckElimination,
   _t_emit_lir,
   _t_linearScan,
   _t_lirGeneration,
@@ -52,8 +55,10 @@ typedef enum {
 static const char * timer_name[] = {
   "compile",
   "setup",
-  "optimizeIR",
   "buildIR",
+  "optimize_blocks",
+  "optimize_null_checks",
+  "rangeCheckElimination",
   "emit_lir",
   "linearScan",
   "lirGeneration",
@@ -159,9 +164,9 @@ void Compilation::build_hir() {
   if (UseC1Optimizations) {
     NEEDS_CLEANUP
     // optimization
-    PhaseTraceTime timeit(_t_optimizeIR);
+    PhaseTraceTime timeit(_t_optimize_blocks);
 
-    _hir->optimize();
+    _hir->optimize_blocks();
   }
 
   _hir->verify();
@@ -180,12 +185,46 @@ void Compilation::build_hir() {
   _hir->compute_code();
 
   if (UseGlobalValueNumbering) {
-    ResourceMark rm;
+    // No resource mark here! LoopInvariantCodeMotion can allocate ValueStack objects.
     int instructions = Instruction::number_of_instructions();
     GlobalValueNumbering gvn(_hir);
     assert(instructions == Instruction::number_of_instructions(),
            "shouldn't have created an instructions");
   }
+
+  _hir->verify();
+
+#ifndef PRODUCT
+  if (PrintCFGToFile) {
+    CFGPrinter::print_cfg(_hir, "Before RangeCheckElimination", true, false);
+  }
+#endif
+
+  if (RangeCheckElimination) {
+    if (_hir->osr_entry() == NULL) {
+      PhaseTraceTime timeit(_t_rangeCheckElimination);
+      RangeCheckElimination::eliminate(_hir);
+    }
+  }
+
+#ifndef PRODUCT
+  if (PrintCFGToFile) {
+    CFGPrinter::print_cfg(_hir, "After RangeCheckElimination", true, false);
+  }
+#endif
+
+  if (UseC1Optimizations) {
+    // loop invariant code motion reorders instructions and range
+    // check elimination adds new instructions so do null check
+    // elimination after.
+    NEEDS_CLEANUP
+    // optimization
+    PhaseTraceTime timeit(_t_optimize_null_checks);
+
+    _hir->eliminate_null_checks();
+  }
+
+  _hir->verify();
 
   // compute use counts after global value numbering
   _hir->compute_use_counts();
@@ -502,6 +541,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _next_id(0)
 , _next_block_id(0)
 , _code(buffer_blob)
+, _has_access_indexed(false)
 , _current_instruction(NULL)
 #ifndef PRODUCT
 , _last_instruction_printed(NULL)
@@ -567,7 +607,9 @@ void Compilation::print_timers() {
   tty->print_cr("    Detailed C1 Timings");
   tty->print_cr("       Setup time:        %6.3f s (%4.1f%%)",    timers[_t_setup].seconds(),           (timers[_t_setup].seconds() / total) * 100.0);
   tty->print_cr("       Build IR:          %6.3f s (%4.1f%%)",    timers[_t_buildIR].seconds(),         (timers[_t_buildIR].seconds() / total) * 100.0);
-  tty->print_cr("         Optimize:           %6.3f s (%4.1f%%)", timers[_t_optimizeIR].seconds(),      (timers[_t_optimizeIR].seconds() / total) * 100.0);
+  float t_optimizeIR = timers[_t_optimize_blocks].seconds() + timers[_t_optimize_null_checks].seconds();
+  tty->print_cr("         Optimize:           %6.3f s (%4.1f%%)", t_optimizeIR,                         (t_optimizeIR / total) * 100.0);
+  tty->print_cr("         RCE:                %6.3f s (%4.1f%%)", timers[_t_rangeCheckElimination].seconds(),      (timers[_t_rangeCheckElimination].seconds() / total) * 100.0);
   tty->print_cr("       Emit LIR:          %6.3f s (%4.1f%%)",    timers[_t_emit_lir].seconds(),        (timers[_t_emit_lir].seconds() / total) * 100.0);
   tty->print_cr("         LIR Gen:          %6.3f s (%4.1f%%)",   timers[_t_lirGeneration].seconds(), (timers[_t_lirGeneration].seconds() / total) * 100.0);
   tty->print_cr("         Linear Scan:      %6.3f s (%4.1f%%)",   timers[_t_linearScan].seconds(),    (timers[_t_linearScan].seconds() / total) * 100.0);

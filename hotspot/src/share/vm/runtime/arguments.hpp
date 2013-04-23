@@ -309,8 +309,12 @@ class Arguments : AllStatic {
   // Garbage-First (UseG1GC)
   static void set_g1_gc_flags();
   // GC ergonomics
+  static void set_use_compressed_oops();
   static void set_ergonomics_flags();
   static void set_shared_spaces_flags();
+  // limits the given memory size by the maximum amount of memory this process is
+  // currently allowed to allocate or reserve.
+  static julong limit_by_allocatable_memory(julong size);
   // Setup heap size
   static void set_heap_size();
   // Based on automatic selection criteria, should the
@@ -414,6 +418,7 @@ class Arguments : AllStatic {
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency();
   static void check_deprecated_gcs();
+  static void check_deprecated_gc_flags();
   // Check consistecy or otherwise of VM argument settings
   static bool check_vm_args_consistency();
   // Check stack pages settings

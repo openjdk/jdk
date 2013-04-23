@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.text.BreakIterator;
 import javax.swing.text.AttributeSet;
 import javax.accessibility.*;
 import java.awt.im.InputMethodRequests;
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * The <code>TextComponent</code> class is the superclass of
@@ -57,8 +56,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @author      Arthur van Hoff
  * @since       JDK1.0
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class TextComponent extends Component implements Accessible {
 
     /**
@@ -109,12 +106,6 @@ public class TextComponent extends Component implements Accessible {
     // the background color of non-editable TextComponents.
     boolean backgroundSetByClientCode = false;
 
-    /**
-     * True if this <code>TextComponent</code> has access
-     * to the System clipboard.
-     */
-    transient private boolean canAccessClipboard;
-
     transient protected TextListener textListener;
 
     /*
@@ -139,7 +130,6 @@ public class TextComponent extends Component implements Accessible {
         GraphicsEnvironment.checkHeadless();
         this.text = (text != null) ? text : "";
         setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
-        checkSystemClipboardAccess();
     }
 
     private void enableInputMethodsIfNecessary() {
@@ -734,17 +724,14 @@ public class TextComponent extends Component implements Accessible {
     /**
      * Assigns a valid value to the canAccessClipboard instance variable.
      */
-    private void checkSystemClipboardAccess() {
-        canAccessClipboard = true;
+    private boolean canAccessClipboard() {
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkSystemClipboardAccess();
-            }
-            catch (SecurityException e) {
-                canAccessClipboard = false;
-            }
-        }
+        if (sm == null) return true;
+        try {
+            sm.checkSystemClipboardAccess();
+            return true;
+        } catch (SecurityException e) {}
+        return false;
     }
 
     /*
@@ -827,7 +814,6 @@ public class TextComponent extends Component implements Accessible {
             }
         }
         enableInputMethodsIfNecessary();
-        checkSystemClipboardAccess();
     }
 
 

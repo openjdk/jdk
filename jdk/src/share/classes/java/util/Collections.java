@@ -28,6 +28,12 @@ import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -264,8 +270,7 @@ public class Collections {
     }
 
     private static <T>
-    int indexedBinarySearch(List<? extends Comparable<? super T>> list, T key)
-    {
+    int indexedBinarySearch(List<? extends Comparable<? super T>> list, T key) {
         int low = 0;
         int high = list.size()-1;
 
@@ -441,21 +446,21 @@ public class Collections {
     /**
      * Randomly permutes the specified list using a default source of
      * randomness.  All permutations occur with approximately equal
-     * likelihood.<p>
+     * likelihood.
      *
-     * The hedge "approximately" is used in the foregoing description because
+     * <p>The hedge "approximately" is used in the foregoing description because
      * default source of randomness is only approximately an unbiased source
      * of independently chosen bits. If it were a perfect source of randomly
      * chosen bits, then the algorithm would choose permutations with perfect
-     * uniformity.<p>
+     * uniformity.
      *
-     * This implementation traverses the list backwards, from the last element
-     * up to the second, repeatedly swapping a randomly selected element into
-     * the "current position".  Elements are randomly selected from the
+     * <p>This implementation traverses the list backwards, from the last
+     * element up to the second, repeatedly swapping a randomly selected element
+     * into the "current position".  Elements are randomly selected from the
      * portion of the list that runs from the first element to the current
-     * position, inclusive.<p>
+     * position, inclusive.
      *
-     * This method runs in linear time.  If the specified list does not
+     * <p>This method runs in linear time.  If the specified list does not
      * implement the {@link RandomAccess} interface and is large, this
      * implementation dumps the specified list into an array before shuffling
      * it, and dumps the shuffled array back into the list.  This avoids the
@@ -469,9 +474,10 @@ public class Collections {
     public static void shuffle(List<?> list) {
         Random rnd = r;
         if (rnd == null)
-            r = rnd = new Random();
+            r = rnd = new Random(); // harmless race.
         shuffle(list, rnd);
     }
+
     private static Random r;
 
     /**
@@ -1082,6 +1088,11 @@ public class Collections {
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }
+                @Override
+                public void forEachRemaining(Consumer<? super E> action) {
+                    // Use backing collection version
+                    i.forEachRemaining(action);
+                }
             };
         }
 
@@ -1107,6 +1118,21 @@ public class Collections {
         public void clear() {
             throw new UnsupportedOperationException();
         }
+
+        // Override default methods in Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            c.forEach(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public Spliterator<E> spliterator() {
+            return (Spliterator<E>)c.spliterator();
+        }
+
     }
 
     /**
@@ -1237,6 +1263,16 @@ public class Collections {
         public boolean addAll(int index, Collection<? extends E> c) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            throw new UnsupportedOperationException();
+        }
+
         public ListIterator<E> listIterator()   {return listIterator(0);}
 
         public ListIterator<E> listIterator(final int index) {
@@ -1259,6 +1295,11 @@ public class Collections {
                 }
                 public void add(E e) {
                     throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void forEachRemaining(Consumer<? super E> action) {
+                    i.forEachRemaining(action);
                 }
             };
         }
@@ -1390,6 +1431,67 @@ public class Collections {
         public boolean equals(Object o) {return o == this || m.equals(o);}
         public int hashCode()           {return m.hashCode();}
         public String toString()        {return m.toString();}
+
+        // Override default methods in Map
+        @Override
+        @SuppressWarnings("unchecked")
+        public V getOrDefault(Object k, V defaultValue) {
+            // Safe cast as we don't change the value
+            return ((Map<K, V>)m).getOrDefault(k, defaultValue);
+        }
+
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            m.forEach(action);
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V putIfAbsent(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V replace(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfPresent(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V compute(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V merge(K key, V value,
+                BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
 
         /**
          * We need this class in addition to UnmodifiableSet as
@@ -1578,7 +1680,8 @@ public class Collections {
      * through the returned collection.<p>
      *
      * It is imperative that the user manually synchronize on the returned
-     * collection when iterating over it:
+     * collection when traversing it via {@link Iterator} or
+     * {@link Spliterator}:
      * <pre>
      *  Collection c = Collections.synchronizedCollection(myCollection);
      *     ...
@@ -1590,9 +1693,9 @@ public class Collections {
      * </pre>
      * Failure to follow this advice may result in non-deterministic behavior.
      *
-     * <p>The returned collection does <i>not</i> pass the <tt>hashCode</tt>
-     * and <tt>equals</tt> operations through to the backing collection, but
-     * relies on <tt>Object</tt>'s equals and hashCode methods.  This is
+     * <p>The returned collection does <i>not</i> pass the {@code hashCode}
+     * and {@code equals} operations through to the backing collection, but
+     * relies on {@code Object}'s equals and hashCode methods.  This is
      * necessary to preserve the contracts of these operations in the case
      * that the backing collection is a set or a list.<p>
      *
@@ -1674,6 +1777,19 @@ public class Collections {
         }
         public String toString() {
             synchronized (mutex) {return c.toString();}
+        }
+        // Override default methods in Collection
+        @Override
+        public void forEach(Consumer<? super E> consumer) {
+            synchronized (mutex) {c.forEach(consumer);}
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            synchronized (mutex) {return c.removeIf(filter);}
+        }
+        @Override
+        public Spliterator<E> spliterator() {
+            return c.spliterator(); // Must be manually synched by user!
         }
         private void writeObject(ObjectOutputStream s) throws IOException {
             synchronized (mutex) {s.defaultWriteObject();}
@@ -1932,6 +2048,15 @@ public class Collections {
             }
         }
 
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            synchronized (mutex) {list.replaceAll(operator);}
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            synchronized (mutex) {list.sort(c);}
+        }
+
         /**
          * SynchronizedRandomAccessList instances are serialized as
          * SynchronizedList instances to allow them to be deserialized
@@ -2107,6 +2232,57 @@ public class Collections {
         public String toString() {
             synchronized (mutex) {return m.toString();}
         }
+
+        // Override default methods in Map
+        @Override
+        public V getOrDefault(Object k, V defaultValue) {
+            synchronized (mutex) {return m.getOrDefault(k, defaultValue);}
+        }
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            synchronized (mutex) {m.forEach(action);}
+        }
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            synchronized (mutex) {m.replaceAll(function);}
+        }
+        @Override
+        public V putIfAbsent(K key, V value) {
+            synchronized (mutex) {return m.putIfAbsent(key, value);}
+        }
+        @Override
+        public boolean remove(Object key, Object value) {
+            synchronized (mutex) {return m.remove(key, value);}
+        }
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            synchronized (mutex) {return m.replace(key, oldValue, newValue);}
+        }
+        @Override
+        public V replace(K key, V value) {
+            synchronized (mutex) {return m.replace(key, value);}
+        }
+        @Override
+        public V computeIfAbsent(K key,
+                Function<? super K, ? extends V> mappingFunction) {
+            synchronized (mutex) {return m.computeIfAbsent(key, mappingFunction);}
+        }
+        @Override
+        public V computeIfPresent(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            synchronized (mutex) {return m.computeIfPresent(key, remappingFunction);}
+        }
+        @Override
+        public V compute(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            synchronized (mutex) {return m.compute(key, remappingFunction);}
+        }
+        @Override
+        public V merge(K key, V value,
+                BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            synchronized (mutex) {return m.merge(key, value, remappingFunction);}
+        }
+
         private void writeObject(ObjectOutputStream s) throws IOException {
             synchronized (mutex) {s.defaultWriteObject();}
         }
@@ -2326,6 +2502,8 @@ public class Collections {
         }
 
         public Iterator<E> iterator() {
+            // JDK-6363904 - unwrapped iterator could be typecast to
+            // ListIterator with unsafe set()
             final Iterator<E> it = c.iterator();
             return new Iterator<E>() {
                 public boolean hasNext() { return it.hasNext(); }
@@ -2375,6 +2553,16 @@ public class Collections {
             // element as we added it)
             return c.addAll(checkedCopyOf(coll));
         }
+
+        // Override default methods in Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {c.forEach(action);}
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            return c.removeIf(filter);
+        }
+        @Override
+        public Spliterator<E> spliterator() {return c.spliterator();}
     }
 
     /**
@@ -2630,11 +2818,25 @@ public class Collections {
                     typeCheck(e);
                     i.add(e);
                 }
+
+                @Override
+                public void forEachRemaining(Consumer<? super E> action) {
+                    i.forEachRemaining(action);
+                }
             };
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
             return new CheckedList<>(list.subList(fromIndex, toIndex), type);
+        }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            list.replaceAll(operator);
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            list.sort(c);
         }
     }
 
@@ -2652,7 +2854,7 @@ public class Collections {
 
         public List<E> subList(int fromIndex, int toIndex) {
             return new CheckedRandomAccessList<>(
-                list.subList(fromIndex, toIndex), type);
+                    list.subList(fromIndex, toIndex), type);
         }
     }
 
@@ -2717,14 +2919,24 @@ public class Collections {
                 throw new ClassCastException(badValueMsg(value));
         }
 
+        private BiFunction<? super K, ? super V, ? extends V> typeCheck(
+                BiFunction<? super K, ? super V, ? extends V> func) {
+            Objects.requireNonNull(func);
+            return (k, v) -> {
+                V newValue = func.apply(k, v);
+                typeCheck(k, newValue);
+                return newValue;
+            };
+        }
+
         private String badKeyMsg(Object key) {
             return "Attempt to insert " + key.getClass() +
-                " key into map with key type " + keyType;
+                    " key into map with key type " + keyType;
         }
 
         private String badValueMsg(Object value) {
             return "Attempt to insert " + value.getClass() +
-                " value into map with value type " + valueType;
+                    " value into map with value type " + valueType;
         }
 
         CheckedMap(Map<K, V> m, Class<K> keyType, Class<V> valueType) {
@@ -2768,7 +2980,7 @@ public class Collections {
                 Object v = e.getValue();
                 typeCheck(k, v);
                 checked.add(
-                    new AbstractMap.SimpleImmutableEntry<>((K) k, (V) v));
+                        new AbstractMap.SimpleImmutableEntry<>((K)k, (V)v));
             }
             for (Map.Entry<K,V> e : checked)
                 m.put(e.getKey(), e.getValue());
@@ -2780,6 +2992,74 @@ public class Collections {
             if (entrySet==null)
                 entrySet = new CheckedEntrySet<>(m.entrySet(), valueType);
             return entrySet;
+        }
+
+        // Override default methods in Map
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            m.forEach(action);
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            m.replaceAll(typeCheck(function));
+        }
+
+        @Override
+        public V putIfAbsent(K key, V value) {
+            typeCheck(key, value);
+            return m.putIfAbsent(key, value);
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            return m.remove(key, value);
+        }
+
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            typeCheck(key, newValue);
+            return m.replace(key, oldValue, newValue);
+        }
+
+        @Override
+        public V replace(K key, V value) {
+            typeCheck(key, value);
+            return m.replace(key, value);
+        }
+
+        @Override
+        public V computeIfAbsent(K key,
+                Function<? super K, ? extends V> mappingFunction) {
+            Objects.requireNonNull(mappingFunction);
+            return m.computeIfAbsent(key, k -> {
+                V value = mappingFunction.apply(k);
+                typeCheck(k, value);
+                return value;
+            });
+        }
+
+        @Override
+        public V computeIfPresent(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            return m.computeIfPresent(key, typeCheck(remappingFunction));
+        }
+
+        @Override
+        public V compute(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            return m.compute(key, typeCheck(remappingFunction));
+        }
+
+        @Override
+        public V merge(K key, V value,
+                BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            Objects.requireNonNull(remappingFunction);
+            return m.merge(key, value, (v1, v2) -> {
+                V newValue = remappingFunction.apply(v1, v2);
+                typeCheck(null, newValue);
+                return newValue;
+            });
         }
 
         /**
@@ -3081,6 +3361,10 @@ public class Collections {
         public boolean hasNext() { return false; }
         public E next() { throw new NoSuchElementException(); }
         public void remove() { throw new IllegalStateException(); }
+        @Override
+        public void forEachRemaining(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+        }
     }
 
     /**
@@ -3221,6 +3505,19 @@ public class Collections {
             return a;
         }
 
+        // Override default methods in Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
+            return false;
+        }
+        @Override
+        public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
+
         // Preserves singleton property
         private Object readResolve() {
             return EMPTY_SET;
@@ -3328,6 +3625,21 @@ public class Collections {
         public E last() {
             throw new NoSuchElementException();
         }
+
+        // Override default methods in Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+        }
+
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
+            return false;
+        }
+
+        @Override
+        public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
     }
 
     /**
@@ -3397,6 +3709,29 @@ public class Collections {
 
         public int hashCode() { return 1; }
 
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
+            return false;
+        }
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            Objects.requireNonNull(operator);
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+            Objects.requireNonNull(c);
+        }
+
+        // Override default methods in Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+        }
+
+        @Override
+        public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
+
         // Preserves singleton property
         private Object readResolve() {
             return EMPTY_LIST;
@@ -3456,6 +3791,67 @@ public class Collections {
 
         public int hashCode()                      {return 0;}
 
+        // Override default methods in Map
+        @Override
+        @SuppressWarnings("unchecked")
+        public V getOrDefault(Object k, V defaultValue) {
+            return defaultValue;
+        }
+
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            Objects.requireNonNull(action);
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            Objects.requireNonNull(function);
+        }
+
+        @Override
+        public V putIfAbsent(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V replace(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfAbsent(K key,
+                Function<? super K, ? extends V> mappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfPresent(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V compute(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V merge(K key, V value,
+                BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
         // Preserves singleton property
         private Object readResolve() {
             return EMPTY_MAP;
@@ -3491,6 +3887,60 @@ public class Collections {
             public void remove() {
                 throw new UnsupportedOperationException();
             }
+            @Override
+            public void forEachRemaining(Consumer<? super E> action) {
+                Objects.requireNonNull(action);
+                if (hasNext) {
+                    action.accept(e);
+                    hasNext = false;
+                }
+            }
+        };
+    }
+
+    /**
+     * Creates a {@code Spliterator} with only the specified element
+     *
+     * @param <T> Type of elements
+     * @return A singleton {@code Spliterator}
+     */
+    static <T> Spliterator<T> singletonSpliterator(final T element) {
+        return new Spliterator<T>() {
+            long est = 1;
+
+            @Override
+            public Spliterator<T> trySplit() {
+                return null;
+            }
+
+            @Override
+            public boolean tryAdvance(Consumer<? super T> consumer) {
+                Objects.requireNonNull(consumer);
+                if (est > 0) {
+                    est--;
+                    consumer.accept(element);
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super T> consumer) {
+                tryAdvance(consumer);
+            }
+
+            @Override
+            public long estimateSize() {
+                return est;
+            }
+
+            @Override
+            public int characteristics() {
+                int value = (element != null) ? Spliterator.NONNULL : 0;
+
+                return value | Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE |
+                       Spliterator.DISTINCT | Spliterator.ORDERED;
+            }
         };
     }
 
@@ -3514,6 +3964,20 @@ public class Collections {
         public int size() {return 1;}
 
         public boolean contains(Object o) {return eq(o, element);}
+
+        // Override default methods for Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            action.accept(element);
+        }
+        @Override
+        public Spliterator<E> spliterator() {
+            return singletonSpliterator(element);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
@@ -3553,6 +4017,27 @@ public class Collections {
             if (index != 0)
               throw new IndexOutOfBoundsException("Index: "+index+", Size: 1");
             return element;
+        }
+
+        // Override default methods for Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            action.accept(element);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void sort(Comparator<? super E> c) {
+        }
+        @Override
+        public Spliterator<E> spliterator() {
+            return singletonSpliterator(element);
         }
     }
 
@@ -3619,6 +4104,65 @@ public class Collections {
             return values;
         }
 
+        // Override default methods in Map
+        @Override
+        public V getOrDefault(Object key, V defaultValue) {
+            return eq(key, k) ? v : defaultValue;
+        }
+
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            action.accept(k, v);
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V putIfAbsent(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean replace(K key, V oldValue, V newValue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V replace(K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfAbsent(K key,
+                Function<? super K, ? extends V> mappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V computeIfPresent(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V compute(K key,
+                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public V merge(K key, V value,
+                BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     // Miscellaneous
@@ -4093,6 +4637,19 @@ public class Collections {
         public boolean retainAll(Collection<?> c)   {return s.retainAll(c);}
         // addAll is the only inherited implementation
 
+        // Override default methods in Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            s.forEach(action);
+        }
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            return s.removeIf(filter);
+        }
+
+        @Override
+        public Spliterator<E> spliterator() {return s.spliterator();}
+
         private static final long serialVersionUID = 2454657854757543876L;
 
         private void readObject(java.io.ObjectInputStream stream)
@@ -4151,5 +4708,15 @@ public class Collections {
         public boolean removeAll(Collection<?> c)   {return q.removeAll(c);}
         public boolean retainAll(Collection<?> c)   {return q.retainAll(c);}
         // We use inherited addAll; forwarding addAll would be wrong
+
+        // Override default methods in Collection
+        @Override
+        public void forEach(Consumer<? super E> action) {q.forEach(action);}
+        @Override
+        public Spliterator<E> spliterator() {return q.spliterator();}
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            return q.removeIf(filter);
+        }
     }
 }

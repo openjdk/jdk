@@ -47,9 +47,8 @@ import sun.util.logging.PlatformLogger;
 
 /**
  * Represents a currency. Currencies are identified by their ISO 4217 currency
- * codes. Visit the <a href="http://www.iso.org/iso/en/prods-services/popstds/currencycodes.html">
- * ISO web site</a> for more information, including a table of
- * currency codes.
+ * codes. Visit the <a href="http://www.iso.org/iso/home/standards/currency_codes.htm">
+ * ISO web site</a> for more information.
  * <p>
  * The class is designed so that there's never more than one
  * <code>Currency</code> instance for any given currency. Therefore, there's

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.util;
+
+import java.util.function.Predicate;
 
 /**
  * The root interface in the <i>collection hierarchy</i>.  A collection
@@ -103,6 +105,12 @@ package java.util;
  * <p>This interface is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
+ *
+ * @implSpec
+ * The default method implementations (inherited or otherwise) do not apply any
+ * synchronization protocol.  If a {@code Collection} implementation has a
+ * specific synchronization protocol, then it must override default
+ * implementations to apply that protocol.
  *
  * @param <E> the type of elements in this collection
  *
@@ -367,6 +375,40 @@ public interface Collection<E> extends Iterable<E> {
     boolean removeAll(Collection<?> c);
 
     /**
+     * Removes all of the elements of this collection that satisfy the given
+     * predicate.  Errors or runtime exceptions thrown by the predicate are
+     * relayed to the caller.
+     *
+     * @implSpec
+     * The default implementation traverses all elements of the collection using
+     * its {@link #iterator}.  Each matching element is removed using
+     * {@link Iterator#remove()}.  If the collection's iterator does not
+     * support removal then an {@code UnsupportedOperationException} will be
+     * thrown on the first matching element.
+     *
+     * @param filter a predicate which returns {@code true} for elements to be
+     *        removed
+     * @return {@code true} if any elements were removed
+     * @throws NullPointerException if the specified filter is null
+     * @throws UnsupportedOperationException if the {@code remove}
+     *         method is not supported by this collection's
+     *         {@link #iterator}
+     * @since 1.8
+     */
+    default boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        boolean removed = false;
+        final Iterator<E> each = iterator();
+        while (each.hasNext()) {
+            if (filter.test(each.next())) {
+                each.remove();
+                removed = true;
+            }
+        }
+        return removed;
+    }
+
+    /**
      * Retains only the elements in this collection that are contained in the
      * specified collection (optional operation).  In other words, removes from
      * this collection all of its elements that are not contained in the
@@ -453,4 +495,28 @@ public interface Collection<E> extends Iterable<E> {
      * @see Object#equals(Object)
      */
     int hashCode();
+
+    /**
+     * Creates a {@link Spliterator} over the elements in this collection.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED}.
+     * Implementations should document the reporting of additional
+     * characteristic values.
+     *
+     * @implSpec
+     * The default implementation creates a
+     * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
+     * from the collections's {@code Iterator}.  The spliterator inherits the
+     * <em>fail-fast</em> properties of the collection's iterator.
+     *
+     * @implNote
+     * The created {@code Spliterator} additionally reports
+     * {@link Spliterator#SUBSIZED}.
+     *
+     * @return a {@code Spliterator} over the elements in this collection
+     * @since 1.8
+     */
+    default Spliterator<E> spliterator() {
+        return Spliterators.spliterator(this, 0);
+    }
 }

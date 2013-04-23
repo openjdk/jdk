@@ -326,6 +326,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
 
   uint loop_count = 0;
   uint gc_count = 0;
+  int gclocker_stalled_count = 0;
 
   while (result == NULL) {
     // We don't want to have multiple collections for a single filled generation.
@@ -354,6 +355,10 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         return result;
       }
 
+      if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
+        return NULL;
+      }
+
       // Failed to allocate without a gc.
       if (GC_locker::is_active_and_needs_gc()) {
         // If this thread is not in a jni critical section, we stall
@@ -366,6 +371,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         if (!jthr->in_critical()) {
           MutexUnlocker mul(Heap_lock);
           GC_locker::stall_until_clear();
+          gclocker_stalled_count += 1;
           continue;
         } else {
           if (CheckJNICalls) {
@@ -409,7 +415,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         // heap remains parsable.
         const bool limit_exceeded = size_policy()->gc_overhead_limit_exceeded();
         const bool softrefs_clear = collector_policy()->all_soft_refs_clear();
-        assert(!limit_exceeded || softrefs_clear, "Should have been cleared");
+
         if (limit_exceeded && softrefs_clear) {
           *gc_overhead_limit_was_exceeded = true;
           size_policy()->set_gc_overhead_limit_exceeded(false);
@@ -656,7 +662,7 @@ void ParallelScavengeHeap::print_tracing_info() const {
     tty->print_cr("[Accumulated GC generation 0 time %3.7f secs]", time);
   }
   if (TraceGen1Time) {
-    double time = PSMarkSweep::accumulated_time()->seconds();
+    double time = UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweep::accumulated_time()->seconds();
     tty->print_cr("[Accumulated GC generation 1 time %3.7f secs]", time);
   }
 }

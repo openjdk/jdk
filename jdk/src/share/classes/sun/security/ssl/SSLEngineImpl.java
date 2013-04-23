@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -961,7 +961,6 @@ final public class SSLEngineImpl extends SSLEngine {
                 decryptedBB = inputRecord.decrypt(
                                     readAuthenticator, readCipher, readBB);
             } catch (BadPaddingException e) {
-                // use the same alert types as for MAC failure below
                 byte alertType = (inputRecord.contentType() ==
                     Record.ct_handshake) ?
                         Alerts.alert_handshake_failure :
