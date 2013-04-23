@@ -1078,16 +1078,6 @@ uint BoolNode::cmp( const Node &n ) const {
   return (_test._test == b->_test._test);
 }
 
-//------------------------------clone_cmp--------------------------------------
-// Clone a compare/bool tree
-static Node *clone_cmp( Node *cmp, Node *cmp1, Node *cmp2, PhaseGVN *gvn, BoolTest::mask test ) {
-  Node *ncmp = cmp->clone();
-  ncmp->set_req(1,cmp1);
-  ncmp->set_req(2,cmp2);
-  ncmp = gvn->transform( ncmp );
-  return new (gvn->C) BoolNode( ncmp, test );
-}
-
 //-------------------------------make_predicate--------------------------------
 Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
   if (test_value->is_Con())   return test_value;

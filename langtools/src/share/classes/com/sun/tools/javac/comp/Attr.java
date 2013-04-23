@@ -2273,7 +2273,7 @@ public class Attr extends JCTree.Visitor {
 
             Type lambdaType;
             if (pt() != Type.recoveryType) {
-                target = checkIntersectionTarget(that, target, resultInfo.checkContext);
+                target = targetChecker.visit(target, that);
                 lambdaType = types.findDescriptorType(target);
                 chk.checkFunctionalInterface(that, target);
             } else {
@@ -2281,7 +2281,7 @@ public class Attr extends JCTree.Visitor {
                 lambdaType = fallbackDescriptorType(that);
             }
 
-            setFunctionalInfo(that, pt(), lambdaType, resultInfo.checkContext.inferenceContext());
+            setFunctionalInfo(that, pt(), lambdaType, target, resultInfo.checkContext.inferenceContext());
 
             if (lambdaType.hasTag(FORALL)) {
                 //lambda expression target desc cannot be a generic method
@@ -2340,11 +2340,34 @@ public class Attr extends JCTree.Visitor {
                 new ResultInfo(VAL, lambdaType.getReturnType(), funcContext);
             localEnv.info.returnResult = bodyResultInfo;
 
-            if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
-                attribTree(that.getBody(), localEnv, bodyResultInfo);
-            } else {
-                JCBlock body = (JCBlock)that.body;
-                attribStats(body.stats, localEnv);
+            Log.DeferredDiagnosticHandler lambdaDeferredHandler = new Log.DeferredDiagnosticHandler(log);
+            try {
+                if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
+                    attribTree(that.getBody(), localEnv, bodyResultInfo);
+                } else {
+                    JCBlock body = (JCBlock)that.body;
+                    attribStats(body.stats, localEnv);
+                }
+
+                if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.SPECULATIVE) {
+                    //check for errors in lambda body
+                    for (JCDiagnostic deferredDiag : lambdaDeferredHandler.getDiagnostics()) {
+                        if (deferredDiag.getKind() == JCDiagnostic.Kind.ERROR) {
+                            resultInfo.checkContext
+                                    .report(that, diags.fragment("bad.arg.types.in.lambda", TreeInfo.types(that.params)));
+                            //we mark the lambda as erroneous - this is crucial in the recovery step
+                            //as parameter-dependent type error won't be reported in that stage,
+                            //meaning that a lambda will be deemed erroeneous only if there is
+                            //a target-independent error (which will cause method diagnostic
+                            //to be skipped).
+                            result = that.type = types.createErrorType(target);
+                            return;
+                        }
+                    }
+                }
+            } finally {
+                lambdaDeferredHandler.reportDeferredDiagnostics();
+                log.popDiagnosticHandler(lambdaDeferredHandler);
             }
 
             result = check(that, target, VAL, resultInfo);
@@ -2373,26 +2396,55 @@ public class Attr extends JCTree.Visitor {
             }
         }
     }
-
-    private Type checkIntersectionTarget(DiagnosticPosition pos, Type pt, CheckContext checkContext) {
-        if (pt != Type.recoveryType && pt.isCompound()) {
-            IntersectionClassType ict = (IntersectionClassType)pt;
-            List<Type> bounds = ict.allInterfaces ?
-                    ict.getComponents().tail :
-                    ict.getComponents();
-            types.findDescriptorType(bounds.head); //propagate exception outwards!
-            for (Type bound : bounds.tail) {
-                if (!types.isMarkerInterface(bound)) {
-                    checkContext.report(pos, diags.fragment("secondary.bound.must.be.marker.intf", bound));
-                }
-            }
-            //for now (translation doesn't support intersection types)
-            return bounds.head;
-        } else {
-            return pt;
-        }
-    }
     //where
+        Types.MapVisitor<DiagnosticPosition> targetChecker = new Types.MapVisitor<DiagnosticPosition>() {
+
+            @Override
+            public Type visitClassType(ClassType t, DiagnosticPosition pos) {
+                return t.isCompound() ?
+                        visitIntersectionClassType((IntersectionClassType)t, pos) : t;
+            }
+
+            public Type visitIntersectionClassType(IntersectionClassType ict, DiagnosticPosition pos) {
+                Symbol desc = types.findDescriptorSymbol(makeNotionalInterface(ict));
+                Type target = null;
+                for (Type bound : ict.getExplicitComponents()) {
+                    TypeSymbol boundSym = bound.tsym;
+                    if (types.isFunctionalInterface(boundSym) &&
+                            types.findDescriptorSymbol(boundSym) == desc) {
+                        target = bound;
+                    } else if (!boundSym.isInterface() || (boundSym.flags() & ANNOTATION) != 0) {
+                        //bound must be an interface
+                        reportIntersectionError(pos, "not.an.intf.component", boundSym);
+                    }
+                }
+                return target != null ?
+                        target :
+                        ict.getExplicitComponents().head; //error recovery
+            }
+
+            private TypeSymbol makeNotionalInterface(IntersectionClassType ict) {
+                ListBuffer<Type> targs = ListBuffer.lb();
+                ListBuffer<Type> supertypes = ListBuffer.lb();
+                for (Type i : ict.interfaces_field) {
+                    if (i.isParameterized()) {
+                        targs.appendList(i.tsym.type.allparams());
+                    }
+                    supertypes.append(i.tsym.type);
+                }
+                IntersectionClassType notionalIntf =
+                        (IntersectionClassType)types.makeCompoundType(supertypes.toList());
+                notionalIntf.allparams_field = targs.toList();
+                notionalIntf.tsym.flags_field |= INTERFACE;
+                return notionalIntf.tsym;
+            }
+
+            private void reportIntersectionError(DiagnosticPosition pos, String key, Object... args) {
+                resultInfo.checkContext.report(pos, diags.fragment("bad.intersection.target.for.functional.expr",
+                        diags.fragment(key, args)));
+            }
+        };
+
         private Type fallbackDescriptorType(JCExpression tree) {
             switch (tree.getTag()) {
                 case LAMBDA:
@@ -2563,7 +2615,7 @@ public class Attr extends JCTree.Visitor {
             Type target;
             Type desc;
             if (pt() != Type.recoveryType) {
-                target = checkIntersectionTarget(that, pt(), resultInfo.checkContext);
+                target = targetChecker.visit(pt(), that);
                 desc = types.findDescriptorType(target);
                 chk.checkFunctionalInterface(that, target);
             } else {
@@ -2571,11 +2623,12 @@ public class Attr extends JCTree.Visitor {
                 desc = fallbackDescriptorType(that);
             }
 
-            setFunctionalInfo(that, pt(), desc, resultInfo.checkContext.inferenceContext());
+            setFunctionalInfo(that, pt(), desc, target, resultInfo.checkContext.inferenceContext());
             List<Type> argtypes = desc.getParameterTypes();
 
-            Pair<Symbol, Resolve.ReferenceLookupHelper> refResult = rs.resolveMemberReference(that.pos(), localEnv, that,
-                    that.expr.type, that.name, argtypes, typeargtypes, true);
+            Pair<Symbol, Resolve.ReferenceLookupHelper> refResult =
+                    rs.resolveMemberReference(that.pos(), localEnv, that,
+                        that.expr.type, that.name, argtypes, typeargtypes, true, rs.resolveMethodCheck);
 
             Symbol refSym = refResult.fst;
             Resolve.ReferenceLookupHelper lookupHelper = refResult.snd;
@@ -2765,19 +2818,24 @@ public class Attr extends JCTree.Visitor {
      * might contain inference variables, we might need to register an hook in the
      * current inference context.
      */
-    private void setFunctionalInfo(final JCFunctionalExpression fExpr, final Type pt, final Type descriptorType, InferenceContext inferenceContext) {
+    private void setFunctionalInfo(final JCFunctionalExpression fExpr, final Type pt,
+            final Type descriptorType, final Type primaryTarget, InferenceContext inferenceContext) {
         if (inferenceContext.free(descriptorType)) {
             inferenceContext.addFreeTypeListener(List.of(pt, descriptorType), new FreeTypeListener() {
                 public void typesInferred(InferenceContext inferenceContext) {
-                    setFunctionalInfo(fExpr, pt, inferenceContext.asInstType(descriptorType), inferenceContext);
+                    setFunctionalInfo(fExpr, pt, inferenceContext.asInstType(descriptorType),
+                            inferenceContext.asInstType(primaryTarget), inferenceContext);
                 }
             });
         } else {
             ListBuffer<TypeSymbol> targets = ListBuffer.lb();
             if (pt.hasTag(CLASS)) {
                 if (pt.isCompound()) {
+                    targets.append(primaryTarget.tsym); //this goes first
                     for (Type t : ((IntersectionClassType)pt()).interfaces_field) {
-                        targets.append(t.tsym);
+                        if (t != primaryTarget) {
+                            targets.append(t.tsym);
+                        }
                     }
                 } else {
                     targets.append(pt.tsym);

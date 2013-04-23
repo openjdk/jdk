@@ -237,13 +237,6 @@ static const char * command_names[] = {
   "help"
 };
 
-static const char * command_name(OracleCommand command) {
-  if (command < OracleFirstCommand || command >= OracleCommandCount) {
-    return "unknown command";
-  }
-  return command_names[command];
-}
-
 class MethodMatcher;
 static MethodMatcher* lists[OracleCommandCount] = { 0, };
 

@@ -25,7 +25,7 @@
  * @test
  * @bug 8002099
  * @summary Add support for intersection types in cast expression
- * @compile/fail/ref=Intersection01.out -XDrawDiagnostics Intersection01.java
+ * @compile Intersection01.java
  */
 class Intersection01 {
 

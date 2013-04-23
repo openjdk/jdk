@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ abstract class SEIMethodHandler extends MethodHandler {
         {// prepare objects for creating messages
             List<ParameterImpl> rp = method.getRequestParameters();
 
-            BodyBuilder bodyBuilder = null;
+            BodyBuilder tmpBodyBuilder = null;
             List<MessageFiller> fillers = new ArrayList<MessageFiller>();
 
             for (ParameterImpl param : rp) {
@@ -105,11 +105,11 @@ abstract class SEIMethodHandler extends MethodHandler {
                 case BODY:
                     if(param.isWrapperStyle()) {
                         if(param.getParent().getBinding().isRpcLit())
-                            bodyBuilder = new BodyBuilder.RpcLit((WrapperParameter)param, owner.soapVersion, getValueGetterFactory());
+                            tmpBodyBuilder = new BodyBuilder.RpcLit((WrapperParameter)param, owner.soapVersion, getValueGetterFactory());
                         else
-                            bodyBuilder = new BodyBuilder.DocLit((WrapperParameter)param, owner.soapVersion, getValueGetterFactory());
+                            tmpBodyBuilder = new BodyBuilder.DocLit((WrapperParameter)param, owner.soapVersion, getValueGetterFactory());
                     } else {
-                        bodyBuilder = new BodyBuilder.Bare(param, owner.soapVersion, getter);
+                        tmpBodyBuilder = new BodyBuilder.Bare(param, owner.soapVersion, getter);
                     }
                     break;
                 case HEADER:
@@ -128,21 +128,21 @@ abstract class SEIMethodHandler extends MethodHandler {
                 }
             }
 
-            if(bodyBuilder==null) {
+            if(tmpBodyBuilder==null) {
                 // no parameter binds to body. we create an empty message
                 switch(owner.soapVersion) {
                 case SOAP_11:
-                    bodyBuilder = BodyBuilder.EMPTY_SOAP11;
+                    tmpBodyBuilder = BodyBuilder.EMPTY_SOAP11;
                     break;
                 case SOAP_12:
-                    bodyBuilder = BodyBuilder.EMPTY_SOAP12;
+                    tmpBodyBuilder = BodyBuilder.EMPTY_SOAP12;
                     break;
                 default:
                     throw new AssertionError();
                 }
             }
 
-            this.bodyBuilder = bodyBuilder;
+            this.bodyBuilder = tmpBodyBuilder;
             this.inFillers = fillers.toArray(new MessageFiller[fillers.size()]);
         }
 

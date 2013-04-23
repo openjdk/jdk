@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.message.AttachmentSet;
 import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
 import com.sun.xml.internal.ws.message.AttachmentSetImpl;
 import com.sun.xml.internal.ws.message.stream.PayloadStreamReaderMessage;
 import com.sun.xml.internal.ws.streaming.SourceReaderFactory;
@@ -44,7 +45,7 @@ import javax.xml.transform.Source;
  */
 public class PayloadSourceMessage extends PayloadStreamReaderMessage {
 
-    public PayloadSourceMessage(@Nullable HeaderList headers,
+    public PayloadSourceMessage(@Nullable MessageHeaders headers,
         @NotNull Source payload, @NotNull AttachmentSet attSet,
         @NotNull SOAPVersion soapVersion) {
 

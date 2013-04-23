@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,12 @@ import java.util.Iterator;
  * @author Santiago.PericasGeertsen@sun.com
  * @author Kohsuke Kawaguchi
  */
-public final class DOMStreamReader implements XMLStreamReader, NamespaceContext {
+public class DOMStreamReader implements XMLStreamReader, NamespaceContext {
 
     /**
      * Current DOM node being traversed.
      */
-    private Node _current;
+    protected Node _current;
 
     /**
      * Starting node of the subtree being traversed.
@@ -96,7 +96,7 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
      * but when a large binary data sent as base64 text, this could get very much
      * non-trivial.
      */
-    private String wholeText;
+    protected String wholeText;
 
     /**
      * List of attributes extracted from <code>_namedNodeMap</code>.
@@ -106,26 +106,26 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
     /**
      * {@link Scope} buffer.
      */
-    private Scope[] scopes = new Scope[8];
+    protected Scope[] scopes = new Scope[8];
 
     /**
      * Depth of the current element. The first element gets depth==0.
      * Also used as the index to {@link #scopes}.
      */
-    private int depth = 0;
+    protected int depth = 0;
 
     /**
      * State of this reader. Any of the valid states defined in StAX'
      * XMLStreamConstants class.
      */
-    int _state;
+    protected int _state;
 
     /**
      * Namespace declarations on one element.
      *
      * Instances are reused.
      */
-    private static final class Scope {
+    protected static final class Scope {
         /**
          * Scope for the parent element.
          */
@@ -247,7 +247,7 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
      * (which contains both ns decl and attributes in DOM) and split them
      * to attributes-proper and namespace decls.
      */
-    private void splitAttributes() {
+    protected void splitAttributes() {
         // Clear attribute and namespace lists
         _currentAttributes.clear();
 
@@ -756,7 +756,7 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
         }
     }
 
-    private int _next() throws XMLStreamException {
+    protected int _next() throws XMLStreamException {
         Node child;
 
         switch (_state) {

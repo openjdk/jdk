@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFactory;
 import javax.xml.ws.soap.SOAPBinding;
 
-import com.sun.xml.internal.org.jvnet.ws.EnvelopeStyle;
-import com.sun.xml.internal.org.jvnet.ws.EnvelopeStyleFeature;
+import com.oracle.webservices.internal.api.EnvelopeStyle;
+import com.oracle.webservices.internal.api.EnvelopeStyleFeature;
 
 import java.util.Arrays;
 import java.util.Collections;
