@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.main;
 
+import com.sun.tools.javac.comp.CompileStates;
 import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +62,7 @@ import com.sun.tools.javac.processing.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.comp.CompileStates.CompileState;
 import com.sun.tools.javac.util.Log.WriterKind;
 
 import static com.sun.tools.javac.code.TypeTag.CLASS;
@@ -326,6 +328,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      **/
     protected boolean implicitSourceFilesRead;
 
+    protected CompileStates compileStates;
+
     /** Construct a new compiler using a shared context.
      */
     public JavaCompiler(Context context) {
@@ -348,6 +352,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         fileManager = context.get(JavaFileManager.class);
         parserFactory = ParserFactory.instance(context);
+        compileStates = CompileStates.instance(context);
 
         try {
             // catch completion problems with predefineds
@@ -520,42 +525,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     /** A list of items to be closed when the compilation is complete.
      */
     public List<Closeable> closeables = List.nil();
-
-    /** Ordered list of compiler phases for each compilation unit. */
-    public enum CompileState {
-        INIT(0),
-        PARSE(1),
-        ENTER(2),
-        PROCESS(3),
-        ATTR(4),
-        FLOW(5),
-        TRANSTYPES(6),
-        UNLAMBDA(7),
-        LOWER(8),
-        GENERATE(9);
-
-        CompileState(int value) {
-            this.value = value;
-        }
-        boolean isAfter(CompileState other) {
-            return value > other.value;
-        }
-        public static CompileState max(CompileState a, CompileState b) {
-            return a.value > b.value ? a : b;
-        }
-        private final int value;
-    };
-    /** Partial map to record which compiler phases have been executed
-     * for each compilation unit. Used for ATTR and FLOW phases.
-     */
-    protected class CompileStates extends HashMap<Env<AttrContext>,CompileState> {
-        private static final long serialVersionUID = 1812267524140424433L;
-        boolean isDone(Env<AttrContext> env, CompileState cs) {
-            CompileState ecs = get(env);
-            return (ecs != null) && !cs.isAfter(ecs);
-        }
-    }
-    private CompileStates compileStates = new CompileStates();
 
     /** The set of currently compiled inputfiles, needed to ensure
      *  we don't accidentally overwrite an input file when -s is set.
@@ -1395,13 +1364,17 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             @Override
             public void visitClassDef(JCClassDecl node) {
                 Type st = types.supertype(node.sym.type);
-                if (st.hasTag(CLASS)) {
+                boolean envForSuperTypeFound = false;
+                while (!envForSuperTypeFound && st.hasTag(CLASS)) {
                     ClassSymbol c = st.tsym.outermostClass();
                     Env<AttrContext> stEnv = enter.getEnv(c);
                     if (stEnv != null && env != stEnv) {
-                        if (dependencies.add(stEnv))
+                        if (dependencies.add(stEnv)) {
                             scan(stEnv.tree);
+                        }
+                        envForSuperTypeFound = true;
                     }
+                    st = types.supertype(st);
                 }
                 super.visitClassDef(node);
             }

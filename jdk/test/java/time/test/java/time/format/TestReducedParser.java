@@ -75,7 +75,7 @@ import org.testng.annotations.Test;
 /**
  * Test ReducedPrinterParser.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestReducedParser extends AbstractTestPrinterParser {
 
     private DateTimeFormatter getFormatter0(TemporalField field, int width, int baseValue) {

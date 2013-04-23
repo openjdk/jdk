@@ -40,9 +40,9 @@
 
 package sun.text.resources.mt;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_mt extends ListResourceBundle {
+public class FormatData_mt extends ParallelListResourceBundle {
     protected final Object[][] getContents() {
         return new Object[][] {
             { "MonthNames",
@@ -76,6 +76,23 @@ public class FormatData_mt extends ListResourceBundle {
                     "Ott",
                     "Nov",
                     "Di\u010b",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "\u0120",
+                    "L",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
                     "",
                 }
             },
@@ -167,22 +184,6 @@ public class FormatData_mt extends ListResourceBundle {
                     "{1} {0}",
                 }
             },
-            { "calendarname.islamic-civil", "Kalendarju Islamiku-\u010aivili" },
-            { "calendarname.islamicc", "Kalendarju Islamiku-\u010aivili" },
-            { "calendarname.islamic", "Kalendarju Islamiku" },
-            { "calendarname.buddhist", "Kalendarju Buddist" },
-            { "calendarname.japanese", "Kalendarju \u0120appuni\u017c" },
-            { "calendarname.gregorian", "Kalendarju Gregorjan" },
-            { "calendarname.gregory", "Kalendarju Gregorjan" },
-            { "field.era", "Epoka" },
-            { "field.year", "Sena" },
-            { "field.month", "Xahar" },
-            { "field.week", "\u0120img\u0127a" },
-            { "field.weekday", "Jum tal-\u0120img\u0127a" },
-            { "field.hour", "Sieg\u0127a" },
-            { "field.minute", "Minuta" },
-            { "field.second", "Sekonda" },
-            { "field.zone", "\u017bona" },
         };
     }
 }

@@ -26,6 +26,8 @@
 package java.security;
 
 import sun.security.util.Debug;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
 
 /**
  * <p> The AccessController class is used for access control operations
@@ -264,6 +266,7 @@ public final class AccessController {
      * @see java.security.DomainCombiner
      */
 
+    @CallerSensitive
     public static native <T> T doPrivileged(PrivilegedAction<T> action);
 
     /**
@@ -288,14 +291,15 @@ public final class AccessController {
      *
      * @since 1.6
      */
+    @CallerSensitive
     public static <T> T doPrivilegedWithCombiner(PrivilegedAction<T> action) {
-
         AccessControlContext acc = getStackAccessControlContext();
         if (acc == null) {
             return AccessController.doPrivileged(action);
         }
         DomainCombiner dc = acc.getAssignedCombiner();
-        return AccessController.doPrivileged(action, preserveCombiner(dc));
+        return AccessController.doPrivileged(action,
+                                             preserveCombiner(dc, Reflection.getCallerClass()));
     }
 
 
@@ -326,6 +330,7 @@ public final class AccessController {
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
      */
+    @CallerSensitive
     public static native <T> T doPrivileged(PrivilegedAction<T> action,
                                             AccessControlContext context);
 
@@ -353,6 +358,7 @@ public final class AccessController {
      * @see #doPrivilegedWithCombiner(PrivilegedExceptionAction)
      * @see java.security.DomainCombiner
      */
+    @CallerSensitive
     public static native <T> T
         doPrivileged(PrivilegedExceptionAction<T> action)
         throws PrivilegedActionException;
@@ -383,34 +389,29 @@ public final class AccessController {
      *
      * @since 1.6
      */
-    public static <T> T doPrivilegedWithCombiner
-        (PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
-
+    @CallerSensitive
+    public static <T> T doPrivilegedWithCombiner(PrivilegedExceptionAction<T> action)
+        throws PrivilegedActionException
+    {
         AccessControlContext acc = getStackAccessControlContext();
         if (acc == null) {
             return AccessController.doPrivileged(action);
         }
         DomainCombiner dc = acc.getAssignedCombiner();
-        return AccessController.doPrivileged(action, preserveCombiner(dc));
+        return AccessController.doPrivileged(action,
+                                             preserveCombiner(dc, Reflection.getCallerClass()));
     }
 
     /**
      * preserve the combiner across the doPrivileged call
      */
-    private static AccessControlContext preserveCombiner
-                                        (DomainCombiner combiner) {
-
-        /**
-         * callerClass[0] = Reflection.getCallerClass
-         * callerClass[1] = AccessController.preserveCombiner
-         * callerClass[2] = AccessController.doPrivileged
-         * callerClass[3] = caller
-         */
-        final Class<?> callerClass = sun.reflect.Reflection.getCallerClass(3);
+    private static AccessControlContext preserveCombiner(DomainCombiner combiner,
+                                                         Class<?> caller)
+    {
         ProtectionDomain callerPd = doPrivileged
             (new PrivilegedAction<ProtectionDomain>() {
             public ProtectionDomain run() {
-                return callerClass.getProtectionDomain();
+                return caller.getProtectionDomain();
             }
         });
 
@@ -455,6 +456,7 @@ public final class AccessController {
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
      */
+    @CallerSensitive
     public static native <T> T
         doPrivileged(PrivilegedExceptionAction<T> action,
                      AccessControlContext context)

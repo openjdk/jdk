@@ -333,10 +333,10 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         hints = h;
     }
 
-    private native void setICMpixels(int x, int y, int w, int h, int[] lut,
+    private native boolean setICMpixels(int x, int y, int w, int h, int[] lut,
                                     byte[] pix, int off, int scansize,
                                     IntegerComponentRaster ict);
-    private native int setDiffICM(int x, int y, int w, int h, int[] lut,
+    private native boolean setDiffICM(int x, int y, int w, int h, int[] lut,
                                  int transPix, int numLut, IndexColorModel icm,
                                  byte[] pix, int off, int scansize,
                                  ByteComponentRaster bct, int chanOff);
@@ -426,10 +426,10 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                 IndexColorModel icm = (IndexColorModel) model;
                 ByteComponentRaster bct = (ByteComponentRaster) biRaster;
                 int numlut = numSrcLUT;
-                if (setDiffICM(x, y, w, h, srcLUT, srcLUTtransIndex,
+                if (!setDiffICM(x, y, w, h, srcLUT, srcLUTtransIndex,
                                numSrcLUT, icm,
                                pix, off, scansize, bct,
-                               bct.getDataOffset(0)) == 0) {
+                               bct.getDataOffset(0))) {
                     convertToRGB();
                 }
                 else {
@@ -470,9 +470,14 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                     if (s_useNative) {
                         // Note that setICMpixels modifies the raster directly
                         // so we must mark it as changed afterwards
-                        setICMpixels(x, y, w, h, srcLUT, pix, off, scansize,
-                                     iraster);
-                        iraster.markDirty();
+                        if (setICMpixels(x, y, w, h, srcLUT, pix, off, scansize,
+                                     iraster))
+                        {
+                            iraster.markDirty();
+                        } else {
+                            abort();
+                            return;
+                        }
                     }
                     else {
                         int[] storage = new int[w*h];

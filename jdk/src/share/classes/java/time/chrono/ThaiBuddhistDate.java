@@ -72,12 +72,13 @@ import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
@@ -205,16 +206,46 @@ public final class ThaiBuddhistDate
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Gets the chronology of this date, which is the Thai Buddhist calendar system.
+     * <p>
+     * The {@code Chronology} represents the calendar system in use.
+     * The era and other fields in {@link ChronoField} are defined by the chronology.
+     *
+     * @return the Thai Buddhist chronology, not null
+     */
     @Override
     public ThaiBuddhistChronology getChronology() {
         return ThaiBuddhistChronology.INSTANCE;
     }
 
+    /**
+     * Gets the era applicable at this date.
+     * <p>
+     * The Thai Buddhist calendar system has two eras, 'BE' and 'BEFORE_BE',
+     * defined by {@link ThaiBuddhistEra}.
+     *
+     * @return the era applicable at this date, not null
+     */
+    @Override
+    public ThaiBuddhistEra getEra() {
+        return (getProlepticYear() >= 1 ? ThaiBuddhistEra.BE : ThaiBuddhistEra.BEFORE_BE);
+    }
+
+    /**
+     * Returns the length of the month represented by this date.
+     * <p>
+     * This returns the length of the month in days.
+     * Month lengths match those of the ISO calendar system.
+     *
+     * @return the length of the month in days
+     */
     @Override
     public int lengthOfMonth() {
         return isoDate.lengthOfMonth();
     }
 
+    //-----------------------------------------------------------------------
     @Override
     public ValueRange range(TemporalField field) {
         if (field instanceof ChronoField) {
@@ -233,7 +264,7 @@ public final class ThaiBuddhistDate
                 }
                 return getChronology().range(f);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.rangeRefinedBy(this);
     }
@@ -242,6 +273,8 @@ public final class ThaiBuddhistDate
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField) {
             switch ((ChronoField) field) {
+                case PROLEPTIC_MONTH:
+                    return getProlepticMonth();
                 case YEAR_OF_ERA: {
                     int prolepticYear = getProlepticYear();
                     return (prolepticYear >= 1 ? prolepticYear : 1 - prolepticYear);
@@ -254,6 +287,10 @@ public final class ThaiBuddhistDate
             return isoDate.getLong(field);
         }
         return field.getFrom(this);
+    }
+
+    private long getProlepticMonth() {
+        return getProlepticYear() * 12L + isoDate.getMonthValue() - 1;
     }
 
     private int getProlepticYear() {
@@ -269,11 +306,13 @@ public final class ThaiBuddhistDate
                 return this;
             }
             switch (f) {
+                case PROLEPTIC_MONTH:
+                    getChronology().range(f).checkValidValue(newValue, f);
+                    return plusMonths(newValue - getProlepticMonth());
                 case YEAR_OF_ERA:
                 case YEAR:
                 case ERA: {
-                    f.checkValidValue(newValue);
-                    int nvalue = (int) newValue;
+                    int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
                     switch (f) {
                         case YEAR_OF_ERA:
                             return with(isoDate.withYear((getProlepticYear() >= 1 ? nvalue : 1 - nvalue)  - YEARS_DIFFERENCE));
@@ -286,7 +325,7 @@ public final class ThaiBuddhistDate
             }
             return with(isoDate.with(field, newValue));
         }
-        return (ThaiBuddhistDate) ChronoLocalDate.super.with(field, newValue);
+        return ChronoLocalDate.super.with(field, newValue);
     }
 
     /**
@@ -296,7 +335,7 @@ public final class ThaiBuddhistDate
      */
     @Override
     public  ThaiBuddhistDate with(TemporalAdjuster adjuster) {
-        return (ThaiBuddhistDate)super.with(adjuster);
+        return super.with(adjuster);
     }
 
     /**
@@ -306,7 +345,7 @@ public final class ThaiBuddhistDate
      */
     @Override
     public ThaiBuddhistDate plus(TemporalAmount amount) {
-        return (ThaiBuddhistDate)super.plus(amount);
+        return super.plus(amount);
     }
 
     /**
@@ -316,7 +355,7 @@ public final class ThaiBuddhistDate
      */
     @Override
     public ThaiBuddhistDate minus(TemporalAmount amount) {
-        return (ThaiBuddhistDate)super.minus(amount);
+        return super.minus(amount);
     }
 
     //-----------------------------------------------------------------------
@@ -332,7 +371,7 @@ public final class ThaiBuddhistDate
 
     @Override
     ThaiBuddhistDate plusWeeks(long weeksToAdd) {
-        return (ThaiBuddhistDate)super.plusWeeks(weeksToAdd);
+        return super.plusWeeks(weeksToAdd);
     }
 
     @Override
@@ -342,32 +381,32 @@ public final class ThaiBuddhistDate
 
     @Override
     public ThaiBuddhistDate plus(long amountToAdd, TemporalUnit unit) {
-        return (ThaiBuddhistDate)super.plus(amountToAdd, unit);
+        return super.plus(amountToAdd, unit);
     }
 
     @Override
     public ThaiBuddhistDate minus(long amountToAdd, TemporalUnit unit) {
-        return (ThaiBuddhistDate)super.minus(amountToAdd, unit);
+        return super.minus(amountToAdd, unit);
     }
 
     @Override
     ThaiBuddhistDate minusYears(long yearsToSubtract) {
-        return (ThaiBuddhistDate)super.minusYears(yearsToSubtract);
+        return super.minusYears(yearsToSubtract);
     }
 
     @Override
     ThaiBuddhistDate minusMonths(long monthsToSubtract) {
-        return (ThaiBuddhistDate)super.minusMonths(monthsToSubtract);
+        return super.minusMonths(monthsToSubtract);
     }
 
     @Override
     ThaiBuddhistDate minusWeeks(long weeksToSubtract) {
-        return (ThaiBuddhistDate)super.minusWeeks(weeksToSubtract);
+        return super.minusWeeks(weeksToSubtract);
     }
 
     @Override
     ThaiBuddhistDate minusDays(long daysToSubtract) {
-        return (ThaiBuddhistDate)super.minusDays(daysToSubtract);
+        return super.minusDays(daysToSubtract);
     }
 
     private ThaiBuddhistDate with(LocalDate newDate) {
@@ -376,7 +415,7 @@ public final class ThaiBuddhistDate
 
     @Override        // for javadoc and covariant return type
     public final ChronoLocalDateTime<ThaiBuddhistDate> atTime(LocalTime localTime) {
-        return (ChronoLocalDateTime<ThaiBuddhistDate>)super.atTime(localTime);
+        return super.atTime(localTime);
     }
 
     @Override

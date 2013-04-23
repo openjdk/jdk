@@ -208,7 +208,7 @@ public class IntegerComponentRaster extends SunWritableRaster {
                                             " SinglePixelPackedSampleModel");
         }
 
-        verify(false);
+        verify();
     }
 
 
@@ -629,16 +629,26 @@ public class IntegerComponentRaster extends SunWritableRaster {
     }
 
     /**
-     * Verify that the layout parameters are consistent with
-     * the data.  If strictCheck
-     * is false, this method will check for ArrayIndexOutOfBounds conditions.  If
-     * strictCheck is true, this method will check for additional error
-     * conditions such as line wraparound (width of a line greater than
-     * the scanline stride).
-     * @return   String   Error string, if the layout is incompatible with
-     *                    the data.  Otherwise returns null.
+     * Verify that the layout parameters are consistent with the data.
+     *
+     * The method verifies whether scanline stride and pixel stride do not
+     * cause an integer overflow during calculation of a position of the pixel
+     * in data buffer. It also verifies whether the data buffer has enough data
+     *  to correspond the raster layout attributes.
+     *
+     * @throws RasterFormatException if an integer overflow is detected,
+     * or if data buffer has not enough capacity.
      */
-    private void verify (boolean strictCheck) {
+    protected final void verify() {
+        /* Need to re-verify the dimensions since a sample model may be
+         * specified to the constructor
+         */
+        if (width <= 0 || height <= 0 ||
+            height > (Integer.MAX_VALUE / width))
+        {
+            throw new RasterFormatException("Invalid raster dimension");
+        }
+
         if (dataOffsets[0] < 0) {
             throw new RasterFormatException("Data offset ("+dataOffsets[0]+
                                             ") must be >= 0");
@@ -647,17 +657,46 @@ public class IntegerComponentRaster extends SunWritableRaster {
         int maxSize = 0;
         int size;
 
-        for (int i=0; i < numDataElements; i++) {
-            size = (height-1)*scanlineStride + (width-1)*pixelStride +
-                dataOffsets[i];
+        // we can be sure that width and height are greater than 0
+        if (scanlineStride < 0 ||
+            scanlineStride > (Integer.MAX_VALUE / height))
+        {
+            // integer overflow
+            throw new RasterFormatException("Incorrect scanline stride: "
+                    + scanlineStride);
+        }
+        int lastScanOffset = (height - 1) * scanlineStride;
+
+        if (pixelStride < 0 ||
+            pixelStride > (Integer.MAX_VALUE / width))
+        {
+            // integer overflow
+            throw new RasterFormatException("Incorrect pixel stride: "
+                    + pixelStride);
+        }
+        int lastPixelOffset = (width - 1) * pixelStride;
+
+        if (lastPixelOffset > (Integer.MAX_VALUE - lastScanOffset)) {
+            // integer overflow
+            throw new RasterFormatException("Incorrect raster attributes");
+        }
+        lastPixelOffset += lastScanOffset;
+
+        for (int i = 0; i < numDataElements; i++) {
+            if (dataOffsets[i] > (Integer.MAX_VALUE - lastPixelOffset)) {
+                throw new RasterFormatException("Incorrect band offset: "
+                            + dataOffsets[i]);
+            }
+
+            size = lastPixelOffset + dataOffsets[i];
+
             if (size > maxSize) {
                 maxSize = size;
             }
         }
         if (data.length < maxSize) {
-            throw new RasterFormatException("Data array too small (should be "+
-                                          maxSize
-                                          +" but is "+data.length+" )");
+            throw new RasterFormatException("Data array too small (should be "
+                    + maxSize + " )");
         }
     }
 

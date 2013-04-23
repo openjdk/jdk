@@ -58,7 +58,7 @@ include $(BUILDDIR)/common/Library.gmk
 SERVICEDIR = $(CLASSBINDIR)/META-INF/services
 
 FILES_copy = \
-	$(SERVICEDIR)/sun.java2d.cmm.PCMM
+	$(SERVICEDIR)/sun.java2d.cmm.CMMServiceProvider
 
 build: copy-files
 

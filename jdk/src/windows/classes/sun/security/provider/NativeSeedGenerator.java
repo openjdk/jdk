@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ class NativeSeedGenerator extends SeedGenerator {
      * @exception IOException if CryptoAPI seeds are not available
      * on this platform.
      */
-    NativeSeedGenerator() throws IOException {
+    NativeSeedGenerator(String seedFile) throws IOException {
+        // seedFile is ignored.
         super();
         // try generating two random bytes to see if CAPI is available
         if (!nativeGenerateSeed(new byte[2])) {

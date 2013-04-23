@@ -58,14 +58,16 @@ const ArabicShaping::ShapeType ArabicShaping::shapeTypes[] =
 */
 ArabicShaping::ShapeType ArabicShaping::getShapeType(LEUnicode c)
 {
-    const ClassDefinitionTable *joiningTypes = (const ClassDefinitionTable *) ArabicShaping::shapingTypeTable;
-    le_int32 joiningType = joiningTypes->getGlyphClass(c);
+  LEErrorCode success = LE_NO_ERROR;
+  const LEReferenceTo<ClassDefinitionTable> joiningTypes((const ClassDefinitionTable *) ArabicShaping::shapingTypeTable,
+                                                         ArabicShaping::shapingTypeTableLen);
+  le_int32 joiningType = joiningTypes->getGlyphClass(joiningTypes, c, success);
 
-    if (joiningType >= 0 && joiningType < ArabicShaping::JT_COUNT) {
-        return ArabicShaping::shapeTypes[joiningType];
-    }
+  if (joiningType >= 0 && joiningType < ArabicShaping::JT_COUNT && LE_SUCCESS(success)) {
+    return ArabicShaping::shapeTypes[joiningType];
+  }
 
-    return ArabicShaping::ST_NOSHAPE_NONE;
+  return ArabicShaping::ST_NOSHAPE_NONE;
 }
 
 #define isolFeatureTag LE_ISOL_FEATURE_TAG
