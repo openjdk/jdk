@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,17 @@ public class XMLStreamReaderUtil {
                 "xmlreader.unexpectedCharacterContent", reader.getText());
         }
         return state;
+    }
+
+    public static void toNextTag(XMLStreamReader reader, QName name) {
+        // skip any whitespace
+        if (reader.getEventType() != XMLStreamConstants.START_ELEMENT &&
+                reader.getEventType() != XMLStreamConstants.END_ELEMENT) {
+            XMLStreamReaderUtil.nextElementContent(reader);
+        }
+        if(reader.getEventType() == XMLStreamConstants.END_ELEMENT && name.equals(reader.getName())) {
+            XMLStreamReaderUtil.nextElementContent(reader);
+        }
     }
 
     /**

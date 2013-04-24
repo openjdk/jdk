@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@
 
 package com.sun.xml.internal.ws.util.exception;
 
-import com.sun.xml.internal.ws.util.localization.*;
-
-import javax.xml.ws.WebServiceException;
+import com.sun.istack.internal.localization.Localizable;
+import com.sun.istack.internal.localization.LocalizableMessage;
+import com.sun.istack.internal.localization.LocalizableMessageFactory;
+import com.sun.istack.internal.localization.Localizer;
+import com.sun.istack.internal.localization.NullLocalizable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import javax.xml.ws.WebServiceException;
 
 /**
  * Represents a {@link WebServiceException} with
@@ -53,17 +56,12 @@ public abstract class JAXWSExceptionBase
      */
     protected JAXWSExceptionBase(String key, Object... args) {
         super(findNestedException(args));
-        this.msg = new LocalizableImpl(key,fixNull(args),getDefaultResourceBundleName());
+        this.msg = new LocalizableMessage(getDefaultResourceBundleName(), key, args);
     }
 
 
     protected JAXWSExceptionBase(String message) {
         this(new NullLocalizable(message));
-    }
-
-    private static Object[] fixNull(Object[] x) {
-        if(x==null)     return new Object[0];
-        else            return x;
     }
 
     /**

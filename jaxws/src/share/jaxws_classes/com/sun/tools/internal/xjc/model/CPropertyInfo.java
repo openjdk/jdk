@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Map;
 
-import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
@@ -37,10 +36,10 @@ import javax.xml.namespace.QName;
 import com.sun.codemodel.internal.JClass;
 import com.sun.codemodel.internal.JJavaName;
 import com.sun.codemodel.internal.JType;
-import com.sun.tools.internal.xjc.Plugin;
 import com.sun.tools.internal.xjc.generator.bean.field.FieldRenderer;
 import com.sun.tools.internal.xjc.model.nav.NClass;
 import com.sun.tools.internal.xjc.model.nav.NType;
+import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.xml.internal.bind.api.impl.NameConverter;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
@@ -105,7 +104,15 @@ public abstract class CPropertyInfo implements PropertyInfo<NType,NClass>, CCust
     protected CPropertyInfo(String name, boolean collection, XSComponent source,
                             CCustomizations customizations, Locator locator) {
         this.publicName = name;
-        String n = NameConverter.standard.toVariableName(name);
+        String n = null;
+
+        Model m = Ring.get(Model.class);
+        if (m != null) {
+            n = m.getNameConverter().toVariableName(name);
+        } else {
+            n = NameConverter.standard.toVariableName(name);
+        }
+
         if(!JJavaName.isJavaIdentifier(n))
             n = '_'+n;  // avoid colliding with the reserved names like 'abstract'.
         this.privateName = n;

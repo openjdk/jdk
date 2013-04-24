@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
-import com.sun.xml.internal.org.jvnet.ws.databinding.DatabindingModeFeature;
 
+import com.oracle.webservices.internal.api.databinding.DatabindingModeFeature;
 import com.sun.xml.internal.ws.db.glassfish.JAXBRIContextFactory;
-import com.sun.xml.internal.ws.policy.privateutil.ServiceConfigurationError;
+import com.sun.xml.internal.ws.util.ServiceConfigurationError;
 import com.sun.xml.internal.ws.util.ServiceFinder;
 
 /**
@@ -115,7 +115,7 @@ abstract public class BindingContextFactory {
          * @param databinding mode/flavor or the package name of the JAXBContext implementation.
          * @return
          */
-        abstract protected boolean isFor(String str);
+        abstract protected boolean isFor(String databinding);
 
         /**
          * @deprecated - Does jaxws need this?

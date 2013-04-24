@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,14 @@ package com.sun.xml.internal.ws.message;
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.message.AttachmentSet;
-import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -53,19 +52,19 @@ public class EmptyMessageImpl extends AbstractMessageImpl {
      * If a message has no payload, it's more likely to have
      * some header, so we create it eagerly here.
      */
-    private final HeaderList headers;
+    private final MessageHeaders headers;
     private final AttachmentSet attachmentSet;
 
     public EmptyMessageImpl(SOAPVersion version) {
         super(version);
-        this.headers = new HeaderList();
+        this.headers = new HeaderList(version);
         this.attachmentSet = new AttachmentSetImpl();
     }
 
-    public EmptyMessageImpl(HeaderList headers, @NotNull AttachmentSet attachmentSet, SOAPVersion version){
+    public EmptyMessageImpl(MessageHeaders headers, @NotNull AttachmentSet attachmentSet, SOAPVersion version){
         super(version);
         if(headers==null)
-            headers = new HeaderList();
+            headers = new HeaderList(version);
         this.attachmentSet = attachmentSet;
         this.headers = headers;
     }
@@ -80,10 +79,10 @@ public class EmptyMessageImpl extends AbstractMessageImpl {
     }
 
     public boolean hasHeaders() {
-        return !headers.isEmpty();
+        return headers.hasHeaders();
     }
 
-    public HeaderList getHeaders() {
+    public MessageHeaders getHeaders() {
         return headers;
     }
 
@@ -118,4 +117,5 @@ public class EmptyMessageImpl extends AbstractMessageImpl {
     public Message copy() {
         return new EmptyMessageImpl(this);
     }
+
 }

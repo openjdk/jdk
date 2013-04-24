@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@
  */
 
 import java.io.*;
-import java.text.SimpleDateFormat;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,16 +57,18 @@ import java.util.regex.Pattern;
 public class RunExamples {
     public static void main(String... args) throws Exception {
         jtreg = (System.getProperty("test.src") != null);
-        File tmpDir;
+        Path tmpDir;
+        boolean deleteOnExit;
         if (jtreg) {
             // use standard jtreg scratch directory: the current directory
-            tmpDir = new File(System.getProperty("user.dir"));
+            tmpDir = Paths.get(System.getProperty("user.dir"));
+            deleteOnExit = false;
         } else {
-            tmpDir = new File(System.getProperty("java.io.tmpdir"),
-                    RunExamples.class.getName()
-                    + (new SimpleDateFormat("yyMMddHHmmss")).format(new Date()));
+            tmpDir = Files.createTempDirectory(Paths.get(System.getProperty("java.io.tmpdir")),
+                    RunExamples.class.getName());
+            deleteOnExit = true;
         }
-        Example.setTempDir(tmpDir);
+        Example.setTempDir(tmpDir.toFile());
 
         RunExamples r = new RunExamples();
 
@@ -73,15 +76,8 @@ public class RunExamples {
             if (r.run(args))
                 return;
         } finally {
-            /* VERY IMPORTANT NOTE. In jtreg mode, tmpDir is set to the
-             * jtreg scratch directory, which is the current directory.
-             * In case someone is faking jtreg mode, make sure to only
-             * clean tmpDir when it is reasonable to do so.
-             */
-            if (tmpDir.isDirectory() &&
-                    tmpDir.getName().startsWith(RunExamples.class.getName())) {
-                if (clean(tmpDir))
-                    tmpDir.delete();
+            if (deleteOnExit) {
+                clean(tmpDir);
             }
         }
 
@@ -203,14 +199,20 @@ public class RunExamples {
     /**
      * Clean the contents of a directory.
      */
-    static boolean clean(File dir) {
-        boolean ok = true;
-        for (File f: dir.listFiles()) {
-            if (f.isDirectory())
-                ok &= clean(f);
-            ok &= f.delete();
-        }
-        return ok;
+    static void clean(Path dir) throws IOException {
+        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return super.visitFile(file, attrs);
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                if (exc == null) Files.delete(dir);
+                return super.postVisitDirectory(dir, exc);
+            }
+        });
     }
 
     static abstract class Runner {

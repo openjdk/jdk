@@ -59,14 +59,21 @@
  */
 package tck.java.time;
 
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 
 import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -136,6 +143,78 @@ public class TCKPeriod extends AbstractTCKTest {
         assertPeriod(Period.of(1, 0, 0), 1, 0, 0);
         assertPeriod(Period.of(0, 0, 0), 0, 0, 0);
         assertPeriod(Period.of(-1, -2, -3), -1, -2, -3);
+    }
+
+    //-----------------------------------------------------------------------
+    // from(TemporalAmount)
+    //-----------------------------------------------------------------------
+    @Test
+    public void factory_from_TemporalAmount_Period() {
+        TemporalAmount amount = Period.of(1, 2, 3);
+        assertPeriod(Period.from(amount), 1, 2, 3);
+    }
+
+    @Test
+    public void factory_from_TemporalAmount_YearsDays() {
+        TemporalAmount amount = new TemporalAmount() {
+            @Override
+            public long get(TemporalUnit unit) {
+                if (unit == YEARS) {
+                    return 23;
+                } else {
+                    return 45;
+                }
+            }
+            @Override
+            public List<TemporalUnit> getUnits() {
+                List<TemporalUnit> list = new ArrayList<>();
+                list.add(YEARS);
+                list.add(DAYS);
+                return list;
+            }
+            @Override
+            public Temporal addTo(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public Temporal subtractFrom(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        assertPeriod(Period.from(amount), 23, 0, 45);
+    }
+
+    @Test(expectedExceptions = ArithmeticException.class)
+    public void factory_from_TemporalAmount_Years_tooBig() {
+        TemporalAmount amount = new TemporalAmount() {
+            @Override
+            public long get(TemporalUnit unit) {
+                return ((long) (Integer.MAX_VALUE)) + 1;
+            }
+            @Override
+            public List<TemporalUnit> getUnits() {
+                return Collections.<TemporalUnit>singletonList(YEARS);
+            }
+            @Override
+            public Temporal addTo(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public Temporal subtractFrom(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        Period.from(amount);
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void factory_from_TemporalAmount_Duration() {
+        Period.from(Duration.ZERO);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void factory_from_TemporalAmount_null() {
+        Period.from(null);
     }
 
     //-----------------------------------------------------------------------
@@ -466,6 +545,32 @@ public class TCKPeriod extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
+    // plus(Period)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="plus")
+    Object[][] data_plus() {
+        return new Object[][] {
+                {pymd(0, 0, 0), pymd(0, 0, 0), pymd(0, 0, 0)},
+                {pymd(0, 0, 0), pymd(5, 0, 0), pymd(5, 0, 0)},
+                {pymd(0, 0, 0), pymd(-5, 0, 0), pymd(-5, 0, 0)},
+                {pymd(0, 0, 0), pymd(0, 5, 0), pymd(0, 5, 0)},
+                {pymd(0, 0, 0), pymd(0, -5, 0), pymd(0, -5, 0)},
+                {pymd(0, 0, 0), pymd(0, 0, 5), pymd(0, 0, 5)},
+                {pymd(0, 0, 0), pymd(0, 0, -5), pymd(0, 0, -5)},
+                {pymd(0, 0, 0), pymd(2, 3, 4), pymd(2, 3, 4)},
+                {pymd(0, 0, 0), pymd(-2, -3, -4), pymd(-2, -3, -4)},
+
+                {pymd(4, 5, 6), pymd(2, 3, 4), pymd(6, 8, 10)},
+                {pymd(4, 5, 6), pymd(-2, -3, -4), pymd(2, 2, 2)},
+        };
+    }
+
+    @Test(dataProvider="plus")
+    public void test_plus(Period base, Period add, Period expected) {
+        assertEquals(base.plus(add), expected);
+    }
+
+    //-----------------------------------------------------------------------
     // plusYears()
     //-----------------------------------------------------------------------
     @Test
@@ -474,6 +579,11 @@ public class TCKPeriod extends AbstractTCKTest {
         assertPeriod(Period.of(1, 2, 3).plusYears(10), 11, 2, 3);
         assertPeriod(Period.of(1, 2, 3).plusYears(-10), -9, 2, 3);
         assertPeriod(Period.of(1, 2, 3).plusYears(-1), 0, 2, 3);
+
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofYears(0)), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofYears(10)), 11, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofYears(-10)), -9, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofYears(-1)), 0, 2, 3);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
@@ -497,6 +607,11 @@ public class TCKPeriod extends AbstractTCKTest {
         assertPeriod(Period.of(1, 2, 3).plusMonths(10), 1, 12, 3);
         assertPeriod(Period.of(1, 2, 3).plusMonths(-10), 1, -8, 3);
         assertPeriod(Period.of(1, 2, 3).plusMonths(-2), 1, 0, 3);
+
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofMonths(0)), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofMonths(10)), 1, 12, 3);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofMonths(-10)), 1, -8, 3);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofMonths(-2)), 1, 0, 3);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
@@ -520,6 +635,11 @@ public class TCKPeriod extends AbstractTCKTest {
         assertPeriod(Period.of(1, 2, 3).plusDays(10), 1, 2, 13);
         assertPeriod(Period.of(1, 2, 3).plusDays(-10), 1, 2, -7);
         assertPeriod(Period.of(1, 2, 3).plusDays(-3), 1, 2, 0);
+
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofDays(0)), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofDays(10)), 1, 2, 13);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofDays(-10)), 1, 2, -7);
+        assertPeriod(Period.of(1, 2, 3).plus(Period.ofDays(-3)), 1, 2, 0);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
@@ -532,6 +652,116 @@ public class TCKPeriod extends AbstractTCKTest {
     public void test_plusDays_overflowTooSmall() {
         Period test = Period.ofDays(Integer.MIN_VALUE);
         test.plusDays(-1);
+    }
+
+    //-----------------------------------------------------------------------
+    // minus(Period)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="minus")
+    Object[][] data_minus() {
+        return new Object[][] {
+                {pymd(0, 0, 0), pymd(0, 0, 0), pymd(0, 0, 0)},
+                {pymd(0, 0, 0), pymd(5, 0, 0), pymd(-5, 0, 0)},
+                {pymd(0, 0, 0), pymd(-5, 0, 0), pymd(5, 0, 0)},
+                {pymd(0, 0, 0), pymd(0, 5, 0), pymd(0, -5, 0)},
+                {pymd(0, 0, 0), pymd(0, -5, 0), pymd(0, 5, 0)},
+                {pymd(0, 0, 0), pymd(0, 0, 5), pymd(0, 0, -5)},
+                {pymd(0, 0, 0), pymd(0, 0, -5), pymd(0, 0, 5)},
+                {pymd(0, 0, 0), pymd(2, 3, 4), pymd(-2, -3, -4)},
+                {pymd(0, 0, 0), pymd(-2, -3, -4), pymd(2, 3, 4)},
+
+                {pymd(4, 5, 6), pymd(2, 3, 4), pymd(2, 2, 2)},
+                {pymd(4, 5, 6), pymd(-2, -3, -4), pymd(6, 8, 10)},
+        };
+    }
+
+    @Test(dataProvider="minus")
+    public void test_minus(Period base, Period subtract, Period expected) {
+        assertEquals(base.minus(subtract), expected);
+    }
+
+    //-----------------------------------------------------------------------
+    // minusYears()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_minusYears() {
+        assertPeriod(Period.of(1, 2, 3).minusYears(0), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minusYears(10), -9, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minusYears(-10), 11, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minusYears(-1), 2, 2, 3);
+
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofYears(0)), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofYears(10)), -9, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofYears(-10)), 11, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofYears(-1)), 2, 2, 3);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_minusYears_overflowTooBig() {
+        Period test = Period.ofYears(Integer.MAX_VALUE);
+        test.minusYears(-1);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_minusYears_overflowTooSmall() {
+        Period test = Period.ofYears(Integer.MIN_VALUE);
+        test.minusYears(1);
+    }
+
+    //-----------------------------------------------------------------------
+    // minusMonths()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_minusMonths() {
+        assertPeriod(Period.of(1, 2, 3).minusMonths(0), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minusMonths(10), 1, -8, 3);
+        assertPeriod(Period.of(1, 2, 3).minusMonths(-10), 1, 12, 3);
+        assertPeriod(Period.of(1, 2, 3).minusMonths(-2), 1, 4, 3);
+
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofMonths(0)), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofMonths(10)), 1, -8, 3);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofMonths(-10)), 1, 12, 3);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofMonths(-2)), 1, 4, 3);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_minusMonths_overflowTooBig() {
+        Period test = Period.ofMonths(Integer.MAX_VALUE);
+        test.minusMonths(-1);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_minusMonths_overflowTooSmall() {
+        Period test = Period.ofMonths(Integer.MIN_VALUE);
+        test.minusMonths(1);
+    }
+
+    //-----------------------------------------------------------------------
+    // minusDays()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_minusDays() {
+        assertPeriod(Period.of(1, 2, 3).minusDays(0), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minusDays(10), 1, 2, -7);
+        assertPeriod(Period.of(1, 2, 3).minusDays(-10), 1, 2, 13);
+        assertPeriod(Period.of(1, 2, 3).minusDays(-3), 1, 2, 6);
+
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofDays(0)), 1, 2, 3);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofDays(10)), 1, 2, -7);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofDays(-10)), 1, 2, 13);
+        assertPeriod(Period.of(1, 2, 3).minus(Period.ofDays(-3)), 1, 2, 6);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_minusDays_overflowTooBig() {
+        Period test = Period.ofDays(Integer.MAX_VALUE);
+        test.minusDays(-1);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_minusDays_overflowTooSmall() {
+        Period test = Period.ofDays(Integer.MIN_VALUE);
+        test.minusDays(1);
     }
 
     //-----------------------------------------------------------------------

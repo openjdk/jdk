@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.xml.internal.ws.transport;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,7 +75,7 @@ public class Headers extends TreeMap<String,List<String>> {
     private static final InsensitiveComparator INSTANCE = new InsensitiveComparator();
 
     // case-insensitive string comparison of HTTP header names.
-    private static final class InsensitiveComparator implements Comparator<String> {
+    private static final class InsensitiveComparator implements Comparator<String>, Serializable {
         public int compare(String o1, String o2) {
             if (o1 == null && o2 == null)
                 return 0;

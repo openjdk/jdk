@@ -860,8 +860,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
     }
 
-    private void flushBuffers() {
-        if (isVisible() && !nativeBounds.isEmpty()) {
+    void flushBuffers() {
+        if (isVisible() && !nativeBounds.isEmpty() && !isFullScreenMode) {
             try {
                 LWCToolkit.invokeAndWait(new Runnable() {
                     @Override
@@ -873,6 +873,21 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Helper method to get a pointer to the native view from the PlatformWindow.
+     */
+    static long getNativeViewPtr(PlatformWindow platformWindow) {
+        long nativePeer = 0L;
+        if (platformWindow instanceof CPlatformWindow) {
+            nativePeer = ((CPlatformWindow) platformWindow).getContentView().getAWTView();
+        } else if (platformWindow instanceof CViewPlatformEmbeddedFrame){
+            nativePeer = ((CViewPlatformEmbeddedFrame) platformWindow).getNSViewPtr();
+        } else {
+            throw new IllegalArgumentException("Unsupported platformWindow implementation");
+        }
+        return nativePeer;
     }
 
     /*************************************************************

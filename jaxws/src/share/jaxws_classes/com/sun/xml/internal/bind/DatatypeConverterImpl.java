@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,11 @@ import javax.xml.stream.XMLStreamWriter;
  * @deprecated in JAXB 2.2.4 - use javax.xml.bind.DatatypeConverterImpl instead
  * or let us know why you can't
  */
-public final class DatatypeConverterImpl {
+@Deprecated
+public final class DatatypeConverterImpl implements DatatypeConverterInterface {
+
+    @Deprecated
+    public static final DatatypeConverterInterface theInstance = new DatatypeConverterImpl();
 
     protected DatatypeConverterImpl() {
         // shall not be used
@@ -874,4 +878,239 @@ public final class DatatypeConverterImpl {
             buf.append(n);
         }
     }
+
+    // DEPRECATED METHODS, KEPT FOR JAXB1 GENERATED CLASSES COMPATIBILITY, WILL BE REMOVED IN FUTURE
+
+    @Deprecated
+    public String parseString(String lexicalXSDString) {
+        return lexicalXSDString;
+    }
+
+    @Deprecated
+    public BigInteger parseInteger(String lexicalXSDInteger) {
+        return _parseInteger(lexicalXSDInteger);
+    }
+
+    @Deprecated
+    public String printInteger(BigInteger val) {
+        return _printInteger(val);
+    }
+
+    @Deprecated
+    public int parseInt(String s) {
+        return _parseInt(s);
+    }
+
+    @Deprecated
+    public long parseLong(String lexicalXSLong) {
+        return _parseLong(lexicalXSLong);
+    }
+
+    @Deprecated
+    public short parseShort(String lexicalXSDShort) {
+        return _parseShort(lexicalXSDShort);
+    }
+
+    @Deprecated
+    public String printShort(short val) {
+        return _printShort(val);
+    }
+
+    @Deprecated
+    public BigDecimal parseDecimal(String content) {
+        return _parseDecimal(content);
+    }
+
+    @Deprecated
+    public float parseFloat(String lexicalXSDFloat) {
+        return _parseFloat(lexicalXSDFloat);
+    }
+
+    @Deprecated
+    public String printFloat(float v) {
+        return _printFloat(v);
+    }
+
+    @Deprecated
+    public double parseDouble(String lexicalXSDDouble) {
+        return _parseDouble(lexicalXSDDouble);
+    }
+
+    @Deprecated
+    public boolean parseBoolean(String lexicalXSDBoolean) {
+        Boolean b = _parseBoolean(lexicalXSDBoolean);
+        return (b == null) ? false : b.booleanValue();
+    }
+
+    @Deprecated
+    public String printBoolean(boolean val) {
+        return val ? "true" : "false";
+    }
+
+    @Deprecated
+    public byte parseByte(String lexicalXSDByte) {
+        return _parseByte(lexicalXSDByte);
+    }
+
+    @Deprecated
+    public String printByte(byte val) {
+        return _printByte(val);
+    }
+
+    @Deprecated
+    public QName parseQName(String lexicalXSDQName, NamespaceContext nsc) {
+        return _parseQName(lexicalXSDQName, nsc);
+    }
+
+    @Deprecated
+    public Calendar parseDateTime(String lexicalXSDDateTime) {
+        return _parseDateTime(lexicalXSDDateTime);
+    }
+
+    @Deprecated
+    public String printDateTime(Calendar val) {
+        return _printDateTime(val);
+    }
+
+    @Deprecated
+    public byte[] parseBase64Binary(String lexicalXSDBase64Binary) {
+        return _parseBase64Binary(lexicalXSDBase64Binary);
+    }
+
+    @Deprecated
+    public byte[] parseHexBinary(String s) {
+        final int len = s.length();
+
+        // "111" is not a valid hex encoding.
+        if (len % 2 != 0) {
+            throw new IllegalArgumentException("hexBinary needs to be even-length: " + s);
+        }
+
+        byte[] out = new byte[len / 2];
+
+        for (int i = 0; i < len; i += 2) {
+            int h = hexToBin(s.charAt(i));
+            int l = hexToBin(s.charAt(i + 1));
+            if (h == -1 || l == -1) {
+                throw new IllegalArgumentException("contains illegal character for hexBinary: " + s);
+            }
+
+            out[i / 2] = (byte) (h * 16 + l);
+        }
+
+        return out;
+    }
+
+    @Deprecated
+    private static int hexToBin(char ch) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        if ('A' <= ch && ch <= 'F') {
+            return ch - 'A' + 10;
+        }
+        if ('a' <= ch && ch <= 'f') {
+            return ch - 'a' + 10;
+        }
+        return -1;
+    }
+
+    @Deprecated
+    private static final char[] hexCode = "0123456789ABCDEF".toCharArray();
+
+    @Deprecated
+    public String printHexBinary(byte[] data) {
+        StringBuilder r = new StringBuilder(data.length * 2);
+        for (byte b : data) {
+            r.append(hexCode[(b >> 4) & 0xF]);
+            r.append(hexCode[(b & 0xF)]);
+        }
+        return r.toString();
+    }
+
+    @Deprecated
+    public long parseUnsignedInt(String lexicalXSDUnsignedInt) {
+        return _parseLong(lexicalXSDUnsignedInt);
+    }
+
+    @Deprecated
+    public String printUnsignedInt(long val) {
+        return _printLong(val);
+    }
+
+    @Deprecated
+    public int parseUnsignedShort(String lexicalXSDUnsignedShort) {
+        return _parseInt(lexicalXSDUnsignedShort);
+    }
+
+    @Deprecated
+    public Calendar parseTime(String lexicalXSDTime) {
+        return datatypeFactory.newXMLGregorianCalendar(lexicalXSDTime).toGregorianCalendar();
+    }
+
+    @Deprecated
+    public String printTime(Calendar val) {
+        return CalendarFormatter.doFormat("%h:%m:%s%z", val);
+    }
+
+    @Deprecated
+    public Calendar parseDate(String lexicalXSDDate) {
+        return datatypeFactory.newXMLGregorianCalendar(lexicalXSDDate).toGregorianCalendar();
+    }
+
+    @Deprecated
+    public String printDate(Calendar val) {
+        return _printDate(val);
+    }
+
+    @Deprecated
+    public String parseAnySimpleType(String lexicalXSDAnySimpleType) {
+        return lexicalXSDAnySimpleType;
+    }
+
+    @Deprecated
+    public String printString(String val) {
+        return val;
+    }
+
+    @Deprecated
+    public String printInt(int val) {
+        return _printInt(val);
+    }
+
+    @Deprecated
+    public String printLong(long val) {
+        return _printLong(val);
+    }
+
+    @Deprecated
+    public String printDecimal(BigDecimal val) {
+        return _printDecimal(val);
+    }
+
+    @Deprecated
+    public String printDouble(double v) {
+        return _printDouble(v);
+    }
+
+    @Deprecated
+    public String printQName(QName val, NamespaceContext nsc) {
+        return _printQName(val, nsc);
+    }
+
+    @Deprecated
+    public String printBase64Binary(byte[] val) {
+        return _printBase64Binary(val);
+    }
+
+    @Deprecated
+    public String printUnsignedShort(int val) {
+        return String.valueOf(val);
+    }
+
+    @Deprecated
+    public String printAnySimpleType(String val) {
+        return val;
+    }
+
 }

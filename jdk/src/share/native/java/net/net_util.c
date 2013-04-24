@@ -84,6 +84,58 @@ void init(JNIEnv *env) {
     }
 }
 
+/* The address, and family fields used to be in InetAddress
+ * but are now in an implementation object. So, there is an extra
+ * level of indirection to access them now.
+ */
+
+extern jclass iac_class;
+extern jfieldID ia_holderID;
+extern jfieldID iac_addressID;
+extern jfieldID iac_familyID;
+
+void setInetAddress_addr(JNIEnv *env, jobject iaObj, int address) {
+    jobject holder;
+    init(env);
+    holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
+    (*env)->SetIntField(env, holder, iac_addressID, address);
+}
+
+void setInetAddress_family(JNIEnv *env, jobject iaObj, int family) {
+    jobject holder;
+    init(env);
+    holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
+    (*env)->SetIntField(env, holder, iac_familyID, family);
+}
+
+void setInetAddress_hostName(JNIEnv *env, jobject iaObj, jobject host) {
+    jobject holder;
+    init(env);
+    holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
+    (*env)->SetObjectField(env, holder, iac_hostNameID, host);
+}
+
+int getInetAddress_addr(JNIEnv *env, jobject iaObj) {
+    jobject holder;
+    init(env);
+    holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
+    return (*env)->GetIntField(env, holder, iac_addressID);
+}
+
+int getInetAddress_family(JNIEnv *env, jobject iaObj) {
+    jobject holder;
+    init(env);
+    holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
+    return (*env)->GetIntField(env, holder, iac_familyID);
+}
+
+jobject getInetAddress_hostName(JNIEnv *env, jobject iaObj) {
+    jobject holder;
+    init(env);
+    holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
+    return (*env)->GetObjectField(env, holder, iac_hostNameID);
+}
+
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
     jobject iaObj;
@@ -110,8 +162,8 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             iaObj = (*env)->NewObject(env, inet4Cls, ia4_ctrID);
             CHECK_NULL_RETURN(iaObj, NULL);
             address = NET_IPv4MappedToIPv4(caddr);
-            (*env)->SetIntField(env, iaObj, ia_addressID, address);
-            (*env)->SetIntField(env, iaObj, ia_familyID, IPv4);
+            setInetAddress_addr(env, iaObj, address);
+            setInetAddress_family(env, iaObj, IPv4);
         } else {
             static jclass inet6Cls = 0;
             jint scope;
@@ -131,7 +183,7 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
 
             (*env)->SetObjectField(env, iaObj, ia6_ipaddressID, ipaddress);
 
-            (*env)->SetIntField(env, iaObj, ia_familyID, IPv6);
+            setInetAddress_family(env, iaObj, IPv6);
             scope = getScopeID(him);
             (*env)->SetIntField(env, iaObj, ia6_scopeidID, scope);
             if (scope > 0)
@@ -153,9 +205,8 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             }
             iaObj = (*env)->NewObject(env, inet4Cls, ia4_ctrID);
             CHECK_NULL_RETURN(iaObj, NULL);
-            (*env)->SetIntField(env, iaObj, ia_familyID, IPv4);
-            (*env)->SetIntField(env, iaObj, ia_addressID,
-                                ntohl(him4->sin_addr.s_addr));
+            setInetAddress_family(env, iaObj, IPv4);
+            setInetAddress_addr(env, iaObj, ntohl(him4->sin_addr.s_addr));
             *port = ntohs(him4->sin_port);
         }
     return iaObj;
@@ -167,8 +218,7 @@ NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
     jint family = AF_INET;
 
 #ifdef AF_INET6
-    family = (*env)->GetIntField(env, iaObj, ia_familyID) == IPv4?
-        AF_INET : AF_INET6;
+    family = getInetAddress_family(env, iaObj) == IPv4? AF_INET : AF_INET6;
     if (him->sa_family == AF_INET6) {
 #ifdef WIN32
         struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
@@ -183,7 +233,7 @@ NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
                 return JNI_FALSE;
             }
             addrNew = NET_IPv4MappedToIPv4(caddrNew);
-            addrCur = (*env)->GetIntField(env, iaObj, ia_addressID);
+            addrCur = getInetAddress_addr(env, iaObj);
             if (addrNew == addrCur) {
                 return JNI_TRUE;
             } else {
@@ -215,7 +265,7 @@ NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
                 return JNI_FALSE;
             }
             addrNew = ntohl(him4->sin_addr.s_addr);
-            addrCur = (*env)->GetIntField(env, iaObj, ia_addressID);
+            addrCur = getInetAddress_addr(env, iaObj);
             if (addrNew == addrCur) {
                 return JNI_TRUE;
             } else {
