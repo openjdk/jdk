@@ -182,7 +182,8 @@ public final class NativeDate extends ScriptObject {
 
     @Override
     public String safeToString() {
-        return "[Date " + toISOStringImpl(this) + "]";
+        final String str = isValidDate() ? toISOStringImpl(this) : INVALID_DATE;
+        return "[Date " + str + "]";
     }
 
     @Override
