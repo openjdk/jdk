@@ -79,6 +79,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Arrays;
 import java.util.Collections;
@@ -215,26 +216,40 @@ public final class Period
 
     //-----------------------------------------------------------------------
     /**
-     * Obtains a {@code Period} consisting of the number of years, months,
-     * and days between two dates.
+     * Obtains an instance of {@code Period} from a temporal amount.
      * <p>
-     * The start date is included, but the end date is not.
-     * The period is calculated by removing complete months, then calculating
-     * the remaining number of days, adjusting to ensure that both have the same sign.
-     * The number of months is then split into years and months based on a 12 month year.
-     * A month is considered if the end day-of-month is greater than or equal to the start day-of-month.
-     * For example, from {@code 2010-01-15} to {@code 2011-03-18} is one year, two months and three days.
+     * This obtains a period based on the specified amount.
+     * A {@code TemporalAmount} represents an  amount of time, which may be
+     * date-based or time-based, which this factory extracts to a period.
      * <p>
-     * The result of this method can be a negative period if the end is before the start.
-     * The negative sign will be the same in each of year, month and day.
+     * The conversion loops around the set of units from the amount and uses
+     * the {@link ChronoUnit#YEARS YEARS}, {@link ChronoUnit#MONTHS MONTHS}
+     * and {@link ChronoUnit#DAYS DAYS} units to create a period.
+     * If any other units are found then an exception is thrown.
      *
-     * @param startDate  the start date, inclusive, not null
-     * @param endDate  the end date, exclusive, not null
-     * @return the period between this date and the end date, not null
-     * @see ChronoLocalDate#periodUntil(ChronoLocalDate)
+     * @param amount  the temporal amount to convert, not null
+     * @return the equivalent period, not null
+     * @throws DateTimeException if unable to convert to a {@code Period}
+     * @throws ArithmeticException if the amount of years, months or days exceeds an int
      */
-    public static Period between(LocalDate startDate, LocalDate endDate) {
-        return startDate.periodUntil(endDate);
+    public static Period from(TemporalAmount amount) {
+        Objects.requireNonNull(amount, "amount");
+        int years = 0;
+        int months = 0;
+        int days = 0;
+        for (TemporalUnit unit : amount.getUnits()) {
+            long unitAmount = amount.get(unit);
+            if (unit == ChronoUnit.YEARS) {
+                years = Math.toIntExact(unitAmount);
+            } else if (unit == ChronoUnit.MONTHS) {
+                months = Math.toIntExact(unitAmount);
+            } else if (unit == ChronoUnit.DAYS) {
+                days = Math.toIntExact(unitAmount);
+            } else {
+                throw new DateTimeException("Unit must be Years, Months or Days, but was " + unit);
+            }
+        }
+        return create(years, months, days);
     }
 
     //-----------------------------------------------------------------------
@@ -298,6 +313,30 @@ public final class Period
 
     //-----------------------------------------------------------------------
     /**
+     * Obtains a {@code Period} consisting of the number of years, months,
+     * and days between two dates.
+     * <p>
+     * The start date is included, but the end date is not.
+     * The period is calculated by removing complete months, then calculating
+     * the remaining number of days, adjusting to ensure that both have the same sign.
+     * The number of months is then split into years and months based on a 12 month year.
+     * A month is considered if the end day-of-month is greater than or equal to the start day-of-month.
+     * For example, from {@code 2010-01-15} to {@code 2011-03-18} is one year, two months and three days.
+     * <p>
+     * The result of this method can be a negative period if the end is before the start.
+     * The negative sign will be the same in each of year, month and day.
+     *
+     * @param startDate  the start date, inclusive, not null
+     * @param endDate  the end date, exclusive, not null
+     * @return the period between this date and the end date, not null
+     * @see ChronoLocalDate#periodUntil(ChronoLocalDate)
+     */
+    public static Period between(LocalDate startDate, LocalDate endDate) {
+        return startDate.periodUntil(endDate);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
      * Creates an instance.
      *
      * @param years  the amount
@@ -336,6 +375,7 @@ public final class Period
      * @param unit the {@code TemporalUnit} for which to return the value
      * @return the long value of the unit
      * @throws DateTimeException if the unit is not supported
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     @Override
     public long get(TemporalUnit unit) {
@@ -346,7 +386,7 @@ public final class Period
         } else if (unit == ChronoUnit.DAYS) {
             return getDays();
         } else {
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
     }
 
@@ -499,8 +539,7 @@ public final class Period
     /**
      * Returns a copy of this period with the specified period added.
      * <p>
-     * This operates separately on the years, months, days and the normalized time.
-     * There is no further normalization beyond the normalized time.
+     * This operates separately on the years, months and days.
      * <p>
      * For example, "1 year, 6 months and 3 days" plus "2 years, 2 months and 2 days"
      * returns "3 years, 8 months and 5 days".
@@ -582,8 +621,7 @@ public final class Period
     /**
      * Returns a copy of this period with the specified period subtracted.
      * <p>
-     * This operates separately on the years, months, days and the normalized time.
-     * There is no further normalization beyond the normalized time.
+     * This operates separately on the years, months and days.
      * <p>
      * For example, "1 year, 6 months and 3 days" minus "2 years, 2 months and 2 days"
      * returns "-1 years, 4 months and 1 day".
@@ -845,9 +883,11 @@ public final class Period
      * @return the month range, negative if not fixed range
      */
     private long monthRange(Temporal temporal) {
-        ValueRange startRange = Chronology.from(temporal).range(MONTH_OF_YEAR);
-        if (startRange.isFixed() && startRange.isIntValue()) {
-            return startRange.getMaximum() - startRange.getMinimum() + 1;
+        if (temporal.isSupported(MONTH_OF_YEAR)) {
+            ValueRange startRange = Chronology.from(temporal).range(MONTH_OF_YEAR);
+            if (startRange.isFixed() && startRange.isIntValue()) {
+                return startRange.getMaximum() - startRange.getMinimum() + 1;
+            }
         }
         return -1;
     }

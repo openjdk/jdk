@@ -56,6 +56,7 @@
  */
 package java.time.chrono;
 
+import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
 
 import java.io.Serializable;
@@ -106,15 +107,6 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
      * Singleton instance of the Buddhist chronology.
      */
     public static final ThaiBuddhistChronology INSTANCE = new ThaiBuddhistChronology();
-    /**
-     * The singleton instance for the era before the current one - Before Buddhist -
-     * which has the value 0.
-     */
-    public static final Era ERA_BEFORE_BE = ThaiBuddhistEra.BEFORE_BE;
-    /**
-     * The singleton instance for the current era - Buddhist - which has the value 1.
-     */
-    public static final Era ERA_BE = ThaiBuddhistEra.BE;
 
     /**
      * Serialization version.
@@ -166,15 +158,6 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
     private ThaiBuddhistChronology() {
     }
 
-    /**
-     * Resolve singleton.
-     *
-     * @return the singleton instance, not null
-     */
-    private Object readResolve() {
-        return INSTANCE;
-    }
-
     //-----------------------------------------------------------------------
     /**
      * Gets the ID of the chronology - 'ThaiBuddhist'.
@@ -208,32 +191,78 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Obtains a local date in Thai Buddhist calendar system from the
+     * era, year-of-era, month-of-year and day-of-month fields.
+     *
+     * @param era  the Thai Buddhist era, not null
+     * @param yearOfEra  the year-of-era
+     * @param month  the month-of-year
+     * @param dayOfMonth  the day-of-month
+     * @return the Thai Buddhist local date, not null
+     * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the {@code era} is not a {@code ThaiBuddhistEra}
+     */
+    @Override
+    public ThaiBuddhistDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
+        return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
+    }
+
+    /**
+     * Obtains a local date in Thai Buddhist calendar system from the
+     * proleptic-year, month-of-year and day-of-month fields.
+     *
+     * @param prolepticYear  the proleptic-year
+     * @param month  the month-of-year
+     * @param dayOfMonth  the day-of-month
+     * @return the Thai Buddhist local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
     @Override
     public ThaiBuddhistDate date(int prolepticYear, int month, int dayOfMonth) {
         return new ThaiBuddhistDate(LocalDate.of(prolepticYear - YEARS_DIFFERENCE, month, dayOfMonth));
     }
 
+    /**
+     * Obtains a local date in Thai Buddhist calendar system from the
+     * era, year-of-era and day-of-year fields.
+     *
+     * @param era  the Thai Buddhist era, not null
+     * @param yearOfEra  the year-of-era
+     * @param dayOfYear  the day-of-year
+     * @return the Thai Buddhist local date, not null
+     * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the {@code era} is not a {@code ThaiBuddhistEra}
+     */
+    @Override
+    public ThaiBuddhistDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
+        return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
+    }
+
+    /**
+     * Obtains a local date in Thai Buddhist calendar system from the
+     * proleptic-year and day-of-year fields.
+     *
+     * @param prolepticYear  the proleptic-year
+     * @param dayOfYear  the day-of-year
+     * @return the Thai Buddhist local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
     @Override
     public ThaiBuddhistDate dateYearDay(int prolepticYear, int dayOfYear) {
         return new ThaiBuddhistDate(LocalDate.ofYearDay(prolepticYear - YEARS_DIFFERENCE, dayOfYear));
     }
 
-    @Override
-    public ThaiBuddhistDate date(TemporalAccessor temporal) {
-        if (temporal instanceof ThaiBuddhistDate) {
-            return (ThaiBuddhistDate) temporal;
-        }
-        return new ThaiBuddhistDate(LocalDate.from(temporal));
-    }
-    @Override
-    public ThaiBuddhistDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
-        return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
-
-    }
-
-    @Override
-    public ThaiBuddhistDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
-        return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
+    /**
+     * Obtains a local date in the Thai Buddhist calendar system from the epoch-day.
+     *
+     * @param epochDay  the epoch day
+     * @return the Thai Buddhist local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
+    @Override  // override with covariant return type
+    public ThaiBuddhistDate dateEpochDay(long epochDay) {
+        return new ThaiBuddhistDate(LocalDate.ofEpochDay(epochDay));
     }
 
     @Override
@@ -249,6 +278,14 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
     @Override
     public ThaiBuddhistDate dateNow(Clock clock) {
         return date(LocalDate.now(clock));
+    }
+
+    @Override
+    public ThaiBuddhistDate date(TemporalAccessor temporal) {
+        if (temporal instanceof ThaiBuddhistDate) {
+            return (ThaiBuddhistDate) temporal;
+        }
+        return new ThaiBuddhistDate(LocalDate.from(temporal));
     }
 
     @Override
@@ -285,7 +322,7 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
         if (era instanceof ThaiBuddhistEra == false) {
-            throw new DateTimeException("Era must be BuddhistEra");
+            throw new ClassCastException("Era must be BuddhistEra");
         }
         return (era == ThaiBuddhistEra.BE ? yearOfEra : 1 - yearOfEra);
     }
@@ -304,6 +341,10 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
     @Override
     public ValueRange range(ChronoField field) {
         switch (field) {
+            case PROLEPTIC_MONTH: {
+                ValueRange range = PROLEPTIC_MONTH.range();
+                return ValueRange.of(range.getMinimum() + YEARS_DIFFERENCE * 12L, range.getMaximum() + YEARS_DIFFERENCE * 12L);
+            }
             case YEAR_OF_ERA: {
                 ValueRange range = YEAR.range();
                 return ValueRange.of(1, -(range.getMinimum() + YEARS_DIFFERENCE) + 1, range.getMaximum() + YEARS_DIFFERENCE);
