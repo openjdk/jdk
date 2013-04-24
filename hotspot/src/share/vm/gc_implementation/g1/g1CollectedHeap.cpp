@@ -1271,9 +1271,8 @@ double G1CollectedHeap::verify(bool guard, const char* msg) {
   if (guard && total_collections() >= VerifyGCStartAt) {
     double verify_start = os::elapsedTime();
     HandleMark hm;  // Discard invalid handles created during verification
-    gclog_or_tty->print(msg);
     prepare_for_verify();
-    Universe::verify(false /* silent */, VerifyOption_G1UsePrevMarking);
+    Universe::verify(VerifyOption_G1UsePrevMarking, msg);
     verify_time_ms = (os::elapsedTime() - verify_start) * 1000;
   }
 
