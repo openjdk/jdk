@@ -2425,7 +2425,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     private void doesNotHave(final int index, final Object value, final boolean strict) {
         final long oldLength = getArray().length();
-        final long longIndex = index & 0xffff_ffffL;
+        final long longIndex = index & JSType.MAX_UINT;
 
         if (!getArray().has(index)) {
             final String key = convertKey(longIndex);

@@ -117,6 +117,7 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ECMAException;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
@@ -2572,7 +2573,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
             @Override
             protected void op() {
                 method.shr();
-                method.convert(Type.LONG).load(0xffff_ffffL).and();
+                method.convert(Type.LONG).load(JSType.MAX_UINT).and();
             }
         }.store();
 
@@ -2807,7 +2808,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
             @Override
             protected void op() {
                 method.shr();
-                method.convert(Type.LONG).load(0xffff_ffffL).and();
+                method.convert(Type.LONG).load(JSType.MAX_UINT).and();
             }
         }.evaluate(binaryNode);
 
