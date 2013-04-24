@@ -2444,8 +2444,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         // initial marking in checkpointRootsInitialWork has been completed
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          gclog_or_tty->print("Verify before initial mark: ");
-          Universe::verify();
+          Universe::verify("Verify before initial mark: ");
         }
         {
           bool res = markFromRoots(false);
@@ -2456,8 +2455,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
       case FinalMarking:
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          gclog_or_tty->print("Verify before re-mark: ");
-          Universe::verify();
+          Universe::verify("Verify before re-mark: ");
         }
         checkpointRootsFinal(false, clear_all_soft_refs,
                              init_mark_was_synchronous);
@@ -2468,8 +2466,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         // final marking in checkpointRootsFinal has been completed
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          gclog_or_tty->print("Verify before sweep: ");
-          Universe::verify();
+          Universe::verify("Verify before sweep: ");
         }
         sweep(false);
         assert(_collectorState == Resizing, "Incorrect state");
@@ -2484,8 +2481,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         // The heap has been resized.
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-          gclog_or_tty->print("Verify before reset: ");
-          Universe::verify();
+          Universe::verify("Verify before reset: ");
         }
         reset(false);
         assert(_collectorState == Idling, "Collector state should "
@@ -2853,8 +2849,8 @@ class VerifyMarkedClosure: public BitMapClosure {
   bool failed() { return _failed; }
 };
 
-bool CMSCollector::verify_after_remark() {
-  gclog_or_tty->print(" [Verifying CMS Marking... ");
+bool CMSCollector::verify_after_remark(bool silent) {
+  if (!silent) gclog_or_tty->print(" [Verifying CMS Marking... ");
   MutexLockerEx ml(verification_mark_bm()->lock(), Mutex::_no_safepoint_check_flag);
   static bool init = false;
 
@@ -2915,7 +2911,7 @@ bool CMSCollector::verify_after_remark() {
     warning("Unrecognized value %d for CMSRemarkVerifyVariant",
             CMSRemarkVerifyVariant);
   }
-  gclog_or_tty->print(" done] ");
+  if (!silent) gclog_or_tty->print(" done] ");
   return true;
 }
 

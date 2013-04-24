@@ -170,7 +170,6 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact);
-    gclog_or_tty->print(" VerifyDuringGC:(full)[Verifying ");
     Universe::heap()->prepare_for_verify();
     // Note: we can verify only the heap here. When an object is
     // marked, the previous value of the mark word (including
@@ -182,11 +181,13 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     // fail. At the end of the GC, the orginal mark word values
     // (including hash values) are restored to the appropriate
     // objects.
-    Universe::heap()->verify(/* silent      */ false,
-                             /* option      */ VerifyOption_G1UseMarkWord);
-
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    gclog_or_tty->print_cr("]");
+    if (!VerifySilently) {
+      gclog_or_tty->print(" VerifyDuringGC:(full)[Verifying ");
+    }
+    Universe::heap()->verify(VerifySilently, VerifyOption_G1UseMarkWord);
+    if (!VerifySilently) {
+      gclog_or_tty->print_cr("]");
+    }
   }
 }
 
