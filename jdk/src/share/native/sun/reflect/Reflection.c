@@ -27,9 +27,9 @@
 #include "sun_reflect_Reflection.h"
 
 JNIEXPORT jclass JNICALL Java_sun_reflect_Reflection_getCallerClass
-(JNIEnv *env, jclass unused, jint depth)
+(JNIEnv *env, jclass unused)
 {
-    return JVM_GetCallerClass(env, depth);
+    return JVM_GetCallerClass(env, JVM_DEPTH); // JVM_DEPTH is only the expected value
 }
 
 JNIEXPORT jint JNICALL Java_sun_reflect_Reflection_getClassAccessFlags

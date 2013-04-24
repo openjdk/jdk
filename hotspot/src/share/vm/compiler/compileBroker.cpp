@@ -1206,11 +1206,8 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
   assert(!method->method_holder()->is_not_initialized(), "method holder must be initialized");
-
-  if (!TieredCompilation) {
-    comp_level = CompLevel_highest_tier;
-  }
-
+  // allow any levels for WhiteBox
+  assert(WhiteBoxAPI || TieredCompilation || comp_level == CompLevel_highest_tier, "only CompLevel_highest_tier must be used in non-tiered");
   // return quickly if possible
 
   // lock, make sure that the compilation

@@ -28,6 +28,7 @@ package java.beans;
 import com.sun.beans.TypeResolver;
 import com.sun.beans.WeakCache;
 import com.sun.beans.finder.ClassFinder;
+import com.sun.beans.finder.MethodFinder;
 
 import java.awt.Component;
 
@@ -1281,7 +1282,20 @@ public class Introspector {
                 for (int i = 0; i < result.length; i++) {
                     Method method = result[i];
                     if (!method.getDeclaringClass().equals(clz)) {
-                        result[i] = null;
+                        result[i] = null; // ignore methods declared elsewhere
+                    }
+                    else {
+                        try {
+                            method = MethodFinder.findAccessibleMethod(method);
+                            Class<?> type = method.getDeclaringClass();
+                            result[i] = type.equals(clz) || type.isInterface()
+                                    ? method
+                                    : null; // ignore methods from superclasses
+                        }
+                        catch (NoSuchMethodException exception) {
+                            // commented out because of 6976577
+                            // result[i] = null; // ignore inaccessible methods
+                        }
                     }
                 }
                 declaredMethodCache.put(clz, result);

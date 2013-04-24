@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,19 +291,6 @@ public class JAXWSBinding extends ExtensionImpl {
         this.className = className;
     }
 
-    /**
-     * @return Returns the exception.
-     */
-    public Exception getException() {
-        return exception;
-    }
-    /**
-     * @param exception The exception to set.
-     */
-    public void setException(Exception exception) {
-        this.exception = exception;
-    }
-
     private String wsdlNamespace;
     private String wsdlLocation;
     private String node;
@@ -316,7 +303,6 @@ public class JAXWSBinding extends ExtensionImpl {
 //    private Boolean enableAdditionalHeaderMapping;
     private Boolean enableMimeContentMapping;
     private Boolean isProvider;
-    private Exception exception;
 
     private Set<Element> jaxbBindings;
 

@@ -46,19 +46,18 @@ SegmentArrayProcessor::SegmentArrayProcessor()
 {
 }
 
-SegmentArrayProcessor::SegmentArrayProcessor(const MorphSubtableHeader *morphSubtableHeader)
-  : NonContextualGlyphSubstitutionProcessor(morphSubtableHeader)
+SegmentArrayProcessor::SegmentArrayProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success)
+  : NonContextualGlyphSubstitutionProcessor(morphSubtableHeader, success)
 {
-    const NonContextualGlyphSubstitutionHeader *header = (const NonContextualGlyphSubstitutionHeader *) morphSubtableHeader;
-
-    segmentArrayLookupTable = (const SegmentArrayLookupTable *) &header->table;
+  LEReferenceTo<NonContextualGlyphSubstitutionHeader> header(morphSubtableHeader, success);
+  segmentArrayLookupTable = LEReferenceTo<SegmentArrayLookupTable>(morphSubtableHeader, success, (const SegmentArrayLookupTable*)&header->table);
 }
 
 SegmentArrayProcessor::~SegmentArrayProcessor()
 {
 }
 
-void SegmentArrayProcessor::process(LEGlyphStorage &glyphStorage)
+void SegmentArrayProcessor::process(LEGlyphStorage &glyphStorage, LEErrorCode &success)
 {
     const LookupSegment *segments = segmentArrayLookupTable->segments;
     le_int32 glyphCount = glyphStorage.getGlyphCount();
@@ -66,17 +65,16 @@ void SegmentArrayProcessor::process(LEGlyphStorage &glyphStorage)
 
     for (glyph = 0; glyph < glyphCount; glyph += 1) {
         LEGlyphID thisGlyph = glyphStorage[glyph];
-        const LookupSegment *lookupSegment = segmentArrayLookupTable->lookupSegment(segments, thisGlyph);
+        const LookupSegment *lookupSegment = segmentArrayLookupTable->lookupSegment(segmentArrayLookupTable, segments, thisGlyph, success);
 
         if (lookupSegment != NULL)  {
             TTGlyphID firstGlyph = SWAPW(lookupSegment->firstGlyph);
             le_int16  offset = SWAPW(lookupSegment->value);
 
             if (offset != 0) {
-                TTGlyphID  *glyphArray = (TTGlyphID *) ((char *) subtableHeader + offset);
-                TTGlyphID   newGlyph   = SWAPW(glyphArray[LE_GET_GLYPH(thisGlyph) - firstGlyph]);
-
-                glyphStorage[glyph] = LE_SET_GLYPH(thisGlyph, newGlyph);
+              LEReferenceToArrayOf<TTGlyphID> glyphArray(subtableHeader, success, offset, LE_UNBOUNDED_ARRAY);
+              TTGlyphID   newGlyph   = SWAPW(glyphArray(LE_GET_GLYPH(thisGlyph) - firstGlyph, success));
+              glyphStorage[glyph] = LE_SET_GLYPH(thisGlyph, newGlyph);
             }
         }
     }

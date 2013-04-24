@@ -112,9 +112,9 @@
  * such as the "last day of the month", or "next Wednesday".
  * These are modeled as functions that adjust a base date-time.
  * The functions implement {@link java.time.temporal.TemporalAdjuster} and operate on {@code Temporal}.
- * A set of common functions are provided in {@link java.time.temporal.Adjusters}.
+ * A set of common functions are provided in {@code TemporalAdjuster}.
  * For example, to find the first occurrence of a day-of-week after a given date, use
- * {@link java.time.temporal.Adjusters#next(DayOfWeek)}, such as
+ * {@link java.time.temporal.TemporalAdjuster#next(DayOfWeek)}, such as
  * {@code date.with(next(MONDAY))}.
  * Applications can also define adjusters by implementing {@code TemporalAdjuster}.
  * </p>
@@ -127,7 +127,7 @@
  * The most common implementations of the query interface are method references.
  * The {@code from(TemporalAccessor)} methods on major classes can all be used, such as
  * {@code LocalDate::from} or {@code Month::from}.
- * Further implementations are provided in {@link java.time.temporal.Queries}.
+ * Further implementations are provided in {@code TemporalQuery} as static methods.
  * Applications can also define queries by implementing {@code TemporalQuery}.
  * </p>
  *

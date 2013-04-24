@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package com.sun.xml.internal.ws.message.jaxb;
 
 import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
 import com.sun.xml.internal.ws.encoding.SOAPBindingCodec;
 import com.sun.xml.internal.ws.message.AbstractMessageImpl;
 import com.sun.xml.internal.ws.message.PayloadElementSniffer;
@@ -114,7 +114,7 @@ public class JAXBDispatchMessage extends AbstractMessageImpl {
     }
 
     @Override
-    public HeaderList getHeaders() {
+    public MessageHeaders getHeaders() {
         return null;
     }
 
@@ -194,7 +194,7 @@ public class JAXBDispatchMessage extends AbstractMessageImpl {
             String encoding = XMLStreamWriterUtil.getEncoding(sw);
 
             // Get output stream and use JAXB UTF-8 writer
-            OutputStream os = XMLStreamWriterUtil.getOutputStream(sw);
+            OutputStream os = bridge.supportOutputStream() ? XMLStreamWriterUtil.getOutputStream(sw) : null;
             if (rawContext != null) {
                 Marshaller m = rawContext.createMarshaller();
                 m.setProperty("jaxb.fragment", Boolean.FALSE);
@@ -207,7 +207,7 @@ public class JAXBDispatchMessage extends AbstractMessageImpl {
 
             } else {
 
-                if (os != null && bridge.supportOutputStream() && encoding != null && encoding.equalsIgnoreCase(SOAPBindingCodec.UTF8_ENCODING)) {
+                if (os != null && encoding != null && encoding.equalsIgnoreCase(SOAPBindingCodec.UTF8_ENCODING)) {
                     bridge.marshal(jaxbObject, os, sw.getNamespaceContext(), am);
                 } else {
                     bridge.marshal(jaxbObject, sw, am);

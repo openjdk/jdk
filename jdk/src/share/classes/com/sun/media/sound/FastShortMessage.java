@@ -32,7 +32,7 @@ import javax.sound.midi.*;
  *
  * @author Florian Bomers
  */
-class FastShortMessage extends ShortMessage {
+final class FastShortMessage extends ShortMessage {
     private int packedMsg;
 
     public FastShortMessage(int packedMsg) throws InvalidMidiDataException {

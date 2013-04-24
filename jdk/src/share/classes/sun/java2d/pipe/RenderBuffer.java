@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.java2d.pipe;
 
 import sun.misc.Unsafe;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * The RenderBuffer class is a simplified, high-performance, Unsafe wrapper
@@ -44,8 +43,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * single-threaded rendering.  For example, there is no put(double[]) method
  * because we currently have no need for such a method in the STR classes.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class RenderBuffer {
 
     /**

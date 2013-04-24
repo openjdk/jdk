@@ -48,13 +48,13 @@ public class CldrFormatNamesTest {
         {
             Locale.JAPAN,
             "field.zone", "\u30bf\u30a4\u30e0\u30be\u30fc\u30f3",
-            "cldr.japanese.DatePatterns", new String[] {
+            "java.time.japanese.DatePatterns", new String[] {
                 "Gy\u5e74M\u6708d\u65e5EEEE",
                 "Gy\u5e74M\u6708d\u65e5",
                 "Gy\u5e74M\u6708d\u65e5",
                 "Gyy/MM/dd",
             },
-            "cldr.roc.DatePatterns", new String[] {
+            "java.time.roc.DatePatterns", new String[] {
                 "Gy\u5e74M\u6708d\u65e5EEEE",
                 "Gy\u5e74M\u6708d\u65e5",
                 "Gy/MM/dd",
@@ -65,7 +65,7 @@ public class CldrFormatNamesTest {
         {
             Locale.PRC,
             "field.zone", "\u533a\u57df",
-            "cldr.islamic.DatePatterns", new String[] {
+            "java.time.islamic.DatePatterns", new String[] {
                 "Gy\u5e74M\u6708d\u65e5EEEE",
                 "Gy\u5e74M\u6708d\u65e5",
                 "Gy\u5e74M\u6708d\u65e5",
@@ -76,7 +76,7 @@ public class CldrFormatNamesTest {
         {
             Locale.GERMANY,
             "field.dayperiod", "Tagesh\u00e4lfte",
-            "cldr.islamic.DatePatterns", new String[] {
+            "java.time.islamic.DatePatterns", new String[] {
                 "EEEE d. MMMM y G",
                 "d. MMMM y G",
                 "d. MMM y G",
@@ -119,7 +119,7 @@ public class CldrFormatNamesTest {
         for (Object[] data : CLDR_DATA) {
             Locale locale = (Locale) data[0];
             ResourceBundle rb = LocaleProviderAdapter.getResourceBundleBased()
-                                    .getLocaleResources(locale).getFormatData();
+                                    .getLocaleResources(locale).getJavaTimeFormatData();
             for (int i = 1; i < data.length; ) {
                 String key = (String) data[i++];
                 Object expected = data[i++];
@@ -167,7 +167,7 @@ public class CldrFormatNamesTest {
                                         int field, int style, String fieldName) {
         for (int i = 0; i < expected.length; i++) {
             String expt = expected[i];
-            String name = CalendarDataUtility.retrieveFieldValueName(calType, field, i, style, locale);
+            String name = CalendarDataUtility.retrieveJavaTimeFieldValueName(calType, field, i, style, locale);
             if (!expt.equals(name)) {
                 errors++;
                 System.err.printf("error: wrong %s %s name in %s: value=%d, got='%s', expected='%s'%n",

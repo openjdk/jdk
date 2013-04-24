@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.message.Message;
-import com.sun.xml.internal.ws.api.model.CheckedException;
 import com.sun.xml.internal.ws.api.model.ExceptionType;
 import com.sun.xml.internal.ws.encoding.soap.SOAP12Constants;
 import com.sun.xml.internal.ws.encoding.soap.SOAPConstants;
@@ -170,7 +169,18 @@ public abstract class SOAPFaultBuilder {
      * @param soapVersion non-null
      */
     public static Message createSOAPFaultMessage(SOAPVersion soapVersion, CheckedExceptionImpl ceModel, Throwable ex) {
-        return createSOAPFaultMessage(soapVersion, ceModel, ex, null);
+        // Sometimes InvocationTargetException.getCause() is null
+        // but InvocationTargetException.getTargetException() contains the real exception
+        // even though they are supposed to be equivalent.
+        // If we only look at .getCause this results in the real exception being lost.
+        // Looks like a JDK bug.
+        final Throwable t =
+            ex instanceof java.lang.reflect.InvocationTargetException
+            ?
+            ((java.lang.reflect.InvocationTargetException)ex).getTargetException()
+            :
+            ex;
+        return createSOAPFaultMessage(soapVersion, ceModel, t, null);
     }
 
     /**
@@ -491,7 +501,6 @@ public abstract class SOAPFaultBuilder {
             } catch (JAXBException e1) {
                 //Should we throw Internal Server Error???
                 faultString = e.getMessage();
-                faultCode = getDefaultFaultCode(soapVersion);
             }
         }
 
@@ -535,16 +544,18 @@ public abstract class SOAPFaultBuilder {
     /**
      * Set to false if you don't want the generated faults to have stack trace in it.
      */
-    public static boolean captureStackTrace;
+    public static final boolean captureStackTrace;
 
     /*package*/ static final String CAPTURE_STACK_TRACE_PROPERTY = SOAPFaultBuilder.class.getName()+".captureStackTrace";
 
     static {
+        boolean tmpVal = false;
         try {
-            captureStackTrace = Boolean.getBoolean(CAPTURE_STACK_TRACE_PROPERTY);
+            tmpVal = Boolean.getBoolean(CAPTURE_STACK_TRACE_PROPERTY);
         } catch (SecurityException e) {
             // ignore
         }
+        captureStackTrace = tmpVal;
 
         try {
             JAXB_CONTEXT = JAXBContext.newInstance(SOAP11Fault.class, SOAP12Fault.class);
