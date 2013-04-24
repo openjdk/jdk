@@ -61,13 +61,13 @@
  */
 package java.time;
 
+import java.time.temporal.UnsupportedTemporalTypeException;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -259,7 +259,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * <p>
      * If the field is {@link ChronoField#DAY_OF_WEEK DAY_OF_WEEK} then the
      * range of the day-of-week, from 1 to 7, will be returned.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
@@ -269,6 +269,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
     @Override
     public ValueRange range(TemporalField field) {
@@ -288,7 +289,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * <p>
      * If the field is {@link ChronoField#DAY_OF_WEEK DAY_OF_WEEK} then the
      * value of the day-of-week, from 1 to 7, will be returned.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -297,7 +298,10 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      *
      * @param field  the field to get, not null
      * @return the value for the field, within the valid range of values
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -317,7 +321,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * <p>
      * If the field is {@link ChronoField#DAY_OF_WEEK DAY_OF_WEEK} then the
      * value of the day-of-week, from 1 to 7, will be returned.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -327,6 +331,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -334,7 +339,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
         if (field == DAY_OF_WEEK) {
             return getValue();
         } else if (field instanceof ChronoField) {
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.getFrom(this);
     }
@@ -393,7 +398,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.precision()) {
+        if (query == TemporalQuery.precision()) {
             return (R) DAYS;
         }
         return TemporalAccessor.super.query(query);
@@ -409,8 +414,8 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * passing {@link ChronoField#DAY_OF_WEEK} as the field.
      * Note that this adjusts forwards or backwards within a Monday to Sunday week.
      * See {@link WeekFields#dayOfWeek} for localized week start days.
-     * See {@link java.time.temporal.Adjusters Adjusters} for other adjusters
-     * with more control, such as {@code next(MONDAY)}.
+     * See {@code TemporalAdjuster} for other adjusters with more control,
+     * such as {@code next(MONDAY)}.
      * <p>
      * In most cases, it is clearer to reverse the calling pattern by using
      * {@link Temporal#with(TemporalAdjuster)}:

@@ -860,8 +860,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
     }
 
-    private void flushBuffers() {
-        if (isVisible() && !nativeBounds.isEmpty()) {
+    void flushBuffers() {
+        if (isVisible() && !nativeBounds.isEmpty() && !isFullScreenMode) {
             try {
                 LWCToolkit.invokeAndWait(new Runnable() {
                     @Override

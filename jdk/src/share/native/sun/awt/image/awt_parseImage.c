@@ -34,6 +34,7 @@
 #include "java_awt_color_ColorSpace.h"
 #include "awt_Mlib.h"
 #include "safe_alloc.h"
+#include "safe_math.h"
 
 static int setHints(JNIEnv *env, BufImageS_t *imageP);
 

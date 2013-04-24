@@ -77,6 +77,17 @@ class InputRecord extends ByteArrayInputStream implements Record {
     /*
      * Construct the record to hold the maximum sized input record.
      * Data will be filled in separately.
+     *
+     * The structure of the byte buffer looks like:
+     *
+     *     |--------+---------+---------------------------------|
+     *     | header |   IV    | content, MAC/TAG, padding, etc. |
+     *     | headerPlusIVSize |
+     *
+     * header: the header of an SSL records
+     * IV:     the optional IV/nonce field, it is only required for block
+     *         (TLS 1.1 or later) and AEAD cipher suites.
+     *
      */
     InputRecord() {
         super(new byte[maxRecordSize]);
@@ -133,24 +144,34 @@ class InputRecord extends ByteArrayInputStream implements Record {
         return handshakeHash;
     }
 
-    void decrypt(MAC signer, CipherBox box) throws BadPaddingException {
-
+    void decrypt(Authenticator authenticator,
+            CipherBox box) throws BadPaddingException {
         BadPaddingException reservedBPE = null;
-        int tagLen = signer.MAClen();
+        int tagLen =
+            (authenticator instanceof MAC) ? ((MAC)authenticator).MAClen() : 0;
         int cipheredLength = count - headerSize;
 
         if (!box.isNullCipher()) {
-            // sanity check length of the ciphertext
-            if (!box.sanityCheck(tagLen, cipheredLength)) {
-                throw new BadPaddingException(
-                    "ciphertext sanity check failed");
-            }
-
             try {
+                // apply explicit nonce for AEAD/CBC cipher suites if needed
+                int nonceSize = box.applyExplicitNonce(authenticator,
+                        contentType(), buf, headerSize, cipheredLength);
+                pos = headerSize + nonceSize;
+                lastHashed = pos;   // don't digest the explicit nonce
+
+                // decrypt the content
+                int offset = headerSize;
+                if (box.isAEADMode()) {
+                    // DON'T encrypt the nonce_explicit for AEAD mode
+                    offset += nonceSize;
+                }   // The explicit IV for CBC mode can be decrypted.
+
                 // Note that the CipherBox.decrypt() does not change
                 // the capacity of the buffer.
-                count = headerSize +
-                        box.decrypt(buf, headerSize, cipheredLength, tagLen);
+                count = offset +
+                    box.decrypt(buf, offset, count - offset, tagLen);
+
+                // Note that we don't remove the nonce from the buffer.
             } catch (BadPaddingException bpe) {
                 // RFC 2246 states that decryption_failed should be used
                 // for this purpose. However, that allows certain attacks,
@@ -164,9 +185,12 @@ class InputRecord extends ByteArrayInputStream implements Record {
             }
         }
 
-        if (tagLen != 0) {
+        // Requires message authentication code for null, stream and block
+        // cipher suites.
+        if (authenticator instanceof MAC && tagLen != 0) {
+            MAC signer = (MAC)authenticator;
             int macOffset = count - tagLen;
-            int contentLen = macOffset - headerSize;
+            int contentLen = macOffset - pos;
 
             // Note that although it is not necessary, we run the same MAC
             // computation and comparison on the payload for both stream
@@ -190,7 +214,7 @@ class InputRecord extends ByteArrayInputStream implements Record {
 
             // Run MAC computation and comparison on the payload.
             if (checkMacTags(contentType(),
-                    buf, headerSize, contentLen, signer, false)) {
+                    buf, pos, contentLen, signer, false)) {
                 if (reservedBPE == null) {
                     reservedBPE = new BadPaddingException("bad record MAC");
                 }

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,7 +22,12 @@
  */
 
 /*
- * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file:
+ *
+ * Copyright (c) 2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -57,217 +60,189 @@
 package tck.java.time.chrono;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.time.DateTimeException;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
-import java.time.chrono.Era;
+import java.time.chrono.HijrahChronology;
 import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
 import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalQuery;
-import java.time.temporal.ValueRange;
-import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
- * Test.
+ * Test Chronology class.
  */
 @Test
 public class TCKChronology {
-    // Can only work with IsoChronology here
-    // others may be in separate module
 
-    @Test
-    public void factory_from_TemporalAccessor_dateWithChronlogy() {
-        assertEquals(Chronology.from(LocalDate.of(2012, 6, 30)), IsoChronology.INSTANCE);
+    //-----------------------------------------------------------------------
+    // regular data factory for ID and calendarType of available calendars
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "calendarNameAndType")
+    Object[][] data_of_calendars() {
+        return new Object[][] {
+                    {"Hijrah-umalqura", "islamic-umalqura"},
+                    {"ISO", "iso8601"},
+                    {"Japanese", "japanese"},
+                    {"Minguo", "roc"},
+                    {"ThaiBuddhist", "buddhist"},
+                };
+    }
+
+    @Test(dataProvider = "calendarNameAndType")
+    public void test_getters(String chronoId, String calendarSystemType) {
+        Chronology chrono = Chronology.of(chronoId);
+        assertNotNull(chrono, "Required calendar not found by ID: " + chronoId);
+        assertEquals(chrono.getId(), chronoId);
+        assertEquals(chrono.getCalendarType(), calendarSystemType);
+    }
+
+    @Test(dataProvider = "calendarNameAndType")
+    public void test_required_calendars(String chronoId, String calendarSystemType) {
+        Chronology chrono = Chronology.of(chronoId);
+        assertNotNull(chrono, "Required calendar not found by ID: " + chronoId);
+        chrono = Chronology.of(calendarSystemType);
+        assertNotNull(chrono, "Required calendar not found by type: " + chronoId);
+        Set<Chronology> cals = Chronology.getAvailableChronologies();
+        assertTrue(cals.contains(chrono), "Required calendar not found in set of available calendars");
     }
 
     @Test
-    public void factory_from_TemporalAccessor_chronology() {
-        assertEquals(Chronology.from(new TemporalAccessor() {
-            @Override
-            public boolean isSupported(TemporalField field) {
-                throw new UnsupportedOperationException();
-            }
-            @Override
-            public long getLong(TemporalField field) {
-                throw new UnsupportedOperationException();
-            }
-            @SuppressWarnings("unchecked")
-            @Override
-            public <R> R query(TemporalQuery<R> query) {
-                if (query == Queries.chronology()) {
-                    return (R) IsoChronology.INSTANCE;
-                }
-                throw new UnsupportedOperationException();
-            }
-        }), IsoChronology.INSTANCE);
+    public void test_calendar_list() {
+        Set<Chronology> chronos = Chronology.getAvailableChronologies();
+        assertNotNull(chronos, "Required list of calendars must be non-null");
+        for (Chronology chrono : chronos) {
+            Chronology lookup = Chronology.of(chrono.getId());
+            assertNotNull(lookup, "Required calendar not found: " + chrono);
+        }
+        assertEquals(chronos.size() >= data_of_calendars().length, true, "Chronology.getAvailableChronologies().size = " + chronos.size()
+                + ", expected >= " + data_of_calendars().length);
     }
 
-    @Test
-    public void factory_from_TemporalAccessor_noChronology() {
-        assertEquals(Chronology.from(new TemporalAccessor() {
-            @Override
-            public boolean isSupported(TemporalField field) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public long getLong(TemporalField field) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public <R> R query(TemporalQuery<R> query) {
-                if (query == Queries.chronology()) {
-                    return null;
-                }
-                throw new UnsupportedOperationException();
-            }
-        }), IsoChronology.INSTANCE);
+    /**
+     * Compute the number of days from the Epoch and compute the date from the number of days.
+     */
+    @Test(dataProvider = "calendarNameAndType")
+    public void test_epoch(String name, String alias) {
+        Chronology chrono = Chronology.of(name); // a chronology. In practice this is rarely hardcoded
+        ChronoLocalDate<?> date1 = chrono.dateNow();
+        long epoch1 = date1.getLong(ChronoField.EPOCH_DAY);
+        ChronoLocalDate<?> date2 = date1.with(ChronoField.EPOCH_DAY, epoch1);
+        assertEquals(date1, date2, "Date from epoch day is not same date: " + date1 + " != " + date2);
+        long epoch2 = date1.getLong(ChronoField.EPOCH_DAY);
+        assertEquals(epoch1, epoch2, "Epoch day not the same: " + epoch1 + " != " + epoch2);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
-    public void factory_from_TemporalAccessor_null() {
-        Chronology.from(null);
+    @Test(dataProvider = "calendarNameAndType")
+    public void test_dateEpochDay(String name, String alias) {
+        Chronology chrono = Chronology.of(name);
+        ChronoLocalDate<?> date = chrono.dateNow();
+        long epochDay = date.getLong(ChronoField.EPOCH_DAY);
+        ChronoLocalDate<?> test = chrono.dateEpochDay(epochDay);
+        assertEquals(test, date);
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_date_TemporalAccessor() {
-        assertEquals(IsoChronology.INSTANCE.date(new TemporalAccessor() {
-            @Override
-            public boolean isSupported(TemporalField field) {
-                if (field == ChronoField.EPOCH_DAY) {
-                    return true;
-                }
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public long getLong(TemporalField field) {
-                if (field == ChronoField.EPOCH_DAY) {
-                    return LocalDate.of(2012, 6, 30).toEpochDay();
-                }
-                throw new UnsupportedOperationException();
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public <R> R query(TemporalQuery<R> query) {
-                if (query == Queries.localDate()) {
-                    return (R) LocalDate.of(2012, 6, 30);
-                }
-                throw new UnsupportedOperationException();
-            }
-        }), LocalDate.of(2012, 6, 30));
+    // locale based lookup
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "calendarsystemtype")
+    Object[][] data_CalendarType() {
+        return new Object[][] {
+            {HijrahChronology.INSTANCE, "islamic", "umalqura"},
+            {IsoChronology.INSTANCE, "iso8601", null},
+            {JapaneseChronology.INSTANCE, "japanese", null},
+            {MinguoChronology.INSTANCE, "roc", null},
+            {ThaiBuddhistChronology.INSTANCE, "buddhist", null},
+        };
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
-    public void test_date_TemporalAccessor_null() {
-        IsoChronology.INSTANCE.date(null);
+    @Test(dataProvider = "calendarsystemtype")
+    public void test_getCalendarType(Chronology chrono, String calendarType, String variant) {
+        String type = calendarType;
+        if (variant != null) {
+            type += '-';
+            type += variant;
+        }
+        assertEquals(chrono.getCalendarType(), type);
+    }
+
+    @Test(dataProvider = "calendarsystemtype")
+    public void test_lookupLocale(Chronology chrono, String calendarType, String variant) {
+        Locale.Builder builder = new Locale.Builder().setLanguage("en").setRegion("CA");
+        builder.setUnicodeLocaleKeyword("ca", calendarType);
+        if (variant != null) {
+            builder.setUnicodeLocaleKeyword("cv", variant);
+        }
+        Locale locale = builder.build();
+        assertEquals(Chronology.ofLocale(locale), chrono);
+    }
+
+
+    /**
+     * Test lookup by calendarType of each chronology.
+     * The calendarType is split on "-" to separate the calendar and variant.
+     * Verify that the calendar can be found by {@link java.time.chrono.Chronology#ofLocale}.
+     */
+    @Test
+    public void test_ofLocaleByType() {
+        // Test that all available chronologies can be successfully found using ofLocale
+        Set<Chronology> chronos = Chronology.getAvailableChronologies();
+        for (Chronology chrono : chronos) {
+            String[] split = chrono.getCalendarType().split("-");
+
+            Locale.Builder builder = new Locale.Builder().setLanguage("en").setRegion("CA");
+            builder.setUnicodeLocaleKeyword("ca", split[0]);
+            if (split.length > 1) {
+                builder.setUnicodeLocaleKeyword("cv", split[1]);
+            }
+            Locale locale = builder.build();
+            assertEquals(Chronology.ofLocale(locale), chrono, "Lookup by type and variant");
+        }
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_lookupLocale() {
+        Locale.Builder builder = new Locale.Builder().setLanguage("en").setRegion("CA");
+        builder.setUnicodeLocaleKeyword("ca", "xxx");
+        builder.setUnicodeLocaleKeyword("cv", "yyy");
+
+        Locale locale = builder.build();
+        Chronology.ofLocale(locale);
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void test_noChrono() {
+        Chronology chrono = Chronology.of("FooFoo");
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_localDateTime_TemporalAccessor() {
-        assertEquals(IsoChronology.INSTANCE.localDateTime(new TemporalAccessor() {
-            @Override
-            public boolean isSupported(TemporalField field) {
-                if (field == ChronoField.EPOCH_DAY || field == ChronoField.NANO_OF_DAY) {
-                    return true;
-                }
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public long getLong(TemporalField field) {
-                if (field == ChronoField.EPOCH_DAY) {
-                    return LocalDate.of(2012, 6, 30).toEpochDay();
-                }
-                if (field == ChronoField.NANO_OF_DAY) {
-                    return LocalTime.of(12, 30, 40).toNanoOfDay();
-                }
-                throw new UnsupportedOperationException();
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public <R> R query(TemporalQuery<R> query) {
-                if (query == Queries.localDate()) {
-                    return (R) LocalDate.of(2012, 6, 30);
-                }
-                if (query == Queries.localTime()) {
-                    return (R) LocalTime.of(12, 30, 40);
-                }
-                throw new UnsupportedOperationException();
-            }
-        }), LocalDateTime.of(2012, 6, 30, 12, 30, 40));
-    }
-
-    @Test(expectedExceptions=NullPointerException.class)
-    public void test_localDateTime_TemporalAccessor_null() {
-        IsoChronology.INSTANCE.localDateTime(null);
-    }
-
+    // serialization; serialize and check each calendar system
     //-----------------------------------------------------------------------
-    @Test
-    public void test_zonedDateTime_TemporalAccessor() {
-        assertEquals(IsoChronology.INSTANCE.zonedDateTime(new TemporalAccessor() {
-            @Override
-            public boolean isSupported(TemporalField field) {
-                if (field == ChronoField.EPOCH_DAY || field == ChronoField.NANO_OF_DAY ||
-                        field == ChronoField.INSTANT_SECONDS || field == ChronoField.NANO_OF_SECOND) {
-                    return true;
-                }
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public long getLong(TemporalField field) {
-                if (field == ChronoField.INSTANT_SECONDS) {
-                    return ZonedDateTime.of(2012, 6, 30, 12, 30, 40, 0, ZoneId.of("Europe/London")).toEpochSecond();
-                }
-                if (field == ChronoField.NANO_OF_SECOND) {
-                    return 0;
-                }
-                if (field == ChronoField.EPOCH_DAY) {
-                    return LocalDate.of(2012, 6, 30).toEpochDay();
-                }
-                if (field == ChronoField.NANO_OF_DAY) {
-                    return LocalTime.of(12, 30, 40).toNanoOfDay();
-                }
-                throw new UnsupportedOperationException();
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public <R> R query(TemporalQuery<R> query) {
-                if (query == Queries.localDate()) {
-                    return (R) LocalDate.of(2012, 6, 30);
-                }
-                if (query == Queries.localTime()) {
-                    return (R) LocalTime.of(12, 30, 40);
-                }
-                if (query == Queries.zoneId() || query == Queries.zone()) {
-                    return (R) ZoneId.of("Europe/London");
-                }
-                throw new UnsupportedOperationException();
-            }
-        }), ZonedDateTime.of(2012, 6, 30, 12, 30, 40, 0, ZoneId.of("Europe/London")));
-    }
-
-    @Test(expectedExceptions=NullPointerException.class)
-    public void test_zonedDateTime_TemporalAccessor_null() {
-        IsoChronology.INSTANCE.zonedDateTime(null);
+    @Test(dataProvider = "calendarNameAndType")
+    public void test_chronoSerializationSingleton(String id, String _calendarType) throws Exception {
+        Chronology original = Chronology.of(id);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(baos);
+        out.writeObject(original);
+        out.close();
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInputStream in = new ObjectInputStream(bais);
+        Chronology ser = (Chronology) in.readObject();
+        assertEquals(ser, original, "Deserialized Chronology is not correct");
     }
 
 }

@@ -426,17 +426,13 @@ final class CipherCore {
            }
         }
         try {
-            params = AlgorithmParameters.getInstance(algName, "SunJCE");
+            params = AlgorithmParameters.getInstance(algName,
+                    SunJCE.getInstance());
+            params.init(spec);
         } catch (NoSuchAlgorithmException nsae) {
             // should never happen
             throw new RuntimeException("Cannot find " + algName +
                 " AlgorithmParameters implementation in SunJCE provider");
-        } catch (NoSuchProviderException nspe) {
-            // should never happen
-            throw new RuntimeException("Cannot find SunJCE provider");
-        }
-        try {
-            params.init(spec);
         } catch (InvalidParameterSpecException ipse) {
             // should never happen
             throw new RuntimeException(spec.getClass() + " not supported");

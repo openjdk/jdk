@@ -59,30 +59,33 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.ERA;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
 import static org.testng.Assert.assertEquals;
 
-import java.util.Locale;
-
 import java.time.DateTimeException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.TemporalField;
 import java.time.chrono.JapaneseChronology;
-import test.java.time.temporal.MockFieldValue;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.time.temporal.TemporalField;
+import java.util.Locale;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import test.java.time.temporal.MockFieldValue;
 
 /**
  * Test TextPrinterParser.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestTextPrinter extends AbstractTestPrinterParser {
+    static final Locale RUSSIAN = new Locale("ru");
+    static final Locale FINNISH = new Locale("fi");
 
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=DateTimeException.class)
@@ -166,13 +169,55 @@ public class TestTextPrinter extends AbstractTestPrinterParser {
             {MONTH_OF_YEAR, TextStyle.SHORT, 11, "Nov"},
             {MONTH_OF_YEAR, TextStyle.SHORT, 12, "Dec"},
 
+            {MONTH_OF_YEAR, TextStyle.NARROW, 1, "J"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 2, "F"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 3, "M"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 4, "A"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 5, "M"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 6, "J"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 7, "J"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 8, "A"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 9, "S"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 10, "O"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 11, "N"},
+            {MONTH_OF_YEAR, TextStyle.NARROW, 12, "D"},
+
             {ERA,           TextStyle.FULL, 0, "Before Christ"},
             {ERA,           TextStyle.FULL, 1, "Anno Domini"},
             {ERA,           TextStyle.SHORT, 0, "BC"},
             {ERA,           TextStyle.SHORT, 1, "AD"},
             {ERA,           TextStyle.NARROW, 0, "B"},
             {ERA,           TextStyle.NARROW, 1, "A"},
+
+            {QUARTER_OF_YEAR, TextStyle.FULL, 1, "1st quarter"},
+            {QUARTER_OF_YEAR, TextStyle.FULL, 2, "2nd quarter"},
+            {QUARTER_OF_YEAR, TextStyle.FULL, 3, "3rd quarter"},
+            {QUARTER_OF_YEAR, TextStyle.FULL, 4, "4th quarter"},
+
+            {QUARTER_OF_YEAR, TextStyle.SHORT, 1, "Q1"},
+            {QUARTER_OF_YEAR, TextStyle.SHORT, 2, "Q2"},
+            {QUARTER_OF_YEAR, TextStyle.SHORT, 3, "Q3"},
+            {QUARTER_OF_YEAR, TextStyle.SHORT, 4, "Q4"},
+
+            {QUARTER_OF_YEAR, TextStyle.NARROW, 1, "1"},
+            {QUARTER_OF_YEAR, TextStyle.NARROW, 2, "2"},
+            {QUARTER_OF_YEAR, TextStyle.NARROW, 3, "3"},
+            {QUARTER_OF_YEAR, TextStyle.NARROW, 4, "4"},
        };
+    }
+
+    @DataProvider(name="print_DayOfWeekData")
+    Object[][] providerDayOfWeekData() {
+        return new Object[][] {
+            // Locale, pattern, expected text, input DayOfWeek
+            {Locale.US, "e",  "1",  DayOfWeek.SUNDAY},
+            {Locale.US, "ee", "01", DayOfWeek.SUNDAY},
+            {Locale.US, "c",  "1",  DayOfWeek.SUNDAY},
+
+            {Locale.UK, "e",  "1",  DayOfWeek.MONDAY},
+            {Locale.UK, "ee", "01", DayOfWeek.MONDAY},
+            {Locale.UK, "c",  "1",  DayOfWeek.MONDAY},
+        };
     }
 
     @DataProvider(name="print_JapaneseChronology")
@@ -184,16 +229,42 @@ public class TestTextPrinter extends AbstractTestPrinterParser {
        };
     };
 
+    // Test data is dependent on localized resources.
+    @DataProvider(name="print_standalone")
+    Object[][] provider_StandaloneNames() {
+        return new Object[][] {
+            // standalone names for 2013-01-01 (Tue)
+            // Locale, TemporalField, TextStyle, expected text
+            {RUSSIAN, MONTH_OF_YEAR, TextStyle.FULL_STANDALONE,  "\u042f\u043d\u0432\u0430\u0440\u044c"},
+            {RUSSIAN, MONTH_OF_YEAR, TextStyle.SHORT_STANDALONE, "\u042f\u043d\u0432."},
+            {FINNISH, DAY_OF_WEEK,   TextStyle.FULL_STANDALONE,  "tiistai"},
+            {FINNISH, DAY_OF_WEEK,   TextStyle.SHORT_STANDALONE, "ti"},
+        };
+    }
+
     @Test(dataProvider="print")
     public void test_format(TemporalField field, TextStyle style, int value, String expected) throws Exception {
         getFormatter(field, style).formatTo(new MockFieldValue(field, value), buf);
         assertEquals(buf.toString(), expected);
     }
 
+    @Test(dataProvider="print_DayOfWeekData")
+    public void test_formatDayOfWeek(Locale locale, String pattern, String expected, DayOfWeek dayOfWeek) {
+        DateTimeFormatter formatter = getPatternFormatter(pattern).withLocale(locale);
+        String text = formatter.format(dayOfWeek);
+        assertEquals(text, expected);
+    }
+
     @Test(dataProvider="print_JapaneseChronology")
     public void test_formatJapaneseEra(TemporalField field, TextStyle style, int value, String expected) throws Exception {
         LocalDate ld = LocalDate.of(2013, 1, 31);
         getFormatter(field, style).withChronology(JapaneseChronology.INSTANCE).formatTo(ld, buf);
+        assertEquals(buf.toString(), expected);
+    }
+
+    @Test(dataProvider="print_standalone")
+    public void test_standaloneNames(Locale locale, TemporalField field, TextStyle style, String expected) {
+        getFormatter(field, style).withLocale(locale).formatTo(LocalDate.of(2013, 1, 1), buf);
         assertEquals(buf.toString(), expected);
     }
 
