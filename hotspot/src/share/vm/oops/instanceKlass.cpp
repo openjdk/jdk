@@ -54,6 +54,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
+#include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
@@ -2312,7 +2313,29 @@ static void clear_all_breakpoints(Method* m) {
   m->clear_all_breakpoints();
 }
 
+
+void InstanceKlass::notify_unload_class(InstanceKlass* ik) {
+  // notify the debugger
+  if (JvmtiExport::should_post_class_unload()) {
+    JvmtiExport::post_class_unload(ik);
+  }
+
+  // notify ClassLoadingService of class unload
+  ClassLoadingService::notify_class_unloaded(ik);
+}
+
+void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {
+  // Clean up C heap
+  ik->release_C_heap_structures();
+  ik->constants()->release_C_heap_structures();
+}
+
 void InstanceKlass::release_C_heap_structures() {
+
+  // Can't release the constant pool here because the constant pool can be
+  // deallocated separately from the InstanceKlass for default methods and
+  // redefine classes.
+
   // Deallocate oop map cache
   if (_oop_map_cache != NULL) {
     delete _oop_map_cache;
