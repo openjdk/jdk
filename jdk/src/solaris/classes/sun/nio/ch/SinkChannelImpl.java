@@ -165,7 +165,7 @@ class SinkChannelImpl
                     return 0;
                 thread = NativeThread.current();
                 do {
-                    n = IOUtil.write(fd, src, -1, nd, lock);
+                    n = IOUtil.write(fd, src, -1, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {

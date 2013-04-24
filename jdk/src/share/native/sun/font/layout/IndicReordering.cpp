@@ -266,7 +266,7 @@ public:
                                         le_uint32 saveAuxData = fGlyphStorage.getAuxData(i+inv_count,success);
                     const SplitMatra *splitMatra = classTable->getSplitMatra(matraClass);
                     int j;
-                    for (j = 0 ; *(splitMatra)[j] != 0 ; j++) {
+                    for (j = 0 ; j < SM_MAX_PIECES && *(splitMatra)[j] != 0 ; j++) {
                         LEUnicode piece = (*splitMatra)[j];
                                                 if ( j == 0 ) {
                                                         fOutChars[i+inv_count] = piece;
@@ -357,7 +357,7 @@ public:
                 const SplitMatra *splitMatra = classTable->getSplitMatra(matraClass);
                 int i;
 
-                for (i = 0; i < 3 && (*splitMatra)[i] != 0; i += 1) {
+                for (i = 0; i < SM_MAX_PIECES && (*splitMatra)[i] != 0; i += 1) {
                     LEUnicode piece = (*splitMatra)[i];
                     IndicClassTable::CharClass pieceClass = classTable->getCharClass(piece);
 
@@ -657,6 +657,11 @@ le_int32 IndicReordering::reorder(const LEUnicode *chars, le_int32 charCount, le
 
     MPreFixups *mpreFixups = NULL;
     const IndicClassTable *classTable = IndicClassTable::getScriptClassTable(scriptCode);
+
+    if(classTable==NULL) {
+      success = LE_MEMORY_ALLOCATION_ERROR;
+      return 0;
+    }
 
     if (classTable->scriptFlags & SF_MPRE_FIXUP) {
         mpreFixups = new MPreFixups(charCount);
@@ -1224,7 +1229,6 @@ void IndicReordering::getDynamicProperties( DynamicProperties *, const IndicClas
 
 
     LEUnicode currentChar;
-    LEUnicode virama;
     LEUnicode workChars[2];
     LEGlyphStorage workGlyphs;
 
@@ -1232,14 +1236,17 @@ void IndicReordering::getDynamicProperties( DynamicProperties *, const IndicClas
 
     //le_int32 offset = 0;
 
+#if 0
+// TODO:  Should this section of code have actually been doing something?
     // First find the relevant virama for the script we are dealing with
-
+    LEUnicode virama;
     for ( currentChar = classTable->firstChar ; currentChar <= classTable->lastChar ; currentChar++ ) {
         if ( classTable->isVirama(currentChar)) {
             virama = currentChar;
             break;
         }
     }
+#endif
 
     for ( currentChar = classTable->firstChar ; currentChar <= classTable->lastChar ; currentChar++ ) {
         if ( classTable->isConsonant(currentChar)) {

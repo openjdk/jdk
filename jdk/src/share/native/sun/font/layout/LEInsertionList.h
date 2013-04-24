@@ -25,7 +25,7 @@
 
 /*
  **********************************************************************
- *   Copyright (C) 1998-2008, International Business Machines
+ *   Copyright (C) 1998-2013, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  **********************************************************************
  */
@@ -39,6 +39,7 @@ U_NAMESPACE_BEGIN
 
 struct InsertionRecord;
 
+#ifndef U_HIDE_INTERNAL_API
 /**
  * This class encapsulates the callback used by <code>LEInsertionList</code>
  * to apply an insertion from the insertion list.
@@ -194,6 +195,7 @@ private:
      */
     le_bool  append;
 };
+#endif  /* U_HIDE_INTERNAL_API */
 
 U_NAMESPACE_END
 #endif

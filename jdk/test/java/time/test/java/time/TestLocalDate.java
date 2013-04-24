@@ -80,7 +80,7 @@ public class TestLocalDate extends AbstractTest {
 
     private LocalDate TEST_2007_07_15;
 
-    @BeforeMethod(groups={"tck", "implementation"})
+    @BeforeMethod
     public void setUp() {
         TEST_2007_07_15 = LocalDate.of(2007, 7, 15);
     }
@@ -117,55 +117,55 @@ public class TestLocalDate extends AbstractTest {
         return date.withDayOfMonth(date.getMonth().length(isIsoLeap(date.getYear())));
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_with_DateTimeField_long_noChange_same() {
         LocalDate t = TEST_2007_07_15.with(YEAR, 2007);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withYear_int_noChange_same() {
         LocalDate t = TEST_2007_07_15.withYear(2007);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withMonth_int_noChange_same() {
         LocalDate t = TEST_2007_07_15.withMonth(7);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withDayOfMonth_noChange_same() {
         LocalDate t = TEST_2007_07_15.withDayOfMonth(15);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withDayOfYear_noChange_same() {
         LocalDate t = TEST_2007_07_15.withDayOfYear(31 + 28 + 31 + 30 + 31 + 30 + 15);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plus_Period_zero() {
         LocalDate t = TEST_2007_07_15.plus(MockSimplePeriod.ZERO_DAYS);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plus_longPeriodUnit_zero() {
         LocalDate t = TEST_2007_07_15.plus(0, ChronoUnit.DAYS);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusYears_long_noChange_same() {
         LocalDate t = TEST_2007_07_15.plusYears(0);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusMonths_long_noChange_same() {
         LocalDate t = TEST_2007_07_15.plusMonths(0);
         assertSame(t, TEST_2007_07_15);
@@ -206,7 +206,7 @@ public class TestLocalDate extends AbstractTest {
         };
     }
 
-    @Test(dataProvider="samplePlusWeeksSymmetry", groups={"implementation"})
+    @Test(dataProvider="samplePlusWeeksSymmetry")
     public void test_plusWeeks_symmetry(LocalDate reference) {
         for (int weeks = 0; weeks < 365 * 8; weeks++) {
             LocalDate t = reference.plusWeeks(weeks).plusWeeks(-weeks);
@@ -217,7 +217,7 @@ public class TestLocalDate extends AbstractTest {
         }
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusWeeks_noChange_same() {
         LocalDate t = TEST_2007_07_15.plusWeeks(0);
         assertSame(t, TEST_2007_07_15);
@@ -258,7 +258,7 @@ public class TestLocalDate extends AbstractTest {
         };
     }
 
-    @Test(dataProvider="samplePlusDaysSymmetry", groups={"implementation"})
+    @Test(dataProvider="samplePlusDaysSymmetry")
     public void test_plusDays_symmetry(LocalDate reference) {
         for (int days = 0; days < 365 * 8; days++) {
             LocalDate t = reference.plusDays(days).plusDays(-days);
@@ -269,31 +269,31 @@ public class TestLocalDate extends AbstractTest {
         }
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_plusDays_noChange_same() {
         LocalDate t = TEST_2007_07_15.plusDays(0);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minus_Period_zero() {
         LocalDate t = TEST_2007_07_15.minus(MockSimplePeriod.ZERO_DAYS);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minus_longPeriodUnit_zero() {
         LocalDate t = TEST_2007_07_15.minus(0, ChronoUnit.DAYS);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusYears_long_noChange_same() {
         LocalDate t = TEST_2007_07_15.minusYears(0);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusMonths_long_noChange_same() {
         LocalDate t = TEST_2007_07_15.minusMonths(0);
         assertSame(t, TEST_2007_07_15);
@@ -334,7 +334,7 @@ public class TestLocalDate extends AbstractTest {
         };
     }
 
-    @Test(dataProvider="sampleMinusWeeksSymmetry", groups={"implementation"})
+    @Test(dataProvider="sampleMinusWeeksSymmetry")
     public void test_minusWeeks_symmetry(LocalDate reference) {
         for (int weeks = 0; weeks < 365 * 8; weeks++) {
             LocalDate t = reference.minusWeeks(weeks).minusWeeks(-weeks);
@@ -345,7 +345,7 @@ public class TestLocalDate extends AbstractTest {
         }
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusWeeks_noChange_same() {
         LocalDate t = TEST_2007_07_15.minusWeeks(0);
         assertSame(t, TEST_2007_07_15);
@@ -386,7 +386,7 @@ public class TestLocalDate extends AbstractTest {
         };
     }
 
-    @Test(dataProvider="sampleMinusDaysSymmetry", groups={"implementation"})
+    @Test(dataProvider="sampleMinusDaysSymmetry")
     public void test_minusDays_symmetry(LocalDate reference) {
         for (int days = 0; days < 365 * 8; days++) {
             LocalDate t = reference.minusDays(days).minusDays(-days);
@@ -397,13 +397,13 @@ public class TestLocalDate extends AbstractTest {
         }
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_minusDays_noChange_same() {
         LocalDate t = TEST_2007_07_15.minusDays(0);
         assertSame(t, TEST_2007_07_15);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_toEpochDay_fromMJDays_symmetry() {
         long date_0000_01_01 = -678941 - 40587;
 

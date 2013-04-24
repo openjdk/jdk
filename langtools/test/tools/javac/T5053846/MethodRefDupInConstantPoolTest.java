@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 5053846
+ * @bug 5053846 8011432
  * @summary javac: MethodRef entries are duplicated in the constant pool
+ * @summary javac, compiler regression iterable + captured type
  */
 
 import java.io.PrintWriter;
@@ -43,9 +44,13 @@ public class MethodRefDupInConstantPoolTest {
 
     void run() {
         check("-v", Paths.get(System.getProperty("test.classes"),
-                "TestHelper1.class").toString());
+                this.getClass().getSimpleName() + "$TestHelper1.class").toString());
         check("-v", Paths.get(System.getProperty("test.classes"),
-                "TestHelper2.class").toString());
+                this.getClass().getSimpleName() + "$TestHelper2.class").toString());
+        check("-v", Paths.get(System.getProperty("test.classes"),
+                this.getClass().getSimpleName() + "$TestHelper3.class").toString());
+        check("-v", Paths.get(System.getProperty("test.classes"),
+                this.getClass().getSimpleName() + "$TestHelper4.class").toString());
     }
 
     void check(String... params) {
@@ -68,24 +73,38 @@ public class MethodRefDupInConstantPoolTest {
         int end = out.indexOf("{");
         return out.substring(start, end);
     }
-}
 
-class TestHelper1 {
-    void m() {
-        Vector v = new Vector();
-        Iterator iter = v.iterator();
-        while (iter.hasNext()) {
-            Object o = iter.next();
-            Object o2 = o;
-        }
-        for (Object o: v) {
-            Object o2 = o;
+    class TestHelper1 {
+        void m() {
+            Vector v = new Vector();
+            Iterator iter = v.iterator();
+            while (iter.hasNext()) {
+                Object o = iter.next();
+                Object o2 = o;
+            }
+            for (Object o: v) {
+                Object o2 = o;
+            }
         }
     }
-}
 
-class TestHelper2<X extends Number & Iterable<String>> {
-    void test(X x) {
-        for (String s : x) { }
+    class TestHelper2<X extends Number & Iterable<String>> {
+        void test(X x) {
+            for (String s : x) { }
+        }
+    }
+
+    interface Data extends Iterable<String> {}
+
+    class TestHelper3<X extends Number & Iterable<? extends Data>> {
+        void test(X x) {
+            for (Data s : x) { }
+        }
+    }
+
+    class TestHelper4 {
+         void test(Iterable<? extends Data> t) {
+             for(Object a: t.iterator().next());
+         }
     }
 }

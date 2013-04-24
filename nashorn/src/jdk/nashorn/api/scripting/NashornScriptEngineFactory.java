@@ -210,42 +210,10 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
     }
 
     private static ClassLoader getAppClassLoader() {
-        if (System.getSecurityManager() == null) {
-            return Thread.currentThread().getContextClassLoader();
-        }
-
-        // Try to determine the caller class loader. Use that if it can be
-        // found. If not, use the class loader of nashorn itself as the
-        // "application" class loader for scripts.
-
-        // User could have called ScriptEngineFactory.getScriptEngine()
-        //
-        // <caller>
-        //  <factory.getScriptEngine()>
-        //   <factory.getAppClassLoader()>
-        //    <Reflection.getCallerClass()>
-        //
-        // or used one of the getEngineByABC methods of ScriptEngineManager.
-        //
-        // <caller>
-        //  <ScriptEngineManager.getEngineByName()>
-        //   <factory.getScriptEngine()>
-        //    <factory.getAppClassLoader()>
-        //     <Reflection.getCallerClass()>
-
-        // So, stack depth is 3 or 4 (recall it is zero based). We try
-        // stack depths 3, 4 and look for non-bootstrap caller.
-        Class<?> caller = null;
-        for (int depth = 3; depth < 5; depth++) {
-            caller = Reflection.getCallerClass(depth);
-            if (caller != null && caller.getClassLoader() != null) {
-                // found a non-bootstrap caller
-                break;
-            }
-        }
-
-        final ClassLoader ccl = (caller == null)? null : caller.getClassLoader();
-        // if caller loader is null, then use nashorn's own loader
+        // Revisit: script engine implementation needs the capability to
+        // find the class loader of the context in which the script engine
+        // is running so that classes will be found and loaded properly
+        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
         return (ccl == null)? NashornScriptEngineFactory.class.getClassLoader() : ccl;
     }
 }

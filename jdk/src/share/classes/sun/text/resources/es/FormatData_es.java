@@ -76,11 +76,11 @@
 
 package sun.text.resources.es;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_es extends ListResourceBundle {
+public class FormatData_es extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -118,6 +118,23 @@ public class FormatData_es extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "E",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "domingo", // Sunday
@@ -149,6 +166,18 @@ public class FormatData_es extends ListResourceBundle {
                     "J",
                     "V",
                     "S",
+                }
+            },
+            { "Eras",
+                new String[] {
+                    "antes de Cristo",
+                    "anno D\u00f3mini",
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "a.C.",
+                    "d.C.",
                 }
             },
             { "NumberPatterns",
@@ -195,72 +224,6 @@ public class FormatData_es extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y G",
-                    "d 'de' MMMM 'de' y G",
-                    "dd/MM/y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y G",
-                    "d 'de' MMMM 'de' y G",
-                    "dd/MM/y G",
-                    "dd/MM/y GGGGG",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y G",
-                    "d 'de' MMMM 'de' y G",
-                    "dd/MM/y G",
-                    "dd/MM/y GGGGG",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y GGGG",
-                    "d 'de' MMMM 'de' y GGGG",
-                    "dd/MM/y GGGG",
-                    "dd/MM/y G",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y G",
-                    "d 'de' MMMM 'de' y G",
-                    "dd/MM/y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE, d 'de' MMMM 'de' y GGGG",
-                    "d 'de' MMMM 'de' y GGGG",
-                    "dd/MM/y GGGG",
-                    "dd/MM/y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "calendario civil isl\u00e1mico" },
-            { "calendarname.islamicc", "calendario civil isl\u00e1mico" },
-            { "calendarname.islamic", "calendario isl\u00e1mico" },
-            { "calendarname.japanese", "calendario japon\u00e9s" },
-            { "calendarname.gregorian", "calendario gregoriano" },
-            { "calendarname.gregory", "calendario gregoriano" },
-            { "calendarname.roc", "calendario de la Rep\u00fablica de China" },
-            { "calendarname.buddhist", "calendario budista" },
-            { "field.era", "era" },
-            { "field.year", "a\u00f1o" },
-            { "field.month", "mes" },
-            { "field.week", "semana" },
-            { "field.weekday", "d\u00eda de la semana" },
-            { "field.dayperiod", "periodo del d\u00eda" },
-            { "field.hour", "hora" },
-            { "field.minute", "minuto" },
-            { "field.second", "segundo" },
-            { "field.zone", "zona" },
         };
     }
 }
