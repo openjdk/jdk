@@ -1368,11 +1368,35 @@ public class BytePackedRaster extends SunWritableRaster {
             throw new RasterFormatException("Data offsets must be >= 0");
         }
 
+        /* Need to re-verify the dimensions since a sample model may be
+         * specified to the constructor
+         */
+        if (width <= 0 || height <= 0 ||
+            height > (Integer.MAX_VALUE / width))
+        {
+            throw new RasterFormatException("Invalid raster dimension");
+        }
+
+
+        /*
+         * pixelBitstride was verified in constructor, so just make
+         * sure that it is safe to multiply it by width.
+         */
+        if ((width - 1) > Integer.MAX_VALUE / pixelBitStride) {
+            throw new RasterFormatException("Invalid raster dimension");
+        }
+
+        if (scanlineStride < 0 ||
+            scanlineStride > (Integer.MAX_VALUE / height))
+        {
+            throw new RasterFormatException("Invalid scanline stride");
+        }
+
         int lastbit = (dataBitOffset
                        + (height-1) * scanlineStride * 8
                        + (width-1) * pixelBitStride
                        + pixelBitStride - 1);
-        if (lastbit / 8 >= data.length) {
+        if (lastbit < 0 || lastbit / 8 >= data.length) {
             throw new RasterFormatException("raster dimensions overflow " +
                                             "array bounds");
         }

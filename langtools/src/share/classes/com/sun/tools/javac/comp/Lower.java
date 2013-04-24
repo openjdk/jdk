@@ -48,6 +48,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import javax.lang.model.type.TypeKind;
 
 /** This pass translates away some syntactic sugar: inner classes,
  *  class literals, assertions, foreach loops, etc.
@@ -3400,8 +3401,11 @@ public class Lower extends TreeTranslator {
             if (iterableType.getTypeArguments().nonEmpty())
                 iteratorTarget = types.erasure(iterableType.getTypeArguments().head);
             Type eType = tree.expr.type;
+            while (eType.hasTag(TYPEVAR)) {
+                eType = eType.getUpperBound();
+            }
             tree.expr.type = types.erasure(eType);
-            if (eType.hasTag(TYPEVAR) && eType.getUpperBound().isCompound())
+            if (eType.isCompound())
                 tree.expr = make.TypeCast(types.erasure(iterableType), tree.expr);
             Symbol iterator = lookupMethod(tree.expr.pos(),
                                            names.iterator,

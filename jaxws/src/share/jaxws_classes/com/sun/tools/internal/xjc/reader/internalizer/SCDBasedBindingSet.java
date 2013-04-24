@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.UnmarshallerHandler;
 import javax.xml.validation.ValidatorHandler;
 
@@ -45,7 +46,6 @@ import com.sun.xml.internal.xsom.SCD;
 import com.sun.xml.internal.xsom.XSAnnotation;
 import com.sun.xml.internal.xsom.XSComponent;
 import com.sun.xml.internal.xsom.XSSchemaSet;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallerImpl;
 
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -217,7 +217,7 @@ public final class SCDBasedBindingSet {
     public void apply(XSSchemaSet schema, ErrorReceiver errorReceiver) {
         if(topLevel!=null) {
             this.errorReceiver = errorReceiver;
-            UnmarshallerImpl u = BindInfo.getJAXBContext().createUnmarshaller();
+            Unmarshaller u =  BindInfo.getCustomizationUnmarshaller();
             this.unmarshaller = u.getUnmarshallerHandler();
             ValidatorHandler v = BindInfo.bindingFileSchema.newValidator();
             v.setErrorHandler(errorReceiver);

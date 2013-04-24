@@ -384,7 +384,7 @@ class UnixAsynchronousSocketChannelImpl
             if (scattering) {
                 n = (int)IOUtil.read(fd, readBuffers, nd);
             } else {
-                n = IOUtil.read(fd, readBuffer, -1, nd, null);
+                n = IOUtil.read(fd, readBuffer, -1, nd);
             }
             if (n == IOStatus.UNAVAILABLE) {
                 // spurious wakeup, is this possible?
@@ -505,7 +505,7 @@ class UnixAsynchronousSocketChannelImpl
                 if (isScatteringRead) {
                     n = (int)IOUtil.read(fd, dsts, nd);
                 } else {
-                    n = IOUtil.read(fd, dst, -1, nd, null);
+                    n = IOUtil.read(fd, dst, -1, nd);
                 }
             }
 
@@ -579,7 +579,7 @@ class UnixAsynchronousSocketChannelImpl
             if (gathering) {
                 n = (int)IOUtil.write(fd, writeBuffers, nd);
             } else {
-                n = IOUtil.write(fd, writeBuffer, -1, nd, null);
+                n = IOUtil.write(fd, writeBuffer, -1, nd);
             }
             if (n == IOStatus.UNAVAILABLE) {
                 // spurious wakeup, is this possible?
@@ -688,7 +688,7 @@ class UnixAsynchronousSocketChannelImpl
                 if (isGatheringWrite) {
                     n = (int)IOUtil.write(fd, srcs, nd);
                 } else {
-                    n = IOUtil.write(fd, src, -1, nd, null);
+                    n = IOUtil.write(fd, src, -1, nd);
                 }
             }
 

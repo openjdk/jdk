@@ -64,6 +64,7 @@ package java.time.zone;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.util.Arrays;
@@ -75,7 +76,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipFile;
 
 /**
  * Loads time-zone rules for 'TZDB'.
@@ -106,10 +106,8 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
     public TzdbZoneRulesProvider() {
         try {
             String libDir = System.getProperty("java.home") + File.separator + "lib";
-            File tzdbJar = new File(libDir, "tzdb.jar");
-            try (ZipFile zf = new ZipFile(tzdbJar);
-                 DataInputStream dis = new DataInputStream(
-                     zf.getInputStream(zf.getEntry("TZDB.dat")))) {
+            try (DataInputStream dis = new DataInputStream(
+                     new FileInputStream(new File(libDir, "tzdb.dat")))) {
                 load(dis);
             }
         } catch (Exception ex) {

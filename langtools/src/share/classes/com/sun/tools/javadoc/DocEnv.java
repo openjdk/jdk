@@ -810,6 +810,8 @@ public class DocEnv {
 
         JavacTask t = BasicJavacTask.instance(context);
         doclint = new DocLint();
+        // standard doclet normally generates H1, H2
+        doclintOpts.add(DocLint.XIMPLICIT_HEADERS + "2");
         doclint.init(t, doclintOpts.toArray(new String[doclintOpts.size()]), false);
     }
 

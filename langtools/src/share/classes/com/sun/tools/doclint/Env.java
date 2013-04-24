@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,8 @@ public class Env {
     /** Message handler. */
     final Messages messages;
 
+    int implicitHeaderLevel = 0;
+
     // Utility classes
     DocTrees trees;
     Elements elements;
@@ -102,7 +104,7 @@ public class Env {
     DocCommentTree currDocComment;
     /**
      * The access kind of the declaration containing the comment currently being analyzed.
-     * This is the minimum (most restrictive) access kind of the declaration iteself
+     * This is the minimum (most restrictive) access kind of the declaration itself
      * and that of its containers. For example, a public method in a private class is
      * noted as private.
      */
@@ -126,6 +128,10 @@ public class Env {
         java_lang_RuntimeException = elements.getTypeElement("java.lang.RuntimeException").asType();
         java_lang_Throwable = elements.getTypeElement("java.lang.Throwable").asType();
         java_lang_Void = elements.getTypeElement("java.lang.Void").asType();
+    }
+
+    void setImplicitHeaders(int n) {
+        implicitHeaderLevel = n;
     }
 
     /** Set the current declaration and its doc comment. */

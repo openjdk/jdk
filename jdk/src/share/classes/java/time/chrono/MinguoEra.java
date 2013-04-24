@@ -24,6 +24,11 @@
  */
 
 /*
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file:
+ *
  * Copyright (c) 2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -65,7 +70,34 @@ import java.time.DateTimeException;
  * An era in the Minguo calendar system.
  * <p>
  * The Minguo calendar system has two eras.
- * The date {@code 0001-01-01 (Minguo)} is equal to {@code 1912-01-01 (ISO)}.
+ * The current era, for years from 1 onwards, is known as the 'Republic of China' era.
+ * All previous years, zero or earlier in the proleptic count or one and greater
+ * in the year-of-era count, are part of the 'Before Republic of China' era.
+ * <p>
+ * <table summary="Minguo years and eras" cellpadding="2" cellspacing="3" border="0" >
+ * <thead>
+ * <tr class="tableSubHeadingColor">
+ * <th class="colFirst" align="left">year-of-era</th>
+ * <th class="colFirst" align="left">era</th>
+ * <th class="colFirst" align="left">proleptic-year</th>
+ * <th class="colLast" align="left">ISO proleptic-year</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr class="rowColor">
+ * <td>2</td><td>ROC</td><td>2</td><td>1913</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td>1</td><td>ROC</td><td>1</td><td>1912</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td>1</td><td>BEFORE_ROC</td><td>0</td><td>1911</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td>2</td><td>BEFORE_ROC</td><td>-1</td><td>1910</td>
+ * </tr>
+ * </tbody>
+ * </table>
  * <p>
  * <b>Do not use {@code ordinal()} to obtain the numeric representation of {@code MinguoEra}.
  * Use {@code getValue()} instead.</b>
@@ -75,16 +107,16 @@ import java.time.DateTimeException;
  *
  * @since 1.8
  */
-enum MinguoEra implements Era  {
+public enum MinguoEra implements Era {
 
     /**
-     * The singleton instance for the era BEFORE_ROC, 'Before Republic of China'.
-     * This has the numeric value of {@code 0}.
+     * The singleton instance for the era before the current one, 'Before Republic of China Era',
+     * which has the numeric value 0.
      */
     BEFORE_ROC,
     /**
-     * The singleton instance for the era ROC, 'Republic of China'.
-     * This has the numeric value of {@code 1}.
+     * The singleton instance for the current era, 'Republic of China Era',
+     * which has the numeric value 1.
      */
     ROC;
 
@@ -95,18 +127,18 @@ enum MinguoEra implements Era  {
      * {@code MinguoEra} is an enum representing the Minguo eras of BEFORE_ROC/ROC.
      * This factory allows the enum to be obtained from the {@code int} value.
      *
-     * @param era  the BEFORE_ROC/ROC value to represent, from 0 (BEFORE_ROC) to 1 (ROC)
+     * @param minguoEra  the BEFORE_ROC/ROC value to represent, from 0 (BEFORE_ROC) to 1 (ROC)
      * @return the era singleton, not null
      * @throws DateTimeException if the value is invalid
      */
-    public static MinguoEra of(int era) {
-        switch (era) {
+    public static MinguoEra of(int minguoEra) {
+        switch (minguoEra) {
             case 0:
                 return BEFORE_ROC;
             case 1:
                 return ROC;
             default:
-                throw new DateTimeException("Invalid era: " + era);
+                throw new DateTimeException("Invalid era: " + minguoEra);
         }
     }
 
@@ -123,24 +155,7 @@ enum MinguoEra implements Era  {
         return ordinal();
     }
 
-    @Override
-    public MinguoChronology getChronology() {
-        return MinguoChronology.INSTANCE;
-    }
-
-    // JDK8 default methods:
     //-----------------------------------------------------------------------
-    @Override
-    public MinguoDate date(int year, int month, int day) {
-        return (MinguoDate)(getChronology().date(this, year, month, day));
-    }
-
-    @Override
-    public MinguoDate dateYearDay(int year, int dayOfYear) {
-        return (MinguoDate)(getChronology().dateYearDay(this, year, dayOfYear));
-    }
-
-    //-------------------------------------------------------------------------
     private Object writeReplace() {
         return new Ser(Ser.MINGUO_ERA_TYPE, this);
     }

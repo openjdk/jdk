@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@ import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.pipe.helper.PipeAdapter;
 import com.sun.xml.internal.ws.api.server.Container;
+import com.sun.xml.internal.ws.assembler.MetroTubelineAssembler;
 import com.sun.xml.internal.ws.util.ServiceFinder;
-import com.sun.xml.internal.ws.util.pipe.StandaloneTubeAssembler;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 
@@ -85,15 +86,16 @@ public abstract class TubelineAssemblerFactory {
             TubelineAssemblerFactory taf = container.getSPI(TubelineAssemblerFactory.class);
             if(taf!=null) {
                 TubelineAssembler a = taf.doCreate(bindingId);
-                if(a!=null)
+                if (a != null) {
                     return a;
+                }
             }
         }
 
         for (TubelineAssemblerFactory factory : ServiceFinder.find(TubelineAssemblerFactory.class, classLoader)) {
             TubelineAssembler assembler = factory.doCreate(bindingId);
             if (assembler != null) {
-                TubelineAssemblerFactory.logger.fine(factory.getClass() + " successfully created " + assembler);
+                TubelineAssemblerFactory.logger.log(Level.FINE, "{0} successfully created {1}", new Object[]{factory.getClass(), assembler});
                 return assembler;
             }
         }
@@ -102,13 +104,13 @@ public abstract class TubelineAssemblerFactory {
         for (PipelineAssemblerFactory factory : ServiceFinder.find(PipelineAssemblerFactory.class,classLoader)) {
             PipelineAssembler assembler = factory.doCreate(bindingId);
             if(assembler!=null) {
-                logger.fine(factory.getClass()+" successfully created "+assembler);
+                logger.log(Level.FINE, "{0} successfully created {1}", new Object[]{factory.getClass(), assembler});
                 return new TubelineAssemblerAdapter(assembler);
             }
         }
 
         // default binding IDs that are known
-        return new StandaloneTubeAssembler();
+        return new MetroTubelineAssembler(bindingId, MetroTubelineAssembler.JAXWS_TUBES_CONFIG_NAMES);
     }
 
     private static class TubelineAssemblerAdapter implements TubelineAssembler {
@@ -118,6 +120,7 @@ public abstract class TubelineAssemblerFactory {
             this.assembler = assembler;
         }
 
+        @Override
         public @NotNull Tube createClient(@NotNull ClientTubeAssemblerContext context) {
             ClientPipeAssemblerContext ctxt = new ClientPipeAssemblerContext(
                     context.getAddress(), context.getWsdlModel(), context.getService(),
@@ -125,7 +128,11 @@ public abstract class TubelineAssemblerFactory {
             return PipeAdapter.adapt(assembler.createClient(ctxt));
         }
 
+        @Override
         public @NotNull Tube createServer(@NotNull ServerTubeAssemblerContext context) {
+            if (!(context instanceof ServerPipeAssemblerContext)) {
+                throw new IllegalArgumentException("{0} is not instance of ServerPipeAssemblerContext");
+            }
             return PipeAdapter.adapt(assembler.createServer((ServerPipeAssemblerContext) context));
         }
     }

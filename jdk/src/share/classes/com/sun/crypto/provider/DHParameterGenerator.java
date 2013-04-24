@@ -151,7 +151,8 @@ extends AlgorithmParameterGeneratorSpi {
                 dhParamSpec = new DHParameterSpec(dsaParamSpec.getP(),
                                                   dsaParamSpec.getG());
             }
-            algParams = AlgorithmParameters.getInstance("DH", "SunJCE");
+            algParams = AlgorithmParameters.getInstance("DH",
+                    SunJCE.getInstance());
             algParams.init(dhParamSpec);
         } catch (InvalidParameterSpecException e) {
             // this should never happen
@@ -159,11 +160,7 @@ extends AlgorithmParameterGeneratorSpi {
         } catch (NoSuchAlgorithmException e) {
             // this should never happen, because we provide it
             throw new RuntimeException(e.getMessage());
-        } catch (NoSuchProviderException e) {
-            // this should never happen, because we provide it
-            throw new RuntimeException(e.getMessage());
         }
-
         return algParams;
     }
 }

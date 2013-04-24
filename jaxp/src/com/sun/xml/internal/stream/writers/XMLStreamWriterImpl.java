@@ -53,6 +53,7 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.PropertyManager;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.QName;
 
 import com.sun.xml.internal.stream.util.ReadOnlyIterator;
@@ -340,7 +341,7 @@ public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamW
                 fEncoder = Charset.forName(encoding).newEncoder();
             }
         } else {
-            encoding = System.getProperty("file.encoding");
+            encoding = SecuritySupport.getSystemProperty("file.encoding");
             if (encoding != null && encoding.equalsIgnoreCase("utf-8")) {
                 fWriter = new UTF8OutputStreamWriter(os);
             } else {

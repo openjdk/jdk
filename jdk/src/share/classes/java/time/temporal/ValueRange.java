@@ -305,11 +305,7 @@ public final class ValueRange implements Serializable {
      */
     public long checkValidValue(long value, TemporalField field) {
         if (isValidValue(value) == false) {
-            if (field != null) {
-                throw new DateTimeException("Invalid value for " + field.getName() + " (valid values " + this + "): " + value);
-            } else {
-                throw new DateTimeException("Invalid value (valid values " + this + "): " + value);
-            }
+            throw new DateTimeException(genInvalidFieldMessage(field, value));
         }
         return value;
     }
@@ -328,9 +324,17 @@ public final class ValueRange implements Serializable {
      */
     public int checkValidIntValue(long value, TemporalField field) {
         if (isValidIntValue(value) == false) {
-            throw new DateTimeException("Invalid int value for " + field.getName() + ": " + value);
+            throw new DateTimeException(genInvalidFieldMessage(field, value));
         }
         return (int) value;
+    }
+
+    private String genInvalidFieldMessage(TemporalField field, long value) {
+        if (field != null) {
+            return "Invalid value for " + field.getName() + " (valid values " + this + "): " + value;
+        } else {
+            return "Invalid value (valid values " + this + "): " + value;
+        }
     }
 
     //-----------------------------------------------------------------------

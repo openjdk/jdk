@@ -83,10 +83,9 @@ public final class NGCCRuntimeEx extends NGCCRuntime {
      * @return
      *        A list of regular expression patterns {@link Pattern}
      */
-    public List<Pattern> getIncludePatterns(List includeContent ) {
+    public List<Pattern> getIncludePatterns(List<String> includeContent ) {
         List<Pattern> includeRegexList = new ArrayList<Pattern>();
-        for (int i = 0 ; i < includeContent.size(); i ++){
-            String includes = (String)includeContent.get(i);
+        for (String includes : includeContent) {
             String regex = convertToRegex(includes);
             Pattern pattern = Pattern.compile(regex);
             includeRegexList.add(pattern);
@@ -103,10 +102,9 @@ public final class NGCCRuntimeEx extends NGCCRuntime {
      * @return
      *        A list of regular expression patterns {@link Pattern}
      */
-    public List getExcludePatterns(List excludeContent ) {
-        List excludeRegexList = new ArrayList();
-        for (int i = 0 ; i < excludeContent.size(); i ++){
-            String excludes = (String)excludeContent.get(i);
+    public List getExcludePatterns(List<String> excludeContent ) {
+        List<Pattern> excludeRegexList = new ArrayList<Pattern>();
+        for (String excludes : excludeContent) {
             String regex = convertToRegex(excludes);
             Pattern pattern = Pattern.compile(regex);
             excludeRegexList.add(pattern);
@@ -126,17 +124,16 @@ public final class NGCCRuntimeEx extends NGCCRuntime {
 
             for ( int i = 0 ; i < pattern.length(); i ++ ) {
                 char c = pattern.charAt(i);
-                int j = i;
                 nc = ' ';
-                if ((j+1) != pattern.length()) {
-                    nc = pattern.charAt(j+1);
+                if ((i +1) != pattern.length()) {
+                    nc = pattern.charAt(i +1);
                 }
                 //escape single '.'
-                if ((c=='.') && ( nc !='.')){
+                if (c == '.' &&  nc != '.'){
                     regex.append('\\');
                     regex.append('.');
                     //do not allow patterns like a..b
-                } else if ((c=='.') && ( nc =='.')){
+                } else if (c == '.'){
                     continue;
                     // "**" gets replaced by ".*"
                 } else if ((c=='*') && (nc == '*')) {
