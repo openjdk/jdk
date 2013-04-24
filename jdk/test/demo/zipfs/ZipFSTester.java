@@ -138,13 +138,30 @@ public class ZipFSTester {
             Path dst3 = Paths.get(tmpName + "_Tmp");
             Files.move(dst2, dst3);
             checkEqual(src, dst3);
+            if (Files.exists(dst2))
+                throw new RuntimeException("Failed!");
+
+            // copyback + move
+            Files.copy(dst3, dst);
+            Path dst4 = getPathWithParents(fs, tmpName + "_Tmp0");
+            Files.move(dst, dst4);
+            checkEqual(src, dst4);
 
             // delete
-            if (Files.exists(dst2))
+            Files.delete(dst4);
+            if (Files.exists(dst4))
                 throw new RuntimeException("Failed!");
             Files.delete(dst3);
             if (Files.exists(dst3))
                 throw new RuntimeException("Failed!");
+
+            // move (existing entry)
+            Path dst5 = fs.getPath("META-INF/MANIFEST.MF");
+            if (Files.exists(dst5)) {
+                Path dst6 = fs.getPath("META-INF/MANIFEST.MF_TMP");
+                Files.move(dst5, dst6);
+                walk(fs.getPath("/"));
+            }
 
             // newInputStream on dir
             Path parent = dst2.getParent();

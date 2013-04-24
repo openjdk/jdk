@@ -59,8 +59,6 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
@@ -68,7 +66,7 @@ import org.testng.annotations.Test;
 /**
  * Test StringLiteralPrinterParser.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestStringLiteralPrinter extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------

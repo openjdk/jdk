@@ -63,6 +63,10 @@ class PrimitiveType implements com.sun.javadoc.Type {
         return name;
     }
 
+    public com.sun.javadoc.Type getElementType() {
+        return null;
+    }
+
     /**
      * Return qualified name of type excluding any dimension information.
      *<p>

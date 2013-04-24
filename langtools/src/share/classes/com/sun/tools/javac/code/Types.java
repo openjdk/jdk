@@ -589,7 +589,7 @@ public class Types {
                             CapturedType capVar = (CapturedType)capturedTypeargs.head;
                             //use declared bound if it doesn't depend on formal type-args
                             bound = capVar.bound.containsAny(capturedSite.getTypeArguments()) ?
-                                    syms.objectType : capVar.bound;
+                                    wt.type : capVar.bound;
                             break;
                         default:
                             bound = wt.type;

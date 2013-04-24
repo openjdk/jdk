@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,25 @@ public class CipherTest {
             CS_15("TLS_DH_anon_WITH_AES_256_CBC_SHA256",     0x0303, 0xFFFF),
             CS_16("TLS_DH_anon_WITH_AES_128_CBC_SHA256",     0x0303, 0xFFFF),
             CS_17("TLS_RSA_WITH_NULL_SHA256",                0x0303, 0xFFFF),
+
+            CS_20("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", 0x0303, 0xFFFF),
+            CS_21("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", 0x0303, 0xFFFF),
+            CS_22("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",   0x0303, 0xFFFF),
+            CS_23("TLS_RSA_WITH_AES_256_GCM_SHA384",         0x0303, 0xFFFF),
+            CS_24("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",  0x0303, 0xFFFF),
+            CS_25("TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",    0x0303, 0xFFFF),
+            CS_26("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",     0x0303, 0xFFFF),
+            CS_27("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",     0x0303, 0xFFFF),
+
+            CS_28("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",   0x0303, 0xFFFF),
+            CS_29("TLS_RSA_WITH_AES_128_GCM_SHA256",         0x0303, 0xFFFF),
+            CS_30("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",  0x0303, 0xFFFF),
+            CS_31("TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",    0x0303, 0xFFFF),
+            CS_32("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",     0x0303, 0xFFFF),
+            CS_33("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",     0x0303, 0xFFFF),
+
+            CS_34("TLS_DH_anon_WITH_AES_256_GCM_SHA384",     0x0303, 0xFFFF),
+            CS_35("TLS_DH_anon_WITH_AES_128_GCM_SHA256",     0x0303, 0xFFFF),
 
             // cipher suites obsoleted since TLS 1.2
             CS_50("SSL_RSA_WITH_DES_CBC_SHA",                0x0000, 0x0303),
