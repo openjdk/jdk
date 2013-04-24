@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,6 @@
 /**
  * APIs for hosting JAX-WS services.
  *
- * If you are new to the code, start with {@link WSEndpoint}.
+ * If you are new to the code, start with {@link com.sun.xml.internal.ws.api.server.WSEndpoint}.
  */
 package com.sun.xml.internal.ws.api.server;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
     // unused methods.  Overridden to disable this functionality as
     // it requires HWND which is not available for FileDialog
-    public void setAlwaysOnTop(boolean value) {}
+    public void updateAlwaysOnTopState() {}
     public void setDirectory(String dir) {}
     public void setFile(String file) {}
     public void setTitle(String title) {}

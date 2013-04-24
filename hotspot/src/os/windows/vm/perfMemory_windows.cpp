@@ -1581,7 +1581,7 @@ static void open_file_mapping(const char* user, int vmid,
   ResourceMark rm;
 
   void *mapAddress = 0;
-  size_t size;
+  size_t size = 0;
   HANDLE fmh;
   DWORD ofm_access;
   DWORD mv_access;
@@ -1652,8 +1652,11 @@ static void open_file_mapping(const char* user, int vmid,
 
   if (*sizep == 0) {
     size = sharedmem_filesize(rfilename, CHECK);
-    assert(size != 0, "unexpected size");
+  } else {
+    size = *sizep;
   }
+
+  assert(size > 0, "unexpected size <= 0");
 
   // Open the file mapping object with the given name
   fmh = open_sharedmem_object(robjectname, ofm_access, CHECK);

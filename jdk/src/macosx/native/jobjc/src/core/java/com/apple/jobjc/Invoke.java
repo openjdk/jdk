@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,13 @@ import com.apple.jobjc.Coder.PrimitivePointerCoder;
 import com.apple.jobjc.Coder.SELCoder;
 import com.apple.jobjc.Coder.StructCoder;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public abstract class Invoke {
     public abstract void invoke(NativeArgumentBuffer argBuf);
     public abstract void invoke(NativeArgumentBuffer buffer, Struct retvalStruct);
 
     //
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class FunCall extends Invoke{
         static native void invoke(long cifPtr, long fxnPtr, long retValPtr, long argsPtr);
 
@@ -78,8 +73,6 @@ public abstract class Invoke {
         }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class MsgSend extends Invoke{
         static{ System.load("/usr/lib/libobjc.dylib"); }
 
@@ -165,8 +158,6 @@ public abstract class Invoke {
         }
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static final class MsgSendSuper extends Invoke{
         static{ System.load("/usr/lib/libobjc.dylib"); }
 

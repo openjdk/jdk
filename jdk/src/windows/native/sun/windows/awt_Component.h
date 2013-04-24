@@ -37,7 +37,6 @@
 #include "java_awt_Component.h"
 #include "sun_awt_windows_WComponentPeer.h"
 #include "java_awt_event_KeyEvent.h"
-#include "java_awt_event_FocusEvent.h"
 #include "java_awt_event_MouseEvent.h"
 #include "java_awt_event_WindowEvent.h"
 #include "java_awt_Dimension.h"

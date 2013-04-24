@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,16 +81,23 @@ final class ImageCache {
         }
     }
 
-    public Image getImage(final GraphicsConfiguration config, final int w, final int h, final JRSUIState state) {
+    public Image getImage(final GraphicsConfiguration config, final int w,
+                          final int h, final int scale,
+                          final JRSUIState state) {
+        final int hash = hash(config, w, h, scale, state);
+        final PixelCountSoftReference ref;
         lock.readLock().lock();
         try {
-            final PixelCountSoftReference ref = map.get(hash(config, w, h, state));
-            // check reference has not been lost and the key truly matches, in case of false positive hash match
-            if (ref != null && ref.equals(config, w, h, state)) return ref.get();
-            return null;
+            ref = map.get(hash);
         } finally {
             lock.readLock().unlock();
         }
+        // check reference has not been lost and the key truly matches,
+        // in case of false positive hash match
+        if (ref != null && ref.equals(config, w, h, scale, state)) {
+            return ref.get();
+        }
+        return null;
     }
 
     /**
@@ -100,14 +107,17 @@ final class ImageCache {
      * @param config The graphics configuration, needed if cached image is a Volatile Image. Used as part of cache key
      * @param w      The image width, used as part of cache key
      * @param h      The image height, used as part of cache key
+     * @param scale  The image scale factor, used as part of cache key
      * @return true if the image could be cached, false otherwise.
      */
-    public boolean setImage(final Image image, final GraphicsConfiguration config, final int w, final int h, final JRSUIState state) {
+    public boolean setImage(final Image image,
+            final GraphicsConfiguration config, final int w, final int h,
+            final int scale, final JRSUIState state) {
         if (state.is(JRSUIConstants.Animating.YES)) {
             return false;
         }
 
-        final int hash = hash(config, w, h, state);
+        final int hash = hash(config, w, h, scale, state);
 
         lock.writeLock().lock();
         try {
@@ -145,44 +155,60 @@ final class ImageCache {
                 }
             }
             // finally put new in map
-            map.put(hash, new PixelCountSoftReference(image, referenceQueue, newPixelCount, hash, config, w, h, state));
+            map.put(hash, new PixelCountSoftReference(image, referenceQueue, newPixelCount, hash, config, w, h, scale, state));
             return true;
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    private int hash(final GraphicsConfiguration config, final int w, final int h, final JRSUIState state) {
-        int hash = (config != null ? config.hashCode() : 0);
+    private static int hash(final GraphicsConfiguration config, final int w,
+                            final int h, final int scale,
+                            final JRSUIState state) {
+        int hash = config != null ? config.hashCode() : 0;
         hash = 31 * hash + w;
         hash = 31 * hash + h;
+        hash = 31 * hash + scale;
         hash = 31 * hash + state.hashCode();
         return hash;
     }
 
-    /** Extended SoftReference that stores the pixel count even after the image is lost */
+    /**
+     * Extended SoftReference that stores the pixel count even after the image
+     * is lost.
+     */
     private static class PixelCountSoftReference extends SoftReference<Image> {
-        private final int pixelCount;
-        private final int hash;
+
+        // default access, because access to these fields shouldn't be emulated
+        // by a synthetic accessor.
+        final int pixelCount;
+        final int hash;
 
         // key parts
         private final GraphicsConfiguration config;
         private final int w;
         private final int h;
+        private final int scale;
         private final JRSUIState state;
 
-        PixelCountSoftReference(final Image referent, final ReferenceQueue<? super Image> q, final int pixelCount, final int hash, final GraphicsConfiguration config, final int w, final int h, final JRSUIState state) {
+        PixelCountSoftReference(final Image referent,
+                final ReferenceQueue<? super Image> q, final int pixelCount,
+                final int hash, final GraphicsConfiguration config, final int w,
+                final int h, final int scale, final JRSUIState state) {
             super(referent, q);
             this.pixelCount = pixelCount;
             this.hash = hash;
             this.config = config;
             this.w = w;
             this.h = h;
+            this.scale = scale;
             this.state = state;
         }
 
-        public boolean equals(final GraphicsConfiguration config, final int w, final int h, final JRSUIState state) {
-            return config == this.config && w == this.w && h == this.h && state.equals(this.state);
+        boolean equals(final GraphicsConfiguration config, final int w,
+                       final int h, final int scale, final JRSUIState state) {
+            return config == this.config && w == this.w && h == this.h
+                    && scale == this.scale && state.equals(this.state);
         }
     }
 

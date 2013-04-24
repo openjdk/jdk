@@ -79,11 +79,11 @@
 
 package sun.text.resources.el;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_el extends ListResourceBundle {
+public class FormatData_el extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
@@ -143,6 +143,57 @@ public class FormatData_el extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "\u0399\u03b1\u03bd",
+                    "\u03a6\u03b5\u03b2",
+                    "\u039c\u03ac\u03c1",
+                    "\u0391\u03c0\u03c1",
+                    "\u039c\u03ac\u03b9",
+                    "\u0399\u03bf\u03cd\u03bd",
+                    "\u0399\u03bf\u03cd\u03bb",
+                    "\u0391\u03c5\u03b3",
+                    "\u03a3\u03b5\u03c0",
+                    "\u039f\u03ba\u03c4",
+                    "\u039d\u03bf\u03ad",
+                    "\u0394\u03b5\u03ba",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "\u0399",
+                    "\u03a6",
+                    "\u039c",
+                    "\u0391",
+                    "\u039c",
+                    "\u0399",
+                    "\u0399",
+                    "\u0391",
+                    "\u03a3",
+                    "\u039f",
+                    "\u039d",
+                    "\u0394",
+                    "",
+                }
+            },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "\u0399",
+                    "\u03a6",
+                    "\u039c",
+                    "\u0391",
+                    "\u039c",
+                    "\u0399",
+                    "\u0399",
+                    "\u0391",
+                    "\u03a3",
+                    "\u039f",
+                    "\u039d",
+                    "\u0394",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "\u039a\u03c5\u03c1\u03b9\u03b1\u03ba\u03ae", // Sunday
@@ -152,6 +203,17 @@ public class FormatData_el extends ListResourceBundle {
                     "\u03a0\u03ad\u03bc\u03c0\u03c4\u03b7", // Thursday
                     "\u03a0\u03b1\u03c1\u03b1\u03c3\u03ba\u03b5\u03c5\u03ae", // Friday
                     "\u03a3\u03ac\u03b2\u03b2\u03b1\u03c4\u03bf" // Saturday
+                }
+            },
+            { "standalone.DayNames",
+                new String[] {
+                    "\u039a\u03c5\u03c1\u03b9\u03b1\u03ba\u03ae",
+                    "\u0394\u03b5\u03c5\u03c4\u03ad\u03c1\u03b1",
+                    "\u03a4\u03c1\u03af\u03c4\u03b7",
+                    "\u03a4\u03b5\u03c4\u03ac\u03c1\u03c4\u03b7",
+                    "\u03a0\u03ad\u03bc\u03c0\u03c4\u03b7",
+                    "\u03a0\u03b1\u03c1\u03b1\u03c3\u03ba\u03b5\u03c5\u03ae",
+                    "\u03a3\u03ac\u03b2\u03b2\u03b1\u03c4\u03bf",
                 }
             },
             { "DayAbbreviations",
@@ -165,6 +227,17 @@ public class FormatData_el extends ListResourceBundle {
                     "\u03a3\u03b1\u03b2" // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "\u039a\u03c5\u03c1",
+                    "\u0394\u03b5\u03c5",
+                    "\u03a4\u03c1\u03af",
+                    "\u03a4\u03b5\u03c4",
+                    "\u03a0\u03ad\u03bc",
+                    "\u03a0\u03b1\u03c1",
+                    "\u03a3\u03ac\u03b2",
+                }
+            },
             { "DayNarrows",
                 new String[] {
                     "\u039a",
@@ -174,6 +247,23 @@ public class FormatData_el extends ListResourceBundle {
                     "\u03a0",
                     "\u03a0",
                     "\u03a3",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "\u039a",
+                    "\u0394",
+                    "\u03a4",
+                    "\u03a4",
+                    "\u03a0",
+                    "\u03a0",
+                    "\u03a3",
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "\u03c0.\u03a7.",
+                    "\u03bc.\u03a7.",
                 }
             },
             { "AmPmMarkers",
@@ -219,58 +309,6 @@ public class FormatData_el extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM, y G",
-                    "d MMMM, y G",
-                    "d MMM, y G",
-                    "d/M/yyyy",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM, y G",
-                    "d MMMM, y G",
-                    "d MMM, y G",
-                    "d/M/yy",
-                }
-            },
-            { "roc.Eras", rocEras },
-            { "roc.short.Eras", rocEras },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM, y G",
-                    "d MMMM, y G",
-                    "d MMM, y G",
-                    "d/M/y G",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM, y GGGG",
-                    "d MMMM, y GGGG",
-                    "d MMM, y GGGG",
-                    "d/M/y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "\u0399\u03c3\u03bb\u03b1\u03bc\u03b9\u03ba\u03cc \u03b1\u03c3\u03c4\u03b9\u03ba\u03cc \u03b7\u03bc\u03b5\u03c1\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf" },
-            { "calendarname.islamicc", "\u0399\u03c3\u03bb\u03b1\u03bc\u03b9\u03ba\u03cc \u03b1\u03c3\u03c4\u03b9\u03ba\u03cc \u03b7\u03bc\u03b5\u03c1\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf" },
-            { "calendarname.islamic", "\u0399\u03c3\u03bb\u03b1\u03bc\u03b9\u03ba\u03cc \u03b7\u03bc\u03b5\u03c1\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf" },
-            { "calendarname.japanese", "\u0399\u03b1\u03c0\u03c9\u03bd\u03b9\u03ba\u03cc \u03b7\u03bc\u03b5\u03c1\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf" },
-            { "calendarname.gregorian", "\u0393\u03c1\u03b7\u03b3\u03bf\u03c1\u03b9\u03b1\u03bd\u03cc \u03b7\u03bc\u03b5\u03c1\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf" },
-            { "calendarname.gregory", "\u0393\u03c1\u03b7\u03b3\u03bf\u03c1\u03b9\u03b1\u03bd\u03cc \u03b7\u03bc\u03b5\u03c1\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf" },
-            { "calendarname.roc", "\u0397\u03bc\u03b5\u03c1\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf \u03c4\u03b7\u03c2 \u0394\u03b7\u03bc\u03bf\u03ba\u03c1\u03b1\u03c4\u03af\u03b1\u03c2 \u03c4\u03b7\u03c2 \u039a\u03af\u03bd\u03b1\u03c2" },
-            { "calendarname.buddhist", "\u0392\u03bf\u03c5\u03b4\u03b9\u03c3\u03c4\u03b9\u03ba\u03cc \u03b7\u03bc\u03b5\u03c1\u03bf\u03bb\u03cc\u03b3\u03b9\u03bf" },
-            { "field.era", "\u03a0\u03b5\u03c1\u03af\u03bf\u03b4\u03bf\u03c2" },
-            { "field.year", "\u0388\u03c4\u03bf\u03c2" },
-            { "field.month", "\u039c\u03ae\u03bd\u03b1\u03c2" },
-            { "field.week", "\u0395\u03b2\u03b4\u03bf\u03bc\u03ac\u03b4\u03b1" },
-            { "field.weekday", "\u0397\u03bc\u03ad\u03c1\u03b1 \u03b5\u03b2\u03b4\u03bf\u03bc\u03ac\u03b4\u03b1\u03c2" },
-            { "field.dayperiod", "\u03c0.\u03bc./\u03bc.\u03bc." },
-            { "field.hour", "\u038f\u03c1\u03b1" },
-            { "field.minute", "\u039b\u03b5\u03c0\u03c4\u03cc" },
-            { "field.second", "\u0394\u03b5\u03c5\u03c4\u03b5\u03c1\u03cc\u03bb\u03b5\u03c0\u03c4\u03bf" },
-            { "field.zone", "\u0396\u03ce\u03bd\u03b7" },
         };
     }
 }

@@ -79,11 +79,11 @@
 
 package sun.text.resources.ca;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_ca extends ListResourceBundle {
+public class FormatData_ca extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -101,6 +101,23 @@ public class FormatData_ca extends ListResourceBundle {
                     "d\u2019octubre",
                     "de novembre",
                     "de desembre",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "G",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "G",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
                     "",
                 }
             },
@@ -183,6 +200,17 @@ public class FormatData_ca extends ListResourceBundle {
                     "dissabte" // Saturday
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "Diumenge",
+                    "Dilluns",
+                    "Dimarts",
+                    "Dimecres",
+                    "Dijous",
+                    "Divendres",
+                    "Dissabte",
+                }
+            },
             { "DayAbbreviations",
                 new String[] {
                     "dg.", // abb Sunday
@@ -192,6 +220,17 @@ public class FormatData_ca extends ListResourceBundle {
                     "dj.", // abb Thursday
                     "dv.", // abb Friday
                     "ds." // abb Saturday
+                }
+            },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "dg",
+                    "dl",
+                    "dt",
+                    "dc",
+                    "dj",
+                    "dv",
+                    "ds",
                 }
             },
             { "DayNarrows",
@@ -214,6 +253,12 @@ public class FormatData_ca extends ListResourceBundle {
                     "j",
                     "v",
                     "s",
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "aC",
+                    "dC",
                 }
             },
             { "NumberElements",
@@ -253,24 +298,6 @@ public class FormatData_ca extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GuMtkHmsSEDFwWahKzZ" },
-            { "calendarname.islamic-civil", "calendari civil isl\u00e0mic" },
-            { "calendarname.islamicc", "calendari civil isl\u00e0mic" },
-            { "calendarname.roc", "calendari de la Rep\u00fablica de Xina" },
-            { "calendarname.islamic", "calendari musulm\u00e0" },
-            { "calendarname.buddhist", "calendari budista" },
-            { "calendarname.japanese", "calendari japon\u00e8s" },
-            { "calendarname.gregorian", "calendari gregori\u00e0" },
-            { "calendarname.gregory", "calendari gregori\u00e0" },
-            { "field.era", "era" },
-            { "field.year", "any" },
-            { "field.month", "mes" },
-            { "field.week", "setmana" },
-            { "field.weekday", "dia de la setmana" },
-            { "field.dayperiod", "a.m./p.m." },
-            { "field.hour", "hora" },
-            { "field.minute", "minut" },
-            { "field.second", "segon" },
-            { "field.zone", "zona" },
         };
     }
 }

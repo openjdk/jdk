@@ -46,8 +46,9 @@ class FileDispatcherImpl extends FileDispatcher
         return read0(fd, address, len);
     }
 
-    int pread(FileDescriptor fd, long address, int len,
-                             long position, Object lock) throws IOException {
+    int pread(FileDescriptor fd, long address, int len, long position)
+        throws IOException
+    {
         return pread0(fd, address, len, position);
     }
 
@@ -59,8 +60,8 @@ class FileDispatcherImpl extends FileDispatcher
         return write0(fd, address, len);
     }
 
-    int pwrite(FileDescriptor fd, long address, int len,
-                             long position, Object lock) throws IOException
+    int pwrite(FileDescriptor fd, long address, int len, long position)
+        throws IOException
     {
         return pwrite0(fd, address, len, position);
     }

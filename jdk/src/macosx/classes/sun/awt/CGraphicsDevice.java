@@ -219,6 +219,12 @@ public final class CGraphicsDevice extends GraphicsDevice {
         return nativeGetDisplayModes(displayID);
     }
 
+    public int getScaleFactor() {
+        return (int) nativeGetScaleFactor(displayID);
+    }
+
+    private static native double nativeGetScaleFactor(int displayID);
+
     private static native void nativeSetDisplayMode(int displayID, int w, int h, int bpp, int refrate);
 
     private static native DisplayMode nativeGetDisplayMode(int displayID);

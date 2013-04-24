@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,22 @@
 
 package com.sun.tools.internal.ws.wscompile;
 
-import com.sun.tools.internal.ws.resources.WscompileMessages;
 import com.sun.tools.internal.ws.api.WsgenExtension;
 import com.sun.tools.internal.ws.api.WsgenProtocol;
+import com.sun.tools.internal.ws.resources.WscompileMessages;
 import com.sun.xml.internal.ws.api.BindingID;
-import com.sun.xml.internal.ws.util.ServiceFinder;
 import com.sun.xml.internal.ws.binding.SOAPBindingImpl;
+import com.sun.xml.internal.ws.util.ServiceFinder;
 
 import javax.jws.WebService;
 import javax.xml.namespace.QName;
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Vivek Pandey
@@ -89,6 +94,12 @@ public class WsgenOptions extends Options {
      * Tells if user specified a specific protocol
      */
     public boolean protocolSet = false;
+
+    /**
+     * <code>-x file1 -x file2 ...<code/><br />
+     * Files to be parsed to get classes' metadata in addition/instead of using annotations and reflection API
+     */
+    public List<String> externalMetadataFiles = new ArrayList<String>();
 
     private static final String SERVICENAME_OPTION = "-servicename";
     private static final String PORTNAME_OPTION = "-portname";
@@ -163,6 +174,9 @@ public class WsgenOptions extends Options {
         } else if (args[i].equals("-inlineSchemas")) {
             inlineSchemas = true;
             return 1;
+        } else if ("-x".equals(args[i])) {
+            externalMetadataFiles.add(requireArgument("-x", args, ++i));
+            return 1;
         }
 
         return j;
@@ -180,7 +194,6 @@ public class WsgenOptions extends Options {
 
 
     private boolean isImplClass;
-    private boolean noWebServiceEndpoint;
 
     public void validate() throws BadCommandLineException {
         if(nonclassDestDir == null)
@@ -232,9 +245,6 @@ public class WsgenOptions extends Options {
         }
         if(!isImplClass){
             throw new BadCommandLineException(WscompileMessages.WSGEN_CLASS_MUST_BE_IMPLEMENTATION_CLASS(clazz.getName()));
-        }
-        if(noWebServiceEndpoint){
-            throw new BadCommandLineException(WscompileMessages.WSGEN_NO_WEBSERVICES_CLASS(clazz.getName()));
         }
         endpoint = clazz;
         validateBinding();

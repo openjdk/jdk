@@ -113,6 +113,8 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
     return res;
   }
 
+  void print_on_error(outputStream* st, const char* prefix) const;
+
   // debugging
   NOT_PRODUCT(bool covers(ReservedSpace rs) const;)
 };
@@ -828,6 +830,8 @@ public:
   void print_summary_info();
 
   void print_worker_threads_on(outputStream* st) const;
+
+  void print_on_error(outputStream* st) const;
 
   // The following indicate whether a given verbose level has been
   // set. Notice that anything above stats is conditional to

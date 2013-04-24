@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ final class WSHttpHandler implements HttpHandler {
     public void handle(HttpExchange msg) {
         try {
             if (fineTraceEnabled) {
-                LOGGER.fine("Received HTTP request:"+msg.getRequestURI());
+                LOGGER.log(Level.FINE, "Received HTTP request:{0}", msg.getRequestURI());
             }
             if (executor != null) {
                 // Use application's Executor to handle request. Application may
@@ -90,7 +90,7 @@ final class WSHttpHandler implements HttpHandler {
         WSHTTPConnection con = new ServerConnectionImpl(adapter,msg);
         try {
             if (fineTraceEnabled) {
-                LOGGER.fine("Received HTTP request:"+msg.getRequestURI());
+                LOGGER.log(Level.FINE, "Received HTTP request:{0}", msg.getRequestURI());
             }
             String method = msg.getRequestMethod();
             if(method.equals(GET_METHOD) || method.equals(POST_METHOD) || method.equals(HEAD_METHOD)
