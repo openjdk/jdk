@@ -148,7 +148,7 @@ public class ComponentSampleModel extends SampleModel
         this.pixelStride = pixelStride;
         this.scanlineStride  = scanlineStride;
         this.bandOffsets = (int[])bandOffsets.clone();
-        numBands = bandOffsets.length;
+        numBands = this.bandOffsets.length;
         if (pixelStride < 0) {
             throw new IllegalArgumentException("Pixel stride must be >= 0");
         }
@@ -223,24 +223,24 @@ public class ComponentSampleModel extends SampleModel
             (dataType > DataBuffer.TYPE_DOUBLE)) {
             throw new IllegalArgumentException("Unsupported dataType.");
         }
-        int maxBank = bankIndices[0];
+        int maxBank = this.bankIndices[0];
         if (maxBank < 0) {
             throw new IllegalArgumentException("Index of bank 0 is less than "+
                                                "0 ("+maxBank+")");
         }
-        for (int i=1; i < bankIndices.length; i++) {
-            if (bankIndices[i] > maxBank) {
-                maxBank = bankIndices[i];
+        for (int i=1; i < this.bankIndices.length; i++) {
+            if (this.bankIndices[i] > maxBank) {
+                maxBank = this.bankIndices[i];
             }
-            else if (bankIndices[i] < 0) {
+            else if (this.bankIndices[i] < 0) {
                 throw new IllegalArgumentException("Index of bank "+i+
                                                    " is less than 0 ("+
                                                    maxBank+")");
             }
         }
         numBanks         = maxBank+1;
-        numBands         = bandOffsets.length;
-        if (bandOffsets.length != bankIndices.length) {
+        numBands         = this.bandOffsets.length;
+        if (this.bandOffsets.length != this.bankIndices.length) {
             throw new IllegalArgumentException("Length of bandOffsets must "+
                                                "equal length of bankIndices.");
         }

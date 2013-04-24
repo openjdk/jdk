@@ -1387,7 +1387,8 @@ public class BytePackedRaster extends SunWritableRaster {
         }
 
         if (scanlineStride < 0 ||
-            scanlineStride > (Integer.MAX_VALUE / height))
+            scanlineStride > (Integer.MAX_VALUE / height) ||
+            scanlineStride > data.length)
         {
             throw new RasterFormatException("Invalid scanline stride");
         }

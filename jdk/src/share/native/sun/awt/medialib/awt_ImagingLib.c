@@ -1177,6 +1177,10 @@ static int lookupShortData(mlib_image* src, mlib_image* dst,
 
     static int indexes[NLUT] = INDEXES;
 
+    if (src->width != dst->width || src->height != dst->height) {
+        return 0;
+    }
+
     for (y=0; y < src->height; y++) {
         int nloop, nx;
         int npix = src->width;
