@@ -49,16 +49,19 @@ import com.sun.codemodel.internal.JExpr;
 import com.sun.codemodel.internal.JExpression;
 import com.sun.codemodel.internal.JType;
 import com.sun.tools.internal.xjc.model.nav.NClass;
+import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
+import com.sun.xml.internal.bind.v2.model.core.BuiltinLeafInfo;
+import com.sun.xml.internal.bind.v2.model.core.Element;
+import com.sun.xml.internal.bind.v2.model.core.LeafInfo;
+import com.sun.xml.internal.bind.v2.runtime.Location;
 import com.sun.tools.internal.xjc.model.nav.NType;
 import com.sun.tools.internal.xjc.model.nav.NavigatorImpl;
 import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.tools.internal.xjc.runtime.ZeroOneBooleanAdapter;
 import com.sun.tools.internal.xjc.util.NamespaceContextAdapter;
-import com.sun.xml.internal.bind.DatatypeConverterImpl;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.model.core.ID;
-import com.sun.xml.internal.bind.v2.model.impl.BuiltinLeafInfoImpl;
 import com.sun.xml.internal.xsom.XSComponent;
 import com.sun.xml.internal.xsom.XmlString;
 
@@ -92,13 +95,23 @@ import org.xml.sax.Locator;
  *
  * @author Kohsuke Kawaguchi
  */
-public abstract class CBuiltinLeafInfo extends BuiltinLeafInfoImpl<NType,NClass> implements CNonElement {
+public abstract class CBuiltinLeafInfo implements CNonElement, BuiltinLeafInfo<NType,NClass>, LeafInfo<NType,NClass>, Location {
+
+    private final NType type;
+    /**
+     * Can be null for anonymous types.
+     */
+    private final QName typeName;
+
+    private final QName[] typeNames;
 
     private final ID id;
 
     // no derived class other than the spec-defined ones. definitely not for enum.
-    private CBuiltinLeafInfo(NType typeToken, QName typeName, ID id) {
-        super(typeToken,typeName);
+    private CBuiltinLeafInfo(NType typeToken, ID id, QName... typeNames) {
+        this.type = typeToken;
+        this.typeName = typeNames.length>0?typeNames[0]:null;
+        this.typeNames = typeNames;
         this.id = id;
     }
 
@@ -172,6 +185,73 @@ public abstract class CBuiltinLeafInfo extends BuiltinLeafInfoImpl<NType,NClass>
     }
 
     /**
+     * @deprecated always return false at this level.
+     */
+    public final boolean isElement() {
+        return false;
+    }
+
+    /**
+     * @deprecated always return null at this level.
+     */
+    public final QName getElementName() {
+        return null;
+    }
+
+    /**
+     * @deprecated always return null at this level.
+     */
+    public final Element<NType,NClass> asElement() {
+        return null;
+    }
+
+    /**
+     * A reference to the representation of the type.
+     */
+    public NType getType() {
+        return type;
+    }
+
+    /**
+     * Returns all the type names recognized by this bean info.
+     *
+     * @return
+     *      do not modify the returned array.
+     */
+    public final QName[] getTypeNames() {
+        return typeNames;
+    }
+
+    /**
+     * Leaf-type cannot be referenced from IDREF.
+     *
+     * @deprecated
+     *      why are you calling a method whose return value is always known?
+     */
+    public final boolean canBeReferencedByIDREF() {
+        return false;
+    }
+
+    public QName getTypeName() {
+        return typeName;
+    }
+
+    public Locatable getUpstream() {
+        return null;
+    }
+
+    public Location getLocation() {
+        // this isn't very accurate, but it's not too bad
+        // doing it correctly need leaves to hold navigator.
+        // otherwise revisit the design so that we take navigator as a parameter
+        return this;
+    }
+
+    public boolean isSimpleType() {
+        return true;
+    }
+
+    /**
      * {@link CBuiltinLeafInfo} for Java classes that have
      * the spec defined built-in binding semantics.
      */
@@ -180,7 +260,7 @@ public abstract class CBuiltinLeafInfo extends BuiltinLeafInfoImpl<NType,NClass>
             this(c,typeName,com.sun.xml.internal.bind.v2.model.core.ID.NONE);
         }
         protected Builtin(Class c, String typeName, ID id) {
-            super(NavigatorImpl.theInstance.ref(c), new QName(WellKnownNamespace.XML_SCHEMA,typeName),id);
+            super(NavigatorImpl.theInstance.ref(c), id, new QName(WellKnownNamespace.XML_SCHEMA,typeName));
             LEAVES.put(getType(),this);
         }
 
@@ -215,46 +295,46 @@ public abstract class CBuiltinLeafInfo extends BuiltinLeafInfoImpl<NType,NClass>
     };
     public static final CBuiltinLeafInfo BOOLEAN = new Builtin(Boolean.class,"boolean") {
             public JExpression createConstant(Outline outline, XmlString lexical) {
-                return JExpr.lit(DatatypeConverterImpl._parseBoolean(lexical.value));
+                return JExpr.lit(DatatypeConverter.parseBoolean(lexical.value));
             }
     };
     public static final CBuiltinLeafInfo INT = new Builtin(Integer.class,"int") {
         public JExpression createConstant(Outline outline, XmlString lexical) {
-            return JExpr.lit(DatatypeConverterImpl._parseInt(lexical.value));
+            return JExpr.lit(DatatypeConverter.parseInt(lexical.value));
         }
     };
     public static final CBuiltinLeafInfo LONG = new Builtin(Long.class,"long") {
         public JExpression createConstant(Outline outline, XmlString lexical) {
-            return JExpr.lit(DatatypeConverterImpl._parseLong(lexical.value));
+            return JExpr.lit(DatatypeConverter.parseLong(lexical.value));
         }
     };
     public static final CBuiltinLeafInfo BYTE = new Builtin(Byte.class,"byte") {
         public JExpression createConstant(Outline outline, XmlString lexical) {
             return JExpr.cast(
                     outline.getCodeModel().BYTE,
-                    JExpr.lit(DatatypeConverterImpl._parseByte(lexical.value)));
+                    JExpr.lit(DatatypeConverter.parseByte(lexical.value)));
         }
     };
     public static final CBuiltinLeafInfo SHORT = new Builtin(Short.class,"short") {
         public JExpression createConstant(Outline outline, XmlString lexical) {
             return JExpr.cast(
                     outline.getCodeModel().SHORT,
-                    JExpr.lit(DatatypeConverterImpl._parseShort(lexical.value)));
+                    JExpr.lit(DatatypeConverter.parseShort(lexical.value)));
         }
     };
     public static final CBuiltinLeafInfo FLOAT = new Builtin(Float.class,"float") {
         public JExpression createConstant(Outline outline, XmlString lexical) {
-            return JExpr.lit(DatatypeConverterImpl._parseFloat(lexical.value));
+            return JExpr.lit(DatatypeConverter.parseFloat(lexical.value));
         }
     };
     public static final CBuiltinLeafInfo DOUBLE = new Builtin(Double.class,"double") {
         public JExpression createConstant(Outline outline, XmlString lexical) {
-            return JExpr.lit(DatatypeConverterImpl._parseDouble(lexical.value));
+            return JExpr.lit(DatatypeConverter.parseDouble(lexical.value));
         }
     };
     public static final CBuiltinLeafInfo QNAME = new Builtin(QName.class,"QName") {
         public JExpression createConstant(Outline outline, XmlString lexical) {
-            QName qn = DatatypeConverterImpl._parseQName(lexical.value,new NamespaceContextAdapter(lexical));
+            QName qn = DatatypeConverter.parseQName(lexical.value,new NamespaceContextAdapter(lexical));
             return JExpr._new(outline.getCodeModel().ref(QName.class))
                 .arg(qn.getNamespaceURI())
                 .arg(qn.getLocalPart())

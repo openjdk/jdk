@@ -95,11 +95,6 @@ final class ZoneRegion extends ZoneId implements Serializable {
      */
     private static final long serialVersionUID = 8386373296231747096L;
     /**
-     * The regex pattern for region IDs.
-     */
-    private static final Pattern PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9~/._+-]+");
-
-    /**
      * The time-zone ID, not null.
      */
     private final String id;
@@ -107,26 +102,6 @@ final class ZoneRegion extends ZoneId implements Serializable {
      * The time-zone rules, null if zone ID was loaded leniently.
      */
     private final transient ZoneRules rules;
-
-    /**
-     * Obtains an instance of {@code ZoneRegion} from an identifier without checking
-     * if the time-zone has available rules.
-     * <p>
-     * This method parses the ID and applies any appropriate normalization.
-     * It does not validate the ID against the known set of IDs for which rules are available.
-     * <p>
-     * This method is intended for advanced use cases.
-     * For example, consider a system that always retrieves time-zone rules from a remote server.
-     * Using this factory would allow a {@code ZoneRegion}, and thus a {@code ZonedDateTime},
-     * to be created without loading the rules from the remote server.
-     *
-     * @param zoneId  the time-zone ID, not null
-     * @return the zone ID, not null
-     * @throws DateTimeException if the ID format is invalid
-     */
-    private static ZoneRegion ofLenient(String zoneId) {
-        return ofId(zoneId, false);
-    }
 
     /**
      * Obtains an instance of {@code ZoneId} from an identifier.
@@ -139,12 +114,7 @@ final class ZoneRegion extends ZoneId implements Serializable {
      */
     static ZoneRegion ofId(String zoneId, boolean checkAvailable) {
         Objects.requireNonNull(zoneId, "zoneId");
-        if (zoneId.length() < 2 ||
-                zoneId.startsWith("UT") ||  // includes UTC
-                zoneId.startsWith("GMT") ||
-                (PATTERN.matcher(zoneId).matches() == false)) {
-            throw new DateTimeException("Invalid ID for region-based ZoneId, invalid format: " + zoneId);
-        }
+        checkName(zoneId);
         ZoneRules rules = null;
         try {
             // always attempt load for better behavior after deserialization
@@ -155,6 +125,45 @@ final class ZoneRegion extends ZoneId implements Serializable {
             }
         }
         return new ZoneRegion(zoneId, rules);
+    }
+
+    /**
+     * Checks that the given string is a legal ZondId name.
+     *
+     * @param zoneId  the time-zone ID, not null
+     * @throws DateTimeException if the ID format is invalid
+     */
+    private static void checkName(String zoneId) {
+        int n = zoneId.length();
+        if (n < 2) {
+           throw new DateTimeException("Invalid ID for region-based ZoneId, invalid format: " + zoneId);
+        }
+        for (int i = 0; i < n; i++) {
+            char c = zoneId.charAt(i);
+            if (c >= 'a' && c <= 'z') continue;
+            if (c >= 'A' && c <= 'Z') continue;
+            if (c == '/' && i != 0) continue;
+            if (c >= '0' && c <= '9' && i != 0) continue;
+            if (c == '~' && i != 0) continue;
+            if (c == '.' && i != 0) continue;
+            if (c == '_' && i != 0) continue;
+            if (c == '+' && i != 0) continue;
+            if (c == '-' && i != 0) continue;
+            throw new DateTimeException("Invalid ID for region-based ZoneId, invalid format: " + zoneId);
+        }
+    }
+
+    /**
+     * Obtains an instance of {@code ZoneId} wrapping an offset.
+     * <p>
+     * For example, zone IDs like 'UTC', 'GMT', 'UT' and 'UTC+01:30' will be setup here.
+     *
+     * @param zoneId  the time-zone ID, not null
+     * @param offset  the offset, not null
+     * @return the zone ID, not null
+     */
+    static ZoneRegion ofPrefixedOffset(String zoneId, ZoneOffset offset) {
+        return new ZoneRegion(zoneId, offset.getRules());
     }
 
     //-------------------------------------------------------------------------
@@ -218,7 +227,7 @@ final class ZoneRegion extends ZoneId implements Serializable {
 
     static ZoneId readExternal(DataInput in) throws IOException {
         String id = in.readUTF();
-        return ofLenient(id);
+        return ZoneId.of(id, false);
     }
 
 }

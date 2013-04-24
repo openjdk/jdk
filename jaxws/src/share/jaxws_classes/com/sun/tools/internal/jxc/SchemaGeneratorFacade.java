@@ -25,7 +25,6 @@
 
 package com.sun.tools.internal.jxc;
 
-import com.sun.tools.internal.jxc.SecureLoader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 

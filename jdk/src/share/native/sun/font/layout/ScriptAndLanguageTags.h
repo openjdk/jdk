@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2010. All Rights Reserved.
+ * (C) Copyright IBM Corp. 1998-2013. All Rights Reserved.
  *
  * WARNING: THIS FILE IS MACHINE GENERATED. DO NOT HAND EDIT IT UNLESS
  * YOU REALLY KNOW WHAT YOU'RE DOING.
@@ -201,6 +201,17 @@ const LETag nbatScriptTag = 0x6E626174; /* 'nbat' (NBAT) */
 const LETag palmScriptTag = 0x70616C6D; /* 'palm' (PALM) */
 const LETag sindScriptTag = 0x73696E64; /* 'sind' (SIND) */
 const LETag waraScriptTag = 0x77617261; /* 'wara' (WARA) */
+const LETag afakScriptTag = 0x6166616B; /* 'afak' (AFAK) */
+const LETag jurcScriptTag = 0x6A757263; /* 'jurc' (JURC) */
+const LETag mrooScriptTag = 0x6D726F6F; /* 'mroo' (MROO) */
+const LETag nshuScriptTag = 0x6E736875; /* 'nshu' (NSHU) */
+const LETag shrdScriptTag = 0x73687264; /* 'shrd' (SHARADA) */
+const LETag soraScriptTag = 0x736F7261; /* 'sora' (SORA_SOMPENG) */
+const LETag takrScriptTag = 0x74616B72; /* 'takr' (TAKRI) */
+const LETag tangScriptTag = 0x74616E67; /* 'tang' (TANG) */
+const LETag woleScriptTag = 0x776F6C65; /* 'wole' (WOLE) */
+const LETag khojScriptTag = 0x6B686F6A; /* 'khoj' (KHOJ) */
+const LETag tirhScriptTag = 0x74697268; /* 'tirh' (TIRH) */
 
 const LETag nullScriptTag = 0x00000000; /* ''     (NULL) */
 

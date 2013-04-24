@@ -23,6 +23,7 @@
 package com.sun.org.apache.xalan.internal.xslt;
 
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -574,7 +575,7 @@ public class EnvironmentCheck
     // Grab java version for later use
     try
     {
-      String javaVersion = System.getProperty("java.version");
+      String javaVersion = SecuritySupport.getSystemProperty("java.version");
 
       h.put("java.version", javaVersion);
     }
@@ -593,7 +594,7 @@ public class EnvironmentCheck
     {
 
       // This is present in all JVM's
-      String cp = System.getProperty("java.class.path");
+      String cp = SecuritySupport.getSystemProperty("java.class.path");
 
       h.put("java.class.path", cp);
 
@@ -603,7 +604,7 @@ public class EnvironmentCheck
         h.put(FOUNDCLASSES + "java.class.path", classpathJars);
 
       // Also check for JDK 1.2+ type classpaths
-      String othercp = System.getProperty("sun.boot.class.path");
+      String othercp = SecuritySupport.getSystemProperty("sun.boot.class.path");
 
       if (null != othercp)
       {
@@ -617,7 +618,7 @@ public class EnvironmentCheck
 
       //@todo NOTE: We don't actually search java.ext.dirs for
       //  *.jar files therein! This should be updated
-      othercp = System.getProperty("java.ext.dirs");
+      othercp = SecuritySupport.getSystemProperty("java.ext.dirs");
 
       if (null != othercp)
       {

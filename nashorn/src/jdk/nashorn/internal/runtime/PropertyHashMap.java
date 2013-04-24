@@ -104,10 +104,10 @@ import java.util.Set;
  */
 public final class PropertyHashMap implements Map <String, Property> {
     /** Number of initial bins. Power of 2. */
-    private static final int INITIAL_BINS = 16;
+    private static final int INITIAL_BINS = 32;
 
     /** Threshold before using bins. */
-    private static final int LIST_THRESHOLD = 4;
+    private static final int LIST_THRESHOLD = 8;
 
     /** Initial map. */
     public static final PropertyHashMap EMPTY_MAP = new PropertyHashMap();
@@ -300,8 +300,8 @@ public final class PropertyHashMap implements Map <String, Property> {
      * @return Number of bins required.
      */
     private static int binsNeeded(final int n) {
-        // Allow for 25% padding.
-        return 1 << (32 - Integer.numberOfLeadingZeros((n + oneQuarter(n)) | (INITIAL_BINS - 1)));
+        // 50% padding
+        return 1 << (32 - Integer.numberOfLeadingZeros((n + (n >>> 1)) | (INITIAL_BINS - 1)));
     }
 
     /**
@@ -316,27 +316,15 @@ public final class PropertyHashMap implements Map <String, Property> {
     }
 
     /**
-     * Used to calculate the current capacity of the bins.
-     *
-     * @param n Number of bin slots.
-     *
-     * @return 25% of n.
-     */
-    private static int oneQuarter(final int n) {
-        return n >>> 2;
-    }
-
-    /**
      * Regenerate the bin table after changing the number of bins.
      *
      * @param list    // List of all properties.
-     * @param newSize // New size of {@link PropertyHashMap}.
+     * @param binSize // New size of bins.
      *
      * @return Populated bins.
      */
-    private static Element[] rehash(final Element list, final int newSize) {
-        final int binsNeeded = binsNeeded(newSize);
-        final Element[] newBins = new Element[binsNeeded];
+    private static Element[] rehash(final Element list, final int binSize) {
+        final Element[] newBins = new Element[binSize];
         for (Element element = list; element != null; element = element.getLink()) {
             final Property property = element.getProperty();
             final String key = property.getKey();
@@ -390,7 +378,7 @@ public final class PropertyHashMap implements Map <String, Property> {
         if (bins == null && newSize <= LIST_THRESHOLD) {
             newBins = null;
         } else if (newSize > threshold) {
-            newBins = rehash(list, newSize);
+            newBins = rehash(list, binsNeeded(newSize));
         } else {
             newBins = bins.clone();
         }

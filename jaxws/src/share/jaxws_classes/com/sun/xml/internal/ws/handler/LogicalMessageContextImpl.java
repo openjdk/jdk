@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,13 @@
 
 package com.sun.xml.internal.ws.handler;
 
-import com.sun.xml.internal.ws.api.message.AttachmentSet;
-import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.WSBinding;
-import com.sun.xml.internal.ws.api.model.SEIModel;
-import com.sun.xml.internal.ws.message.EmptyMessageImpl;
-import com.sun.xml.internal.ws.message.source.PayloadSourceMessage;
 import com.sun.xml.internal.ws.spi.db.BindingContext;
-
-import javax.xml.transform.Source;
 
 import javax.xml.ws.LogicalMessage;
 import javax.xml.ws.handler.LogicalMessageContext;
-import javax.xml.bind.JAXBContext;
 
 /**
  * Implementation of LogicalMessageContext. This class is used at runtime

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package com.sun.xml.internal.ws.server.sei;
 
+import com.oracle.webservices.internal.api.databinding.JavaCallInfo;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.databinding.EndpointCallBridge;
-import com.sun.xml.internal.ws.api.databinding.JavaCallInfo;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageContextFactory;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.JavaMethod;
 import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
@@ -57,7 +58,7 @@ import java.util.logging.Logger;
  * <p>
  * This class mainly performs the following two tasks:
  * <ol>
- *  <li>Takes a {@link Message] that represents a request,
+ *  <li>Takes a {@link Message} that represents a request,
  *      and extracts the arguments (and updates {@link Holder}s.)
  *  <li>Accepts return value and {@link Holder} arguments for a Java method,
  *      and creates {@link JAXBMessage} that represents a response message.
@@ -90,8 +91,9 @@ final public class TieHandler implements EndpointCallBridge {
     // these objects together create a response message from method parameters
     private final EndpointResponseMessageBuilder bodyBuilder;
     private final MessageFiller[] outFillers;
+    protected MessageContextFactory packetFactory;
 
-    public TieHandler(JavaMethodImpl method, WSBinding binding) {
+    public TieHandler(JavaMethodImpl method, WSBinding binding, MessageContextFactory mcf) {
         this.soapVersion = binding.getSOAPVersion();
         this.method = method.getMethod();
         this.javaMethodModel = method;
@@ -101,6 +103,7 @@ final public class TieHandler implements EndpointCallBridge {
         this.outFillers = fillers.toArray(new MessageFiller[fillers.size()]);
         this.isOneWay = method.getMEP().isOneWay();
         this.noOfArgs = this.method.getParameterTypes().length;
+        packetFactory = mcf;
     }
 
     /**
@@ -178,7 +181,7 @@ final public class TieHandler implements EndpointCallBridge {
     */
     private EndpointResponseMessageBuilder createResponseMessageBuilder(List<MessageFiller> fillers) {
 
-        EndpointResponseMessageBuilder bodyBuilder = null;
+        EndpointResponseMessageBuilder tmpBodyBuilder = null;
         List<ParameterImpl> rp = javaMethodModel.getResponseParameters();
 
         for (ParameterImpl param : rp) {
@@ -188,14 +191,14 @@ final public class TieHandler implements EndpointCallBridge {
             case BODY:
                 if(param.isWrapperStyle()) {
                     if(param.getParent().getBinding().isRpcLit()) {
-                        bodyBuilder = new EndpointResponseMessageBuilder.RpcLit((WrapperParameter)param,
+                        tmpBodyBuilder = new EndpointResponseMessageBuilder.RpcLit((WrapperParameter)param,
                             soapVersion);
                     } else {
-                        bodyBuilder = new EndpointResponseMessageBuilder.DocLit((WrapperParameter)param,
+                        tmpBodyBuilder = new EndpointResponseMessageBuilder.DocLit((WrapperParameter)param,
                             soapVersion);
                     }
                 } else {
-                    bodyBuilder = new EndpointResponseMessageBuilder.Bare(param, soapVersion);
+                    tmpBodyBuilder = new EndpointResponseMessageBuilder.Bare(param, soapVersion);
                 }
                 break;
             case HEADER:
@@ -211,20 +214,20 @@ final public class TieHandler implements EndpointCallBridge {
             }
         }
 
-        if (bodyBuilder == null) {
+        if (tmpBodyBuilder == null) {
             // no parameter binds to body. we create an empty message
             switch(soapVersion) {
             case SOAP_11:
-                bodyBuilder = EndpointResponseMessageBuilder.EMPTY_SOAP11;
+                tmpBodyBuilder = EndpointResponseMessageBuilder.EMPTY_SOAP11;
                 break;
             case SOAP_12:
-                bodyBuilder = EndpointResponseMessageBuilder.EMPTY_SOAP12;
+                tmpBodyBuilder = EndpointResponseMessageBuilder.EMPTY_SOAP12;
                 break;
             default:
                 throw new AssertionError();
             }
         }
-        return bodyBuilder;
+        return tmpBodyBuilder;
     }
 
     public Object[] readRequest(Message reqMsg) {
@@ -241,7 +244,6 @@ final public class TieHandler implements EndpointCallBridge {
 
     public Message createResponse(JavaCallInfo call) {
         Message responseMessage;
-        Object ret = call.getReturnValue();
         if (call.getException() == null) {
             responseMessage = isOneWay ? null : createResponseMessage(call.getParameters(), call.getReturnValue());
         } else {
@@ -310,21 +312,24 @@ final public class TieHandler implements EndpointCallBridge {
 
     private static final Logger LOGGER = Logger.getLogger(TieHandler.class.getName());
 
+    @Override
         public JavaCallInfo deserializeRequest(Packet req) {
-                JavaCallInfo call = new JavaCallInfo();
+        com.sun.xml.internal.ws.api.databinding.JavaCallInfo call = new com.sun.xml.internal.ws.api.databinding.JavaCallInfo();
                 call.setMethod(this.getMethod());
         Object[] args = this.readRequest(req.getMessage());
                 call.setParameters(args);
                 return call;
         }
 
+    @Override
         public Packet serializeResponse(JavaCallInfo call) {
-                Message msg = this.createResponse(call);
-        Packet response = new Packet();
-        response.setMessage(msg);
-        return response;
+            Message msg = this.createResponse(call);
+            Packet p = (msg == null) ? (Packet)packetFactory.createContext() : (Packet)packetFactory.createContext(msg);
+            p.setState(Packet.State.ServerResponse);
+            return p;
         }
 
+    @Override
     public JavaMethod getOperationModel() {
         return javaMethodModel;
     }

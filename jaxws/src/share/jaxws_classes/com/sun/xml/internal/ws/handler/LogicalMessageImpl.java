@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package com.sun.xml.internal.ws.handler;
 
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.message.Message;
-import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.AttachmentSet;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.spi.db.BindingContext;
@@ -184,7 +184,7 @@ class LogicalMessageImpl implements LogicalMessage {
      * @param binding
      * @return
      */
-    public Message getMessage(HeaderList headers, AttachmentSet attachments, WSBinding binding) {
+    public Message getMessage(MessageHeaders headers, AttachmentSet attachments, WSBinding binding) {
         assert isPayloadModifed();
         if(isPayloadModifed()) {
             return lm.getMessage(headers,attachments,binding);
@@ -199,7 +199,7 @@ class LogicalMessageImpl implements LogicalMessage {
         public abstract Source getPayload();
         public abstract Object getPayload(BindingContext context);
         public abstract Object getPayload(JAXBContext context);
-        public abstract Message getMessage(HeaderList headers, AttachmentSet attachments, WSBinding binding);
+        public abstract Message getMessage(MessageHeaders headers, AttachmentSet attachments, WSBinding binding);
 
     }
 
@@ -216,12 +216,12 @@ class LogicalMessageImpl implements LogicalMessage {
             return dom;
         }
 
-        public Message getMessage(HeaderList headers, AttachmentSet attachments, WSBinding binding) {
+        public Message getMessage(MessageHeaders headers, AttachmentSet attachments, WSBinding binding) {
             Node n = dom.getNode();
             if(n.getNodeType()== Node.DOCUMENT_NODE) {
                 n = ((Document)n).getDocumentElement();
             }
-            return new DOMMessage(binding.getSOAPVersion(),headers, (Element)n, attachments);
+            return new DOMMessage(binding.getSOAPVersion(), headers, (Element)n, attachments);
         }
     }
 
@@ -245,7 +245,7 @@ class LogicalMessageImpl implements LogicalMessage {
             return null;
         }
 
-        public Message getMessage(HeaderList headers, AttachmentSet attachments, WSBinding binding) {
+        public Message getMessage(MessageHeaders headers, AttachmentSet attachments, WSBinding binding) {
             return new EmptyMessageImpl(headers,attachments,binding.getSOAPVersion());
         }
     }
@@ -303,7 +303,7 @@ class LogicalMessageImpl implements LogicalMessage {
           }
       }
 
-        public Message getMessage(HeaderList headers, AttachmentSet attachments, WSBinding binding) {
+        public Message getMessage(MessageHeaders headers, AttachmentSet attachments, WSBinding binding) {
             return JAXBMessage.create(BindingContextFactory.create(ctxt), o,binding.getSOAPVersion(), headers,attachments);
         }
     }
@@ -356,7 +356,7 @@ class LogicalMessageImpl implements LogicalMessage {
 
         }
 
-        public Message getMessage(HeaderList headers, AttachmentSet attachments, WSBinding binding) {
+        public Message getMessage(MessageHeaders headers, AttachmentSet attachments, WSBinding binding) {
             assert (payloadSrc!=null);
             return new PayloadSourceMessage(headers, payloadSrc, attachments,binding.getSOAPVersion());
         }

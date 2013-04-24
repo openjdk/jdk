@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.model.SEIModel;
+import com.sun.xml.internal.ws.api.model.WSDLOperationMapping;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.message.Message;
@@ -65,15 +66,20 @@ public class OperationDispatcher {
     }
 
     /**
-     *
+     * @deprecated use getWSDLOperationMapping(Packet request)
      * @param request Packet
      * @return QName of the wsdl operation.
      * @throws DispatchException if a unique operartion cannot be associated with this packet.
      */
     public @NotNull QName getWSDLOperationQName(Packet request) throws DispatchException {
-        QName opName;
+        WSDLOperationMapping m = getWSDLOperationMapping(request);
+        return m != null ? m.getOperationName() : null;
+    }
+
+    public @NotNull WSDLOperationMapping getWSDLOperationMapping(Packet request) throws DispatchException {
+        WSDLOperationMapping opName;
         for(WSDLOperationFinder finder: opFinders) {
-            opName = finder.getWSDLOperationQName(request);
+            opName = finder.getWSDLOperationMapping(request);
             if(opName != null)
                 return opName;
         }
@@ -85,6 +91,5 @@ public class OperationDispatcher {
         Message faultMsg = SOAPFaultBuilder.createSOAPFaultMessage(
                 binding.getSOAPVersion(), faultString, binding.getSOAPVersion().faultCodeClient);
         throw new DispatchException(faultMsg);
-
     }
 }

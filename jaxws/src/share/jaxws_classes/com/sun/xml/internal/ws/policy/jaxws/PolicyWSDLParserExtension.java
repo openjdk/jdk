@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import com.sun.xml.internal.ws.policy.sourcemodel.wspolicy.XmlToken;
 import com.sun.xml.internal.ws.model.wsdl.WSDLModelImpl;
 import com.sun.xml.internal.ws.policy.PolicyException;
 import com.sun.xml.internal.ws.policy.PolicyMap;
+import com.sun.xml.internal.ws.util.xml.XmlUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,6 +59,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.ws.WebServiceException;
+import javax.xml.xpath.XPathFactoryConfigurationException;
 
 /**
  * This class parses the Policy Attachments in the WSDL and creates a PolicyMap thaty captures the policies configured on
@@ -622,7 +624,7 @@ final public class PolicyWSDLParserExtension extends WSDLParserExtension {
         try {
             final URL xmlURL = new URL(fileUrl);
             ios = xmlURL.openStream();
-            reader = XMLInputFactory.newInstance().createXMLStreamReader(ios);
+            reader = XmlUtil.newXMLInputFactory(true).createXMLStreamReader(ios);
             while (reader.hasNext()) {
                 if (reader.isStartElement() && NamespaceVersion.resolveAsToken(reader.getName()) == XmlToken.Policy) {
                     readSinglePolicy(policyReader.readPolicyElement(reader, fileUrl), false);
@@ -872,6 +874,14 @@ final public class PolicyWSDLParserExtension extends WSDLParserExtension {
 
                             for (WSDLBoundFault boundFault : boundOperation.getFaults()) {
                                 final WSDLFault fault = boundFault.getFault();
+
+                                // this shouldn't happen ususally,
+                                // but since this scenario tested in lagacy tests, dont' fail here
+                                if (fault == null) {
+                                    LOGGER.warning(PolicyMessages.WSP_1021_FAULT_NOT_BOUND(boundFault.getName()));
+                                    continue;
+                                }
+
                                 final WSDLMessage faultMessage = fault.getMessage();
                                 final QName faultName = new QName(boundOperation.getBoundPortType().getName().getNamespaceURI(), boundFault.getName());
                                 // We store the message and portType/fault under the same namespace as the binding/fault so that we can match them up later

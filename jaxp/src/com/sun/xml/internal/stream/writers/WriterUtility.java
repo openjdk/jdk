@@ -32,6 +32,7 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 
 /**
  * Implements common xml writer functions.
@@ -240,7 +241,7 @@ public class WriterUtility {
 
     private CharsetEncoder getDefaultEncoder(){
         try{
-            String encoding = System.getProperty("file.encoding");
+            String encoding = SecuritySupport.getSystemProperty("file.encoding");
             if(encoding != null){
                 return Charset.forName(encoding).newEncoder();
             }

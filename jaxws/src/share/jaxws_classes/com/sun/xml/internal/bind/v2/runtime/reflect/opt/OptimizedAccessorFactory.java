@@ -134,7 +134,7 @@ public abstract class OptimizedAccessorFactory {
 
 
     /**
-     * Gets the optimizd {@link Accessor} that accesses the given field.
+     * Gets the optimized {@link Accessor} that accesses the given field.
      *
      * @return null
      *      if for some reason it fails to create an optimized version.

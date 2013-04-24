@@ -64,23 +64,24 @@ import static org.testng.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamConstants;
 import java.lang.reflect.Field;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.temporal.Queries;
+import java.time.format.TextStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.zone.ZoneRulesException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -114,9 +115,12 @@ public class TCKZoneId extends AbstractTCKTest {
         // an ID can be loaded without validation during deserialization
         String id = "QWERTYUIOPASDFGHJKLZXCVBNM~/._+-";
         ZoneId deser = deserialize(id);
-        // getting the ID and string are OK
+        // getId, equals, hashCode, toString and normalized are OK
         assertEquals(deser.getId(), id);
         assertEquals(deser.toString(), id);
+        assertEquals(deser, deser);
+        assertEquals(deser.hashCode(), deser.hashCode());
+        assertEquals(deser.normalized(), deser);
         // getting the rules is not
         try {
             deser.getRules();
@@ -133,32 +137,32 @@ public class TCKZoneId extends AbstractTCKTest {
         deserialize("|!?");
     }
 
-    @Test(dataProvider="offsetBasedValid", expectedExceptions=DateTimeException.class)
+    @Test(dataProvider="offsetBasedValid")
     public void test_deserialization_lenient_offsetNotAllowed_noPrefix(String input, String resolvedId) throws Exception {
-        // an ID can be loaded without validation during deserialization
-        // but there is a check to ensure the ID format is valid
-        deserialize(input);
+        ZoneId deserialized = deserialize(input);
+        assertEquals(deserialized, ZoneId.of(input));
+        assertEquals(deserialized, ZoneId.of(resolvedId));
     }
 
-    @Test(dataProvider="offsetBasedValid", expectedExceptions=DateTimeException.class)
-    public void test_deserialization_lenient_offsetNotAllowed_prefixUTC(String input, String resolvedId) throws Exception {
-        // an ID can be loaded without validation during deserialization
-        // but there is a check to ensure the ID format is valid
-        deserialize("UTC" + input);
+    @Test(dataProvider="offsetBasedValidPrefix")
+    public void test_deserialization_lenient_offsetNotAllowed_prefixUTC(String input, String resolvedId, String offsetId) throws Exception {
+        ZoneId deserialized = deserialize("UTC" + input);
+        assertEquals(deserialized, ZoneId.of("UTC" + input));
+        assertEquals(deserialized, ZoneId.of("UTC" + resolvedId));
     }
 
-    @Test(dataProvider="offsetBasedValid", expectedExceptions=DateTimeException.class)
-    public void test_deserialization_lenient_offsetNotAllowed_prefixGMT(String input, String resolvedId) throws Exception {
-        // an ID can be loaded without validation during deserialization
-        // but there is a check to ensure the ID format is valid
-        deserialize("GMT" + input);
+    @Test(dataProvider="offsetBasedValidPrefix")
+    public void test_deserialization_lenient_offsetNotAllowed_prefixGMT(String input, String resolvedId, String offsetId) throws Exception {
+        ZoneId deserialized = deserialize("GMT" + input);
+        assertEquals(deserialized, ZoneId.of("GMT" + input));
+        assertEquals(deserialized, ZoneId.of("GMT" + resolvedId));
     }
 
-    @Test(dataProvider="offsetBasedValid", expectedExceptions=DateTimeException.class)
-    public void test_deserialization_lenient_offsetNotAllowed_prefixUT(String input, String resolvedId) throws Exception {
-        // an ID can be loaded without validation during deserialization
-        // but there is a check to ensure the ID format is valid
-        deserialize("UT" + input);
+    @Test(dataProvider="offsetBasedValidPrefix")
+    public void test_deserialization_lenient_offsetNotAllowed_prefixUT(String input, String resolvedId, String offsetId) throws Exception {
+        ZoneId deserialized = deserialize("UT" + input);
+        assertEquals(deserialized, ZoneId.of("UT" + input));
+        assertEquals(deserialized, ZoneId.of("UT" + resolvedId));
     }
 
     private ZoneId deserialize(String id) throws Exception {
@@ -193,10 +197,10 @@ public class TCKZoneId extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
-    // OLD_IDS_PRE_2005
+    // OLD_SHORT_IDS
     //-----------------------------------------------------------------------
     public void test_constant_OLD_IDS_PRE_2005() {
-        Map<String, String> ids = ZoneId.OLD_IDS_PRE_2005;
+        Map<String, String> ids = ZoneId.OLD_SHORT_IDS;
         assertEquals(ids.get("EST"), "America/New_York");
         assertEquals(ids.get("MST"), "America/Denver");
         assertEquals(ids.get("HST"), "Pacific/Honolulu");
@@ -229,15 +233,15 @@ public class TCKZoneId extends AbstractTCKTest {
 
     @Test(expectedExceptions=UnsupportedOperationException.class)
     public void test_constant_OLD_IDS_PRE_2005_immutable() {
-        Map<String, String> ids = ZoneId.OLD_IDS_PRE_2005;
+        Map<String, String> ids = ZoneId.OLD_SHORT_IDS;
         ids.clear();
     }
 
     //-----------------------------------------------------------------------
-    // OLD_IDS_POST_2005
+    // SHORT_IDS
     //-----------------------------------------------------------------------
     public void test_constant_OLD_IDS_POST_2005() {
-        Map<String, String> ids = ZoneId.OLD_IDS_POST_2005;
+        Map<String, String> ids = ZoneId.SHORT_IDS;
         assertEquals(ids.get("EST"), "-05:00");
         assertEquals(ids.get("MST"), "-07:00");
         assertEquals(ids.get("HST"), "-10:00");
@@ -270,8 +274,21 @@ public class TCKZoneId extends AbstractTCKTest {
 
     @Test(expectedExceptions=UnsupportedOperationException.class)
     public void test_constant_OLD_IDS_POST_2005_immutable() {
-        Map<String, String> ids = ZoneId.OLD_IDS_POST_2005;
+        Map<String, String> ids = ZoneId.SHORT_IDS;
         ids.clear();
+    }
+
+    //-----------------------------------------------------------------------
+    // getAvailableZoneIds()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_getAvailableGroupIds() {
+        Set<String> zoneIds = ZoneId.getAvailableZoneIds();
+        assertEquals(zoneIds.contains("Europe/London"), true);
+        zoneIds.clear();
+        assertEquals(zoneIds.size(), 0);
+        Set<String> zoneIds2 = ZoneId.getAvailableZoneIds();
+        assertEquals(zoneIds2.contains("Europe/London"), true);
     }
 
     //-----------------------------------------------------------------------
@@ -315,65 +332,41 @@ public class TCKZoneId extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
-    // regular factory
-    //-----------------------------------------------------------------------
-    @DataProvider(name="offsetBasedZero")
-    Object[][] data_offsetBasedZero() {
-        return new Object[][] {
-                {""}, {"0"},
-                {"+00"},{"+0000"},{"+00:00"},{"+000000"},{"+00:00:00"},
-                {"-00"},{"-0000"},{"-00:00"},{"-000000"},{"-00:00:00"},
-        };
-    }
-
-    @Test(dataProvider="offsetBasedZero")
-    public void factory_of_String_offsetBasedZero_noPrefix(String id) {
-        if (id.length() > 0 && id.equals("0") == false) {
-            ZoneId test = ZoneId.of(id);
-            assertEquals(test, ZoneOffset.UTC);
-        }
-    }
-
-    @Test(dataProvider="offsetBasedZero")
-    public void factory_of_String_offsetBasedZero_prefixUTC(String id) {
-        ZoneId test = ZoneId.of("UTC" + id);
-        assertEquals(test, ZoneOffset.UTC);
-    }
-
-    @Test(dataProvider="offsetBasedZero")
-    public void factory_of_String_offsetBasedZero_prefixGMT(String id) {
-        ZoneId test = ZoneId.of("GMT" + id);
-        assertEquals(test, ZoneOffset.UTC);
-    }
-
-    @Test(dataProvider="offsetBasedZero")
-    public void factory_of_String_offsetBasedZero_prefixUT(String id) {
-        ZoneId test = ZoneId.of("UT" + id);
-        assertEquals(test, ZoneOffset.UTC);
-    }
-
-    @Test
-    public void factory_of_String_offsetBasedZero_z() {
-        ZoneId test = ZoneId.of("Z");
-        assertEquals(test, ZoneOffset.UTC);
-    }
-
+    // regular factory and .normalized()
     //-----------------------------------------------------------------------
     @DataProvider(name="offsetBasedValid")
     Object[][] data_offsetBasedValid() {
         return new Object[][] {
+                {"Z", "Z"},
                 {"+0", "Z"},
+                {"-0", "Z"},
+                {"+00", "Z"},
+                {"+0000", "Z"},
+                {"+00:00", "Z"},
+                {"+000000", "Z"},
+                {"+00:00:00", "Z"},
+                {"-00", "Z"},
+                {"-0000", "Z"},
+                {"-00:00", "Z"},
+                {"-000000", "Z"},
+                {"-00:00:00", "Z"},
                 {"+5", "+05:00"},
                 {"+01", "+01:00"},
-                {"+0100", "+01:00"},{"+01:00", "+01:00"},
-                {"+010000", "+01:00"},{"+01:00:00", "+01:00"},
+                {"+0100", "+01:00"},
+                {"+01:00", "+01:00"},
+                {"+010000", "+01:00"},
+                {"+01:00:00", "+01:00"},
                 {"+12", "+12:00"},
-                {"+1234", "+12:34"},{"+12:34", "+12:34"},
-                {"+123456", "+12:34:56"},{"+12:34:56", "+12:34:56"},
+                {"+1234", "+12:34"},
+                {"+12:34", "+12:34"},
+                {"+123456", "+12:34:56"},
+                {"+12:34:56", "+12:34:56"},
                 {"-02", "-02:00"},
                 {"-5", "-05:00"},
-                {"-0200", "-02:00"},{"-02:00", "-02:00"},
-                {"-020000", "-02:00"},{"-02:00:00", "-02:00"},
+                {"-0200", "-02:00"},
+                {"-02:00", "-02:00"},
+                {"-020000", "-02:00"},
+                {"-02:00:00", "-02:00"},
         };
     }
 
@@ -382,27 +375,126 @@ public class TCKZoneId extends AbstractTCKTest {
         ZoneId test = ZoneId.of(input);
         assertEquals(test.getId(), id);
         assertEquals(test, ZoneOffset.of(id));
+        assertEquals(test.normalized(), ZoneOffset.of(id));
+        assertEquals(test.getDisplayName(TextStyle.FULL, Locale.UK), id);
+        assertEquals(test.getRules().isFixedOffset(), true);
+        assertEquals(test.getRules().getOffset(Instant.EPOCH), ZoneOffset.of(id));
     }
 
-    @Test(dataProvider="offsetBasedValid")
-    public void factory_of_String_offsetBasedValid_prefixUTC(String input, String id) {
+    //-----------------------------------------------------------------------
+    @DataProvider(name="offsetBasedValidPrefix")
+    Object[][] data_offsetBasedValidPrefix() {
+        return new Object[][] {
+                {"", "", "Z"},
+                {"+0", "", "Z"},
+                {"-0", "", "Z"},
+                {"+00", "", "Z"},
+                {"+0000", "", "Z"},
+                {"+00:00", "", "Z"},
+                {"+000000", "", "Z"},
+                {"+00:00:00", "", "Z"},
+                {"-00", "", "Z"},
+                {"-0000", "", "Z"},
+                {"-00:00", "", "Z"},
+                {"-000000", "", "Z"},
+                {"-00:00:00", "", "Z"},
+                {"+5", "+05:00", "+05:00"},
+                {"+01", "+01:00", "+01:00"},
+                {"+0100", "+01:00", "+01:00"},
+                {"+01:00", "+01:00", "+01:00"},
+                {"+010000", "+01:00", "+01:00"},
+                {"+01:00:00", "+01:00", "+01:00"},
+                {"+12", "+12:00", "+12:00"},
+                {"+1234", "+12:34", "+12:34"},
+                {"+12:34", "+12:34", "+12:34"},
+                {"+123456", "+12:34:56", "+12:34:56"},
+                {"+12:34:56", "+12:34:56", "+12:34:56"},
+                {"-02", "-02:00", "-02:00"},
+                {"-5", "-05:00", "-05:00"},
+                {"-0200", "-02:00", "-02:00"},
+                {"-02:00", "-02:00", "-02:00"},
+                {"-020000", "-02:00", "-02:00"},
+                {"-02:00:00", "-02:00", "-02:00"},
+        };
+    }
+
+    @Test(dataProvider="offsetBasedValidPrefix")
+    public void factory_of_String_offsetBasedValid_prefixUTC(String input, String id, String offsetId) {
         ZoneId test = ZoneId.of("UTC" + input);
-        assertEquals(test.getId(), id);
-        assertEquals(test, ZoneOffset.of(id));
+        assertEquals(test.getId(), "UTC" + id);
+        assertEquals(test.getRules(), ZoneOffset.of(offsetId).getRules());
+        assertEquals(test.normalized(), ZoneOffset.of(offsetId));
+        assertEquals(test.getDisplayName(TextStyle.FULL, Locale.UK), displayName("UTC" + id));
+        assertEquals(test.getRules().isFixedOffset(), true);
+        assertEquals(test.getRules().getOffset(Instant.EPOCH), ZoneOffset.of(offsetId));
     }
 
-    @Test(dataProvider="offsetBasedValid")
-    public void factory_of_String_offsetBasedValid_prefixGMT(String input, String id) {
+    @Test(dataProvider="offsetBasedValidPrefix")
+    public void factory_of_String_offsetBasedValid_prefixGMT(String input, String id, String offsetId) {
         ZoneId test = ZoneId.of("GMT" + input);
-        assertEquals(test.getId(), id);
-        assertEquals(test, ZoneOffset.of(id));
+        assertEquals(test.getId(), "GMT" + id);
+        assertEquals(test.getRules(), ZoneOffset.of(offsetId).getRules());
+        assertEquals(test.normalized(), ZoneOffset.of(offsetId));
+        assertEquals(test.getDisplayName(TextStyle.FULL, Locale.UK), displayName("GMT" + id));
+        assertEquals(test.getRules().isFixedOffset(), true);
+        assertEquals(test.getRules().getOffset(Instant.EPOCH), ZoneOffset.of(offsetId));
     }
 
-    @Test(dataProvider="offsetBasedValid")
-    public void factory_of_String_offsetBasedValid_prefixUT(String input, String id) {
+    @Test(dataProvider="offsetBasedValidPrefix")
+    public void factory_of_String_offsetBasedValid_prefixUT(String input, String id, String offsetId) {
         ZoneId test = ZoneId.of("UT" + input);
-        assertEquals(test.getId(), id);
-        assertEquals(test, ZoneOffset.of(id));
+        assertEquals(test.getId(), "UT" + id);
+        assertEquals(test.getRules(), ZoneOffset.of(offsetId).getRules());
+        assertEquals(test.normalized(), ZoneOffset.of(offsetId));
+        assertEquals(test.getDisplayName(TextStyle.FULL, Locale.UK), displayName("UT" + id));
+        assertEquals(test.getRules().isFixedOffset(), true);
+        assertEquals(test.getRules().getOffset(Instant.EPOCH), ZoneOffset.of(offsetId));
+    }
+
+    private String displayName(String id) {
+        if (id.equals("GMT")) {
+            return "Greenwich Mean Time";
+        }
+        if (id.equals("GMT0")) {
+            return "Greenwich Mean Time";
+        }
+        if (id.equals("UTC")) {
+            return "Coordinated Universal Time";
+        }
+        return id;
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="offsetBasedValidOther")
+    Object[][] data_offsetBasedValidOther() {
+        return new Object[][] {
+                {"GMT", "Z"},
+                {"GMT0", "Z"},
+                {"UCT", "Z"},
+                {"Greenwich", "Z"},
+                {"Universal", "Z"},
+                {"Zulu", "Z"},
+                {"Etc/GMT", "Z"},
+                {"Etc/GMT+0", "Z"},
+                {"Etc/GMT+1", "-01:00"},
+                {"Etc/GMT-1", "+01:00"},
+                {"Etc/GMT+9", "-09:00"},
+                {"Etc/GMT-9", "+09:00"},
+                {"Etc/GMT0", "Z"},
+                {"Etc/UCT", "Z"},
+                {"Etc/UTC", "Z"},
+                {"Etc/Greenwich", "Z"},
+                {"Etc/Universal", "Z"},
+                {"Etc/Zulu", "Z"},
+        };
+    }
+
+    @Test(dataProvider="offsetBasedValidOther")
+    public void factory_of_String_offsetBasedValidOther(String input, String offsetId) {
+        ZoneId test = ZoneId.of(input);
+        assertEquals(test.getId(), input);
+        assertEquals(test.getRules(), ZoneOffset.of(offsetId).getRules());
+        assertEquals(test.normalized(), ZoneOffset.of(offsetId));
     }
 
     //-----------------------------------------------------------------------
@@ -422,6 +514,12 @@ public class TCKZoneId extends AbstractTCKTest {
                 {"-19"}, {"-19:00"}, {"-18:01"}, {"-18:00:01"}, {"-1801"}, {"-180001"},
                 {"-01_00"}, {"-01;00"}, {"-01@00"}, {"-01:AA"},
                 {"@01:00"},
+                {"0"},
+                {"UT0"},
+                {"UTZ"},
+                {"UTC0"},
+                {"UTCZ"},
+                {"GMTZ"},  // GMT0 is valid in ZoneRulesProvider
         };
     }
 
@@ -440,6 +538,9 @@ public class TCKZoneId extends AbstractTCKTest {
 
     @Test(dataProvider="offsetBasedInvalid", expectedExceptions=DateTimeException.class)
     public void factory_of_String_offsetBasedInvalid_prefixGMT(String id) {
+        if (id.equals("0")) {
+            throw new DateTimeException("Fake exception: GMT0 is valid, not invalid");
+        }
         ZoneId.of("GMT" + id);
     }
 
@@ -479,6 +580,7 @@ public class TCKZoneId extends AbstractTCKTest {
         ZoneId test = ZoneId.of("Europe/London");
         assertEquals(test.getId(), "Europe/London");
         assertEquals(test.getRules().isFixedOffset(), false);
+        assertEquals(test.normalized(), test);
     }
 
     //-----------------------------------------------------------------------
@@ -514,7 +616,7 @@ public class TCKZoneId extends AbstractTCKTest {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == Queries.zoneId()) {
+                if (query == TemporalQuery.zoneId()) {
                     return (R) ZoneId.of("Europe/Paris");
                 }
                 return TemporalAccessor.super.query(query);
@@ -578,8 +680,10 @@ public class TCKZoneId extends AbstractTCKTest {
                 {"Europe/London", "Europe/London"},
                 {"Europe/Paris", "Europe/Paris"},
                 {"Europe/Berlin", "Europe/Berlin"},
-                {"UTC", "Z"},
-                {"UTC+01:00", "+01:00"},
+                {"Z", "Z"},
+                {"+01:00", "+01:00"},
+                {"UTC", "UTC"},
+                {"UTC+01:00", "UTC+01:00"},
         };
     }
 
