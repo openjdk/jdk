@@ -247,7 +247,7 @@ final class FoldConstants extends NodeVisitor {
                 value = lhs.getNumber() - rhs.getNumber();
                 break;
             case SHR:
-                return LiteralNode.newInstance(source, token, finish, (lhs.getInt32() >>> rhs.getInt32()) & 0xffff_ffffL);
+                return LiteralNode.newInstance(source, token, finish, (lhs.getInt32() >>> rhs.getInt32()) & JSType.MAX_UINT);
             case SAR:
                 return LiteralNode.newInstance(source, token, finish, lhs.getInt32() >> rhs.getInt32());
             case SHL:

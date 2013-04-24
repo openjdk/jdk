@@ -273,7 +273,7 @@ class SparseArrayData extends ArrayData {
     }
 
     private static Long indexToKey(final int index) {
-        return Long.valueOf(index & 0xffff_ffffL);
+        return Long.valueOf(index & JSType.MAX_UINT);
     }
 
     @Override
