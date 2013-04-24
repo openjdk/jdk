@@ -315,7 +315,7 @@ void InterpreterGenerator::generate_counter_incr(
       const Address mdo_invocation_counter(rax, in_bytes(MethodData::invocation_counter_offset()) +
                                                 in_bytes(InvocationCounter::counter_offset()));
       __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rcx, false, Assembler::zero, overflow);
-      __ jmpb(done);
+      __ jmp(done);
     }
     __ bind(no_mdo);
     // Increment counter in MethodCounters
