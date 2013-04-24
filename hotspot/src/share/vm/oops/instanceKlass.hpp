@@ -236,7 +236,7 @@ class InstanceKlass: public Klass {
     _misc_rewritten            = 1 << 0, // methods rewritten.
     _misc_has_nonstatic_fields = 1 << 1, // for sizing with UseCompressedOops
     _misc_should_verify_class  = 1 << 2, // allow caching of preverification
-    _misc_is_anonymous         = 1 << 3, // has embedded _inner_classes field
+    _misc_is_anonymous         = 1 << 3, // has embedded _host_klass field
     _misc_is_contended         = 1 << 4, // marked with contended annotation
     _misc_has_default_methods  = 1 << 5  // class/superclass/implemented interfaces has default methods
   };
@@ -934,7 +934,9 @@ class InstanceKlass: public Klass {
   // referenced by handles.
   bool on_stack() const { return _constants->on_stack(); }
 
-  void release_C_heap_structures();
+  // callbacks for actions during class unloading
+  static void notify_unload_class(InstanceKlass* ik);
+  static void release_C_heap_structures(InstanceKlass* ik);
 
   // Parallel Scavenge and Parallel Old
   PARALLEL_GC_DECLS
@@ -1022,6 +1024,8 @@ private:
   // Returns the array class with this class as element type
   Klass* array_klass_impl(bool or_null, TRAPS);
 
+  // Free CHeap allocated fields.
+  void release_C_heap_structures();
 public:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();

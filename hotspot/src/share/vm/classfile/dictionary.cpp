@@ -27,7 +27,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
-#include "services/classLoadingService.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 
@@ -156,19 +155,7 @@ bool Dictionary::do_unloading() {
           if (k_def_class_loader_data == loader_data) {
             // This is the defining entry, so the referred class is about
             // to be unloaded.
-            // Notify the debugger and clean up the class.
             class_was_unloaded = true;
-            // notify the debugger
-            if (JvmtiExport::should_post_class_unload()) {
-              JvmtiExport::post_class_unload(ik);
-            }
-
-            // notify ClassLoadingService of class unload
-            ClassLoadingService::notify_class_unloaded(ik);
-
-            // Clean up C heap
-            ik->release_C_heap_structures();
-            ik->constants()->release_C_heap_structures();
           }
           // Also remove this system dictionary entry.
           purge_entry = true;
