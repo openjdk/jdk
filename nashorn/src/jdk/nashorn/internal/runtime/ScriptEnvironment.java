@@ -82,6 +82,9 @@ public final class ScriptEnvironment {
     /** Show full Nashorn version */
     public final boolean _fullversion;
 
+    /** Launch using as fx application */
+    public final boolean _fx;
+
     /** Should lazy compilation take place */
     public final boolean _lazy_compilation;
 
@@ -158,6 +161,7 @@ public final class ScriptEnvironment {
         _early_lvalue_error   = options.getBoolean("early.lvalue.error");
         _empty_statements     = options.getBoolean("empty.statements");
         _fullversion          = options.getBoolean("fullversion");
+        _fx                   = options.getBoolean("fx");
         _lazy_compilation     = options.getBoolean("lazy.compilation");
         _loader_per_compile   = options.getBoolean("loader.per.compile");
         _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
