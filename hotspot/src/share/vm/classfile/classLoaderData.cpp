@@ -66,17 +66,19 @@
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
-ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
+ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies) :
   _class_loader(h_class_loader()),
   _is_anonymous(is_anonymous), _keep_alive(is_anonymous), // initially
   _metaspace(NULL), _unloading(false), _klasses(NULL),
   _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
-  _next(NULL), _dependencies(),
+  _next(NULL), _dependencies(dependencies),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true)) {
     // empty
 }
 
 void ClassLoaderData::init_dependencies(TRAPS) {
+  assert(!Universe::is_fully_initialized(), "should only be called when initializing");
+  assert(is_the_null_class_loader_data(), "should only call this for the null class loader");
   _dependencies.init(CHECK);
 }
 
@@ -499,29 +501,25 @@ ClassLoaderData* ClassLoaderDataGraph::_saved_head = NULL;
 // Add a new class loader data node to the list.  Assign the newly created
 // ClassLoaderData into the java/lang/ClassLoader object as a hidden field
 ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRAPS) {
-  // Not assigned a class loader data yet.
-  // Create one.
-  ClassLoaderData* cld = new ClassLoaderData(loader, is_anonymous);
-  cld->init_dependencies(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    delete cld;
-    return NULL;
-  }
+  // We need to allocate all the oops for the ClassLoaderData before allocating the
+  // actual ClassLoaderData object.
+  ClassLoaderData::Dependencies dependencies(CHECK_NULL);
 
-  No_Safepoint_Verifier no_safepoints; // nothing is keeping the dependencies array in cld alive
-                                       // make sure we don't encounter a GC until we've inserted
-                                       // cld into the CLDG
+  No_Safepoint_Verifier no_safepoints; // we mustn't GC until we've installed the
+                                       // ClassLoaderData in the graph since the CLD
+                                       // contains unhandled oops
+
+  ClassLoaderData* cld = new ClassLoaderData(loader, is_anonymous, dependencies);
+
 
   if (!is_anonymous) {
     ClassLoaderData** cld_addr = java_lang_ClassLoader::loader_data_addr(loader());
-    if (cld_addr != NULL) {
-      // First, Atomically set it
-      ClassLoaderData* old = (ClassLoaderData*) Atomic::cmpxchg_ptr(cld, cld_addr, NULL);
-      if (old != NULL) {
-        delete cld;
-        // Returns the data.
-        return old;
-      }
+    // First, Atomically set it
+    ClassLoaderData* old = (ClassLoaderData*) Atomic::cmpxchg_ptr(cld, cld_addr, NULL);
+    if (old != NULL) {
+      delete cld;
+      // Returns the data.
+      return old;
     }
   }
 
