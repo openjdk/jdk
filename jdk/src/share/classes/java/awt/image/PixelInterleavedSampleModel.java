@@ -85,11 +85,11 @@ public class PixelInterleavedSampleModel extends ComponentSampleModel
                                        int scanlineStride,
                                        int bandOffsets[]) {
         super(dataType, w, h, pixelStride, scanlineStride, bandOffsets);
-        int minBandOff=bandOffsets[0];
-        int maxBandOff=bandOffsets[0];
-        for (int i=1; i<bandOffsets.length; i++) {
-            minBandOff = Math.min(minBandOff,bandOffsets[i]);
-            maxBandOff = Math.max(maxBandOff,bandOffsets[i]);
+        int minBandOff=this.bandOffsets[0];
+        int maxBandOff=this.bandOffsets[0];
+        for (int i=1; i<this.bandOffsets.length; i++) {
+            minBandOff = Math.min(minBandOff,this.bandOffsets[i]);
+            maxBandOff = Math.max(maxBandOff,this.bandOffsets[i]);
         }
         maxBandOff -= minBandOff;
         if (maxBandOff > scanlineStride) {

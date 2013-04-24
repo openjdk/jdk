@@ -755,6 +755,13 @@ public class ByteBandedRaster extends SunWritableRaster {
                     + scanlineStride);
         }
 
+        for (int i = 0; i < data.length; i++) {
+            if (scanlineStride > data[i].length) {
+                throw new RasterFormatException("Incorrect scanline stride: "
+                    + scanlineStride);
+            }
+        }
+
         // Make sure data for Raster is in a legal range
         for (int i=0; i < dataOffsets.length; i++) {
             if (dataOffsets[i] < 0) {
@@ -765,19 +772,20 @@ public class ByteBandedRaster extends SunWritableRaster {
         }
 
         int lastScanOffset = (height - 1) * scanlineStride;
-        int lastPixelOffset = lastScanOffset + (width-1);
-        if (lastPixelOffset < lastScanOffset) {
+
+        if ((width - 1) > (Integer.MAX_VALUE - lastScanOffset)) {
             throw new RasterFormatException("Invalid raster dimension");
         }
+        int lastPixelOffset = lastScanOffset + (width-1);
 
         int maxIndex = 0;
         int index;
 
         for (int i=0; i < numDataElements; i++) {
-            index = lastPixelOffset + dataOffsets[i];
-            if (index < lastPixelOffset) {
+            if (dataOffsets[i] > (Integer.MAX_VALUE - lastPixelOffset)) {
                 throw new RasterFormatException("Invalid raster dimension");
             }
+            index = lastPixelOffset + dataOffsets[i];
             if (index > maxIndex) {
                 maxIndex = index;
             }

@@ -821,7 +821,8 @@ public class ShortComponentRaster extends SunWritableRaster {
 
         // we can be sure that width and height are greater than 0
         if (scanlineStride < 0 ||
-            scanlineStride > (Integer.MAX_VALUE / height))
+            scanlineStride > (Integer.MAX_VALUE / height) ||
+            scanlineStride > data.length)
         {
             // integer overflow
             throw new RasterFormatException("Incorrect scanline stride: "
@@ -830,7 +831,8 @@ public class ShortComponentRaster extends SunWritableRaster {
         int lastScanOffset = (height - 1) * scanlineStride;
 
         if (pixelStride < 0 ||
-            pixelStride > (Integer.MAX_VALUE / width))
+            pixelStride > (Integer.MAX_VALUE / width) ||
+            pixelStride > data.length)
         {
             // integer overflow
             throw new RasterFormatException("Incorrect pixel stride: "
