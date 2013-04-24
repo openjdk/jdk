@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,15 +278,12 @@ public abstract class EnvelopeImpl extends ElementImpl implements Envelope {
                 result = new StreamResult(writer);
             }
 
-
-            log.log(
-                Level.FINE,
-                "SAAJ0190.impl.set.xml.declaration",
-                new String[] { omitXmlDecl });
-            log.log(
-                Level.FINE,
-                "SAAJ0191.impl.set.encoding",
-                new String[] { charset });
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "SAAJ0190.impl.set.xml.declaration",
+                        new String[] { omitXmlDecl });
+                log.log(Level.FINE, "SAAJ0191.impl.set.encoding",
+                        new String[] { charset });
+            }
 
             //StreamResult result = new StreamResult(out);
             transformer.transform(getContent(), result);

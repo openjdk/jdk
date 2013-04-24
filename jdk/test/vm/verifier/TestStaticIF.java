@@ -26,7 +26,7 @@
  * @test
  * @bug 8007736
  * @summary Test static interface method.
- * @run main/othervm -Xverify:all -XX:-UseSplitVerifier TestStaticIF
+ * @run main/othervm -Xverify:all TestStaticIF
  */
 
 public class TestStaticIF implements StaticMethodInInterface {

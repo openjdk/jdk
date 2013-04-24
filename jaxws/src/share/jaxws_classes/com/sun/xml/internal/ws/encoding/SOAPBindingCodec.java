@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.StringTokenizer;
+//import java.util.StringTokenizer;
 
 /**
  * SOAP binding {@link Codec} that can handle MTOM, SwA, and SOAP messages
@@ -74,28 +74,6 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
     public static final String UTF8_ENCODING = "utf-8";
     public static final String DEFAULT_ENCODING = UTF8_ENCODING;
 
-    /**
-     * Based on request's Accept header this is set.
-     * Currently only set if MTOMFeature is enabled.
-     *
-     * Should be used on server-side, for encoding the response.
-     */
-    private boolean acceptMtomMessages;
-
-    /**
-     * If the request's Content-Type is multipart/related; type=application/xop+xml, then this set to to true
-     *
-     * Used on server-side, for encoding the repsonse.
-     */
-    private boolean isRequestMtomMessage;
-
-    private enum TriState {UNSET,TRUE,FALSE}
-
-    /**
-     * This captures is decode is called before encode,
-     *  if true, infers that this is being used on Server-side
-     */
-    private TriState decodeFirst = TriState.UNSET;
 
     /**
      * True if Fast Infoset functionality has been
@@ -132,9 +110,6 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
     // The Fast Infoset SWA codec
     private final MimeCodec fiSwaCodec;
 
-//  private final SOAPBindingImpl binding;
-//    private final WebServiceFeature[] feature;
-
     /**
      * The XML SOAP MIME type
      */
@@ -159,34 +134,16 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
         return xmlSoapCodec;
     }
 
-    private class AcceptContentType implements ContentType {
-        private ContentType _c;
-        private String _accept;
-
-        public AcceptContentType set(Packet p, ContentType c) {
-            if (!ignoreContentNegotiationProperty && p.contentNegotiation != ContentNegotiation.none) {
-                _accept = connegXmlAccept;
-            } else {
-                _accept = xmlAccept;
-            }
-            _c = c;
-            return this;
+    private ContentTypeImpl setAcceptHeader(Packet p, ContentTypeImpl c) {
+        String _accept;
+        if (!ignoreContentNegotiationProperty && p.contentNegotiation != ContentNegotiation.none) {
+            _accept = connegXmlAccept;
+        } else {
+            _accept = xmlAccept;
         }
-
-        public String getContentType() {
-            return _c.getContentType();
-        }
-
-        public String getSOAPActionHeader() {
-            return _c.getSOAPActionHeader();
-        }
-
-        public String getAcceptHeader() {
-            return _accept;
-        }
+        c.setAcceptHeader(_accept);
+        return c;
     }
-
-    private AcceptContentType _adaptingContentType = new AcceptContentType();
 
     public SOAPBindingCodec(WSFeatureList features) {
         this(features, Codecs.createSOAPEnvelopeXmlCodec(features));
@@ -252,10 +209,8 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
 
         xmlAccept = clientAcceptedContentTypes;
 
-//      if(!(binding instanceof SOAPBindingImpl))
         if(getSoapVersion(features) == null)
             throw new WebServiceException("Expecting a SOAP binding but found ");
-//        this.binding = (SOAPBindingImpl)binding;
     }
 
     public String getMimeType() {
@@ -264,19 +219,21 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
 
     public ContentType getStaticContentType(Packet packet) {
         ContentType toAdapt = getEncoder(packet).getStaticContentType(packet);
-        return (toAdapt != null) ? _adaptingContentType.set(packet, toAdapt) : null;
+        return setAcceptHeader(packet, (ContentTypeImpl)toAdapt);
     }
 
     public ContentType encode(Packet packet, OutputStream out) throws IOException {
        preEncode(packet);
-       ContentType ct = _adaptingContentType.set(packet, getEncoder(packet).encode(packet, out));
+       ContentType ct = getEncoder(packet).encode(packet, out);
+       ct = setAcceptHeader(packet, (ContentTypeImpl)ct);
        postEncode();
        return ct;
     }
 
     public ContentType encode(Packet packet, WritableByteChannel buffer) {
         preEncode(packet);
-        ContentType ct = _adaptingContentType.set(packet, getEncoder(packet).encode(packet, buffer));
+        ContentType ct = getEncoder(packet).encode(packet, buffer);
+        ct = setAcceptHeader(packet, (ContentTypeImpl)ct);
         postEncode();
         return ct;
     }
@@ -286,8 +243,6 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
      * Set the state so that such state is used by encode process.
      */
     private void preEncode(Packet p) {
-        if (decodeFirst == TriState.UNSET)
-            decodeFirst = TriState.FALSE;
     }
 
     /**
@@ -295,9 +250,6 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
      * Reset the encoding state.
      */
     private void postEncode() {
-        decodeFirst = TriState.UNSET;
-        acceptMtomMessages = false;
-        isRequestMtomMessage = false;
     }
 
     /**
@@ -314,25 +266,24 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
      * Set the state so that such state is used by encode().
      */
     private void postDecode(Packet p) {
-        if(decodeFirst == TriState.UNSET)
-            decodeFirst = TriState.TRUE;
-        if(features.isEnabled(MTOMFeature.class))
-            acceptMtomMessages =isMtomAcceptable(p.acceptableMimeTypes);
-        if (!useFastInfosetForEncoding) {
-            useFastInfosetForEncoding = isFastInfosetAcceptable(p.acceptableMimeTypes);
+        p.setFastInfosetDisabled(isFastInfosetDisabled);
+        if(features.isEnabled(MTOMFeature.class)) p.checkMtomAcceptable();
+//            p.setMtomAcceptable( isMtomAcceptable(p.acceptableMimeTypes) );
+        MTOMFeature mtomFeature = features.get(MTOMFeature.class);
+        if (mtomFeature != null) {
+            p.setMtomFeature(mtomFeature);
         }
-    }
-
-
-    private boolean isServerSide() {
-        return decodeFirst ==  TriState.TRUE;
+        if (!useFastInfosetForEncoding) {
+            useFastInfosetForEncoding = p.getFastInfosetAcceptable(fiMimeType);
+//          useFastInfosetForEncoding = isFastInfosetAcceptable(p.acceptableMimeTypes);
+        }
     }
 
     public void decode(InputStream in, String contentType, Packet packet) throws IOException {
         if (contentType == null) {
             contentType = xmlMimeType;
         }
-
+        packet.setContentType(new ContentTypeImpl(contentType));
         preDecode(packet);
         try {
             if(isMultipartRelated(contentType))
@@ -391,9 +342,9 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
     protected void decode(MimeMultipartParser mpp, Packet packet) throws IOException {
         // is this SwA or XOP?
         final String rootContentType = mpp.getRootPart().getContentType();
-
-        if(isApplicationXopXml(rootContentType)) {
-            isRequestMtomMessage = true;
+        boolean isMTOM = isApplicationXopXml(rootContentType);
+        packet.setMtomRequest(isMTOM);
+        if(isMTOM) {
             xmlMtomCodec.decode(mpp,packet);
         } else if (isFastInfoset(rootContentType)) {
             if (packet.contentNegotiation == ContentNegotiation.none)
@@ -435,35 +386,34 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
                 b.length()));
     }
 
-    private boolean isFastInfosetAcceptable(String accept) {
-        if (accept == null || isFastInfosetDisabled) return false;
-
-        StringTokenizer st = new StringTokenizer(accept, ",");
-        while (st.hasMoreTokens()) {
-            final String token = st.nextToken().trim();
-            if (token.equalsIgnoreCase(fiMimeType)) {
-                return true;
-            }
-        }
-        return false;
-    }
+//    private boolean isFastInfosetAcceptable(String accept) {
+//        if (accept == null || isFastInfosetDisabled) return false;
+//
+//        StringTokenizer st = new StringTokenizer(accept, ",");
+//        while (st.hasMoreTokens()) {
+//            final String token = st.nextToken().trim();
+//            if (token.equalsIgnoreCase(fiMimeType)) {
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     /*
      * Just check if the Accept header contains application/xop+xml,
      * no need to worry about q values.
      */
-    private boolean isMtomAcceptable(String accept) {
-        if (accept == null || isFastInfosetDisabled) return false;
-
-        StringTokenizer st = new StringTokenizer(accept, ",");
-        while (st.hasMoreTokens()) {
-            final String token = st.nextToken().trim();
-            if (token.toLowerCase().contains(MtomCodec.XOP_XML_MIME_TYPE)) {
-                return true;
-            }
-        }
-        return false;
-    }
+//    private boolean isMtomAcceptable(String accept) {
+//        if (accept == null || isFastInfosetDisabled) return false;
+//        StringTokenizer st = new StringTokenizer(accept, ",");
+//        while (st.hasMoreTokens()) {
+//            final String token = st.nextToken().trim();
+//            if (token.toLowerCase().contains(MtomCodec.XOP_XML_MIME_TYPE)) {
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     /**
      * Determines the encoding codec.
@@ -495,11 +445,16 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
                 return fiSwaCodec;
         }
 
-        if(features.isEnabled(MTOMFeature.class)) {
-            //On client, always use XOP encoding if MTOM is enabled
-            // On Server, use XOP encoding if either request is XOP encoded or client accepts XOP encoding
-            if(!isServerSide() || isRequestMtomMessage || acceptMtomMessages)
-                return xmlMtomCodec;
+        //If the packet does not have a binding, explicitly set the MTOMFeature
+        //on the packet so that it has a way to determine whether to use MTOM
+        if (p.getBinding() == null) {
+            if (features != null) {
+                p.setMtomFeature(features.get(MTOMFeature.class));
+            }
+        }
+
+        if (p.shouldUseMtom()) {
+            return xmlMtomCodec;
         }
 
         Message m = p.getMessage();

@@ -76,11 +76,11 @@
 
 package sun.text.resources.sl;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_sl extends ListResourceBundle {
+public class FormatData_sl extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -135,6 +135,23 @@ public class FormatData_sl extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "j",
+                    "f",
+                    "m",
+                    "a",
+                    "m",
+                    "j",
+                    "j",
+                    "a",
+                    "s",
+                    "o",
+                    "n",
+                    "d",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "Nedelja", // Sunday
@@ -155,6 +172,17 @@ public class FormatData_sl extends ListResourceBundle {
                     "\u010cet", // abb Thursday
                     "Pet", // abb Friday
                     "Sob" // abb Saturday
+                }
+            },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "ned",
+                    "pon",
+                    "tor",
+                    "sre",
+                    "\u010det",
+                    "pet",
+                    "sob",
                 }
             },
             { "DayNarrows",
@@ -211,24 +239,6 @@ public class FormatData_sl extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "calendarname.islamic-civil", "islamski civilni koledar" },
-            { "calendarname.islamicc", "islamski civilni koledar" },
-            { "calendarname.roc", "kitajski dr\u017eavni koledar" },
-            { "calendarname.islamic", "islamski koledar" },
-            { "calendarname.buddhist", "budisti\u010dni koledar" },
-            { "calendarname.japanese", "japonski koledar" },
-            { "calendarname.gregorian", "gregorijanski koledar" },
-            { "calendarname.gregory", "gregorijanski koledar" },
-            { "field.era", "Doba" },
-            { "field.year", "Leto" },
-            { "field.month", "Mesec" },
-            { "field.week", "Teden" },
-            { "field.weekday", "Dan v tednu" },
-            { "field.dayperiod", "\u010cas dneva" },
-            { "field.hour", "Ura" },
-            { "field.minute", "Minuta" },
-            { "field.second", "Sekunda" },
-            { "field.zone", "Obmo\u010dje" },
         };
     }
 }

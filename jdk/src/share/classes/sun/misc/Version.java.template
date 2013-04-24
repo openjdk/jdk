@@ -52,8 +52,6 @@ public class Version {
         System.setProperty("java.version", java_version);
         System.setProperty("java.runtime.version", java_runtime_version);
         System.setProperty("java.runtime.name", java_runtime_name);
-        if (java_profile_name.length() > 0)
-            System.setProperty("java.runtime.profile", java_profile_name);
     }
 
     private static boolean versionsInitialized = false;

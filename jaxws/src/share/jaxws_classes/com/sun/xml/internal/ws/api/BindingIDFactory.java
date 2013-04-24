@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,4 +63,27 @@ public abstract class BindingIDFactory {
      *      {@link BindingID#parse(String)} will throw the exception.
      */
     public abstract @Nullable BindingID parse(@NotNull String lexical) throws WebServiceException;
+
+    /**
+     * Creates a {@link BindingID} for given transport and SOAPVersion.
+     *
+     * @return
+     *      a non-null return value would cause the JAX-WS RI to consider
+     *      the creation to be successful. No furhter {@link BindingIDFactory}
+     *      will be consulted.
+     *
+     *      <p>
+     *      Retruning a null value indicates that this factory doesn't understand
+     *      the transport, in which case the JAX-WS RI will keep asking next
+     *      {@link BindingIDFactory}.
+     *
+     * @throws WebServiceException
+     *      if the implementation understood the transport but it is not correct,
+     *      this exception can be thrown to abort the creation with error.
+     *      No further {@link BindingIDFactory} will be consulted, and
+     *      {@link BindingID#create(String, SOAPVersion)} will throw the exception.
+     */
+    public @Nullable BindingID create(@NotNull String transport, @NotNull SOAPVersion soapVersion) throws WebServiceException {
+        return null;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,12 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * The <code>PageFormat</code> class describes the size and
  * orientation of a page to be printed.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class PageFormat implements Cloneable
 {
 
@@ -48,21 +46,21 @@ public class PageFormat implements Cloneable
      *  Note that this is not the Macintosh landscape but
      *  is the Window's and PostScript landscape.
      */
-    public static final int LANDSCAPE = 0;
+    @Native public static final int LANDSCAPE = 0;
 
     /**
      *  The origin is at the top left of the paper with
      *  x running to the right and y running down the
      *  paper.
      */
-    public static final int PORTRAIT = 1;
+    @Native public static final int PORTRAIT = 1;
 
     /**
      *  The origin is at the top right of the paper with x
      *  running top to bottom and y running right to left.
      *  Note that this is the Macintosh landscape.
      */
-    public static final int REVERSE_LANDSCAPE = 2;
+    @Native public static final int REVERSE_LANDSCAPE = 2;
 
  /* Instance Variables */
 

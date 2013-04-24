@@ -131,6 +131,28 @@ public class Region {
         return newv;
     }
 
+    /**
+     * Multiply the scale factor {@code sv} and the value {@code v} with
+     * appropriate clipping to the bounds of Integer resolution. If the answer
+     * would be greater than {@code Integer.MAX_VALUE} then {@code
+     * Integer.MAX_VALUE} is returned. If the answer would be less than {@code
+     * Integer.MIN_VALUE} then {@code Integer.MIN_VALUE} is returned. Otherwise
+     * the multiplication is returned.
+     */
+    public static int clipScale(final int v, final double sv) {
+        if (sv == 1.0) {
+            return v;
+        }
+        final double newv = v * sv;
+        if (newv < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        if (newv > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) Math.round(newv);
+    }
+
     protected Region(int lox, int loy, int hix, int hiy) {
         this.lox = lox;
         this.loy = loy;
@@ -347,6 +369,79 @@ public class Region {
         endRow(box);
         calcBBox();
     }
+
+    /**
+     * Returns a Region object that represents the same list of rectangles as
+     * the current Region object, scaled by the specified sx, sy factors.
+     */
+    public Region getScaledRegion(final double sx, final double sy) {
+        if (sx == 0 || sy == 0 || this == EMPTY_REGION) {
+            return EMPTY_REGION;
+        }
+        if ((sx == 1.0 && sy == 1.0) || (this == WHOLE_REGION)) {
+            return this;
+        }
+
+        int tlox = clipScale(lox, sx);
+        int tloy = clipScale(loy, sy);
+        int thix = clipScale(hix, sx);
+        int thiy = clipScale(hiy, sy);
+        Region ret = new Region(tlox, tloy, thix, thiy);
+        int bands[] = this.bands;
+        if (bands != null) {
+            int end = endIndex;
+            int newbands[] = new int[end];
+            int i = 0; // index for source bands
+            int j = 0; // index for translated newbands
+            int ncol;
+            while (i < end) {
+                int y1, y2;
+                newbands[j++] = y1   = clipScale(bands[i++], sy);
+                newbands[j++] = y2   = clipScale(bands[i++], sy);
+                newbands[j++] = ncol = bands[i++];
+                int savej = j;
+                if (y1 < y2) {
+                    while (--ncol >= 0) {
+                        int x1 = clipScale(bands[i++], sx);
+                        int x2 = clipScale(bands[i++], sx);
+                        if (x1 < x2) {
+                            newbands[j++] = x1;
+                            newbands[j++] = x2;
+                        }
+                    }
+                } else {
+                    i += ncol * 2;
+                }
+                // Did we get any non-empty bands in this row?
+                if (j > savej) {
+                    newbands[savej-1] = (j - savej) / 2;
+                } else {
+                    j = savej - 3;
+                }
+            }
+            if (j <= 5) {
+                if (j < 5) {
+                    // No rows or bands were generated...
+                    ret.lox = ret.loy = ret.hix = ret.hiy = 0;
+                } else {
+                    // Only generated one single rect in the end...
+                    ret.loy = newbands[0];
+                    ret.hiy = newbands[1];
+                    ret.lox = newbands[3];
+                    ret.hix = newbands[4];
+                }
+                // ret.endIndex and ret.bands were never initialized...
+                // ret.endIndex = 0;
+                // ret.newbands = null;
+            } else {
+                // Generated multiple bands and/or multiple rows...
+                ret.endIndex = j;
+                ret.bands = newbands;
+            }
+        }
+        return ret;
+    }
+
 
     /**
      * Returns a Region object that represents the same list of

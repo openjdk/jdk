@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import javax.xml.ws.BindingType;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Holder;
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -84,12 +85,12 @@ public final class JwsImplGenerator extends GeneratorBase {
                 jwsImplGenerator.init(model, options, receiver);
                 jwsImplGenerator.doGeneration();
                 // print a warning message while implFiles.size() is zero
-                if (jwsImplGenerator.implFiles.size() == 0) {
-                        StringBuffer msg = new StringBuffer();
+                if (jwsImplGenerator.implFiles.isEmpty()) {
+                        StringBuilder msg = new StringBuilder();
                         if (options.implServiceName != null)
-                                msg.append("serviceName=[" + options.implServiceName + "] ");
+                                msg.append("serviceName=[").append(options.implServiceName).append("] ");
                         if (options.implPortName != null)
-                                msg.append("portName=[" + options.implPortName + "] ");
+                                msg.append("portName=[").append(options.implPortName).append("] ");
 
                         if (msg.length() > 0)
                                 msg.append(", Not found in wsdl file.\n");
@@ -107,7 +108,7 @@ public final class JwsImplGenerator extends GeneratorBase {
         public static boolean moveToImplDestDir(List<String> gImplFiles,
             WsimportOptions options, ErrorReceiver receiver) {
                 if (options.implDestDir == null || gImplFiles == null
-                    || gImplFiles.size() == 0)
+                    || gImplFiles.isEmpty())
                         return true;
 
                 List<ImplFile> generatedImplFiles = ImplFile.toImplFiles(gImplFiles);
@@ -335,24 +336,29 @@ public final class JwsImplGenerator extends GeneratorBase {
                 webServiceAnn.param("wsdlLocation", wsdlLocation);
                 webServiceAnn.param("endpointInterface", port.getJavaInterface().getName());
         }
-        //CR373098 To transform the java class name as validate.
-  private String transToValidJavaIdentifier(String s) {
-    if (s == null) return null;
-    final int len = s.length();
-    StringBuffer retSB = new StringBuffer();
-    if (len == 0 || !Character.isJavaIdentifierStart(s.charAt(0)))
-      retSB.append("J"); //update to a default start char
-    else
-        retSB.append(s.charAt(0));
 
-    for (int i = 1; i < len; i++) {
-      if (!Character.isJavaIdentifierPart(s.charAt(i)))
-        ;  //delete it if it is illegal //TODO: It might conflict "a-b" vs. "ab"
-      else
-        retSB.append(s.charAt(i));
-    }
-    return retSB.toString();
-  }
+        //CR373098 To transform the java class name as validate.
+        private String transToValidJavaIdentifier(String s) {
+            if (s == null) {
+                return null;
+            }
+            final int len = s.length();
+            StringBuilder retSB = new StringBuilder();
+            if (len == 0 || !Character.isJavaIdentifierStart(s.charAt(0))) {
+                retSB.append("J"); //update to a default start char
+            } else {
+                retSB.append(s.charAt(0));
+            }
+
+            for (int i = 1; i < len; i++) {
+                if (!Character.isJavaIdentifierPart(s.charAt(i)))
+                  ; //delete it if it is illegal //TODO: It might conflict "a-b" vs. "ab"
+                else {
+                    retSB.append(s.charAt(i));
+                }
+            }
+            return retSB.toString();
+        }
 
         private String makePackageQualified(String s) {
                 s = transToValidJavaIdentifier(s);
@@ -446,21 +452,20 @@ public final class JwsImplGenerator extends GeneratorBase {
                         }
                 }
 
-                // process the bindings in backup list of model
+                // process the bindings in whole document
                 if (value == null) {
-                        // TODO: The property "BAKEUP_BINDINGS" is set in WsdlModeler when init
-                        // the model
-                        // make this as a const if needed.
-                        HashMap hm = (HashMap) model.getProperty("BAKEUP_BINDINGS");
-                        Binding b = (Binding) hm.get(bName);
-                        if (b != null) {
+                        if (model.getEntity() instanceof Definitions) {
+                            Definitions definitions = (Definitions) model.getEntity();
+                            Binding b = (Binding) definitions.resolveBindings().get(bName);
+                            if (b != null) {
                                 List<TWSDLExtension> bindextends = (List<TWSDLExtension>) b
                                     .extensions();
                                 for (TWSDLExtension wsdlext : bindextends) {
-                                        value = resolveBindingValue(wsdlext);
-                                        if (value != null)
-                                                break;
+                                    value = resolveBindingValue(wsdlext);
+                                    if (value != null)
+                                    break;
                                 }
+                            }
                         }
                 }
 
@@ -478,14 +483,14 @@ public final class JwsImplGenerator extends GeneratorBase {
    *          retrieved from WSDL
    * @return Standard BindingType URI defined by JAX-WS 2.0 specification.
    */
-  private String translate(String transportURI)
-  {
-    String translatedBindingId = TRANSLATION_MAP.get(transportURI);
-    if (translatedBindingId == null)
-      translatedBindingId = transportURI;
-
-    return translatedBindingId;
-  }
+//  private String translate(String transportURI)
+//  {
+//    String translatedBindingId = TRANSLATION_MAP.get(transportURI);
+//    if (translatedBindingId == null)
+//      translatedBindingId = transportURI;
+//
+//    return translatedBindingId;
+//  }
 
         /*****************************************************************************
          * Inner classes definition
@@ -529,7 +534,10 @@ public final class JwsImplGenerator extends GeneratorBase {
                         ret = options.implDestDir;
                 }
 
-                ret.mkdirs();
+                boolean created = ret.mkdirs();
+                if (options.verbose && !created) {
+                    System.out.println(MessageFormat.format("Directory not created: {0}", ret));
+                }
                 return ret;
         }
 
@@ -549,7 +557,7 @@ public final class JwsImplGenerator extends GeneratorBase {
 
         private static File findFile(WsimportOptions options, String qualifiedFileName)
             throws java.io.IOException {
-                String baseDir = options.destDir.getCanonicalPath();
+                String baseDir = options.sourceDir.getCanonicalPath();
                 String fp = null;
                 for (File f : options.getGeneratedFiles()) {
                         fp = getQualifiedFileName(baseDir, f);

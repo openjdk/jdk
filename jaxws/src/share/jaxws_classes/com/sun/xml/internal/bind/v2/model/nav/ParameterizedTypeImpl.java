@@ -59,10 +59,11 @@ class ParameterizedTypeImpl implements ParameterizedType {
         if (formals.length != actualTypeArguments.length) {
             throw new MalformedParameterizedTypeException();
         }
+/*
         for (int i = 0; i < actualTypeArguments.length; i++) {
             // check actuals against formals' bounds
         }
-
+*/
     }
 
     public Type[] getActualTypeArguments() {
@@ -96,6 +97,7 @@ class ParameterizedTypeImpl implements ParameterizedType {
             Type thatOwner = that.getOwnerType();
             Type thatRawType = that.getRawType();
 
+/*
             if (false) { // Debugging
                 boolean ownerEquality = (ownerType == null ?
                         thatOwner == null :
@@ -114,6 +116,7 @@ class ParameterizedTypeImpl implements ParameterizedType {
                         ownerEquality, rawEquality, typeArgEquality);
                 return ownerEquality && rawEquality && typeArgEquality;
             }
+*/
 
 
             return

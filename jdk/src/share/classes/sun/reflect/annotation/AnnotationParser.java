@@ -30,6 +30,8 @@ import java.util.*;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
 import java.lang.reflect.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import sun.reflect.ConstantPool;
 
 import sun.reflect.generics.parser.SignatureParser;
@@ -253,12 +255,15 @@ public class AnnotationParser {
      * Returns an annotation of the given type backed by the given
      * member -> value map.
      */
-    public static Annotation annotationForMap(
-        Class<? extends Annotation> type, Map<String, Object> memberValues)
+    public static Annotation annotationForMap(final Class<? extends Annotation> type,
+                                              final Map<String, Object> memberValues)
     {
-        return (Annotation) Proxy.newProxyInstance(
-            type.getClassLoader(), new Class<?>[] { type },
-            new AnnotationInvocationHandler(type, memberValues));
+        return AccessController.doPrivileged(new PrivilegedAction<Annotation>() {
+            public Annotation run() {
+                return (Annotation) Proxy.newProxyInstance(
+                    type.getClassLoader(), new Class<?>[] { type },
+                    new AnnotationInvocationHandler(type, memberValues));
+            }});
     }
 
     /**

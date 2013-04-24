@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,8 @@ public abstract class AbstractHeaderImpl implements Header {
         // check mustUnderstand
         String v = getAttribute(soapVersion.nsUri, "mustUnderstand");
         if(v==null || !parseBool(v)) return true;
+
+        if (roles == null) return true;
 
         // now role
         return !roles.contains(getRole(soapVersion));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,13 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.sun.codemodel.internal.CodeWriter;
 import com.sun.codemodel.internal.JPackage;
+import com.sun.codemodel.internal.JResourceFile;
 import com.sun.codemodel.internal.writer.FileCodeWriter;
 import com.sun.codemodel.internal.writer.PrologCodeWriter;
+import com.sun.istack.internal.tools.DefaultAuthenticator;
 import com.sun.org.apache.xml.internal.resolver.CatalogManager;
 import com.sun.org.apache.xml.internal.resolver.tools.CatalogResolver;
 import com.sun.tools.internal.xjc.api.ClassNameAllocator;
@@ -106,6 +106,15 @@ public class Options
     public String encoding;
 
     /**
+     * If true XML security features when parsing XML documents will be disabled.
+     * The default value is false.
+     *
+     * Boolean
+     * @since 2.2.6
+     */
+    public boolean disableXmlSecurity;
+
+    /**
      * Check the source schemas with extra scrutiny.
      * The exact meaning depends on the schema language.
      */
@@ -152,20 +161,12 @@ public class Options
      */
     public SpecVersion target = SpecVersion.LATEST;
 
-    private boolean is2_2 = true;
 
     public Options() {
-        if (is2_2) {
-            try {
-                Class.forName("javax.xml.bind.JAXBPermission");
-            } catch (ClassNotFoundException cnfe) {
-                is2_2 = false;
-            }
-            if (!is2_2) {
-                target = SpecVersion.V2_1;
-            } else {
-                target = SpecVersion.LATEST;
-            }
+        try {
+            Class.forName("javax.xml.bind.JAXBPermission");
+        } catch (ClassNotFoundException cnfe) {
+            target = SpecVersion.V2_1;
         }
     }
 
@@ -213,8 +214,7 @@ public class Options
     // Proxy setting.
     private String proxyHost = null;
     private String proxyPort = null;
-    private String proxyUser = null;
-    private String proxyPassword = null;
+    public String proxyAuth = null;
 
     /**
      * {@link Plugin}s that are enabled in this compilation.
@@ -459,7 +459,9 @@ public class Options
      * Gets a classLoader that can load classes specified via the
      * -classpath option.
      */
-    public URLClassLoader getUserClassLoader( ClassLoader parent ) {
+    public ClassLoader getUserClassLoader( ClassLoader parent ) {
+        if (classpaths.isEmpty())
+            return parent;
         return new URLClassLoader(
                 classpaths.toArray(new URL[classpaths.size()]),parent);
     }
@@ -540,6 +542,10 @@ public class Options
         }
         if (args[i].equals("-enableIntrospection")) {
             enableIntrospection = true;
+            return 1;
+        }
+        if (args[i].equals("-disableXmlSecurity")) {
+            disableXmlSecurity = true;
             return 1;
         }
         if (args[i].equals("-contentForWildcard")) {
@@ -639,16 +645,6 @@ public class Options
             }
             return 2;
         }
-        if (args[i].equals("-source")) {
-            String version = requireArgument("-source",args,++i);
-            //For source 1.0 the 1.0 Driver is loaded
-            //Hence anything other than 2.0 is defaulted to
-            //2.0
-            if( !version.equals("2.0") && !version.equals("2.1") )
-                throw new BadCommandLineException(
-                    Messages.format(Messages.DEFAULT_VERSION));
-            return 2;
-        }
         if( args[i].equals("-Xtest-class-name-allocator") ) {
             classNameAllocator = new ClassNameAllocator() {
                 public String assignClassName(String packageName, String className) {
@@ -703,18 +699,29 @@ public class Options
     }
 
     private void parseProxy(String text) throws BadCommandLineException {
-        // syntax is [user[:password]@]proxyHost:proxyPort
-        String token = "([^@:]+)";
-        Pattern p = Pattern.compile("(?:"+token+"(?:\\:"+token+")?\\@)?"+token+"(?:\\:"+token+")");
+        int i = text.lastIndexOf('@');
+        int j = text.lastIndexOf(':');
 
-        Matcher matcher = p.matcher(text);
-        if(!matcher.matches())
-            throw new BadCommandLineException(Messages.format(Messages.ILLEGAL_PROXY,text));
-
-        proxyUser = matcher.group(1);
-        proxyPassword = matcher.group(2);
-        proxyHost = matcher.group(3);
-        proxyPort = matcher.group(4);
+        if (i > 0) {
+            proxyAuth = text.substring(0, i);
+            if (j > i) {
+                proxyHost = text.substring(i + 1, j);
+                proxyPort = text.substring(j + 1);
+            } else {
+                proxyHost = text.substring(i + 1);
+                proxyPort = "80";
+            }
+        } else {
+            //no auth info
+            if (j < 0) {
+                //no port
+                proxyHost = text;
+                proxyPort = "80";
+            } else {
+                proxyHost = text.substring(0, j);
+                proxyPort = text.substring(j + 1);
+            }
+        }
         try {
             Integer.valueOf(proxyPort);
         } catch (NumberFormatException e) {
@@ -811,11 +818,9 @@ public class Options
                 throw new BadCommandLineException(
                     Messages.format(Messages.MISSING_PROXYPORT));
             }
-            if(proxyUser!=null)
-                System.setProperty("http.proxyUser", proxyUser);
-            if(proxyPassword!=null)
-                System.setProperty("http.proxyPassword", proxyPassword);
-
+            if (proxyAuth != null) {
+                DefaultAuthenticator.getAuthenticator().setProxyAuth(proxyAuth);
+            }
         }
 
         if (grammars.isEmpty())
