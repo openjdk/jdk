@@ -84,10 +84,10 @@
 package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
+import jdk.nashorn.internal.lookup.Lookup;
 
 class StaticClassIntrospector extends FacetIntrospector {
     StaticClassIntrospector(Class<?> clazz) {
@@ -98,7 +98,7 @@ class StaticClassIntrospector extends FacetIntrospector {
     Map<String, MethodHandle> getInnerClassGetters() {
         final Map<String, MethodHandle> map = new HashMap<>();
         for(Class<?> innerClass: membersLookup.getInnerClasses()) {
-            map.put(innerClass.getSimpleName(), editMethodHandle(MethodHandles.constant(StaticClass.class,
+            map.put(innerClass.getSimpleName(), editMethodHandle(Lookup.MH.constant(StaticClass.class,
                     StaticClass.forClass(innerClass))));
         }
         return map;
@@ -106,7 +106,11 @@ class StaticClassIntrospector extends FacetIntrospector {
 
     @Override
     MethodHandle editMethodHandle(MethodHandle mh) {
-        MethodHandle newHandle = MethodHandles.dropArguments(mh, 0, Object.class);
+        return dropReceiver(mh, Object.class);
+    }
+
+    static MethodHandle dropReceiver(final MethodHandle mh, final Class<?> receiverClass) {
+        MethodHandle newHandle = Lookup.MH.dropArguments(mh, 0, receiverClass);
         // NOTE: this is a workaround for the fact that dropArguments doesn't preserve vararg collector state.
         if(mh.isVarargsCollector() && !newHandle.isVarargsCollector()) {
             final MethodType type = mh.type();
