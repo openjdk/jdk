@@ -77,8 +77,9 @@ struct PairPositioningFormat1Subtable : PairPositioningSubtable
     le_uint32  process(const LEReferenceTo<PairPositioningFormat1Subtable> &base, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode &success) const;
 
 private:
-    const PairValueRecord *findPairValueRecord(TTGlyphID glyphID, const PairValueRecord *records,
-        le_uint16 recordCount, le_uint16 recordSize) const;
+    LEReferenceTo<PairValueRecord> findPairValueRecord(const LETableReference &base, TTGlyphID glyphID, const PairValueRecord *records,
+        le_uint16 recordCount, le_uint16 recordSize, LEErrorCode &success) const;
+
 };
 LE_VAR_ARRAY(PairPositioningFormat1Subtable, pairSetTableOffsetArray)
 
