@@ -1043,24 +1043,13 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
 
   case JVM_CONSTANT_InvokeDynamic:
   {
-    int k1 = invoke_dynamic_bootstrap_method_ref_index_at(index1);
-    int k2 = cp2->invoke_dynamic_bootstrap_method_ref_index_at(index2);
-    bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
-    if (!match)  return false;
-    k1 = invoke_dynamic_name_and_type_ref_index_at(index1);
-    k2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
-    match = compare_entry_to(k1, cp2, k2, CHECK_false);
-    if (!match)  return false;
-    int argc = invoke_dynamic_argument_count_at(index1);
-    if (argc == cp2->invoke_dynamic_argument_count_at(index2)) {
-      for (int j = 0; j < argc; j++) {
-        k1 = invoke_dynamic_argument_index_at(index1, j);
-        k2 = cp2->invoke_dynamic_argument_index_at(index2, j);
-        match = compare_entry_to(k1, cp2, k2, CHECK_false);
-        if (!match)  return false;
-      }
-      return true;           // got through loop; all elements equal
-    }
+    int k1 = invoke_dynamic_name_and_type_ref_index_at(index1);
+    int k2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
+    int i1 = invoke_dynamic_bootstrap_specifier_index(index1);
+    int i2 = cp2->invoke_dynamic_bootstrap_specifier_index(index2);
+    bool match = compare_entry_to(k1, cp2, k2, CHECK_false) &&
+                 compare_operand_to(i1, cp2, i2, CHECK_false);
+    return match;
   } break;
 
   case JVM_CONSTANT_String:
@@ -1093,6 +1082,80 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
 
   return false;
 } // end compare_entry_to()
+
+
+// Resize the operands array with delta_len and delta_size.
+// Used in RedefineClasses for CP merge.
+void ConstantPool::resize_operands(int delta_len, int delta_size, TRAPS) {
+  int old_len  = operand_array_length(operands());
+  int new_len  = old_len + delta_len;
+  int min_len  = (delta_len > 0) ? old_len : new_len;
+
+  int old_size = operands()->length();
+  int new_size = old_size + delta_size;
+  int min_size = (delta_size > 0) ? old_size : new_size;
+
+  ClassLoaderData* loader_data = pool_holder()->class_loader_data();
+  Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, new_size, CHECK);
+
+  // Set index in the resized array for existing elements only
+  for (int idx = 0; idx < min_len; idx++) {
+    int offset = operand_offset_at(idx);                       // offset in original array
+    operand_offset_at_put(new_ops, idx, offset + 2*delta_len); // offset in resized array
+  }
+  // Copy the bootstrap specifiers only
+  Copy::conjoint_memory_atomic(operands()->adr_at(2*old_len),
+                               new_ops->adr_at(2*new_len),
+                               (min_size - 2*min_len) * sizeof(u2));
+  // Explicitly deallocate old operands array.
+  // Note, it is not needed for 7u backport.
+  if ( operands() != NULL) { // the safety check
+    MetadataFactory::free_array<u2>(loader_data, operands());
+  }
+  set_operands(new_ops);
+} // end resize_operands()
+
+
+// Extend the operands array with the length and size of the ext_cp operands.
+// Used in RedefineClasses for CP merge.
+void ConstantPool::extend_operands(constantPoolHandle ext_cp, TRAPS) {
+  int delta_len = operand_array_length(ext_cp->operands());
+  if (delta_len == 0) {
+    return; // nothing to do
+  }
+  int delta_size = ext_cp->operands()->length();
+
+  assert(delta_len  > 0 && delta_size > 0, "extended operands array must be bigger");
+
+  if (operand_array_length(operands()) == 0) {
+    ClassLoaderData* loader_data = pool_holder()->class_loader_data();
+    Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, delta_size, CHECK);
+    // The first element index defines the offset of second part
+    operand_offset_at_put(new_ops, 0, 2*delta_len); // offset in new array
+    set_operands(new_ops);
+  } else {
+    resize_operands(delta_len, delta_size, CHECK);
+  }
+
+} // end extend_operands()
+
+
+// Shrink the operands array to a smaller array with new_len length.
+// Used in RedefineClasses for CP merge.
+void ConstantPool::shrink_operands(int new_len, TRAPS) {
+  int old_len = operand_array_length(operands());
+  if (new_len == old_len) {
+    return; // nothing to do
+  }
+  assert(new_len < old_len, "shrunken operands array must be smaller");
+
+  int free_base  = operand_next_offset_at(new_len - 1);
+  int delta_len  = new_len - old_len;
+  int delta_size = 2*delta_len + free_base - operands()->length();
+
+  resize_operands(delta_len, delta_size, CHECK);
+
+} // end shrink_operands()
 
 
 void ConstantPool::copy_operands(constantPoolHandle from_cp,
@@ -1355,6 +1418,46 @@ int ConstantPool::find_matching_entry(int pattern_i,
 
   return 0;  // entry not found; return unused index zero (0)
 } // end find_matching_entry()
+
+
+// Compare this constant pool's bootstrap specifier at idx1 to the constant pool
+// cp2's bootstrap specifier at idx2.
+bool ConstantPool::compare_operand_to(int idx1, constantPoolHandle cp2, int idx2, TRAPS) {
+  int k1 = operand_bootstrap_method_ref_index_at(idx1);
+  int k2 = cp2->operand_bootstrap_method_ref_index_at(idx2);
+  bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
+
+  if (!match) {
+    return false;
+  }
+  int argc = operand_argument_count_at(idx1);
+  if (argc == cp2->operand_argument_count_at(idx2)) {
+    for (int j = 0; j < argc; j++) {
+      k1 = operand_argument_index_at(idx1, j);
+      k2 = cp2->operand_argument_index_at(idx2, j);
+      match = compare_entry_to(k1, cp2, k2, CHECK_false);
+      if (!match) {
+        return false;
+      }
+    }
+    return true;           // got through loop; all elements equal
+  }
+  return false;
+} // end compare_operand_to()
+
+// Search constant pool search_cp for a bootstrap specifier that matches
+// this constant pool's bootstrap specifier at pattern_i index.
+// Return the index of a matching bootstrap specifier or (-1) if there is no match.
+int ConstantPool::find_matching_operand(int pattern_i,
+                    constantPoolHandle search_cp, int search_len, TRAPS) {
+  for (int i = 0; i < search_len; i++) {
+    bool found = compare_operand_to(pattern_i, search_cp, i, CHECK_(-1));
+    if (found) {
+      return i;
+    }
+  }
+  return -1;  // bootstrap specifier not found; return unused index (-1)
+} // end find_matching_operand()
 
 
 #ifndef PRODUCT
