@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.xml.internal.ws.message;
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.api.message.Attachment;
 import com.sun.xml.internal.ws.spi.db.XMLBridge;
-import com.sun.xml.internal.ws.util.ASCIIUtility;
 import com.sun.xml.internal.ws.util.ByteArrayBuffer;
 import com.sun.xml.internal.ws.encoding.DataSourceStreamingDataHandler;
 
@@ -62,14 +61,17 @@ public final class JAXBAttachment implements Attachment, DataSource {
         this.mimeType = mimeType;
     }
 
+    @Override
     public String getContentId() {
         return contentId;
     }
 
+    @Override
     public String getContentType() {
         return mimeType;
     }
 
+    @Override
     public byte[] asByteArray() {
         ByteArrayBuffer bab = new ByteArrayBuffer();
         try {
@@ -80,14 +82,17 @@ public final class JAXBAttachment implements Attachment, DataSource {
         return bab.getRawData();
     }
 
+    @Override
     public DataHandler asDataHandler() {
         return new DataSourceStreamingDataHandler(this);
     }
 
+    @Override
     public Source asSource() {
         return new StreamSource(asInputStream());
     }
 
+    @Override
     public InputStream asInputStream() {
         ByteArrayBuffer bab = new ByteArrayBuffer();
         try {
@@ -98,6 +103,7 @@ public final class JAXBAttachment implements Attachment, DataSource {
         return bab.newInputStream();
     }
 
+    @Override
     public void writeTo(OutputStream os) throws IOException {
         try {
             bridge.marshal(jaxbObject, os, null, null);
@@ -106,6 +112,7 @@ public final class JAXBAttachment implements Attachment, DataSource {
         }
     }
 
+    @Override
     public void writeTo(SOAPMessage saaj) throws SOAPException {
         AttachmentPart part = saaj.createAttachmentPart();
         part.setDataHandler(asDataHandler());
@@ -113,14 +120,17 @@ public final class JAXBAttachment implements Attachment, DataSource {
         saaj.addAttachmentPart(part);
     }
 
+    @Override
     public InputStream getInputStream() throws IOException {
         return asInputStream();
     }
 
+    @Override
     public OutputStream getOutputStream() throws IOException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getName() {
         return null;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.xml.internal.ws.binding;
 
+import com.oracle.webservices.internal.api.message.MessageContextFactory;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.BindingID;
@@ -43,9 +44,11 @@ import javax.xml.ws.soap.AddressingFeature;
 import javax.xml.ws.handler.Handler;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
+
 
 /**
  * Instances are created by the service, which then
@@ -67,10 +70,13 @@ public abstract class BindingImpl implements WSBinding {
     protected static final WebServiceFeature[] EMPTY_FEATURES = new WebServiceFeature[0];
 
     //This is reset when ever Binding.setHandlerChain() or SOAPBinding.setRoles() is called.
-    protected HandlerConfiguration handlerConfig;
+    private HandlerConfiguration handlerConfig;
+    private final Set<QName> addedHeaders = new HashSet<QName>();
+    private final Set<QName> knownHeaders = new HashSet<QName>();
+    private final Set<QName> unmodKnownHeaders = Collections.unmodifiableSet(knownHeaders);
     private final BindingID bindingId;
     // Features that are set(enabled/disabled) on the binding
-    protected final WebServiceFeatureList features = new WebServiceFeatureList();
+    protected final WebServiceFeatureList features;
     // Features that are set(enabled/disabled) on the binding or an operation
     protected final Map<QName, WebServiceFeatureList> operationFeatures = new HashMap<QName, WebServiceFeatureList>();
     // Features that are set(enabled/disabled) on the binding, an operation or an input message
@@ -82,10 +88,15 @@ public abstract class BindingImpl implements WSBinding {
 
     protected javax.xml.ws.Service.Mode serviceMode = javax.xml.ws.Service.Mode.PAYLOAD;
 
+    protected MessageContextFactory messageContextFactory;
+
     protected BindingImpl(BindingID bindingId, WebServiceFeature ... features) {
         this.bindingId = bindingId;
         handlerConfig = new HandlerConfiguration(Collections.<String>emptySet(), Collections.<Handler>emptyList());
-        setFeatures(features);
+        if (handlerConfig.getHandlerKnownHeaders() != null)
+            knownHeaders.addAll(handlerConfig.getHandlerKnownHeaders());
+        this.features = new WebServiceFeatureList(features);
+        this.features.validate();
     }
 
     public
@@ -98,13 +109,25 @@ public abstract class BindingImpl implements WSBinding {
         return handlerConfig;
     }
 
+    protected void setHandlerConfig(HandlerConfiguration handlerConfig) {
+        this.handlerConfig = handlerConfig;
+        knownHeaders.clear();
+        knownHeaders.addAll(addedHeaders);
+        if (handlerConfig != null && handlerConfig.getHandlerKnownHeaders() != null)
+            knownHeaders.addAll(handlerConfig.getHandlerKnownHeaders());
+    }
 
     public void setMode(@NotNull Service.Mode mode) {
         this.serviceMode = mode;
     }
 
     public Set<QName> getKnownHeaders() {
-        return handlerConfig.getHandlerKnownHeaders();
+        return unmodKnownHeaders;
+    }
+
+    public boolean addKnownHeader(QName headerQName) {
+        addedHeaders.add(headerQName);
+        return knownHeaders.add(headerQName);
     }
 
     public
@@ -186,7 +209,7 @@ public abstract class BindingImpl implements WSBinding {
     @NotNull
     public WebServiceFeatureList getFeatures() {
         //TODO scchen convert BindingID  to WebServiceFeature[]
-        if(!isFeatureEnabled(com.sun.xml.internal.org.jvnet.ws.EnvelopeStyleFeature.class)) {
+        if(!isFeatureEnabled(com.oracle.webservices.internal.api.EnvelopeStyleFeature.class)) {
             WebServiceFeature[] f = { getSOAPVersion().toFeature() };
             features.mergeFeatures(f, false);
         }
@@ -217,14 +240,6 @@ public abstract class BindingImpl implements WSBinding {
         final WebServiceFeatureList messageFeatureList = this.faultMessageFeatures.get(
                 new MessageKey(operationName, messageName));
         return FeatureListUtil.mergeList(operationFeatureList, messageFeatureList, features);
-    }
-
-    public void setFeatures(WebServiceFeature... newFeatures) {
-        if (newFeatures != null) {
-            for (WebServiceFeature f : newFeatures) {
-                features.add(f);
-            }
-        }
     }
 
     public void setOperationFeatures(@NotNull final QName operationName, WebServiceFeature... newFeatures) {
@@ -280,10 +295,12 @@ public abstract class BindingImpl implements WSBinding {
         }
     }
 
-    public void addFeature(@NotNull WebServiceFeature newFeature) {
-        features.add(newFeature);
+    public synchronized @NotNull com.oracle.webservices.internal.api.message.MessageContextFactory getMessageContextFactory () {
+        if (messageContextFactory == null) {
+            messageContextFactory = MessageContextFactory.createFactory(getFeatures().toArray());
+        }
+        return messageContextFactory;
     }
-
 
     /**
      * Experimental: Identify messages based on the name of the message and the

@@ -1182,6 +1182,9 @@ bool os::dll_build_name(char *buffer, size_t buflen,
   } else if (strchr(pname, *os::path_separator()) != NULL) {
     int n;
     char** pelements = split_path(pname, &n);
+    if (pelements == NULL) {
+      return false;
+    }
     for (int i = 0 ; i < n ; i++) {
       char* path = pelements[i];
       // Really shouldn't be NULL, but check can't hurt
@@ -4235,9 +4238,6 @@ char * os::native_path(char *path) {
           path[3] = '\0';
   }
 
-  #ifdef DEBUG
-    jio_fprintf(stderr, "sysNativePath: %s\n", path);
-  #endif DEBUG
   return path;
 }
 

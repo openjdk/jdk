@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.awt.print;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * The <code>Pageable</code> implementation represents a set of
@@ -35,8 +35,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @see java.awt.print.PageFormat
  * @see java.awt.print.Printable
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public interface Pageable {
 
     /**
@@ -45,7 +43,7 @@ public interface Pageable {
      * method if a <code>Pageable</code> implementation does not know
      * the number of pages in its set.
      */
-    int UNKNOWN_NUMBER_OF_PAGES = -1;
+    @Native int UNKNOWN_NUMBER_OF_PAGES = -1;
 
     /**
      * Returns the number of pages in the set.

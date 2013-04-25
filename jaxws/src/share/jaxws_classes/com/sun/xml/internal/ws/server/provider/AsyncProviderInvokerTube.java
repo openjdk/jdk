@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.Fiber;
 import com.sun.xml.internal.ws.api.pipe.NextAction;
+import com.sun.xml.internal.ws.api.pipe.ThrowableContainerPropertySet;
 import com.sun.xml.internal.ws.api.pipe.Tube;
 import com.sun.xml.internal.ws.api.server.AsyncProvider;
 import com.sun.xml.internal.ws.api.server.AsyncProviderCallback;
@@ -45,6 +46,7 @@ import java.util.logging.Logger;
  *
  * @author Jitendra Kotamraju
  */
+public // TODO needed by factory
 class AsyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
 
     private static final Logger LOGGER = Logger.getLogger(
@@ -76,8 +78,14 @@ class AsyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
         }
 
         synchronized(callback) {
-                if (resumer.response != null)
-                        return doReturnWith(resumer.response);
+                if (resumer.response != null) {
+                // Only used by AsyncProvider<Packet>
+                // Implementation may pass Packet containing throwable; use both
+                    ThrowableContainerPropertySet tc = resumer.response.getSatellite(ThrowableContainerPropertySet.class);
+                    Throwable t = (tc != null) ? tc.getThrowable() : null;
+
+                        return t != null ? doThrow(resumer.response, t) : doReturnWith(resumer.response);
+                }
 
                 // Suspend the Fiber. AsyncProviderCallback will resume the Fiber after
                 // it receives response.
@@ -90,7 +98,7 @@ class AsyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
         public void onResume(Packet response);
     }
 
-    private class FiberResumer implements Resumer {
+    /*private*/ public class FiberResumer implements Resumer { // TODO public for DISI
         private final Fiber fiber;
 
         public FiberResumer() {
@@ -98,7 +106,11 @@ class AsyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
         }
 
         public void onResume(Packet response) {
-                fiber.resume(response);
+            // Only used by AsyncProvider<Packet>
+            // Implementation may pass Packet containing throwable; use both
+            ThrowableContainerPropertySet tc = response.getSatellite(ThrowableContainerPropertySet.class);
+            Throwable t = (tc != null) ? tc.getThrowable() : null;
+                fiber.resume(t, response);
         }
     }
 
@@ -110,7 +122,7 @@ class AsyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
                 }
     }
 
-    private class AsyncProviderCallbackImpl implements AsyncProviderCallback<T> {
+    /*private*/ public class AsyncProviderCallbackImpl implements AsyncProviderCallback<T> { // TODO public for DISI
         private final Packet request;
         private Resumer resumer;
 
@@ -133,8 +145,8 @@ class AsyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
 
         public void sendError(@NotNull Throwable t) {
             Exception e;
-            if (t instanceof RuntimeException) {
-                e = (RuntimeException)t;
+            if (t instanceof Exception) {
+                e = (Exception) t;
             } else {
                 e = new RuntimeException(t);
             }
@@ -148,10 +160,10 @@ class AsyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
     /**
      * The single {@link javax.xml.ws.WebServiceContext} instance injected into application.
      */
-    private static final class AsyncWebServiceContext extends AbstractWebServiceContext {
+    /*private static final*/ public class AsyncWebServiceContext extends AbstractWebServiceContext { // TODO public for DISI
         final Packet packet;
 
-        AsyncWebServiceContext(WSEndpoint endpoint, Packet packet) {
+        public AsyncWebServiceContext(WSEndpoint endpoint, Packet packet) { // TODO public for DISI
             super(endpoint);
             this.packet = packet;
         }
@@ -166,7 +178,7 @@ class AsyncProviderInvokerTube<T> extends ProviderInvokerTube<T> {
     }
 
     public @NotNull NextAction processException(@NotNull Throwable t) {
-        throw new IllegalStateException("AsyncProviderInvokerTube's processException shouldn't be called.");
+        return doThrow(t);
     }
 
 }

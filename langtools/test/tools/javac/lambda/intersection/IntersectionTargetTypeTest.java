@@ -28,10 +28,11 @@
  */
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -45,37 +46,45 @@ public class IntersectionTargetTypeTest {
 
     enum BoundKind {
         INTF,
-        CLASS,
-        SAM,
-        ZAM;
+        CLASS;
     }
 
     enum MethodKind {
-        NONE,
-        ABSTRACT,
-        DEFAULT;
+        NONE(false),
+        ABSTRACT_M(true),
+        DEFAULT_M(false),
+        ABSTRACT_G(true),
+        DEFAULT_G(false);
+
+        boolean isAbstract;
+
+        MethodKind(boolean isAbstract) {
+            this.isAbstract = isAbstract;
+        }
     }
 
     enum TypeKind {
-        A("interface A { }\n", "A", BoundKind.ZAM),
-        B("interface B { default void m() { } }\n", "B", BoundKind.ZAM),
-        C("interface C { void m(); }\n", "C", BoundKind.SAM),
-        D("interface D extends B { }\n", "D", BoundKind.ZAM),
-        E("interface E extends C { }\n", "E", BoundKind.SAM),
-        F("interface F extends C { void g(); }\n", "F", BoundKind.INTF),
-        G("interface G extends B { void g(); }\n", "G", BoundKind.SAM),
-        H("interface H extends A { void g(); }\n", "H", BoundKind.SAM),
+        A("interface A { }\n", "A", BoundKind.INTF, MethodKind.NONE),
+        B("interface B { default void m() { } }\n", "B", BoundKind.INTF, MethodKind.DEFAULT_M),
+        C("interface C { void m(); }\n", "C", BoundKind.INTF, MethodKind.ABSTRACT_M),
+        D("interface D extends B { }\n", "D", BoundKind.INTF, MethodKind.DEFAULT_M),
+        E("interface E extends C { }\n", "E", BoundKind.INTF, MethodKind.ABSTRACT_M),
+        F("interface F extends C { void g(); }\n", "F", BoundKind.INTF, MethodKind.ABSTRACT_G, MethodKind.ABSTRACT_M),
+        G("interface G extends B { void g(); }\n", "G", BoundKind.INTF, MethodKind.ABSTRACT_G, MethodKind.DEFAULT_M),
+        H("interface H extends A { void g(); }\n", "H", BoundKind.INTF, MethodKind.ABSTRACT_G),
         OBJECT("", "Object", BoundKind.CLASS),
         STRING("", "String", BoundKind.CLASS);
 
         String declStr;
         String typeStr;
         BoundKind boundKind;
+        MethodKind[] methodKinds;
 
-        private TypeKind(String declStr, String typeStr, BoundKind boundKind) {
+        private TypeKind(String declStr, String typeStr, BoundKind boundKind, MethodKind... methodKinds) {
             this.declStr = declStr;
             this.typeStr = typeStr;
             this.boundKind = boundKind;
+            this.methodKinds = methodKinds;
         }
 
         boolean compatibleSupertype(TypeKind tk) {
@@ -263,14 +272,22 @@ public class IntersectionTargetTypeTest {
         boolean errorExpected = !cInfo.wellFormed();
 
         if (ek.isFunctional) {
-            //first bound must be a SAM
-            errorExpected |= cInfo.types[0].boundKind != BoundKind.SAM;
-            if (cInfo.types.length > 1) {
-                //additional bounds must be ZAMs
-                for (int i = 1; i < cInfo.types.length; i++) {
-                    errorExpected |= cInfo.types[i].boundKind != BoundKind.ZAM;
+            List<MethodKind> mks = new ArrayList<>();
+            for (TypeKind tk : cInfo.types) {
+                if (tk.boundKind == BoundKind.CLASS) {
+                    errorExpected = true;
+                    break;
+                } else {
+                    mks = mergeMethods(mks, Arrays.asList(tk.methodKinds));
                 }
             }
+            int abstractCount = 0;
+            for (MethodKind mk : mks) {
+                if (mk.isAbstract) {
+                    abstractCount++;
+                }
+            }
+            errorExpected |= abstractCount != 1;
         }
 
         if (errorExpected != diagChecker.errorFound) {
@@ -279,6 +296,32 @@ public class IntersectionTargetTypeTest {
                 "\nFound error: " + diagChecker.errorFound +
                 "\nExpected error: " + errorExpected);
         }
+    }
+
+    List<MethodKind> mergeMethods(List<MethodKind> l1, List<MethodKind> l2) {
+        List<MethodKind> mergedMethods = new ArrayList<>(l1);
+        for (MethodKind mk2 : l2) {
+            boolean add = !mergedMethods.contains(mk2);
+            switch (mk2) {
+                case ABSTRACT_G:
+                    add = add && !mergedMethods.contains(MethodKind.DEFAULT_G);
+                    break;
+                case ABSTRACT_M:
+                    add = add && !mergedMethods.contains(MethodKind.DEFAULT_M);
+                    break;
+                case DEFAULT_G:
+                    mergedMethods.remove(MethodKind.ABSTRACT_G);
+                case DEFAULT_M:
+                    mergedMethods.remove(MethodKind.ABSTRACT_M);
+                case NONE:
+                    add = false;
+                    break;
+            }
+            if (add) {
+                mergedMethods.add(mk2);
+            }
+        }
+        return mergedMethods;
     }
 
     static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {

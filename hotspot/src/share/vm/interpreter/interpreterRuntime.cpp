@@ -557,11 +557,6 @@ IRT_END
 // be shared by method invocation and synchronized blocks.
 //%note synchronization_3
 
-static void trace_locking(Handle& h_locking_obj, bool is_locking) {
-  ObjectSynchronizer::trace_locking(h_locking_obj, false, true, is_locking);
-}
-
-
 //%note monitor_1
 IRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, BasicObjectLock* elem))
 #ifdef ASSERT

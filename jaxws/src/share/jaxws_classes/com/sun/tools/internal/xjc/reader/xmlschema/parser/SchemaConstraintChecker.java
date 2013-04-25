@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import com.sun.tools.internal.xjc.ConsoleErrorReporter;
 import com.sun.tools.internal.xjc.ErrorReceiver;
 import com.sun.tools.internal.xjc.util.ErrorReceiverFilter;
 
+import com.sun.xml.internal.bind.v2.util.XmlFactory;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.EntityResolver;
@@ -60,12 +61,14 @@ public class SchemaConstraintChecker {
      * @return true if there was no error, false if there were errors.
      */
     public static boolean check(InputSource[] schemas,
-                                ErrorReceiver errorHandler, final EntityResolver entityResolver) {
+                                ErrorReceiver errorHandler,
+                                final EntityResolver entityResolver,
+                                boolean disableXmlSecurity) {
 
         ErrorReceiverFilter errorFilter = new ErrorReceiverFilter(errorHandler);
         boolean hadErrors = false;
 
-        SchemaFactory sf = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
+        SchemaFactory sf = XmlFactory.createSchemaFactory(W3C_XML_SCHEMA_NS_URI, disableXmlSecurity);
         sf.setErrorHandler(errorFilter);
         if( entityResolver != null ) {
             sf.setResourceResolver(new LSResourceResolver() {
@@ -121,6 +124,6 @@ public class SchemaConstraintChecker {
         for (int i = 0; i < args.length; i++)
             sources[i] = new InputSource(new File(args[i]).toURL().toExternalForm());
 
-        check(sources, new ConsoleErrorReporter(), null);
+        check(sources, new ConsoleErrorReporter(), null, true);
     }
 }

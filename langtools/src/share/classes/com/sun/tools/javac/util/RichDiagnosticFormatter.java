@@ -395,6 +395,9 @@ public class RichDiagnosticFormatter extends
 
         @Override
         public String visitClassSymbol(ClassSymbol s, Locale locale) {
+            if (s.type.isCompound()) {
+                return visit(s.type, locale);
+            }
             String name = nameSimplifier.simplify(s);
             if (name.length() == 0 ||
                     !getConfiguration().isEnabled(RichFormatterFeature.SIMPLE_NAMES)) {
@@ -583,7 +586,11 @@ public class RichDiagnosticFormatter extends
 
         @Override
         public Void visitClassSymbol(ClassSymbol s, Void ignored) {
-            nameSimplifier.addUsage(s);
+            if (s.type.isCompound()) {
+                typePreprocessor.visit(s.type);
+            } else {
+                nameSimplifier.addUsage(s);
+            }
             return null;
         }
 

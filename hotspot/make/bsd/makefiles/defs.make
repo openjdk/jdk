@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # The common definitions for hotspot bsd builds.
@@ -86,7 +86,7 @@ ifneq (,$(findstring $(ARCH), amd64 x86_64))
     VM_PLATFORM     = bsd_i486
     HS_ARCH         = x86
     # We have to reset ARCH to i386 since SRCARCH relies on it
-    ARCH            = i386   
+    ARCH            = i386
   endif
 endif
 
@@ -146,9 +146,6 @@ else
   LIBRARY_SUFFIX=so
 endif
 
-# FIXUP: The subdirectory for a debug build is NOT the same on all platforms
-VM_DEBUG=jvmg
-
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
 # client and server subdirectories have symbolic links to ../libjsig.so
@@ -177,7 +174,7 @@ ifeq ($(JVM_VARIANT_MINIMAL1),true)
     else
 	EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.debuginfo
     endif
-  endif 
+  endif
 endif
 
 # Serviceability Binaries

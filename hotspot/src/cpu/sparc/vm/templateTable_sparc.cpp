@@ -63,6 +63,13 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                                 noreg /* pre_val */,
                                 tmp, true /*preserve_o_regs*/);
 
+        // G1 barrier needs uncompressed oop for region cross check.
+        Register new_val = val;
+        if (UseCompressedOops && val != G0) {
+          new_val = tmp;
+          __ mov(val, new_val);
+        }
+
         if (index == noreg ) {
           assert(Assembler::is_simm13(offset), "fix this code");
           __ store_heap_oop(val, base, offset);
@@ -79,7 +86,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
               __ add(base, index, base);
             }
           }
-          __ g1_write_barrier_post(base, val, tmp);
+          __ g1_write_barrier_post(base, new_val, tmp);
         }
       }
       break;

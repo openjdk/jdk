@@ -28,7 +28,6 @@
 #include "awt_Event.h"
 #include "awt_Window.h"
 
-#include <java_awt_PopupMenu.h>
 #include <sun_awt_windows_WPopupMenuPeer.h>
 #include <java_awt_Event.h>
 

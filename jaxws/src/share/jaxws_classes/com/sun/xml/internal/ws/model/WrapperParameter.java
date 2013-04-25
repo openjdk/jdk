@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.xml.internal.ws.model;
 import com.sun.xml.internal.ws.api.model.JavaMethod;
 import com.sun.xml.internal.ws.api.model.ParameterBinding;
 import com.sun.xml.internal.ws.spi.db.TypeInfo;
+import com.sun.xml.internal.ws.spi.db.WrapperComposite;
 
 import javax.jws.WebParam.Mode;
 import java.util.ArrayList;
@@ -84,6 +85,7 @@ public class WrapperParameter extends ParameterImpl {
      */
     public void addWrapperChild(ParameterImpl wrapperChild) {
         wrapperChildren.add(wrapperChild);
+        wrapperChild.wrapper = this;
         // must bind to body. see class javadoc
         assert wrapperChild.getBinding()== ParameterBinding.BODY;
     }
@@ -95,12 +97,15 @@ public class WrapperParameter extends ParameterImpl {
     @Override
     void fillTypes(List<TypeInfo> types) {
         super.fillTypes(types);
-        if(getParent().getBinding().isRpcLit()) {
-            // for rpc/lit, we need to individually marshal/unmarshal wrapped values,
-            // so their TypeReference needs to be collected
-//            assert getTypeReference().type==CompositeStructure.class;
-            for (ParameterImpl p : wrapperChildren)
-                p.fillTypes(types);
+        if(WrapperComposite.class.equals(getTypeInfo().type)) {
+            for (ParameterImpl p : wrapperChildren) p.fillTypes(types);
         }
+//        if(getParent().getBinding().isRpcLit()) {
+//            // for rpc/lit, we need to individually marshal/unmarshal wrapped values,
+//            // so their TypeReference needs to be collected
+////            assert getTypeReference().type==CompositeStructure.class;
+//            for (ParameterImpl p : wrapperChildren)
+//                p.fillTypes(types);
+//        }
     }
 }
