@@ -89,7 +89,7 @@ class CompileReplay : public StackObj {
     loader = Handle(thread, SystemDictionary::java_system_loader());
     stream = fopen(filename, "rt");
     if (stream == NULL) {
-      fprintf(stderr, "Can't open replay file %s\n", filename);
+      fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
     }
     buffer_length = 32;
     buffer = NEW_RESOURCE_ARRAY(char, buffer_length);
@@ -327,7 +327,6 @@ class CompileReplay : public StackObj {
         if (had_error()) {
           tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
           tty->print_cr("%s", buffer);
-          assert(false, "error");
           return;
         }
         pos = 0;
@@ -551,7 +550,7 @@ class CompileReplay : public StackObj {
           if (parsed_two_word == i) continue;
 
         default:
-          ShouldNotReachHere();
+          fatal(err_msg_res("Unexpected tag: %d", cp->tag_at(i).value()));
           break;
       }
 
@@ -817,6 +816,11 @@ int ciReplay::replay_impl(TRAPS) {
     // normal VM bootstrap but once we get into the replay itself
     // don't allow any intializers to be run.
     ReplaySuppressInitializers = 1;
+  }
+
+  if (FLAG_IS_DEFAULT(ReplayDataFile)) {
+    tty->print_cr("ERROR: no compiler replay data file specified (use -XX:ReplayDataFile=replay_pid12345.txt).");
+    return 1;
   }
 
   // Load and parse the replay data

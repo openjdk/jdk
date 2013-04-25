@@ -3223,8 +3223,9 @@ class CommandLineFlags {
   develop(bool, ReplayCompiles, false,                                      \
           "Enable replay of compilations from ReplayDataFile")              \
                                                                             \
-  develop(ccstr, ReplayDataFile, "replay.txt",                              \
-          "file containing compilation replay information")                 \
+  product(ccstr, ReplayDataFile, NULL,                                      \
+          "File containing compilation replay information"                  \
+          "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
   develop(intx, ReplaySuppressInitializers, 2,                              \
           "Controls handling of class initialization during replay"         \
@@ -3237,8 +3238,8 @@ class CommandLineFlags {
   develop(bool, ReplayIgnoreInitErrors, false,                              \
           "Ignore exceptions thrown during initialization for replay")      \
                                                                             \
-  develop(bool, DumpReplayDataOnError, true,                                \
-          "record replay data for crashing compiler threads")               \
+  product(bool, DumpReplayDataOnError, true,                                \
+          "Record replay data for crashing compiler threads")               \
                                                                             \
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \

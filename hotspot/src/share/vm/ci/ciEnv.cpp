@@ -1149,23 +1149,9 @@ void ciEnv::record_out_of_memory_failure() {
   record_method_not_compilable("out of memory");
 }
 
-fileStream* ciEnv::_replay_data_stream = NULL;
-
-void ciEnv::dump_replay_data() {
+void ciEnv::dump_replay_data(outputStream* out) {
   VM_ENTRY_MARK;
   MutexLocker ml(Compile_lock);
-  if (_replay_data_stream == NULL) {
-    _replay_data_stream = new (ResourceObj::C_HEAP, mtCompiler) fileStream(ReplayDataFile);
-    if (_replay_data_stream == NULL) {
-      fatal(err_msg("Can't open %s for replay data", ReplayDataFile));
-    }
-  }
-  dump_replay_data(_replay_data_stream);
-}
-
-
-void ciEnv::dump_replay_data(outputStream* out) {
-  ASSERT_IN_VM;
   ResourceMark rm;
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
