@@ -567,6 +567,47 @@ class ConstantPool : public Metadata {
          _indy_argc_offset = 1,  // u2 argc
          _indy_argv_offset = 2   // u2 argv[argc]
   };
+
+  // These functions are used in RedefineClasses for CP merge
+
+  int operand_offset_at(int bootstrap_specifier_index) {
+    assert(0 <= bootstrap_specifier_index &&
+           bootstrap_specifier_index < operand_array_length(operands()),
+           "Corrupted CP operands");
+    return operand_offset_at(operands(), bootstrap_specifier_index);
+  }
+  int operand_bootstrap_method_ref_index_at(int bootstrap_specifier_index) {
+    int offset = operand_offset_at(bootstrap_specifier_index);
+    return operands()->at(offset + _indy_bsm_offset);
+  }
+  int operand_argument_count_at(int bootstrap_specifier_index) {
+    int offset = operand_offset_at(bootstrap_specifier_index);
+    int argc = operands()->at(offset + _indy_argc_offset);
+    return argc;
+  }
+  int operand_argument_index_at(int bootstrap_specifier_index, int j) {
+    int offset = operand_offset_at(bootstrap_specifier_index);
+    return operands()->at(offset + _indy_argv_offset + j);
+  }
+  int operand_next_offset_at(int bootstrap_specifier_index) {
+    int offset = operand_offset_at(bootstrap_specifier_index) + _indy_argv_offset
+                   + operand_argument_count_at(bootstrap_specifier_index);
+    return offset;
+  }
+  // Compare a bootsrap specifier in the operands arrays
+  bool compare_operand_to(int bootstrap_specifier_index1, constantPoolHandle cp2,
+                          int bootstrap_specifier_index2, TRAPS);
+  // Find a bootsrap specifier in the operands array
+  int find_matching_operand(int bootstrap_specifier_index, constantPoolHandle search_cp,
+                            int operands_cur_len, TRAPS);
+  // Resize the operands array with delta_len and delta_size
+  void resize_operands(int delta_len, int delta_size, TRAPS);
+  // Extend the operands array with the length and size of the ext_cp operands
+  void extend_operands(constantPoolHandle ext_cp, TRAPS);
+  // Shrink the operands array to a smaller array with new_len length
+  void shrink_operands(int new_len, TRAPS);
+
+
   int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
     int op_base = invoke_dynamic_operand_base(which);
