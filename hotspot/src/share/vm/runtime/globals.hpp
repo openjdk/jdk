@@ -3248,7 +3248,9 @@ class CommandLineFlags {
           "Fire OutOfMemoryErrors throughout CI for testing the compiler "  \
           "(non-negative value throws OOM after this many CI accesses "     \
           "in each compile)")                                               \
-                                                                            \
+  notproduct(intx, CICrashAt, -1,                                           \
+          "id of compilation to trigger assert in compiler thread for "     \
+          "the purpose of testing, e.g. generation of replay data")         \
   notproduct(bool, CIObjectFactoryVerify, false,                            \
           "enable potentially expensive verification in ciObjectFactory")   \
                                                                             \
