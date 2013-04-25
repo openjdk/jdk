@@ -184,8 +184,9 @@ class InstanceKlass: public Klass {
   oop             _protection_domain;
   // Class signers.
   objArrayOop     _signers;
-  // Initialization lock.  Must be one per class and it has to be a VM internal
-  // object so java code cannot lock it (like the mirror)
+  // Lock for (1) initialization; (2) access to the ConstantPool of this class.
+  // Must be one per class and it has to be a VM internal object so java code
+  // cannot lock it (like the mirror).
   // It has to be an object not a Mutex because it's held through java calls.
   volatile oop    _init_lock;
 
@@ -970,6 +971,7 @@ class InstanceKlass: public Klass {
 #endif // INCLUDE_ALL_GCS
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
+
 private:
   // initialization state
 #ifdef ASSERT
@@ -996,9 +998,10 @@ private:
          { OrderAccess::release_store_ptr(&_methods_cached_itable_indices, indices); }
 
   // Lock during initialization
-  volatile oop init_lock() const;
-  void set_init_lock(oop value)      { klass_oop_store(&_init_lock, value); }
-  void fence_and_clear_init_lock();  // after fully_initialized
+public:
+  volatile oop init_lock() const     {return _init_lock; }
+private:
+  void set_init_lock(oop value) { klass_oop_store(&_init_lock, value); }
 
   // Offsets for memory management
   oop* adr_protection_domain() const { return (oop*)&this->_protection_domain;}

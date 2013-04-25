@@ -483,7 +483,8 @@ ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
     {
       // We have to lock the cpool to keep the oop from being resolved
       // while we are accessing it.
-        MonitorLockerEx ml(cpool->lock());
+      oop cplock = cpool->lock();
+      ObjectLocker ol(cplock, THREAD, cplock != NULL);
       constantTag tag = cpool->tag_at(index);
       if (tag.is_klass()) {
         // The klass has been inserted into the constant pool
