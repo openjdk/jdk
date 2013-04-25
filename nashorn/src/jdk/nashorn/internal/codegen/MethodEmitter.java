@@ -71,7 +71,6 @@ import java.util.ArrayDeque;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -674,7 +673,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter loadUndefined(final Type type) {
-        debug("load undefined " + type);
+        debug("load undefined ", type);
         pushType(type.loadUndefined(method));
         return this;
     }
@@ -686,7 +685,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter loadEmpty(final Type type) {
-        debug("load empty " + type);
+        debug("load empty ", type);
         pushType(type.loadEmpty(method));
         return this;
     }
@@ -1076,7 +1075,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter newarray(final ArrayType arrayType) {
-        debug("newarray ", "arrayType=" + arrayType);
+        debug("newarray ", "arrayType=", arrayType);
         popType(Type.INT); //LENGTH
         pushType(arrayType.newarray(method));
         return this;
@@ -1155,7 +1154,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter invokespecial(final String className, final String methodName, final String methodDescriptor) {
-        debug("invokespecial", className + "." + methodName + methodDescriptor);
+        debug("invokespecial", className, ".", methodName, methodDescriptor);
         return invoke(INVOKESPECIAL, className, methodName, methodDescriptor, true);
     }
 
@@ -1169,7 +1168,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter invokevirtual(final String className, final String methodName, final String methodDescriptor) {
-        debug("invokevirtual", className + "." + methodName + methodDescriptor + " " + stack);
+        debug("invokevirtual", className, ".", methodName, methodDescriptor, " ", stack);
         return invoke(INVOKEVIRTUAL, className, methodName, methodDescriptor, true);
     }
 
@@ -1183,7 +1182,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter invokestatic(final String className, final String methodName, final String methodDescriptor) {
-        debug("invokestatic", className + "." + methodName + methodDescriptor);
+        debug("invokestatic", className, ".", methodName, methodDescriptor);
         invoke(INVOKESTATIC, className, methodName, methodDescriptor, false);
         return this;
     }
@@ -1216,7 +1215,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter invokeinterface(final String className, final String methodName, final String methodDescriptor) {
-        debug("invokeinterface", className + "." + methodName + methodDescriptor);
+        debug("invokeinterface", className, ".", methodName, methodDescriptor);
         return invoke(INVOKEINTERFACE, className, methodName, methodDescriptor, true);
     }
 
@@ -1268,11 +1267,11 @@ public class MethodEmitter implements Emitter {
      */
     void conditionalJump(final Condition cond, final boolean isCmpG, final Label trueLabel) {
         if (peekType().isCategory2()) {
-            debug("[ld]cmp isCmpG=" + isCmpG);
+            debug("[ld]cmp isCmpG=", isCmpG);
             pushType(get2n().cmp(method, isCmpG));
             jump(Condition.toUnary(cond), trueLabel, 1);
         } else {
-            debug("if" + cond);
+            debug("if", cond);
             jump(Condition.toBinary(cond, peekType().isObject()), trueLabel, 2);
         }
     }
@@ -1517,7 +1516,7 @@ public class MethodEmitter implements Emitter {
      */
     private void mergeStackTo(final Label label) {
         final ArrayDeque<Type> labelStack = label.getStack();
-        //debug(labelStack == null ? " >> Control flow - first visit " + label : " >> Control flow - JOIN with " + labelStack + " at " + label);
+        //debug(labelStack == null ? " >> Control flow - first visit ", label : " >> Control flow - JOIN with ", labelStack, " at ", label);
         if (labelStack == null) {
             assert stack != null;
             label.setStack(stack.clone());
@@ -1710,7 +1709,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter dynamicNew(final int argCount, final int flags) {
-        debug("dynamic_new", "argcount=" + argCount);
+        debug("dynamic_new", "argcount=", argCount);
         final String signature = getDynamicSignature(Type.OBJECT, argCount);
         method.visitInvokeDynamicInsn("dyn:new", signature, LINKERBOOTSTRAP, flags);
         pushType(Type.OBJECT); //TODO fix result type
@@ -1727,7 +1726,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter dynamicCall(final Type returnType, final int argCount, final int flags) {
-        debug("dynamic_call", "args=" + argCount, "returnType=" + returnType);
+        debug("dynamic_call", "args=", argCount, "returnType=", returnType);
         final String signature = getDynamicSignature(returnType, argCount); // +1 because the function itself is the 1st parameter for dynamic calls (what you call - call target)
         debug("   signature", signature);
         method.visitInvokeDynamicInsn("dyn:call", signature, LINKERBOOTSTRAP, flags);
@@ -1746,7 +1745,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter dynamicRuntimeCall(final String name, final Type returnType, final RuntimeNode.Request request) {
-        debug("dynamic_runtime_call", name, "args=" + request.getArity(), "returnType=" + returnType);
+        debug("dynamic_runtime_call", name, "args=", request.getArity(), "returnType=", returnType);
         final String signature = getDynamicSignature(returnType, request.getArity());
         debug("   signature", signature);
         method.visitInvokeDynamicInsn(name, signature, RUNTIMEBOOTSTRAP);
@@ -1817,7 +1816,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter dynamicGetIndex(final Type result, final int flags, final boolean isMethod) {
-        debug("dynamic_get_index", peekType(1) + "[" + peekType() + "]");
+        debug("dynamic_get_index", peekType(1), "[", peekType(), "]");
 
         Type resultType = result;
         if (result.isBoolean()) {
@@ -1853,7 +1852,7 @@ public class MethodEmitter implements Emitter {
      * @param flags call site flags for setter
      */
     void dynamicSetIndex(final int flags) {
-        debug("dynamic_set_index", peekType(2) + "[" + peekType(1) + "] =", peekType());
+        debug("dynamic_set_index", peekType(2), "[", peekType(1), "] =", peekType());
 
         Type value = peekType();
         if (value.isObject() || value.isBoolean()) {
@@ -1953,7 +1952,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter getField(final String className, final String fieldName, final String fieldDescriptor) {
-        debug("getfield", "receiver=" + peekType(), className + "." + fieldName + fieldDescriptor);
+        debug("getfield", "receiver=", peekType(), className, ".", fieldName, fieldDescriptor);
         final Type receiver = popType();
         assert receiver.isObject();
         method.visitFieldInsn(GETFIELD, className, fieldName, fieldDescriptor);
@@ -1971,7 +1970,7 @@ public class MethodEmitter implements Emitter {
      * @return the method emitter
      */
     MethodEmitter getStatic(final String className, final String fieldName, final String fieldDescriptor) {
-        debug("getstatic", className + "." + fieldName + "." + fieldDescriptor);
+        debug("getstatic", className, ".", fieldName, ".", fieldDescriptor);
         method.visitFieldInsn(GETSTATIC, className, fieldName, fieldDescriptor);
         pushType(fieldType(fieldDescriptor));
         return this;
@@ -1985,7 +1984,7 @@ public class MethodEmitter implements Emitter {
      * @param fieldDescriptor field descriptor
      */
     void putField(final String className, final String fieldName, final String fieldDescriptor) {
-        debug("putfield", "receiver=" + peekType(1), "value=" + peekType());
+        debug("putfield", "receiver=", peekType(1), "value=", peekType());
         popType(fieldType(fieldDescriptor));
         popType(Type.OBJECT);
         method.visitFieldInsn(PUTFIELD, className, fieldName, fieldDescriptor);
@@ -1999,7 +1998,7 @@ public class MethodEmitter implements Emitter {
      * @param fieldDescriptor field descriptor
      */
     void putStatic(final String className, final String fieldName, final String fieldDescriptor) {
-        debug("putfield", "value=" + peekType());
+        debug("putfield", "value=", peekType());
         popType(fieldType(fieldDescriptor));
         method.visitFieldInsn(PUTSTATIC, className, fieldName, fieldDescriptor);
     }

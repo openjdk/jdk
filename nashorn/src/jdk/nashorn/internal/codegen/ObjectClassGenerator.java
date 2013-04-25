@@ -222,6 +222,22 @@ public final class ObjectClassGenerator {
     }
 
     /**
+     * Returns the number of fields in the JavaScript scope class. Its name had to be generated using either
+     * {@link #getClassName(int)} or {@link #getClassName(int, int)}.
+     * @param clazz the JavaScript scope class.
+     * @return the number of fields in the scope class.
+     */
+    public static int getFieldCount(Class<?> clazz) {
+        final String name = clazz.getSimpleName();
+        final String prefix = JS_OBJECT_PREFIX.symbolName();
+        if(prefix.equals(name)) {
+            return 0;
+        }
+        final int scopeMarker = name.indexOf(SCOPE_MARKER);
+        return Integer.parseInt(scopeMarker == -1 ? name.substring(prefix.length()) : name.substring(prefix.length(), scopeMarker));
+    }
+
+    /**
      * Returns the name of a field based on number and type.
      *
      * @param fieldIndex Ordinal of field.
