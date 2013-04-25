@@ -1164,13 +1164,15 @@ void ciEnv::dump_replay_data(outputStream* out) {
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
-  Method* method = task()->method();
-  int entry_bci = task()->osr_bci();
+  CompileTask* task = this->task();
+  Method* method = task->method();
+  int entry_bci = task->osr_bci();
+  int comp_level = task->comp_level();
   // Klass holder = method->method_holder();
-  out->print_cr("compile %s %s %s %d",
+  out->print_cr("compile %s %s %s %d %d",
                 method->klass_name()->as_quoted_ascii(),
                 method->name()->as_quoted_ascii(),
                 method->signature()->as_quoted_ascii(),
-                entry_bci);
+                entry_bci, comp_level);
   out->flush();
 }

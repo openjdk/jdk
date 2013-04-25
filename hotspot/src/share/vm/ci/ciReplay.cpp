@@ -369,11 +369,47 @@ class CompileReplay : public StackObj {
     }
   }
 
-  // compile <klass> <name> <signature> <entry_bci>
+  // validation of comp_level
+  bool is_valid_comp_level(int comp_level) {
+    const int msg_len = 256;
+    char* msg = NULL;
+    if (!is_compile(comp_level)) {
+      msg = NEW_RESOURCE_ARRAY(char, msg_len);
+      jio_snprintf(msg, msg_len, "%d isn't compilation level", comp_level);
+    } else if (!TieredCompilation && (comp_level != CompLevel_highest_tier)) {
+      msg = NEW_RESOURCE_ARRAY(char, msg_len);
+      switch (comp_level) {
+        case CompLevel_simple:
+          jio_snprintf(msg, msg_len, "compilation level %d requires Client VM or TieredCompilation", comp_level);
+          break;
+        case CompLevel_full_optimization:
+          jio_snprintf(msg, msg_len, "compilation level %d requires Server VM", comp_level);
+          break;
+        default:
+          jio_snprintf(msg, msg_len, "compilation level %d requires TieredCompilation", comp_level);
+      }
+    }
+    if (msg != NULL) {
+      report_error(msg);
+      return false;
+    }
+    return true;
+  }
+
+  // compile <klass> <name> <signature> <entry_bci> <comp_level>
   void process_compile(TRAPS) {
     // methodHandle method;
     Method* method = parse_method(CHECK);
     int entry_bci = parse_int("entry_bci");
+    const char* comp_level_label = "comp_level";
+    int comp_level = parse_int(comp_level_label);
+    // old version w/o comp_level
+    if (had_error() && (error_message() == comp_level_label)) {
+      comp_level = CompLevel_full_optimization;
+    }
+    if (!is_valid_comp_level(comp_level)) {
+      return;
+    }
     Klass* k = method->method_holder();
     ((InstanceKlass*)k)->initialize(THREAD);
     if (HAS_PENDING_EXCEPTION) {
@@ -388,12 +424,12 @@ class CompileReplay : public StackObj {
       }
     }
     // Make sure the existence of a prior compile doesn't stop this one
-    nmethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, CompLevel_full_optimization, true) : method->code();
+    nmethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
     if (nm != NULL) {
       nm->make_not_entrant();
     }
     replay_state = this;
-    CompileBroker::compile_method(method, entry_bci, CompLevel_full_optimization,
+    CompileBroker::compile_method(method, entry_bci, comp_level,
                                   methodHandle(), 0, "replay", THREAD);
     replay_state = NULL;
     reset();
