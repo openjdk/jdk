@@ -27,11 +27,10 @@ package com.sun.xml.internal.bind.v2.model.impl;
 
 import javax.xml.namespace.QName;
 
-import com.sun.xml.internal.bind.v2.TODO;
-import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
 import com.sun.xml.internal.bind.v2.model.core.ArrayInfo;
 import com.sun.xml.internal.bind.v2.model.core.NonElement;
+import com.sun.xml.internal.bind.v2.model.util.ArrayInfoUtil;
 import com.sun.xml.internal.bind.v2.runtime.Location;
 import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 
@@ -68,20 +67,7 @@ public class ArrayInfoImpl<TypeT,ClassDeclT,FieldT,MethodT>
                 nav().getTypeName(componentType)),this));
             n = new QName("#dummy"); // for error recovery
         }
-        this.typeName = calcArrayTypeName(n);
-    }
-
-    /**
-     * Computes the type name of the array from that of the item type.
-     */
-    public static QName calcArrayTypeName(QName n) {
-        String uri;
-        if(n.getNamespaceURI().equals(WellKnownNamespace.XML_SCHEMA)) {
-            TODO.checkSpec("this URI");
-            uri = "http://jaxb.dev.java.net/array";
-        } else
-            uri = n.getNamespaceURI();
-        return new QName(uri,n.getLocalPart()+"Array");
+        this.typeName = ArrayInfoUtil.calcArrayTypeName(n);
     }
 
     public NonElement<TypeT, ClassDeclT> getItemType() {

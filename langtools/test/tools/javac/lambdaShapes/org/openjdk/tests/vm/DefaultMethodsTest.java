@@ -427,6 +427,8 @@ public class DefaultMethodsTest extends TestHarness {
      */
     public void testReflectCall() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
+        //workaround accessibility issue when loading C with DirectedClassLoader
+        I.addAccessFlag(AccessFlag.PUBLIC);
         Class C = new Class("C", I);
 
         Compiler.Flags[] flags = this.verbose ?

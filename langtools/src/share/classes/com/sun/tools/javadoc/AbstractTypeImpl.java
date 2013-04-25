@@ -61,6 +61,10 @@ abstract class AbstractTypeImpl implements com.sun.javadoc.Type {
         return type.tsym.getQualifiedName().toString();
     }
 
+    public com.sun.javadoc.Type getElementType() {
+        return null;
+    }
+
     public String simpleTypeName() {
         return type.tsym.name.toString();
     }

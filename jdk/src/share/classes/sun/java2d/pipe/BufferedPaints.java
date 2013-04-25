@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,8 @@ import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.SurfaceType;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class BufferedPaints {
 
     static void setPaint(RenderQueue rq, SunGraphics2D sg2d,
@@ -304,7 +302,7 @@ public class BufferedPaints {
      * shaders.  So for now we will cap this value at 12, but we can
      * re-evaluate this in the future as hardware becomes more capable.
      */
-    public static final int MULTI_MAX_FRACTIONS = 12;
+    @Native public static final int MULTI_MAX_FRACTIONS = 12;
 
     /**
      * Helper function to convert a color component in sRGB space to

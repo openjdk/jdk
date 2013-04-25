@@ -41,6 +41,7 @@ final class CPlatformResponder {
 
     private final LWWindowPeer peer;
     private final boolean isNpapiCallback;
+    private int lastKeyPressCode = KeyEvent.VK_UNDEFINED;
 
     CPlatformResponder(final LWWindowPeer peer, final boolean isNpapiCallback) {
         this.peer = peer;
@@ -123,7 +124,7 @@ final class CPlatformResponder {
      * Handles key events.
      */
     void handleKeyEvent(int eventType, int modifierFlags, String chars,
-                        short keyCode, boolean needsKeyTyped) {
+                        short keyCode, boolean needsKeyTyped, boolean needsKeyReleased) {
         boolean isFlagsChangedEvent =
             isNpapiCallback ? (eventType == CocoaConstants.NPCocoaEventFlagsChanged) :
                               (eventType == CocoaConstants.NSFlagsChanged);
@@ -183,6 +184,9 @@ final class CPlatformResponder {
         int jmodifiers = NSEvent.nsToJavaKeyModifiers(modifierFlags);
         long when = System.currentTimeMillis();
 
+        if (jeventType == KeyEvent.KEY_PRESSED) {
+            lastKeyPressCode = jkeyCode;
+        }
         peer.dispatchKeyEvent(jeventType, when, jmodifiers,
                               jkeyCode, javaChar, jkeyLocation);
 
@@ -195,26 +199,41 @@ final class CPlatformResponder {
         // Modifier keys (shift, etc) don't want to send TYPED events.
         // On the other hand we don't want to generate keyTyped events
         // for clipboard related shortcuts like Meta + [CVX]
-        boolean isMetaDown = (jmodifiers & KeyEvent.META_DOWN_MASK) != 0;
-        if (jeventType == KeyEvent.KEY_PRESSED && postsTyped && !isMetaDown) {
+        if (jeventType == KeyEvent.KEY_PRESSED && postsTyped &&
+                (jmodifiers & KeyEvent.META_DOWN_MASK) == 0) {
+            // Enter and Space keys finish the input method processing,
+            // KEY_TYPED and KEY_RELEASED events for them are synthesized in handleInputEvent.
+            if (needsKeyReleased && (jkeyCode == KeyEvent.VK_ENTER || jkeyCode == KeyEvent.VK_SPACE)) {
+                return;
+            }
             peer.dispatchKeyEvent(KeyEvent.KEY_TYPED, when, jmodifiers,
                                   KeyEvent.VK_UNDEFINED, javaChar,
                                   KeyEvent.KEY_LOCATION_UNKNOWN);
+            //If events come from Firefox, released events should also be generated.
+            if (needsKeyReleased) {
+                peer.dispatchKeyEvent(KeyEvent.KEY_RELEASED, when, jmodifiers,
+                        jkeyCode, javaChar,
+                        KeyEvent.KEY_LOCATION_UNKNOWN);
+            }
         }
     }
 
     void handleInputEvent(String text) {
         if (text != null) {
             int index = 0, length = text.length();
-            char c;
+            char c = 0;
             while (index < length) {
                 c = text.charAt(index);
                 peer.dispatchKeyEvent(KeyEvent.KEY_TYPED,
-                                      System.currentTimeMillis(),
-                                      0, KeyEvent.VK_UNDEFINED, c,
-                                      KeyEvent.KEY_LOCATION_UNKNOWN);
+                        System.currentTimeMillis(),
+                        0, KeyEvent.VK_UNDEFINED, c,
+                        KeyEvent.KEY_LOCATION_UNKNOWN);
                 index++;
             }
+            peer.dispatchKeyEvent(KeyEvent.KEY_RELEASED,
+                    System.currentTimeMillis(),
+                    0, lastKeyPressCode, c,
+                    KeyEvent.KEY_LOCATION_UNKNOWN);
         }
     }
 

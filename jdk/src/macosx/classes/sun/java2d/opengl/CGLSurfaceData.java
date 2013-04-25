@@ -30,7 +30,6 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.image.ColorModel;
 
@@ -41,6 +40,9 @@ import sun.lwawt.macosx.CPlatformView;
 
 public abstract class CGLSurfaceData extends OGLSurfaceData {
 
+    protected final int scale;
+    protected final int width;
+    protected final int height;
     protected CPlatformView pView;
     private CGLGraphicsConfig graphicsConfig;
 
@@ -52,10 +54,19 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     protected native boolean initPbuffer(long pData, long pConfigInfo,
             boolean isOpaque, int width, int height);
 
-    protected CGLSurfaceData(CPlatformView pView, CGLGraphicsConfig gc,
-                             ColorModel cm, int type)
-    {
+    protected CGLSurfaceData(CGLGraphicsConfig gc, ColorModel cm, int type,
+                             int width, int height) {
         super(gc, cm, type);
+        // TEXTURE shouldn't be scaled, it is used for managed BufferedImages.
+        scale = type == TEXTURE ? 1 : gc.getDevice().getScaleFactor();
+        this.width = width * scale;
+        this.height = height * scale;
+    }
+
+    protected CGLSurfaceData(CPlatformView pView, CGLGraphicsConfig gc,
+                             ColorModel cm, int type,int width, int height)
+    {
+        this(gc, cm, type, width, height);
         this.pView = pView;
         this.graphicsConfig = gc;
 
@@ -70,9 +81,9 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     }
 
     protected CGLSurfaceData(CGLLayer layer, CGLGraphicsConfig gc,
-                             ColorModel cm, int type)
+                             ColorModel cm, int type,int width, int height)
     {
-        super(gc, cm, type);
+        this(gc, cm, type, width, height);
         this.graphicsConfig = gc;
 
         long pConfigInfo = gc.getNativeConfigInfo();
@@ -157,13 +168,43 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
         // Overridden in CGLWindowSurfaceData below
     }
 
+    @Override
+    public int getDefaultScale() {
+        return scale;
+    }
+
+    @Override
+    public boolean copyArea(SunGraphics2D sg2d, int x, int y, int w, int h,
+                            int dx, int dy) {
+        final int state = sg2d.transformState;
+        if (state > SunGraphics2D.TRANSFORM_TRANSLATESCALE
+            || sg2d.compositeState >= SunGraphics2D.COMP_XOR) {
+            return false;
+        }
+        if (state <= SunGraphics2D.TRANSFORM_ANY_TRANSLATE) {
+            x += sg2d.transX;
+            y += sg2d.transY;
+        } else if (state == SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
+            final double[] coords = {x, y, x + w, y + h, x + dx, y + dy};
+            sg2d.transform.transform(coords, 0, coords, 0, 3);
+            x = (int) Math.ceil(coords[0] - 0.5);
+            y = (int) Math.ceil(coords[1] - 0.5);
+            w = ((int) Math.ceil(coords[2] - 0.5)) - x;
+            h = ((int) Math.ceil(coords[3] - 0.5)) - y;
+            dx = ((int) Math.ceil(coords[4] - 0.5)) - x;
+            dy = ((int) Math.ceil(coords[5] - 0.5)) - y;
+        }
+        oglRenderPipe.copyArea(sg2d, x, y, w, h, dx, dy);
+        return true;
+    }
+
     protected native void clearWindow();
 
     public static class CGLWindowSurfaceData extends CGLSurfaceData {
 
         public CGLWindowSurfaceData(CPlatformView pView,
                 CGLGraphicsConfig gc) {
-            super(pView, gc, gc.getColorModel(), WINDOW);
+            super(pView, gc, gc.getColorModel(), WINDOW, 0, 0);
         }
 
         @Override
@@ -217,17 +258,12 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     public static class CGLLayerSurfaceData extends CGLSurfaceData {
 
         private CGLLayer layer;
-        private int width, height;
 
         public CGLLayerSurfaceData(CGLLayer layer, CGLGraphicsConfig gc,
                                    int width, int height) {
-            super(layer, gc, gc.getColorModel(), FBOBJECT);
-
-            this.width = width;
-            this.height = height;
+            super(layer, gc, gc.getColorModel(), FBOBJECT, width, height);
             this.layer = layer;
-
-            initSurface(width, height);
+            initSurface(this.width, this.height);
         }
 
         @Override
@@ -296,18 +332,13 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
 
     public static class CGLOffScreenSurfaceData extends CGLSurfaceData {
         private Image offscreenImage;
-        private int width, height;
 
         public CGLOffScreenSurfaceData(CPlatformView pView,
                                        CGLGraphicsConfig gc, int width, int height, Image image,
                                        ColorModel cm, int type) {
-            super(pView, gc, cm, type);
-
-            this.width = width;
-            this.height = height;
+            super(pView, gc, cm, type, width, height);
             offscreenImage = image;
-
-            initSurface(width, height);
+            initSurface(this.width, this.height);
         }
 
         @Override

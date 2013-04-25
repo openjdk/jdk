@@ -25,6 +25,7 @@
 
 package java.lang.reflect;
 
+import sun.reflect.CallerSensitive;
 import sun.reflect.ConstructorAccessor;
 import sun.reflect.Reflection;
 import sun.reflect.generics.repository.ConstructorRepository;
@@ -284,16 +285,20 @@ public final class Constructor<T> extends Executable {
      * modifiers {@code public}, {@code protected} or
      * {@code private}.  Only one of these may appear, or none if the
      * constructor has default (package) access.
+     *
+     * @return a string describing this {@code Constructor}
+     * @jls 8.8.3. Constructor Modifiers
      */
     public String toString() {
         return sharedToString(Modifier.constructorModifiers(),
+                              false,
                               parameterTypes,
                               exceptionTypes);
     }
 
     @Override
     void specificToStringHeader(StringBuilder sb) {
-        sb.append(Field.getTypeName(getDeclaringClass()));
+        sb.append(getDeclaringClass().getTypeName());
     }
 
     /**
@@ -328,10 +333,11 @@ public final class Constructor<T> extends Executable {
      * include type parameters
      *
      * @since 1.5
+     * @jls 8.8.3. Constructor Modifiers
      */
     @Override
     public String toGenericString() {
-        return sharedToGenericString(Modifier.constructorModifiers());
+        return sharedToGenericString(Modifier.constructorModifiers(), false);
     }
 
     @Override
@@ -387,14 +393,14 @@ public final class Constructor<T> extends Executable {
      * @exception ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
      */
+    @CallerSensitive
     public T newInstance(Object ... initargs)
         throws InstantiationException, IllegalAccessException,
                IllegalArgumentException, InvocationTargetException
     {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class<?> caller = Reflection.getCallerClass(2);
-
+                Class<?> caller = Reflection.getCallerClass();
                 checkAccess(caller, clazz, null, modifiers);
             }
         }

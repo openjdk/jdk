@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.beans.PropertyChangeEvent;
 import java.util.Set;
 import java.awt.AWTKeyStroke;
 import java.applet.Applet;
-import javax.tools.annotation.GenerateNativeHeader;
 import sun.applet.AppletPanel;
 
 /**
@@ -54,8 +53,6 @@ import sun.applet.AppletPanel;
  *
  * @author      Thomas Ball
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public abstract class EmbeddedFrame extends Frame
                           implements KeyEventDispatcher, PropertyChangeListener {
 
@@ -542,7 +539,7 @@ public abstract class EmbeddedFrame extends Frame
         public void toBack() {}
         public void updateFocusableWindowState() {}
         public void updateAlwaysOnTop() {}
-        public void setAlwaysOnTop(boolean alwaysOnTop) {}
+        public void updateAlwaysOnTopState() {}
         public Component getGlobalHeavyweightFocusOwner() { return null; }
         public void setBoundsPrivate(int x, int y, int width, int height) {
             setBounds(x, y, width, height, SET_BOUNDS);

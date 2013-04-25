@@ -355,3 +355,33 @@ size_t lcm(size_t a, size_t b) {
 
     return size_t(result);
 }
+
+#ifndef PRODUCT
+
+void GlobalDefinitions::test_globals() {
+  intptr_t page_sizes[] = { os::vm_page_size(), 4096, 8192, 65536, 2*1024*1024 };
+  const int num_page_sizes = sizeof(page_sizes) / sizeof(page_sizes[0]);
+
+  for (int i = 0; i < num_page_sizes; i++) {
+    intptr_t page_size = page_sizes[i];
+
+    address a_page = (address)(10*page_size);
+
+    // Check that address within page is returned as is
+    assert(clamp_address_in_page(a_page, a_page, page_size) == a_page, "incorrect");
+    assert(clamp_address_in_page(a_page + 128, a_page, page_size) == a_page + 128, "incorrect");
+    assert(clamp_address_in_page(a_page + page_size - 1, a_page, page_size) == a_page + page_size - 1, "incorrect");
+
+    // Check that address above page returns start of next page
+    assert(clamp_address_in_page(a_page + page_size, a_page, page_size) == a_page + page_size, "incorrect");
+    assert(clamp_address_in_page(a_page + page_size + 1, a_page, page_size) == a_page + page_size, "incorrect");
+    assert(clamp_address_in_page(a_page + page_size*5 + 1, a_page, page_size) == a_page + page_size, "incorrect");
+
+    // Check that address below page returns start of page
+    assert(clamp_address_in_page(a_page - 1, a_page, page_size) == a_page, "incorrect");
+    assert(clamp_address_in_page(a_page - 2*page_size - 1, a_page, page_size) == a_page, "incorrect");
+    assert(clamp_address_in_page(a_page - 5*page_size - 1, a_page, page_size) == a_page, "incorrect");
+  }
+}
+
+#endif // PRODUCT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -137,12 +139,24 @@ public final class ServiceFinder<T> implements Iterable<T> {
 
     private static final String prefix = "META-INF/services/";
 
+    private static WeakHashMap<ClassLoader, ConcurrentHashMap<String, ServiceName[]>> serviceNameCache
+             = new WeakHashMap<ClassLoader, ConcurrentHashMap<String, ServiceName[]>>();
+
     private final Class<T> serviceClass;
     private final @Nullable ClassLoader classLoader;
     private final @Nullable ComponentEx component;
 
+    private static class ServiceName {
+        final String className;
+        final URL config;
+        public ServiceName(String className, URL config) {
+            this.className = className;
+            this.config = config;
+        }
+    }
+
     public static <T> ServiceFinder<T> find(@NotNull Class<T> service, @Nullable ClassLoader loader, Component component) {
-        return new ServiceFinder<T>(service,loader,component);
+        return new ServiceFinder<T>(service, loader, component);
     }
 
     public static <T> ServiceFinder<T> find(@NotNull Class<T> service, Component component) {
@@ -202,6 +216,12 @@ public final class ServiceFinder<T> implements Iterable<T> {
         this.serviceClass = service;
         this.classLoader = loader;
         this.component = getComponentEx(component);
+    }
+
+    private static ServiceName[] serviceClassNames(Class serviceClass, ClassLoader classLoader) {
+        ArrayList<ServiceName> l = new ArrayList<ServiceName>();
+        for (Iterator<ServiceName> it = new ServiceNameIterator(serviceClass,classLoader);it.hasNext();) l.add(it.next());
+        return l.toArray(new ServiceName[l.size()]);
     }
 
     /**
@@ -395,8 +415,8 @@ public final class ServiceFinder<T> implements Iterable<T> {
     /**
      * Private inner class implementing fully-lazy provider lookup
      */
-    private static class LazyIterator<T> implements Iterator<T> {
-        Class<T> service;
+    private static class ServiceNameIterator implements Iterator<ServiceName> {
+        Class service;
         @Nullable ClassLoader loader;
         Enumeration<URL> configs = null;
         Iterator<String> pending = null;
@@ -404,7 +424,7 @@ public final class ServiceFinder<T> implements Iterable<T> {
         String nextName = null;
         URL currentConfig = null;
 
-        private LazyIterator(Class<T> service, ClassLoader loader) {
+        private ServiceNameIterator(Class service, ClassLoader loader) {
             this.service = service;
             this.loader = loader;
         }
@@ -435,26 +455,69 @@ public final class ServiceFinder<T> implements Iterable<T> {
             return true;
         }
 
-        public T next() throws ServiceConfigurationError {
+        public ServiceName next() throws ServiceConfigurationError {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
             String cn = nextName;
             nextName = null;
-            try {
-                return service.cast(Class.forName(cn, true, loader).newInstance());
-            } catch (ClassNotFoundException x) {
-                fail(service,
-                    "Provider " + cn + " is specified in "+currentConfig+" but not found");
-            } catch (Exception x) {
-                fail(service,
-                    "Provider " + cn + " is specified in "+currentConfig+"but could not be instantiated: " + x, x);
-            }
-            return null;    /* This cannot happen */
+            return new ServiceName(cn, currentConfig);
         }
 
         public void remove() {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private static class LazyIterator<T> implements Iterator<T> {
+        Class<T> service;
+        @Nullable ClassLoader loader;
+        ServiceName[] names;
+        int index;
+
+        private LazyIterator(Class<T> service, ClassLoader loader) {
+            this.service = service;
+            this.loader = loader;
+            this.names = null;
+            index = 0;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (names == null) {
+                ConcurrentHashMap<String, ServiceName[]> nameMap = null;
+                synchronized(serviceNameCache){ nameMap = serviceNameCache.get(loader); }
+                names = (nameMap != null)? nameMap.get(service.getName()) : null;
+                if (names == null) {
+                    names = serviceClassNames(service, loader);
+                    if (nameMap == null) nameMap = new ConcurrentHashMap<String, ServiceName[]>();
+                    nameMap.put(service.getName(), names);
+                    synchronized(serviceNameCache){ serviceNameCache.put(loader,nameMap); }
+                }
+            }
+            return (index < names.length);
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            ServiceName sn = names[index++];
+            String cn = sn.className;
+            URL currentConfig = sn.config;
+            try {
+                return service.cast(Class.forName(cn, true, loader).newInstance());
+            } catch (ClassNotFoundException x) {
+                fail(service, "Provider " + cn + " is specified in "+currentConfig+" but not found");
+            } catch (Exception x) {
+              fail(service, "Provider " + cn + " is specified in "+currentConfig+"but could not be instantiated: " + x, x);
+            }
+            return null;    /* This cannot happen */
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,8 +181,8 @@ public final class JAXBHeader extends AbstractHeaderImpl {
             String encoding = XMLStreamWriterUtil.getEncoding(sw);
 
             // Get output stream and use JAXB UTF-8 writer
-            OutputStream os = XMLStreamWriterUtil.getOutputStream(sw);
-            if (os != null && bridge.supportOutputStream() && encoding != null && encoding.equalsIgnoreCase(SOAPBindingCodec.UTF8_ENCODING)) {
+            OutputStream os = bridge.supportOutputStream() ? XMLStreamWriterUtil.getOutputStream(sw) : null;
+            if (os != null && encoding != null && encoding.equalsIgnoreCase(SOAPBindingCodec.UTF8_ENCODING)) {
                 bridge.marshal(jaxbObject, os, sw.getNamespaceContext(), null);
             } else {
                 bridge.marshal(jaxbObject,sw, null);

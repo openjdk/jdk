@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import sun.java2d.loops.XORComposite;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import static sun.java2d.pipe.BufferedRenderPipe.BYTES_PER_SPAN;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * Base context class for managing state in a single-threaded rendering
@@ -49,8 +49,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  *
  * @see RenderQueue
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public abstract class BufferedContext {
 
     /*
@@ -63,19 +61,19 @@ public abstract class BufferedContext {
     /**
      * Indicates that no flags are needed; take all default code paths.
      */
-    public static final int NO_CONTEXT_FLAGS = (0 << 0);
+    @Native public static final int NO_CONTEXT_FLAGS = (0 << 0);
     /**
      * Indicates that the source surface (or color value, if it is a simple
      * rendering operation) is opaque (has an alpha value of 1.0).  If this
      * flag is present, it allows us to disable blending in certain
      * situations in order to improve performance.
      */
-    public static final int SRC_IS_OPAQUE    = (1 << 0);
+    @Native public static final int SRC_IS_OPAQUE    = (1 << 0);
     /**
      * Indicates that the operation uses an alpha mask, which may determine
      * the code path that is used when setting up the current paint state.
      */
-    public static final int USE_MASK         = (1 << 1);
+    @Native public static final int USE_MASK         = (1 << 1);
 
     protected RenderQueue rq;
     protected RenderBuffer buf;
@@ -99,8 +97,7 @@ public abstract class BufferedContext {
     private int             validatedRGB;
     private int             validatedFlags;
     private boolean         xformInUse;
-    private int             transX;
-    private int             transY;
+    private AffineTransform transform;
 
     protected BufferedContext(RenderQueue rq) {
         this.rq = rq;
@@ -277,14 +274,11 @@ public abstract class BufferedContext {
                 resetTransform();
                 xformInUse = false;
                 txChanged = true;
-            } else if (sg2d != null) {
-                if (transX != sg2d.transX || transY != sg2d.transY) {
-                    txChanged = true;
-                }
+            } else if (sg2d != null && !sg2d.transform.equals(transform)) {
+                txChanged = true;
             }
-            if (sg2d != null) {
-                transX = sg2d.transX;
-                transY = sg2d.transY;
+            if (sg2d != null && txChanged) {
+                transform = new AffineTransform(sg2d.transform);
             }
         } else {
             setTransform(xform);

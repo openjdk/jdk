@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,9 @@ final class TypeModeler {
                 retClass = getDeclaringClassMethod(superClass, methodName, args);
         }
         if (retClass == null) {
-            for (TypeMirror interfaceType : theClass.getInterfaces())
+            for (TypeMirror interfaceType : theClass.getInterfaces()) {
                 retClass = getDeclaringClassMethod(interfaceType, methodName, args);
+            }
         }
         if (retClass == null) {
             Collection<? extends ExecutableElement> methods = ElementFilter.methodsIn(theClass.getEnclosedElements());
@@ -105,7 +106,7 @@ final class TypeModeler {
                 Collection<? extends TypeMirror> argTypes = ((DeclaredType) type).getTypeArguments();
                 if (argTypes.size() == 1) {
                     return argTypes.iterator().next();
-                } else if (argTypes.size() == 0) {
+                } else if (argTypes.isEmpty()) {
                     VariableElement member = getValueMember(typeElement);
                     if (member != null) {
                         return member.asType();
