@@ -841,7 +841,7 @@ public final class NativeString extends ScriptObject {
         final long lim = (limit == UNDEFINED) ? JSType.MAX_UINT : JSType.toUint32(limit);
 
         if (separator == UNDEFINED) {
-            return new NativeArray(new Object[]{str});
+            return limit == 0 ? new NativeArray() : new NativeArray(new Object[]{str});
         }
 
         if (separator instanceof NativeRegExp) {
@@ -854,8 +854,9 @@ public final class NativeString extends ScriptObject {
 
     private static Object splitString(String str, String separator, long limit) {
         if (separator.isEmpty()) {
-            final Object[] array = new Object[str.length()];
-            for (int i = 0; i < array.length; i++) {
+            final int length = (int) Math.min(str.length(), limit);
+            final Object[] array = new Object[length];
+            for (int i = 0; i < length; i++) {
                 array[i] = String.valueOf(str.charAt(i));
             }
             return new NativeArray(array);
