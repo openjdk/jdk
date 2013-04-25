@@ -382,7 +382,9 @@ void Generation::compact() {
 CardGeneration::CardGeneration(ReservedSpace rs, size_t initial_byte_size,
                                int level,
                                GenRemSet* remset) :
-  Generation(rs, initial_byte_size, level), _rs(remset)
+  Generation(rs, initial_byte_size, level), _rs(remset),
+  _shrink_factor(0), _min_heap_delta_bytes(), _capacity_at_prologue(),
+  _used_at_prologue()
 {
   HeapWord* start = (HeapWord*)rs.base();
   size_t reserved_byte_size = rs.size();
@@ -406,6 +408,9 @@ CardGeneration::CardGeneration(ReservedSpace rs, size_t initial_byte_size,
     // the end if we try.
     guarantee(_rs->is_aligned(reserved_mr.end()), "generation must be card aligned");
   }
+  _min_heap_delta_bytes = MinHeapDeltaBytes;
+  _capacity_at_prologue = initial_byte_size;
+  _used_at_prologue = 0;
 }
 
 bool CardGeneration::expand(size_t bytes, size_t expand_bytes) {
@@ -456,6 +461,160 @@ void CardGeneration::invalidate_remembered_set() {
   _rs->invalidate(used_region());
 }
 
+
+void CardGeneration::compute_new_size() {
+  assert(_shrink_factor <= 100, "invalid shrink factor");
+  size_t current_shrink_factor = _shrink_factor;
+  _shrink_factor = 0;
+
+  // We don't have floating point command-line arguments
+  // Note:  argument processing ensures that MinHeapFreeRatio < 100.
+  const double minimum_free_percentage = MinHeapFreeRatio / 100.0;
+  const double maximum_used_percentage = 1.0 - minimum_free_percentage;
+
+  // Compute some numbers about the state of the heap.
+  const size_t used_after_gc = used();
+  const size_t capacity_after_gc = capacity();
+
+  const double min_tmp = used_after_gc / maximum_used_percentage;
+  size_t minimum_desired_capacity = (size_t)MIN2(min_tmp, double(max_uintx));
+  // Don't shrink less than the initial generation size
+  minimum_desired_capacity = MAX2(minimum_desired_capacity,
+                                  spec()->init_size());
+  assert(used_after_gc <= minimum_desired_capacity, "sanity check");
+
+  if (PrintGC && Verbose) {
+    const size_t free_after_gc = free();
+    const double free_percentage = ((double)free_after_gc) / capacity_after_gc;
+    gclog_or_tty->print_cr("TenuredGeneration::compute_new_size: ");
+    gclog_or_tty->print_cr("  "
+                  "  minimum_free_percentage: %6.2f"
+                  "  maximum_used_percentage: %6.2f",
+                  minimum_free_percentage,
+                  maximum_used_percentage);
+    gclog_or_tty->print_cr("  "
+                  "   free_after_gc   : %6.1fK"
+                  "   used_after_gc   : %6.1fK"
+                  "   capacity_after_gc   : %6.1fK",
+                  free_after_gc / (double) K,
+                  used_after_gc / (double) K,
+                  capacity_after_gc / (double) K);
+    gclog_or_tty->print_cr("  "
+                  "   free_percentage: %6.2f",
+                  free_percentage);
+  }
+
+  if (capacity_after_gc < minimum_desired_capacity) {
+    // If we have less free space than we want then expand
+    size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
+    // Don't expand unless it's significant
+    if (expand_bytes >= _min_heap_delta_bytes) {
+      expand(expand_bytes, 0); // safe if expansion fails
+    }
+    if (PrintGC && Verbose) {
+      gclog_or_tty->print_cr("    expanding:"
+                    "  minimum_desired_capacity: %6.1fK"
+                    "  expand_bytes: %6.1fK"
+                    "  _min_heap_delta_bytes: %6.1fK",
+                    minimum_desired_capacity / (double) K,
+                    expand_bytes / (double) K,
+                    _min_heap_delta_bytes / (double) K);
+    }
+    return;
+  }
+
+  // No expansion, now see if we want to shrink
+  size_t shrink_bytes = 0;
+  // We would never want to shrink more than this
+  size_t max_shrink_bytes = capacity_after_gc - minimum_desired_capacity;
+
+  if (MaxHeapFreeRatio < 100) {
+    const double maximum_free_percentage = MaxHeapFreeRatio / 100.0;
+    const double minimum_used_percentage = 1.0 - maximum_free_percentage;
+    const double max_tmp = used_after_gc / minimum_used_percentage;
+    size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));
+    maximum_desired_capacity = MAX2(maximum_desired_capacity,
+                                    spec()->init_size());
+    if (PrintGC && Verbose) {
+      gclog_or_tty->print_cr("  "
+                             "  maximum_free_percentage: %6.2f"
+                             "  minimum_used_percentage: %6.2f",
+                             maximum_free_percentage,
+                             minimum_used_percentage);
+      gclog_or_tty->print_cr("  "
+                             "  _capacity_at_prologue: %6.1fK"
+                             "  minimum_desired_capacity: %6.1fK"
+                             "  maximum_desired_capacity: %6.1fK",
+                             _capacity_at_prologue / (double) K,
+                             minimum_desired_capacity / (double) K,
+                             maximum_desired_capacity / (double) K);
+    }
+    assert(minimum_desired_capacity <= maximum_desired_capacity,
+           "sanity check");
+
+    if (capacity_after_gc > maximum_desired_capacity) {
+      // Capacity too large, compute shrinking size
+      shrink_bytes = capacity_after_gc - maximum_desired_capacity;
+      // We don't want shrink all the way back to initSize if people call
+      // System.gc(), because some programs do that between "phases" and then
+      // we'd just have to grow the heap up again for the next phase.  So we
+      // damp the shrinking: 0% on the first call, 10% on the second call, 40%
+      // on the third call, and 100% by the fourth call.  But if we recompute
+      // size without shrinking, it goes back to 0%.
+      shrink_bytes = shrink_bytes / 100 * current_shrink_factor;
+      assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
+      if (current_shrink_factor == 0) {
+        _shrink_factor = 10;
+      } else {
+        _shrink_factor = MIN2(current_shrink_factor * 4, (size_t) 100);
+      }
+      if (PrintGC && Verbose) {
+        gclog_or_tty->print_cr("  "
+                      "  shrinking:"
+                      "  initSize: %.1fK"
+                      "  maximum_desired_capacity: %.1fK",
+                      spec()->init_size() / (double) K,
+                      maximum_desired_capacity / (double) K);
+        gclog_or_tty->print_cr("  "
+                      "  shrink_bytes: %.1fK"
+                      "  current_shrink_factor: %d"
+                      "  new shrink factor: %d"
+                      "  _min_heap_delta_bytes: %.1fK",
+                      shrink_bytes / (double) K,
+                      current_shrink_factor,
+                      _shrink_factor,
+                      _min_heap_delta_bytes / (double) K);
+      }
+    }
+  }
+
+  if (capacity_after_gc > _capacity_at_prologue) {
+    // We might have expanded for promotions, in which case we might want to
+    // take back that expansion if there's room after GC.  That keeps us from
+    // stretching the heap with promotions when there's plenty of room.
+    size_t expansion_for_promotion = capacity_after_gc - _capacity_at_prologue;
+    expansion_for_promotion = MIN2(expansion_for_promotion, max_shrink_bytes);
+    // We have two shrinking computations, take the largest
+    shrink_bytes = MAX2(shrink_bytes, expansion_for_promotion);
+    assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
+    if (PrintGC && Verbose) {
+      gclog_or_tty->print_cr("  "
+                             "  aggressive shrinking:"
+                             "  _capacity_at_prologue: %.1fK"
+                             "  capacity_after_gc: %.1fK"
+                             "  expansion_for_promotion: %.1fK"
+                             "  shrink_bytes: %.1fK",
+                             capacity_after_gc / (double) K,
+                             _capacity_at_prologue / (double) K,
+                             expansion_for_promotion / (double) K,
+                             shrink_bytes / (double) K);
+    }
+  }
+  // Don't shrink unless it's significant
+  if (shrink_bytes >= _min_heap_delta_bytes) {
+    shrink(shrink_bytes);
+  }
+}
 
 // Currently nothing to do.
 void CardGeneration::prepare_for_verify() {}

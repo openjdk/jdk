@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.internal.jxc;
 
+import com.sun.tools.internal.jxc.ap.Options;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -51,6 +52,7 @@ import com.sun.tools.internal.xjc.SchemaCache;
 import com.sun.tools.internal.xjc.api.Reference;
 import com.sun.tools.internal.xjc.util.ForkContentHandler;
 
+import com.sun.xml.internal.bind.v2.util.XmlFactory;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -94,7 +96,7 @@ public final class ConfigReader  {
      */
     public ConfigReader(ProcessingEnvironment env, Collection<? extends TypeElement> classes, File xmlFile, ErrorHandler errorHandler) throws SAXException, IOException {
         this.env = env;
-        Config config = parseAndGetConfig(xmlFile,errorHandler);
+        Config config = parseAndGetConfig(xmlFile, errorHandler, env.getOptions().containsKey(Options.DISABLE_XML_SECURITY));
         checkAllClasses(config,classes);
         String path =   xmlFile.getAbsolutePath();
         String xmlPath = path.substring(0,path.lastIndexOf(File.separatorChar));
@@ -150,14 +152,14 @@ public final class ConfigReader  {
 
     private SchemaOutputResolver createSchemaOutputResolver(Config config, String xmlpath) {
         File baseDir = new File(xmlpath, config.getBaseDir().getPath());
-        SchemaOutputResolverImpl schemaOutputResolver = new SchemaOutputResolverImpl (baseDir);
+        SchemaOutputResolverImpl outResolver = new SchemaOutputResolverImpl (baseDir);
 
         for( Schema schema : (List<Schema>)config.getSchema() ) {
             String namespace = schema.getNamespace();
             File location = schema.getLocation();
-            schemaOutputResolver.addSchemaInfo(namespace,location);
+            outResolver.addSchemaInfo(namespace,location);
         }
-        return schemaOutputResolver;
+        return outResolver;
     }
 
     /**
@@ -190,11 +192,10 @@ public final class ConfigReader  {
      * @return
      *        A non null Config object
      */
-    private Config parseAndGetConfig (File xmlFile, ErrorHandler errorHandler) throws SAXException, IOException {
+    private Config parseAndGetConfig (File xmlFile, ErrorHandler errorHandler, boolean disableSecureProcessing) throws SAXException, IOException {
         XMLReader reader;
         try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
+            SAXParserFactory factory = XmlFactory.createParserFactory(disableSecureProcessing);
             reader = factory.newSAXParser().getXMLReader();
         } catch (ParserConfigurationException e) {
             // in practice this will never happen

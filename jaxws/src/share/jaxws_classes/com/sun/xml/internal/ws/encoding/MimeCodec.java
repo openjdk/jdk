@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,12 +92,8 @@ abstract class MimeCodec implements Codec {
 
     public static final String MULTIPART_RELATED_MIME_TYPE = "multipart/related";
 
-    private String boundary;
-    private String messageContentType;
-    private boolean hasAttachments;
-    protected Codec rootCodec;
+    protected Codec mimeRootCodec;
     protected final SOAPVersion version;
-//  protected final WSBinding binding;
     protected final WSFeatureList features;
 
     protected MimeCodec(SOAPVersion version, WSFeatureList f) {
@@ -109,6 +105,10 @@ abstract class MimeCodec implements Codec {
         return MULTIPART_RELATED_MIME_TYPE;
     }
 
+    protected Codec getMimeRootCodec(Packet packet) {
+        return mimeRootCodec;
+    }
+
     // TODO: preencode String literals to byte[] so that they don't have to
     // go through char[]->byte[] conversion at runtime.
     public ContentType encode(Packet packet, OutputStream out) throws IOException {
@@ -116,7 +116,10 @@ abstract class MimeCodec implements Codec {
         if (msg == null) {
             return null;
         }
-
+        ContentTypeImpl ctImpl = (ContentTypeImpl)getStaticContentType(packet);
+        String boundary = ctImpl.getBoundary();
+        boolean hasAttachments = (boundary != null);
+        Codec rootCodec = getMimeRootCodec(packet);
         if (hasAttachments) {
             writeln("--"+boundary, out);
             ContentType ct = rootCodec.getStaticContentType(packet);
@@ -148,7 +151,7 @@ abstract class MimeCodec implements Codec {
             writeAsAscii("--", out);
         }
         // TODO not returing correct multipart/related type(no boundary)
-        return hasAttachments ? new ContentTypeImpl(messageContentType, packet.soapAction, null) : primaryCt;
+        return hasAttachments ? ctImpl : primaryCt;
     }
 
     private void writeCustomMimeHeaders(Attachment att, OutputStream out) throws IOException {
@@ -166,19 +169,28 @@ abstract class MimeCodec implements Codec {
     }
 
     public ContentType getStaticContentType(Packet packet) {
+        ContentType ct = (ContentType) packet.getInternalContentType();
+        if ( ct != null ) return ct;
         Message msg = packet.getMessage();
-        hasAttachments = !msg.getAttachments().isEmpty();
+        boolean hasAttachments = !msg.getAttachments().isEmpty();
+        Codec rootCodec = getMimeRootCodec(packet);
 
         if (hasAttachments) {
-            boundary = "uuid:" + UUID.randomUUID().toString();
+            String boundary = "uuid:" + UUID.randomUUID().toString();
             String boundaryParameter = "boundary=\"" + boundary + "\"";
             // TODO use primaryEncoder to get type
-            messageContentType =  MULTIPART_RELATED_MIME_TYPE +
+            String messageContentType =  MULTIPART_RELATED_MIME_TYPE +
                     "; type=\"" + rootCodec.getMimeType() + "\"; " +
                     boundaryParameter;
-            return new ContentTypeImpl(messageContentType, packet.soapAction, null);
+            ContentTypeImpl impl = new ContentTypeImpl(messageContentType, packet.soapAction, null);
+            impl.setBoundary(boundary);
+            impl.setBoundaryParameter(boundaryParameter);
+            packet.setContentType(impl);
+            return impl;
         } else {
-            return rootCodec.getStaticContentType(packet);
+            ct = rootCodec.getStaticContentType(packet);
+            packet.setContentType(ct);
+            return ct;
         }
     }
 

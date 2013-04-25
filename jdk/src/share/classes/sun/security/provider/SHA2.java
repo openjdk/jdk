@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ abstract class SHA2 extends DigestBase {
         i2bBig4((int)bitsProcessed, buffer, 60);
         implCompress(buffer, 0);
 
-        i2bBig(state, 0, out, ofs, 32);
+        i2bBig(state, 0, out, ofs, engineGetDigestLength());
     }
 
     /**

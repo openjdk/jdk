@@ -61,6 +61,8 @@ public interface LoggingProxy {
 
     public String getLevelName(Object level);
 
+    public int getLevelValue(Object level);
+
     // return the logging property
     public String getProperty(String key);
 }

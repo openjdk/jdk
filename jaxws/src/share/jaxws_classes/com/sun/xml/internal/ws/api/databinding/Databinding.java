@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 
-import javax.xml.ws.WebServiceFeature;
+import com.sun.xml.internal.ws.api.message.MessageContextFactory;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.ContentType;
 import com.sun.xml.internal.ws.wsdl.DispatchException;
@@ -61,7 +61,7 @@ import com.sun.xml.internal.ws.wsdl.DispatchException;
  *
  * @author shih-chang.chen@oracle.com
  */
-public interface Databinding extends com.sun.xml.internal.org.jvnet.ws.databinding.Databinding {
+public interface Databinding extends com.oracle.webservices.internal.api.databinding.Databinding {
 
         /**
          * Gets the MessageFactory instance associated with this WsRuntime
@@ -141,7 +141,15 @@ public interface Databinding extends com.sun.xml.internal.org.jvnet.ws.databindi
 
         void generateWSDL(WSDLGenInfo info);
 
+        /**
+         * @deprecated use MessageContextFactory
+         */
         public ContentType encode( Packet packet, OutputStream out ) throws IOException ;
 
+    /**
+     * @deprecated use MessageContextFactory
+     */
         public void decode( InputStream in, String ct, Packet packet ) throws IOException;
+
+        public MessageContextFactory getMessageContextFactory();
 }

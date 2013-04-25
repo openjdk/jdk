@@ -37,6 +37,9 @@ package java.util.concurrent.atomic;
 import java.util.function.UnaryOperator;
 import java.util.function.BinaryOperator;
 import sun.misc.Unsafe;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
@@ -96,10 +99,12 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
      * or the field is inaccessible to the caller according to Java language
      * access control
      */
+    @CallerSensitive
     public static <U, W> AtomicReferenceFieldUpdater<U,W> newUpdater(Class<U> tclass, Class<W> vclass, String fieldName) {
         return new AtomicReferenceFieldUpdaterImpl<U,W>(tclass,
                                                         vclass,
-                                                        fieldName);
+                                                        fieldName,
+                                                        Reflection.getCallerClass());
     }
 
     /**
@@ -297,10 +302,11 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
 
         AtomicReferenceFieldUpdaterImpl(final Class<T> tclass,
                                         Class<V> vclass,
-                                        final String fieldName) {
+                                        final String fieldName,
+                                        final Class<?> caller)
+        {
             final Field field;
             final Class<?> fieldClass;
-            final Class<?> caller;
             final int modifiers;
             try {
                 field = AccessController.doPrivileged(
@@ -309,7 +315,6 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
                             return tclass.getDeclaredField(fieldName);
                         }
                     });
-                caller = sun.reflect.Reflection.getCallerClass(3);
                 modifiers = field.getModifiers();
                 sun.reflect.misc.ReflectUtil.ensureMemberAccess(
                     caller, tclass, null, modifiers);

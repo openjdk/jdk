@@ -561,8 +561,7 @@ public class ZoneInfo extends TimeZone {
      * @return an array of time zone IDs.
      */
     public static String[] getAvailableIDs() {
-        Set<String> idSet = ZoneInfoFile.getZoneIds();
-        return idSet.toArray(new String[idSet.size()]);
+        return ZoneInfoFile.getZoneIds();
     }
 
     /**

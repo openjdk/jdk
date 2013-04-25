@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,17 @@ public interface MemberSubmissionAddressingConstants {
     public static final String WSA_NAMESPACE_WSDL_NAME = WSA_NAMESPACE_NAME;
     public static final String WSA_NAMESPACE_POLICY_NAME = "http://schemas.xmlsoap.org/ws/2004/08/addressing/policy";
 
+    public static final QName  WSA_ACTION_QNAME = new QName(WSA_NAMESPACE_NAME,"Action");
+
     public static final String WSA_SERVICENAME_NAME = "ServiceName";
     public static final String WSA_PORTTYPE_NAME = "PortType";
     public static final String WSA_PORTNAME_NAME = "PortName";
 
     public static final String WSA_ADDRESS_NAME = "Address";
     public static final QName WSA_ADDRESS_QNAME = new QName(WSA_NAMESPACE_NAME, WSA_ADDRESS_NAME);
+
+    public static final String WSA_EPR_NAME = "EndpointReference";
+    public static final QName WSA_EPR_QNAME = new QName(WSA_NAMESPACE_NAME, WSA_EPR_NAME);
 
     public static final String WSA_ANONYMOUS_ADDRESS = WSA_NAMESPACE_NAME + "/role/anonymous";
     public static final String WSA_NONE_ADDRESS = "";

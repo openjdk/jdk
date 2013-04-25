@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.xml.ws.WebServiceClient;
 import javax.xml.ws.WebServiceException;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -48,16 +47,16 @@ import java.util.ArrayList;
 final class SCAnnotations {
     SCAnnotations(final Class<?> sc) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
             public Void run() {
                 WebServiceClient wsc =sc.getAnnotation(WebServiceClient.class);
-                if(wsc==null)
+                if(wsc==null) {
                     throw new WebServiceException("Service Interface Annotations required, exiting...");
+                }
 
-                String name = wsc.name();
                 String tns = wsc.targetNamespace();
-                serviceQName = new QName(tns, name);
                 try {
-                    wsdlLocation = JAXWSUtils.getFileOrURL(wsc.wsdlLocation());
+                    JAXWSUtils.getFileOrURL(wsc.wsdlLocation());
                 } catch (IOException e) {
                     // TODO: report a reasonable error message
                     throw new WebServiceException(e);
@@ -81,8 +80,6 @@ final class SCAnnotations {
         });
     }
 
-    QName serviceQName;
     final ArrayList<QName> portQNames = new ArrayList<QName>();
     final ArrayList<Class> classes = new ArrayList<Class>();
-    URL wsdlLocation;
 }

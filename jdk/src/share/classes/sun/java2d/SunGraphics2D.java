@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ import java.awt.image.ImageObserver;
 import java.awt.Transparency;
 import java.awt.font.GlyphVector;
 import java.awt.font.TextLayout;
+
+import sun.awt.image.SurfaceManager;
 import sun.font.FontDesignMetrics;
 import sun.font.FontUtilities;
 import sun.java2d.pipe.PixelDrawPipe;
@@ -82,17 +84,15 @@ import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.Blit;
 import sun.java2d.loops.MaskFill;
-import sun.font.FontManager;
 import java.awt.font.FontRenderContext;
 import sun.java2d.loops.XORComposite;
 import sun.awt.ConstrainableGraphics;
 import sun.awt.SunHints;
 import java.util.Map;
 import java.util.Iterator;
-import sun.java2d.DestSurfaceProvider;
 import sun.misc.PerformanceLogger;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * This is a the master Graphics2D superclass for all of the Sun
@@ -103,8 +103,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  *
  * @author Jim Graham
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public final class SunGraphics2D
     extends Graphics2D
     implements ConstrainableGraphics, Cloneable, DestSurfaceProvider
@@ -113,18 +111,29 @@ public final class SunGraphics2D
      * Attribute States
      */
     /* Paint */
+    @Native
     public static final int PAINT_CUSTOM       = 6; /* Any other Paint object */
+    @Native
     public static final int PAINT_TEXTURE      = 5; /* Tiled Image */
+    @Native
     public static final int PAINT_RAD_GRADIENT = 4; /* Color RadialGradient */
+    @Native
     public static final int PAINT_LIN_GRADIENT = 3; /* Color LinearGradient */
+    @Native
     public static final int PAINT_GRADIENT     = 2; /* Color Gradient */
+    @Native
     public static final int PAINT_ALPHACOLOR   = 1; /* Non-opaque Color */
+    @Native
     public static final int PAINT_OPAQUECOLOR  = 0; /* Opaque Color */
 
     /* Composite*/
+    @Native
     public static final int COMP_CUSTOM = 3;/* Custom Composite */
+    @Native
     public static final int COMP_XOR    = 2;/* XOR Mode Composite */
+    @Native
     public static final int COMP_ALPHA  = 1;/* AlphaComposite */
+    @Native
     public static final int COMP_ISCOPY = 0;/* simple stores into destination,
                                              * i.e. Src, SrcOverNoEa, and other
                                              * alpha modes which replace
@@ -132,21 +141,33 @@ public final class SunGraphics2D
                                              */
 
     /* Stroke */
+    @Native
     public static final int STROKE_CUSTOM = 3; /* custom Stroke */
+    @Native
     public static final int STROKE_WIDE   = 2; /* BasicStroke */
+    @Native
     public static final int STROKE_THINDASHED   = 1; /* BasicStroke */
+    @Native
     public static final int STROKE_THIN   = 0; /* BasicStroke */
 
     /* Transform */
+    @Native
     public static final int TRANSFORM_GENERIC = 4; /* any 3x2 */
+    @Native
     public static final int TRANSFORM_TRANSLATESCALE = 3; /* scale XY */
+    @Native
     public static final int TRANSFORM_ANY_TRANSLATE = 2; /* non-int translate */
+    @Native
     public static final int TRANSFORM_INT_TRANSLATE = 1; /* int translate */
+    @Native
     public static final int TRANSFORM_ISIDENT = 0; /* Identity */
 
     /* Clipping */
+    @Native
     public static final int CLIP_SHAPE       = 2; /* arbitrary clip */
+    @Native
     public static final int CLIP_RECTANGULAR = 1; /* rectangular clip */
+    @Native
     public static final int CLIP_DEVICE      = 0; /* no clipping set */
 
     /* The following fields are used when the current Paint is a Color. */
@@ -207,13 +228,15 @@ public final class SunGraphics2D
 
     public RenderingHints hints;
 
-    public Region constrainClip;                // lightweight bounds
+    public Region constrainClip;        // lightweight bounds in pixels
     public int constrainX;
     public int constrainY;
 
     public Region clipRegion;
     public Shape usrClip;
-    protected Region devClip;           // Actual physical drawable
+    protected Region devClip;           // Actual physical drawable in pixels
+
+    private final int devScale;         // Actual physical scale factor
 
     // cached state for text rendering
     private boolean validFontInfo;
@@ -255,6 +278,12 @@ public final class SunGraphics2D
         interpolationType = AffineTransformOp.TYPE_NEAREST_NEIGHBOR;
 
         validateColor();
+
+        devScale = sd.getDefaultScale();
+        if (devScale != 1) {
+            transform.setToScale(devScale, devScale);
+            invalidateTransform();
+        }
 
         font = f;
         if (font == null) {
@@ -320,6 +349,49 @@ public final class SunGraphics2D
 
     /**
      * Constrain rendering for lightweight objects.
+     */
+    public void constrain(int x, int y, int w, int h, Region region) {
+        if ((x | y) != 0) {
+            translate(x, y);
+        }
+        if (transformState > TRANSFORM_TRANSLATESCALE) {
+            clipRect(0, 0, w, h);
+            return;
+        }
+        // changes parameters according to the current scale and translate.
+        final double scaleX = transform.getScaleX();
+        final double scaleY = transform.getScaleY();
+        x = constrainX = (int) transform.getTranslateX();
+        y = constrainY = (int) transform.getTranslateY();
+        w = Region.dimAdd(x, Region.clipScale(w, scaleX));
+        h = Region.dimAdd(y, Region.clipScale(h, scaleY));
+
+        Region c = constrainClip;
+        if (c == null) {
+            c = Region.getInstanceXYXY(x, y, w, h);
+        } else {
+            c = c.getIntersectionXYXY(x, y, w, h);
+        }
+        if (region != null) {
+            region = region.getScaledRegion(scaleX, scaleY);
+            region = region.getTranslatedRegion(x, y);
+            c = c.getIntersection(region);
+        }
+
+        if (c == constrainClip) {
+            // Common case to ignore
+            return;
+        }
+
+        constrainClip = c;
+        if (!devClip.isInsideQuickCheck(c)) {
+            devClip = devClip.getIntersection(c);
+            validateCompClip();
+        }
+    }
+
+    /**
+     * Constrain rendering for lightweight objects.
      *
      * REMIND: This method will back off to the "workaround"
      * of using translate and clipRect if the Graphics
@@ -330,33 +402,9 @@ public final class SunGraphics2D
      * @exception IllegalStateException If the Graphics
      * to be constrained has a complex transform.
      */
+    @Override
     public void constrain(int x, int y, int w, int h) {
-        if ((x|y) != 0) {
-            translate(x, y);
-        }
-        if (transformState >= TRANSFORM_TRANSLATESCALE) {
-            clipRect(0, 0, w, h);
-            return;
-        }
-        x = constrainX = transX;
-        y = constrainY = transY;
-        w = Region.dimAdd(x, w);
-        h = Region.dimAdd(y, h);
-        Region c = constrainClip;
-        if (c == null) {
-            c = Region.getInstanceXYXY(x, y, w, h);
-        } else {
-            c = c.getIntersectionXYXY(x, y, w, h);
-            if (c == constrainClip) {
-                // Common case to ignore
-                return;
-            }
-        }
-        constrainClip = c;
-        if (!devClip.isInsideQuickCheck(c)) {
-            devClip = devClip.getIntersection(c);
-            validateCompClip();
-        }
+        constrain(x, y, w, h, null);
     }
 
     protected static ValidatePipe invalidpipe = new ValidatePipe();
@@ -1540,11 +1588,13 @@ public final class SunGraphics2D
      * @see TransformChain
      * @see AffineTransform
      */
+    @Override
     public void setTransform(AffineTransform Tx) {
-        if ((constrainX|constrainY) == 0) {
+        if ((constrainX | constrainY) == 0 && devScale == 1) {
             transform.setTransform(Tx);
         } else {
-            transform.setToTranslation(constrainX, constrainY);
+            transform.setTransform(devScale, 0, 0, devScale, constrainX,
+                                   constrainY);
             transform.concatenate(Tx);
         }
         invalidateTransform();
@@ -1602,12 +1652,15 @@ public final class SunGraphics2D
      * @see #transform
      * @see #setTransform
      */
+    @Override
     public AffineTransform getTransform() {
-        if ((constrainX|constrainY) == 0) {
+        if ((constrainX | constrainY) == 0 && devScale == 1) {
             return new AffineTransform(transform);
         }
-        AffineTransform tx =
-            AffineTransform.getTranslateInstance(-constrainX, -constrainY);
+        final double invScale = 1.0 / devScale;
+        AffineTransform tx = new AffineTransform(invScale, 0, 0, invScale,
+                                                 -constrainX * invScale,
+                                                 -constrainY * invScale);
         tx.concatenate(transform);
         return tx;
     }
@@ -2991,6 +3044,37 @@ public final class SunGraphics2D
     }
 // end of text rendering methods
 
+    private static boolean isHiDPIImage(final Image img) {
+        return SurfaceManager.getImageScale(img) != 1;
+    }
+
+    private boolean drawHiDPIImage(Image img, int dx1, int dy1, int dx2,
+                                   int dy2, int sx1, int sy1, int sx2, int sy2,
+                                   Color bgcolor, ImageObserver observer) {
+        final int scale = SurfaceManager.getImageScale(img);
+        sx1 = Region.clipScale(sx1, scale);
+        sx2 = Region.clipScale(sx2, scale);
+        sy1 = Region.clipScale(sy1, scale);
+        sy2 = Region.clipScale(sy2, scale);
+        try {
+            return imagepipe.scaleImage(this, img, dx1, dy1, dx2, dy2, sx1, sy1,
+                                        sx2, sy2, bgcolor, observer);
+        } catch (InvalidPipeException e) {
+            try {
+                revalidateAll();
+                return imagepipe.scaleImage(this, img, dx1, dy1, dx2, dy2, sx1,
+                                            sy1, sx2, sy2, bgcolor, observer);
+            } catch (InvalidPipeException e2) {
+                // Still catching the exception; we are not yet ready to
+                // validate the surfaceData correctly.  Fail for now and
+                // try again next time around.
+                return false;
+            }
+        } finally {
+            surfaceData.markDirty();
+        }
+    }
+
     /**
      * Draws an image scaled to x,y,w,h in nonblocking mode with a
      * callback object.
@@ -3004,8 +3088,9 @@ public final class SunGraphics2D
      * Not part of the advertised API but a useful utility method
      * to call internally.  This is for the case where we are
      * drawing to/from given coordinates using a given width/height,
-     * but we guarantee that the weidth/height of the src and dest
-     * areas are equal (no scale needed).
+     * but we guarantee that the surfaceData's width/height of the src and dest
+     * areas are equal (no scale needed). Note that this method intentionally
+     * ignore scale factor of the source image, and copy it as is.
      */
     public boolean copyImage(Image img, int dx, int dy, int sx, int sy,
                              int width, int height, Color bgcolor,
@@ -3043,7 +3128,15 @@ public final class SunGraphics2D
         if ((width == 0) || (height == 0)) {
             return true;
         }
-        if (width == img.getWidth(null) && height == img.getHeight(null)) {
+
+        final int imgW = img.getWidth(null);
+        final int imgH = img.getHeight(null);
+        if (isHiDPIImage(img)) {
+            return drawHiDPIImage(img, x, y, x + width, y + height, 0, 0, imgW,
+                                  imgH, bg, observer);
+        }
+
+        if (width == imgW && height == imgH) {
             return copyImage(img, x, y, 0, 0, width, height, bg, observer);
         }
 
@@ -3082,6 +3175,13 @@ public final class SunGraphics2D
 
         if (img == null) {
             return true;
+        }
+
+        if (isHiDPIImage(img)) {
+            final int imgW = img.getWidth(null);
+            final int imgH = img.getHeight(null);
+            return drawHiDPIImage(img, x, y, x + imgW, y + imgH, 0, 0, imgW,
+                                  imgH, bg, observer);
         }
 
         try {
@@ -3130,6 +3230,11 @@ public final class SunGraphics2D
             sx1 == sx2 || sy1 == sy2)
         {
             return true;
+        }
+
+        if (isHiDPIImage(img)) {
+            return drawHiDPIImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2,
+                                  bgcolor, observer);
         }
 
         if (((sx2 - sx1) == (dx2 - dx1)) &&
@@ -3208,6 +3313,18 @@ public final class SunGraphics2D
 
         if (xform == null || xform.isIdentity()) {
             return drawImage(img, 0, 0, null, observer);
+        }
+
+        if (isHiDPIImage(img)) {
+            final int w = img.getWidth(null);
+            final int h = img.getHeight(null);
+            final AffineTransform tx = new AffineTransform(transform);
+            transform(xform);
+            boolean result = drawHiDPIImage(img, 0, 0, w, h, 0, 0, w, h, null,
+                                            observer);
+            transform.setTransform(tx);
+            invalidateTransform();
+            return result;
         }
 
         try {

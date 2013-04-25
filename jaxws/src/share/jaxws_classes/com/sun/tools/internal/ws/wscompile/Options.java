@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -91,6 +92,12 @@ public class Options {
      * -Xnocompile
      */
     public boolean nocompile;
+
+    /**
+     * Disable secure xml processing.
+     * -XdisableSecureXmlProcessing
+     */
+    public boolean disableSecureXmlProcessing = false;
 
     public enum Target {
         V2_0, V2_1, V2_2;
@@ -180,13 +187,6 @@ public class Options {
         return compatibilityMode == EXTENSION;
     }
 
-    /**
-     * Target direcoty when producing files.
-     */
-    public File targetDir = new File(".");
-
-
-
     public boolean debug = false;
 
     /**
@@ -213,7 +213,10 @@ public class Options {
     public void removeGeneratedFiles(){
         for(File file : generatedFiles){
             if (file.getName().endsWith(".java")) {
-                file.delete();
+                boolean deleted = file.delete();
+                if (verbose && !deleted) {
+                    System.out.println(MessageFormat.format("{0} could not be deleted.", file));
+                }
             }
         }
         generatedFiles.clear();
@@ -235,7 +238,10 @@ public class Options {
         synchronized (generatedFiles) {
             for (File file : generatedFiles) {
                 if (file.getName().endsWith(".java")) {
-                    file.delete();
+                    boolean deleted = file.delete();
+                    if (verbose && !deleted) {
+                        System.out.println(MessageFormat.format("{0} could not be deleted.", file));
+                    }
                 }
             }
             generatedFiles.clear();
@@ -348,6 +354,9 @@ public class Options {
                 throw new BadCommandLineException(WscompileMessages.WSCOMPILE_UNSUPPORTED_ENCODING(encoding));
             }
             return 2;
+        } else if (args[i].equals("-XdisableSecureXmlProcessing")) {
+            disableSecureXmlProcessing= true;
+            return 1;
         }
         return 0;
     }

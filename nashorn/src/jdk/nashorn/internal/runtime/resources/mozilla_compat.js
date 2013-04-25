@@ -49,6 +49,7 @@ Object.defineProperty(this, "importPackage", {
         var global = this;
         var oldNoSuchProperty = global.__noSuchProperty__;
         global.__noSuchProperty__ = function(name) {
+            'use strict';
             for (var i in _packages) {
                 try {
                     var type = Java.type(_packages[i] + "." + name);
@@ -57,7 +58,15 @@ Object.defineProperty(this, "importPackage", {
                 } catch (e) {}
             }
 
-            return oldNoSuchProperty? oldNoSuchProperty(name) : undefined;
+            if (oldNoSuchProperty) {
+                return oldNoSuchProperty.call(this, name);
+            } else {
+                if (this === undefined) {
+                    throw new ReferenceError(name + " is not defined");
+                } else {
+                    return undefined;
+                }
+            }
         }
 
         var prefix = "[JavaPackage ";

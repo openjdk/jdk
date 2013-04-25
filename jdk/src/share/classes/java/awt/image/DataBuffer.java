@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import sun.java2d.StateTrackableDelegate;
 
 import sun.awt.image.SunWritableRaster;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * This class exists to wrap one or more data arrays.  Each data array in
@@ -67,30 +67,28 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @see java.awt.image.Raster
  * @see java.awt.image.SampleModel
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public abstract class DataBuffer {
 
     /** Tag for unsigned byte data. */
-    public static final int TYPE_BYTE  = 0;
+    @Native public static final int TYPE_BYTE  = 0;
 
     /** Tag for unsigned short data. */
-    public static final int TYPE_USHORT = 1;
+    @Native public static final int TYPE_USHORT = 1;
 
     /** Tag for signed short data.  Placeholder for future use. */
-    public static final int TYPE_SHORT = 2;
+    @Native public static final int TYPE_SHORT = 2;
 
     /** Tag for int data. */
-    public static final int TYPE_INT   = 3;
+    @Native public static final int TYPE_INT   = 3;
 
     /** Tag for float data.  Placeholder for future use. */
-    public static final int TYPE_FLOAT  = 4;
+    @Native public static final int TYPE_FLOAT  = 4;
 
     /** Tag for double data.  Placeholder for future use. */
-    public static final int TYPE_DOUBLE  = 5;
+    @Native public static final int TYPE_DOUBLE  = 5;
 
     /** Tag for undefined data. */
-    public static final int TYPE_UNDEFINED = 32;
+    @Native public static final int TYPE_UNDEFINED = 32;
 
     /** The data type of this DataBuffer. */
     protected int dataType;

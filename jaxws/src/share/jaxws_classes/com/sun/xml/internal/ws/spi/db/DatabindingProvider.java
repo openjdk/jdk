@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package com.sun.xml.internal.ws.spi.db;
 
 import java.util.Map;
 
-import com.sun.xml.internal.org.jvnet.ws.databinding.Databinding;
+import com.oracle.webservices.internal.api.databinding.Databinding;
+import com.oracle.webservices.internal.api.databinding.WSDLGenerator;
+
 import com.sun.xml.internal.ws.api.databinding.DatabindingConfig;
 
 public interface DatabindingProvider {
@@ -35,5 +37,5 @@ public interface DatabindingProvider {
         boolean isFor(String databindingMode);
         void init(Map<String, Object> properties);
         Databinding create(DatabindingConfig config);
-    Databinding.WSDLGenerator wsdlGen(DatabindingConfig config);
+    WSDLGenerator wsdlGen(DatabindingConfig config);
 }

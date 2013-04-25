@@ -139,12 +139,24 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
     }
 
-    protected void addReceiverAnnotations(ExecutableMemberDoc member,
-            Content tree) {
-        if (member.receiverAnnotations().length > 0) {
-            tree.addContent(writer.getSpace());
-            writer.addReceiverAnnotationInfo(member, tree);
-        }
+    /**
+     * Add the receiver annotations information.
+     *
+     * @param member the member to write receiver annotations for.
+     * @param rcvrType the receiver type.
+     * @param descList list of annotation description.
+     * @param tree the content tree to which the information will be added.
+     */
+    protected void addReceiverAnnotations(ExecutableMemberDoc member, Type rcvrType,
+            AnnotationDesc[] descList, Content tree) {
+        writer.addReceiverAnnotationInfo(member, descList, tree);
+        tree.addContent(writer.getSpace());
+        tree.addContent(rcvrType.typeName());
+        LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
+                LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, rcvrType);
+        tree.addContent(new RawHtml(writer.getTypeParameterLinks(linkInfo)));
+        tree.addContent(writer.getSpace());
+        tree.addContent("this");
     }
 
 
@@ -168,14 +180,24 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addParameters(ExecutableMemberDoc member,
             boolean includeAnnotations, Content htmltree) {
         htmltree.addContent("(");
+        String sep = "";
         Parameter[] params = member.parameters();
         String indent = makeSpace(writer.displayLength);
         if (configuration.linksource) {
             //add spaces to offset indentation changes caused by link.
             indent+= makeSpace(member.name().length());
         }
+        Type rcvrType = member.receiverType();
+        if (includeAnnotations && rcvrType instanceof AnnotatedType) {
+            AnnotationDesc[] descList = rcvrType.asAnnotatedType().annotations();
+            if (descList.length > 0) {
+                addReceiverAnnotations(member, rcvrType, descList, htmltree);
+                sep = "," + DocletConstants.NL + indent;
+            }
+        }
         int paramstart;
         for (paramstart = 0; paramstart < params.length; paramstart++) {
+            htmltree.addContent(sep);
             Parameter param = params[paramstart];
             if (!param.name().startsWith("this$")) {
                 if (includeAnnotations) {

@@ -72,12 +72,13 @@ import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
@@ -205,16 +206,46 @@ public final class MinguoDate
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Gets the chronology of this date, which is the Minguo calendar system.
+     * <p>
+     * The {@code Chronology} represents the calendar system in use.
+     * The era and other fields in {@link ChronoField} are defined by the chronology.
+     *
+     * @return the Minguo chronology, not null
+     */
     @Override
     public MinguoChronology getChronology() {
         return MinguoChronology.INSTANCE;
     }
 
+    /**
+     * Gets the era applicable at this date.
+     * <p>
+     * The Minguo calendar system has two eras, 'ROC' and 'BEFORE_ROC',
+     * defined by {@link MinguoEra}.
+     *
+     * @return the era applicable at this date, not null
+     */
+    @Override
+    public MinguoEra getEra() {
+        return (getProlepticYear() >= 1 ? MinguoEra.ROC : MinguoEra.BEFORE_ROC);
+    }
+
+    /**
+     * Returns the length of the month represented by this date.
+     * <p>
+     * This returns the length of the month in days.
+     * Month lengths match those of the ISO calendar system.
+     *
+     * @return the length of the month in days
+     */
     @Override
     public int lengthOfMonth() {
         return isoDate.lengthOfMonth();
     }
 
+    //-----------------------------------------------------------------------
     @Override
     public ValueRange range(TemporalField field) {
         if (field instanceof ChronoField) {
@@ -233,7 +264,7 @@ public final class MinguoDate
                 }
                 return getChronology().range(f);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.rangeRefinedBy(this);
     }
@@ -242,6 +273,8 @@ public final class MinguoDate
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField) {
             switch ((ChronoField) field) {
+                case PROLEPTIC_MONTH:
+                    return getProlepticMonth();
                 case YEAR_OF_ERA: {
                     int prolepticYear = getProlepticYear();
                     return (prolepticYear >= 1 ? prolepticYear : 1 - prolepticYear);
@@ -254,6 +287,10 @@ public final class MinguoDate
             return isoDate.getLong(field);
         }
         return field.getFrom(this);
+    }
+
+    private long getProlepticMonth() {
+        return getProlepticYear() * 12L + isoDate.getMonthValue() - 1;
     }
 
     private int getProlepticYear() {
@@ -269,11 +306,13 @@ public final class MinguoDate
                 return this;
             }
             switch (f) {
+                case PROLEPTIC_MONTH:
+                    getChronology().range(f).checkValidValue(newValue, f);
+                    return plusMonths(newValue - getProlepticMonth());
                 case YEAR_OF_ERA:
                 case YEAR:
                 case ERA: {
-                    f.checkValidValue(newValue);
-                    int nvalue = (int) newValue;
+                    int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
                     switch (f) {
                         case YEAR_OF_ERA:
                             return with(isoDate.withYear(getProlepticYear() >= 1 ? nvalue + YEARS_DIFFERENCE : (1 - nvalue)  + YEARS_DIFFERENCE));
@@ -286,7 +325,7 @@ public final class MinguoDate
             }
             return with(isoDate.with(field, newValue));
         }
-        return (MinguoDate) ChronoLocalDate.super.with(field, newValue);
+        return ChronoLocalDate.super.with(field, newValue);
     }
 
     /**
@@ -296,7 +335,7 @@ public final class MinguoDate
      */
     @Override
     public  MinguoDate with(TemporalAdjuster adjuster) {
-        return (MinguoDate)super.with(adjuster);
+        return super.with(adjuster);
     }
 
     /**
@@ -306,7 +345,7 @@ public final class MinguoDate
      */
     @Override
     public MinguoDate plus(TemporalAmount amount) {
-        return (MinguoDate)super.plus(amount);
+        return super.plus(amount);
     }
 
     /**
@@ -316,7 +355,7 @@ public final class MinguoDate
      */
     @Override
     public MinguoDate minus(TemporalAmount amount) {
-        return (MinguoDate)super.minus(amount);
+        return super.minus(amount);
     }
 
     //-----------------------------------------------------------------------
@@ -337,37 +376,37 @@ public final class MinguoDate
 
     @Override
     public MinguoDate plus(long amountToAdd, TemporalUnit unit) {
-        return (MinguoDate)super.plus(amountToAdd, unit);
+        return super.plus(amountToAdd, unit);
     }
 
     @Override
     public MinguoDate minus(long amountToAdd, TemporalUnit unit) {
-        return (MinguoDate)super.minus(amountToAdd, unit);
+        return super.minus(amountToAdd, unit);
     }
 
     @Override
     MinguoDate plusWeeks(long weeksToAdd) {
-        return (MinguoDate)super.plusWeeks(weeksToAdd);
+        return super.plusWeeks(weeksToAdd);
     }
 
     @Override
     MinguoDate minusYears(long yearsToSubtract) {
-        return (MinguoDate)super.minusYears(yearsToSubtract);
+        return super.minusYears(yearsToSubtract);
     }
 
     @Override
     MinguoDate minusMonths(long monthsToSubtract) {
-        return (MinguoDate)super.minusMonths(monthsToSubtract);
+        return super.minusMonths(monthsToSubtract);
     }
 
     @Override
     MinguoDate minusWeeks(long weeksToSubtract) {
-        return (MinguoDate)super.minusWeeks(weeksToSubtract);
+        return super.minusWeeks(weeksToSubtract);
     }
 
     @Override
     MinguoDate minusDays(long daysToSubtract) {
-        return (MinguoDate)super.minusDays(daysToSubtract);
+        return super.minusDays(daysToSubtract);
     }
 
     private MinguoDate with(LocalDate newDate) {
@@ -376,7 +415,7 @@ public final class MinguoDate
 
     @Override        // for javadoc and covariant return type
     public final ChronoLocalDateTime<MinguoDate> atTime(LocalTime localTime) {
-        return (ChronoLocalDateTime<MinguoDate>)super.atTime(localTime);
+        return super.atTime(localTime);
     }
 
     @Override
@@ -419,7 +458,7 @@ public final class MinguoDate
         out.writeByte(get(DAY_OF_MONTH));
     }
 
-    static ChronoLocalDate readExternal(DataInput in) throws IOException {
+    static ChronoLocalDate<?> readExternal(DataInput in) throws IOException {
         int year = in.readInt();
         int month = in.readByte();
         int dayOfMonth = in.readByte();

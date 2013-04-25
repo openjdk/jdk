@@ -344,6 +344,7 @@ public:
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
+  virtual void print_on_error(outputStream* st) const;
 
   // PrintGC, PrintGCDetails support
   void print_heap_change(size_t prev_used) const;

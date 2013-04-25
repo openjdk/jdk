@@ -77,26 +77,57 @@ security.provider.9=sun.security.smartcardio.SunPCSC
 security.provider.10=sun.security.mscapi.SunMSCAPI
 
 #
-# Select the source of seed data for SecureRandom. By default an
-# attempt is made to use the entropy gathering device specified by
-# the securerandom.source property. If an exception occurs when
-# accessing the URL then the traditional system/thread activity
-# algorithm is used.
+# Sun Provider SecureRandom seed source.
 #
-# On Solaris and Linux systems, if file:/dev/urandom is specified and it
-# exists, a special SecureRandom implementation is activated by default.
-# This "NativePRNG" reads random bytes directly from /dev/urandom.
+# Select the primary source of seed data for the "SHA1PRNG" and
+# "NativePRNG" SecureRandom implementations in the "Sun" provider.
+# (Other SecureRandom implementations might also use this property.)
 #
-# On Windows systems, the URLs file:/dev/random and file:/dev/urandom
-# enables use of the Microsoft CryptoAPI seed functionality.
+# On Unix-like systems (for example, Solaris/Linux/MacOS), the
+# "NativePRNG" and "SHA1PRNG" implementations obtains seed data from
+# special device files such as file:/dev/random.
 #
-securerandom.source=file:/dev/urandom
+# On Windows systems, specifying the URLs "file:/dev/random" or
+# "file:/dev/urandom" will enable the native Microsoft CryptoAPI seeding
+# mechanism for SHA1PRNG.
 #
-# The entropy gathering device is described as a URL and can also
-# be specified with the system property "java.security.egd". For example,
-#   -Djava.security.egd=file:/dev/urandom
-# Specifying this system property will override the securerandom.source
-# setting.
+# By default, an attempt is made to use the entropy gathering device
+# specified by the "securerandom.source" Security property.  If an
+# exception occurs while accessing the specified URL:
+#
+#     SHA1PRNG:
+#         the traditional system/thread activity algorithm will be used.
+#
+#     NativePRNG:
+#         a default value of /dev/random will be used.  If neither
+#         are available, the implementation will be disabled.
+#         "file" is the only currently supported protocol type.
+#
+# The entropy gathering device can also be specified with the System
+# property "java.security.egd". For example:
+#
+#   % java -Djava.security.egd=file:/dev/random MainClass
+#
+# Specifying this System property will override the
+# "securerandom.source" Security property.
+#
+# In addition, if "file:/dev/random" or "file:/dev/urandom" is
+# specified, the "NativePRNG" implementation will be more preferred than
+# SHA1PRNG in the Sun provider.
+#
+securerandom.source=file:/dev/random
+
+#
+# A list of known strong SecureRandom implementations.
+#
+# To help guide applications in selecting a suitable strong
+# java.security.SecureRandom implementation, Java distributions should
+# indicate a list of known strong implementations using the property.
+#
+# This is a comma-separated list of algorithm and/or algorithm:provider
+# entries.
+#
+securerandom.strongAlgorithms=Windows-PRNG:SunMSCAPI
 
 #
 # Class to instantiate as the javax.security.auth.login.Configuration
@@ -147,20 +178,35 @@ keystore.type=jks
 # corresponding RuntimePermission ("accessClassInPackage."+package) has
 # been granted.
 package.access=sun.,\
-               com.sun.xml.internal.bind.,\
-               com.sun.xml.internal.org.jvnet.staxex.,\
-               com.sun.xml.internal.ws.,\
+               com.sun.xml.internal.,\
                com.sun.imageio.,\
                com.sun.istack.internal.,\
                com.sun.jmx.,\
                com.sun.proxy.,\
-               com.sun.org.apache.xerces.internal.utils.,\
+               com.sun.org.apache.bcel.internal.,\
+               com.sun.org.apache.regexp.internal.,\
+               com.sun.org.apache.xerces.internal.,\
+               com.sun.org.apache.xpath.internal.,\
+               com.sun.org.apache.xalan.internal.extensions.,\
+               com.sun.org.apache.xalan.internal.lib.,\
+               com.sun.org.apache.xalan.internal.res.,\
+               com.sun.org.apache.xalan.internal.templates.,\
                com.sun.org.apache.xalan.internal.utils.,\
-               com.sun.org.glassfish.external.,\
-               com.sun.org.glassfish.gmbal.,\
-	       jdk.internal.,\
-	       jdk.nashorn.internal.,\
-	       jdk.nashorn.tools.
+               com.sun.org.apache.xalan.internal.xslt.,\
+               com.sun.org.apache.xalan.internal.xsltc.cmdline.,\
+               com.sun.org.apache.xalan.internal.xsltc.compiler.,\
+               com.sun.org.apache.xalan.internal.xsltc.trax.,\
+               com.sun.org.apache.xalan.internal.xsltc.util.,\
+               com.sun.org.apache.xml.internal.res.,\
+               com.sun.org.apache.xml.internal.serializer.utils.,\
+               com.sun.org.apache.xml.internal.utils.,\
+               com.sun.org.glassfish.,\
+               com.oracle.xmlns.internal.,\
+               com.oracle.webservices.internal.,\
+               jdk.internal.,\
+               jdk.nashorn.internal.,\
+               jdk.nashorn.tools.,\
+               com.sun.java.accessibility.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -173,20 +219,35 @@ package.access=sun.,\
 # checkPackageDefinition.
 #
 package.definition=sun.,\
-                   com.sun.xml.internal.bind.,\
-                   com.sun.xml.internal.org.jvnet.staxex.,\
-                   com.sun.xml.internal.ws.,\
+                   com.sun.xml.internal.,\
                    com.sun.imageio.,\
                    com.sun.istack.internal.,\
                    com.sun.jmx.,\
                    com.sun.proxy.,\
-                   com.sun.org.apache.xerces.internal.utils.,\
+                   com.sun.org.apache.bcel.internal.,\
+                   com.sun.org.apache.regexp.internal.,\
+                   com.sun.org.apache.xerces.internal.,\
+                   com.sun.org.apache.xpath.internal.,\
+                   com.sun.org.apache.xalan.internal.extensions.,\
+                   com.sun.org.apache.xalan.internal.lib.,\
+                   com.sun.org.apache.xalan.internal.res.,\
+                   com.sun.org.apache.xalan.internal.templates.,\
                    com.sun.org.apache.xalan.internal.utils.,\
-                   com.sun.org.glassfish.external.,\
-                   com.sun.org.glassfish.gmbal.,\
-		   jdk.internal.,\
-		   jdk.nashorn.internal.,\
-		   jdk.nashorn.tools.
+                   com.sun.org.apache.xalan.internal.xslt.,\
+                   com.sun.org.apache.xalan.internal.xsltc.cmdline.,\
+                   com.sun.org.apache.xalan.internal.xsltc.compiler.,\
+                   com.sun.org.apache.xalan.internal.xsltc.trax.,\
+                   com.sun.org.apache.xalan.internal.xsltc.util.,\
+                   com.sun.org.apache.xml.internal.res.,\
+                   com.sun.org.apache.xml.internal.serializer.utils.,\
+                   com.sun.org.apache.xml.internal.utils.,\
+                   com.sun.org.glassfish.,\
+                   com.oracle.xmlns.internal.,\
+                   com.oracle.webservices.internal.,\
+                   jdk.internal.,\
+                   jdk.nashorn.internal.,\
+                   jdk.nashorn.tools.,\
+                   com.sun.java.accessibility.
 
 #
 # Determines whether this properties file can be appended to
