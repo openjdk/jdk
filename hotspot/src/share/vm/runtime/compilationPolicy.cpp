@@ -123,9 +123,10 @@ bool CompilationPolicy::can_be_compiled(methodHandle m, int comp_level) {
   }
   if (comp_level == CompLevel_all) {
     return !m->is_not_compilable(CompLevel_simple) && !m->is_not_compilable(CompLevel_full_optimization);
-  } else {
+  } else if (is_compile(comp_level)) {
     return !m->is_not_compilable(comp_level);
   }
+  return false;
 }
 
 bool CompilationPolicy::is_compilation_enabled() {

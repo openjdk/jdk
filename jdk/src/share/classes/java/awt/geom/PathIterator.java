@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.awt.geom;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * The <code>PathIterator</code> interface provides the mechanism
@@ -59,8 +59,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  *
  * @author Jim Graham
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public interface PathIterator {
     /**
      * The winding rule constant for specifying an even-odd rule
@@ -69,7 +67,7 @@ public interface PathIterator {
      * path if a ray drawn in any direction from that point to
      * infinity is crossed by path segments an odd number of times.
      */
-    public static final int WIND_EVEN_ODD       = 0;
+    @Native public static final int WIND_EVEN_ODD       = 0;
 
     /**
      * The winding rule constant for specifying a non-zero rule
@@ -80,20 +78,20 @@ public interface PathIterator {
      * of times in the counter-clockwise direction than the
      * clockwise direction.
      */
-    public static final int WIND_NON_ZERO       = 1;
+    @Native public static final int WIND_NON_ZERO       = 1;
 
     /**
      * The segment type constant for a point that specifies the
      * starting location for a new subpath.
      */
-    public static final int SEG_MOVETO          = 0;
+    @Native public static final int SEG_MOVETO          = 0;
 
     /**
      * The segment type constant for a point that specifies the
      * end point of a line to be drawn from the most recently
      * specified point.
      */
-    public static final int SEG_LINETO          = 1;
+    @Native public static final int SEG_LINETO          = 1;
 
     /**
      * The segment type constant for the pair of points that specify
@@ -115,7 +113,7 @@ public interface PathIterator {
      *               = n! / (m! * (n-m)!)
      * </pre>
      */
-    public static final int SEG_QUADTO          = 2;
+    @Native public static final int SEG_QUADTO          = 2;
 
     /**
      * The segment type constant for the set of 3 points that specify
@@ -139,14 +137,14 @@ public interface PathIterator {
      * </pre>
      * This form of curve is commonly known as a B&eacute;zier curve.
      */
-    public static final int SEG_CUBICTO         = 3;
+    @Native public static final int SEG_CUBICTO         = 3;
 
     /**
      * The segment type constant that specifies that
      * the preceding subpath should be closed by appending a line segment
      * back to the point corresponding to the most recent SEG_MOVETO.
      */
-    public static final int SEG_CLOSE           = 4;
+    @Native public static final int SEG_CLOSE           = 4;
 
     /**
      * Returns the winding rule for determining the interior of the

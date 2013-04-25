@@ -2127,22 +2127,19 @@ void Compile::Code_Gen() {
   }
   NOT_PRODUCT( verify_graph_edges(); )
 
-  PhaseChaitin regalloc(unique(),cfg,m);
+  PhaseChaitin regalloc(unique(), cfg, m);
   _regalloc = &regalloc;
   {
     TracePhase t2("regalloc", &_t_registerAllocation, true);
-    // Perform any platform dependent preallocation actions.  This is used,
-    // for example, to avoid taking an implicit null pointer exception
-    // using the frame pointer on win95.
-    _regalloc->pd_preallocate_hook();
-
     // Perform register allocation.  After Chaitin, use-def chains are
     // no longer accurate (at spill code) and so must be ignored.
     // Node->LRG->reg mappings are still accurate.
     _regalloc->Register_Allocate();
 
     // Bail out if the allocator builds too many nodes
-    if (failing())  return;
+    if (failing()) {
+      return;
+    }
   }
 
   // Prior to register allocation we kept empty basic blocks in case the
@@ -2159,9 +2156,6 @@ void Compile::Code_Gen() {
     }
     cfg.fixup_flow();
   }
-
-  // Perform any platform dependent postallocation verifications.
-  debug_only( _regalloc->pd_postallocate_verify_hook(); )
 
   // Apply peephole optimizations
   if( OptoPeephole ) {
@@ -2326,12 +2320,14 @@ struct Final_Reshape_Counts : public StackObj {
   int  get_inner_loop_count() const { return _inner_loop_count; }
 };
 
+#ifdef ASSERT
 static bool oop_offset_is_sane(const TypeInstPtr* tp) {
   ciInstanceKlass *k = tp->klass()->as_instance_klass();
   // Make sure the offset goes inside the instance layout.
   return k->contains_field_offset(tp->offset());
   // Note that OffsetBot and OffsetTop are very negative.
 }
+#endif
 
 // Eliminate trivially redundant StoreCMs and accumulate their
 // precedence edges.

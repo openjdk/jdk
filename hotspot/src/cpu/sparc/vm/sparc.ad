@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -8176,10 +8176,25 @@ instruct cadd_cmpLTMask( iRegI p, iRegI q, iRegI y, iRegI tmp, flagsReg ccr ) %{
   format %{ "SUBcc  $p,$q,$p\t! p' = p-q\n\t"
             "ADD    $p,$y,$tmp\t! g3=p-q+y\n\t"
             "MOVlt  $tmp,$p\t! p' < 0 ? p'+y : p'" %}
-  ins_encode( enc_cadd_cmpLTMask(p, q, y, tmp) );
-  ins_pipe( cadd_cmpltmask );
+  ins_encode(enc_cadd_cmpLTMask(p, q, y, tmp));
+  ins_pipe(cadd_cmpltmask);
 %}
 
+instruct and_cmpLTMask(iRegI p, iRegI q, iRegI y, flagsReg ccr) %{
+  match(Set p (AndI (CmpLTMask p q) y));
+  effect(KILL ccr);
+  ins_cost(DEFAULT_COST*3);
+
+  format %{ "CMP  $p,$q\n\t"
+            "MOV  $y,$p\n\t"
+            "MOVge G0,$p" %}
+  ins_encode %{
+    __ cmp($p$$Register, $q$$Register);
+    __ mov($y$$Register, $p$$Register);
+    __ movcc(Assembler::greaterEqual, false, Assembler::icc, G0, $p$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_ialu);
+%}
 
 //-----------------------------------------------------------------
 // Direct raw moves between float and general registers using VIS3.

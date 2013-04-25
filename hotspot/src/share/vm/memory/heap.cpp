@@ -42,7 +42,7 @@ CodeHeap::CodeHeap() {
   _log2_segment_size            = 0;
   _next_segment                 = 0;
   _freelist                     = NULL;
-  _free_segments                = 0;
+  _freelist_segments            = 0;
 }
 
 
@@ -74,13 +74,6 @@ void CodeHeap::mark_segmap_as_used(size_t beg, size_t end) {
 
 static size_t align_to_page_size(size_t size) {
   const size_t alignment = (size_t)os::vm_page_size();
-  assert(is_power_of_2(alignment), "no kidding ???");
-  return (size + alignment - 1) & ~(alignment - 1);
-}
-
-
-static size_t align_to_allocation_size(size_t size) {
-  const size_t alignment = (size_t)os::vm_allocation_granularity();
   assert(is_power_of_2(alignment), "no kidding ???");
   return (size + alignment - 1) & ~(alignment - 1);
 }
@@ -122,8 +115,8 @@ bool CodeHeap::reserve(size_t reserved_size, size_t committed_size,
   }
 
   on_code_mapping(_memory.low(), _memory.committed_size());
-  _number_of_committed_segments = number_of_segments(_memory.committed_size());
-  _number_of_reserved_segments  = number_of_segments(_memory.reserved_size());
+  _number_of_committed_segments = size_to_segments(_memory.committed_size());
+  _number_of_reserved_segments  = size_to_segments(_memory.reserved_size());
   assert(_number_of_reserved_segments >= _number_of_committed_segments, "just checking");
 
   // reserve space for _segmap
@@ -156,8 +149,8 @@ bool CodeHeap::expand_by(size_t size) {
     if (!_memory.expand_by(dm)) return false;
     on_code_mapping(base, dm);
     size_t i = _number_of_committed_segments;
-    _number_of_committed_segments = number_of_segments(_memory.committed_size());
-    assert(_number_of_reserved_segments == number_of_segments(_memory.reserved_size()), "number of reserved segments should not change");
+    _number_of_committed_segments = size_to_segments(_memory.committed_size());
+    assert(_number_of_reserved_segments == size_to_segments(_memory.reserved_size()), "number of reserved segments should not change");
     assert(_number_of_reserved_segments >= _number_of_committed_segments, "just checking");
     // expand _segmap space
     size_t ds = align_to_page_size(_number_of_committed_segments) - _segmap.committed_size();
@@ -183,33 +176,44 @@ void CodeHeap::clear() {
 }
 
 
-void* CodeHeap::allocate(size_t size) {
-  size_t length = number_of_segments(size + sizeof(HeapBlock));
-  assert(length *_segment_size >= sizeof(FreeBlock), "not enough room for FreeList");
+void* CodeHeap::allocate(size_t instance_size, bool is_critical) {
+  size_t number_of_segments = size_to_segments(instance_size + sizeof(HeapBlock));
+  assert(segments_to_size(number_of_segments) >= sizeof(FreeBlock), "not enough room for FreeList");
 
   // First check if we can satify request from freelist
   debug_only(verify());
-  HeapBlock* block = search_freelist(length);
+  HeapBlock* block = search_freelist(number_of_segments, is_critical);
   debug_only(if (VerifyCodeCacheOften) verify());
   if (block != NULL) {
-    assert(block->length() >= length && block->length() < length + CodeCacheMinBlockLength, "sanity check");
+    assert(block->length() >= number_of_segments && block->length() < number_of_segments + CodeCacheMinBlockLength, "sanity check");
     assert(!block->free(), "must be marked free");
 #ifdef ASSERT
-    memset((void *)block->allocated_space(), badCodeHeapNewVal, size);
+    memset((void *)block->allocated_space(), badCodeHeapNewVal, instance_size);
 #endif
     return block->allocated_space();
   }
 
-  if (length < CodeCacheMinBlockLength) {
-    length = CodeCacheMinBlockLength;
+  // Ensure minimum size for allocation to the heap.
+  if (number_of_segments < CodeCacheMinBlockLength) {
+    number_of_segments = CodeCacheMinBlockLength;
   }
-  if (_next_segment + length <= _number_of_committed_segments) {
-    mark_segmap_as_used(_next_segment, _next_segment + length);
+
+  if (!is_critical) {
+    // Make sure the allocation fits in the unallocated heap without using
+    // the CodeCacheMimimumFreeSpace that is reserved for critical allocations.
+    if (segments_to_size(number_of_segments) > (heap_unallocated_capacity() - CodeCacheMinimumFreeSpace)) {
+      // Fail allocation
+      return NULL;
+    }
+  }
+
+  if (_next_segment + number_of_segments <= _number_of_committed_segments) {
+    mark_segmap_as_used(_next_segment, _next_segment + number_of_segments);
     HeapBlock* b =  block_at(_next_segment);
-    b->initialize(length);
-    _next_segment += length;
+    b->initialize(number_of_segments);
+    _next_segment += number_of_segments;
 #ifdef ASSERT
-    memset((void *)b->allocated_space(), badCodeHeapNewVal, size);
+    memset((void *)b->allocated_space(), badCodeHeapNewVal, instance_size);
 #endif
     return b->allocated_space();
   } else {
@@ -226,7 +230,7 @@ void CodeHeap::deallocate(void* p) {
 #ifdef ASSERT
   memset((void *)b->allocated_space(),
          badCodeHeapFreeVal,
-         size(b->length()) - sizeof(HeapBlock));
+         segments_to_size(b->length()) - sizeof(HeapBlock));
 #endif
   add_to_freelist(b);
 
@@ -306,32 +310,14 @@ size_t CodeHeap::max_capacity() const {
 }
 
 size_t CodeHeap::allocated_capacity() const {
-  // Start with the committed size in _memory;
-  size_t l = _memory.committed_size();
-
-  // Subtract the committed, but unused, segments
-  l -= size(_number_of_committed_segments - _next_segment);
-
-  // Subtract the size of the freelist
-  l -= size(_free_segments);
-
-  return l;
+  // size of used heap - size on freelist
+  return segments_to_size(_next_segment - _freelist_segments);
 }
 
-size_t CodeHeap::largest_free_block() const {
-  // First check unused space excluding free blocks.
-  size_t free_sz = size(_free_segments);
-  size_t unused  = max_capacity() - allocated_capacity() - free_sz;
-  if (unused >= free_sz)
-    return unused;
-
-  // Now check largest free block.
-  size_t len = 0;
-  for (FreeBlock* b = _freelist; b != NULL; b = b->link()) {
-    if (b->length() > len)
-      len = b->length();
-  }
-  return MAX2(unused, size(len));
+// Returns size of the unallocated heap block
+size_t CodeHeap::heap_unallocated_capacity() const {
+  // Total number of segments - number currently used
+  return segments_to_size(_number_of_reserved_segments - _next_segment);
 }
 
 // Free list management
@@ -372,7 +358,7 @@ void CodeHeap::add_to_freelist(HeapBlock *a) {
   assert(b != _freelist, "cannot be removed twice");
 
   // Mark as free and update free space count
-  _free_segments += b->length();
+  _freelist_segments += b->length();
   b->set_free();
 
   // First element in list?
@@ -407,7 +393,7 @@ void CodeHeap::add_to_freelist(HeapBlock *a) {
 
 // Search freelist for an entry on the list with the best fit
 // Return NULL if no one was found
-FreeBlock* CodeHeap::search_freelist(size_t length) {
+FreeBlock* CodeHeap::search_freelist(size_t length, bool is_critical) {
   FreeBlock *best_block = NULL;
   FreeBlock *best_prev  = NULL;
   size_t best_length = 0;
@@ -418,6 +404,16 @@ FreeBlock* CodeHeap::search_freelist(size_t length) {
   while(cur != NULL) {
     size_t l = cur->length();
     if (l >= length && (best_block == NULL || best_length > l)) {
+
+      // Non critical allocations are not allowed to use the last part of the code heap.
+      if (!is_critical) {
+        // Make sure the end of the allocation doesn't cross into the last part of the code heap
+        if (((size_t)cur + length) > ((size_t)high_boundary() - CodeCacheMinimumFreeSpace)) {
+          // the freelist is sorted by address - if one fails, all consecutive will also fail.
+          break;
+        }
+      }
+
       // Remember best block, its previous element, and its length
       best_block = cur;
       best_prev  = prev;
@@ -459,7 +455,7 @@ FreeBlock* CodeHeap::search_freelist(size_t length) {
   }
 
   best_block->set_used();
-  _free_segments -= length;
+  _freelist_segments -= length;
   return best_block;
 }
 
@@ -485,7 +481,7 @@ void CodeHeap::verify() {
   }
 
   // Verify that freelist contains the right amount of free space
-  //  guarantee(len == _free_segments, "wrong freelist");
+  //  guarantee(len == _freelist_segments, "wrong freelist");
 
   // Verify that the number of free blocks is not out of hand.
   static int free_block_threshold = 10000;

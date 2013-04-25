@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -571,10 +571,8 @@ public class Items {
             int idx = pool.put(value);
             if (typecode == LONGcode || typecode == DOUBLEcode) {
                 code.emitop2(ldc2w, idx);
-            } else if (idx <= 255) {
-                code.emitop1(ldc1, idx);
             } else {
-                code.emitop2(ldc2, idx);
+                code.emitLdc(idx);
             }
         }
 

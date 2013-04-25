@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.xml.internal.ws.transport.http;
 
+import com.oracle.webservices.internal.api.message.BasePropertySet;
+import com.oracle.webservices.internal.api.message.PropertySet;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
-import com.sun.xml.internal.ws.api.PropertySet;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.server.WebServiceContextDelegate;
 
@@ -54,12 +55,12 @@ import java.util.Set;
  *
  * <p>
  * This class extends {@link PropertySet} so that a transport can
- * expose its properties to the appliation and pipes. (This object
+ * expose its properties to the application and pipes. (This object
  * will be added to {@link Packet#addSatellite(PropertySet)}.)
  *
  * @author Jitendra Kotamraju
  */
-public abstract class WSHTTPConnection extends PropertySet {
+public abstract class WSHTTPConnection extends BasePropertySet {
 
     public static final int OK=200;
     public static final int ONEWAY=202;
@@ -111,7 +112,7 @@ public abstract class WSHTTPConnection extends PropertySet {
      * the previously set value. If not, this method adds it.
      *
      * <p>
-     * Note that this method and {@link #setResponseHeaders(Map&lt;String,List&lt;String>>)}
+     * Note that this method and {@link #setResponseHeaders(java.util.Map)}
      * may be invoked in any arbitrary order.
      *
      * @param value
@@ -347,7 +348,7 @@ public abstract class WSHTTPConnection extends PropertySet {
     /**
      * Subclasses are expected to override
      *
-     * @return
+     * @return a {@link String} containing the protocol name and version number
      */
     public String getProtocol() {
         return "HTTP/1.1";
@@ -357,7 +358,7 @@ public abstract class WSHTTPConnection extends PropertySet {
      * Subclasses are expected to override
      *
      * @since JAX-WS RI 2.2.2
-     * @return
+     * @return value of given cookie
      */
     public String getCookie(String name) {
         return null;
@@ -374,8 +375,6 @@ public abstract class WSHTTPConnection extends PropertySet {
 
     /**
      * Subclasses are expected to override
-     *
-     * @return
      */
     public void setContentLengthResponseHeader(int value) {
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,12 +53,12 @@ void SyncThreadRecorderClosure::do_thread(Thread* thread) {
 }
 
 
-MemRecorder*                    MemTracker::_global_recorder = NULL;
+MemRecorder* volatile           MemTracker::_global_recorder = NULL;
 MemSnapshot*                    MemTracker::_snapshot = NULL;
 MemBaseline                     MemTracker::_baseline;
 Mutex*                          MemTracker::_query_lock = NULL;
-volatile MemRecorder*           MemTracker::_merge_pending_queue = NULL;
-volatile MemRecorder*           MemTracker::_pooled_recorders = NULL;
+MemRecorder* volatile           MemTracker::_merge_pending_queue = NULL;
+MemRecorder* volatile           MemTracker::_pooled_recorders = NULL;
 MemTrackWorker*                 MemTracker::_worker_thread = NULL;
 int                             MemTracker::_sync_point_skip_count = 0;
 MemTracker::NMTLevel            MemTracker::_tracking_level = MemTracker::NMT_off;
@@ -127,12 +127,15 @@ void MemTracker::start() {
   assert(_state == NMT_bootstrapping_multi_thread, "wrong state");
 
   _snapshot = new (std::nothrow)MemSnapshot();
-  if (_snapshot != NULL && !_snapshot->out_of_memory()) {
-    if (start_worker()) {
+  if (_snapshot != NULL) {
+    if (!_snapshot->out_of_memory() && start_worker(_snapshot)) {
       _state = NMT_started;
       NMT_track_callsite = (_tracking_level == NMT_detail && can_walk_stack());
       return;
     }
+
+    delete _snapshot;
+    _snapshot = NULL;
   }
 
   // fail to start native memory tracking, shut it down
@@ -206,7 +209,7 @@ void MemTracker::final_shutdown() {
 // delete all pooled recorders
 void MemTracker::delete_all_pooled_recorders() {
   // free all pooled recorders
-  volatile MemRecorder* cur_head = _pooled_recorders;
+  MemRecorder* volatile cur_head = _pooled_recorders;
   if (cur_head != NULL) {
     MemRecorder* null_ptr = NULL;
     while (cur_head != NULL && (void*)cur_head != Atomic::cmpxchg_ptr((void*)null_ptr,
@@ -540,11 +543,14 @@ void MemTracker::sync() {
 /*
  * Start worker thread.
  */
-bool MemTracker::start_worker() {
-  assert(_worker_thread == NULL, "Just Check");
-  _worker_thread = new (std::nothrow) MemTrackWorker();
-  if (_worker_thread == NULL || _worker_thread->has_error()) {
-    shutdown(NMT_initialization);
+bool MemTracker::start_worker(MemSnapshot* snapshot) {
+  assert(_worker_thread == NULL && _snapshot != NULL, "Just Check");
+  _worker_thread = new (std::nothrow) MemTrackWorker(snapshot);
+  if (_worker_thread == NULL) {
+    return false;
+  } else if (_worker_thread->has_error()) {
+    delete _worker_thread;
+    _worker_thread = NULL;
     return false;
   }
   _worker_thread->start();

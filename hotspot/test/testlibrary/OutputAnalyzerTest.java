@@ -36,6 +36,11 @@ public class OutputAnalyzerTest {
     String stdout = "aaaaaa";
     String stderr = "bbbbbb";
 
+    // Regexps used for testing pattern matching of the test input
+    String stdoutPattern = "[a]";
+    String stderrPattern = "[b]";
+    String nonExistingPattern = "[c]";
+
     OutputAnalyzer output = new OutputAnalyzer(stdout, stderr);
 
     if (!stdout.equals(output.getStdout())) {
@@ -99,10 +104,73 @@ public class OutputAnalyzerTest {
     }
 
     try {
-      output.stderrShouldNotContain(stderr);
-      throw new Exception("shouldContain() failed to throw exception");
+        output.stderrShouldNotContain(stderr);
+        throw new Exception("shouldContain() failed to throw exception");
     } catch (RuntimeException e) {
-      // expected
+        // expected
+    }
+
+    // Should match
+    try {
+        output.shouldMatch(stdoutPattern);
+        output.stdoutShouldMatch(stdoutPattern);
+        output.shouldMatch(stderrPattern);
+        output.stderrShouldMatch(stderrPattern);
+    } catch (RuntimeException e) {
+        throw new Exception("shouldMatch() failed", e);
+    }
+
+    try {
+        output.shouldMatch(nonExistingPattern);
+        throw new Exception("shouldMatch() failed to throw exception");
+    } catch (RuntimeException e) {
+        // expected
+    }
+
+    try {
+        output.stdoutShouldMatch(stderrPattern);
+        throw new Exception(
+                "stdoutShouldMatch() failed to throw exception");
+    } catch (RuntimeException e) {
+        // expected
+    }
+
+    try {
+        output.stderrShouldMatch(stdoutPattern);
+        throw new Exception(
+                "stderrShouldMatch() failed to throw exception");
+    } catch (RuntimeException e) {
+        // expected
+    }
+
+    // Should not match
+    try {
+        output.shouldNotMatch(nonExistingPattern);
+        output.stdoutShouldNotMatch(nonExistingPattern);
+        output.stderrShouldNotMatch(nonExistingPattern);
+    } catch (RuntimeException e) {
+        throw new Exception("shouldNotMatch() failed", e);
+    }
+
+    try {
+        output.shouldNotMatch(stdoutPattern);
+        throw new Exception("shouldNotMatch() failed to throw exception");
+    } catch (RuntimeException e) {
+        // expected
+    }
+
+    try {
+        output.stdoutShouldNotMatch(stdoutPattern);
+        throw new Exception("shouldNotMatch() failed to throw exception");
+    } catch (RuntimeException e) {
+        // expected
+    }
+
+    try {
+        output.stderrShouldNotMatch(stderrPattern);
+        throw new Exception("shouldNotMatch() failed to throw exception");
+    } catch (RuntimeException e) {
+        // expected
     }
   }
 }

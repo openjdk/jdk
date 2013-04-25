@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,11 @@
 package com.sun.xml.internal.ws.server;
 
 import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.config.management.policy.ManagedClientAssertion;
 import com.sun.xml.internal.ws.api.config.management.policy.ManagedServiceAssertion;
 import com.sun.xml.internal.ws.api.config.management.policy.ManagementAssertion.Setting;
-import com.sun.xml.internal.ws.api.server.BoundEndpoint;
 import com.sun.xml.internal.ws.api.server.Container;
-import com.sun.xml.internal.ws.api.server.Module;
 import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.client.Stub;
 import com.sun.org.glassfish.external.amx.AMXGlassfish;
@@ -45,16 +42,11 @@ import com.sun.org.glassfish.gmbal.ManagedObjectManager;
 import com.sun.org.glassfish.gmbal.ManagedObjectManagerFactory;
 import java.io.IOException;
 import java.lang.reflect.*;
-import java.net.URL;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.management.ObjectName;
-import javax.xml.namespace.QName;
 
 // BEGIN IMPORTS FOR RewritingMOM
 import java.util.ResourceBundle ;
-import java.io.Closeable ;
 import java.lang.reflect.AnnotatedElement ;
 import java.lang.annotation.Annotation ;
 import javax.management.ObjectName ;
@@ -276,7 +268,7 @@ public abstract class MonitorBase {
                 ObjectName ignoredName = mom.getObjectName(mom.getRoot());
                 // The name is null when the MOM is a NOOP.
                 if (ignoredName != null) {
-                    logger.log(Level.INFO, "Metro monitoring rootname successfully set to: " + ignoredName);
+                    logger.log(Level.INFO, "Metro monitoring rootname successfully set to: {0}", ignoredName);
                 }
                 return mom;
             }
@@ -297,19 +289,6 @@ public abstract class MonitorBase {
         } catch (Throwable t) {
             logger.log(Level.WARNING, "Error while creating monitoring root with name: " + rootName, t);
             return ManagedObjectManagerFactory.createNOOP();
-        }
-    }
-
-    public static void closeMOM(ManagedObjectManager mom) {
-        try {
-            final ObjectName name = mom.getObjectName(mom.getRoot());
-            // The name is null when the MOM is a NOOP.
-            if (name != null) {
-                logger.log(Level.INFO, "Closing Metro monitoring root: " + name);
-            }
-            mom.close();
-        } catch (java.io.IOException e) {
-            logger.log(Level.WARNING, "Ignoring error when closing Managed Object Manager", e);
         }
     }
 
@@ -382,7 +361,6 @@ class RewritingMOM implements ManagedObjectManager
     private final ManagedObjectManager mom;
 
     private final static String gmbalQuotingCharsRegex = "\n|\\|\"|\\*|\\?|:|=|,";
-    private final static String jmxQuotingCharsRegex   = ",|=|:|\"";
     private final static String replacementChar        = "-";
 
     RewritingMOM(final ManagedObjectManager mom) { this.mom = mom; }
@@ -393,42 +371,42 @@ class RewritingMOM implements ManagedObjectManager
 
     // The interface
 
-    public void suspendJMXRegistration() { mom.suspendJMXRegistration(); }
-    public void resumeJMXRegistration()  { mom.resumeJMXRegistration(); }
-    public GmbalMBean createRoot()       { return mom.createRoot(); }
-    public GmbalMBean createRoot(Object root) { return mom.createRoot(root); }
-    public GmbalMBean createRoot(Object root, String name) {
+    @Override public void suspendJMXRegistration() { mom.suspendJMXRegistration(); }
+    @Override public void resumeJMXRegistration()  { mom.resumeJMXRegistration(); }
+    @Override public GmbalMBean createRoot()       { return mom.createRoot(); }
+    @Override public GmbalMBean createRoot(Object root) { return mom.createRoot(root); }
+    @Override public GmbalMBean createRoot(Object root, String name) {
         return mom.createRoot(root, rewrite(name));
     }
-    public Object getRoot() { return mom.getRoot(); }
-    public GmbalMBean register(Object parent, Object obj, String name) {
+    @Override public Object getRoot() { return mom.getRoot(); }
+    @Override public GmbalMBean register(Object parent, Object obj, String name) {
         return mom.register(parent, obj, rewrite(name));
     }
-    public GmbalMBean register(Object parent, Object obj) { return mom.register(parent, obj);}
-    public GmbalMBean registerAtRoot(Object obj, String name) {
+    @Override public GmbalMBean register(Object parent, Object obj) { return mom.register(parent, obj);}
+    @Override public GmbalMBean registerAtRoot(Object obj, String name) {
         return mom.registerAtRoot(obj, rewrite(name));
     }
-    public GmbalMBean registerAtRoot(Object obj) { return mom.registerAtRoot(obj); }
-    public void unregister(Object obj)           { mom.unregister(obj); }
-    public ObjectName getObjectName(Object obj)  { return mom.getObjectName(obj); }
-    public AMXClient getAMXClient(Object obj)    { return mom.getAMXClient(obj); }
-    public Object getObject(ObjectName oname)    { return mom.getObject(oname); }
-    public void stripPrefix(String... str)       { mom.stripPrefix(str); }
-    public void stripPackagePrefix()             { mom.stripPackagePrefix(); }
-    public String getDomain()                    { return mom.getDomain(); }
-    public void setMBeanServer(MBeanServer server){mom.setMBeanServer(server); }
-    public MBeanServer getMBeanServer()          { return mom.getMBeanServer(); }
-    public void setResourceBundle(ResourceBundle rb) { mom.setResourceBundle(rb); }
-    public ResourceBundle getResourceBundle()    { return mom.getResourceBundle(); }
-    public void addAnnotation(AnnotatedElement element, Annotation annotation) { mom.addAnnotation(element, annotation); }
-    public void setRegistrationDebug(RegistrationDebugLevel level) { mom.setRegistrationDebug(level); }
-    public void setRuntimeDebug(boolean flag) { mom.setRuntimeDebug(flag); }
-    public void setTypelibDebug(int level)    { mom.setTypelibDebug(level); }
-    public String dumpSkeleton(Object obj)    { return mom.dumpSkeleton(obj); }
-    public void suppressDuplicateRootReport(boolean suppressReport) { mom.suppressDuplicateRootReport(suppressReport); }
-    public void close() throws IOException    { mom.close(); }
-    public void setJMXRegistrationDebug(boolean x) { mom.setJMXRegistrationDebug(x); }
-    public boolean isManagedObject(Object x)  { return mom.isManagedObject(x); }
+    @Override public GmbalMBean registerAtRoot(Object obj) { return mom.registerAtRoot(obj); }
+    @Override public void unregister(Object obj)           { mom.unregister(obj); }
+    @Override public ObjectName getObjectName(Object obj)  { return mom.getObjectName(obj); }
+    @Override public AMXClient getAMXClient(Object obj)    { return mom.getAMXClient(obj); }
+    @Override public Object getObject(ObjectName oname)    { return mom.getObject(oname); }
+    @Override public void stripPrefix(String... str)       { mom.stripPrefix(str); }
+    @Override public void stripPackagePrefix()             { mom.stripPackagePrefix(); }
+    @Override public String getDomain()                    { return mom.getDomain(); }
+    @Override public void setMBeanServer(MBeanServer server){mom.setMBeanServer(server); }
+    @Override public MBeanServer getMBeanServer()          { return mom.getMBeanServer(); }
+    @Override public void setResourceBundle(ResourceBundle rb) { mom.setResourceBundle(rb); }
+    @Override public ResourceBundle getResourceBundle()    { return mom.getResourceBundle(); }
+    @Override public void addAnnotation(AnnotatedElement element, Annotation annotation) { mom.addAnnotation(element, annotation); }
+    @Override public void setRegistrationDebug(RegistrationDebugLevel level) { mom.setRegistrationDebug(level); }
+    @Override public void setRuntimeDebug(boolean flag) { mom.setRuntimeDebug(flag); }
+    @Override public void setTypelibDebug(int level)    { mom.setTypelibDebug(level); }
+    @Override public String dumpSkeleton(Object obj)    { return mom.dumpSkeleton(obj); }
+    @Override public void suppressDuplicateRootReport(boolean suppressReport) { mom.suppressDuplicateRootReport(suppressReport); }
+    @Override public void close() throws IOException    { mom.close(); }
+    @Override public void setJMXRegistrationDebug(boolean x) { mom.setJMXRegistrationDebug(x); }
+    @Override public boolean isManagedObject(Object x)  { return mom.isManagedObject(x); }
 }
 
 // End of file.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,14 @@ public class Localizer {
                                     alternateBundleName,
                                     _locale);
                         } catch (MissingResourceException e2) {
-                            // give up
-                            return getDefaultMessage(l);
+                            //try context classloader
+                            try {
+                                bundle = ResourceBundle.getBundle(bundlename, _locale, Thread.currentThread().getContextClassLoader());
+                            } catch (MissingResourceException e3) {
+                                // give up
+                                return getDefaultMessage(l);
+                            }
+
                         }
                     }
                 }

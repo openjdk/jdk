@@ -27,20 +27,34 @@
  * @build DeoptimizeAllTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DeoptimizeAllTest
+ * @summary testing of WB::deoptimizeAll()
  * @author igor.ignatyev@oracle.com
  */
 public class DeoptimizeAllTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        // to prevent inlining #method into #compile()
-        WHITE_BOX.setDontInlineMethod(METHOD, true);
-        new DeoptimizeAllTest().runTest();
+        for (TestCase test : TestCase.values()) {
+            new DeoptimizeAllTest(test).runTest();
+        }
     }
 
+    public DeoptimizeAllTest(TestCase testCase) {
+        super(testCase);
+        // to prevent inlining of #method
+        WHITE_BOX.testSetDontInlineMethod(method, true);
+    }
+
+    /**
+     * Tests {@code WB::deoptimizeAll()} by calling it after
+     * compilation and checking that method isn't compiled.
+     *
+     * @throws Exception if one of the checks fails.
+     */
+    @Override
     protected void test() throws Exception {
         compile();
-        checkCompiled(METHOD);
+        checkCompiled();
         WHITE_BOX.deoptimizeAll();
-        checkNotCompiled(METHOD);
+        checkNotCompiled();
     }
 }

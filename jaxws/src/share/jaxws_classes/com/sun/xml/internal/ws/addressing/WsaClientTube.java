@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.xml.internal.ws.addressing;
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.addressing.model.ActionNotSupportedException;
 import com.sun.xml.internal.ws.api.WSBinding;
+import com.sun.xml.internal.ws.api.message.AddressingUtils;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
@@ -73,8 +74,9 @@ public class WsaClientTube extends WsaTube {
         if (response.getMessage() != null) {
             response = validateInboundHeaders(response);
             response.addSatellite(new WsaPropertyBag(addressingVersion,soapVersion,response));
-            String msgId = response.getMessage().getHeaders().
-              getMessageID(addressingVersion, soapVersion);
+            String msgId = AddressingUtils.
+              getMessageID(response.getMessage().getHeaders(),
+                      addressingVersion, soapVersion);
             response.put(WsaPropertyBag.WSA_MSGID_FROM_REQUEST, msgId);
         }
 
@@ -90,7 +92,9 @@ public class WsaClientTube extends WsaTube {
 
         if (wbo == null)    return;
 
-        String gotA = packet.getMessage().getHeaders().getAction(addressingVersion, soapVersion);
+        String gotA = AddressingUtils.getAction(
+                packet.getMessage().getHeaders(),
+                addressingVersion, soapVersion);
         if (gotA == null)
             throw new WebServiceException(AddressingMessages.VALIDATION_CLIENT_NULL_ACTION());
 

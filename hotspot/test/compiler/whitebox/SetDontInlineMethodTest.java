@@ -27,33 +27,47 @@
  * @build SetDontInlineMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SetDontInlineMethodTest
+ * @summary testing of WB::testSetDontInlineMethod()
  * @author igor.ignatyev@oracle.com
  */
 public class SetDontInlineMethodTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        new SetDontInlineMethodTest().runTest();
+        for (TestCase test : TestCase.values()) {
+            new SetDontInlineMethodTest(test).runTest();
+        }
     }
 
+    public SetDontInlineMethodTest(TestCase testCase) {
+        super(testCase);
+    }
+
+    /**
+     * Tests {@code WB::testSetDontInlineMethod()} by sequential calling it and
+     * checking of return value.
+     *
+     * @throws Exception if one of the checks fails.
+     */
+    @Override
     protected void test() throws Exception {
-        if (WHITE_BOX.setDontInlineMethod(METHOD, true)) {
-            throw new RuntimeException("on start " + METHOD
+        if (WHITE_BOX.testSetDontInlineMethod(method, true)) {
+            throw new RuntimeException("on start " + method
                     + " must be inlineable");
         }
-        if (!WHITE_BOX.setDontInlineMethod(METHOD, true)) {
-            throw new RuntimeException("after first change to true " + METHOD
+        if (!WHITE_BOX.testSetDontInlineMethod(method, true)) {
+            throw new RuntimeException("after first change to true " + method
                     + " must be not inlineable");
         }
-        if (!WHITE_BOX.setDontInlineMethod(METHOD, false)) {
-            throw new RuntimeException("after second change to true " + METHOD
+        if (!WHITE_BOX.testSetDontInlineMethod(method, false)) {
+            throw new RuntimeException("after second change to true " + method
                     + " must be still not inlineable");
         }
-        if (WHITE_BOX.setDontInlineMethod(METHOD, false)) {
-            throw new RuntimeException("after first change to false" + METHOD
+        if (WHITE_BOX.testSetDontInlineMethod(method, false)) {
+            throw new RuntimeException("after first change to false" + method
                     + " must be inlineable");
         }
-        if (WHITE_BOX.setDontInlineMethod(METHOD, false)) {
-            throw new RuntimeException("after second change to false " + METHOD
+        if (WHITE_BOX.testSetDontInlineMethod(method, false)) {
+            throw new RuntimeException("after second change to false " + method
                     + " must be inlineable");
         }
     }

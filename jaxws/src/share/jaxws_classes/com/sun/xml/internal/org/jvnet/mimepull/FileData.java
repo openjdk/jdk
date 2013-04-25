@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ final class FileData implements Data {
         this.length = length;
     }
 
+    @Override
     public byte[] read() {
         byte[] buf = new byte[length];
         file.read(pointer, buf, 0, length);
@@ -57,10 +58,12 @@ final class FileData implements Data {
     /*
      * This shouldn't be called
      */
+    @Override
     public long writeTo(DataFile file) {
         throw new IllegalStateException();
     }
 
+    @Override
     public int size() {
         return length;
     }
@@ -68,6 +71,7 @@ final class FileData implements Data {
     /*
      * Always create FileData
      */
+    @Override
     public Data createNext(DataHead dataHead, ByteBuffer buf) {
         return new FileData(file, buf);
     }

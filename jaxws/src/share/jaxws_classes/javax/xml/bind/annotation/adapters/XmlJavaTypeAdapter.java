@@ -93,7 +93,7 @@ import static java.lang.annotation.ElementType.PACKAGE;
 @Retention(RUNTIME) @Target({PACKAGE,FIELD,METHOD,TYPE,PARAMETER})
 public @interface XmlJavaTypeAdapter {
     /**
-     * Points to the clsss that converts a value type to a bound type or vice versa.
+     * Points to the class that converts a value type to a bound type or vice versa.
      * See {@link XmlAdapter} for more details.
      */
     Class<? extends XmlAdapter> value();

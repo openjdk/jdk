@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.xml.internal.ws.spi.db;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
@@ -117,8 +118,8 @@ public final class TypeInfo {
     public TypeInfo toItemType() {
         // if we are to reinstitute this check, check JAXB annotations only
         // assert annotations.length==0;   // not designed to work with adapters.
-
-        Type base = Navigator.REFLECTION.getBaseClass(type, Collection.class);
+        Type t = (genericType != null)? genericType : type;
+        Type base = Navigator.REFLECTION.getBaseClass(t, Collection.class);
         if(base==null)
             return this;    // not a collection
 
@@ -169,5 +170,28 @@ public final class TypeInfo {
     public String toString() {
         return new StringBuilder("TypeInfo: Type = ").append(type)
                 .append(", tag = ").append(tagName).toString();
+    }
+
+    public TypeInfo getItemType() {
+//      System.out.println("????? TypeInfo " + type);
+        if (type instanceof Class && ((Class)type).isArray() && !byte[].class.equals(type)) {
+            Type componentType = ((Class)type).getComponentType();
+            Type genericComponentType = null;
+            if (genericType!= null && genericType instanceof GenericArrayType) {
+                GenericArrayType arrayType = (GenericArrayType) type;
+                genericComponentType = arrayType.getGenericComponentType();
+                componentType = arrayType.getGenericComponentType();
+            }
+            TypeInfo ti =new TypeInfo(tagName, componentType, annotations);
+            if (genericComponentType != null) ti.setGenericType(genericComponentType);
+            return ti;
+        }
+//        if (type instanceof Class && java.util.Collection.class.isAssignableFrom((Class)type)) {
+        Type t = (genericType != null)? genericType : type;
+        Type base = Navigator.REFLECTION.getBaseClass(t, Collection.class);
+        if ( base != null)  {
+            return new TypeInfo(tagName, Navigator.REFLECTION.getTypeArgument(base,0), annotations);
+        }
+        return null;
     }
 }

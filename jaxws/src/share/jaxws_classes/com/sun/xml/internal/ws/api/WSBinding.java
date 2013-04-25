@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.xml.ws.WebServiceFeature;
 import javax.xml.ws.handler.Handler;
 import java.util.List;
 import java.util.Set;
+
 
 /**
  * JAX-WS implementation of {@link Binding}.
@@ -97,7 +98,8 @@ public interface WSBinding extends Binding {
      */
     @NotNull BindingID getBindingId();
 
-    @NotNull List<Handler> getHandlerChain();
+    @NotNull@Override
+    List<Handler> getHandlerChain();
 
     /**
      * Checks if a particular {@link WebServiceFeature} is enabled.
@@ -188,10 +190,20 @@ public interface WSBinding extends Binding {
             @NotNull final QName messageName);
 
     /**
-     * Returns set of header QNames known to be supported by this binding.  Tubes should use this
-     * Set to add QNames for headers they process so that must-understand processing can validate
-     * headers on inbound messages
+     * Returns set of header QNames known to be supported by this binding.
      * @return Set of known QNames
      */
     @NotNull Set<QName> getKnownHeaders();
+
+    /**
+     * Adds header QName to set known to be supported by this binding
+     * @param knownHeader Known header QName
+     * @return true, if new entry was added; false, if known header QName was already known
+     */
+    boolean addKnownHeader(QName knownHeader);
+
+    /**
+     * @return A MessageContextFactory configured according to the binding's features.
+     */
+    @NotNull com.oracle.webservices.internal.api.message.MessageContextFactory getMessageContextFactory();
 }

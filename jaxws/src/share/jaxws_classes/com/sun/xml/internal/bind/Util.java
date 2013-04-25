@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,9 @@ public abstract class Util {
      */
     public static Logger getClassLogger() {
         try {
-//            StackTraceElement[] trace = Thread.currentThread().getStackTrace();
             StackTraceElement[] trace = new Exception().getStackTrace();
             return Logger.getLogger(trace[1].getClassName());
-        } catch( SecurityException _ ) {
+        } catch( SecurityException e) {
             return Logger.getLogger("com.sun.xml.internal.bind"); // use the default
         }
     }
