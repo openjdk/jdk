@@ -1120,7 +1120,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        final Label label = new Label("line:" + lineNumberNode.getLineNumber() + " (" + getLexicalContext().getCurrentFunction().getName() + ")");
+        final Label label = new Label((String)null);
         method.label(label);
         method.lineNumber(lineNumberNode.getLineNumber(), label);
         return false;
