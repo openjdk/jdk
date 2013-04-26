@@ -1887,7 +1887,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         switch (getWindowType())
         {
             case NORMAL:
-                typeAtom = protocol.XA_NET_WM_WINDOW_TYPE_NORMAL;
+                typeAtom = (ownerPeer == null) ?
+                               protocol.XA_NET_WM_WINDOW_TYPE_NORMAL :
+                               protocol.XA_NET_WM_WINDOW_TYPE_DIALOG;
                 break;
             case UTILITY:
                 typeAtom = protocol.XA_NET_WM_WINDOW_TYPE_UTILITY;
