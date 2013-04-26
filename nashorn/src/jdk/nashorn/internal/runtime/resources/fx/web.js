@@ -23,14 +23,14 @@
  * questions.
  */
 
-HTMLEditor                              = Java.type("javafx.scene.web.HTMLEditor");
-HTMLEditorBuilder                       = Java.type("javafx.scene.web.HTMLEditorBuilder");
-PopupFeatures                           = Java.type("javafx.scene.web.PopupFeatures");
-PromptData                              = Java.type("javafx.scene.web.PromptData");
-PromptDataBuilder                       = Java.type("javafx.scene.web.PromptDataBuilder");
-WebEngine                               = Java.type("javafx.scene.web.WebEngine");
-WebEngineBuilder                        = Java.type("javafx.scene.web.WebEngineBuilder");
-WebEvent                                = Java.type("javafx.scene.web.WebEvent");
-WebHistory                              = Java.type("javafx.scene.web.WebHistory");
-WebView                                 = Java.type("javafx.scene.web.WebView");
-WebViewBuilder                          = Java.type("javafx.scene.web.WebViewBuilder");
+HTMLEditor        = Java.type("javafx.scene.web.HTMLEditor");
+HTMLEditorBuilder = Java.type("javafx.scene.web.HTMLEditorBuilder");
+PopupFeatures     = Java.type("javafx.scene.web.PopupFeatures");
+PromptData        = Java.type("javafx.scene.web.PromptData");
+PromptDataBuilder = Java.type("javafx.scene.web.PromptDataBuilder");
+WebEngine         = Java.type("javafx.scene.web.WebEngine");
+WebEngineBuilder  = Java.type("javafx.scene.web.WebEngineBuilder");
+WebEvent          = Java.type("javafx.scene.web.WebEvent");
+WebHistory        = Java.type("javafx.scene.web.WebHistory");
+WebView           = Java.type("javafx.scene.web.WebView");
+WebViewBuilder    = Java.type("javafx.scene.web.WebViewBuilder");

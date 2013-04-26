@@ -23,6 +23,7 @@
  * questions.
  */
 
-JFXPanel                                = Java.type("javafx.embed.swing.JFXPanel");
-JFXPanelBuilder                         = Java.type("javafx.embed.swing.JFXPanelBuilder");
-SwingFXUtils                            = Java.type("javafx.embed.swing.SwingFXUtils");
+JFXPanel        = Java.type("javafx.embed.swing.JFXPanel");
+JFXPanelBuilder = Java.type("javafx.embed.swing.JFXPanelBuilder");
+SwingFXUtils    = Java.type("javafx.embed.swing.SwingFXUtils");
+SwingNode       = Java.type("javafx.embed.swing.SwingNode");

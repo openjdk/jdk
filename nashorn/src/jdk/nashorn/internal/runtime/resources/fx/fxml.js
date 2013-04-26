@@ -23,8 +23,8 @@
  * questions.
  */
 
-FXML                                    = Java.type("javafx.fxml.FXML");
-FXMLLoader                              = Java.type("javafx.fxml.FXMLLoader");
-Initializable                           = Java.type("javafx.fxml.Initializable");
-JavaFXBuilderFactory                    = Java.type("javafx.fxml.JavaFXBuilderFactory");
-LoadException                           = Java.type("javafx.fxml.LoadException");
+FXML                 = Java.type("javafx.fxml.FXML");
+FXMLLoader           = Java.type("javafx.fxml.FXMLLoader");
+Initializable        = Java.type("javafx.fxml.Initializable");
+JavaFXBuilderFactory = Java.type("javafx.fxml.JavaFXBuilderFactory");
+LoadException        = Java.type("javafx.fxml.LoadException");
