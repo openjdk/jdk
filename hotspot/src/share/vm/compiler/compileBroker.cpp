@@ -1842,6 +1842,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         }
       }
     }
+    // simulate crash during compilation
+    assert(task->compile_id() != CICrashAt, "just as planned");
   }
   pop_jni_handle_block();
 
