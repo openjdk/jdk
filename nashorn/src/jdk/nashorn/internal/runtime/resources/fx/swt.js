@@ -23,7 +23,7 @@
  * questions.
  */
 
-CustomTransfer                          = Java.type("javafx.embed.swt.CustomTransfer");
-CustomTransferBuilder                   = Java.type("javafx.embed.swt.CustomTransferBuilder");
-FXCanvas                                = Java.type("javafx.embed.swt.FXCanvas");
-SWTFXUtils                              = Java.type("javafx.embed.swt.SWTFXUtils");
+CustomTransfer        = Java.type("javafx.embed.swt.CustomTransfer");
+CustomTransferBuilder = Java.type("javafx.embed.swt.CustomTransferBuilder");
+FXCanvas              = Java.type("javafx.embed.swt.FXCanvas");
+SWTFXUtils            = Java.type("javafx.embed.swt.SWTFXUtils");
