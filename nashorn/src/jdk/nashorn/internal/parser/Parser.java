@@ -2339,7 +2339,7 @@ loop:
                 functionNode = functionNode.setFlag(lc, FunctionNode.IS_DECLARED);
             }
             if (ARGUMENTS.symbolName().equals(name.getName())) {
-                functionNode = functionNode.setFlag(lc, FunctionNode.DEFINES_ARGUMENTS);
+                lc.setFlag(lc.getCurrentFunction(), FunctionNode.DEFINES_ARGUMENTS);
             }
         }
 
