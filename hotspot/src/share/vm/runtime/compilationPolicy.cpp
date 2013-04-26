@@ -109,6 +109,9 @@ bool CompilationPolicy::must_be_compiled(methodHandle m, int comp_level) {
 
 // Returns true if m is allowed to be compiled
 bool CompilationPolicy::can_be_compiled(methodHandle m, int comp_level) {
+  // allow any levels for WhiteBox
+  assert(WhiteBoxAPI || comp_level == CompLevel_all || is_compile(comp_level), "illegal compilation level");
+
   if (m->is_abstract()) return false;
   if (DontCompileHugeMethods && m->code_size() > HugeMethodLimit) return false;
 
@@ -122,7 +125,13 @@ bool CompilationPolicy::can_be_compiled(methodHandle m, int comp_level) {
     return false;
   }
   if (comp_level == CompLevel_all) {
-    return !m->is_not_compilable(CompLevel_simple) && !m->is_not_compilable(CompLevel_full_optimization);
+    if (TieredCompilation) {
+      // enough to be compilable at any level for tiered
+      return !m->is_not_compilable(CompLevel_simple) || !m->is_not_compilable(CompLevel_full_optimization);
+    } else {
+      // must be compilable at available level for non-tiered
+      return !m->is_not_compilable(CompLevel_highest_tier);
+    }
   } else if (is_compile(comp_level)) {
     return !m->is_not_compilable(comp_level);
   }
@@ -436,7 +445,7 @@ void SimpleCompPolicy::method_invocation_event(methodHandle m, JavaThread* threa
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
-  if (is_compilation_enabled() && can_be_compiled(m)) {
+  if (is_compilation_enabled() && can_be_compiled(m, comp_level)) {
     nmethod* nm = m->code();
     if (nm == NULL ) {
       CompileBroker::compile_method(m, InvocationEntryBci, comp_level, m, hot_count, comment, thread);
@@ -449,7 +458,7 @@ void SimpleCompPolicy::method_back_branch_event(methodHandle m, int bci, JavaThr
   const int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (is_compilation_enabled() && !m->is_not_osr_compilable(comp_level) && can_be_compiled(m)) {
+  if (is_compilation_enabled() && !m->is_not_osr_compilable(comp_level) && can_be_compiled(m, comp_level)) {
     CompileBroker::compile_method(m, bci, comp_level, m, hot_count, comment, thread);
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, comp_level, true));)
   }
@@ -467,7 +476,7 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, JavaThread* th
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
-  if (is_compilation_enabled() && m->code() == NULL && can_be_compiled(m)) {
+  if (is_compilation_enabled() && m->code() == NULL && can_be_compiled(m, comp_level)) {
     ResourceMark rm(thread);
     frame       fr     = thread->last_frame();
     assert(fr.is_interpreted_frame(), "must be interpreted");
@@ -505,7 +514,7 @@ void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int bci, Java
   const int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (is_compilation_enabled() && !m->is_not_osr_compilable(comp_level) && can_be_compiled(m)) {
+  if (is_compilation_enabled() && !m->is_not_osr_compilable(comp_level) && can_be_compiled(m, comp_level)) {
     CompileBroker::compile_method(m, bci, comp_level, m, hot_count, comment, thread);
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, comp_level, true));)
   }
@@ -600,7 +609,7 @@ RFrame* StackWalkCompPolicy::findTopInlinableFrame(GrowableArray<RFrame*>* stack
 
     // If the caller method is too big or something then we do not want to
     // compile it just to inline a method
-    if (!can_be_compiled(next_m)) {
+    if (!can_be_compiled(next_m, CompLevel_any)) {
       msg = "caller cannot be compiled";
       break;
     }
