@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2220,12 +2220,6 @@ encode %{
   %{
     // Output immediate
     $$$emit32$src$$constant;
-  %}
-
-  enc_class Con64(immL src)
-  %{
-    // Output immediate
-    emit_d64($src$$constant);
   %}
 
   enc_class Con32F_as_bits(immF src)
@@ -7608,7 +7602,7 @@ instruct xaddI( memory mem, rRegI newval, rFlagsReg cr) %{
   ins_pipe( pipe_cmpxchg );
 %}
 
-instruct xaddL_no_res( memory mem, Universe dummy, immL add, rFlagsReg cr) %{
+instruct xaddL_no_res( memory mem, Universe dummy, immL32 add, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddL mem add));
   effect(KILL cr);
@@ -9434,7 +9428,7 @@ instruct cmpLTMask(rRegI dst, rRegI p, rRegI q, rFlagsReg cr)
   match(Set dst (CmpLTMask p q));
   effect(KILL cr);
 
-  ins_cost(400); // XXX
+  ins_cost(400);
   format %{ "cmpl    $p, $q\t# cmpLTMask\n\t"
             "setlt   $dst\n\t"
             "movzbl  $dst, $dst\n\t"
@@ -9452,36 +9446,62 @@ instruct cmpLTMask0(rRegI dst, immI0 zero, rFlagsReg cr)
   match(Set dst (CmpLTMask dst zero));
   effect(KILL cr);
 
-  ins_cost(100); // XXX
+  ins_cost(100);
   format %{ "sarl    $dst, #31\t# cmpLTMask0" %}
-  opcode(0xC1, 0x7);  /* C1 /7 ib */
-  ins_encode(reg_opc_imm(dst, 0x1F));
+  ins_encode %{
+  __ sarl($dst$$Register, 31);
+  %}
   ins_pipe(ialu_reg);
 %}
 
-
-instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y, rRegI tmp, rFlagsReg cr)
+/* Better to save a register than avoid a branch */
+instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y, rFlagsReg cr)
 %{
   match(Set p (AddI (AndI (CmpLTMask p q) y) (SubI p q)));
-  effect(TEMP tmp, KILL cr);
-
-  ins_cost(400); // XXX
-  format %{ "subl    $p, $q\t# cadd_cmpLTMask1\n\t"
-            "sbbl    $tmp, $tmp\n\t"
-            "andl    $tmp, $y\n\t"
-            "addl    $p, $tmp" %}
+  effect(KILL cr);
+  ins_cost(300);
+  format %{ "subl   $p,$q\t# cadd_cmpLTMask\n\t"
+            "jge    done\n\t"
+            "addl   $p,$y\n"
+            "done:  " %}
   ins_encode %{
     Register Rp = $p$$Register;
     Register Rq = $q$$Register;
     Register Ry = $y$$Register;
-    Register Rt = $tmp$$Register;
+    Label done;
     __ subl(Rp, Rq);
-    __ sbbl(Rt, Rt);
-    __ andl(Rt, Ry);
-    __ addl(Rp, Rt);
+    __ jccb(Assembler::greaterEqual, done);
+    __ addl(Rp, Ry);
+    __ bind(done);
   %}
   ins_pipe(pipe_cmplt);
 %}
+
+/* Better to save a register than avoid a branch */
+instruct and_cmpLTMask(rRegI p, rRegI q, rRegI y, rFlagsReg cr)
+%{
+  match(Set y (AndI (CmpLTMask p q) y));
+  effect(KILL cr);
+
+  ins_cost(300);
+
+  format %{ "cmpl     $p, $q\t# and_cmpLTMask\n\t"
+            "jlt      done\n\t"
+            "xorl     $y, $y\n"
+            "done:  " %}
+  ins_encode %{
+    Register Rp = $p$$Register;
+    Register Rq = $q$$Register;
+    Register Ry = $y$$Register;
+    Label done;
+    __ cmpl(Rp, Rq);
+    __ jccb(Assembler::less, done);
+    __ xorl(Ry, Ry);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_cmplt);
+%}
+
 
 //---------- FP Instructions------------------------------------------------
 

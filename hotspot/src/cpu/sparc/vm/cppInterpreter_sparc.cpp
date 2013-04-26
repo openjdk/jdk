@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,14 +404,20 @@ address CppInterpreter::deopt_entry(TosState state, int length) {
 // ??: invocation counter
 //
 void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
+  Label done;
+  const Register Rcounters = G3_scratch;
+
+  __ ld_ptr(STATE(_method), G5_method);
+  __ get_method_counters(G5_method, Rcounters, done);
+
   // Update standard invocation counters
-  __ increment_invocation_counter(O0, G3_scratch);
-  if (ProfileInterpreter) {  // %%% Merge this into MethodData*
-    __ ld_ptr(STATE(_method), G3_scratch);
-    Address interpreter_invocation_counter(G3_scratch, 0, in_bytes(Method::interpreter_invocation_counter_offset()));
-    __ ld(interpreter_invocation_counter, G3_scratch);
-    __ inc(G3_scratch);
-    __ st(G3_scratch, interpreter_invocation_counter);
+  __ increment_invocation_counter(Rcounters, O0, G4_scratch);
+  if (ProfileInterpreter) {
+    Address interpreter_invocation_counter(Rcounters, 0,
+            in_bytes(MethodCounters::interpreter_invocation_counter_offset()));
+    __ ld(interpreter_invocation_counter, G4_scratch);
+    __ inc(G4_scratch);
+    __ st(G4_scratch, interpreter_invocation_counter);
   }
 
   Address invocation_limit(G3_scratch, (address)&InvocationCounter::InterpreterInvocationLimit);
@@ -420,7 +426,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
   __ cmp(O0, G3_scratch);
   __ br(Assembler::greaterEqualUnsigned, false, Assembler::pn, *overflow);
   __ delayed()->nop();
-
+  __ bind(done);
 }
 
 address InterpreterGenerator::generate_empty_entry(void) {
