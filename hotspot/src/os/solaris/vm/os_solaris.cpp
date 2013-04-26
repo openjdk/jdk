@@ -1915,10 +1915,6 @@ bool os::dll_build_name(char* buffer, size_t buflen,
   return retval;
 }
 
-const char* os::get_current_directory(char *buf, int buflen) {
-  return getcwd(buf, buflen);
-}
-
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
