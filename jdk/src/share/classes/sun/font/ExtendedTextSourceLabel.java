@@ -247,6 +247,10 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     float aw = 0f;
     float ah = cm.ascent + cm.descent;
 
+    if (charinfo == null || charinfo.length == 0) {
+        return new Rectangle2D.Float(al, at, aw, ah);
+    }
+
     boolean lineIsLTR = (source.getLayoutFlags() & 0x8) == 0;
     int rn = info.length - numvals;
     if (lineIsLTR) {
@@ -350,24 +354,42 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 
   public float getCharX(int index) {
     validate(index);
-    return getCharinfo()[l2v(index) * numvals + posx];
+    float[] charinfo = getCharinfo();
+    int idx = l2v(index) * numvals + posx;
+    if (charinfo == null || idx >= charinfo.length) {
+        return 0f;
+    } else {
+        return charinfo[idx];
+    }
   }
 
   public float getCharY(int index) {
     validate(index);
-    return getCharinfo()[l2v(index) * numvals + posy];
+    float[] charinfo = getCharinfo();
+    int idx = l2v(index) * numvals + posy;
+    if (charinfo == null || idx >= charinfo.length) {
+        return 0f;
+    } else {
+        return charinfo[idx];
+    }
   }
 
   public float getCharAdvance(int index) {
     validate(index);
-    return getCharinfo()[l2v(index) * numvals + advx];
+    float[] charinfo = getCharinfo();
+    int idx = l2v(index) * numvals + advx;
+    if (charinfo == null || idx >= charinfo.length) {
+        return 0f;
+    } else {
+        return charinfo[idx];
+    }
   }
 
   public Rectangle2D handleGetCharVisualBounds(int index) {
     validate(index);
     float[] charinfo = getCharinfo();
     index = l2v(index) * numvals;
-    if ((index+vish) >= charinfo.length) {
+    if (charinfo == null || (index+vish) >= charinfo.length) {
         return new Rectangle2D.Float();
     }
     return new Rectangle2D.Float(
@@ -463,7 +485,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
       if (cidx >= charinfo.length) {
           break; // layout bailed for some reason
       }
-      float adv = charinfo[l2v(start) * numvals + advx];
+      float adv = charinfo[cidx];
       width -= adv;
     }
 
@@ -512,7 +534,13 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
       //    }
       //}
 
-      return getCharinfo()[v * numvals + advx] != 0;
+      int idx = v * numvals + advx;
+      float[] charinfo = getCharinfo();
+      if (charinfo == null || idx >= charinfo.length) {
+          return false;
+      } else {
+          return charinfo[idx] != 0;
+      }
   }
 
   private final float[] getCharinfo() {
@@ -604,6 +632,9 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     */
 
     int numGlyphs = gv.getNumGlyphs();
+    if (numGlyphs == 0) {
+        return glyphinfo;
+    }
     int[] indices = gv.getGlyphCharIndices(0, numGlyphs, null);
 
     boolean DEBUG = false;
