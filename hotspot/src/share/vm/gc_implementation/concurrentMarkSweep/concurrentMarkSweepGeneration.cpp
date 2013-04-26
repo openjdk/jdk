@@ -6007,26 +6007,23 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
                                         &cmsDrainMarkingStackClosure,
                                         NULL);
     }
-    verify_work_stacks_empty();
   }
+
+  // This is the point where the entire marking should have completed.
+  verify_work_stacks_empty();
 
   if (should_unload_classes()) {
     {
       TraceTime t("class unloading", PrintGCDetails, false, gclog_or_tty);
 
-      // Follow SystemDictionary roots and unload classes
+      // Unload classes and purge the SystemDictionary.
       bool purged_class = SystemDictionary::do_unloading(&_is_alive_closure);
 
-      // Follow CodeCache roots and unload any methods marked for unloading
+      // Unload nmethods.
       CodeCache::do_unloading(&_is_alive_closure, purged_class);
 
-      cmsDrainMarkingStackClosure.do_void();
-      verify_work_stacks_empty();
-
-      // Update subklass/sibling/implementor links in KlassKlass descendants
+      // Prune dead klasses from subklass/sibling/implementor lists.
       Klass::clean_weak_klass_links(&_is_alive_closure);
-      // Nothing should have been pushed onto the working stacks.
-      verify_work_stacks_empty();
     }
 
     {
@@ -6040,11 +6037,10 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
   // Need to check if we really scanned the StringTable.
   if ((roots_scanning_options() & SharedHeap::SO_Strings) == 0) {
     TraceTime t("scrub string table", PrintGCDetails, false, gclog_or_tty);
-    // Now clean up stale oops in StringTable
+    // Delete entries for dead interned strings.
     StringTable::unlink(&_is_alive_closure);
   }
 
-  verify_work_stacks_empty();
   // Restore any preserved marks as a result of mark stack or
   // work queue overflow
   restore_preserved_marks_if_any();  // done single-threaded for now

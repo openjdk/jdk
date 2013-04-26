@@ -517,23 +517,23 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
       is_alive_closure(), mark_and_push_closure(), follow_stack_closure(), NULL);
   }
 
-  // Follow system dictionary roots and unload classes
+  // This is the point where the entire marking should have completed.
+  assert(_marking_stack.is_empty(), "Marking should have completed");
+
+  // Unload classes and purge the SystemDictionary.
   bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
 
-  // Follow code cache roots
+  // Unload nmethods.
   CodeCache::do_unloading(is_alive_closure(), purged_class);
-  follow_stack(); // Flush marking stack
 
-  // Update subklass/sibling/implementor links of live klasses
-  Klass::clean_weak_klass_links(&is_alive);
-  assert(_marking_stack.is_empty(), "just drained");
+  // Prune dead klasses from subklass/sibling/implementor lists.
+  Klass::clean_weak_klass_links(is_alive_closure());
 
-  // Visit interned string tables and delete unmarked oops
+  // Delete entries for dead interned strings.
   StringTable::unlink(is_alive_closure());
+
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
-
-  assert(_marking_stack.is_empty(), "stack should be empty by now");
 }
 
 
