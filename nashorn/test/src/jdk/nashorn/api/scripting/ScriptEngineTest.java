@@ -55,7 +55,7 @@ import org.testng.annotations.Test;
  * Tests for JSR-223 script engine for Nashorn.
  *
  * @test
- * @build jdk.nashorn.api.scripting.Window jdk.nashorn.api.scripting.WindowEventHandler jdk.nashorn.api.scripting.ScriptEngineTest
+ * @build jdk.nashorn.api.scripting.Window jdk.nashorn.api.scripting.WindowEventHandler jdk.nashorn.api.scripting.VariableArityTestInterface jdk.nashorn.api.scripting.ScriptEngineTest
  * @run testng jdk.nashorn.api.scripting.ScriptEngineTest
  */
 public class ScriptEngineTest {
