@@ -126,6 +126,11 @@ le_uint32 PairPositioningFormat2Subtable::process(const LEReferenceTo<PairPositi
 {
     LEGlyphID firstGlyph = glyphIterator->getCurrGlyphID();
     le_int32 coverageIndex = getGlyphCoverage(base, firstGlyph, success);
+
+    if (LE_FAILURE(success)) {
+        return 0;
+    }
+
     GlyphIterator tempIterator(*glyphIterator);
 
     if (coverageIndex >= 0 && glyphIterator->next()) {

@@ -45,6 +45,10 @@ le_uint32 LigatureSubstitutionSubtable::process(const LETableReference &base, Gl
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
     le_int32 coverageIndex = getGlyphCoverage(base, glyph, success);
 
+    if (LE_FAILURE(success)) {
+      return 0;
+    }
+
     if (coverageIndex >= 0) {
         Offset ligSetTableOffset = SWAPW(ligSetTableOffsetArray[coverageIndex]);
         const LigatureSetTable *ligSetTable = (const LigatureSetTable *) ((char *) this + ligSetTableOffset);

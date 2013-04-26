@@ -139,7 +139,7 @@ le_uint32 GlyphSubstitutionLookupProcessor::applySubtable(const LEReferenceTo<Lo
     {
         const LEReferenceTo<ExtensionSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(this, lookupType, glyphIterator, fontInstance, success);
+        delta = subtable->process(subtable, this, lookupType, glyphIterator, fontInstance, success);
         break;
     }
 
