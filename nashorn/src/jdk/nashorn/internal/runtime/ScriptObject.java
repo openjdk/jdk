@@ -2265,17 +2265,29 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private int getInt(final int index, final String key) {
-        for (ScriptObject object = this; object != null; object = object.getProto()) {
-            final ArrayData array = object.getArray();
+        if (isValidArrayIndex(index)) {
+             for (ScriptObject object = this; ; ) {
+                final FindProperty find = object.findProperty(key, false, false, this);
 
-            if (array.has(index)) {
-                return array.getInt(index);
-            }
+                if (find != null) {
+                    return getIntValue(find);
+                }
 
-            final FindProperty find = object.findProperty(key, false);
+                if ((object = object.getProto()) == null) {
+                    break;
+                }
+
+                final ArrayData array = object.getArray();
+
+                if (array.has(index)) {
+                    return array.getInt(index);
+                }
+           }
+        } else {
+            final FindProperty find = findProperty(key, true);
 
             if (find != null) {
-                return getIntValue(new FindProperty(this, find.getOwner(), find.getProperty()));
+                return getIntValue(find);
             }
         }
 
@@ -2284,36 +2296,75 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public int getInt(final Object key) {
-        return getInt(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getInt(index);
+        }
+
+        return getInt(index, convertKey(key));
     }
 
     @Override
     public int getInt(final double key) {
-        return getInt(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getInt(index);
+        }
+
+        return getInt(index, convertKey(key));
     }
 
     @Override
     public int getInt(final long key) {
-        return getInt(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getInt(index);
+        }
+
+        return getInt(index, convertKey(key));
     }
 
     @Override
     public int getInt(final int key) {
-        return getInt(getArrayIndexNoThrow(key), convertKey(key));
+        final ArrayData array = getArray();
+
+        if (array.has(key)) {
+            return array.getInt(key);
+        }
+
+        return getInt(key, convertKey(key));
     }
 
     private long getLong(final int index, final String key) {
-        for (ScriptObject object = this; object != null; object = object.getProto()) {
-            final ArrayData array = object.getArray();
+        if (isValidArrayIndex(index)) {
+            for (ScriptObject object = this; ; ) {
+                final FindProperty find = object.findProperty(key, false, false, this);
 
-            if (array.has(index)) {
-                return array.getLong(index);
-            }
+                if (find != null) {
+                    return getLongValue(find);
+                }
 
-            final FindProperty find = object.findProperty(key, false);
+                if ((object = object.getProto()) == null) {
+                    break;
+                }
+
+                final ArrayData array = object.getArray();
+
+                if (array.has(index)) {
+                    return array.getLong(index);
+                }
+           }
+        } else {
+            final FindProperty find = findProperty(key, true);
 
             if (find != null) {
-                return getLongValue(new FindProperty(this, find.getOwner(), find.getProperty()));
+                return getLongValue(find);
             }
         }
 
@@ -2322,36 +2373,75 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public long getLong(final Object key) {
-        return getLong(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getLong(index);
+        }
+
+        return getLong(index, convertKey(key));
     }
 
     @Override
     public long getLong(final double key) {
-        return getLong(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getLong(index);
+        }
+
+        return getLong(index, convertKey(key));
     }
 
     @Override
     public long getLong(final long key) {
-        return getLong(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getLong(index);
+        }
+
+        return getLong(index, convertKey(key));
     }
 
     @Override
     public long getLong(final int key) {
-        return getLong(getArrayIndexNoThrow(key), convertKey(key));
+        final ArrayData array = getArray();
+
+        if (array.has(key)) {
+            return array.getLong(key);
+        }
+
+        return getLong(key, convertKey(key));
     }
 
     private double getDouble(final int index, final String key) {
-        for (ScriptObject object = this; object != null; object = object.getProto()) {
-            final ArrayData array = object.getArray();
+        if (isValidArrayIndex(index)) {
+            for (ScriptObject object = this; ; ) {
+                final FindProperty find = object.findProperty(key, false, false, this);
 
-            if (array.has(index)) {
-                return array.getDouble(index);
-            }
+                if (find != null) {
+                    return getDoubleValue(find);
+                }
 
-            final FindProperty find = object.findProperty(key, false);
+                if ((object = object.getProto()) == null) {
+                    break;
+                }
+
+                final ArrayData array = object.getArray();
+
+                if (array.has(index)) {
+                    return array.getDouble(index);
+                }
+           }
+        } else {
+            final FindProperty find = findProperty(key, true);
 
             if (find != null) {
-                return getDoubleValue(new FindProperty(this, find.getOwner(), find.getProperty()));
+                return getDoubleValue(find);
             }
         }
 
@@ -2360,36 +2450,75 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public double getDouble(final Object key) {
-        return getDouble(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getDouble(index);
+        }
+
+        return getDouble(index, convertKey(key));
     }
 
     @Override
     public double getDouble(final double key) {
-        return getDouble(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getDouble(index);
+        }
+
+        return getDouble(index, convertKey(key));
     }
 
     @Override
     public double getDouble(final long key) {
-        return getDouble(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getDouble(index);
+        }
+
+        return getDouble(index, convertKey(key));
     }
 
     @Override
     public double getDouble(final int key) {
-        return getDouble(getArrayIndexNoThrow(key), convertKey(key));
+        final ArrayData array = getArray();
+
+        if (array.has(key)) {
+            return array.getDouble(key);
+        }
+
+        return getDouble(key, convertKey(key));
     }
 
     private Object get(final int index, final String key) {
-        for (ScriptObject object = this; object != null; object = object.getProto()) {
-            final ArrayData array = object.getArray();
+        if (isValidArrayIndex(index)) {
+            for (ScriptObject object = this; ; ) {
+                final FindProperty find = object.findProperty(key, false, false, this);
 
-            if (array.has(index)) {
-                return array.getObject(index);
+                if (find != null) {
+                    return getObjectValue(find);
+                }
+
+                if ((object = object.getProto()) == null) {
+                    break;
+                }
+
+                final ArrayData array = object.getArray();
+
+                if (array.has(index)) {
+                    return array.getObject(index);
+                }
             }
-
-            final FindProperty find = object.findProperty(key, false);
+        } else {
+            final FindProperty find = findProperty(key, true);
 
             if (find != null) {
-                return getObjectValue(new FindProperty(this, find.getOwner(), find.getProperty()));
+                return getObjectValue(find);
             }
         }
 
@@ -2398,22 +2527,49 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public Object get(final Object key) {
-        return get(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getObject(index);
+        }
+
+        return get(index, convertKey(key));
     }
 
     @Override
     public Object get(final double key) {
-        return get(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getObject(index);
+        }
+
+        return get(index, convertKey(key));
     }
 
     @Override
     public Object get(final long key) {
-        return get(getArrayIndexNoThrow(key), convertKey(key));
+        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
+
+        if (array.has(index)) {
+            return array.getObject(index);
+        }
+
+        return get(index, convertKey(key));
     }
 
     @Override
     public Object get(final int key) {
-        return get(getArrayIndexNoThrow(key), convertKey(key));
+        final ArrayData array = getArray();
+
+        if (array.has(key)) {
+            return array.getObject(key);
+        }
+
+        return get(key, convertKey(key));
     }
 
     /**
