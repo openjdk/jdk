@@ -48,10 +48,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
@@ -91,6 +89,7 @@ import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
@@ -125,8 +124,6 @@ final class Attr extends NodeOperatorVisitor {
     private final Deque<Set<String>> localUses;
 
     private final Deque<Type> returnTypes;
-
-    private final Map<Symbol, FunctionNode> selfSymbolToFunction = new IdentityHashMap<>();
 
     private static final DebugLogger LOG   = new DebugLogger("attr");
     private static final boolean     DEBUG = LOG.isEnabled();
@@ -173,23 +170,26 @@ final class Attr extends NodeOperatorVisitor {
 
         if (functionNode.isProgram()) {
             initFromPropertyMap(body);
-        }
+        } else if(!functionNode.isDeclared()) {
+            // It's neither declared nor program - it's a function expression then; assign it a self-symbol.
 
-        // Add function name as local symbol
-        if (!functionNode.isDeclared() && !functionNode.isProgram()) {
             if (functionNode.getSymbol() != null) {
                 // a temporary left over from an earlier pass when the function was lazy
                 assert functionNode.getSymbol().isTemp();
                 // remove it
                 functionNode.setSymbol(null);
             }
-            final Symbol selfSymbol;
-            if (functionNode.isAnonymous()) {
-                selfSymbol = ensureSymbol(functionNode, Type.OBJECT, functionNode);
+            final boolean anonymous = functionNode.isAnonymous();
+            final String name = anonymous ? null : functionNode.getIdent().getName();
+            if (anonymous || body.getExistingSymbol(name) != null) {
+                // The function is either anonymous, or another local identifier already trumps its name on entry:
+                // either it has the same name as one of its parameters, or is named "arguments" and also references the
+                // "arguments" identifier in its body.
+                ensureSymbol(functionNode, Type.typeFor(ScriptFunction.class), functionNode);
             } else {
-                selfSymbol = defineSymbol(body, functionNode.getIdent().getName(), IS_VAR | IS_FUNCTION_SELF, functionNode);
+                final Symbol selfSymbol = defineSymbol(body, name, IS_VAR | IS_FUNCTION_SELF, functionNode);
+                assert selfSymbol.isFunctionSelf();
                 newType(selfSymbol, Type.OBJECT);
-                selfSymbolToFunction.put(selfSymbol, functionNode);
             }
         }
 
