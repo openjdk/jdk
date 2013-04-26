@@ -1016,7 +1016,8 @@ public class ClassWriter extends ClassFile {
 //          log.errWriter.println("enter inner " + c);//DEBUG
             enterInner(c.owner.enclClass());
             pool.put(c);
-            pool.put(c.name);
+            if (c.name != names.empty)
+                pool.put(c.name);
             if (innerClasses == null) {
                 innerClasses = new HashSet<ClassSymbol>();
                 innerClassesQueue = new ListBuffer<ClassSymbol>();

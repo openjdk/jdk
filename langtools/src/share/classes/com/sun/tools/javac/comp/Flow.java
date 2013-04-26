@@ -719,7 +719,7 @@ public class Flow {
                 Flow.this.make = make;
                 pendingExits = new ListBuffer<PendingExit>();
                 alive = true;
-                scan(env.tree);
+                scan(tree);
             } finally {
                 pendingExits = null;
                 Flow.this.make = null;

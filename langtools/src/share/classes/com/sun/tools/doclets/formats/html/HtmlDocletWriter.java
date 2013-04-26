@@ -1860,11 +1860,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * Add the annotation types of the executable receiver.
      *
      * @param method the executable to write the receiver annotations for.
+     * @param descList list of annotation description.
      * @param htmltree the documentation tree to which the annotation info will be
      *        added
      */
-    public void addReceiverAnnotationInfo(ExecutableMemberDoc method, Content htmltree) {
-        addAnnotationInfo(method, method.receiverAnnotations(), htmltree);
+    public void addReceiverAnnotationInfo(ExecutableMemberDoc method, AnnotationDesc[] descList,
+            Content htmltree) {
+        addAnnotationInfo(0, method, descList, false, htmltree);
     }
 
     /**
@@ -1915,13 +1917,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     private boolean addAnnotationInfo(int indent, Doc doc,
             AnnotationDesc[] descList, boolean lineBreak, Content htmltree) {
         List<String> annotations = getAnnotations(indent, descList, lineBreak);
+        String sep ="";
         if (annotations.size() == 0) {
             return false;
         }
         Content annotationContent;
         for (Iterator<String> iter = annotations.iterator(); iter.hasNext();) {
+            htmltree.addContent(sep);
             annotationContent = new RawHtml(iter.next());
             htmltree.addContent(annotationContent);
+            sep = " ";
         }
         return true;
     }

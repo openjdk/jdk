@@ -68,14 +68,11 @@ public class Credentials {
         sname = (PrincipalName) new_sname.clone();
         key = (EncryptionKey) new_key.clone();
 
-        authtime = (KerberosTime) new_authtime.clone();
-        if (new_starttime != null) {
-            starttime = (KerberosTime) new_starttime.clone();
-        }
-        endtime = (KerberosTime) new_endtime.clone();
-        if (new_renewTill != null) {
-            renewTill = (KerberosTime) new_renewTill.clone();
-        }
+        authtime = new_authtime;
+        starttime = new_starttime;
+        endtime = new_endtime;
+        renewTill = new_renewTill;
+
         if (new_caddr != null) {
             caddr = (HostAddresses) new_caddr.clone();
         }
@@ -104,14 +101,11 @@ public class Credentials {
         ticket = (Ticket) kdcRep.ticket.clone();
         key = (EncryptionKey) kdcRep.encKDCRepPart.key.clone();
         flags = (TicketFlags) kdcRep.encKDCRepPart.flags.clone();
-        authtime = (KerberosTime) kdcRep.encKDCRepPart.authtime.clone();
-        if (kdcRep.encKDCRepPart.starttime != null) {
-            starttime = (KerberosTime) kdcRep.encKDCRepPart.starttime.clone();
-        }
-        endtime = (KerberosTime) kdcRep.encKDCRepPart.endtime.clone();
-        if (kdcRep.encKDCRepPart.renewTill != null) {
-            renewTill = (KerberosTime) kdcRep.encKDCRepPart.renewTill.clone();
-        }
+        authtime = kdcRep.encKDCRepPart.authtime;
+        starttime = kdcRep.encKDCRepPart.starttime;
+        endtime = kdcRep.encKDCRepPart.endtime;
+        renewTill = kdcRep.encKDCRepPart.renewTill;
+
         sname = (PrincipalName) kdcRep.encKDCRepPart.sname.clone();
         caddr = (HostAddresses) kdcRep.encKDCRepPart.caddr.clone();
         secondTicket = (Ticket) new_secondTicket.clone();
@@ -128,18 +122,10 @@ public class Credentials {
         sname = (PrincipalName) kdcRep.encKDCRepPart.sname.clone();
         cname = (PrincipalName) kdcRep.cname.clone();
         key = (EncryptionKey) kdcRep.encKDCRepPart.key.clone();
-        authtime = (KerberosTime) kdcRep.encKDCRepPart.authtime.clone();
-        if (kdcRep.encKDCRepPart.starttime != null) {
-            starttime = (KerberosTime) kdcRep.encKDCRepPart.starttime.clone();
-        } else {
-            starttime = null;
-        }
-        endtime = (KerberosTime) kdcRep.encKDCRepPart.endtime.clone();
-        if (kdcRep.encKDCRepPart.renewTill != null) {
-            renewTill = (KerberosTime) kdcRep.encKDCRepPart.renewTill.clone();
-        } else {
-            renewTill = null;
-        }
+        authtime = kdcRep.encKDCRepPart.authtime;
+        starttime = kdcRep.encKDCRepPart.starttime;
+        endtime = kdcRep.encKDCRepPart.endtime;
+        renewTill = kdcRep.encKDCRepPart.renewTill;
         // if (kdcRep.msgType == Krb5.KRB_AS_REP) {
         //    isEncInSKey = false;
         //    secondTicket = null;

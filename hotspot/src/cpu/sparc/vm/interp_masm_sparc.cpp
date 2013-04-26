@@ -2097,7 +2097,8 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
   call_VM(noreg, CAST_FROM_FN_PTR(address,
           InterpreterRuntime::build_method_counters), method);
   ld_ptr(method_counters, Rcounters);
-  br_null_short(Rcounters, Assembler::pn, skip); // No MethodCounters, OutOfMemory
+  br_null(Rcounters, false, Assembler::pn, skip); // No MethodCounters, OutOfMemory
+  delayed()->nop();
   bind(has_counters);
 }
 

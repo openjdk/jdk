@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2010. All Rights Reserved.
+ * (C) Copyright IBM Corp. 1998-2013. All Rights Reserved.
  *
  * WARNING: THIS FILE IS MACHINE GENERATED. DO NOT HAND EDIT IT UNLESS
  * YOU REALLY KNOW WHAT YOU'RE DOING.
@@ -186,7 +186,18 @@ const LETag OpenTypeLayoutEngine::scriptTags[] = {
     nbatScriptTag, /* 'nbat' (NBAT) */
     palmScriptTag, /* 'palm' (PALM) */
     sindScriptTag, /* 'sind' (SIND) */
-    waraScriptTag  /* 'wara' (WARA) */
+    waraScriptTag, /* 'wara' (WARA) */
+    afakScriptTag, /* 'afak' (AFAK) */
+    jurcScriptTag, /* 'jurc' (JURC) */
+    mrooScriptTag, /* 'mroo' (MROO) */
+    nshuScriptTag, /* 'nshu' (NSHU) */
+    shrdScriptTag, /* 'shrd' (SHARADA) */
+    soraScriptTag, /* 'sora' (SORA_SOMPENG) */
+    takrScriptTag, /* 'takr' (TAKRI) */
+    tangScriptTag, /* 'tang' (TANG) */
+    woleScriptTag, /* 'wole' (WOLE) */
+    khojScriptTag, /* 'khoj' (KHOJ) */
+    tirhScriptTag  /* 'tirh' (TIRH) */
 };
 
 const LETag OpenTypeLayoutEngine::languageTags[] = {

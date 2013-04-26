@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class CalendarDataUtility {
                                        field, value, style, false);
     }
 
-    public static String retrieveCldrFieldValueName(String id, int field, int value, int style, Locale locale) {
+    public static String retrieveJavaTimeFieldValueName(String id, int field, int value, int style, Locale locale) {
         LocaleServiceProviderPool pool =
                 LocaleServiceProviderPool.getPool(CalendarNameProvider.class);
         String name;
@@ -89,7 +89,7 @@ public class CalendarDataUtility {
                                        normalizeCalendarType(id), field, style, false);
     }
 
-    public static Map<String, Integer> retrieveCldrFieldValueNames(String id, int field, int style, Locale locale) {
+    public static Map<String, Integer> retrieveJavaTimeFieldValueNames(String id, int field, int style, Locale locale) {
         LocaleServiceProviderPool pool =
             LocaleServiceProviderPool.getPool(CalendarNameProvider.class);
         Map<String, Integer> map;
@@ -133,14 +133,14 @@ public class CalendarDataUtility {
             int field = (int) params[0];
             int value = (int) params[1];
             int style = (int) params[2];
-            boolean cldr = (boolean) params[3];
+            boolean javatime = (boolean) params[3];
 
-            // If cldr is true, resources from CLDR have precedence over JRE
+            // If javatime is true, resources from CLDR have precedence over JRE
             // native resources.
-            if (cldr && calendarNameProvider instanceof CalendarNameProviderImpl) {
+            if (javatime && calendarNameProvider instanceof CalendarNameProviderImpl) {
                 String name;
                 name = ((CalendarNameProviderImpl)calendarNameProvider)
-                        .getCldrDisplayName(requestID, field, value, style, locale);
+                        .getJavaTimeDisplayName(requestID, field, value, style, locale);
                 return name;
             }
             return calendarNameProvider.getDisplayName(requestID, field, value, style, locale);
@@ -165,14 +165,14 @@ public class CalendarDataUtility {
             assert params.length == 3;
             int field = (int) params[0];
             int style = (int) params[1];
-            boolean cldr = (boolean) params[2];
+            boolean javatime = (boolean) params[2];
 
-            // If cldr is true, resources from CLDR have precedence over JRE
+            // If javatime is true, resources from CLDR have precedence over JRE
             // native resources.
-            if (cldr && calendarNameProvider instanceof CalendarNameProviderImpl) {
+            if (javatime && calendarNameProvider instanceof CalendarNameProviderImpl) {
                 Map<String, Integer> map;
                 map = ((CalendarNameProviderImpl)calendarNameProvider)
-                        .getCldrDisplayNames(requestID, field, style, locale);
+                        .getJavaTimeDisplayNames(requestID, field, style, locale);
                 return map;
             }
             return calendarNameProvider.getDisplayNames(requestID, field, style, locale);
