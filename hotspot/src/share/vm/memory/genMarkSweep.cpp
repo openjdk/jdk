@@ -223,23 +223,23 @@ void GenMarkSweep::mark_sweep_phase1(int level,
       &is_alive, &keep_alive, &follow_stack_closure, NULL);
   }
 
-  // Follow system dictionary roots and unload classes
+  // This is the point where the entire marking should have completed.
+  assert(_marking_stack.is_empty(), "Marking should have completed");
+
+  // Unload classes and purge the SystemDictionary.
   bool purged_class = SystemDictionary::do_unloading(&is_alive);
 
-  // Follow code cache roots
+  // Unload nmethods.
   CodeCache::do_unloading(&is_alive, purged_class);
-  follow_stack(); // Flush marking stack
 
-  // Update subklass/sibling/implementor links of live klasses
+  // Prune dead klasses from subklass/sibling/implementor lists.
   Klass::clean_weak_klass_links(&is_alive);
-  assert(_marking_stack.is_empty(), "just drained");
 
-  // Visit interned string tables and delete unmarked oops
+  // Delete entries for dead interned strings.
   StringTable::unlink(&is_alive);
+
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
-
-  assert(_marking_stack.is_empty(), "stack should be empty by now");
 }
 
 

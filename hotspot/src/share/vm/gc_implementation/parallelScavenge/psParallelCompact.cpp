@@ -2354,22 +2354,24 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   }
 
   TraceTime tm_c("class unloading", print_phases(), true, gclog_or_tty);
+
+  // This is the point where the entire marking should have completed.
+  assert(cm->marking_stacks_empty(), "Marking should have completed");
+
   // Follow system dictionary roots and unload classes.
   bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
 
-  // Follow code cache roots.
+  // Unload nmethods.
   CodeCache::do_unloading(is_alive_closure(), purged_class);
-  cm->follow_marking_stacks(); // Flush marking stack.
 
-  // Update subklass/sibling/implementor links of live klasses
+  // Prune dead klasses from subklass/sibling/implementor lists.
   Klass::clean_weak_klass_links(is_alive_closure());
 
-  // Visit interned string tables and delete unmarked oops
+  // Delete entries for dead interned strings.
   StringTable::unlink(is_alive_closure());
+
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
-
-  assert(cm->marking_stacks_empty(), "marking stacks should be empty");
 }
 
 void PSParallelCompact::follow_klass(ParCompactionManager* cm, Klass* klass) {

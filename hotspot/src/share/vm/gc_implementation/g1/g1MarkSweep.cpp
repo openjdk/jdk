@@ -144,28 +144,24 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     &GenMarkSweep::follow_stack_closure,
                                     NULL);
 
-  // Follow system dictionary roots and unload classes
+
+  // This is the point where the entire marking should have completed.
+  assert(GenMarkSweep::_marking_stack.is_empty(), "Marking should have completed");
+
+  // Unload classes and purge the SystemDictionary.
   bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive);
-  assert(GenMarkSweep::_marking_stack.is_empty(),
-         "stack should be empty by now");
 
-  // Follow code cache roots (has to be done after system dictionary,
-  // assumes all live klasses are marked)
+  // Unload nmethods.
   CodeCache::do_unloading(&GenMarkSweep::is_alive, purged_class);
-  GenMarkSweep::follow_stack();
 
-  // Update subklass/sibling/implementor links of live klasses
+  // Prune dead klasses from subklass/sibling/implementor lists.
   Klass::clean_weak_klass_links(&GenMarkSweep::is_alive);
-  assert(GenMarkSweep::_marking_stack.is_empty(),
-         "stack should be empty by now");
 
-  // Visit interned string tables and delete unmarked oops
+  // Delete entries for dead interned strings.
   StringTable::unlink(&GenMarkSweep::is_alive);
+
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
-
-  assert(GenMarkSweep::_marking_stack.is_empty(),
-         "stack should be empty by now");
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
