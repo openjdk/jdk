@@ -2329,6 +2329,12 @@ void InstanceKlass::release_C_heap_structures() {
     FreeHeap(jmeths);
   }
 
+  MemberNameTable* mnt = member_names();
+  if (mnt != NULL) {
+    delete mnt;
+    set_member_names(NULL);
+  }
+
   int* indices = methods_cached_itable_indices_acquire();
   if (indices != (int*)NULL) {
     release_set_methods_cached_itable_indices(NULL);
@@ -2755,6 +2761,17 @@ nmethod* InstanceKlass::lookup_osr_nmethod(Method* const m, int bci, int comp_le
     return best;
   }
   return NULL;
+}
+
+void InstanceKlass::add_member_name(Handle mem_name) {
+  jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
+  MutexLocker ml(MemberNameTable_lock);
+  DEBUG_ONLY(No_Safepoint_Verifier nsv);
+
+  if (_member_names == NULL) {
+    _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable();
+  }
+  _member_names->add_member_name(mem_name_wref);
 }
 
 // -----------------------------------------------------------------------------------------------------

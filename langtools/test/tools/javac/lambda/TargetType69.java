@@ -25,11 +25,11 @@
  * @test
  * @bug 8010303
  * @summary Graph inference: missing incorporation step causes spurious inference error
- * @compile TargetType68.java
+ * @compile TargetType69.java
  */
 import java.util.*;
 
-class TargetType68 {
+class TargetType69 {
 
     interface Function<X,Y> {
         Y m(X x);

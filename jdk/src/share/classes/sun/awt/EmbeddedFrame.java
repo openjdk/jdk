@@ -539,7 +539,7 @@ public abstract class EmbeddedFrame extends Frame
         public void toBack() {}
         public void updateFocusableWindowState() {}
         public void updateAlwaysOnTop() {}
-        public void setAlwaysOnTop(boolean alwaysOnTop) {}
+        public void updateAlwaysOnTopState() {}
         public Component getGlobalHeavyweightFocusOwner() { return null; }
         public void setBoundsPrivate(int x, int y, int width, int height) {
             setBounds(x, y, width, height, SET_BOUNDS);

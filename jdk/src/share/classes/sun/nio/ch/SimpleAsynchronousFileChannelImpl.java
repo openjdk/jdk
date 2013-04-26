@@ -318,7 +318,7 @@ public class SimpleAsynchronousFileChannelImpl
                 try {
                     begin();
                     do {
-                        n = IOUtil.read(fdObj, dst, position, nd, null);
+                        n = IOUtil.read(fdObj, dst, position, nd);
                     } while ((n == IOStatus.INTERRUPTED) && isOpen());
                     if (n < 0 && !isOpen())
                         throw new AsynchronousCloseException();
@@ -372,7 +372,7 @@ public class SimpleAsynchronousFileChannelImpl
                 try {
                     begin();
                     do {
-                        n = IOUtil.write(fdObj, src, position, nd, null);
+                        n = IOUtil.write(fdObj, src, position, nd);
                     } while ((n == IOStatus.INTERRUPTED) && isOpen());
                     if (n < 0 && !isOpen())
                         throw new AsynchronousCloseException();

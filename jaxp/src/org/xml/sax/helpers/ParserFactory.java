@@ -30,12 +30,6 @@
 
 package org.xml.sax.helpers;
 
-import java.lang.ClassNotFoundException;
-import java.lang.IllegalAccessException;
-import java.lang.InstantiationException;
-import java.lang.SecurityException;
-import java.lang.ClassCastException;
-
 import org.xml.sax.Parser;
 
 
@@ -69,9 +63,10 @@ import org.xml.sax.Parser;
  *             interface.
  * @since SAX 1.0
  * @author David Megginson
+ * @version 2.0.1 (sax2r2)
  */
 public class ParserFactory {
-
+    private static SecuritySupport ss = new SecuritySupport();
 
     /**
      * Private null constructor.
@@ -109,7 +104,7 @@ public class ParserFactory {
         NullPointerException,
         ClassCastException
     {
-        String className = System.getProperty("org.xml.sax.parser");
+        String className = ss.getSystemProperty("org.xml.sax.parser");
         if (className == null) {
             throw new NullPointerException("No value for sax.parser property");
         } else {
@@ -146,7 +141,7 @@ public class ParserFactory {
         ClassCastException
     {
         return (Parser) NewInstance.newInstance (
-                NewInstance.getClassLoader (), className);
+                ss.getContextClassLoader(), className);
     }
 
 }

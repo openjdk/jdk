@@ -222,6 +222,10 @@ public class TypeMaker {
 
         private com.sun.javadoc.Type skipArraysCache = null;
 
+        public com.sun.javadoc.Type getElementType() {
+            return TypeMaker.getType(env, env.types.elemtype(arrayType));
+        }
+
         private com.sun.javadoc.Type skipArrays() {
             if (skipArraysCache == null) {
                 Type t;
