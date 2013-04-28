@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -905,6 +905,20 @@ ciMethodData* ciMethod::method_data_or_null() {
 }
 
 // ------------------------------------------------------------------
+// ciMethod::ensure_method_counters
+//
+address ciMethod::ensure_method_counters() {
+  check_is_loaded();
+  VM_ENTRY_MARK;
+  methodHandle mh(THREAD, get_Method());
+  MethodCounters *counter = mh->method_counters();
+  if (counter == NULL) {
+    counter = Method::build_method_counters(mh(), CHECK_AND_CLEAR_NULL);
+  }
+  return (address)counter;
+}
+
+// ------------------------------------------------------------------
 // ciMethod::should_exclude
 //
 // Should this method be excluded from compilation?
@@ -1191,13 +1205,14 @@ void ciMethod::dump_replay_data(outputStream* st) {
   ASSERT_IN_VM;
   ResourceMark rm;
   Method* method = get_Method();
+  MethodCounters* mcs = method->method_counters();
   Klass*  holder = method->method_holder();
   st->print_cr("ciMethod %s %s %s %d %d %d %d %d",
                holder->name()->as_quoted_ascii(),
                method->name()->as_quoted_ascii(),
                method->signature()->as_quoted_ascii(),
-               method->invocation_counter()->raw_counter(),
-               method->backedge_counter()->raw_counter(),
+               mcs == NULL ? 0 : mcs->invocation_counter()->raw_counter(),
+               mcs == NULL ? 0 : mcs->backedge_counter()->raw_counter(),
                interpreter_invocation_count(),
                interpreter_throwout_count(),
                _instructions_size);
