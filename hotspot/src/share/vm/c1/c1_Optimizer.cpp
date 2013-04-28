@@ -535,7 +535,9 @@ public:
   void do_RuntimeCall    (RuntimeCall*     x);
   void do_MemBar         (MemBar*          x);
   void do_RangeCheckPredicate(RangeCheckPredicate* x);
+#ifdef ASSERT
   void do_Assert         (Assert*          x);
+#endif
 };
 
 
@@ -718,8 +720,9 @@ void NullCheckVisitor::do_ProfileInvoke  (ProfileInvoke*   x) {}
 void NullCheckVisitor::do_RuntimeCall    (RuntimeCall*     x) {}
 void NullCheckVisitor::do_MemBar         (MemBar*          x) {}
 void NullCheckVisitor::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
+#ifdef ASSERT
 void NullCheckVisitor::do_Assert         (Assert*          x) {}
-
+#endif
 
 void NullCheckEliminator::visit(Value* p) {
   assert(*p != NULL, "should not find NULL instructions");
