@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,7 +304,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // The sender should positively be an nmethod or call_stub. On sparc we might in fact see something else.
     // The cause of this is because at a save instruction the O7 we get is a leftover from an earlier
-    // window use. So if a runtime stub creates two frames (common in fastdebug/jvmg) then we see the
+    // window use. So if a runtime stub creates two frames (common in fastdebug/debug) then we see the
     // stale pc. So if the sender blob is not something we'd expect we have little choice but to declare
     // the stack unwalkable. pd_get_top_frame_for_signal_handler tries to recover from this by unwinding
     // that initial frame and retrying.

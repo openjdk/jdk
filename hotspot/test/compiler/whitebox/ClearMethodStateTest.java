@@ -27,42 +27,61 @@
  * @build ClearMethodStateTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ClearMethodStateTest
+ * @summary testing of WB::clearMethodState()
  * @author igor.ignatyev@oracle.com
  */
 public class ClearMethodStateTest extends CompilerWhiteBoxTest {
+
     public static void main(String[] args) throws Exception {
-        // to prevent inlining #method into #compile() and #test()
-        WHITE_BOX.testSetDontInlineMethod(METHOD, true);
-        new ClearMethodStateTest().runTest();
+        for (TestCase test : TestCase.values()) {
+            new ClearMethodStateTest(test).runTest();
+        }
     }
 
+    public ClearMethodStateTest(TestCase testCase) {
+        super(testCase);
+        // to prevent inlining of #method
+        WHITE_BOX.testSetDontInlineMethod(method, true);
+    }
+
+
+    /**
+     * Tests {@code WB::clearMethodState()} by calling it before/after
+     * compilation. For non-tiered, checks that counters will be rested after
+     * clearing of method state.
+     *
+     * @throws Exception if one of the checks fails.
+     */
+    @Override
     protected void test() throws Exception {
-        checkNotCompiled(METHOD);
+        checkNotCompiled();
         compile();
-        checkCompiled(METHOD);
-        WHITE_BOX.clearMethodState(METHOD);
-        WHITE_BOX.deoptimizeMethod(METHOD);
-        checkNotCompiled(METHOD);
+        WHITE_BOX.clearMethodState(method);
+        checkCompiled();
+        WHITE_BOX.clearMethodState(method);
+        WHITE_BOX.deoptimizeMethod(method);
+        checkNotCompiled();
 
 
         if (!TIERED_COMPILATION) {
-            WHITE_BOX.clearMethodState(METHOD);
+            WHITE_BOX.clearMethodState(method);
             compile(COMPILE_THRESHOLD);
-            checkCompiled(METHOD);
+            checkCompiled();
 
-            WHITE_BOX.deoptimizeMethod(METHOD);
-            checkNotCompiled(METHOD);
-            WHITE_BOX.clearMethodState(METHOD);
+            WHITE_BOX.deoptimizeMethod(method);
+            checkNotCompiled();
+            WHITE_BOX.clearMethodState(method);
 
+            // invoke method one less time than needed to compile
             if (COMPILE_THRESHOLD > 1) {
                 compile(COMPILE_THRESHOLD - 1);
-                checkNotCompiled(METHOD);
+                checkNotCompiled();
             } else {
-               System.err.println("Warning: 'CompileThreshold' <= 1");
+                System.err.println("Warning: 'CompileThreshold' <= 1");
             }
 
-            method();
-            checkCompiled(METHOD);
+            compile(1);
+            checkCompiled();
         } else {
             System.err.println(
                     "Warning: part of test is not applicable in Tiered");

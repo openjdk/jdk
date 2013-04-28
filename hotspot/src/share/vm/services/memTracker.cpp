@@ -53,12 +53,12 @@ void SyncThreadRecorderClosure::do_thread(Thread* thread) {
 }
 
 
-MemRecorder*                    MemTracker::_global_recorder = NULL;
+MemRecorder* volatile           MemTracker::_global_recorder = NULL;
 MemSnapshot*                    MemTracker::_snapshot = NULL;
 MemBaseline                     MemTracker::_baseline;
 Mutex*                          MemTracker::_query_lock = NULL;
-volatile MemRecorder*           MemTracker::_merge_pending_queue = NULL;
-volatile MemRecorder*           MemTracker::_pooled_recorders = NULL;
+MemRecorder* volatile           MemTracker::_merge_pending_queue = NULL;
+MemRecorder* volatile           MemTracker::_pooled_recorders = NULL;
 MemTrackWorker*                 MemTracker::_worker_thread = NULL;
 int                             MemTracker::_sync_point_skip_count = 0;
 MemTracker::NMTLevel            MemTracker::_tracking_level = MemTracker::NMT_off;
@@ -128,7 +128,7 @@ void MemTracker::start() {
 
   _snapshot = new (std::nothrow)MemSnapshot();
   if (_snapshot != NULL) {
-    if (!_snapshot->out_of_memory() && start_worker()) {
+    if (!_snapshot->out_of_memory() && start_worker(_snapshot)) {
       _state = NMT_started;
       NMT_track_callsite = (_tracking_level == NMT_detail && can_walk_stack());
       return;
@@ -209,7 +209,7 @@ void MemTracker::final_shutdown() {
 // delete all pooled recorders
 void MemTracker::delete_all_pooled_recorders() {
   // free all pooled recorders
-  volatile MemRecorder* cur_head = _pooled_recorders;
+  MemRecorder* volatile cur_head = _pooled_recorders;
   if (cur_head != NULL) {
     MemRecorder* null_ptr = NULL;
     while (cur_head != NULL && (void*)cur_head != Atomic::cmpxchg_ptr((void*)null_ptr,
@@ -543,14 +543,14 @@ void MemTracker::sync() {
 /*
  * Start worker thread.
  */
-bool MemTracker::start_worker() {
-  assert(_worker_thread == NULL, "Just Check");
-  _worker_thread = new (std::nothrow) MemTrackWorker();
-  if (_worker_thread == NULL || _worker_thread->has_error()) {
-    if (_worker_thread != NULL) {
-      delete _worker_thread;
-      _worker_thread = NULL;
-    }
+bool MemTracker::start_worker(MemSnapshot* snapshot) {
+  assert(_worker_thread == NULL && _snapshot != NULL, "Just Check");
+  _worker_thread = new (std::nothrow) MemTrackWorker(snapshot);
+  if (_worker_thread == NULL) {
+    return false;
+  } else if (_worker_thread->has_error()) {
+    delete _worker_thread;
+    _worker_thread = NULL;
     return false;
   }
   _worker_thread->start();

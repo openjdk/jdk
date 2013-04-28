@@ -265,18 +265,118 @@ public:
   int effective_degree( uint lidx ) const;
 };
 
-// TEMPORARILY REPLACED WITH COMMAND LINE FLAG
+// The LiveRangeMap class is responsible for storing node to live range id mapping.
+// Each node is mapped to a live range id (a virtual register). Nodes that are
+// not considered for register allocation are given live range id 0.
+class LiveRangeMap VALUE_OBJ_CLASS_SPEC {
 
-//// !!!!! Magic Constants need to move into ad file
-#ifdef SPARC
-//#define FLOAT_PRESSURE 30  /*     SFLT_REG_mask.Size() - 1 */
-//#define INT_PRESSURE   23  /* NOTEMP_I_REG_mask.Size() - 1 */
-#define FLOAT_INCREMENT(regs) regs
-#else
-//#define FLOAT_PRESSURE 6
-//#define INT_PRESSURE   6
-#define FLOAT_INCREMENT(regs) 1
-#endif
+private:
+
+  uint _max_lrg_id;
+
+  // Union-find map.  Declared as a short for speed.
+  // Indexed by live-range number, it returns the compacted live-range number
+  LRG_List _uf_map;
+
+  // Map from Nodes to live ranges
+  LRG_List _names;
+
+  // Straight out of Tarjan's union-find algorithm
+  uint find_compress(const Node *node) {
+    uint lrg_id = find_compress(_names[node->_idx]);
+    _names.map(node->_idx, lrg_id);
+    return lrg_id;
+  }
+
+  uint find_compress(uint lrg);
+
+public:
+
+  const LRG_List& names() {
+    return _names;
+  }
+
+  uint max_lrg_id() const {
+    return _max_lrg_id;
+  }
+
+  void set_max_lrg_id(uint max_lrg_id) {
+    _max_lrg_id = max_lrg_id;
+  }
+
+  uint size() const {
+    return _names.Size();
+  }
+
+  uint live_range_id(uint idx) const {
+    return _names[idx];
+  }
+
+  uint live_range_id(const Node *node) const {
+    return _names[node->_idx];
+  }
+
+  uint uf_live_range_id(uint lrg_id) const {
+    return _uf_map[lrg_id];
+  }
+
+  void map(uint idx, uint lrg_id) {
+    _names.map(idx, lrg_id);
+  }
+
+  void uf_map(uint dst_lrg_id, uint src_lrg_id) {
+    _uf_map.map(dst_lrg_id, src_lrg_id);
+  }
+
+  void extend(uint idx, uint lrg_id) {
+    _names.extend(idx, lrg_id);
+  }
+
+  void uf_extend(uint dst_lrg_id, uint src_lrg_id) {
+    _uf_map.extend(dst_lrg_id, src_lrg_id);
+  }
+
+  LiveRangeMap(uint unique)
+  : _names(unique)
+  , _uf_map(unique)
+  , _max_lrg_id(0) {}
+
+  uint find_id( const Node *n ) {
+    uint retval = live_range_id(n);
+    assert(retval == find(n),"Invalid node to lidx mapping");
+    return retval;
+  }
+
+  // Reset the Union-Find map to identity
+  void reset_uf_map(uint max_lrg_id);
+
+  // Make all Nodes map directly to their final live range; no need for
+  // the Union-Find mapping after this call.
+  void compress_uf_map_for_nodes();
+
+  uint find(uint lidx) {
+    uint uf_lidx = _uf_map[lidx];
+    return (uf_lidx == lidx) ? uf_lidx : find_compress(lidx);
+  }
+
+  // Convert a Node into a Live Range Index - a lidx
+  uint find(const Node *node) {
+    uint lidx = live_range_id(node);
+    uint uf_lidx = _uf_map[lidx];
+    return (uf_lidx == lidx) ? uf_lidx : find_compress(node);
+  }
+
+  // Like Find above, but no path compress, so bad asymptotic behavior
+  uint find_const(uint lrg) const;
+
+  // Like Find above, but no path compress, so bad asymptotic behavior
+  uint find_const(const Node *node) const {
+    if(node->_idx >= _names.Size()) {
+      return 0; // not mapped, usual for debug dump
+    }
+    return find_const(_names[node->_idx]);
+  }
+};
 
 //------------------------------Chaitin----------------------------------------
 // Briggs-Chaitin style allocation, mostly.
@@ -286,23 +386,12 @@ class PhaseChaitin : public PhaseRegAlloc {
   int _trip_cnt;
   int _alternate;
 
-  uint _maxlrg;                 // Max live range number
   LRG &lrgs(uint idx) const { return _ifg->lrgs(idx); }
   PhaseLive *_live;             // Liveness, used in the interference graph
   PhaseIFG *_ifg;               // Interference graph (for original chunk)
   Node_List **_lrg_nodes;       // Array of node; lists for lrgs which spill
   VectorSet _spilled_once;      // Nodes that have been spilled
   VectorSet _spilled_twice;     // Nodes that have been spilled twice
-
-  LRG_List _names;              // Map from Nodes to Live RanGes
-
-  // Union-find map.  Declared as a short for speed.
-  // Indexed by live-range number, it returns the compacted live-range number
-  LRG_List _uf_map;
-  // Reset the Union-Find map to identity
-  void reset_uf_map( uint maxlrg );
-  // Remove the need for the Union-Find mapping
-  void compress_uf_map_for_nodes( );
 
   // Combine the Live Range Indices for these 2 Nodes into a single live
   // range.  Future requests for any Node in either live range will
@@ -322,7 +411,34 @@ class PhaseChaitin : public PhaseRegAlloc {
   // Helper functions for Split()
   uint split_DEF( Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
   uint split_USE( Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
-  int clone_projs( Block *b, uint idx, Node *con, Node *copy, uint &maxlrg );
+
+  bool clone_projs(Block *b, uint idx, Node *con, Node *copy, LiveRangeMap &lrg_map) {
+    bool found_projs = clone_projs_shared(b, idx, con, copy, lrg_map.max_lrg_id());
+
+    if(found_projs) {
+      uint max_lrg_id = lrg_map.max_lrg_id();
+      lrg_map.set_max_lrg_id(max_lrg_id + 1);
+    }
+
+    return found_projs;
+  }
+
+  //------------------------------clone_projs------------------------------------
+  // After cloning some rematerialized instruction, clone any MachProj's that
+  // follow it.  Example: Intel zero is XOR, kills flags.  Sparc FP constants
+  // use G3 as an address temp.
+  bool clone_projs(Block *b, uint idx, Node *con, Node *copy, uint &max_lrg_id) {
+    bool found_projs = clone_projs_shared(b, idx, con, copy, max_lrg_id);
+
+    if(found_projs) {
+      max_lrg_id++;
+    }
+
+    return found_projs;
+  }
+
+  bool clone_projs_shared(Block *b, uint idx, Node *con, Node *copy, uint max_lrg_id);
+
   Node *split_Rematerialize(Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits,
                             int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru);
   // True if lidx is used before any real register is def'd in the block
@@ -349,19 +465,10 @@ public:
   PhaseChaitin( uint unique, PhaseCFG &cfg, Matcher &matcher );
   ~PhaseChaitin() {}
 
-  // Convert a Node into a Live Range Index - a lidx
-  uint Find( const Node *n ) {
-    uint lidx = n2lidx(n);
-    uint uf_lidx = _uf_map[lidx];
-    return (uf_lidx == lidx) ? uf_lidx : Find_compress(n);
-  }
-  uint Find_const( uint lrg ) const;
-  uint Find_const( const Node *n ) const;
+  LiveRangeMap _lrg_map;
 
   // Do all the real work of allocate
   void Register_Allocate();
-
-  uint n2lidx( const Node *n ) const { return _names[n->_idx]; }
 
   float high_frequency_lrg() const { return _high_frequency_lrg; }
 
@@ -374,18 +481,6 @@ private:
   // all inputs to a PhiNode, effectively coalescing live ranges.  Insert
   // copies as needed.
   void de_ssa();
-  uint Find_compress( const Node *n );
-  uint Find( uint lidx ) {
-    uint uf_lidx = _uf_map[lidx];
-    return (uf_lidx == lidx) ? uf_lidx : Find_compress(lidx);
-  }
-  uint Find_compress( uint lidx );
-
-  uint Find_id( const Node *n ) {
-    uint retval = n2lidx(n);
-    assert(retval == Find(n),"Invalid node to lidx mapping");
-    return retval;
-  }
 
   // Add edge between reg and everything in the vector.
   // Same as _ifg->add_vector(reg,live) EXCEPT use the RegMask
