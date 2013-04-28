@@ -6921,7 +6921,7 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
           size = CompactibleFreeListSpace::adjustObjectSize(
                    p->oop_iterate(_scanningClosure));
         }
-        #ifdef DEBUG
+        #ifdef ASSERT
           size_t direct_size =
             CompactibleFreeListSpace::adjustObjectSize(p->size());
           assert(size == direct_size, "Inconsistency in size");
@@ -6933,7 +6933,7 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
             assert(_bitMap->isMarked(addr+size-1),
                    "inconsistent Printezis mark");
           }
-        #endif // DEBUG
+        #endif // ASSERT
     } else {
       // an unitialized object
       assert(_bitMap->isMarked(addr+1), "missing Printezis mark?");
@@ -7075,14 +7075,14 @@ bool ScanMarkedObjectsAgainClosure::do_object_bm(oop p, MemRegion mr) {
   HeapWord* addr = (HeapWord*)p;
   assert(_span.contains(addr), "we are scanning the CMS generation");
   bool is_obj_array = false;
-  #ifdef DEBUG
+  #ifdef ASSERT
     if (!_parallel) {
       assert(_mark_stack->isEmpty(), "pre-condition (eager drainage)");
       assert(_collector->overflow_list_is_empty(),
              "overflow list should be empty");
 
     }
-  #endif // DEBUG
+  #endif // ASSERT
   if (_bit_map->isMarked(addr)) {
     // Obj arrays are precisely marked, non-arrays are not;
     // so we scan objArrays precisely and non-arrays in their
@@ -7102,14 +7102,14 @@ bool ScanMarkedObjectsAgainClosure::do_object_bm(oop p, MemRegion mr) {
       }
     }
   }
-  #ifdef DEBUG
+  #ifdef ASSERT
     if (!_parallel) {
       assert(_mark_stack->isEmpty(), "post-condition (eager drainage)");
       assert(_collector->overflow_list_is_empty(),
              "overflow list should be empty");
 
     }
-  #endif // DEBUG
+  #endif // ASSERT
   return is_obj_array;
 }
 
@@ -8320,7 +8320,7 @@ size_t SweepClosure::do_live_chunk(FreeChunk* fc) {
     assert(size == CompactibleFreeListSpace::adjustObjectSize(size),
            "alignment problem");
 
-#ifdef DEBUG
+#ifdef ASSERT
       if (oop(addr)->klass_or_null() != NULL) {
         // Ignore mark word because we are running concurrent with mutators
         assert(oop(addr)->is_oop(true), "live block should be an oop");
