@@ -219,8 +219,8 @@ public final class FileTime
      *
      * <p> {@code FileTime} can store points on the time-line further in the
      * future and further in the past than {@code Instant}. Conversion
-     * from such further time points saturates to {@link Instant.MIN} if
-     * earlier than {@code Instant.MIN} or {@link Instant.MAX} if later
+     * from such further time points saturates to {@link Instant#MIN} if
+     * earlier than {@code Instant.MIN} or {@link Instant#MAX} if later
      * than {@code Instant.MAX}.
      *
      * @return  an instant representing the same point on the time-line as
