@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package com.sun.xml.internal.ws.api.databinding;
 
+import com.oracle.webservices.internal.api.databinding.WSDLResolver;
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.api.wsdl.writer.WSDLGeneratorExtension;
-import com.sun.xml.internal.ws.wsdl.writer.WSDLResolver;
 
 /**
  * WSDLGenInfo provides the WSDL generation options
@@ -38,6 +38,7 @@ public class WSDLGenInfo {
         WSDLResolver wsdlResolver;
         Container container;
     boolean inlineSchemas;
+    boolean secureXmlProcessingDisabled;
     WSDLGeneratorExtension[] extensions;
 
         public WSDLResolver getWsdlResolver() {
@@ -59,9 +60,18 @@ public class WSDLGenInfo {
                 this.inlineSchemas = inlineSchemas;
         }
         public WSDLGeneratorExtension[] getExtensions() {
+            if (extensions == null) return new WSDLGeneratorExtension[0];
                 return extensions;
         }
         public void setExtensions(WSDLGeneratorExtension[] extensions) {
                 this.extensions = extensions;
         }
+
+    public void setSecureXmlProcessingDisabled(boolean secureXmlProcessingDisabled) {
+        this.secureXmlProcessingDisabled = secureXmlProcessingDisabled;
+    }
+
+    public boolean isSecureXmlProcessingDisabled() {
+        return secureXmlProcessingDisabled;
+    }
 }

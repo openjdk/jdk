@@ -97,13 +97,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
     public void handleKeyEvent(int eventType, int modifierFlags, String characters,
                                String charsIgnoringMods, boolean isRepeat, short keyCode,
                                boolean needsKeyTyped) {
-        responder.handleKeyEvent(eventType, modifierFlags, charsIgnoringMods, keyCode, needsKeyTyped);
-    }
-
-    // REMIND: delete this method once 'deploy' changes for 7156194 is pushed
-    public void handleKeyEvent(int eventType, int modifierFlags, String characters,
-                               String charsIgnoringMods, boolean isRepeat, short keyCode) {
-        handleKeyEvent(eventType, modifierFlags, characters, charsIgnoringMods, isRepeat, keyCode, true);
+        responder.handleKeyEvent(eventType, modifierFlags, charsIgnoringMods, keyCode, needsKeyTyped, isRepeat);
     }
 
     public void handleInputEvent(String text) {

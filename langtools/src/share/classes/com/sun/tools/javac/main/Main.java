@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,6 +497,8 @@ public class Main {
                 if (!(doclintOpts.size() == 1
                         && doclintOpts.iterator().next().equals(DocLint.XMSGS_CUSTOM_PREFIX + "none"))) {
                     JavacTask t = BasicJavacTask.instance(context);
+                    // standard doclet normally generates H1, H2
+                    doclintOpts.add(DocLint.XIMPLICIT_HEADERS + "2");
                     new DocLint().init(t, doclintOpts.toArray(new String[doclintOpts.size()]));
                     comp.keepComments = true;
                 }

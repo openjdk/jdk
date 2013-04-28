@@ -634,6 +634,17 @@ class CardGeneration: public Generation {
   // This is local to this generation.
   BlockOffsetSharedArray* _bts;
 
+  // current shrinking effect: this damps shrinking when the heap gets empty.
+  size_t _shrink_factor;
+
+  size_t _min_heap_delta_bytes;   // Minimum amount to expand.
+
+  // Some statistics from before gc started.
+  // These are gathered in the gc_prologue (and should_collect)
+  // to control growing/shrinking policy in spite of promotions.
+  size_t _capacity_at_prologue;
+  size_t _used_at_prologue;
+
   CardGeneration(ReservedSpace rs, size_t initial_byte_size, int level,
                  GenRemSet* remset);
 
@@ -643,6 +654,11 @@ class CardGeneration: public Generation {
   // minimum "expand_bytes".  Return true if some amount (not
   // necessarily the full "bytes") was done.
   virtual bool expand(size_t bytes, size_t expand_bytes);
+
+  // Shrink generation with specified size (returns false if unable to shrink)
+  virtual void shrink(size_t bytes) = 0;
+
+  virtual void compute_new_size();
 
   virtual void clear_remembered_set();
 
@@ -667,7 +683,6 @@ class OneContigSpaceCardGeneration: public CardGeneration {
   friend class VM_PopulateDumpSharedSpace;
 
  protected:
-  size_t     _min_heap_delta_bytes;   // Minimum amount to expand.
   ContiguousSpace*  _the_space;       // actual space holding objects
   WaterMark  _last_gc;                // watermark between objects allocated before
                                       // and after last GC.
@@ -688,11 +703,10 @@ class OneContigSpaceCardGeneration: public CardGeneration {
 
  public:
   OneContigSpaceCardGeneration(ReservedSpace rs, size_t initial_byte_size,
-                               size_t min_heap_delta_bytes,
                                int level, GenRemSet* remset,
                                ContiguousSpace* space) :
     CardGeneration(rs, initial_byte_size, level, remset),
-    _the_space(space), _min_heap_delta_bytes(min_heap_delta_bytes)
+    _the_space(space)
   {}
 
   inline bool is_in(const void* p) const;

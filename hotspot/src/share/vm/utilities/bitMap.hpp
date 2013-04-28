@@ -262,6 +262,7 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   bool is_full() const;
   bool is_empty() const;
 
+  void print_on_error(outputStream* st, const char* prefix) const;
 
 #ifndef PRODUCT
  public:

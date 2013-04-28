@@ -360,7 +360,9 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     void handleJavaFocusEvent(FocusEvent fe) {
-        if (focusLog.isLoggable(PlatformLogger.FINER)) focusLog.finer(fe.toString());
+        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+            focusLog.finer(fe.toString());
+        }
         setFocus(fe.getID() == FocusEvent.FOCUS_GAINED);
     }
 
@@ -693,7 +695,9 @@ public abstract class WComponentPeer extends WObjectPeer
               }
               boolean res = wpeer.requestWindowFocus(cause);
 
-              if (focusLog.isLoggable(PlatformLogger.FINER)) focusLog.finer("Requested window focus: " + res);
+              if (focusLog.isLoggable(PlatformLogger.FINER)) {
+                  focusLog.finer("Requested window focus: " + res);
+              }
               // If parent window can be made focused and has been made focused(synchronously)
               // then we can proceed with children, otherwise we retreat.
               if (!(res && parentWindow.isFocused())) {
@@ -713,7 +717,9 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     private boolean rejectFocusRequestHelper(String logMsg) {
-        if (focusLog.isLoggable(PlatformLogger.FINER)) focusLog.finer(logMsg);
+        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+            focusLog.finer(logMsg);
+        }
         WKeyboardFocusManagerPeer.removeLastFocusRequest((Component)target);
         return false;
     }
@@ -1080,10 +1086,9 @@ public abstract class WComponentPeer extends WObjectPeer
     @SuppressWarnings("deprecation")
     public void applyShape(Region shape) {
         if (shapeLog.isLoggable(PlatformLogger.FINER)) {
-            shapeLog.finer(
-                    "*** INFO: Setting shape: PEER: " + this
-                    + "; TARGET: " + target
-                    + "; SHAPE: " + shape);
+            shapeLog.finer("*** INFO: Setting shape: PEER: " + this
+                            + "; TARGET: " + target
+                            + "; SHAPE: " + shape);
         }
 
         if (shape != null) {
