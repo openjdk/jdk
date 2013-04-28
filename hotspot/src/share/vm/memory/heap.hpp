@@ -91,11 +91,11 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t       _next_segment;
 
   FreeBlock*   _freelist;
-  size_t       _free_segments;                   // No. of segments in freelist
+  size_t       _freelist_segments;               // No. of segments in freelist
 
   // Helper functions
-  size_t   number_of_segments(size_t size) const { return (size + _segment_size - 1) >> _log2_segment_size; }
-  size_t   size(size_t number_of_segments) const { return number_of_segments << _log2_segment_size; }
+  size_t   size_to_segments(size_t size) const { return (size + _segment_size - 1) >> _log2_segment_size; }
+  size_t   segments_to_size(size_t number_of_segments) const { return number_of_segments << _log2_segment_size; }
 
   size_t   segment_for(void* p) const            { return ((char*)p - _memory.low()) >> _log2_segment_size; }
   HeapBlock* block_at(size_t i) const            { return (HeapBlock*)(_memory.low() + (i << _log2_segment_size)); }
@@ -110,7 +110,7 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   // Toplevel freelist management
   void add_to_freelist(HeapBlock *b);
-  FreeBlock* search_freelist(size_t length);
+  FreeBlock* search_freelist(size_t length, bool is_critical);
 
   // Iteration helpers
   void*      next_free(HeapBlock* b) const;
@@ -132,22 +132,19 @@ class CodeHeap : public CHeapObj<mtCode> {
   void  clear();                                 // clears all heap contents
 
   // Memory allocation
-  void* allocate  (size_t size);                 // allocates a block of size or returns NULL
+  void* allocate  (size_t size, bool is_critical);  // allocates a block of size or returns NULL
   void  deallocate(void* p);                     // deallocates a block
 
   // Attributes
-  void*  begin() const                           { return _memory.low (); }
-  void*  end() const                             { return _memory.high(); }
-  bool   contains(void* p) const                 { return begin() <= p && p < end(); }
-  void*  find_start(void* p) const;              // returns the block containing p or NULL
-  size_t alignment_unit() const;                 // alignment of any block
-  size_t alignment_offset() const;               // offset of first byte of any block, within the enclosing alignment unit
-  static size_t header_size();                   // returns the header size for each heap block
+  char* low_boundary() const                     { return _memory.low_boundary (); }
+  char* high() const                             { return _memory.high(); }
+  char* high_boundary() const                    { return _memory.high_boundary(); }
 
-  // Returns reserved area high and low addresses
-  char *low_boundary() const                     { return _memory.low_boundary (); }
-  char *high() const                             { return _memory.high(); }
-  char *high_boundary() const                    { return _memory.high_boundary(); }
+  bool  contains(const void* p) const            { return low_boundary() <= p && p < high(); }
+  void* find_start(void* p) const;              // returns the block containing p or NULL
+  size_t alignment_unit() const;                // alignment of any block
+  size_t alignment_offset() const;              // offset of first byte of any block, within the enclosing alignment unit
+  static size_t header_size();                  // returns the header size for each heap block
 
   // Iteration
 
@@ -161,8 +158,11 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t max_capacity() const;
   size_t allocated_capacity() const;
   size_t unallocated_capacity() const            { return max_capacity() - allocated_capacity(); }
-  size_t largest_free_block() const;
 
+private:
+  size_t heap_unallocated_capacity() const;
+
+public:
   // Debugging
   void verify();
   void print()  PRODUCT_RETURN;
