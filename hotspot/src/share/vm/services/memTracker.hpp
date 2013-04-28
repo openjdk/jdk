@@ -421,7 +421,7 @@ class MemTracker : AllStatic {
 
  private:
   // start native memory tracking worker thread
-  static bool start_worker();
+  static bool start_worker(MemSnapshot* snapshot);
 
   // called by worker thread to complete shutdown process
   static void final_shutdown();
@@ -475,18 +475,18 @@ class MemTracker : AllStatic {
   // a thread can start to allocate memory before it is attached
   // to VM 'Thread', those memory activities are recorded here.
   // ThreadCritical is required to guard this global recorder.
-  static MemRecorder*     _global_recorder;
+  static MemRecorder* volatile _global_recorder;
 
   // main thread id
   debug_only(static intx   _main_thread_tid;)
 
   // pending recorders to be merged
-  static volatile MemRecorder*      _merge_pending_queue;
+  static MemRecorder* volatile     _merge_pending_queue;
 
   NOT_PRODUCT(static volatile jint   _pending_recorder_count;)
 
   // pooled memory recorders
-  static volatile MemRecorder*      _pooled_recorders;
+  static MemRecorder* volatile     _pooled_recorders;
 
   // memory recorder pool management, uses following
   // counter to determine if a released memory recorder

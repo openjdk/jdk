@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # The common definitions for hotspot windows builds.
@@ -209,8 +209,6 @@ endif
 ifneq (,$(findstring MINGW,$(SYSTEM_UNAME)))
   USING_MINGW=true
 endif
-# FIXUP: The subdirectory for a debug build is NOT the same on all platforms
-VM_DEBUG=debug
 
 # Windows wants particular paths due to nmake (must be after macros defined)
 #   It is important that gnumake invokes nmake with C:\\...\\  formated
@@ -292,7 +290,7 @@ ifeq ($(BUILD_WIN_SA), 1)
   MAKE_ARGS += BUILD_WIN_SA=1
 endif
 
-# Propagate compiler and tools paths from configure to nmake. 
+# Propagate compiler and tools paths from configure to nmake.
 # Need to make sure they contain \\ and not /.
 ifneq ($(SPEC),)
   ifeq ($(USING_CYGWIN), true)

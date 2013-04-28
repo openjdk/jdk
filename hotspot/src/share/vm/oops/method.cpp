@@ -91,7 +91,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
   set_hidden(false);
   set_dont_inline(false);
   set_method_data(NULL);
-  set_interpreter_throwout_count(0);
+  set_method_counters(NULL);
   set_vtable_index(Method::garbage_vtable_index);
 
   // Fix and bury in Method*
@@ -105,16 +105,6 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
   }
 
   NOT_PRODUCT(set_compiled_invocation_count(0);)
-  set_interpreter_invocation_count(0);
-  invocation_counter()->init();
-  backedge_counter()->init();
-  clear_number_of_breakpoints();
-
-#ifdef TIERED
-  set_rate(0);
-  set_prev_event_count(0);
-  set_prev_time(0);
-#endif
 }
 
 // Release Method*.  The nmethod will be gone when we get here because
@@ -124,6 +114,8 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   set_constMethod(NULL);
   MetadataFactory::free_metadata(loader_data, method_data());
   set_method_data(NULL);
+  MetadataFactory::free_metadata(loader_data, method_counters());
+  set_method_counters(NULL);
   // The nmethod will be gone when we get here.
   if (code() != NULL) _code = NULL;
 }
@@ -323,7 +315,10 @@ bool Method::was_executed_more_than(int n) {
     // compiler does not bump invocation counter of compiled methods
     return true;
   }
-  else if (_invocation_counter.carry() || (method_data() != NULL && method_data()->invocation_counter()->carry())) {
+  else if ((method_counters() != NULL &&
+            method_counters()->invocation_counter()->carry()) ||
+           (method_data() != NULL &&
+            method_data()->invocation_counter()->carry())) {
     // The carry bit is set when the counter overflows and causes
     // a compilation to occur.  We don't know how many times
     // the counter has been reset, so we simply assume it has
@@ -385,6 +380,18 @@ void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
       // At the end of the run, the MDO, full of data, will be dumped.
     }
   }
+}
+
+MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
+  methodHandle mh(m);
+  ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
+  MethodCounters* counters = MethodCounters::allocate(loader_data, CHECK_NULL);
+  if (mh->method_counters() == NULL) {
+    mh->set_method_counters(counters);
+  } else {
+    MetadataFactory::free_metadata(loader_data, counters);
+  }
+  return mh->method_counters();
 }
 
 void Method::cleanup_inline_caches() {
@@ -794,8 +801,6 @@ void Method::unlink_method() {
     set_signature_handler(NULL);
   }
   NOT_PRODUCT(set_compiled_invocation_count(0);)
-  invocation_counter()->reset();
-  backedge_counter()->reset();
   _adapter = NULL;
   _from_compiled_entry = NULL;
 
@@ -808,8 +813,7 @@ void Method::unlink_method() {
   assert(!DumpSharedSpaces || _method_data == NULL, "unexpected method data?");
 
   set_method_data(NULL);
-  set_interpreter_throwout_count(0);
-  set_interpreter_invocation_count(0);
+  set_method_counters(NULL);
 }
 
 // Called when the method_holder is getting linked. Setup entrypoints so the method
@@ -1545,28 +1549,34 @@ void Method::clear_all_breakpoints() {
 
 
 int Method::invocation_count() {
+  MethodCounters *mcs = method_counters();
   if (TieredCompilation) {
     MethodData* const mdo = method_data();
-    if (invocation_counter()->carry() || ((mdo != NULL) ? mdo->invocation_counter()->carry() : false)) {
+    if (((mcs != NULL) ? mcs->invocation_counter()->carry() : false) ||
+        ((mdo != NULL) ? mdo->invocation_counter()->carry() : false)) {
       return InvocationCounter::count_limit;
     } else {
-      return invocation_counter()->count() + ((mdo != NULL) ? mdo->invocation_counter()->count() : 0);
+      return ((mcs != NULL) ? mcs->invocation_counter()->count() : 0) +
+             ((mdo != NULL) ? mdo->invocation_counter()->count() : 0);
     }
   } else {
-    return invocation_counter()->count();
+    return (mcs == NULL) ? 0 : mcs->invocation_counter()->count();
   }
 }
 
 int Method::backedge_count() {
+  MethodCounters *mcs = method_counters();
   if (TieredCompilation) {
     MethodData* const mdo = method_data();
-    if (backedge_counter()->carry() || ((mdo != NULL) ? mdo->backedge_counter()->carry() : false)) {
+    if (((mcs != NULL) ? mcs->backedge_counter()->carry() : false) ||
+        ((mdo != NULL) ? mdo->backedge_counter()->carry() : false)) {
       return InvocationCounter::count_limit;
     } else {
-      return backedge_counter()->count() + ((mdo != NULL) ? mdo->backedge_counter()->count() : 0);
+      return ((mcs != NULL) ? mcs->backedge_counter()->count() : 0) +
+             ((mdo != NULL) ? mdo->backedge_counter()->count() : 0);
     }
   } else {
-    return backedge_counter()->count();
+    return (mcs == NULL) ? 0 : mcs->backedge_counter()->count();
   }
 }
 
@@ -1621,12 +1631,12 @@ void BreakpointInfo::set(Method* method) {
     assert(orig_bytecode() == code, "original bytecode must be the same");
   }
 #endif
+  Thread *thread = Thread::current();
   *method->bcp_from(_bci) = Bytecodes::_breakpoint;
-  method->incr_number_of_breakpoints();
+  method->incr_number_of_breakpoints(thread);
   SystemDictionary::notice_modification();
   {
     // Deoptimize all dependents on this method
-    Thread *thread = Thread::current();
     HandleMark hm(thread);
     methodHandle mh(thread, method);
     Universe::flush_dependents_on_method(mh);
@@ -1636,7 +1646,7 @@ void BreakpointInfo::set(Method* method) {
 void BreakpointInfo::clear(Method* method) {
   *method->bcp_from(_bci) = orig_bytecode();
   assert(method->number_of_breakpoints() > 0, "must not go negative");
-  method->decr_number_of_breakpoints();
+  method->decr_number_of_breakpoints(Thread::current());
 }
 
 // jmethodID handling

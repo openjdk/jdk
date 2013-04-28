@@ -86,10 +86,15 @@ ifneq ($(COMPILE_TYPE),cross)
 	$(MKDIR) -p $(@D)
 	$(TOOL_WRAPPERGENERATOR) $(@D) $(GENSRC_SIZER_DIR)/xlibtypes.txt "sizer" $*
 
+    # use -m32/-m64 only if the compiler supports it
+    ifeq ($(COMPILER_SUPPORTS_TARGET_BITS_FLAG),true)
+    MEMORY_MODEL_FLAG="-m$*"
+    endif
+
     # Compile the C code into an executable.
     $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe : $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
 	$(MKDIR) -p $(@D)
-	(cd $(@D) && $(CC) -m$* -o $@ $< \
+	(cd $(@D) && $(CC) $(MEMORY_MODEL_FLAG) -o $@ $< \
               $(X_CFLAGS) \
               $(X_LIBS) \
               -I$(JDK_OUTPUTDIR)/include \
