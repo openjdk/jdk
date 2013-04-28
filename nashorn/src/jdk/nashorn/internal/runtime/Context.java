@@ -56,6 +56,7 @@ import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.options.Options;
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
 /**
@@ -113,11 +114,12 @@ public final class Context {
      * Get the current global scope
      * @return the current global scope
      */
+    @CallerSensitive
     public static ScriptObject getGlobal() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // skip getCallerClass and getGlobal and get to the real caller
-            Class<?> caller = Reflection.getCallerClass(2);
+            Class<?> caller = Reflection.getCallerClass();
             ClassLoader callerLoader = caller.getClassLoader();
 
             // Allow this method only for nashorn's own classes, objects

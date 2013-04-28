@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,12 @@ import com.sun.xml.internal.ws.api.SOAPVersion;
 import static com.sun.xml.internal.ws.api.SOAPVersion.SOAP_11;
 import static com.sun.xml.internal.ws.api.SOAPVersion.SOAP_12;
 import com.sun.xml.internal.ws.api.WSBinding;
-import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.message.Header;
-import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
 import com.sun.xml.internal.ws.api.pipe.Tube;
 import com.sun.xml.internal.ws.api.pipe.TubeCloner;
 import com.sun.xml.internal.ws.api.pipe.helper.AbstractFilterTubeImpl;
-import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.binding.SOAPBindingImpl;
 import com.sun.xml.internal.ws.message.DOMHeader;
 import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
@@ -49,7 +47,6 @@ import javax.xml.soap.SOAPFault;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.soap.SOAPBinding;
 import javax.xml.ws.soap.SOAPFaultException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -95,27 +92,10 @@ abstract class MUTube extends AbstractFilterTubeImpl {
      * @return returns the headers that have mustUnderstand attribute and are not understood
      *         by the binding.
      */
-    public final Set<QName> getMisUnderstoodHeaders(HeaderList headers, Set<String> roles,
+    public final Set<QName> getMisUnderstoodHeaders(MessageHeaders headers, Set<String> roles,
                                                     Set<QName> handlerKnownHeaders) {
-        Set<QName> notUnderstoodHeaders = null;
-        for (int i = 0; i < headers.size(); i++) {
-            if (!headers.isUnderstood(i)) {
-                Header header = headers.get(i);
-                if (!header.isIgnorable(soapVersion, roles)) {
-                    QName qName = new QName(header.getNamespaceURI(), header.getLocalPart());
-                    // see if the binding can understand it
-                    if (!binding.understandsHeader(qName)) {
-                        if (!handlerKnownHeaders.contains(qName)) {
-                            logger.info("Element not understood=" + qName);
-                            if (notUnderstoodHeaders == null)
-                                notUnderstoodHeaders = new HashSet<QName>();
-                            notUnderstoodHeaders.add(qName);
-                        }
-                    }
-                }
-            }
-        }
-        return notUnderstoodHeaders;
+        return headers.getNotUnderstoodHeaders(roles, handlerKnownHeaders, binding);
+
     }
 
     /**

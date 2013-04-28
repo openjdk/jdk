@@ -589,7 +589,7 @@ public class Types {
                             CapturedType capVar = (CapturedType)capturedTypeargs.head;
                             //use declared bound if it doesn't depend on formal type-args
                             bound = capVar.bound.containsAny(capturedSite.getTypeArguments()) ?
-                                    syms.objectType : capVar.bound;
+                                    wt.type : capVar.bound;
                             break;
                         default:
                             bound = wt.type;
@@ -610,7 +610,7 @@ public class Types {
 
    /**
     * Scope filter used to skip methods that should be ignored (such as methods
-    * overridden by j.l.Object) during function interface conversion/marker interface checks
+    * overridden by j.l.Object) during function interface conversion interface check
     */
     class DescriptorFilter implements Filter<Symbol> {
 
@@ -628,64 +628,6 @@ public class Types {
                    (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
        }
     };
-
-    // <editor-fold defaultstate="collapsed" desc="isMarker">
-
-    /**
-     * A cache that keeps track of marker interfaces
-     */
-    class MarkerCache {
-
-        private WeakHashMap<TypeSymbol, Entry> _map = new WeakHashMap<TypeSymbol, Entry>();
-
-        class Entry {
-            final boolean isMarkerIntf;
-            final int prevMark;
-
-            public Entry(boolean isMarkerIntf,
-                    int prevMark) {
-                this.isMarkerIntf = isMarkerIntf;
-                this.prevMark = prevMark;
-            }
-
-            boolean matches(int mark) {
-                return  this.prevMark == mark;
-            }
-        }
-
-        boolean get(TypeSymbol origin) throws FunctionDescriptorLookupError {
-            Entry e = _map.get(origin);
-            CompoundScope members = membersClosure(origin.type, false);
-            if (e == null ||
-                    !e.matches(members.getMark())) {
-                boolean isMarkerIntf = isMarkerInterfaceInternal(origin, members);
-                _map.put(origin, new Entry(isMarkerIntf, members.getMark()));
-                return isMarkerIntf;
-            }
-            else {
-                return e.isMarkerIntf;
-            }
-        }
-
-        /**
-         * Is given symbol a marker interface
-         */
-        public boolean isMarkerInterfaceInternal(TypeSymbol origin, CompoundScope membersCache) throws FunctionDescriptorLookupError {
-            return !origin.isInterface() ?
-                    false :
-                    !membersCache.getElements(new DescriptorFilter(origin)).iterator().hasNext();
-        }
-    }
-
-    private MarkerCache markerCache = new MarkerCache();
-
-    /**
-     * Is given type a marker interface?
-     */
-    public boolean isMarkerInterface(Type site) {
-        return markerCache.get(site.tsym);
-    }
-    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="isSubtype">
     /**
@@ -2625,15 +2567,15 @@ public class Types {
     public List<MethodSymbol> interfaceCandidates(Type site, MethodSymbol ms) {
         Filter<Symbol> filter = new MethodFilter(ms, site);
         List<MethodSymbol> candidates = List.nil();
-        for (Symbol s : membersClosure(site, false).getElements(filter)) {
-            if (!site.tsym.isInterface() && !s.owner.isInterface()) {
-                return List.of((MethodSymbol)s);
-            } else if (!candidates.contains(s)) {
-                candidates = candidates.prepend((MethodSymbol)s);
+            for (Symbol s : membersClosure(site, false).getElements(filter)) {
+                if (!site.tsym.isInterface() && !s.owner.isInterface()) {
+                    return List.of((MethodSymbol)s);
+                } else if (!candidates.contains(s)) {
+                    candidates = candidates.prepend((MethodSymbol)s);
+                }
             }
+            return prune(candidates);
         }
-        return prune(candidates);
-    }
 
     public List<MethodSymbol> prune(List<MethodSymbol> methods) {
         ListBuffer<MethodSymbol> methodsMin = ListBuffer.lb();

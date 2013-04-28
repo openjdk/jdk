@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import javax.imageio.ImageIO;
 public class JpegDataContentHandler
     extends Component
     implements DataContentHandler {
-    public final String STR_SRC = "java.awt.Image";
+    public static final String STR_SRC = "java.awt.Image";
 
     /**
      * return the DataFlavors for this <code>DataContentHandler</code>
@@ -125,7 +125,7 @@ public class JpegDataContentHandler
                     + mimeType
                     + "\" for ImageContentHandler");
 
-        if (obj.equals(null)) {
+        if (obj == null) {
             throw new IOException("Null object for ImageContentHandler");
         }
 

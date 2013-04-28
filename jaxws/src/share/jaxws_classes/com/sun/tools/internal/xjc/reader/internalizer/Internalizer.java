@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import com.sun.tools.internal.xjc.ErrorReceiver;
 import com.sun.tools.internal.xjc.reader.Const;
 import com.sun.tools.internal.xjc.util.DOMUtils;
 import com.sun.xml.internal.bind.v2.util.EditDistance;
+import com.sun.xml.internal.bind.v2.util.XmlFactory;
 import com.sun.xml.internal.xsom.SCD;
 import java.io.File;
 import java.io.IOException;
@@ -75,9 +76,9 @@ class Internalizer {
 
     private static final String WSDL_NS = "http://schemas.xmlsoap.org/wsdl/";
 
-    private static final XPathFactory xpf = XPathFactory.newInstance();
+    private static XPathFactory xpf = null;
 
-    private final XPath xpath = xpf.newXPath();
+    private final XPath xpath;
 
     /**
      * Internalize all &lt;jaxb:bindings> customizations in the given forest.
@@ -89,15 +90,21 @@ class Internalizer {
      *      SCDs are only for XML Schema, and doesn't make any sense for other
      *      schema languages.
      */
-    static SCDBasedBindingSet transform( DOMForest forest, boolean enableSCD ) {
-        return new Internalizer( forest, enableSCD ).transform();
+    static SCDBasedBindingSet transform( DOMForest forest, boolean enableSCD, boolean disableSecureProcessing ) {
+        return new Internalizer(forest, enableSCD, disableSecureProcessing).transform();
     }
 
 
-    private Internalizer( DOMForest forest, boolean enableSCD ) {
+    private Internalizer(DOMForest forest, boolean enableSCD, boolean disableSecureProcessing) {
         this.errorHandler = forest.getErrorHandler();
         this.forest = forest;
         this.enableSCD = enableSCD;
+        synchronized (this) {
+            if (xpf == null) {
+                xpf = XmlFactory.createXPathFactory(disableSecureProcessing);
+            }
+        }
+        xpath = xpf.newXPath();
     }
 
     /**

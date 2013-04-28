@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,6 @@
  */
 
 /**
- * {@link Message} and related abstractions that represent a SOAP message.
+ * {@link com.sun.xml.internal.ws.api.message.Message} and related abstractions that represent a SOAP message.
  */
 package com.sun.xml.internal.ws.api.message;

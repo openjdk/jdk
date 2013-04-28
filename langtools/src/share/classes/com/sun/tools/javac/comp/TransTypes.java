@@ -40,6 +40,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import static com.sun.tools.javac.comp.CompileStates.CompileState;
 
 /** This pass translates Generic Java to conventional Java.
  *
@@ -77,8 +78,11 @@ public class TransTypes extends TreeTranslator {
      */
     private final boolean addBridges;
 
+    private final CompileStates compileStates;
+
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
+        compileStates = CompileStates.instance(context);
         names = Names.instance(context);
         log = Log.instance(context);
         syms = Symtab.instance(context);
@@ -706,8 +710,18 @@ public class TransTypes extends TreeTranslator {
 
     public void visitTypeCast(JCTypeCast tree) {
         tree.clazz = translate(tree.clazz, null);
+        Type originalTarget = tree.type;
         tree.type = erasure(tree.type);
         tree.expr = translate(tree.expr, tree.type);
+        if (originalTarget.isCompound()) {
+            Type.IntersectionClassType ict = (Type.IntersectionClassType)originalTarget;
+            for (Type c : ict.getExplicitComponents()) {
+                Type ec = erasure(c);
+                if (!types.isSameType(ec, tree.type)) {
+                    tree.expr = coerce(tree.expr, ec);
+                }
+            }
+        }
         result = tree;
     }
 
@@ -904,16 +918,40 @@ public class TransTypes extends TreeTranslator {
 
     private Env<AttrContext> env;
 
+    private static final String statePreviousToFlowAssertMsg =
+            "The current compile state [%s] of class %s is previous to FLOW";
+
     void translateClass(ClassSymbol c) {
         Type st = types.supertype(c.type);
-
         // process superclass before derived
-        if (st.hasTag(CLASS))
+        if (st.hasTag(CLASS)) {
             translateClass((ClassSymbol)st.tsym);
+        }
 
         Env<AttrContext> myEnv = enter.typeEnvs.remove(c);
-        if (myEnv == null)
+        if (myEnv == null) {
             return;
+        }
+
+        /*  The two assertions below are set for early detection of any attempt
+         *  to translate a class that:
+         *
+         *  1) has no compile state being it the most outer class.
+         *     We accept this condition for inner classes.
+         *
+         *  2) has a compile state which is previous to Flow state.
+         */
+        boolean envHasCompState = compileStates.get(myEnv) != null;
+        if (!envHasCompState && c.outermostClass() == c) {
+            Assert.error("No info for outermost class: " + myEnv.enclClass.sym);
+        }
+
+        if (envHasCompState &&
+                CompileState.FLOW.isAfter(compileStates.get(myEnv))) {
+            Assert.error(String.format(statePreviousToFlowAssertMsg,
+                    compileStates.get(myEnv), myEnv.enclClass.sym));
+        }
+
         Env<AttrContext> oldEnv = env;
         try {
             env = myEnv;
