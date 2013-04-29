@@ -420,14 +420,6 @@ public class LexicalContext {
     }
 
     /**
-     * Check if lexical context is currently inside a with block
-     * @return true if in a with block
-     */
-    public boolean inWith() {
-        return getScopeNestingLevelTo(null) > 0;
-    }
-
-    /**
      * Count the number of with scopes until a given node
      * @param until node to stop counting at, or null if all nodes should be counted
      * @return number of with scopes encountered in the context
