@@ -1229,7 +1229,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     if (method->is_not_compilable(comp_level)) return NULL;
 
     if (UseCodeCacheFlushing) {
-      nmethod* saved = CodeCache::find_and_remove_saved_code(method());
+      nmethod* saved = CodeCache::reanimate_saved_code(method());
       if (saved != NULL) {
         method->set_code(method, saved);
         return saved;
@@ -1288,9 +1288,9 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     method->jmethod_id();
   }
 
-  // If the compiler is shut off due to code cache flushing or otherwise,
+  // If the compiler is shut off due to code cache getting full
   // fail out now so blocking compiles dont hang the java thread
-  if (!should_compile_new_jobs() || (UseCodeCacheFlushing && CodeCache::needs_flushing())) {
+  if (!should_compile_new_jobs()) {
     CompilationPolicy::policy()->delay_compilation(method());
     return NULL;
   }

@@ -3179,6 +3179,9 @@ class CommandLineFlags {
   product(uintx,  CodeCacheFlushingMinimumFreeSpace, 1500*K,                \
           "When less than X space left, start code cache cleaning")         \
                                                                             \
+  product(uintx, CodeCacheFlushingFraction, 2,                              \
+          "Fraction of the code cache that is flushed when full")           \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
