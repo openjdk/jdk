@@ -320,6 +320,11 @@ WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collect(GCCause::_last_ditch_collection);
 WB_END
 
+
+WB_ENTRY(jlong, WB_ReserveMemory(JNIEnv* env, jobject o, jlong size))
+  return (jlong)os::reserve_memory(size, NULL, 0);
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -421,6 +426,8 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Executable;)V",          (void*)&WB_ClearMethodState},
   {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
+
+  {CC"reserveMemory", CC"(J)J", (void*)&WB_ReserveMemory },
 };
 
 #undef CC
