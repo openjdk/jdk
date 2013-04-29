@@ -74,7 +74,7 @@ public:
      *
      * @internal
      */
-    GXLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, const MorphTableHeader *morphTable, LEErrorCode &success);
+    GXLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, const LEReferenceTo<MorphTableHeader> &morphTable, LEErrorCode &success);
 
     /**
      * The destructor, virtual for correct polymorphic invocation.
@@ -104,7 +104,7 @@ protected:
      *
      * @internal
      */
-    const MorphTableHeader *fMorphTable;
+    LEReferenceTo<MorphTableHeader> fMorphTable;
 
     /**
      * This method does GX layout using the font's 'mort' table. It converts the

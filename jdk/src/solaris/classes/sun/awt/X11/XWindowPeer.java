@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,10 +227,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (owner != null) {
             ownerPeer = (XWindowPeer)owner.getPeer();
             if (focusLog.isLoggable(PlatformLogger.FINER)) {
-                focusLog.fine("Owner is " + owner);
-                focusLog.fine("Owner peer is " + ownerPeer);
-                focusLog.fine("Owner X window " + Long.toHexString(ownerPeer.getWindow()));
-                focusLog.fine("Owner content X window " + Long.toHexString(ownerPeer.getContentWindow()));
+                focusLog.finer("Owner is " + owner);
+                focusLog.finer("Owner peer is " + ownerPeer);
+                focusLog.finer("Owner X window " + Long.toHexString(ownerPeer.getWindow()));
+                focusLog.finer("Owner content X window " + Long.toHexString(ownerPeer.getContentWindow()));
             }
             // as owner window may be an embedded window, we must get a toplevel window
             // to set as TRANSIENT_FOR hint
@@ -239,8 +239,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 XToolkit.awtLock();
                 try {
                     // Set WM_TRANSIENT_FOR
-                    if (focusLog.isLoggable(PlatformLogger.FINE)) focusLog.fine("Setting transient on " + Long.toHexString(getWindow())
-                                                                       + " for " + Long.toHexString(ownerWindow));
+                    if (focusLog.isLoggable(PlatformLogger.FINE)) {
+                        focusLog.fine("Setting transient on " + Long.toHexString(getWindow())
+                                      + " for " + Long.toHexString(ownerWindow));
+                    }
                     setToplevelTransientFor(this, ownerPeer, false, true);
 
                     // Set group leader
@@ -777,7 +779,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // override_redirect all we can do is check whether our parent
         // is active. If it is - we can freely synthesize focus transfer.
         // Luckily, this logic is already implemented in requestWindowFocus.
-        if (focusLog.isLoggable(PlatformLogger.FINE)) focusLog.fine("Requesting window focus");
+        if (focusLog.isLoggable(PlatformLogger.FINE)) {
+            focusLog.fine("Requesting window focus");
+        }
         requestWindowFocus(time, timeProvided);
     }
 
@@ -803,7 +807,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public void handleFocusEvent(XEvent xev) {
         XFocusChangeEvent xfe = xev.get_xfocus();
         FocusEvent fe;
-        focusLog.fine("{0}", xfe);
+        if (focusLog.isLoggable(PlatformLogger.FINE)) {
+            focusLog.fine("{0}", xfe);
+        }
         if (isEventDisabled(xev)) {
             return;
         }
@@ -986,15 +992,17 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     private void updateAlwaysOnTop() {
-        log.fine("Promoting always-on-top state {0}", Boolean.valueOf(alwaysOnTop));
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("Promoting always-on-top state {0}", Boolean.valueOf(alwaysOnTop));
+        }
         XWM.getWM().setLayer(this,
                              alwaysOnTop ?
                              XLayerProtocol.LAYER_ALWAYS_ON_TOP :
                              XLayerProtocol.LAYER_NORMAL);
     }
 
-    public void setAlwaysOnTop(boolean alwaysOnTop) {
-        this.alwaysOnTop = alwaysOnTop;
+    public void updateAlwaysOnTopState() {
+        this.alwaysOnTop = ((Window) this.target).isAlwaysOnTop();
         updateAlwaysOnTop();
     }
 
@@ -1511,7 +1519,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             synchronized(getStateLock()) {
                 XDialogPeer blockerPeer = (XDialogPeer) AWTAccessor.getComponentAccessor().getPeer(d);
                 if (blocked) {
-                    log.fine("{0} is blocked by {1}", this, blockerPeer);
+                    if (log.isLoggable(PlatformLogger.FINE)) {
+                        log.fine("{0} is blocked by {1}", this, blockerPeer);
+                    }
                     modalBlocker = d;
 
                     if (isReparented() || XWM.isNonReparentingWM()) {
@@ -1900,7 +1910,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     @Override
     public void xSetVisible(boolean visible) {
-        if (log.isLoggable(PlatformLogger.FINE)) log.fine("Setting visible on " + this + " to " + visible);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("Setting visible on " + this + " to " + visible);
+        }
         XToolkit.awtLock();
         try {
             this.visible = visible;
@@ -2053,7 +2065,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             // since it generates MOUSE_ENTERED/MOUSE_EXITED for frame and dialog.
             // (fix for 6390326)
             XBaseWindow target = XToolkit.windowToXWindow(xce.get_window());
-            grabLog.finer("  -  Grab event target {0}", target);
+            if (grabLog.isLoggable(PlatformLogger.FINER)) {
+                grabLog.finer("  -  Grab event target {0}", target);
+            }
             if (target != null && target != this) {
                 target.dispatchEvent(xev);
                 return;
@@ -2064,7 +2078,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     public void handleMotionNotify(XEvent xev) {
         XMotionEvent xme = xev.get_xmotion();
-        if (grabLog.isLoggable(PlatformLogger.FINE)) {
+        if (grabLog.isLoggable(PlatformLogger.FINER)) {
             grabLog.finer("{0}, when grabbed {1}, contains {2}",
                           xme, isGrabbed(), containsGlobal(xme.get_x_root(), xme.get_y_root()));
         }
@@ -2095,7 +2109,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 xme.set_x(localCoord.x);
                 xme.set_y(localCoord.y);
             }
-            grabLog.finer("  -  Grab event target {0}", target);
+            if (grabLog.isLoggable(PlatformLogger.FINER)) {
+                grabLog.finer("  -  Grab event target {0}", target);
+            }
             if (target != null) {
                 if (target != getContentXWindow() && target != this) {
                     target.dispatchEvent(xev);
@@ -2138,7 +2154,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             // translation)
             XBaseWindow target = XToolkit.windowToXWindow(xbe.get_window());
             try {
-                grabLog.finer("  -  Grab event target {0} (press target {1})", target, pressTarget);
+                if (grabLog.isLoggable(PlatformLogger.FINER)) {
+                    grabLog.finer("  -  Grab event target {0} (press target {1})", target, pressTarget);
+                }
                 if (xbe.get_type() == XConstants.ButtonPress
                     && xbe.get_button() == XConstants.buttons[0])
                 {
@@ -2172,7 +2190,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                         // According to the specification of UngrabEvent, post it
                         // when press occurs outside of the window and not on its owned windows
                         if (xbe.get_type() == XConstants.ButtonPress) {
-                            grabLog.fine("Generating UngrabEvent on {0} because not inside of shell", this);
+                            if (grabLog.isLoggable(PlatformLogger.FINE)) {
+                                grabLog.fine("Generating UngrabEvent on {0} because not inside of shell", this);
+                            }
                             postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
                             return;
                         }
@@ -2191,18 +2211,24 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                             // toplevel == null - outside of
                             // hierarchy, toplevel is Dialog - should
                             // send ungrab (but shouldn't for Window)
-                            grabLog.fine("Generating UngrabEvent on {0} because hierarchy ended", this);
+                            if (grabLog.isLoggable(PlatformLogger.FINE)) {
+                                grabLog.fine("Generating UngrabEvent on {0} because hierarchy ended", this);
+                            }
                             postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
                         }
                     } else {
                         // toplevel is null - outside of hierarchy
-                        grabLog.fine("Generating UngrabEvent on {0} because toplevel is null", this);
+                        if (grabLog.isLoggable(PlatformLogger.FINE)) {
+                            grabLog.fine("Generating UngrabEvent on {0} because toplevel is null", this);
+                        }
                         postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
                         return;
                     }
                 } else {
                     // target doesn't map to XAWT window - outside of hierarchy
-                    grabLog.fine("Generating UngrabEvent on because target is null {0}", this);
+                    if (grabLog.isLoggable(PlatformLogger.FINE)) {
+                        grabLog.fine("Generating UngrabEvent on because target is null {0}", this);
+                    }
                     postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
                     return;
                 }

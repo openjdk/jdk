@@ -459,7 +459,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
 
     // Iterate over all different indices
     if (_optimistic) {
-      for (int i=0; i<indices.length(); i++) {
+      for (int i = 0; i < indices.length(); i++) {
         Instruction *index_instruction = indices.at(i);
         AccessIndexedInfo *info = _access_indexed_info[index_instruction->id()];
         assert(info != NULL, "Info must not be null");
@@ -531,9 +531,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
             remove_range_check(ai);
           }
         }
-        _access_indexed_info[index_instruction->id()] = NULL;
       }
-      indices.clear();
 
       if (list_constant.length() > 1) {
         AccessIndexed *first = list_constant.at(0);
@@ -560,6 +558,13 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
         }
       }
     }
+
+    // Clear data structures for next array
+    for (int i = 0; i < indices.length(); i++) {
+      Instruction *index_instruction = indices.at(i);
+      _access_indexed_info[index_instruction->id()] = NULL;
+    }
+    indices.clear();
   }
 }
 

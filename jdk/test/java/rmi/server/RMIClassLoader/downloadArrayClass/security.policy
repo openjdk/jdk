@@ -7,6 +7,8 @@ grant codeBase "file:${java.home}/lib/ext/*" {
 };
 
 grant {
+    permission java.util.PropertyPermission
+        "java.rmi.server.codebase", "read,write";
 
     // permissions needed to move classes into separate codebase directories
     permission java.io.FilePermission

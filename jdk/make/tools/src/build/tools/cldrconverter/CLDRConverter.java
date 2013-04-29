@@ -68,25 +68,43 @@ public class CLDRConverter {
     static MetaZonesParseHandler handlerMetaZones;
     private static BundleGenerator bundleGenerator;
 
-    static int draftType;
-    private static final String DRAFT_UNCONFIRMED = "unconfirmed";
-    private static final String DRAFT_PROVISIONAL = "provisional";
-    private static final String DRAFT_CONTRIBUTED = "contributed";
-    private static final String DRAFT_APPROVED = "approved";
-    private static final String DRAFT_TRUE = "true";
-    private static final String DRAFT_FALSE = "false";
-    private static final String DRAFT_DEFAULT = DRAFT_APPROVED;
-    static final Map<String, Integer> DRAFT_MAP = new HashMap<>();
+    static enum DraftType {
+        UNCONFIRMED,
+        PROVISIONAL,
+        CONTRIBUTED,
+        APPROVED;
 
-    static {
-        DRAFT_MAP.put(DRAFT_UNCONFIRMED, 0);
-        DRAFT_MAP.put(DRAFT_PROVISIONAL, 1);
-        DRAFT_MAP.put(DRAFT_CONTRIBUTED, 2);
-        DRAFT_MAP.put(DRAFT_APPROVED, 3);
-        DRAFT_MAP.put(DRAFT_TRUE, 0);
-        DRAFT_MAP.put(DRAFT_FALSE, 2);
-        draftType = DRAFT_MAP.get(DRAFT_DEFAULT);
-    };
+        private static final Map<String, DraftType> map = new HashMap<>();
+        static {
+            for (DraftType dt : values()) {
+                map.put(dt.getKeyword(), dt);
+            }
+        }
+        static private DraftType defaultType = CONTRIBUTED;
+
+        private final String keyword;
+
+        private DraftType() {
+            keyword = this.name().toLowerCase(Locale.ROOT);
+
+        }
+
+        static DraftType forKeyword(String keyword) {
+            return map.get(keyword);
+        }
+
+        static DraftType getDefault() {
+            return defaultType;
+        }
+
+        static void setDefault(String keyword) {
+            defaultType = Objects.requireNonNull(forKeyword(keyword));
+        }
+
+        String getKeyword() {
+            return keyword;
+        }
+    }
 
     static boolean USE_UTF8 = false;
     private static boolean verbose;
@@ -106,7 +124,7 @@ public class CLDRConverter {
                     case "-draft":
                         String draftDataType = args[++i];
                         try {
-                            draftType = DRAFT_MAP.get(draftDataType);
+                            DraftType.setDefault(draftDataType);
                         } catch (NullPointerException e) {
                             severe("Error: incorrect draft value: %s%n", draftDataType);
                             System.exit(1);
@@ -525,7 +543,7 @@ public class CLDRConverter {
         "standalone.MonthNames",
         "MonthAbbreviations",
         "standalone.MonthAbbreviations",
-        "MonthNarrow",
+        "MonthNarrows",
         "standalone.MonthNarrows",
         "DayNames",
         "standalone.DayNames",
@@ -533,6 +551,12 @@ public class CLDRConverter {
         "standalone.DayAbbreviations",
         "DayNarrows",
         "standalone.DayNarrows",
+        "QuarterNames",
+        "standalone.QuarterNames",
+        "QuarterAbbreviations",
+        "standalone.QuarterAbbreviations",
+        "QuarterNarrows",
+        "standalone.QuarterNarrows",
         "AmPmMarkers",
         "narrow.AmPmMarkers",
         "long.Eras",
@@ -560,7 +584,7 @@ public class CLDRConverter {
             String prefix = calendarType.keyElementName();
             for (String element : FORMAT_DATA_ELEMENTS) {
                 String key = prefix + element;
-                copyIfPresent(map, "cldr." + key, formatData);
+                copyIfPresent(map, "java.time." + key, formatData);
                 copyIfPresent(map, key, formatData);
             }
         }

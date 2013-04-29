@@ -167,6 +167,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate<D>>
      * @param zone  the zone identifier, not null
      * @return the zoned date-time, not null
      */
+    @SuppressWarnings("rawtypes")
     static ChronoZonedDateTimeImpl<?> ofInstant(Chronology chrono, Instant instant, ZoneId zone) {
         ZoneRules rules = zone.getRules();
         ZoneOffset offset = rules.getOffset(instant);
