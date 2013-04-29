@@ -776,7 +776,7 @@ public class UnionGen implements com.sun.tools.corba.se.idl.UnionGen, JavaGenera
             stream.println (indent + "if (" + disName + ')');
 
             if (firstBranch == null)
-                stream.println (indent + "  throw new org.omg.CORBA.BAD_OPERATION ();");
+                stream.println (indent + "  value._default(" + disName + ");");
             else {
                 stream.println (indent + '{');
                 index = readBranch (index, indent + "  ", firstBranch.typedef.name (),
@@ -787,7 +787,7 @@ public class UnionGen implements com.sun.tools.corba.se.idl.UnionGen, JavaGenera
             stream.println (indent + "else");
 
             if (secondBranch == null)
-                stream.println (indent + "  throw new org.omg.CORBA.BAD_OPERATION ();");
+                stream.println (indent + "  value._default(" + disName + ");");
             else {
                 stream.println (indent + '{');
                 index = readBranch (index, indent + "  ", secondBranch.typedef.name (),
@@ -937,23 +937,25 @@ public class UnionGen implements com.sun.tools.corba.se.idl.UnionGen, JavaGenera
         firstBranch = secondBranch;
         secondBranch = tmp;
       }
-      stream.println (indent + "if (" + disName + ')');
-      if (firstBranch == null)
-        stream.println (indent + "  throw new org.omg.CORBA.BAD_OPERATION ();");
-      else
-      {
-        stream.println (indent + '{');
-        index = writeBranch (index, indent + "  ", name, firstBranch.typedef, stream);
-        stream.println (indent + '}');
-      }
-      stream.println (indent + "else");
-      if (secondBranch == null)
-        stream.println (indent + "  throw new org.omg.CORBA.BAD_OPERATION ();");
-      else
-      {
-        stream.println (indent + '{');
-        index = writeBranch (index, indent + "  ", name, secondBranch.typedef, stream);
-        stream.println (indent + '}');
+      if (firstBranch != null && secondBranch != null) {
+          stream.println (indent + "if (" + disName + ')');
+          stream.println (indent + '{');
+          index = writeBranch (index, indent + "  ", name, firstBranch.typedef, stream);
+          stream.println (indent + '}');
+          stream.println (indent + "else");
+          stream.println (indent + '{');
+          index = writeBranch (index, indent + "  ", name, secondBranch.typedef, stream);
+          stream.println (indent + '}');
+      } else if (firstBranch != null) {
+          stream.println (indent + "if (" + disName + ')');
+          stream.println (indent + '{');
+          index = writeBranch (index, indent + "  ", name, firstBranch.typedef, stream);
+          stream.println (indent + '}');
+      } else {
+          stream.println (indent + "if (!" + disName + ')');
+          stream.println (indent + '{');
+          index = writeBranch (index, indent + "  ", name, secondBranch.typedef, stream);
+          stream.println (indent + '}');
       }
     }
     return index;
