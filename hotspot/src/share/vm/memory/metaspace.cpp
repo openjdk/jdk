@@ -2945,7 +2945,7 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
   if (SafepointSynchronize::is_at_safepoint()) {
     assert(Thread::current()->is_VM_thread(), "should be the VM thread");
     // Don't take Heap_lock
-    MutexLocker ml(vsm()->lock());
+    MutexLockerEx ml(vsm()->lock(), Mutex::_no_safepoint_check_flag);
     if (word_size < TreeChunk<Metablock, FreeList>::min_size()) {
       // Dark matter.  Too small for dictionary.
 #ifdef ASSERT
@@ -2959,7 +2959,7 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
       vsm()->deallocate(ptr, word_size);
     }
   } else {
-    MutexLocker ml(vsm()->lock());
+    MutexLockerEx ml(vsm()->lock(), Mutex::_no_safepoint_check_flag);
 
     if (word_size < TreeChunk<Metablock, FreeList>::min_size()) {
       // Dark matter.  Too small for dictionary.
