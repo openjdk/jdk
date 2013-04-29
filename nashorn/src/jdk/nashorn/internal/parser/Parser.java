@@ -675,9 +675,6 @@ loop:
         if (type == FUNCTION) {
             // As per spec (ECMA section 12), function declarations as arbitrary statement
             // is not "portable". Implementation can issue a warning or disallow the same.
-            if (isStrictMode && !topLevel) {
-                throw error(AbstractParser.message("strict.no.func.here"), token);
-            }
             functionExpression(true, topLevel);
             return;
         }
@@ -2332,6 +2329,12 @@ loop:
         if (isStatement) {
             if (topLevel) {
                 functionNode = functionNode.setFlag(lc, FunctionNode.IS_DECLARED);
+            } else if (isStrictMode) {
+                throw error(JSErrorType.SYNTAX_ERROR, AbstractParser.message("strict.no.func.decl.here"), functionToken);
+            } else if (env._function_statement == ScriptEnvironment.FunctionStatementBehavior.ERROR) {
+                throw error(JSErrorType.SYNTAX_ERROR, AbstractParser.message("no.func.decl.here"), functionToken);
+            } else if (env._function_statement == ScriptEnvironment.FunctionStatementBehavior.WARNING) {
+                warning(JSErrorType.SYNTAX_ERROR, AbstractParser.message("no.func.decl.here.warn"), functionToken);
             }
             if (ARGUMENTS.symbolName().equals(name.getName())) {
                 lc.setFlag(lc.getCurrentFunction(), FunctionNode.DEFINES_ARGUMENTS);

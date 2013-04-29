@@ -85,6 +85,33 @@ public final class ScriptEnvironment {
     /** Launch using as fx application */
     public final boolean _fx;
 
+    /**
+     * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
+     * (function declarations are source elements, but not statements).
+     */
+    public enum FunctionStatementBehavior {
+        /**
+         * Accept the function declaration silently and treat it as if it were a function expression assigned to a local
+         * variable.
+         */
+        ACCEPT,
+        /**
+         * Log a parser warning, but accept the function declaration and treat it as if it were a function expression
+         * assigned to a local variable.
+         */
+        WARNING,
+        /**
+         * Raise a {@code SyntaxError}.
+         */
+        ERROR
+    }
+
+    /**
+     * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
+     * (function declarations are source elements, but not statements).
+     */
+    public final FunctionStatementBehavior _function_statement;
+
     /** Should lazy compilation take place */
     public final boolean _lazy_compilation;
 
@@ -161,6 +188,13 @@ public final class ScriptEnvironment {
         _early_lvalue_error   = options.getBoolean("early.lvalue.error");
         _empty_statements     = options.getBoolean("empty.statements");
         _fullversion          = options.getBoolean("fullversion");
+        if(options.getBoolean("function.statement.error")) {
+            _function_statement = FunctionStatementBehavior.ERROR;
+        } else if(options.getBoolean("function.statement.warning")) {
+            _function_statement = FunctionStatementBehavior.WARNING;
+        } else {
+            _function_statement = FunctionStatementBehavior.ACCEPT;
+        }
         _fx                   = options.getBoolean("fx");
         _lazy_compilation     = options.getBoolean("lazy.compilation");
         _loader_per_compile   = options.getBoolean("loader.per.compile");
