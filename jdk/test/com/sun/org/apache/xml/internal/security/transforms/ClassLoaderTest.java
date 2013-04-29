@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @author Sean Mullan
- * @bug 6461674
+ * @bug 6461674 8009217
  * @compile -XDignore.symbol.file ClassLoaderTest.java MyTransform.java
  * @run main ClassLoaderTest
  * @summary Ensure Transform.register works with transform implementations
@@ -43,13 +43,12 @@ public class ClassLoaderTest {
 
     public static void main(String[] args) throws Exception {
 
-        Transform.init();
         File file = new File(BASE);
         URL[] urls = new URL[1];
         urls[0] = file.toURI().toURL();
         URLClassLoader ucl = new URLClassLoader(urls);
-        Class c = ucl.loadClass("MyTransform");
-        Constructor cons = c.getConstructor();
+        Class<?> c = ucl.loadClass("MyTransform");
+        Constructor<?> cons = c.getConstructor(new Class[] {});
         Object o = cons.newInstance();
         // Apache code swallows the ClassNotFoundExc, so we need to
         // check if the Transform has already been registered by registering
