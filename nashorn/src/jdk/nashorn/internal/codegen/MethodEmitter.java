@@ -818,7 +818,7 @@ public class MethodEmitter implements Emitter {
     }
 
     /**
-     * Push an local variable to the stack. If the symbol representing
+     * Push a local variable to the stack. If the symbol representing
      * the local variable doesn't have a slot, this is a NOP
      *
      * @param symbol the symbol representing the local variable.
@@ -898,6 +898,15 @@ public class MethodEmitter implements Emitter {
 
     private Symbol compilerConstant(final CompilerConstants cc) {
         return functionNode.getBody().getExistingSymbol(cc.symbolName());
+    }
+
+    /**
+     * True if this method has a slot allocated for the scope variable (meaning, something in the method actually needs
+     * the scope).
+     * @return if this method has a slot allocated for the scope variable.
+     */
+    boolean hasScope() {
+        return compilerConstant(SCOPE).hasSlot();
     }
 
     MethodEmitter loadCompilerConstant(final CompilerConstants cc) {

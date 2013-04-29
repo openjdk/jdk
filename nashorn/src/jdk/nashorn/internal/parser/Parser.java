@@ -398,7 +398,7 @@ loop:
         final String name = ident.getName();
 
         if (EVAL.symbolName().equals(name)) {
-            markWithOrEval(lc, FunctionNode.HAS_EVAL);
+            markEval(lc);
         }
     }
 
@@ -1353,7 +1353,6 @@ loop:
 
         // Get WITH expression.
         WithNode withNode = new WithNode(source, withToken, finish);
-        markWithOrEval(lc, FunctionNode.HAS_WITH);
 
         try {
             lc.push(withNode);
@@ -1742,7 +1741,7 @@ loop:
         // Skip ending of edit string expression.
         expect(RBRACE);
 
-        return new CallNode(source, primaryToken, finish, execIdent, arguments, 0);
+        return new CallNode(source, primaryToken, finish, execIdent, arguments);
     }
 
     /**
@@ -2041,10 +2040,6 @@ loop:
         return new PropertyNode(source, propertyToken, finish, propertyName, assignmentExpression(false), null, null);
     }
 
-    private int callNodeFlags() {
-        return lc.inWith() ? CallNode.IN_WITH_BLOCK : 0;
-    }
-
     /**
      * LeftHandSideExpression :
      *      NewExpression
@@ -2074,7 +2069,7 @@ loop:
                 detectSpecialFunction((IdentNode)lhs);
             }
 
-            lhs = new CallNode(source, callToken, finish, lhs, arguments, callNodeFlags());
+            lhs = new CallNode(source, callToken, finish, lhs, arguments);
         }
 
 loop:
@@ -2088,7 +2083,7 @@ loop:
                 final List<Node> arguments = argumentList();
 
                 // Create call node.
-                lhs = new CallNode(source, callToken, finish, lhs, arguments, callNodeFlags());
+                lhs = new CallNode(source, callToken, finish, lhs, arguments);
 
                 break;
 
@@ -2167,7 +2162,7 @@ loop:
             arguments.add(objectLiteral());
         }
 
-        final CallNode callNode = new CallNode(source, constructor.getToken(), finish, constructor, arguments, callNodeFlags());
+        final CallNode callNode = new CallNode(source, constructor.getToken(), finish, constructor, arguments);
 
         return new UnaryNode(source, newToken, callNode);
     }
@@ -2822,16 +2817,16 @@ loop:
         return "[JavaScript Parsing]";
     }
 
-    private static void markWithOrEval(final LexicalContext lc, int flag) {
+    private static void markEval(final LexicalContext lc) {
         final Iterator<FunctionNode> iter = lc.getFunctions();
         boolean flaggedCurrentFn = false;
         while (iter.hasNext()) {
             final FunctionNode fn = iter.next();
             if (!flaggedCurrentFn) {
-                lc.setFlag(fn, flag);
+                lc.setFlag(fn, FunctionNode.HAS_EVAL);
                 flaggedCurrentFn = true;
             } else {
-                lc.setFlag(fn, FunctionNode.HAS_DESCENDANT_WITH_OR_EVAL);
+                lc.setFlag(fn, FunctionNode.HAS_NESTED_EVAL);
             }
             lc.setFlag(lc.getFunctionBody(fn), Block.NEEDS_SCOPE);
         }
