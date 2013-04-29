@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=23.18-hg+jbs
+WEBREV_UPDATED=24.0-hg+jbs
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1443,11 +1443,10 @@ function flist_from_mercurial_forest
     if [ ! -f $FLIST ]; then
         # hg commit hasn't been run see what is lying around
         print "\n No outgoing, perhaps you haven't commited."
-        NO_OUTGOING=
         print " File list from hg fstatus -mard ...\c"
         FSTAT_OPT=
         fstatus
-        HG_LIST_FROM_COMMIT=0
+        HG_LIST_FROM_COMMIT=
     fi
     print " Done."
 }
@@ -1629,7 +1628,6 @@ function flist_from_mercurial
         else
             # hg commit hasn't been run see what is lying around
             print "\n No outgoing, perhaps you haven't commited."
-            NO_OUTGOING=
         fi
 	# First let's list all the modified or deleted files
 
@@ -2112,6 +2110,7 @@ do
 done
 
 FLIST=/tmp/$$.flist
+HG_LIST_FROM_COMMIT=
 
 if [[ -n $wflag && -n $lflag ]]; then
 	usage
@@ -2554,6 +2553,7 @@ SACURL='http://sac.eng.sun.com'
     SACURL='http://www.opensolaris.org/os/community/arc/caselog'
 
 rm -f $WDIR/$WNAME.patch
+rm -f $WDIR/$WNAME.changeset
 rm -f $WDIR/$WNAME.ps
 rm -f $WDIR/$WNAME.pdf
 
@@ -2783,9 +2783,10 @@ do
 	    cleanse_rmfile="sed 's/^\(@@ [0-9+,-]*\) [0-9+,-]* @@$/\1 +0,0 @@/'"
 	    cleanse_newfile="sed 's/^@@ [0-9+,-]* \([0-9+,-]* @@\)$/@@ -0,0 \1/'"
 
-            if [[ -v NO_OUTGOING ]];
+            if [[ ! "$HG_LIST_FROM_COMMIT" -eq 1 || ! $flist_mode == "auto" ]];
             then
               # Only need to generate a patch file here if there are no commits in outgoing
+              # or if we've specified a file list
               rm -f $WDIR/$DIR/$F.patch
               if [[ -z $rename ]]; then
                   if [ ! -f $ofile ]; then
@@ -2909,7 +2910,7 @@ done < $FLIST
 
 # Create the new style mercurial patch here using hg export -r [all-revs] -g -o $CHANGESETPATH
 if [[ $SCM_MODE == "mercurial" ]]; then
-  if [[ !(-v NO_OUTGOING) ]]; then
+  if [[ "$HG_LIST_FROM_COMMIT" -eq 1 && $flist_mode == "auto" ]]; then
     EXPORTCHANGESET="$WNAME.changeset"
     CHANGESETPATH=${WDIR}/${EXPORTCHANGESET}
     rm -f $CHANGESETPATH
@@ -2925,7 +2926,7 @@ if [[ $SCM_MODE == "mercurial" ]]; then
 
     if [[ -n $rev_opt ]]; then
       (cd $CWS;hg export -g $rev_opt -o $CHANGESETPATH)
-      # echo "Created new-patch: $CHANGESETPATH" 1>&2
+      echo "Created changeset: $CHANGESETPATH" 1>&2
       # Use it in place of the jdk.patch created above
       rm -f $WDIR/$WNAME.patch
     fi

@@ -27,8 +27,9 @@ BUILDDIR = ../..
 PRODUCT  = sun
 include $(BUILDDIR)/common/Defs.gmk
 
+SUBDIRS += lcms
+
 ifdef OPENJDK
-    SUBDIRS += lcms
     ICCPROFILE_SRC_DIR = $(SHARE_SRC)/lib/cmm/lcms
 else # !OPENJDK
     SUBDIRS += kcms

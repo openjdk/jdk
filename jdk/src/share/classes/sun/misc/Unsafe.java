@@ -28,6 +28,9 @@ package sun.misc;
 import java.security.*;
 import java.lang.reflect.*;
 
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
+
 
 /**
  * A collection of methods for performing low-level, unsafe operations.
@@ -80,9 +83,10 @@ public final class Unsafe {
      *             <code>checkPropertiesAccess</code> method doesn't allow
      *             access to the system properties.
      */
+    @CallerSensitive
     public static Unsafe getUnsafe() {
-        Class<?> cc = sun.reflect.Reflection.getCallerClass(2);
-        if (!VM.isSystemDomainLoader(cc.getClassLoader()))
+        Class<?> caller = Reflection.getCallerClass();
+        if (!VM.isSystemDomainLoader(caller.getClassLoader()))
             throw new SecurityException("Unsafe");
         return theUnsafe;
     }
@@ -816,8 +820,6 @@ public final class Unsafe {
     public native Class<?> defineClass(String name, byte[] b, int off, int len,
                                        ClassLoader loader,
                                        ProtectionDomain protectionDomain);
-
-    public native Class<?> defineClass(String name, byte[] b, int off, int len);
 
     /**
      * Define a class but do not make it known to the class loader or system dictionary.

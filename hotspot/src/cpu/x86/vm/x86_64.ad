@@ -2180,12 +2180,6 @@ encode %{
     $$$emit32$src$$constant;
   %}
 
-  enc_class Con64(immL src)
-  %{
-    // Output immediate
-    emit_d64($src$$constant);
-  %}
-
   enc_class Con32F_as_bits(immF src)
   %{
     // Output Float immediate bits
@@ -7566,7 +7560,7 @@ instruct xaddI( memory mem, rRegI newval, rFlagsReg cr) %{
   ins_pipe( pipe_cmpxchg );
 %}
 
-instruct xaddL_no_res( memory mem, Universe dummy, immL add, rFlagsReg cr) %{
+instruct xaddL_no_res( memory mem, Universe dummy, immL32 add, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddL mem add));
   effect(KILL cr);

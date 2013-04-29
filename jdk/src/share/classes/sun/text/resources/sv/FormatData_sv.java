@@ -76,11 +76,11 @@
 
 package sun.text.resources.sv;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_sv extends ListResourceBundle {
+public class FormatData_sv extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
@@ -106,6 +106,23 @@ public class FormatData_sv extends ListResourceBundle {
                     "" // month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "MonthAbbreviations",
                 new String[] {
                     "jan", // abb january
@@ -121,6 +138,23 @@ public class FormatData_sv extends ListResourceBundle {
                     "nov", // abb november
                     "dec", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "jan",
+                    "feb",
+                    "mar",
+                    "apr",
+                    "maj",
+                    "jun",
+                    "jul",
+                    "aug",
+                    "sep",
+                    "okt",
+                    "nov",
+                    "dec",
+                    "",
                 }
             },
             { "standalone.MonthNarrows",
@@ -162,6 +196,17 @@ public class FormatData_sv extends ListResourceBundle {
                     "l\u00f6" // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "s\u00f6n",
+                    "m\u00e5n",
+                    "tis",
+                    "ons",
+                    "tor",
+                    "fre",
+                    "l\u00f6r",
+                }
+            },
             { "DayNarrows",
                 new String[] {
                     "S",
@@ -173,6 +218,17 @@ public class FormatData_sv extends ListResourceBundle {
                     "L",
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "s\u00f6ndag",
+                    "m\u00e5ndag",
+                    "tisdag",
+                    "onsdag",
+                    "torsdag",
+                    "fredag",
+                    "l\u00f6rdag",
+                }
+            },
             { "standalone.DayNarrows",
                 new String[] {
                     "S",
@@ -182,6 +238,18 @@ public class FormatData_sv extends ListResourceBundle {
                     "T",
                     "F",
                     "L",
+                }
+            },
+            { "Eras",
+                new String[] {
+                    "f\u00f6re Kristus",
+                    "efter Kristus",
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "f.Kr.",
+                    "e.Kr.",
                 }
             },
             { "narrow.Eras",
@@ -239,74 +307,6 @@ public class FormatData_sv extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "G yyyy-MM-dd",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "G y-MM-dd",
-                }
-            },
-            { "roc.Eras", rocEras },
-            { "roc.short.Eras", rocEras },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "G y-MM-dd",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "d MMM y GGGG",
-                    "GGGG y-MM-dd",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "G y-MM-dd",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "d MMM y GGGG",
-                    "GGGG y-MM-dd",
-                }
-            },
-            { "calendarname.islamic-civil", "islamisk civil kalender" },
-            { "calendarname.islamicc", "islamisk civil kalender" },
-            { "calendarname.islamic", "islamisk kalender" },
-            { "calendarname.japanese", "japansk kalender" },
-            { "calendarname.gregorian", "gregoriansk kalender" },
-            { "calendarname.gregory", "gregoriansk kalender" },
-            { "calendarname.roc", "kinesiska republikens kalender" },
-            { "calendarname.buddhist", "buddistisk kalender" },
-            { "field.era", "era" },
-            { "field.year", "\u00e5r" },
-            { "field.month", "m\u00e5nad" },
-            { "field.week", "vecka" },
-            { "field.weekday", "veckodag" },
-            { "field.dayperiod", "fm/em" },
-            { "field.hour", "timme" },
-            { "field.minute", "minut" },
-            { "field.second", "sekund" },
-            { "field.zone", "tidszon" },
         };
     }
 }

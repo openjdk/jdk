@@ -59,17 +59,16 @@ package tck.java.time.chrono;
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 
-import java.time.DateTimeException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.ValueRange;
 import java.time.chrono.Chronology;
-import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Era;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * The Coptic calendar system.
@@ -102,16 +101,6 @@ public final class CopticChronology extends Chronology implements Serializable {
      * Singleton instance of the Coptic chronology.
      */
     public static final CopticChronology INSTANCE = new CopticChronology();
-    /**
-     * The singleton instance for the era BEFORE_AM.
-     * This has the numeric value of {@code 0}.
-     */
-    public static final Era ERA_BEFORE_AM = CopticEra.BEFORE_AM;
-    /**
-     * The singleton instance for the era AM - 'Era of the Martyrs'.
-     * This has the numeric value of {@code 1}.
-     */
-    public static final Era ERA_AM = CopticEra.AM;
 
     /**
      * Serialization version.
@@ -193,6 +182,11 @@ public final class CopticChronology extends Chronology implements Serializable {
     }
 
     @Override
+    public CopticDate dateEpochDay(long epochDay) {
+        return CopticDate.ofEpochDay(epochDay);
+    }
+
+    @Override
     public CopticDate date(TemporalAccessor dateTime) {
         if (dateTime instanceof CopticDate) {
             return (CopticDate) dateTime;
@@ -219,7 +213,7 @@ public final class CopticChronology extends Chronology implements Serializable {
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
         if (era instanceof CopticEra == false) {
-            throw new DateTimeException("Era must be CopticEra");
+            throw new ClassCastException("Era must be CopticEra");
         }
         return (era == CopticEra.AM ? yearOfEra : 1 - yearOfEra);
     }
@@ -241,7 +235,7 @@ public final class CopticChronology extends Chronology implements Serializable {
             case DAY_OF_MONTH: return ValueRange.of(1, 5, 30);
             case ALIGNED_WEEK_OF_MONTH: return ValueRange.of(1, 1, 5);
             case MONTH_OF_YEAR: return ValueRange.of(1, 13);
-            case EPOCH_MONTH: return ValueRange.of(-1000, 1000);  // TODO
+            case PROLEPTIC_MONTH: return ValueRange.of(-1000, 1000);  // TODO
             case YEAR_OF_ERA: return ValueRange.of(1, 999, 1000);  // TODO
             case YEAR: return ValueRange.of(-1000, 1000);  // TODO
         }

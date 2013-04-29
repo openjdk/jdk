@@ -78,11 +78,11 @@
 
 package sun.text.resources.vi;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_vi extends ListResourceBundle {
+public class FormatData_vi extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -120,6 +120,23 @@ public class FormatData_vi extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "10",
+                    "11",
+                    "12",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "Ch\u1ee7 nh\u1eadt", // Sunday
@@ -143,6 +160,17 @@ public class FormatData_vi extends ListResourceBundle {
                 }
             },
             { "DayNarrows",
+                new String[] {
+                    "CN",
+                    "T2",
+                    "T3",
+                    "T4",
+                    "T5",
+                    "T6",
+                    "T7",
+                }
+            },
+            { "standalone.DayNarrows",
                 new String[] {
                     "CN",
                     "T2",
@@ -201,72 +229,6 @@ public class FormatData_vi extends ListResourceBundle {
                     "{0} {1}" // date-time pattern
                 }
             },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, 'ng\u00e0y' dd MMMM 'n\u0103m' y G",
-                    "'Ng\u00e0y' dd 'th\u00e1ng' M 'n\u0103m' y G",
-                    "dd-MM-yyyy G",
-                    "dd/MM/yyyy G",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, 'ng\u00e0y' dd MMMM 'n\u0103m' y G",
-                    "'Ng\u00e0y' dd 'th\u00e1ng' M 'n\u0103m' y G",
-                    "dd-MM-y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE, 'ng\u00e0y' dd MMMM 'n\u0103m' y G",
-                    "'Ng\u00e0y' dd 'th\u00e1ng' M 'n\u0103m' y G",
-                    "dd-MM-y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, 'ng\u00e0y' dd MMMM 'n\u0103m' y GGGG",
-                    "'Ng\u00e0y' dd 'th\u00e1ng' M 'n\u0103m' y GGGG",
-                    "dd-MM-y GGGG",
-                    "dd/MM/y GGGG",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE, 'ng\u00e0y' dd MMMM 'n\u0103m' y G",
-                    "'Ng\u00e0y' dd 'th\u00e1ng' M 'n\u0103m' y G",
-                    "dd-MM-y G",
-                    "dd/MM/y G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE, 'ng\u00e0y' dd MMMM 'n\u0103m' y GGGG",
-                    "'Ng\u00e0y' dd 'th\u00e1ng' M 'n\u0103m' y GGGG",
-                    "dd-MM-y GGGG",
-                    "dd/MM/y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "L\u1ecbch Islamic-Civil" },
-            { "calendarname.islamicc", "L\u1ecbch Islamic-Civil" },
-            { "calendarname.islamic", "L\u1ecbch Islamic" },
-            { "calendarname.buddhist", "L\u1ecbch Ph\u1eadt Gi\u00e1o" },
-            { "calendarname.japanese", "L\u1ecbch Nh\u1eadt B\u1ea3n" },
-            { "calendarname.roc", "L\u1ecbch Trung Hoa D\u00e2n Qu\u1ed1c" },
-            { "calendarname.gregorian", "L\u1ecbch Gregory" },
-            { "calendarname.gregory", "L\u1ecbch Gregory" },
-            { "field.era", "Th\u1eddi \u0111\u1ea1i" },
-            { "field.year", "N\u0103m" },
-            { "field.month", "Th\u00e1ng" },
-            { "field.week", "Tu\u1ea7n" },
-            { "field.weekday", "Ng\u00e0y trong tu\u1ea7n" },
-            { "field.dayperiod", "SA/CH" },
-            { "field.hour", "Gi\u1edd" },
-            { "field.minute", "Ph\u00fat" },
-            { "field.second", "Gi\u00e2y" },
-            { "field.zone", "M\u00fai gi\u1edd" },
         };
     }
 }

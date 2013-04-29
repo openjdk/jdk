@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,11 @@
 
 package sun.text.resources.sq;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_sq extends ListResourceBundle {
+public class FormatData_sq extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -80,6 +80,23 @@ public class FormatData_sq extends ListResourceBundle {
                     "N\u00ebn", // abb november
                     "Dhj", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "S",
+                    "M",
+                    "P",
+                    "M",
+                    "Q",
+                    "K",
+                    "G",
+                    "S",
+                    "T",
+                    "N",
+                    "D",
+                    "",
                 }
             },
             { "DayNames",

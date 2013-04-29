@@ -2126,7 +2126,7 @@ JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
                "Output file name cannot be null.", -1);
   }
-  char* name = java_lang_String::as_utf8_string(on);
+  char* name = java_lang_String::as_platform_dependent_str(on, CHECK_(-1));
   if (name == NULL) {
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
                "Output file name cannot be null.", -1);

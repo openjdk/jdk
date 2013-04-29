@@ -78,7 +78,7 @@ public class TestMonthDay extends AbstractTest {
 
     private MonthDay TEST_07_15;
 
-    @BeforeMethod(groups={"tck","implementation"})
+    @BeforeMethod
     public void setUp() {
         TEST_07_15 = MonthDay.of(7, 15);
     }
@@ -95,24 +95,24 @@ public class TestMonthDay extends AbstractTest {
         assertEquals(test.getDayOfMonth(), d);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_with_Month_noChangeSame() {
         MonthDay test = MonthDay.of(6, 30);
         assertSame(test.with(Month.JUNE), test);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_withMonth_int_noChangeSame() {
         MonthDay test = MonthDay.of(6, 30);
         assertSame(test.withMonth(6), test);
     }
-    @Test(groups={"implementation"})
+    @Test
     public void test_withDayOfMonth_noChangeSame() {
         MonthDay test = MonthDay.of(6, 30);
         assertSame(test.withDayOfMonth(30), test);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void test_adjustDate_same() {
         MonthDay test = MonthDay.of(6, 30);
         LocalDate date = LocalDate.of(2007, 6, 30);
