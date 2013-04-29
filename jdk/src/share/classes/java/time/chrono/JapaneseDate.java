@@ -69,14 +69,16 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Period;
+import java.time.Year;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Calendar;
 import java.util.Objects;
@@ -191,7 +193,7 @@ public final class JapaneseDate
      */
     public static JapaneseDate of(Era era, int yearOfEra, int month, int dayOfMonth) {
         if (era instanceof JapaneseEra == false) {
-            throw new DateTimeException("Era must be JapaneseEra");
+            throw new ClassCastException("Era must be JapaneseEra");
         }
         return JapaneseDate.of((JapaneseEra) era, yearOfEra, month, dayOfMonth);
     }
@@ -252,7 +254,7 @@ public final class JapaneseDate
         LocalGregorianCalendar.Date jdate = JapaneseChronology.JCAL.newCalendarDate(null);
         jdate.setEra(era.getPrivateEra()).setDate(yearOfEra, month, dayOfMonth);
         if (!JapaneseChronology.JCAL.validate(jdate)) {
-            throw new IllegalArgumentException();
+            throw new DateTimeException("year, month, and day not valid for Era");
         }
         LocalDate date = LocalDate.of(jdate.getNormalizedYear(), month, dayOfMonth);
         return new JapaneseDate(era, yearOfEra, date);
@@ -307,22 +309,54 @@ public final class JapaneseDate
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Gets the chronology of this date, which is the Japanese calendar system.
+     * <p>
+     * The {@code Chronology} represents the calendar system in use.
+     * The era and other fields in {@link ChronoField} are defined by the chronology.
+     *
+     * @return the Japanese chronology, not null
+     */
     @Override
     public JapaneseChronology getChronology() {
         return JapaneseChronology.INSTANCE;
     }
 
+    /**
+     * Gets the era applicable at this date.
+     * <p>
+     * The Japanese calendar system has multiple eras defined by {@link JapaneseEra}.
+     *
+     * @return the era applicable at this date, not null
+     */
+    @Override
+    public JapaneseEra getEra() {
+        return era;
+    }
+
+    /**
+     * Returns the length of the month represented by this date.
+     * <p>
+     * This returns the length of the month in days.
+     * Month lengths match those of the ISO calendar system.
+     *
+     * @return the length of the month in days
+     */
     @Override
     public int lengthOfMonth() {
         return isoDate.lengthOfMonth();
     }
 
+    //-----------------------------------------------------------------------
     @Override
     public ValueRange range(TemporalField field) {
         if (field instanceof ChronoField) {
             if (isSupported(field)) {
                 ChronoField f = (ChronoField) field;
                 switch (f) {
+                    case DAY_OF_MONTH:
+                    case ALIGNED_WEEK_OF_MONTH:
+                        return isoDate.range(field);
                     case DAY_OF_YEAR:
                         return actualRange(Calendar.DAY_OF_YEAR);
                     case YEAR_OF_ERA:
@@ -330,14 +364,14 @@ public final class JapaneseDate
                 }
                 return getChronology().range(f);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.rangeRefinedBy(this);
     }
 
     private ValueRange actualRange(int calendarField) {
         Calendar jcal = Calendar.getInstance(JapaneseChronology.LOCALE);
-        jcal.set(Calendar.ERA, era.getValue() + JapaneseEra.ERA_OFFSET);
+        jcal.set(Calendar.ERA, era.getValue() + JapaneseEra.ERA_OFFSET);  // TODO: cannot calculate this way for SEIREKI
         jcal.set(yearOfEra, isoDate.getMonthValue() - 1, isoDate.getDayOfMonth());
         return ValueRange.of(jcal.getActualMinimum(calendarField),
                 jcal.getActualMaximum(calendarField));
@@ -346,6 +380,12 @@ public final class JapaneseDate
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField) {
+            // same as ISO:
+            // DAY_OF_WEEK, ALIGNED_DAY_OF_WEEK_IN_MONTH, DAY_OF_MONTH, EPOCH_DAY,
+            // ALIGNED_WEEK_OF_MONTH, MONTH_OF_YEAR, PROLEPTIC_MONTH, YEAR
+            //
+            // calendar specific fields
+            // ALIGNED_DAY_OF_WEEK_IN_YEAR, DAY_OF_YEAR, ALIGNED_WEEK_OF_YEAR, YEAR_OF_ERA, ERA
             switch ((ChronoField) field) {
                 case YEAR_OF_ERA:
                     return yearOfEra;
@@ -355,8 +395,8 @@ public final class JapaneseDate
                     LocalGregorianCalendar.Date jdate = toPrivateJapaneseDate(isoDate);
                     return JapaneseChronology.JCAL.getDayOfYear(jdate);
                 }
+                // TODO: ALIGNED_DAY_OF_WEEK_IN_YEAR and ALIGNED_WEEK_OF_YEAR ???
             }
-            // TODO: review other fields
             return isoDate.getLong(field);
         }
         return field.getFrom(this);
@@ -392,8 +432,7 @@ public final class JapaneseDate
                 case YEAR_OF_ERA:
                 case YEAR:
                 case ERA: {
-                    f.checkValidValue(newValue);
-                    int nvalue = (int) newValue;
+                    int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
                     switch (f) {
                         case YEAR_OF_ERA:
                             return this.withYear(nvalue);
@@ -405,15 +444,11 @@ public final class JapaneseDate
                     }
                 }
             }
+            // YEAR, PROLEPTIC_MONTH and others are same as ISO
             // TODO: review other fields, such as WEEK_OF_YEAR
             return with(isoDate.with(field, newValue));
         }
-        return (JapaneseDate) ChronoLocalDate.super.with(field, newValue);
-    }
-
-    @Override
-    public Era getEra() {
-        return era;
+        return ChronoLocalDate.super.with(field, newValue);
     }
 
     /**
@@ -423,7 +458,7 @@ public final class JapaneseDate
      */
     @Override
     public  JapaneseDate with(TemporalAdjuster adjuster) {
-        return (JapaneseDate)super.with(adjuster);
+        return super.with(adjuster);
     }
 
     /**
@@ -433,7 +468,7 @@ public final class JapaneseDate
      */
     @Override
     public JapaneseDate plus(TemporalAmount amount) {
-        return (JapaneseDate)super.plus(amount);
+        return super.plus(amount);
     }
 
     /**
@@ -443,7 +478,7 @@ public final class JapaneseDate
      */
     @Override
     public JapaneseDate minus(TemporalAmount amount) {
-        return (JapaneseDate)super.minus(amount);
+        return super.minus(amount);
     }
     //-----------------------------------------------------------------------
     /**
@@ -479,7 +514,7 @@ public final class JapaneseDate
      * @throws DateTimeException if {@code year} is invalid
      */
     private JapaneseDate withYear(int year) {
-        return withYear((JapaneseEra) getEra(), year);
+        return withYear(getEra(), year);
     }
 
     //-----------------------------------------------------------------------
@@ -505,32 +540,32 @@ public final class JapaneseDate
 
     @Override
     public JapaneseDate plus(long amountToAdd, TemporalUnit unit) {
-        return (JapaneseDate)super.plus(amountToAdd, unit);
+        return super.plus(amountToAdd, unit);
     }
 
     @Override
     public JapaneseDate minus(long amountToAdd, TemporalUnit unit) {
-        return (JapaneseDate)super.minus(amountToAdd, unit);
+        return super.minus(amountToAdd, unit);
     }
 
     @Override
     JapaneseDate minusYears(long yearsToSubtract) {
-        return (JapaneseDate)super.minusYears(yearsToSubtract);
+        return super.minusYears(yearsToSubtract);
     }
 
     @Override
     JapaneseDate minusMonths(long monthsToSubtract) {
-        return (JapaneseDate)super.minusMonths(monthsToSubtract);
+        return super.minusMonths(monthsToSubtract);
     }
 
     @Override
     JapaneseDate minusWeeks(long weeksToSubtract) {
-        return (JapaneseDate)super.minusWeeks(weeksToSubtract);
+        return super.minusWeeks(weeksToSubtract);
     }
 
     @Override
     JapaneseDate minusDays(long daysToSubtract) {
-        return (JapaneseDate)super.minusDays(daysToSubtract);
+        return super.minusDays(daysToSubtract);
     }
 
     private JapaneseDate with(LocalDate newDate) {
@@ -539,7 +574,7 @@ public final class JapaneseDate
 
     @Override        // for javadoc and covariant return type
     public final ChronoLocalDateTime<JapaneseDate> atTime(LocalTime localTime) {
-        return (ChronoLocalDateTime<JapaneseDate>)super.atTime(localTime);
+        return super.atTime(localTime);
     }
 
     @Override

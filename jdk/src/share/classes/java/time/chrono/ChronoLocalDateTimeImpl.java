@@ -171,6 +171,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
      * @param time  the local time, not null
      * @return the local date-time, not null
      */
+    @SuppressWarnings("rawtypes")
     static ChronoLocalDateTimeImpl<?> of(ChronoLocalDate<?> date, LocalTime time) {
         return new ChronoLocalDateTimeImpl(date, time);
     }
@@ -201,8 +202,8 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
             return this;
         }
         // Validate that the new Temporal is a ChronoLocalDate (and not something else)
-        D cd = (D)date.getChronology().ensureChronoLocalDate(newDate);
-        return new ChronoLocalDateTimeImpl<>((D)cd, newTime);
+        D cd = (D) date.getChronology().ensureChronoLocalDate(newDate);
+        return new ChronoLocalDateTimeImpl<>(cd, newTime);
     }
 
     //-----------------------------------------------------------------------
@@ -221,7 +222,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     public boolean isSupported(TemporalField field) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            return f.isDateField() || f.isTimeField();
+            return f.isDateBased() || f.isTimeBased();
         }
         return field != null && field.isSupportedBy(this);
     }
@@ -230,7 +231,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     public ValueRange range(TemporalField field) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            return (f.isTimeField() ? time.range(field) : date.range(field));
+            return (f.isTimeBased() ? time.range(field) : date.range(field));
         }
         return field.rangeRefinedBy(this);
     }
@@ -239,7 +240,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     public int get(TemporalField field) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            return (f.isTimeField() ? time.get(field) : date.get(field));
+            return (f.isTimeBased() ? time.get(field) : date.get(field));
         }
         return range(field).checkValidIntValue(getLong(field), field);
     }
@@ -248,7 +249,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            return (f.isTimeField() ? time.getLong(field) : date.getLong(field));
+            return (f.isTimeBased() ? time.getLong(field) : date.getLong(field));
         }
         return field.getFrom(this);
     }
@@ -272,7 +273,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     public ChronoLocalDateTimeImpl<D> with(TemporalField field, long newValue) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            if (f.isTimeField()) {
+            if (f.isTimeBased()) {
                 return with(date, time.with(field, newValue));
             } else {
                 return with(date.with(field, newValue), time);
@@ -376,7 +377,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
             }
             D endDate = end.toLocalDate();
             if (end.toLocalTime().isBefore(time)) {
-                endDate = (D)endDate.minus(1, ChronoUnit.DAYS);
+                endDate = endDate.minus(1, ChronoUnit.DAYS);
             }
             return date.periodUntil(endDate, unit);
         }
@@ -403,7 +404,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     }
 
     static ChronoLocalDateTime<?> readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        ChronoLocalDate date = (ChronoLocalDate) in.readObject();
+        ChronoLocalDate<?> date = (ChronoLocalDate<?>) in.readObject();
         LocalTime time = (LocalTime) in.readObject();
         return date.atTime(time);
     }

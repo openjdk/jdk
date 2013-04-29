@@ -61,7 +61,7 @@ public abstract class LinkFactory {
                 //Just a primitive.
                 linkInfo.displayLength += type.typeName().length();
                 linkOutput.append(type.typeName());
-            } else if (type.asAnnotatedType() != null) {
+            } else if (type.asAnnotatedType() != null && type.dimension().length() == 0) {
                 linkOutput.append(getTypeAnnotationLinks(linkInfo));
                 linkInfo.type = type.asAnnotatedType().underlyingType();
                 linkOutput.append(getLinkOutput(linkInfo));
@@ -141,8 +141,21 @@ public abstract class LinkFactory {
                 linkInfo.displayLength += 3;
                 linkOutput.append("...");
             } else {
-                linkInfo.displayLength += type.dimension().length();
-                linkOutput.append(type.dimension());
+                while (type != null && type.dimension().length() > 0) {
+                    linkInfo.displayLength += type.dimension().length();
+                    if (type.asAnnotatedType() != null) {
+                        linkInfo.type = type;
+                        linkOutput.append(" ");
+                        linkOutput.append(getTypeAnnotationLinks(linkInfo));
+                        linkOutput.append("[]");
+                        type = type.asAnnotatedType().underlyingType().getElementType();
+                    } else {
+                        linkOutput.append("[]");
+                        type = type.getElementType();
+                    }
+                }
+                linkInfo.type = type;
+                linkOutput.insert(0, getTypeAnnotationLinks(linkInfo));
             }
             return linkOutput;
         } else if (linkInfo.classDoc != null) {

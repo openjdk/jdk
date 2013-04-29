@@ -24,9 +24,6 @@ package com.sun.org.apache.xml.internal.res;
 
 
 import java.util.ListResourceBundle;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 
 /**
  * Set up error messages.
@@ -441,69 +438,6 @@ public class XMLErrorResources_sk extends ListResourceBundle
   public Object[][] getContents()
   {
     return _contents;
-  }
-
-  /**
-   *   Return a named ResourceBundle for a particular locale.  This method mimics the behavior
-   *   of ResourceBundle.getBundle().
-   *
-   *   @param className the name of the class that implements the resource bundle.
-   *   @return the ResourceBundle
-   *   @throws MissingResourceException
-   */
-  public static final XMLErrorResources loadResourceBundle(String className)
-          throws MissingResourceException
-  {
-
-    Locale locale = Locale.getDefault();
-    String suffix = getResourceSuffix(locale);
-
-    try
-    {
-
-      // first try with the given locale
-      return (XMLErrorResources) ResourceBundle.getBundle(className
-              + suffix, locale);
-    }
-    catch (MissingResourceException e)
-    {
-      try  // try to fall back to en_US if we can't load
-      {
-
-        // Since we can't find the localized property file,
-        // fall back to en_US.
-        return (XMLErrorResources) ResourceBundle.getBundle(className,
-                new Locale("en", "US"));
-      }
-      catch (MissingResourceException e2)
-      {
-
-        // Now we are really in trouble.
-        // very bad, definitely very bad...not going to get very far
-        throw new MissingResourceException(
-          "Could not load any resource bundles.", className, "");
-      }
-    }
-  }
-
-  /**
-   * Return the resource file suffic for the indicated locale
-   * For most locales, this will be based the language code.  However
-   * for Chinese, we do distinguish between Taiwan and PRC
-   *
-   * @param locale the locale
-   * @return an String suffix which canbe appended to a resource name
-   */
-  private static final String getResourceSuffix(Locale locale)
-  {
-
-    String suffix = "_" + locale.getLanguage();
-    String country = locale.getCountry();
-
-    if (country.equals("TW"))
-      suffix += "_" + country;
-
-    return suffix;
   }
 
 }

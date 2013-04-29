@@ -186,29 +186,35 @@ final class EngineInputRecord extends InputRecord {
      * If external data(app), return a new ByteBuffer with data to
      * process.
      */
-    ByteBuffer decrypt(MAC signer,
+    ByteBuffer decrypt(Authenticator authenticator,
             CipherBox box, ByteBuffer bb) throws BadPaddingException {
 
         if (internalData) {
-            decrypt(signer, box);   // MAC is checked during decryption
+            decrypt(authenticator, box);   // MAC is checked during decryption
             return tmpBB;
         }
 
         BadPaddingException reservedBPE = null;
-        int tagLen = signer.MAClen();
+        int tagLen =
+            (authenticator instanceof MAC) ? ((MAC)authenticator).MAClen() : 0;
         int cipheredLength = bb.remaining();
 
         if (!box.isNullCipher()) {
-            // sanity check length of the ciphertext
-            if (!box.sanityCheck(tagLen, cipheredLength)) {
-                throw new BadPaddingException(
-                    "ciphertext sanity check failed");
-            }
-
             try {
+                // apply explicit nonce for AEAD/CBC cipher suites if needed
+                int nonceSize =
+                    box.applyExplicitNonce(authenticator, contentType(), bb);
+
+                // decrypt the content
+                if (box.isAEADMode()) {
+                    // DON'T encrypt the nonce_explicit for AEAD mode
+                    bb.position(bb.position() + nonceSize);
+                }   // The explicit IV for CBC mode can be decrypted.
+
                 // Note that the CipherBox.decrypt() does not change
                 // the capacity of the buffer.
                 box.decrypt(bb, tagLen);
+                bb.position(nonceSize); // We don't actually remove the nonce.
             } catch (BadPaddingException bpe) {
                 // RFC 2246 states that decryption_failed should be used
                 // for this purpose. However, that allows certain attacks,
@@ -219,12 +225,13 @@ final class EngineInputRecord extends InputRecord {
                 //
                 // Failover to message authentication code checking.
                 reservedBPE = bpe;
-            } finally {
-                bb.rewind();
             }
         }
 
-        if (tagLen != 0) {
+        // Requires message authentication code for null, stream and block
+        // cipher suites.
+        if ((authenticator instanceof MAC) && (tagLen != 0)) {
+            MAC signer = (MAC)authenticator;
             int macOffset = bb.limit() - tagLen;
 
             // Note that although it is not necessary, we run the same MAC
@@ -297,6 +304,7 @@ final class EngineInputRecord extends InputRecord {
     private static boolean checkMacTags(byte contentType, ByteBuffer bb,
             MAC signer, boolean isSimulated) {
 
+        int position = bb.position();
         int tagLen = signer.MAClen();
         int lim = bb.limit();
         int macData = lim - tagLen;
@@ -314,7 +322,8 @@ final class EngineInputRecord extends InputRecord {
             int[] results = compareMacTags(bb, hash);
             return (results[0] != 0);
         } finally {
-            bb.rewind();
+            // reset to the data
+            bb.position(position);
             bb.limit(macData);
         }
     }
@@ -416,8 +425,8 @@ final class EngineInputRecord extends InputRecord {
         if (debug != null && Debug.isOn("packet")) {
             try {
                 HexDumpEncoder hd = new HexDumpEncoder();
-                srcBB.limit(srcPos + len);
                 ByteBuffer bb = srcBB.duplicate();  // Use copy of BB
+                bb.limit(srcPos + len);
 
                 System.out.println("[Raw read (bb)]: length = " + len);
                 hd.encodeBuffer(bb, System.out);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.util;
+
+import java.util.function.Consumer;
 
 /**
  * An iterator over a collection.  {@code Iterator} takes the place of
@@ -75,6 +77,10 @@ public interface Iterator<E> {
      * iteration is in progress in any way other than by calling this
      * method.
      *
+     * @implSpec
+     * The default implementation throws an instance of
+     * {@link UnsupportedOperationException} and performs no other action.
+     *
      * @throws UnsupportedOperationException if the {@code remove}
      *         operation is not supported by this iterator
      *
@@ -83,5 +89,30 @@ public interface Iterator<E> {
      *         been called after the last call to the {@code next}
      *         method
      */
-    void remove();
+    default void remove() {
+        throw new UnsupportedOperationException("remove");
+    }
+
+    /**
+     * Performs the given action for each remaining element, in the order
+     * elements occur when iterating, until all elements have been processed or
+     * the action throws an exception.  Errors or runtime exceptions thrown by
+     * the action are relayed to the caller.
+     *
+     * @implSpec
+     * <p>The default implementation behaves as if:
+     * <pre>{@code
+     *     while (hasNext())
+     *         action.accept(next());
+     * }</pre>
+     *
+     * @param action The action to be performed for each element
+     * @throws NullPointerException if the specified action is null
+     * @since 1.8
+     */
+    default void forEachRemaining(Consumer<? super E> action) {
+        Objects.requireNonNull(action);
+        while (hasNext())
+            action.accept(next());
+    }
 }
