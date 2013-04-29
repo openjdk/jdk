@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,12 +310,8 @@ WB_END
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
   ResourceMark rm(THREAD);
   int len;
-  jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len);
-  oop found_string = StringTable::the_table()->lookup(name, len);
-  if (found_string == NULL) {
-        return false;
-  }
-  return true;
+  jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len, CHECK_false);
+  return (StringTable::lookup(name, len) != NULL);
 WB_END
 
 
