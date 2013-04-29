@@ -76,6 +76,7 @@ import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.FOREVER;
+import static java.time.temporal.ChronoUnit.HALF_DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.MICROS;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -99,16 +100,17 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.JulianFields;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -116,6 +118,7 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -133,6 +136,7 @@ import org.testng.annotations.Test;
 public class TCKLocalTime extends AbstractDateTimeTest {
 
     private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
+    private static final ZoneId ZONE_PARIS = ZoneId.of("Europe/Paris");
 
     private LocalTime TEST_12_30_40_987654321;
 
@@ -142,7 +146,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         INVALID_UNITS = (TemporalUnit[]) set.toArray(new TemporalUnit[set.size()]);
     }
 
-    @BeforeMethod(groups={"tck","implementation"})
+    @BeforeMethod
     public void setUp() {
         TEST_12_30_40_987654321 = LocalTime.of(12, 30, 40, 987654321);
     }
@@ -258,7 +262,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // constants
     //-----------------------------------------------------------------------
-    @Test(groups={"tck","implementation"})
+    @Test
     public void constant_MIDNIGHT() {
         check(LocalTime.MIDNIGHT, 0, 0, 0, 0);
     }
@@ -281,7 +285,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void now() {
         LocalTime expected = LocalTime.now(Clock.systemDefaultZone());
         LocalTime test = LocalTime.now();
@@ -292,12 +296,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now(ZoneId)
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void now_ZoneId_nullZoneId() {
         LocalTime.now((ZoneId) null);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void now_ZoneId() {
         ZoneId zone = ZoneId.of("UTC+01:02:03");
         LocalTime expected = LocalTime.now(Clock.system(zone));
@@ -315,12 +319,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now(Clock)
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void now_Clock_nullClock() {
         LocalTime.now((Clock) null);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void now_Clock_allSecsInDay() {
         for (int i = 0; i < (2 * 24 * 60 * 60); i++) {
             Instant instant = Instant.ofEpochSecond(i, 8);
@@ -333,7 +337,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void now_Clock_beforeEpoch() {
         for (int i =-1; i >= -(24 * 60 * 60); i--) {
             Instant instant = Instant.ofEpochSecond(i, 8);
@@ -347,7 +351,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void now_Clock_max() {
         Clock clock = Clock.fixed(Instant.MAX, ZoneOffset.UTC);
         LocalTime test = LocalTime.now(clock);
@@ -357,7 +361,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(test.getNano(), 999_999_999);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void now_Clock_min() {
         Clock clock = Clock.fixed(Instant.MIN, ZoneOffset.UTC);
         LocalTime test = LocalTime.now(clock);
@@ -370,71 +374,71 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // of() factories
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_time_2ints() {
         LocalTime test = LocalTime.of(12, 30);
         check(test, 12, 30, 0, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_2ints_hourTooLow() {
         LocalTime.of(-1, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_2ints_hourTooHigh() {
         LocalTime.of(24, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_2ints_minuteTooLow() {
         LocalTime.of(0, -1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_2ints_minuteTooHigh() {
         LocalTime.of(0, 60);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_time_3ints() {
         LocalTime test = LocalTime.of(12, 30, 40);
         check(test, 12, 30, 40, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_3ints_hourTooLow() {
         LocalTime.of(-1, 0, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_3ints_hourTooHigh() {
         LocalTime.of(24, 0, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_3ints_minuteTooLow() {
         LocalTime.of(0, -1, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_3ints_minuteTooHigh() {
         LocalTime.of(0, 60, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_3ints_secondTooLow() {
         LocalTime.of(0, 0, -1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_3ints_secondTooHigh() {
         LocalTime.of(0, 0, 60);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_time_4ints() {
         LocalTime test = LocalTime.of(12, 30, 40, 987654321);
         check(test, 12, 30, 40, 987654321);
@@ -442,42 +446,42 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         check(test, 12, 0, 40, 987654321);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_4ints_hourTooLow() {
         LocalTime.of(-1, 0, 0, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_4ints_hourTooHigh() {
         LocalTime.of(24, 0, 0, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_4ints_minuteTooLow() {
         LocalTime.of(0, -1, 0, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_4ints_minuteTooHigh() {
         LocalTime.of(0, 60, 0, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_4ints_secondTooLow() {
         LocalTime.of(0, 0, -1, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_4ints_secondTooHigh() {
         LocalTime.of(0, 0, 60, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_4ints_nanoTooLow() {
         LocalTime.of(0, 0, 0, -1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_time_4ints_nanoTooHigh() {
         LocalTime.of(0, 0, 0, 1000000000);
     }
@@ -485,18 +489,18 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // ofSecondOfDay(long)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_ofSecondOfDay() {
         LocalTime localTime = LocalTime.ofSecondOfDay(2 * 60 * 60 + 17 * 60 + 23);
         check(localTime, 2, 17, 23, 0);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_ofSecondOfDay_tooLow() {
         LocalTime.ofSecondOfDay(-1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_ofSecondOfDay_tooHigh() {
         LocalTime.ofSecondOfDay(24 * 60 * 60);
     }
@@ -504,18 +508,18 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // ofNanoOfDay(long)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_ofNanoOfDay() {
         LocalTime localTime = LocalTime.ofNanoOfDay(60 * 60 * 1000000000L + 17);
         check(localTime, 1, 0, 0, 17);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_ofNanoOfDay_tooLow() {
         LocalTime.ofNanoOfDay(-1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_ofNanoOfDay_tooHigh() {
         LocalTime.ofNanoOfDay(24 * 60 * 60 * 1000000000L);
     }
@@ -523,18 +527,18 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // from()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_from_TemporalAccessor() {
         assertEquals(LocalTime.from(LocalTime.of(17, 30)), LocalTime.of(17, 30));
         assertEquals(LocalTime.from(LocalDateTime.of(2012, 5, 1, 17, 30)), LocalTime.of(17, 30));
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void factory_from_TemporalAccessor_invalid_noDerive() {
         LocalTime.from(LocalDate.of(2007, 7, 15));
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void factory_from_TemporalAccessor_null() {
         LocalTime.from((TemporalAccessor) null);
     }
@@ -542,7 +546,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // parse()
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "sampleToString", groups={"tck"})
+    @Test(dataProvider = "sampleToString")
     public void factory_parse_validText(int h, int m, int s, int n, String parsable) {
         LocalTime t = LocalTime.parse(parsable);
         assertNotNull(t, parsable);
@@ -567,29 +571,29 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "sampleBadParse", expectedExceptions={DateTimeParseException.class}, groups={"tck"})
+    @Test(dataProvider = "sampleBadParse", expectedExceptions={DateTimeParseException.class})
     public void factory_parse_invalidText(String unparsable) {
         LocalTime.parse(unparsable);
     }
 
     //-----------------------------------------------------------------------s
-    @Test(expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeParseException.class)
     public void factory_parse_illegalHour() {
         LocalTime.parse("25:00");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeParseException.class)
     public void factory_parse_illegalMinute() {
         LocalTime.parse("12:60");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeParseException.class)
     public void factory_parse_illegalSecond() {
         LocalTime.parse("12:12:60");
     }
 
     //-----------------------------------------------------------------------s
-    @Test(expectedExceptions = {NullPointerException.class}, groups={"tck"})
+    @Test(expectedExceptions = {NullPointerException.class})
     public void factory_parse_nullTest() {
         LocalTime.parse((String) null);
     }
@@ -597,20 +601,20 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // parse(DateTimeFormatter)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void factory_parse_formatter() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("H m s");
         LocalTime test = LocalTime.parse("14 30 40", f);
         assertEquals(test, LocalTime.of(14, 30, 40));
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_formatter_nullText() {
         DateTimeFormatter f = DateTimeFormatter.ofPattern("H m s");
         LocalTime.parse((String) null, f);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_formatter_nullFormatter() {
         LocalTime.parse("ANY", null);
     }
@@ -656,13 +660,13 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_12_30_40_987654321, Queries.chronology(), null},
-                {TEST_12_30_40_987654321, Queries.zoneId(), null},
-                {TEST_12_30_40_987654321, Queries.precision(), ChronoUnit.NANOS},
-                {TEST_12_30_40_987654321, Queries.zone(), null},
-                {TEST_12_30_40_987654321, Queries.offset(), null},
-                {TEST_12_30_40_987654321, Queries.localDate(), null},
-                {TEST_12_30_40_987654321, Queries.localTime(), TEST_12_30_40_987654321},
+                {TEST_12_30_40_987654321, TemporalQuery.chronology(), null},
+                {TEST_12_30_40_987654321, TemporalQuery.zoneId(), null},
+                {TEST_12_30_40_987654321, TemporalQuery.precision(), ChronoUnit.NANOS},
+                {TEST_12_30_40_987654321, TemporalQuery.zone(), null},
+                {TEST_12_30_40_987654321, TemporalQuery.offset(), null},
+                {TEST_12_30_40_987654321, TemporalQuery.localDate(), null},
+                {TEST_12_30_40_987654321, TemporalQuery.localTime(), TEST_12_30_40_987654321},
         };
     }
 
@@ -707,7 +711,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_get(int h, int m, int s, int ns) {
         LocalTime a = LocalTime.of(h, m, s, ns);
         assertEquals(a.getHour(), h);
@@ -717,9 +721,53 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
+    // adjustInto(Temporal)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="adjustInto")
+    Object[][] data_adjustInto() {
+        return new Object[][]{
+                {LocalTime.of(23, 5), LocalTime.of(4, 1, 1, 100), LocalTime.of(23, 5, 0, 0), null},
+                {LocalTime.of(23, 5, 20), LocalTime.of(4, 1, 1, 100), LocalTime.of(23, 5, 20, 0), null},
+                {LocalTime.of(23, 5, 20, 1000), LocalTime.of(4, 1, 1, 100), LocalTime.of(23, 5, 20, 1000), null},
+                {LocalTime.of(23, 5, 20, 1000), LocalTime.MAX, LocalTime.of(23, 5, 20, 1000), null},
+                {LocalTime.of(23, 5, 20, 1000), LocalTime.MIN, LocalTime.of(23, 5, 20, 1000), null},
+                {LocalTime.of(23, 5, 20, 1000), LocalTime.NOON, LocalTime.of(23, 5, 20, 1000), null},
+                {LocalTime.of(23, 5, 20, 1000), LocalTime.MIDNIGHT, LocalTime.of(23, 5, 20, 1000), null},
+                {LocalTime.MAX, LocalTime.of(23, 5, 20, 1000), LocalTime.of(23, 59, 59, 999999999), null},
+                {LocalTime.MIN, LocalTime.of(23, 5, 20, 1000), LocalTime.of(0, 0, 0), null},
+                {LocalTime.NOON, LocalTime.of(23, 5, 20, 1000), LocalTime.of(12, 0, 0), null},
+                {LocalTime.MIDNIGHT, LocalTime.of(23, 5, 20, 1000), LocalTime.of(0, 0, 0), null},
+
+                {LocalTime.of(23, 5), LocalDateTime.of(2210, 2, 2, 1, 1), LocalDateTime.of(2210, 2, 2, 23, 5), null},
+                {LocalTime.of(23, 5), OffsetTime.of(1, 1, 0, 0, OFFSET_PTWO), OffsetTime.of(23, 5, 0, 0, OFFSET_PTWO), null},
+                {LocalTime.of(23, 5), OffsetDateTime.of(2210, 2, 2, 1, 1, 0, 0, OFFSET_PTWO), OffsetDateTime.of(2210, 2, 2, 23, 5, 0, 0, OFFSET_PTWO), null},
+                {LocalTime.of(23, 5), ZonedDateTime.of(2210, 2, 2, 1, 1, 0, 0, ZONE_PARIS), ZonedDateTime.of(2210, 2, 2, 23, 5, 0, 0, ZONE_PARIS), null},
+
+                {LocalTime.of(23, 5), LocalDate.of(2210, 2, 2), null, DateTimeException.class},
+                {LocalTime.of(23, 5), null, null, NullPointerException.class},
+
+        };
+    }
+
+    @Test(dataProvider="adjustInto")
+    public void test_adjustInto(LocalTime test, Temporal temporal, Temporal expected, Class<?> expectedEx) {
+        if (expectedEx == null) {
+            Temporal result = test.adjustInto(temporal);
+            assertEquals(result, expected);
+        } else {
+            try {
+                Temporal result = test.adjustInto(temporal);
+                fail();
+            } catch (Exception ex) {
+                assertTrue(expectedEx.isInstance(ex));
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
     // with()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_with_adjustment() {
         final LocalTime sample = LocalTime.of(23, 5);
         TemporalAdjuster adjuster = new TemporalAdjuster() {
@@ -731,7 +779,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(TEST_12_30_40_987654321.with(adjuster), sample);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_with_adjustment_null() {
         TEST_12_30_40_987654321.with((TemporalAdjuster) null);
     }
@@ -739,7 +787,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // withHour()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_withHour_normal() {
         LocalTime t = TEST_12_30_40_987654321;
         for (int i = 0; i < 24; i++) {
@@ -748,30 +796,30 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withHour_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.withHour(12);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withHour_toMidnight_equal() {
         LocalTime t = LocalTime.of(1, 0).withHour(0);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withHour_toMidday_equal() {
         LocalTime t = LocalTime.of(1, 0).withHour(12);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withHour_hourTooLow() {
         TEST_12_30_40_987654321.withHour(-1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withHour_hourTooHigh() {
         TEST_12_30_40_987654321.withHour(24);
     }
@@ -779,7 +827,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // withMinute()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_withMinute_normal() {
         LocalTime t = TEST_12_30_40_987654321;
         for (int i = 0; i < 60; i++) {
@@ -788,30 +836,30 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withMinute_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.withMinute(30);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withMinute_toMidnight_equal() {
         LocalTime t = LocalTime.of(0, 1).withMinute(0);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withMinute_toMidday_equals() {
         LocalTime t = LocalTime.of(12, 1).withMinute(0);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withMinute_minuteTooLow() {
         TEST_12_30_40_987654321.withMinute(-1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withMinute_minuteTooHigh() {
         TEST_12_30_40_987654321.withMinute(60);
     }
@@ -819,7 +867,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // withSecond()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_withSecond_normal() {
         LocalTime t = TEST_12_30_40_987654321;
         for (int i = 0; i < 60; i++) {
@@ -828,30 +876,30 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withSecond_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.withSecond(40);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withSecond_toMidnight_equal() {
         LocalTime t = LocalTime.of(0, 0, 1).withSecond(0);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withSecond_toMidday_equal() {
         LocalTime t = LocalTime.of(12, 0, 1).withSecond(0);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withSecond_secondTooLow() {
         TEST_12_30_40_987654321.withSecond(-1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withSecond_secondTooHigh() {
         TEST_12_30_40_987654321.withSecond(60);
     }
@@ -859,7 +907,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // withNano()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_withNanoOfSecond_normal() {
         LocalTime t = TEST_12_30_40_987654321;
         t = t.withNano(1);
@@ -872,30 +920,30 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(t.getNano(), 999999999);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withNanoOfSecond_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.withNano(987654321);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withNanoOfSecond_toMidnight_equal() {
         LocalTime t = LocalTime.of(0, 0, 0, 1).withNano(0);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_withNanoOfSecond_toMidday_equal() {
         LocalTime t = LocalTime.of(12, 0, 0, 1).withNano(0);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withNanoOfSecond_nanoTooLow() {
         TEST_12_30_40_987654321.withNano(-1);
     }
 
-    @Test(expectedExceptions=DateTimeException.class, groups={"tck"})
+    @Test(expectedExceptions=DateTimeException.class)
     public void test_withNanoOfSecond_nanoTooHigh() {
         TEST_12_30_40_987654321.withNano(1000000000);
     }
@@ -974,7 +1022,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(groups={"tck"}, dataProvider="truncatedToValid")
+    @Test(dataProvider="truncatedToValid")
     public void test_truncatedTo_valid(LocalTime input, TemporalUnit unit, LocalTime expected) {
         assertEquals(input.truncatedTo(unit), expected);
     }
@@ -989,12 +1037,12 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(groups={"tck"}, dataProvider="truncatedToInvalid", expectedExceptions=DateTimeException.class)
+    @Test(dataProvider="truncatedToInvalid", expectedExceptions=DateTimeException.class)
     public void test_truncatedTo_invalid(LocalTime input, TemporalUnit unit) {
         input.truncatedTo(unit);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_truncatedTo_null() {
         TEST_12_30_40_987654321.truncatedTo(null);
     }
@@ -1044,25 +1092,25 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // plus(long,TemporalUnit)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_plus_longTemporalUnit_positiveHours() {
         LocalTime t = TEST_12_30_40_987654321.plus(7, ChronoUnit.HOURS);
         assertEquals(t, LocalTime.of(19, 30, 40, 987654321));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plus_longTemporalUnit_negativeMinutes() {
         LocalTime t = TEST_12_30_40_987654321.plus(-25, ChronoUnit.MINUTES);
         assertEquals(t, LocalTime.of(12, 5, 40, 987654321));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plus_longTemporalUnit_zero() {
         LocalTime t = TEST_12_30_40_987654321.plus(0, ChronoUnit.MINUTES);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plus_longTemporalUnit_invalidUnit() {
         for (TemporalUnit unit : INVALID_UNITS) {
             try {
@@ -1074,7 +1122,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plus_longTemporalUnit_multiples() {
         assertEquals(TEST_12_30_40_987654321.plus(0, DAYS), TEST_12_30_40_987654321);
         assertEquals(TEST_12_30_40_987654321.plus(1, DAYS), TEST_12_30_40_987654321);
@@ -1082,7 +1130,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(TEST_12_30_40_987654321.plus(-3, DAYS), TEST_12_30_40_987654321);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_plus_longTemporalUnit_null() {
         TEST_12_30_40_987654321.plus(1, (TemporalUnit) null);
     }
@@ -1090,7 +1138,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // plusHours()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_plusHours_one() {
         LocalTime t = LocalTime.MIDNIGHT;
         for (int i = 0; i < 50; i++) {
@@ -1099,7 +1147,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusHours_fromZero() {
         LocalTime base = LocalTime.MIDNIGHT;
         for (int i = -50; i < 50; i++) {
@@ -1108,7 +1156,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusHours_fromOne() {
         LocalTime base = LocalTime.of(1, 0);
         for (int i = -50; i < 50; i++) {
@@ -1117,25 +1165,25 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusHours_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.plusHours(0);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusHours_toMidnight_equal() {
         LocalTime t = LocalTime.of(23, 0).plusHours(1);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusHours_toMidday_equal() {
         LocalTime t = LocalTime.of(11, 0).plusHours(1);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusHours_big() {
         LocalTime t = LocalTime.of(2, 30).plusHours(Long.MAX_VALUE);
         int hours = (int) (Long.MAX_VALUE % 24L);
@@ -1145,7 +1193,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // plusMinutes()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMinutes_one() {
         LocalTime t = LocalTime.MIDNIGHT;
         int hour = 0;
@@ -1162,7 +1210,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMinutes_fromZero() {
         LocalTime base = LocalTime.MIDNIGHT;
         int hour;
@@ -1187,31 +1235,31 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMinutes_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.plusMinutes(0);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMinutes_noChange_oneDay_equal() {
         LocalTime t = TEST_12_30_40_987654321.plusMinutes(24 * 60);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMinutes_toMidnight_equal() {
         LocalTime t = LocalTime.of(23, 59).plusMinutes(1);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMinutes_toMidday_equal() {
         LocalTime t = LocalTime.of(11, 59).plusMinutes(1);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusMinutes_big() {
         LocalTime t = LocalTime.of(2, 30).plusMinutes(Long.MAX_VALUE);
         int mins = (int) (Long.MAX_VALUE % (24L * 60L));
@@ -1221,7 +1269,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // plusSeconds()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_plusSeconds_one() {
         LocalTime t = LocalTime.MIDNIGHT;
         int hour = 0;
@@ -1285,7 +1333,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="plusSeconds_fromZero", groups={"tck"})
+    @Test(dataProvider="plusSeconds_fromZero")
     public void test_plusSeconds_fromZero(int seconds, int hour, int min, int sec) {
         LocalTime base = LocalTime.MIDNIGHT;
         LocalTime t = base.plusSeconds(seconds);
@@ -1295,25 +1343,25 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(sec, t.getSecond());
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusSeconds_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.plusSeconds(0);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusSeconds_noChange_oneDay_equal() {
         LocalTime t = TEST_12_30_40_987654321.plusSeconds(24 * 60 * 60);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusSeconds_toMidnight_equal() {
         LocalTime t = LocalTime.of(23, 59, 59).plusSeconds(1);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusSeconds_toMidday_equal() {
         LocalTime t = LocalTime.of(11, 59, 59).plusSeconds(1);
         assertEquals(t, LocalTime.NOON);
@@ -1322,7 +1370,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // plusNanos()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_plusNanos_halfABillion() {
         LocalTime t = LocalTime.MIDNIGHT;
         int hour = 0;
@@ -1398,7 +1446,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="plusNanos_fromZero", groups={"tck"})
+    @Test(dataProvider="plusNanos_fromZero")
     public void test_plusNanos_fromZero(long nanoseconds, int hour, int min, int sec, int nanos) {
         LocalTime base = LocalTime.MIDNIGHT;
         LocalTime t = base.plusNanos(nanoseconds);
@@ -1409,25 +1457,25 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(nanos, t.getNano());
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusNanos_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.plusNanos(0);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusNanos_noChange_oneDay_equal() {
         LocalTime t = TEST_12_30_40_987654321.plusNanos(24 * 60 * 60 * 1000000000L);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusNanos_toMidnight_equal() {
         LocalTime t = LocalTime.of(23, 59, 59, 999999999).plusNanos(1);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_plusNanos_toMidday_equal() {
         LocalTime t = LocalTime.of(11, 59, 59, 999999999).plusNanos(1);
         assertEquals(t, LocalTime.NOON);
@@ -1478,25 +1526,25 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // minus(long,TemporalUnit)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_minus_longTemporalUnit_positiveHours() {
         LocalTime t = TEST_12_30_40_987654321.minus(7, ChronoUnit.HOURS);
         assertEquals(t, LocalTime.of(5, 30, 40, 987654321));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minus_longTemporalUnit_negativeMinutes() {
         LocalTime t = TEST_12_30_40_987654321.minus(-25, ChronoUnit.MINUTES);
         assertEquals(t, LocalTime.of(12, 55, 40, 987654321));
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minus_longTemporalUnit_zero() {
         LocalTime t = TEST_12_30_40_987654321.minus(0, ChronoUnit.MINUTES);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minus_longTemporalUnit_invalidUnit() {
         for (TemporalUnit unit : INVALID_UNITS) {
             try {
@@ -1508,7 +1556,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minus_longTemporalUnit_long_multiples() {
         assertEquals(TEST_12_30_40_987654321.minus(0, DAYS), TEST_12_30_40_987654321);
         assertEquals(TEST_12_30_40_987654321.minus(1, DAYS), TEST_12_30_40_987654321);
@@ -1516,7 +1564,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(TEST_12_30_40_987654321.minus(-3, DAYS), TEST_12_30_40_987654321);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_minus_longTemporalUnit_null() {
         TEST_12_30_40_987654321.minus(1, (TemporalUnit) null);
     }
@@ -1524,7 +1572,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // minusHours()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_minusHours_one() {
         LocalTime t = LocalTime.MIDNIGHT;
         for (int i = 0; i < 50; i++) {
@@ -1533,7 +1581,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusHours_fromZero() {
         LocalTime base = LocalTime.MIDNIGHT;
         for (int i = -50; i < 50; i++) {
@@ -1542,7 +1590,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusHours_fromOne() {
         LocalTime base = LocalTime.of(1, 0);
         for (int i = -50; i < 50; i++) {
@@ -1551,25 +1599,25 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusHours_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.minusHours(0);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusHours_toMidnight_equal() {
         LocalTime t = LocalTime.of(1, 0).minusHours(1);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusHours_toMidday_equal() {
         LocalTime t = LocalTime.of(13, 0).minusHours(1);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusHours_big() {
         LocalTime t = LocalTime.of(2, 30).minusHours(Long.MAX_VALUE);
         int hours = (int) (Long.MAX_VALUE % 24L);
@@ -1579,7 +1627,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // minusMinutes()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMinutes_one() {
         LocalTime t = LocalTime.MIDNIGHT;
         int hour = 0;
@@ -1600,7 +1648,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMinutes_fromZero() {
         LocalTime base = LocalTime.MIDNIGHT;
         int hour = 22;
@@ -1623,31 +1671,31 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMinutes_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.minusMinutes(0);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMinutes_noChange_oneDay_equal() {
         LocalTime t = TEST_12_30_40_987654321.minusMinutes(24 * 60);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMinutes_toMidnight_equal() {
         LocalTime t = LocalTime.of(0, 1).minusMinutes(1);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMinutes_toMidday_equals() {
         LocalTime t = LocalTime.of(12, 1).minusMinutes(1);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusMinutes_big() {
         LocalTime t = LocalTime.of(2, 30).minusMinutes(Long.MAX_VALUE);
         int mins = (int) (Long.MAX_VALUE % (24L * 60L));
@@ -1657,7 +1705,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // minusSeconds()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_minusSeconds_one() {
         LocalTime t = LocalTime.MIDNIGHT;
         int hour = 0;
@@ -1726,7 +1774,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="minusSeconds_fromZero", groups={"tck"})
+    @Test(dataProvider="minusSeconds_fromZero")
     public void test_minusSeconds_fromZero(int seconds, int hour, int min, int sec) {
         LocalTime base = LocalTime.MIDNIGHT;
         LocalTime t = base.minusSeconds(seconds);
@@ -1736,31 +1784,31 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(t.getSecond(), sec);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusSeconds_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.minusSeconds(0);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusSeconds_noChange_oneDay_equal() {
         LocalTime t = TEST_12_30_40_987654321.minusSeconds(24 * 60 * 60);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusSeconds_toMidnight_equal() {
         LocalTime t = LocalTime.of(0, 0, 1).minusSeconds(1);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusSeconds_toMidday_equal() {
         LocalTime t = LocalTime.of(12, 0, 1).minusSeconds(1);
         assertEquals(t, LocalTime.NOON);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusSeconds_big() {
         LocalTime t = LocalTime.of(2, 30).minusSeconds(Long.MAX_VALUE);
         int secs = (int) (Long.MAX_VALUE % (24L * 60L * 60L));
@@ -1770,7 +1818,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // minusNanos()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_minusNanos_halfABillion() {
         LocalTime t = LocalTime.MIDNIGHT;
         int hour = 0;
@@ -1854,7 +1902,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="minusNanos_fromZero", groups={"tck"})
+    @Test(dataProvider="minusNanos_fromZero")
     public void test_minusNanos_fromZero(long nanoseconds, int hour, int min, int sec, int nanos) {
         LocalTime base = LocalTime.MIDNIGHT;
         LocalTime t = base.minusNanos(nanoseconds);
@@ -1865,40 +1913,121 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         assertEquals(nanos, t.getNano());
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusNanos_noChange_equal() {
         LocalTime t = TEST_12_30_40_987654321.minusNanos(0);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusNanos_noChange_oneDay_equal() {
         LocalTime t = TEST_12_30_40_987654321.minusNanos(24 * 60 * 60 * 1000000000L);
         assertEquals(t, TEST_12_30_40_987654321);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusNanos_toMidnight_equal() {
         LocalTime t = LocalTime.of(0, 0, 0, 1).minusNanos(1);
         assertEquals(t, LocalTime.MIDNIGHT);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_minusNanos_toMidday_equal() {
         LocalTime t = LocalTime.of(12, 0, 0, 1).minusNanos(1);
         assertEquals(t, LocalTime.NOON);
     }
 
     //-----------------------------------------------------------------------
+    // periodUntil(Temporal, TemporalUnit)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="periodUntilUnit")
+    Object[][] data_periodUntilUnit() {
+        return new Object[][] {
+                {time(0, 0, 0, 0), time(0, 0, 0, 0), NANOS, 0},
+                {time(0, 0, 0, 0), time(0, 0, 0, 0), MICROS, 0},
+                {time(0, 0, 0, 0), time(0, 0, 0, 0), MILLIS, 0},
+                {time(0, 0, 0, 0), time(0, 0, 0, 0), SECONDS, 0},
+                {time(0, 0, 0, 0), time(0, 0, 0, 0), MINUTES, 0},
+                {time(0, 0, 0, 0), time(0, 0, 0, 0), HOURS, 0},
+                {time(0, 0, 0, 0), time(0, 0, 0, 0), HALF_DAYS, 0},
+
+                {time(0, 0, 0, 0), time(2, 0, 0, 0), NANOS, 2 * 3600 * 1_000_000_000L},
+                {time(0, 0, 0, 0), time(2, 0, 0, 0), MICROS, 2 * 3600 * 1_000_000L},
+                {time(0, 0, 0, 0), time(2, 0, 0, 0), MILLIS, 2 * 3600 * 1_000L},
+                {time(0, 0, 0, 0), time(2, 0, 0, 0), SECONDS, 2 * 3600},
+                {time(0, 0, 0, 0), time(2, 0, 0, 0), MINUTES, 2 * 60},
+                {time(0, 0, 0, 0), time(2, 0, 0, 0), HOURS, 2},
+                {time(0, 0, 0, 0), time(2, 0, 0, 0), HALF_DAYS, 0},
+
+                {time(0, 0, 0, 0), time(14, 0, 0, 0), NANOS, 14 * 3600 * 1_000_000_000L},
+                {time(0, 0, 0, 0), time(14, 0, 0, 0), MICROS, 14 * 3600 * 1_000_000L},
+                {time(0, 0, 0, 0), time(14, 0, 0, 0), MILLIS, 14 * 3600 * 1_000L},
+                {time(0, 0, 0, 0), time(14, 0, 0, 0), SECONDS, 14 * 3600},
+                {time(0, 0, 0, 0), time(14, 0, 0, 0), MINUTES, 14 * 60},
+                {time(0, 0, 0, 0), time(14, 0, 0, 0), HOURS, 14},
+                {time(0, 0, 0, 0), time(14, 0, 0, 0), HALF_DAYS, 1},
+
+                {time(0, 0, 0, 0), time(2, 30, 40, 1500), NANOS, (2 * 3600 + 30 * 60 + 40) * 1_000_000_000L + 1500},
+                {time(0, 0, 0, 0), time(2, 30, 40, 1500), MICROS, (2 * 3600 + 30 * 60 + 40) * 1_000_000L + 1},
+                {time(0, 0, 0, 0), time(2, 30, 40, 1500), MILLIS, (2 * 3600 + 30 * 60 + 40) * 1_000L},
+                {time(0, 0, 0, 0), time(2, 30, 40, 1500), SECONDS, 2 * 3600 + 30 * 60 + 40},
+                {time(0, 0, 0, 0), time(2, 30, 40, 1500), MINUTES, 2 * 60 + 30},
+                {time(0, 0, 0, 0), time(2, 30, 40, 1500), HOURS, 2},
+        };
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_periodUntil_TemporalUnit(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
+        long amount = time1.periodUntil(time2, unit);
+        assertEquals(amount, expected);
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_periodUntil_TemporalUnit_negated(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
+        long amount = time2.periodUntil(time1, unit);
+        assertEquals(amount, -expected);
+    }
+
+    @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
+    public void test_periodUntil_TemporalUnit_unsupportedUnit() {
+        TEST_12_30_40_987654321.periodUntil(TEST_12_30_40_987654321, DAYS);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_periodUntil_TemporalUnit_nullEnd() {
+        TEST_12_30_40_987654321.periodUntil(null, HOURS);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_periodUntil_TemporalUnit_nullUnit() {
+        TEST_12_30_40_987654321.periodUntil(TEST_12_30_40_987654321, null);
+    }
+
+    //-----------------------------------------------------------------------
+    // format(DateTimeFormatter)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_format_formatter() {
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("H m s");
+        String t = LocalTime.of(11, 30, 45).format(f);
+        assertEquals(t, "11 30 45");
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_format_formatter_null() {
+        LocalTime.of(11, 30, 45).format(null);
+    }
+
+    //-----------------------------------------------------------------------
     // atDate()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_atDate() {
         LocalTime t = LocalTime.of(11, 30);
         assertEquals(t.atDate(LocalDate.of(2012, 6, 30)), LocalDateTime.of(2012, 6, 30, 11, 30));
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_atDate_nullDate() {
         TEST_12_30_40_987654321.atDate((LocalDate) null);
     }
@@ -1906,13 +2035,13 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // atOffset()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_atOffset() {
         LocalTime t = LocalTime.of(11, 30);
         assertEquals(t.atOffset(OFFSET_PTWO), OffsetTime.of(LocalTime.of(11, 30), OFFSET_PTWO));
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_atOffset_nullZoneOffset() {
         LocalTime t = LocalTime.of(11, 30);
         t.atOffset((ZoneOffset) null);
@@ -1921,7 +2050,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // toSecondOfDay()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_toSecondOfDay() {
         LocalTime t = LocalTime.of(0, 0);
         for (int i = 0; i < 24 * 60 * 60; i++) {
@@ -1930,7 +2059,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_toSecondOfDay_fromNanoOfDay_symmetry() {
         LocalTime t = LocalTime.of(0, 0);
         for (int i = 0; i < 24 * 60 * 60; i++) {
@@ -1942,7 +2071,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // toNanoOfDay()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_toNanoOfDay() {
         LocalTime t = LocalTime.of(0, 0);
         for (int i = 0; i < 1000000; i++) {
@@ -1956,7 +2085,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_toNanoOfDay_fromNanoOfDay_symmetry() {
         LocalTime t = LocalTime.of(0, 0);
         for (int i = 0; i < 1000000; i++) {
@@ -1973,7 +2102,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // compareTo()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_comparisons() {
         doTest_comparisons_LocalTime(
             LocalTime.MIDNIGHT,
@@ -2028,22 +2157,22 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_compareTo_ObjectNull() {
         TEST_12_30_40_987654321.compareTo(null);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_isBefore_ObjectNull() {
         TEST_12_30_40_987654321.isBefore(null);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_isAfter_ObjectNull() {
         TEST_12_30_40_987654321.isAfter(null);
     }
 
-    @Test(expectedExceptions=ClassCastException.class, groups={"tck"})
+    @Test(expectedExceptions=ClassCastException.class)
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void compareToNonLocalTime() {
        Comparable c = TEST_12_30_40_987654321;
@@ -2053,48 +2182,48 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // equals()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_equals_true(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h, m, s, n);
         assertEquals(a.equals(b), true);
     }
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_equals_false_hour_differs(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h + 1, m, s, n);
         assertEquals(a.equals(b), false);
     }
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_equals_false_minute_differs(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h, m + 1, s, n);
         assertEquals(a.equals(b), false);
     }
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_equals_false_second_differs(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h, m, s + 1, n);
         assertEquals(a.equals(b), false);
     }
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_equals_false_nano_differs(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h, m, s, n + 1);
         assertEquals(a.equals(b), false);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_itself_true() {
         assertEquals(TEST_12_30_40_987654321.equals(TEST_12_30_40_987654321), true);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_string_false() {
         assertEquals(TEST_12_30_40_987654321.equals("2007-07-15"), false);
     }
 
-    @Test(groups={"tck"})
+    @Test
     public void test_equals_null_false() {
         assertEquals(TEST_12_30_40_987654321.equals(null), false);
     }
@@ -2102,35 +2231,35 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // hashCode()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_hashCode_same(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h, m, s, n);
         assertEquals(a.hashCode(), b.hashCode());
     }
 
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_hashCode_hour_differs(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h + 1, m, s, n);
         assertEquals(a.hashCode() == b.hashCode(), false);
     }
 
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_hashCode_minute_differs(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h, m + 1, s, n);
         assertEquals(a.hashCode() == b.hashCode(), false);
     }
 
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_hashCode_second_differs(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h, m, s + 1, n);
         assertEquals(a.hashCode() == b.hashCode(), false);
     }
 
-    @Test(dataProvider="sampleTimes", groups={"tck"})
+    @Test(dataProvider="sampleTimes")
     public void test_hashCode_nano_differs(int h, int m, int s, int n) {
         LocalTime a = LocalTime.of(h, m, s, n);
         LocalTime b = LocalTime.of(h, m, s, n + 1);
@@ -2172,26 +2301,14 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider="sampleToString", groups={"tck"})
+    @Test(dataProvider="sampleToString")
     public void test_toString(int h, int m, int s, int n, String expected) {
         LocalTime t = LocalTime.of(h, m, s, n);
         String str = t.toString();
         assertEquals(str, expected);
     }
 
-    //-----------------------------------------------------------------------
-    // toString(DateTimeFormatter)
-    //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_toString_formatter() {
-        DateTimeFormatter f = DateTimeFormatter.ofPattern("H m s");
-        String t = LocalTime.of(11, 30, 45).toString(f);
-        assertEquals(t, "11 30 45");
+    private LocalTime time(int hour, int min, int sec, int nano) {
+        return LocalTime.of(hour, min, sec, nano);
     }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
-    public void test_toString_formatter_null() {
-        LocalTime.of(11, 30, 45).toString(null);
-    }
-
 }

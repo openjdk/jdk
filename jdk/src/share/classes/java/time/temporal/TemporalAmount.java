@@ -75,7 +75,7 @@ import java.util.List;
  * to any specific point on the time-line.
  * <p>
  * The amount can be thought of as a {@code Map} of {@link TemporalUnit} to
- * {@code long}, exposed via {@link #getUnits()}and {@link #get(TemporalUnit)}.
+ * {@code long}, exposed via {@link #getUnits()} and {@link #get(TemporalUnit)}.
  * A simple case might have a single unit-value pair, such as "6 hours".
  * A more complex case may have multiple unit-value pairs, such as
  * "7 years, 3 months and 5 days".
@@ -111,9 +111,10 @@ public interface TemporalAmount {
      *
      * @param unit the {@code TemporalUnit} for which to return the value
      * @return the long value of the unit
-     * @throws DateTimeException if the {@code unit} is not supported
+     * @throws DateTimeException if a value for the unit cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the {@code unit} is not supported
      */
-    public long get(TemporalUnit unit);
+    long get(TemporalUnit unit);
 
     /**
      * Returns the list of units uniquely defining the value of this TemporalAmount.
@@ -130,7 +131,7 @@ public interface TemporalAmount {
      *
      * @return the List of {@code TemporalUnits}; not null
      */
-    public List<TemporalUnit> getUnits();
+    List<TemporalUnit> getUnits();
 
     /**
      * Adds to the specified temporal object.
@@ -162,7 +163,7 @@ public interface TemporalAmount {
      * <p>
      * The input temporal object may be in a calendar system other than ISO.
      * Implementations may choose to document compatibility with other calendar systems,
-     * or reject non-ISO temporal objects by {@link Queries#chronology() querying the chronology}.
+     * or reject non-ISO temporal objects by {@link TemporalQuery#chronology() querying the chronology}.
      * <p>
      * This method may be called from multiple threads in parallel.
      * It must be thread-safe when invoked.
@@ -172,7 +173,7 @@ public interface TemporalAmount {
      * @throws DateTimeException if unable to add
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Temporal addTo(Temporal temporal);
+    Temporal addTo(Temporal temporal);
 
     /**
      * Subtracts this object from the specified temporal object.
@@ -204,7 +205,7 @@ public interface TemporalAmount {
      * <p>
      * The input temporal object may be in a calendar system other than ISO.
      * Implementations may choose to document compatibility with other calendar systems,
-     * or reject non-ISO temporal objects by {@link Queries#chronology() querying the chronology}.
+     * or reject non-ISO temporal objects by {@link TemporalQuery#chronology() querying the chronology}.
      * <p>
      * This method may be called from multiple threads in parallel.
      * It must be thread-safe when invoked.
@@ -214,5 +215,5 @@ public interface TemporalAmount {
      * @throws DateTimeException if unable to subtract
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Temporal subtractFrom(Temporal temporal);
+    Temporal subtractFrom(Temporal temporal);
 }

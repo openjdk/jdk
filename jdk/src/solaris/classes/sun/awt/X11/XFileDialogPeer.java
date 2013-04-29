@@ -720,7 +720,9 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         }
 
         File fe = new File(dir).getAbsoluteFile();
-        log.fine("Current directory : " + fe);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("Current directory : " + fe);
+        }
 
         if (!fe.isDirectory()) {
             dir = "./";

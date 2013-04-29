@@ -42,6 +42,7 @@
 #include "awt_Mlib.h"
 #include "gdefs.h"
 #include "safe_alloc.h"
+#include "safe_math.h"
 
 /***************************************************************************
  *                               Definitions                               *
@@ -1993,13 +1994,23 @@ cvtCustomToDefault(JNIEnv *env, BufImageS_t *imageP, int component,
     unsigned char *dP = dataP;
 #define NUM_LINES    10
     int numLines = NUM_LINES;
-    int nbytes = rasterP->width*4*NUM_LINES;
+    /* it is safe to calculate the scan length, because width has been verified
+     * on creation of the mlib image
+     */
+    int scanLength = rasterP->width * 4;
+
+    int nbytes = 0;
+    if (!SAFE_TO_MULT(numLines, scanLength)) {
+        return -1;
+    }
+
+    nbytes = numLines * scanLength;
 
     for (y=0; y < rasterP->height; y+=numLines) {
         /* getData, one scanline at a time */
         if (y+numLines > rasterP->height) {
             numLines = rasterP->height - y;
-            nbytes = rasterP->width*4*numLines;
+            nbytes = numLines * scanLength;
         }
         jpixels = (*env)->CallObjectMethod(env, imageP->jimage,
                                            g_BImgGetRGBMID, 0, y,
@@ -2129,8 +2140,14 @@ allocateArray(JNIEnv *env, BufImageS_t *imageP,
     if (cvtToDefault) {
         int status = 0;
         *mlibImagePP = (*sMlibSysFns.createFP)(MLIB_BYTE, 4, width, height);
+        if (*mlibImagePP == NULL) {
+            return -1;
+        }
         cDataP  = (unsigned char *) mlib_ImageGetData(*mlibImagePP);
-        /* Make sure the image is cleared */
+        /* Make sure the image is cleared.
+         * NB: the image dimension is already verified, so we can
+         * safely calculate the length of the buffer.
+         */
         memset(cDataP, 0, width*height*4);
 
         if (!isSrc) {
@@ -2380,6 +2397,9 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
     case sun_awt_image_IntegerComponentRaster_TYPE_BYTE_PACKED_SAMPLES:
         *mlibImagePP = (*sMlibSysFns.createFP)(MLIB_BYTE, rasterP->numBands,
                                         width, height);
+        if (*mlibImagePP == NULL) {
+            return -1;
+        }
         if (!isSrc) return 0;
         cDataP  = (unsigned char *) mlib_ImageGetData(*mlibImagePP);
         return expandPackedBCR(env, rasterP, -1, cDataP);
@@ -2388,6 +2408,9 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
         if (rasterP->sppsm.maxBitSize <= 8) {
             *mlibImagePP = (*sMlibSysFns.createFP)(MLIB_BYTE, rasterP->numBands,
                                             width, height);
+            if (*mlibImagePP == NULL) {
+                return -1;
+            }
             if (!isSrc) return 0;
             cDataP  = (unsigned char *) mlib_ImageGetData(*mlibImagePP);
             return expandPackedSCR(env, rasterP, -1, cDataP);
@@ -2397,6 +2420,9 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
         if (rasterP->sppsm.maxBitSize <= 8) {
             *mlibImagePP = (*sMlibSysFns.createFP)(MLIB_BYTE, rasterP->numBands,
                                             width, height);
+            if (*mlibImagePP == NULL) {
+                return -1;
+            }
             if (!isSrc) return 0;
             cDataP  = (unsigned char *) mlib_ImageGetData(*mlibImagePP);
             return expandPackedICR(env, rasterP, -1, cDataP);

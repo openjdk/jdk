@@ -160,4 +160,13 @@ public interface Type {
      * @since 1.5
      */
     AnnotationTypeDoc asAnnotationTypeDoc();
+
+    /**
+     * If this type is an array type, return the element type of the
+     * array. Otherwise, return null.
+     *
+     * @return a <code>Type</code> representing the element type or null.
+     * @since 1.8
+     */
+    Type getElementType();
 }

@@ -261,6 +261,7 @@ public class Comparators {
      * according to the supplied {@code Comparator}
      */
     public static<T> BinaryOperator<T> lesserOf(Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator);
         return (a, b) -> comparator.compare(a, b) <= 0 ? a : b;
     }
 
@@ -274,6 +275,7 @@ public class Comparators {
      * according to the supplied {@code Comparator}
      */
     public static<T> BinaryOperator<T> greaterOf(Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator);
         return (a, b) -> comparator.compare(a, b) >= 0 ? a : b;
     }
 }
