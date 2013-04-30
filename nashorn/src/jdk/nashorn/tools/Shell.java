@@ -47,6 +47,7 @@ import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
+import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -170,7 +171,11 @@ public class Shell {
             return compileScripts(context, global, files);
         }
 
-        return runScripts(context, global, files);
+        if (env._fx) {
+            return runFXScripts(context, global, files);
+        } else {
+            return runScripts(context, global, files);
+        }
     }
 
     /**
@@ -316,6 +321,46 @@ public class Shell {
                     return RUNTIME_ERROR;
                 }
             }
+        } finally {
+            context.getOut().flush();
+            context.getErr().flush();
+            if (globalChanged) {
+                Context.setGlobal(oldGlobal);
+            }
+        }
+
+        return SUCCESS;
+    }
+
+    /**
+     * Runs launches "fx:bootstrap.js" with the given JavaScript files provided
+     * as arguments.
+     *
+     * @param context the nashorn context
+     * @param global the global scope
+     * @param files the list of script files to provide
+     *
+     * @return error code
+     * @throws IOException when any script file read results in I/O error
+     */
+    private int runFXScripts(final Context context, final ScriptObject global, final List<String> files) throws IOException {
+        final ScriptObject oldGlobal = Context.getGlobal();
+        final boolean globalChanged = (oldGlobal != global);
+        try {
+            if (globalChanged) {
+                Context.setGlobal(global);
+            }
+
+            global.addOwnProperty("$GLOBAL", Property.NOT_ENUMERABLE, global);
+            global.addOwnProperty("$SCRIPTS", Property.NOT_ENUMERABLE, files);
+            context.load(global, "fx:bootstrap.js");
+        } catch (final NashornException e) {
+            context.getErrorManager().error(e.toString());
+            if (context.getEnv()._dump_on_error) {
+                e.printStackTrace(context.getErr());
+            }
+
+            return RUNTIME_ERROR;
         } finally {
             context.getOut().flush();
             context.getErr().flush();
