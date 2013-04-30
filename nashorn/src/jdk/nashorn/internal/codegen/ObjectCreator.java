@@ -26,6 +26,8 @@
 package jdk.nashorn.internal.codegen;
 
 import java.util.List;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.FIELD_PADDING;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.FIELD_ROUNDING;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -50,6 +52,7 @@ public abstract class ObjectCreator {
     private   final boolean       isScope;
     private   final boolean       hasArguments;
     private         int           fieldCount;
+    private         int           paddedFieldCount;
     private         int           paramCount;
     private         String        fieldObjectClassName;
     private         Class<?>      fieldObjectClass;
@@ -88,6 +91,8 @@ public abstract class ObjectCreator {
                 }
             }
         }
+
+        paddedFieldCount = (fieldCount + FIELD_PADDING + FIELD_ROUNDING - 1) / FIELD_ROUNDING * FIELD_ROUNDING;
     }
 
     /**
@@ -96,7 +101,7 @@ public abstract class ObjectCreator {
     private void findClass() {
         fieldObjectClassName = isScope() ?
             ObjectClassGenerator.getClassName(fieldCount, paramCount) :
-            ObjectClassGenerator.getClassName(fieldCount);
+            ObjectClassGenerator.getClassName(paddedFieldCount);
 
         try {
             this.fieldObjectClass = Context.forStructureClass(Compiler.binaryName(fieldObjectClassName));
@@ -125,11 +130,7 @@ public abstract class ObjectCreator {
      * @return the newly created property map
      */
     protected PropertyMap makeMap() {
-        if (keys.isEmpty()) { //empty map
-            propertyMap = PropertyMap.newMap(fieldObjectClass);
-        } else {
-            propertyMap = newMapCreator(fieldObjectClass).makeMap(hasArguments());
-        }
+        propertyMap = newMapCreator(fieldObjectClass).makeMap(hasArguments(), fieldCount, paddedFieldCount);
         return propertyMap;
     }
 

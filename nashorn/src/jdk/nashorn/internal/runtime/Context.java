@@ -201,9 +201,6 @@ public final class Context {
     /** Current error manager. */
     private final ErrorManager errors;
 
-    /** Empty map used for seed map for JO objects */
-    final PropertyMap emptyMap = PropertyMap.newEmptyMap(this);
-
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
