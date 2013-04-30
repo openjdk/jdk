@@ -204,7 +204,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
   jstring objectName, jstring symbolName) 
 {
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
-  if (ph->core != NULL) {
+  if (ph != NULL && ph->core != NULL) {
     return lookupByNameIncore(env, ph, this_obj, objectName, symbolName);
   }
 
@@ -238,10 +238,13 @@ JNIEXPORT jobject JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_loo
   const char* sym = NULL;
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
-  sym = symbol_for_pc(ph, (uintptr_t) addr, &offset);
-  if (sym == NULL) return 0;
-  return (*env)->CallObjectMethod(env, this_obj, createClosestSymbol_ID,
+  if (ph != NULL && ph->core != NULL) {
+    sym = symbol_for_pc(ph, (uintptr_t) addr, &offset);
+    if (sym == NULL) return 0;
+    return (*env)->CallObjectMethod(env, this_obj, createClosestSymbol_ID,
                           (*env)->NewStringUTF(env, sym), (jlong)offset);
+  }
+  return 0;
 }
 
 /** called from Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0 */
@@ -279,7 +282,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
   jbyteArray array;
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
-  if (ph->core != NULL) {
+  if (ph != NULL && ph->core != NULL) {
     return readBytesFromCore(env, ph, this_obj, addr, numBytes);
   }
 
@@ -394,9 +397,9 @@ bool fill_java_threads(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) 
 /* For core file only, called from
  * Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0
  */
-jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, long lwp_id) {
+jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, long lwp_id, struct ps_prochandle* ph) {
   if (!_threads_filled)  {
-    if (!fill_java_threads(env, this_obj, get_proc_handle(env, this_obj))) {
+    if (!fill_java_threads(env, this_obj, ph)) {
       throw_new_debugger_exception(env, "Failed to fill in threads");
       return 0;
     } else {
@@ -409,7 +412,6 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
   jlongArray array;
   jlong *regs;
 
-  struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   if (get_lwp_regs(ph, lwp_id, &gregs) != true) {
     THROW_NEW_DEBUGGER_EXCEPTION_("get_thread_regs failed for a lwp", 0);
   }
@@ -521,8 +523,8 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
   print_debug("getThreadRegisterSet0 called\n");
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
-  if (ph->core != NULL) {
-    return getThreadIntegerRegisterSetFromCore(env, this_obj, thread_id);
+  if (ph != NULL && ph->core != NULL) {
+    return getThreadIntegerRegisterSetFromCore(env, this_obj, thread_id, ph);
   }
 
   kern_return_t result;
