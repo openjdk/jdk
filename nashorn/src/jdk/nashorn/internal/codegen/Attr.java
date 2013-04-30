@@ -48,10 +48,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
@@ -81,6 +79,7 @@ import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
+import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
@@ -91,6 +90,7 @@ import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
@@ -125,8 +125,6 @@ final class Attr extends NodeOperatorVisitor {
     private final Deque<Set<String>> localUses;
 
     private final Deque<Type> returnTypes;
-
-    private final Map<Symbol, FunctionNode> selfSymbolToFunction = new IdentityHashMap<>();
 
     private static final DebugLogger LOG   = new DebugLogger("attr");
     private static final boolean     DEBUG = LOG.isEnabled();
@@ -173,23 +171,26 @@ final class Attr extends NodeOperatorVisitor {
 
         if (functionNode.isProgram()) {
             initFromPropertyMap(body);
-        }
+        } else if(!functionNode.isDeclared()) {
+            // It's neither declared nor program - it's a function expression then; assign it a self-symbol.
 
-        // Add function name as local symbol
-        if (!functionNode.isDeclared() && !functionNode.isProgram()) {
             if (functionNode.getSymbol() != null) {
                 // a temporary left over from an earlier pass when the function was lazy
                 assert functionNode.getSymbol().isTemp();
                 // remove it
                 functionNode.setSymbol(null);
             }
-            final Symbol selfSymbol;
-            if (functionNode.isAnonymous()) {
-                selfSymbol = ensureSymbol(functionNode, Type.OBJECT, functionNode);
+            final boolean anonymous = functionNode.isAnonymous();
+            final String name = anonymous ? null : functionNode.getIdent().getName();
+            if (anonymous || body.getExistingSymbol(name) != null) {
+                // The function is either anonymous, or another local identifier already trumps its name on entry:
+                // either it has the same name as one of its parameters, or is named "arguments" and also references the
+                // "arguments" identifier in its body.
+                ensureSymbol(functionNode, Type.typeFor(ScriptFunction.class), functionNode);
             } else {
-                selfSymbol = defineSymbol(body, functionNode.getIdent().getName(), IS_VAR | IS_FUNCTION_SELF, functionNode);
+                final Symbol selfSymbol = defineSymbol(body, name, IS_VAR | IS_FUNCTION_SELF, functionNode);
+                assert selfSymbol.isFunctionSelf();
                 newType(selfSymbol, Type.OBJECT);
-                selfSymbolToFunction.put(selfSymbol, functionNode);
             }
         }
 
@@ -495,10 +496,8 @@ final class Attr extends NodeOperatorVisitor {
             }
 
             identNode.setSymbol(symbol);
-            // non-local: we need to put symbol in scope (if it isn't already)
-            if (!isLocal(lc.getCurrentFunction(), symbol) && !symbol.isScope()) {
-                Symbol.setSymbolIsScope(lc, symbol);
-            }
+            // if symbol is non-local or we're in a with block, we need to put symbol in scope (if it isn't already)
+            maybeForceScope(symbol);
         } else {
             LOG.info("No symbol exists. Declare undefined: ", symbol);
             symbol = defineSymbol(block, name, IS_GLOBAL, identNode);
@@ -518,6 +517,50 @@ final class Attr extends NodeOperatorVisitor {
         end(identNode);
 
         return false;
+    }
+
+    /**
+     * If the symbol isn't already a scope symbol, and it is either not local to the current function, or it is being
+     * referenced from within a with block, we force it to be a scope symbol.
+     * @param symbol the symbol that might be scoped
+     */
+    private void maybeForceScope(final Symbol symbol) {
+        if(!symbol.isScope() && symbolNeedsToBeScope(symbol)) {
+            Symbol.setSymbolIsScope(getLexicalContext(), symbol);
+        }
+    }
+
+    private boolean symbolNeedsToBeScope(Symbol symbol) {
+        if(symbol.isThis() || symbol.isInternal()) {
+            return false;
+        }
+        boolean previousWasBlock = false;
+        for(final Iterator<LexicalContextNode> it = getLexicalContext().getAllNodes(); it.hasNext();) {
+            final LexicalContextNode node = it.next();
+            if(node instanceof FunctionNode) {
+                // We reached the function boundary without seeing a definition for the symbol - it needs to be in
+                // scope.
+                return true;
+            } else if(node instanceof WithNode) {
+                if(previousWasBlock) {
+                    // We reached a WithNode; the symbol must be scoped. Note that if the WithNode was not immediately
+                    // preceded by a block, this means we're currently processing its expression, not its body,
+                    // therefore it doesn't count.
+                    return true;
+                }
+                previousWasBlock = false;
+            } else if(node instanceof Block) {
+                if(((Block)node).getExistingSymbol(symbol.getName()) == symbol) {
+                    // We reached the block that defines the symbol without reaching either the function boundary, or a
+                    // WithNode. The symbol need not be scoped.
+                    return false;
+                }
+                previousWasBlock = true;
+            } else {
+                previousWasBlock = false;
+            }
+        }
+        throw new AssertionError();
     }
 
     private void setBlockScope(final String name, final Symbol symbol) {
@@ -963,18 +1006,17 @@ final class Attr extends NodeOperatorVisitor {
         final Node lhs = binaryNode.lhs();
 
         if (lhs instanceof IdentNode) {
-            final LexicalContext lc    = getLexicalContext();
-            final Block          block = lc.getCurrentBlock();
-            final IdentNode      ident = (IdentNode)lhs;
-            final String         name  = ident.getName();
+            final Block     block = getLexicalContext().getCurrentBlock();
+            final IdentNode ident = (IdentNode)lhs;
+            final String    name  = ident.getName();
 
             Symbol symbol = findSymbol(block, name);
 
             if (symbol == null) {
                 symbol = defineSymbol(block, name, IS_GLOBAL, ident);
                 binaryNode.setSymbol(symbol);
-            } else if (!isLocal(lc.getCurrentFunction(), symbol)) {
-                Symbol.setSymbolIsScope(lc, symbol);
+            } else {
+                maybeForceScope(symbol);
             }
 
             addLocalDef(name);

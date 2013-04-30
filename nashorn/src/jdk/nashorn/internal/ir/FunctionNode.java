@@ -145,14 +145,12 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     /** Has this node been split because it was too large? */
     public static final int IS_SPLIT                    = 1 << 4;
 
-    /** Does the function call eval? */
+    /** Does the function call eval? If it does, then all variables in this function might be get/set by it and it can
+     * introduce new variables into this function's scope too.*/
     public static final int HAS_EVAL                    = 1 << 5;
 
-    /** Does the function contain a with block ? */
-    public static final int HAS_WITH                    = 1 << 6;
-
-    /** Does a descendant function contain a with or eval? */
-    public static final int HAS_DESCENDANT_WITH_OR_EVAL = 1 << 7;
+    /** Does a nested function contain eval? If it does, then all variables in this function might be get/set by it. */
+    public static final int HAS_NESTED_EVAL = 1 << 6;
 
     /**
      * Flag this function as one that defines the identifier "arguments" as a function parameter or nested function
@@ -178,18 +176,18 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     /** Does this function have nested declarations? */
     public static final int HAS_FUNCTION_DECLARATIONS   = 1 << 13;
 
-    /** Does this function or any nested functions contain a with or an eval? */
-    private static final int HAS_DEEP_WITH_OR_EVAL = HAS_EVAL | HAS_WITH | HAS_DESCENDANT_WITH_OR_EVAL;
+    /** Does this function or any nested functions contain an eval? */
+    private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
 
     /** Does this function need to store all its variables in scope? */
-    private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_WITH_OR_EVAL | IS_SPLIT | HAS_LAZY_CHILDREN;
+    private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_EVAL | IS_SPLIT | HAS_LAZY_CHILDREN;
 
     /** Does this function potentially need "arguments"? Note that this is not a full test, as further negative check of REDEFINES_ARGS is needed. */
     private static final int MAYBE_NEEDS_ARGUMENTS = USES_ARGUMENTS | HAS_EVAL;
 
-    /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep with or eval.
+    /** Does this function need the parent scope? It needs it if either it or its descendants use variables from it, or have a deep eval.
      *  We also pessimistically need a parent scope if we have lazy children that have not yet been compiled */
-    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_WITH_OR_EVAL | HAS_LAZY_CHILDREN;
+    private static final int NEEDS_PARENT_SCOPE = USES_ANCESTOR_SCOPE | HAS_DEEP_EVAL | HAS_LAZY_CHILDREN;
 
     /** What is the return type of this function? */
     private Type returnType = Type.UNKNOWN;
@@ -406,33 +404,12 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     }
 
     /**
-     * Check if the {@code with} keyword is used in this function
-     *
-     * @return true if {@code with} is used
-     */
-    public boolean hasWith() {
-        return getFlag(HAS_WITH);
-    }
-
-    /**
      * Check if the {@code eval} keyword is used in this function
      *
      * @return true if {@code eval} is used
      */
     public boolean hasEval() {
         return getFlag(HAS_EVAL);
-    }
-
-    /**
-     * Test whether this function or any of its nested functions contains a <tt>with</tt> statement
-     * or an <tt>eval</tt> call.
-     *
-     * @see #hasWith()
-     * @see #hasEval()
-     * @return true if this or a nested function contains with or eval
-     */
-    public boolean hasDeepWithOrEval() {
-        return getFlag(HAS_DEEP_WITH_OR_EVAL);
     }
 
     /**

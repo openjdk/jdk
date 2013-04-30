@@ -87,6 +87,7 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LexicalContext;
+import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
@@ -117,6 +118,7 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ECMAException;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
@@ -200,6 +202,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
      * @param compiler
      */
     CodeGenerator(final Compiler compiler) {
+        super(new DynamicScopeTrackingLexicalContext());
         this.compiler      = compiler;
         this.callSiteFlags = compiler.getEnv()._callsite_flags;
     }
@@ -284,23 +287,99 @@ final class CodeGenerator extends NodeOperatorVisitor {
     }
 
     /**
+     * A lexical context that also tracks if we have any dynamic scopes in the context. Such scopes can have new
+     * variables introduced into them at run time - a with block or a function directly containing an eval call.
+     */
+    private static class DynamicScopeTrackingLexicalContext extends LexicalContext {
+        int dynamicScopeCount = 0;
+
+        @Override
+        public <T extends LexicalContextNode> T push(T node) {
+            if(isDynamicScopeBoundary(node)) {
+                ++dynamicScopeCount;
+            }
+            return super.push(node);
+        }
+
+        @Override
+        public <T extends LexicalContextNode> T pop(T node) {
+            final T popped = super.pop(node);
+            if(isDynamicScopeBoundary(popped)) {
+                --dynamicScopeCount;
+            }
+            return popped;
+        }
+
+        private boolean isDynamicScopeBoundary(LexicalContextNode node) {
+            if(node instanceof Block) {
+                // Block's immediate parent is a with node. Note we aren't testing for a WithNode, as that'd capture
+                // processing of WithNode.expression too, but it should be unaffected.
+                return !isEmpty() && peek() instanceof WithNode;
+            } else if(node instanceof FunctionNode) {
+                // Function has a direct eval in it (so a top-level "var ..." in the eval code can introduce a new
+                // variable into the function's scope), and it isn't strict (as evals in strict functions get an
+                // isolated scope).
+                return isFunctionDynamicScope((FunctionNode)node);
+            }
+            return false;
+        }
+    }
+
+    boolean inDynamicScope() {
+        return ((DynamicScopeTrackingLexicalContext)getLexicalContext()).dynamicScopeCount > 0;
+    }
+
+    static boolean isFunctionDynamicScope(FunctionNode fn) {
+        return fn.hasEval() && !fn.isStrict();
+    }
+
+    /**
      * Check if this symbol can be accessed directly with a putfield or getfield or dynamic load
      *
      * @param function function to check for fast scope
      * @return true if fast scope
      */
     private boolean isFastScope(final Symbol symbol) {
-        if (!symbol.isScope() || !getLexicalContext().getDefiningBlock(symbol).needsScope()) {
+        if(!symbol.isScope()) {
             return false;
         }
-        // Allow fast scope access if no function contains with or eval
-        for (final Iterator<FunctionNode> it = getLexicalContext().getFunctions(); it.hasNext();) {
-            final FunctionNode func = it.next();
-            if (func.hasWith() || func.hasEval()) {
-                return false;
+        final LexicalContext lc = getLexicalContext();
+        if(!inDynamicScope()) {
+            // If there's no with or eval in context, and the symbol is marked as scoped, it is fast scoped. Such a
+            // symbol must either be global, or its defining block must need scope.
+            assert symbol.isGlobal() || lc.getDefiningBlock(symbol).needsScope() : symbol.getName();
+            return true;
+        }
+        if(symbol.isGlobal()) {
+            // Shortcut: if there's a with or eval in context, globals can't be fast scoped
+            return false;
+        }
+        // Otherwise, check if there's a dynamic scope between use of the symbol and its definition
+        final String name = symbol.getName();
+        boolean previousWasBlock = false;
+        for (final Iterator<LexicalContextNode> it = lc.getAllNodes(); it.hasNext();) {
+            final LexicalContextNode node = it.next();
+            if(node instanceof Block) {
+                // If this block defines the symbol, then we can fast scope the symbol.
+                final Block block = (Block)node;
+                if(block.getExistingSymbol(name) == symbol) {
+                    assert block.needsScope();
+                    return true;
+                }
+                previousWasBlock = true;
+            } else {
+                if((node instanceof WithNode && previousWasBlock) || (node instanceof FunctionNode && isFunctionDynamicScope((FunctionNode)node))) {
+                    // If we hit a scope that can have symbols introduced into it at run time before finding the defining
+                    // block, the symbol can't be fast scoped. A WithNode only counts if we've immediately seen a block
+                    // before - its block. Otherwise, we are currently processing the WithNode's expression, and that's
+                    // obviously not subjected to introducing new symbols.
+                    return false;
+                }
+                previousWasBlock = false;
             }
         }
-        return true;
+        // Should've found the symbol defined in a block
+        throw new AssertionError();
     }
 
     private MethodEmitter loadSharedScopeVar(final Type valueType, final Symbol symbol, final int flags) {
@@ -664,13 +743,13 @@ final class CodeGenerator extends NodeOperatorVisitor {
                     final int useCount = symbol.getUseCount();
 
                     // Threshold for generating shared scope callsite is lower for fast scope symbols because we know
-                    // we can dial in the correct scope. However, we als need to enable it for non-fast scopes to
+                    // we can dial in the correct scope. However, we also need to enable it for non-fast scopes to
                     // support huge scripts like mandreel.js.
                     if (callNode.isEval()) {
                         evalCall(node, flags);
                     } else if (useCount <= SharedScopeCall.FAST_SCOPE_CALL_THRESHOLD
                             || (!isFastScope(symbol) && useCount <= SharedScopeCall.SLOW_SCOPE_CALL_THRESHOLD)
-                            || callNode.inWithBlock()) {
+                            || CodeGenerator.this.inDynamicScope()) {
                         scopeCall(node, flags);
                     } else {
                         sharedScopeCall(node, flags);
@@ -1119,7 +1198,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        final Label label = new Label("line:" + lineNumberNode.getLineNumber() + " (" + getLexicalContext().getCurrentFunction().getName() + ")");
+        final Label label = new Label((String)null);
         method.label(label);
         method.lineNumber(lineNumberNode.getLineNumber(), label);
         return false;
@@ -2113,9 +2192,11 @@ final class CodeGenerator extends NodeOperatorVisitor {
     }
 
     private void closeWith() {
-        method.loadCompilerConstant(SCOPE);
-        method.invoke(ScriptRuntime.CLOSE_WITH);
-        method.storeCompilerConstant(SCOPE);
+        if(method.hasScope()) {
+            method.loadCompilerConstant(SCOPE);
+            method.invoke(ScriptRuntime.CLOSE_WITH);
+            method.storeCompilerConstant(SCOPE);
+        }
     }
 
     @Override
@@ -2123,38 +2204,58 @@ final class CodeGenerator extends NodeOperatorVisitor {
         final Node expression = withNode.getExpression();
         final Node body       = withNode.getBody();
 
-        final Label tryLabel   = new Label("with_try");
-        final Label endLabel   = new Label("with_end");
-        final Label catchLabel = new Label("with_catch");
-        final Label exitLabel  = new Label("with_exit");
+        // It is possible to have a "pathological" case where the with block does not reference *any* identifiers. It's
+        // pointless, but legal. In that case, if nothing else in the method forced the assignment of a slot to the
+        // scope object, its' possible that it won't have a slot assigned. In this case we'll only evaluate expression
+        // for its side effect and visit the body, and not bother opening and closing a WithObject.
+        final boolean hasScope = method.hasScope();
 
-        method.label(tryLabel);
-
-        method.loadCompilerConstant(SCOPE);
-        load(expression);
-
-        assert expression.getType().isObject() : "with expression needs to be object: " + expression;
-
-        method.invoke(ScriptRuntime.OPEN_WITH);
-        method.storeCompilerConstant(SCOPE);
-
-        body.accept(this);
-
-        if (!body.isTerminal()) {
-            closeWith();
-            method._goto(exitLabel);
+        final Label tryLabel;
+        if(hasScope) {
+            tryLabel = new Label("with_try");
+            method.label(tryLabel);
+            method.loadCompilerConstant(SCOPE);
+        } else {
+            tryLabel = null;
         }
 
-        method.label(endLabel);
+        load(expression);
+        assert expression.getType().isObject() : "with expression needs to be object: " + expression;
 
-        method._catch(catchLabel);
-        closeWith();
-        method.athrow();
+        if(hasScope) {
+            // Construct a WithObject if we have a scope
+            method.invoke(ScriptRuntime.OPEN_WITH);
+            method.storeCompilerConstant(SCOPE);
+        } else {
+            // We just loaded the expression for its side effect; discard it
+            method.pop();
+        }
 
-        method.label(exitLabel);
 
-        method._try(tryLabel, endLabel, catchLabel);
+        // Always process body
+        body.accept(this);
 
+        if(hasScope) {
+            // Ensure we always close the WithObject
+            final Label endLabel   = new Label("with_end");
+            final Label catchLabel = new Label("with_catch");
+            final Label exitLabel  = new Label("with_exit");
+
+            if (!body.isTerminal()) {
+                closeWith();
+                method._goto(exitLabel);
+            }
+
+            method.label(endLabel);
+
+            method._catch(catchLabel);
+            closeWith();
+            method.athrow();
+
+            method.label(exitLabel);
+
+            method._try(tryLabel, endLabel, catchLabel);
+        }
         return false;
     }
 
@@ -2572,7 +2673,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
             @Override
             protected void op() {
                 method.shr();
-                method.convert(Type.LONG).load(0xffff_ffffL).and();
+                method.convert(Type.LONG).load(JSType.MAX_UINT).and();
             }
         }.store();
 
@@ -2807,7 +2908,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
             @Override
             protected void op() {
                 method.shr();
-                method.convert(Type.LONG).load(0xffff_ffffL).and();
+                method.convert(Type.LONG).load(JSType.MAX_UINT).and();
             }
         }.evaluate(binaryNode);
 

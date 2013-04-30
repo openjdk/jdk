@@ -37,8 +37,8 @@ import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
 import jdk.nashorn.internal.runtime.ParserException;
-import jdk.nashorn.internal.runtime.regexp.RegExpFactory;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.regexp.RegExpFactory;
 
 /**
  * Base class for parsers.
@@ -242,6 +242,16 @@ public abstract class AbstractParser {
         final int column = position - linePosition;
         final String formatted = ErrorManager.format(message, source, line, column, token);
         return new ParserException(errorType, formatted, source, line, column, token);
+    }
+
+    /**
+     * Report a warning to the error manager.
+     *
+     * @param errorType  The error type of the warning
+     * @param message    Warning message.
+     */
+    protected final void warning(final JSErrorType errorType, final String message, final long errorToken) {
+        errors.warning(error(errorType, message, errorToken));
     }
 
     /**
