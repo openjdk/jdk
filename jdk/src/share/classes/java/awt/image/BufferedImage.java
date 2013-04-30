@@ -654,17 +654,19 @@ public class BufferedImage extends java.awt.Image
         int csType = cs.getType();
         if (csType != ColorSpace.TYPE_RGB) {
             if (csType == ColorSpace.TYPE_GRAY
-                && cm instanceof ComponentColorModel) {
+                && ComponentColorModel.class.equals(cm.getClass())) {
                 // Check if this might be a child raster (fix for bug 4240596)
                 if (sm instanceof ComponentSampleModel &&
                     ((ComponentSampleModel)sm).getPixelStride() != numBands) {
                     imageType = TYPE_CUSTOM;
                 } else if (raster instanceof ByteComponentRaster &&
+                       PixelInterleavedSampleModel.class.equals(sm.getClass()) &&
                        raster.getNumBands() == 1 &&
                        cm.getComponentSize(0) == 8 &&
                        ((ByteComponentRaster)raster).getPixelStride() == 1) {
                     imageType = TYPE_BYTE_GRAY;
                 } else if (raster instanceof ShortComponentRaster &&
+                       PixelInterleavedSampleModel.class.equals(sm.getClass()) &&
                        raster.getNumBands() == 1 &&
                        cm.getComponentSize(0) == 16 &&
                        ((ShortComponentRaster)raster).getPixelStride() == 1) {
@@ -684,7 +686,8 @@ public class BufferedImage extends java.awt.Image
             // are correct
             int pixSize = cm.getPixelSize();
             if (iraster.getPixelStride() == 1 &&
-                cm instanceof DirectColorModel  &&
+                DirectColorModel.class.equals(cm.getClass())  &&
+                SinglePixelPackedSampleModel.class.equals(sm.getClass()) &&
                 (pixSize == 32 || pixSize == 24))
             {
                 // Now check on the DirectColorModel params
@@ -715,16 +718,21 @@ public class BufferedImage extends java.awt.Image
                 }  // if (rmask == DCM_BGR_RED_MASK &&
             }   // if (iraster.getPixelStride() == 1
         }   // ((raster instanceof IntegerComponentRaster) &&
-        else if ((cm instanceof IndexColorModel) && (numBands == 1) &&
+        else if ((IndexColorModel.class.equals(cm.getClass())) &&
+                 (numBands == 1) &&
                  (!cm.hasAlpha() || !isAlphaPre))
         {
             IndexColorModel icm = (IndexColorModel) cm;
             int pixSize = icm.getPixelSize();
 
-            if (raster instanceof BytePackedRaster) {
+            if (raster instanceof BytePackedRaster &&
+                MultiPixelPackedSampleModel.class.equals(sm.getClass()))
+            {
                 imageType = TYPE_BYTE_BINARY;
             }   // if (raster instanceof BytePackedRaster)
-            else if (raster instanceof ByteComponentRaster) {
+            else if (raster instanceof ByteComponentRaster &&
+                     PixelInterleavedSampleModel.class.equals(sm.getClass()))
+            {
                 ByteComponentRaster braster = (ByteComponentRaster) raster;
                 if (braster.getPixelStride() == 1 && pixSize <= 8) {
                     imageType = TYPE_BYTE_INDEXED;
@@ -732,7 +740,8 @@ public class BufferedImage extends java.awt.Image
             }
         }   // else if (cm instanceof IndexColorModel) && (numBands == 1))
         else if ((raster instanceof ShortComponentRaster)
-                 && (cm instanceof DirectColorModel)
+                 && (DirectColorModel.class.equals(cm.getClass()))
+                 && (SinglePixelPackedSampleModel.class.equals(sm.getClass()))
                  && (numBands == 3)
                  && !cm.hasAlpha())
         {
@@ -779,12 +788,14 @@ public class BufferedImage extends java.awt.Image
                 braster.getPixelStride() == numBands &&
                 offs[0] == numBands-1 &&
                 offs[1] == numBands-2 &&
-                offs[2] == numBands-3)
+                offs[2] == numBands-3 &&
+                ComponentColorModel.class.equals(ccm.getClass()) &&
+                PixelInterleavedSampleModel.class.equals(csm.getClass()))
             {
-                if (numBands == 3) {
+                if (numBands == 3 && !ccm.hasAlpha()) {
                     imageType = TYPE_3BYTE_BGR;
                 }
-                else if (offs[3] == 0) {
+                else if (offs[3] == 0 && ccm.hasAlpha()) {
                     imageType = (isAlphaPre
                                  ? TYPE_4BYTE_ABGR_PRE
                                  : TYPE_4BYTE_ABGR);
