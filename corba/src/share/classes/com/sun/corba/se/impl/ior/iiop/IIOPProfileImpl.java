@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,8 @@ public class IIOPProfileImpl extends IdentifiableBase implements IIOPProfile
 
     public org.omg.IOP.TaggedProfile getIOPProfile()
     {
-        EncapsOutputStream os = new EncapsOutputStream( orb ) ;
+        EncapsOutputStream os =
+            sun.corba.OutputStreamFactory.newEncapsOutputStream(orb);
         os.write_long( getId() ) ;
         write( os ) ;
         InputStream is = (InputStream)(os.create_input_stream()) ;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,9 +534,9 @@ public class SocketOrChannelAcceptorImpl
     {
         CorbaMessageMediator corbaMessageMediator = (CorbaMessageMediator)
             messageMediator;
-        return new CDROutputObject((ORB) broker, corbaMessageMediator,
-                                   corbaMessageMediator.getReplyHeader(),
-                                   corbaMessageMediator.getStreamFormatVersion());
+        return sun.corba.OutputStreamFactory.newCDROutputObject((ORB) broker,
+                       corbaMessageMediator, corbaMessageMediator.getReplyHeader(),
+                       corbaMessageMediator.getStreamFormatVersion());
     }
 
     ////////////////////////////////////////////////////
