@@ -201,11 +201,6 @@ public class LWWindowPeer
         return this;
     }
 
-    @Override
-    protected void initializeContainerPeer() {
-        // No-op as LWWindowPeer doesn't have any containerPeer
-    }
-
     // ---- PEER METHODS ---- //
 
     @Override
