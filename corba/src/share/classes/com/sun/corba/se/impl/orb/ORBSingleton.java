@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ public class ORBSingleton extends ORB
     }
 
     public OutputStream create_output_stream() {
-        return new EncapsOutputStream(this);
+        return sun.corba.OutputStreamFactory.newEncapsOutputStream(this);
     }
 
     public TypeCode create_struct_tc(String id,

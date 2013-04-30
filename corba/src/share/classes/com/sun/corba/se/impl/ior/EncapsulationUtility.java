@@ -128,7 +128,8 @@ public class EncapsulationUtility
     static public void writeEncapsulation( WriteContents obj,
         OutputStream os )
     {
-        EncapsOutputStream out = new EncapsOutputStream( (ORB)os.orb() ) ;
+        EncapsOutputStream out =
+            sun.corba.OutputStreamFactory.newEncapsOutputStream((ORB)os.orb());
 
         out.putEndian() ;
 

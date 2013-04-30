@@ -179,7 +179,7 @@ public abstract class OutputStreamHook extends ObjectOutputStream
         putFields.write(this);
     }
 
-    public abstract org.omg.CORBA_2_3.portable.OutputStream getOrbStream();
+    abstract org.omg.CORBA_2_3.portable.OutputStream getOrbStream();
 
     protected abstract void beginOptionalCustomData();
 

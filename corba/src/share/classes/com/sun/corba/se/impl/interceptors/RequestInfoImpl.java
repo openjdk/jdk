@@ -659,7 +659,8 @@ public abstract class RequestInfoImpl
             // Convert the "core" service context to an
             // "IOP" ServiceContext by writing it to a
             // CDROutputStream and reading it back.
-            EncapsOutputStream out = new EncapsOutputStream(myORB);
+            EncapsOutputStream out =
+                sun.corba.OutputStreamFactory.newEncapsOutputStream(myORB);
 
             context.write( out, GIOPVersion.V1_2 );
             InputStream inputStream = out.create_input_stream();
@@ -695,8 +696,8 @@ public abstract class RequestInfoImpl
     {
         int id = 0 ;
         // Convert IOP.service_context to core.ServiceContext:
-        EncapsOutputStream outputStream = new EncapsOutputStream(
-            myORB );
+        EncapsOutputStream outputStream =
+           sun.corba.OutputStreamFactory.newEncapsOutputStream(myORB);
         InputStream inputStream = null;
         UnknownServiceContext coreServiceContext = null;
         ServiceContextHelper.write( outputStream, service_context );

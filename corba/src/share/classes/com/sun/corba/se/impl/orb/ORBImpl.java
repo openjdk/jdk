@@ -550,7 +550,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     public synchronized org.omg.CORBA.portable.OutputStream create_output_stream()
     {
         checkShutdownState();
-        return new EncapsOutputStream(this);
+        return sun.corba.OutputStreamFactory.newEncapsOutputStream(this);
     }
 
     /**
