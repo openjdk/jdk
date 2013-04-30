@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Unit test for Files.walkFileTree to test TERMINATE return value
+ * @library ../..
  * @compile TerminateWalk.java CreateFileTree.java
  * @run main TerminateWalk
  */
@@ -50,9 +51,16 @@ public class TerminateWalk {
     }
 
     public static void main(String[] args) throws Exception {
-        Path dir = CreateFileTree.create();
+        Path top = CreateFileTree.create();
+        try {
+            test(top);
+        } finally {
+            TestUtil.removeAll(top);
+        }
+    }
 
-        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+    static void test(Path start) throws IOException {
+        Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 return maybeTerminate();

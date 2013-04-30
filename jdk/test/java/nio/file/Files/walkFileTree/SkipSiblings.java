@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Unit test for Files.walkFileTree to test SKIP_SIBLINGS return value
+ * @library ../..
  * @compile SkipSiblings.java CreateFileTree.java
  * @run main SkipSiblings
  */
@@ -55,9 +56,16 @@ public class SkipSiblings {
     }
 
     public static void main(String[] args) throws Exception {
-        Path dir = CreateFileTree.create();
+        Path top = CreateFileTree.create();
+        try {
+            test(top);
+        } finally {
+            TestUtil.removeAll(top);
+        }
+    }
 
-        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+    static void test(final Path start) throws IOException {
+        Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 check(dir);
