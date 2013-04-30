@@ -315,7 +315,7 @@ public class Dependencies {
     static class SimpleLocation implements Location {
         public SimpleLocation(String name) {
             this.name = name;
-            this.className = name.replace('/', '.').replace('$', '.');
+            this.className = name.replace('/', '.');
         }
 
         public String getName() {
