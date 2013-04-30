@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@ import java.security.*;
 
 /**
  * The permission for which the <code>SecurityManager</code> will check
- * when code that is running in an applet, or an application with a
+ * when code that is running an application with a
  * <code>SecurityManager</code> enabled, calls the
+ * {@code DriverManager.deregisterDriver} method,
  * <code>DriverManager.setLogWriter</code> method,
  * <code>DriverManager.setLogStream</code> (deprecated) method,
  * {@code SyncFactory.setJNDIContext} method,
@@ -95,14 +96,16 @@ import java.security.*;
  * <code>Connection</code> or
  * objects created from the <code>Connection</code>
  * will wait for the database to reply to any one request.</td>
+ * <tr>
+ * <td>deregisterDriver</td>
+ *   <td>Allows the invocation of the {@code DriverManager}
+ * method {@code deregisterDriver}</td>
+ *   <td>Permits an application to remove a JDBC driver from the list of
+ * registered Drivers and release its resources.</td>
+ * </tr>
  * </tr>
  * </table>
  *<p>
- * The person running an applet decides what permissions to allow
- * and will run the <code>Policy Tool</code> to create an
- * <code>SQLPermission</code> in a policy file.  A programmer does
- * not use a constructor directly to create an instance of <code>SQLPermission</code>
- * but rather uses a tool.
  * @since 1.3
  * @see java.security.BasicPermission
  * @see java.security.Permission

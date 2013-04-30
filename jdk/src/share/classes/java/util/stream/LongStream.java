@@ -24,17 +24,21 @@
  */
 package java.util.stream;
 
+import java.util.Arrays;
 import java.util.LongSummaryStatistics;
+import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
 import java.util.function.LongPredicate;
+import java.util.function.LongSupplier;
 import java.util.function.LongToDoubleFunction;
 import java.util.function.LongToIntFunction;
 import java.util.function.LongUnaryOperator;
@@ -643,4 +647,153 @@ public interface LongStream extends BaseStream<Long, LongStream> {
 
     @Override
     Spliterator.OfLong spliterator();
+
+    // Static factories
+
+    /**
+     * Returns a builder for a {@code LongStream}.
+     *
+     * @return a stream builder
+     */
+    public static StreamBuilder.OfLong builder() {
+        return new Streams.LongStreamBuilderImpl();
+    }
+
+    /**
+     * Returns an empty sequential {@code LongStream}.
+     *
+     * @return an empty sequential stream
+     */
+    public static LongStream empty() {
+        return StreamSupport.longStream(Spliterators.emptyLongSpliterator());
+    }
+
+    /**
+     * Returns a sequential {@code LongStream} containing a single element.
+     *
+     * @param t the single element
+     * @return a singleton sequential stream
+     */
+    public static LongStream of(long t) {
+        return StreamSupport.longStream(new Streams.LongStreamBuilderImpl(t));
+    }
+
+    /**
+     * Returns a sequential stream whose elements are the specified values.
+     *
+     * @param values the elements of the new stream
+     * @return the new stream
+     */
+    public static LongStream of(long... values) {
+        return Arrays.stream(values);
+    }
+
+    /**
+     * Returns an infinite sequential {@code LongStream} produced by iterative
+     * application of a function {@code f} to an initial element {@code seed},
+     * producing a {@code Stream} consisting of {@code seed}, {@code f(seed)},
+     * {@code f(f(seed))}, etc.
+     *
+     * <p>The first element (position {@code 0}) in the {@code LongStream} will
+     * be the provided {@code seed}.  For {@code n > 0}, the element at position
+     * {@code n}, will be the result of applying the function {@code f} to the
+     * element at position {@code n - 1}.
+     *
+     * @param seed the initial element
+     * @param f a function to be applied to to the previous element to produce
+     *          a new element
+     * @return a new sequential {@code LongStream}
+     */
+    public static LongStream iterate(final long seed, final LongUnaryOperator f) {
+        Objects.requireNonNull(f);
+        final PrimitiveIterator.OfLong iterator = new PrimitiveIterator.OfLong() {
+            long t = seed;
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public long nextLong() {
+                long v = t;
+                t = f.applyAsLong(t);
+                return v;
+            }
+        };
+        return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(
+                iterator,
+                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+    }
+
+    /**
+     * Returns a sequential {@code LongStream} where each element is generated
+     * by a {@code LongSupplier}.  This is suitable for generating constant
+     * streams, streams of random elements, etc.
+     *
+     * @param s the {@code LongSupplier} for generated elements
+     * @return a new sequential {@code LongStream}
+     */
+    public static LongStream generate(LongSupplier s) {
+        Objects.requireNonNull(s);
+        return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(
+                new PrimitiveIterator.OfLong() {
+                    @Override
+                    public boolean hasNext() { return true; }
+
+                    @Override
+                    public long nextLong() { return s.getAsLong(); }
+                },
+                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+    }
+
+    /**
+     * Returns a sequential {@code LongStream} from {@code startInclusive}
+     * (inclusive) to {@code endExclusive} (exclusive) by an incremental step of
+     * 1.
+     *
+     * @implSpec
+     * The implementation behaves as if:
+     * <pre>{@code
+     *     longRange(startInclusive, endExclusive, 1);
+     * }</pre>
+     *
+     * @param startInclusive the (inclusive) initial value
+     * @param endExclusive the exclusive upper bound
+     * @return a sequential {@code LongStream} for the range of {@code long}
+     *         elements
+     */
+    public static LongStream range(long startInclusive, final long endExclusive) {
+        return range(startInclusive, endExclusive, 1);
+    }
+
+    /**
+     * Returns a sequential {@code LongStream} from {@code startInclusive}
+     * (inclusive) to {@code endExclusive} (exclusive) by {@code step}. If
+     * {@code startInclusive} is greater than or equal to {@code
+     * endExclusive}, an empty stream is returned.
+     *
+     * <p>An equivalent sequence of increasing values can be produced
+     * sequentially using a {@code for} loop as follows:
+     * <pre>{@code
+     *     for (long i = startInclusive; i < endExclusive ; i += step) { ... }
+     * }</pre>
+     *
+     * @param startInclusive the (inclusive) initial value
+     * @param endExclusive the exclusive upper bound
+     * @param step the difference between consecutive values
+     * @return a sequential {@code LongStream} for the range of {@code long}
+     *         elements
+     * @throws IllegalArgumentException if {@code step} is less than or equal to
+     *                                  0
+     */
+    public static LongStream range(long startInclusive, final long endExclusive, final long step) {
+        if (step <= 0) {
+            throw new IllegalArgumentException(String.format("Illegal step: %d", step));
+        } else if (startInclusive >= endExclusive) {
+            return empty();
+        } else {
+            return StreamSupport.longStream(new Streams.RangeLongSpliterator(startInclusive, endExclusive, step));
+        }
+    }
 }
