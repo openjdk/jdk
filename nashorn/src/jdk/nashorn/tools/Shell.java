@@ -343,7 +343,7 @@ public class Shell {
      * @return error code
      * @throws IOException when any script file read results in I/O error
      */
-    private int runFXScripts(final Context context, final ScriptObject global, final List<String> files) throws IOException {
+    private static int runFXScripts(final Context context, final ScriptObject global, final List<String> files) throws IOException {
         final ScriptObject oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         try {
