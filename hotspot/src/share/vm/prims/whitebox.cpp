@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,18 +310,19 @@ WB_END
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
   ResourceMark rm(THREAD);
   int len;
-  jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len);
-  oop found_string = StringTable::the_table()->lookup(name, len);
-  if (found_string == NULL) {
-        return false;
-  }
-  return true;
+  jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len, CHECK_false);
+  return (StringTable::lookup(name, len) != NULL);
 WB_END
 
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collector_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_last_ditch_collection);
+WB_END
+
+
+WB_ENTRY(jlong, WB_ReserveMemory(JNIEnv* env, jobject o, jlong size))
+  return (jlong)os::reserve_memory(size, NULL, 0);
 WB_END
 
 //Some convenience methods to deal with objects from java
@@ -425,6 +426,8 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Executable;)V",          (void*)&WB_ClearMethodState},
   {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
+
+  {CC"reserveMemory", CC"(J)J", (void*)&WB_ReserveMemory },
 };
 
 #undef CC
