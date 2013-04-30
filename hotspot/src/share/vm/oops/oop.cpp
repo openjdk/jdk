@@ -111,7 +111,7 @@ unsigned int oopDesc::new_hash(jint seed) {
     // Use alternate hashing algorithm on the string
     return AltHashing::murmur3_32(seed, chars, length);
   } else {
-    vm_exit_out_of_memory(length, "unable to create Unicode strings for String table rehash");
+    vm_exit_out_of_memory(length, OOM_MALLOC_ERROR, "unable to create Unicode strings for String table rehash");
     return 0;
   }
 }

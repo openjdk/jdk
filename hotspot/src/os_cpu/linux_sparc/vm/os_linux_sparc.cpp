@@ -178,7 +178,7 @@ static void current_stack_region(address* bottom, size_t* size) {
     // JVM needs to know exact stack location, abort if it fails
     if (rslt != 0) {
       if (rslt == ENOMEM) {
-        vm_exit_out_of_memory(0, "pthread_getattr_np");
+        vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
       } else {
         fatal(err_msg("pthread_getattr_np failed with errno = %d", rslt));
       }
