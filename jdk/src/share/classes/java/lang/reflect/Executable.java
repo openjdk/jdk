@@ -237,8 +237,8 @@ public abstract class Executable extends AccessibleObject
     public abstract Class<?>[] getParameterTypes();
 
     /**
-     * Returns the number of formal parameters (including any
-     * synthetic or synthesized parameters) for the executable
+     * Returns the number of formal parameters (whether explicitly
+     * declared or implicitly declared or neither) for the executable
      * represented by this object.
      *
      * @return The number of formal parameters for the executable this
