@@ -55,8 +55,9 @@ public final class Regex implements RegexState {
     int[]repeatRangeLo;
     int[]repeatRangeHi;
 
-    public WarnCallback warnings;
-    public MatcherFactory factory;
+    WarnCallback warnings;
+    MatcherFactory factory;
+    private Analyser analyser;
 
     int options;
     int userOptions;
@@ -140,9 +141,18 @@ public final class Regex implements RegexState {
         this.caseFoldFlag = caseFoldFlag;
         this.warnings = warnings;
 
-        new Analyser(new ScanEnvironment(this, syntax), chars, p, end).compile();
+        this.analyser = new Analyser(new ScanEnvironment(this, syntax), chars, p, end);
+        this.analyser.compile();
 
         this.warnings = null;
+    }
+
+    public void compile() {
+        if (factory == null && analyser != null) {
+            Compiler compiler = new ArrayCompiler(analyser);
+            analyser = null; // only do this once
+            compiler.compile();
+        }
     }
 
     public Matcher matcher(char[] chars) {
@@ -150,7 +160,12 @@ public final class Regex implements RegexState {
     }
 
     public Matcher matcher(char[] chars, int p, int end) {
+        compile();
         return factory.create(this, chars, p, end);
+    }
+
+    public WarnCallback getWarnings() {
+        return warnings;
     }
 
     public int numberOfCaptures() {
