@@ -454,8 +454,7 @@ public abstract class Symbol implements Element {
     }
 
     public Set<Modifier> getModifiers() {
-        long flags = flags();
-        return Flags.asModifierSet((flags & DEFAULT) != 0 ? flags & ~ABSTRACT : flags);
+        return Flags.asModifierSet(flags());
     }
 
     public Name getSimpleName() {
@@ -496,10 +495,11 @@ public abstract class Symbol implements Element {
         return List.nil();
     }
 
-    public List<TypeSymbol> getTypeParameters() {
-        ListBuffer<TypeSymbol> l = ListBuffer.lb();
+    public List<TypeVariableSymbol> getTypeParameters() {
+        ListBuffer<TypeVariableSymbol> l = ListBuffer.lb();
         for (Type t : type.getTypeArguments()) {
-            l.append(t.tsym);
+            Assert.check(t.tsym.getKind() == ElementKind.TYPE_PARAMETER);
+            l.append((TypeVariableSymbol)t.tsym);
         }
         return l.toList();
     }
@@ -546,19 +546,12 @@ public abstract class Symbol implements Element {
         }
     }
 
-    /** A class for type symbols. Type variables are represented by instances
-     *  of this class, classes and packages by instances of subclasses.
+    /** A base class for Symbols representing types.
      */
-    public static class TypeSymbol
-            extends Symbol implements TypeParameterElement {
-        // Implements TypeParameterElement because type parameters don't
-        // have their own TypeSymbol subclass.
-        // TODO: type parameters should have their own TypeSymbol subclass
-
-        public TypeSymbol(long flags, Name name, Type type, Symbol owner) {
-            super(TYP, flags, name, type, owner);
+    public static abstract class TypeSymbol extends Symbol {
+        public TypeSymbol(int kind, long flags, Name name, Type type, Symbol owner) {
+            super(kind, flags, name, type, owner);
         }
-
         /** form a fully qualified name from a name and an owner
          */
         static public Name formFullName(Name name, Symbol owner) {
@@ -610,11 +603,7 @@ public abstract class Symbol implements Element {
             return this.type.hasTag(TYPEVAR);
         }
 
-        // For type params; overridden in subclasses.
-        public ElementKind getKind() {
-            return ElementKind.TYPE_PARAMETER;
-        }
-
+        @Override
         public java.util.List<Symbol> getEnclosedElements() {
             List<Symbol> list = List.nil();
             if (kind == TYP && type.hasTag(TYPEVAR)) {
@@ -627,21 +616,29 @@ public abstract class Symbol implements Element {
             return list;
         }
 
-        // For type params.
-        // Perhaps not needed if getEnclosingElement can be spec'ed
-        // to do the same thing.
-        // TODO: getGenericElement() might not be needed
-        public Symbol getGenericElement() {
-            return owner;
-        }
-
-        public <R, P> R accept(ElementVisitor<R, P> v, P p) {
-            Assert.check(type.hasTag(TYPEVAR)); // else override will be invoked
-            return v.visitTypeParameter(this, p);
-        }
-
+        @Override
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitTypeSymbol(this, p);
+        }
+    }
+
+    /**
+     * Type variables are represented by instances of this class.
+     */
+    public static class TypeVariableSymbol
+            extends TypeSymbol implements TypeParameterElement {
+
+        public TypeVariableSymbol(long flags, Name name, Type type, Symbol owner) {
+            super(TYP, flags, name, type, owner);
+        }
+
+        public ElementKind getKind() {
+            return ElementKind.TYPE_PARAMETER;
+        }
+
+        @Override
+        public Symbol getGenericElement() {
+            return owner;
         }
 
         public List<Type> getBounds() {
@@ -658,6 +655,11 @@ public abstract class Symbol implements Element {
                 return ct.interfaces_field;
             }
         }
+
+        @Override
+        public <R, P> R accept(ElementVisitor<R, P> v, P p) {
+            return v.visitTypeParameter(this, p);
+        }
     }
 
     /** A class for package symbols
@@ -670,8 +672,7 @@ public abstract class Symbol implements Element {
         public ClassSymbol package_info; // see bug 6443073
 
         public PackageSymbol(Name name, Type type, Symbol owner) {
-            super(0, name, type, owner);
-            this.kind = PCK;
+            super(PCK, 0, name, type, owner);
             this.members_field = null;
             this.fullname = formFullName(name, owner);
         }
@@ -783,7 +784,7 @@ public abstract class Symbol implements Element {
         public Pool pool;
 
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
-            super(flags, name, type, owner);
+            super(TYP, flags, name, type, owner);
             this.members_field = null;
             this.fullname = formFullName(name, owner);
             this.flatname = formFlatName(name, owner);
@@ -1124,6 +1125,12 @@ public abstract class Symbol implements Element {
             };
             m.code = code;
             return m;
+        }
+
+        @Override
+        public Set<Modifier> getModifiers() {
+            long flags = flags();
+            return Flags.asModifierSet((flags & DEFAULT) != 0 ? flags & ~ABSTRACT : flags);
         }
 
         /** The Java source which this symbol represents.
