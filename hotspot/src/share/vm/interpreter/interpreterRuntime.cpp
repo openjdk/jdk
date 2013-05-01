@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,7 +454,7 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     continuation = Interpreter::remove_activation_entry();
 #endif
     // Count this for compilation purposes
-    h_method->interpreter_throwout_increment();
+    h_method->interpreter_throwout_increment(THREAD);
   } else {
     // handler in this method => change bci/bcp to handler bci/bcp and continue there
     handler_pc = h_method->code_base() + handler_bci;
@@ -901,6 +901,15 @@ IRT_ENTRY(void, InterpreterRuntime::update_mdp_for_ret(JavaThread* thread, int r
   RetData* rdata = data->as_RetData();
   address new_mdp = rdata->fixup_ret(return_bci, h_mdo);
   fr.interpreter_frame_set_mdp(new_mdp);
+IRT_END
+
+IRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread* thread, Method* m))
+  MethodCounters* mcs = Method::build_method_counters(m, thread);
+  if (HAS_PENDING_EXCEPTION) {
+    assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+    CLEAR_PENDING_EXCEPTION;
+  }
+  return mcs;
 IRT_END
 
 
