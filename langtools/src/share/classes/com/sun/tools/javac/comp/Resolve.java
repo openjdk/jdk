@@ -3604,6 +3604,11 @@ public class Resolve {
         }
 
         @Override
+        public Symbol baseSymbol() {
+            return delegatedError.baseSymbol();
+        }
+
+        @Override
         protected Symbol access(Name name, TypeSymbol location) {
             return delegatedError.access(name, location);
         }

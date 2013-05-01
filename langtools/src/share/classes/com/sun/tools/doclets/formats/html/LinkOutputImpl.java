@@ -63,6 +63,13 @@ public class LinkOutputImpl implements LinkOutput {
     /**
      * {@inheritDoc}
      */
+    public void insert(int offset, Object o) {
+        output.insert(offset, o.toString());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String toString() {
         return output.toString();
     }
