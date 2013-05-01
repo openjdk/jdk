@@ -120,37 +120,29 @@ endif
 #
 #       debug           compiler2       <os>_<arch>_compiler2/debug
 #       fastdebug       compiler2       <os>_<arch>_compiler2/fastdebug
-#       jvmg            compiler2       <os>_<arch>_compiler2/jvmg
 #       optimized       compiler2       <os>_<arch>_compiler2/optimized
-#       profiled        compiler2       <os>_<arch>_compiler2/profiled
 #       product         compiler2       <os>_<arch>_compiler2/product
 #
 #       debug1          compiler1       <os>_<arch>_compiler1/debug
 #       fastdebug1      compiler1       <os>_<arch>_compiler1/fastdebug
-#       jvmg1           compiler1       <os>_<arch>_compiler1/jvmg
 #       optimized1      compiler1       <os>_<arch>_compiler1/optimized
-#       profiled1       compiler1       <os>_<arch>_compiler1/profiled
 #       product1        compiler1       <os>_<arch>_compiler1/product
 #
 #       debugcore       core            <os>_<arch>_core/debug
 #       fastdebugcore   core            <os>_<arch>_core/fastdebug
-#       jvmgcore        core            <os>_<arch>_core/jvmg
 #       optimizedcore   core            <os>_<arch>_core/optimized
-#       profiledcore    core            <os>_<arch>_core/profiled
 #       productcore     core            <os>_<arch>_core/product
 #
 # What you get with each target:
 #
-# debug*     - "thin" libjvm - debug info linked into the gamma launcher
+# debug*     - debug compile with asserts enabled
 # fastdebug* - optimized compile, but with asserts enabled
-# jvmg*      - "fat" libjvm - debug info linked into libjvm.so
 # optimized* - optimized compile, no asserts
-# profiled*  - gprof
 # product*   - the shippable thing:  optimized compile, no asserts, -DPRODUCT
 
 # This target list needs to be coordinated with the usage message
 # in the build.sh script:
-TARGETS           = debug jvmg fastdebug optimized profiled product
+TARGETS           = debug fastdebug optimized product
 
 SUBDIR_DOCS       = $(OSNAME)_$(BUILDARCH)_docs
 SUBDIRS_C1        = $(addprefix $(OSNAME)_$(BUILDARCH)_compiler1/,$(TARGETS))
@@ -267,11 +259,21 @@ docs: checks
 	$(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/makefiles/jvmti.make $(MFLAGS) $(BUILDTREE_VARS) JvmtiOutDir=$(SUBDIR_DOCS) BUILD_FLAVOR=product jvmtidocs
 
 # Synonyms for win32-like targets.
-compiler2:  jvmg product
+compiler2:  debug product
 
-compiler1:  jvmg1 product1
+compiler1:  debug1 product1
 
-core: jvmgcore productcore
+core: debugcore productcore
+
+warn_jvmg_deprecated:
+	echo "Warning: The jvmg target has been replaced with debug"
+	echo "Warning: Please update your usage"
+
+jvmg: warn_jvmg_deprecated debug
+
+jvmg1: warn_jvmg_deprecated debug1
+
+jvmgcore: warn_jvmg_deprecated debugcore
 
 clean_docs:
 	rm -rf $(SUBDIR_DOCS)

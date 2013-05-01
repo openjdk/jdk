@@ -103,27 +103,7 @@ bool MetaspaceGC::_should_concurrent_collect = false;
 // a chunk is placed on the free list of blocks (BlockFreelist) and
 // reused from there.
 
-// Pointer to list of Metachunks.
-class ChunkList VALUE_OBJ_CLASS_SPEC {
-  // List of free chunks
-  Metachunk* _head;
-
- public:
-  // Constructor
-  ChunkList() : _head(NULL) {}
-
-  // Accessors
-  Metachunk* head() { return _head; }
-  void set_head(Metachunk* v) { _head = v; }
-
-  // Link at head of the list
-  void add_at_head(Metachunk* head, Metachunk* tail);
-  void add_at_head(Metachunk* head);
-
-  size_t sum_list_size();
-  size_t sum_list_count();
-  size_t sum_list_capacity();
-};
+typedef class FreeList<Metachunk> ChunkList;
 
 // Manages the global free lists of chunks.
 // Has three lists of free chunks, and a total size and
@@ -184,6 +164,10 @@ class ChunkManager VALUE_OBJ_CLASS_SPEC {
   // Map a size to a list index assuming that there are lists
   // for special, small, medium, and humongous chunks.
   static ChunkIndex list_index(size_t size);
+
+  // Add the simple linked list of chunks to the freelist of chunks
+  // of type index.
+  void return_chunks(ChunkIndex index, Metachunk* chunks);
 
   // Total of the space in the free chunks list
   size_t free_chunks_total();
@@ -899,6 +883,9 @@ VirtualSpaceList::VirtualSpaceList(size_t word_size ) :
                    Mutex::_no_safepoint_check_flag);
   bool initialization_succeeded = grow_vs(word_size);
 
+  _chunk_manager.free_chunks(SpecializedIndex)->set_size(SpecializedChunk);
+  _chunk_manager.free_chunks(SmallIndex)->set_size(SmallChunk);
+  _chunk_manager.free_chunks(MediumIndex)->set_size(MediumChunk);
   assert(initialization_succeeded,
     " VirtualSpaceList initialization should not fail");
 }
@@ -913,6 +900,9 @@ VirtualSpaceList::VirtualSpaceList(ReservedSpace rs) :
                    Mutex::_no_safepoint_check_flag);
   VirtualSpaceNode* class_entry = new VirtualSpaceNode(rs);
   bool succeeded = class_entry->initialize();
+  _chunk_manager.free_chunks(SpecializedIndex)->set_size(SpecializedChunk);
+  _chunk_manager.free_chunks(SmallIndex)->set_size(ClassSmallChunk);
+  _chunk_manager.free_chunks(MediumIndex)->set_size(ClassMediumChunk);
   assert(succeeded, " VirtualSpaceList initialization should not fail");
   link_vs(class_entry, rs.size()/BytesPerWord);
 }
@@ -1380,76 +1370,6 @@ bool Metadebug::test_metadata_failure() {
 }
 #endif
 
-// ChunkList methods
-
-size_t ChunkList::sum_list_size() {
-  size_t result = 0;
-  Metachunk* cur = head();
-  while (cur != NULL) {
-    result += cur->word_size();
-    cur = cur->next();
-  }
-  return result;
-}
-
-size_t ChunkList::sum_list_count() {
-  size_t result = 0;
-  Metachunk* cur = head();
-  while (cur != NULL) {
-    result++;
-    cur = cur->next();
-  }
-  return result;
-}
-
-size_t ChunkList::sum_list_capacity() {
-  size_t result = 0;
-  Metachunk* cur = head();
-  while (cur != NULL) {
-    result += cur->capacity_word_size();
-    cur = cur->next();
-  }
-  return result;
-}
-
-void ChunkList::add_at_head(Metachunk* head, Metachunk* tail) {
-  assert_lock_strong(SpaceManager::expand_lock());
-  assert(head == tail || tail->next() == NULL,
-         "Not the tail or the head has already been added to a list");
-
-  if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print("ChunkList::add_at_head(head, tail): ");
-    Metachunk* cur = head;
-    while (cur != NULL) {
-      gclog_or_tty->print(PTR_FORMAT " (" SIZE_FORMAT ") ", cur, cur->word_size());
-      cur = cur->next();
-    }
-    gclog_or_tty->print_cr("");
-  }
-
-  if (tail != NULL) {
-    tail->set_next(_head);
-  }
-  set_head(head);
-}
-
-void ChunkList::add_at_head(Metachunk* list) {
-  if (list == NULL) {
-    // Nothing to add
-    return;
-  }
-  assert_lock_strong(SpaceManager::expand_lock());
-  Metachunk* head = list;
-  Metachunk* tail = list;
-  Metachunk* cur = head->next();
-  // Search for the tail since it is not passed.
-  while (cur != NULL) {
-    tail = cur;
-    cur = cur->next();
-  }
-  add_at_head(head, tail);
-}
-
 // ChunkManager methods
 
 // Verification of _free_chunks_total and _free_chunks_count does not
@@ -1553,7 +1473,7 @@ size_t ChunkManager::sum_free_chunks() {
       continue;
     }
 
-    result = result + list->sum_list_capacity();
+    result = result + list->count() * list->size();
   }
   result = result + humongous_dictionary()->total_size();
   return result;
@@ -1567,7 +1487,7 @@ size_t ChunkManager::sum_free_chunks_count() {
     if (list == NULL) {
       continue;
     }
-    count = count + list->sum_list_count();
+    count = count + list->count();
   }
   count = count + humongous_dictionary()->total_free_blocks();
   return count;
@@ -1622,7 +1542,7 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
     }
 
     // Remove the chunk as the head of the list.
-    free_list->set_head(chunk->next());
+    free_list->remove_chunk(chunk);
 
     // Chunk is being removed from the chunks free list.
     dec_free_chunks_total(chunk->capacity_word_size());
@@ -1679,7 +1599,7 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
     size_t list_count;
     if (list_index(word_size) < HumongousIndex) {
       ChunkList* list = find_free_chunks_list(word_size);
-      list_count = list->sum_list_count();
+      list_count = list->count();
     } else {
       list_count = humongous_dictionary()->total_count();
     }
@@ -1958,6 +1878,29 @@ void SpaceManager::initialize() {
   }
 }
 
+void ChunkManager::return_chunks(ChunkIndex index, Metachunk* chunks) {
+  if (chunks == NULL) {
+    return;
+  }
+  ChunkList* list = free_chunks(index);
+  assert(list->size() == chunks->word_size(), "Mismatch in chunk sizes");
+  assert_lock_strong(SpaceManager::expand_lock());
+  Metachunk* cur = chunks;
+
+  // This return chunks one at a time.  If a new
+  // class List can be created that is a base class
+  // of FreeList then something like FreeList::prepend()
+  // can be used in place of this loop
+  while (cur != NULL) {
+    // Capture the next link before it is changed
+    // by the call to return_chunk_at_head();
+    Metachunk* next = cur->next();
+    cur->set_is_free(true);
+    list->return_chunk_at_head(cur);
+    cur = next;
+  }
+}
+
 SpaceManager::~SpaceManager() {
   // This call this->_lock which can't be done while holding expand_lock()
   const size_t in_use_before = sum_capacity_in_chunks_in_use();
@@ -1995,11 +1938,11 @@ SpaceManager::~SpaceManager() {
                              chunk_size_name(i));
     }
     Metachunk* chunks = chunks_in_use(i);
-    chunk_manager->free_chunks(i)->add_at_head(chunks);
+    chunk_manager->return_chunks(i, chunks);
     set_chunks_in_use(i, NULL);
     if (TraceMetadataChunkAllocation && Verbose) {
       gclog_or_tty->print_cr("updated freelist count %d %s",
-                             chunk_manager->free_chunks(i)->sum_list_count(),
+                             chunk_manager->free_chunks(i)->count(),
                              chunk_size_name(i));
     }
     assert(i != HumongousIndex, "Humongous chunks are handled explicitly later");
