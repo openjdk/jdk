@@ -616,7 +616,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       buffer[0] = 0;
       _chaitin->dump_register(node, buffer);
       print_prop("reg", buffer);
-      print_prop("lrg", _chaitin->n2lidx(node));
+      print_prop("lrg", _chaitin->_lrg_map.live_range_id(node));
     }
 
     node->_in_dump_cnt--;

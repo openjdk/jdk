@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Single gnu makefile for solaris, linux and windows (windows requires cygwin and mingw)
@@ -66,7 +66,7 @@ ARCH=i386
 endif
 CC 		= $(MINGW)-gcc
 CONFIGURE_ARGS= --host=$(MINGW) --target=$(MINGW)
-else   #linux 
+else   #linux
 CPU             = $(shell uname -m)
 ARCH1=$(CPU:x86_64=amd64)
 ARCH=$(ARCH1:i686=i386)
@@ -116,7 +116,6 @@ OUTFLAGS        += -o $@
 else #Windows
 OS		= windows
 CC		= gcc
-#CPPFLAGS	+= /D"WIN32" /D"_WINDOWS" /D"DEBUG" /D"NDEBUG"
 CFLAGS		+=  /nologo /MD /W3 /WX /O2 /Fo$(@:.dll=.obj) /Gi-
 CFLAGS		+= LIBARCH=\"$(LIBARCH)\"
 DLDFLAGS	+= /dll /subsystem:windows /incremental:no \
