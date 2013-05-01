@@ -707,8 +707,8 @@ JNF_COCOA_ENTER(env);
   task_t gTask = 0;
   result = task_for_pid(mach_task_self(), jpid, &gTask);
   if (result != KERN_SUCCESS) {
-    print_error("attach: task_for_pid(%d) failed (%d)\n", (int)jpid, result);
-    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the process");
+    print_error("attach: task_for_pid(%d) failed: '%s' (%d)\n", (int)jpid, mach_error_string(result), result);
+    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the process. Could be caused by an incorrect pid or lack of privileges.");
   }
   putTask(env, this_obj, gTask);
 

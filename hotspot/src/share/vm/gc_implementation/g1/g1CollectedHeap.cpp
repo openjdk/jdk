@@ -1831,7 +1831,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
     if (G1ExitOnExpansionFailure &&
         _g1_storage.uncommitted_size() >= aligned_expand_bytes) {
       // We had head room...
-      vm_exit_out_of_memory(aligned_expand_bytes, "G1 heap expansion");
+      vm_exit_out_of_memory(aligned_expand_bytes, OOM_MMAP_ERROR, "G1 heap expansion");
     }
   }
   return successful;
@@ -3614,7 +3614,7 @@ G1CollectedHeap::setup_surviving_young_words() {
   uint array_length = g1_policy()->young_cset_region_length();
   _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, (size_t) array_length, mtGC);
   if (_surviving_young_words == NULL) {
-    vm_exit_out_of_memory(sizeof(size_t) * array_length,
+    vm_exit_out_of_memory(sizeof(size_t) * array_length, OOM_MALLOC_ERROR,
                           "Not enough space for young surv words summary.");
   }
   memset(_surviving_young_words, 0, (size_t) array_length * sizeof(size_t));
@@ -4397,7 +4397,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num)
                       PADDING_ELEM_NUM;
   _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length, mtGC);
   if (_surviving_young_words_base == NULL)
-    vm_exit_out_of_memory(array_length * sizeof(size_t),
+    vm_exit_out_of_memory(array_length * sizeof(size_t), OOM_MALLOC_ERROR,
                           "Not enough space for young surv histo.");
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
   memset(_surviving_young_words, 0, (size_t) real_length * sizeof(size_t));

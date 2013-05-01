@@ -2404,7 +2404,7 @@ void ObjectMonitor::DeferredInitialize () {
   size_t sz = strlen (SyncKnobs) ;
   char * knobs = (char *) malloc (sz + 2) ;
   if (knobs == NULL) {
-     vm_exit_out_of_memory (sz + 2, "Parse SyncKnobs") ;
+     vm_exit_out_of_memory (sz + 2, OOM_MALLOC_ERROR, "Parse SyncKnobs") ;
      guarantee (0, "invariant") ;
   }
   strcpy (knobs, SyncKnobs) ;
