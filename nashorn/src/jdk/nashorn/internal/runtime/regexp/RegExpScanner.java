@@ -47,9 +47,6 @@ final class RegExpScanner extends Scanner {
      */
     private final StringBuilder sb;
 
-    /** Is this the special case of a regexp that never matches anything */
-    private boolean neverMatches;
-
     /** Expected token table */
     private final Map<Character, Integer> expected = new HashMap<>();
 
@@ -99,24 +96,17 @@ final class RegExpScanner extends Scanner {
     }
 
     private void processForwardReferences() {
-        if (neverMatches()) {
-            return;
-        }
 
         Iterator<Integer> iterator = forwardReferences.descendingIterator();
         while (iterator.hasNext()) {
             final int pos = iterator.next();
             final int num = iterator.next();
             if (num > caps.size()) {
-                // Non-existing reference should never match, if smaller than 8 convert to octal escape
-                // to be compatible with other engines.
-                if (num < 8) {
-                    String escape = "\\x0" + num;
-                    sb.insert(pos, escape);
-                } else {
-                    neverMatches = true;
-                    break;
-                }
+                // Non-existing backreference. If the number begins with a valid octal convert it to
+                // Unicode escape and append the rest to a literal character sequence.
+                final StringBuilder buffer = new StringBuilder();
+                octalOrLiteral(Integer.toString(num), buffer);
+                sb.insert(pos, buffer);
             }
         }
 
@@ -140,9 +130,6 @@ final class RegExpScanner extends Scanner {
         }
 
         scanner.processForwardReferences();
-        if (scanner.neverMatches()) {
-            return null; // never matches
-        }
 
         // Throw syntax error unless we parsed the entire JavaScript regexp without syntax errors
         if (scanner.position != string.length()) {
@@ -151,16 +138,6 @@ final class RegExpScanner extends Scanner {
         }
 
         return scanner;
-     }
-
-    /**
-     * Does this regexp ever match anything? Use of e.g. [], which is legal in JavaScript,
-     * is an example where we never match
-     *
-     * @return boolean
-     */
-    private boolean neverMatches() {
-        return neverMatches;
     }
 
     final StringBuilder getStringBuilder() {
@@ -282,23 +259,16 @@ final class RegExpScanner extends Scanner {
         }
 
         if (atom()) {
-            boolean emptyCharacterClass = false;
+            // Check for character classes that never or always match
             if (sb.toString().endsWith("[]")) {
-                emptyCharacterClass = true;
+                sb.setLength(sb.length() - 1);
+                sb.append("^\\s\\S]");
             } else if (sb.toString().endsWith("[^]")) {
                 sb.setLength(sb.length() - 2);
                 sb.append("\\s\\S]");
             }
 
-            boolean quantifier = quantifier();
-
-            if (emptyCharacterClass) {
-                if (!quantifier) {
-                    neverMatches = true; //never matches ever.
-                }
-                // Note: we could check if quantifier has min zero to mark empty character class as dead.
-            }
-
+            quantifier();
             return true;
         }
 
@@ -626,13 +596,14 @@ final class RegExpScanner extends Scanner {
      *      ABCDEFGHIJKLMNOPQRSTUVWXYZ
      */
     private boolean controlLetter() {
-        final char c = Character.toUpperCase(ch0);
-        if (c >= 'A' && c <= 'Z') {
+        // To match other engines we also accept '0'..'9' and '_' as control letters inside a character class.
+        if ((ch0 >= 'A' && ch0 <= 'Z') || (ch0 >= 'a' && ch0 <= 'z')
+                || (inCharClass && (isDecimalDigit(ch0) || ch0 == '_'))) {
             // for some reason java regexps don't like control characters on the
             // form "\\ca".match([string with ascii 1 at char0]). Translating
             // them to unicode does it though.
             sb.setLength(sb.length() - 1);
-            unicode(c - 'A' + 1);
+            unicode(ch0 % 32, sb);
             skip(1);
             return true;
         }
@@ -651,14 +622,7 @@ final class RegExpScanner extends Scanner {
         }
         // ES 5.1 A.7 requires "not IdentifierPart" here but all major engines accept any character here.
         if (ch0 == 'c') {
-            // Ignore invalid control letter escape if within a character class
-            if (inCharClass && ch1 != ']') {
-                sb.setLength(sb.length() - 1);
-                skip(2);
-                return true;
-            } else {
-                sb.append('\\'); // Treat invalid \c control sequence as \\c
-            }
+            sb.append('\\'); // Treat invalid \c control sequence as \\c
         } else if (NON_IDENT_ESCAPES.indexOf(ch0) == -1) {
             sb.setLength(sb.length() - 1);
         }
@@ -673,7 +637,7 @@ final class RegExpScanner extends Scanner {
         final int startIn  = position;
         final int startOut = sb.length();
 
-        if (ch0 == '0' && !isDecimalDigit(ch1)) {
+        if (ch0 == '0' && !isOctalDigit(ch1)) {
             skip(1);
             //  DecimalEscape :: 0. If i is zero, return the EscapeValue consisting of a <NUL> character (Unicodevalue0000);
             sb.append("\u0000");
@@ -681,50 +645,56 @@ final class RegExpScanner extends Scanner {
         }
 
         if (isDecimalDigit(ch0)) {
-            final int num = ch0 - '0';
 
-            // Single digit escape, treat as backreference.
-            if (!isDecimalDigit(ch1)) {
-                if (num <= caps.size() && caps.get(num - 1).getNegativeLookaheadLevel() > 0) {
+            if (ch0 == '0') {
+                // We know this is an octal escape.
+                if (inCharClass) {
+                    // Convert octal escape to unicode escape if inside character class.
+                    int octalValue = 0;
+                    while (isOctalDigit(ch0)) {
+                        octalValue = octalValue * 8 + ch0 - '0';
+                        skip(1);
+                    }
+
+                    unicode(octalValue, sb);
+
+                } else {
+                    // Copy decimal escape as-is
+                    decimalDigits();
+                }
+            } else {
+                // This should be a backreference, but could also be an octal escape or even a literal string.
+                int decimalValue = 0;
+                while (isDecimalDigit(ch0)) {
+                    decimalValue = decimalValue * 10 + ch0 - '0';
+                    skip(1);
+                }
+
+                if (inCharClass) {
+                    // No backreferences in character classes. Encode as unicode escape or literal char sequence
+                    sb.setLength(sb.length() - 1);
+                    octalOrLiteral(Integer.toString(decimalValue), sb);
+
+                } else if (decimalValue <= caps.size() && caps.get(decimalValue - 1).getNegativeLookaheadLevel() > 0) {
                     //  Captures that live inside a negative lookahead are dead after the
                     //  lookahead and will be undefined if referenced from outside.
-                    if (caps.get(num - 1).getNegativeLookaheadLevel() > negativeLookaheadLevel) {
+                    if (caps.get(decimalValue - 1).getNegativeLookaheadLevel() > negativeLookaheadLevel) {
                         sb.setLength(sb.length() - 1);
                     } else {
-                        sb.append(ch0);
+                        sb.append(decimalValue);
                     }
-                    skip(1);
-                    return true;
-                } else if (num > caps.size()) {
-                    // Forward reference to a capture group. Forward references are always undefined so we
-                    // can omit it from the output buffer. Additionally, if the capture group does not exist
-                    // the whole regexp becomes invalid, so register the reference for later processing.
+                } else if (decimalValue > caps.size()) {
+                    // Forward reference to a capture group. Forward references are always undefined so we can omit
+                    // it from the output buffer. However, if the target capture does not exist, we need to rewrite
+                    // the reference as hex escape or literal string, so register the reference for later processing.
                     sb.setLength(sb.length() - 1);
-                    forwardReferences.add(num);
+                    forwardReferences.add(decimalValue);
                     forwardReferences.add(sb.length());
-                    skip(1);
-                    return true;
-                }
-            }
-
-            if (inCharClass) {
-                // Convert octal escape to unicode escape if inside character class.
-                StringBuilder digit = new StringBuilder(4);
-                while (isDecimalDigit(ch0)) {
-                    digit.append(ch0);
-                    skip(1);
+                } else {
+                    // Append as backreference
+                    sb.append(decimalValue);
                 }
 
-                int value = Integer.parseInt(digit.toString(), 8); //throws exception that leads to SyntaxError if not octal
-                if (value > 0xff) {
-                    throw new NumberFormatException(digit.toString());
-                }
-
-                unicode(value);
-
-            } else {
-                // Copy decimal escape as-is
-                decimalDigits();
             }
             return true;
         }
@@ -904,7 +874,6 @@ final class RegExpScanner extends Scanner {
         switch (ch0) {
         case ']':
         case '-':
-        case '\0':
             return false;
 
         case '[':
@@ -965,13 +934,41 @@ final class RegExpScanner extends Scanner {
         return true;
     }
 
-    private void unicode(final int value) {
+    private void unicode(final int value, final StringBuilder buffer) {
         final String hex = Integer.toHexString(value);
-        sb.append('u');
+        buffer.append('u');
         for (int i = 0; i < 4 - hex.length(); i++) {
-            sb.append('0');
+            buffer.append('0');
         }
-        sb.append(hex);
+        buffer.append(hex);
+    }
+
+    // Convert what would have been a backreference into a unicode escape, or a number literal, or both.
+    private void octalOrLiteral(final String numberLiteral, final StringBuilder buffer) {
+        final int length = numberLiteral.length();
+        int octalValue = 0;
+        int pos = 0;
+        // Maximum value for octal escape is 0377 (255) so we stop the loop at 32
+        while (pos < length && octalValue < 0x20) {
+            final char ch = numberLiteral.charAt(pos);
+            if (isOctalDigit(ch)) {
+                octalValue = octalValue * 8 + ch - '0';
+            } else {
+                break;
+            }
+            pos++;
+        }
+        if (octalValue > 0) {
+            buffer.append('\\');
+            unicode(octalValue, buffer);
+            buffer.append(numberLiteral.substring(pos));
+        } else {
+            buffer.append(numberLiteral);
+        }
+    }
+
+    private static boolean isOctalDigit(final char ch) {
+        return ch >= '0' && ch <= '7';
     }
 
     private static boolean isDecimalDigit(final char ch) {
