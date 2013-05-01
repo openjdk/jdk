@@ -41,23 +41,25 @@ protected:
 
 public:
   // Coalesce copies
-  PhaseCoalesce( PhaseChaitin &chaitin ) : Phase(Coalesce), _phc(chaitin) { }
+  PhaseCoalesce(PhaseChaitin &phc)
+  : Phase(Coalesce)
+  , _phc(phc) {}
 
   virtual void verify() = 0;
 
   // Coalesce copies
-  void coalesce_driver( );
+  void coalesce_driver();
 
   // Coalesce copies in this block
-  virtual void coalesce( Block *b ) = 0;
+  virtual void coalesce(Block *b) = 0;
 
   // Attempt to coalesce live ranges defined by these 2
-  void combine_these_two( Node *n1, Node *n2 );
+  void combine_these_two(Node *n1, Node *n2);
 
-  LRG &lrgs( uint lidx ) { return _phc.lrgs(lidx); }
+  LRG &lrgs(uint lidx) { return _phc.lrgs(lidx); }
 #ifndef PRODUCT
   // Dump internally name
-  void dump( Node *n ) const;
+  void dump(Node *n) const;
   // Dump whole shebang
   void dump() const;
 #endif

@@ -1000,9 +1000,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
         assert(deopt_blob != NULL, "deoptimization blob must have been created");
         restore_live_registers(sasm);
-        __ restore();
-        __ br(Assembler::always, false, Assembler::pt, deopt_blob->unpack_with_reexecution(), relocInfo::runtime_call_type);
-        __ delayed()->nop();
+
+        AddressLiteral dest(deopt_blob->unpack_with_reexecution());
+        __ jump_to(dest, O0);
+        __ delayed()->restore();
       }
       break;
 
