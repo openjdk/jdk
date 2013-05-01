@@ -100,7 +100,7 @@ VMError::VMError(Thread* thread, const char* filename, int lineno,
                  const char* message, const char * detail_msg)
 {
   _thread = thread;
-  _id = internal_error;     // Value that's not an OS exception/signal
+  _id = INTERNAL_ERROR;     // Value that's not an OS exception/signal
   _filename = filename;
   _lineno = lineno;
   _message = message;
@@ -119,9 +119,9 @@ VMError::VMError(Thread* thread, const char* filename, int lineno,
 
 // Constructor for OOM errors
 VMError::VMError(Thread* thread, const char* filename, int lineno, size_t size,
-                 const char* message) {
+                 VMErrorType vm_err_type, const char* message) {
     _thread = thread;
-    _id = oom_error;     // Value that's not an OS exception/signal
+    _id = vm_err_type; // Value that's not an OS exception/signal
     _filename = filename;
     _lineno = lineno;
     _message = message;
@@ -142,7 +142,7 @@ VMError::VMError(Thread* thread, const char* filename, int lineno, size_t size,
 // Constructor for non-fatal errors
 VMError::VMError(const char* message) {
     _thread = NULL;
-    _id = internal_error;     // Value that's not an OS exception/signal
+    _id = INTERNAL_ERROR;     // Value that's not an OS exception/signal
     _filename = NULL;
     _lineno = 0;
     _message = message;
@@ -351,9 +351,12 @@ void VMError::report(outputStream* st) {
   STEP(15, "(printing type of error)")
 
      switch(_id) {
-       case oom_error:
+       case OOM_MALLOC_ERROR:
+       case OOM_MMAP_ERROR:
          if (_size) {
-           st->print("# Native memory allocation (malloc) failed to allocate ");
+           st->print("# Native memory allocation ");
+           st->print((_id == (int)OOM_MALLOC_ERROR) ? "(malloc) failed to allocate " :
+                                                 "(mmap) failed to map ");
            jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
            st->print(buf);
            st->print(" bytes");
@@ -386,7 +389,7 @@ void VMError::report(outputStream* st) {
            return;  // that's enough for the screen
          }
          break;
-       case internal_error:
+       case INTERNAL_ERROR:
        default:
          break;
      }
