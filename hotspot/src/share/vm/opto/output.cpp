@@ -1044,21 +1044,6 @@ void NonSafepointEmitter::emit_non_safepoint() {
   debug_info->end_non_safepoint(pc_offset);
 }
 
-
-
-// helper for fill_buffer bailout logic
-static void turn_off_compiler(Compile* C) {
-  if (CodeCache::largest_free_block() >= CodeCacheMinimumFreeSpace*10) {
-    // Do not turn off compilation if a single giant method has
-    // blown the code cache size.
-    C->record_failure("excessive request to CodeCache");
-  } else {
-    // Let CompilerBroker disable further compilations.
-    C->record_failure("CodeCache is full");
-  }
-}
-
-
 //------------------------------init_buffer------------------------------------
 CodeBuffer* Compile::init_buffer(uint* blk_starts) {
 
@@ -1158,7 +1143,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
 
   // Have we run out of code space?
   if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
-    turn_off_compiler(this);
+    C->record_failure("CodeCache is full");
     return NULL;
   }
   // Configure the code buffer.
@@ -1476,7 +1461,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       // Verify that there is sufficient space remaining
       cb->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
       if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
-        turn_off_compiler(this);
+        C->record_failure("CodeCache is full");
         return;
       }
 
@@ -1633,7 +1618,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // One last check for failed CodeBuffer::expand:
   if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
-    turn_off_compiler(this);
+    C->record_failure("CodeCache is full");
     return;
   }
 
