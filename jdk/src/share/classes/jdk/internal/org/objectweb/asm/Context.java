@@ -57,70 +57,118 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package jdk.internal.org.objectweb.asm.commons;
-
-import java.util.Collections;
-import java.util.Comparator;
-
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.tree.MethodNode;
-import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
-import jdk.internal.org.objectweb.asm.tree.TypeAnnotationNode;
+package jdk.internal.org.objectweb.asm;
 
 /**
- * A {@link MethodVisitor} adapter to sort the exception handlers. The handlers
- * are sorted in a method innermost-to-outermost. This allows the programmer to
- * add handlers without worrying about ordering them correctly with respect to
- * existing, in-code handlers.
+ * Information about a class being parsed in a {@link ClassReader}.
  *
- * Behavior is only defined for properly-nested handlers. If any "try" blocks
- * overlap (something that isn't possible in Java code) then this may not do
- * what you want. In fact, this adapter just sorts by the length of the "try"
- * block, taking advantage of the fact that a given try block must be larger
- * than any block it contains).
- *
- * @author Adrian Sampson
+ * @author Eric Bruneton
  */
-public class TryCatchBlockSorter extends MethodNode {
+class Context {
 
-    public TryCatchBlockSorter(final MethodVisitor mv, final int access,
-            final String name, final String desc, final String signature,
-            final String[] exceptions) {
-        this(Opcodes.ASM5, mv, access, name, desc, signature, exceptions);
-    }
+    /**
+     * Prototypes of the attributes that must be parsed for this class.
+     */
+    Attribute[] attrs;
 
-    protected TryCatchBlockSorter(final int api, final MethodVisitor mv,
-            final int access, final String name, final String desc,
-            final String signature, final String[] exceptions) {
-        super(api, access, name, desc, signature, exceptions);
-        this.mv = mv;
-    }
+    /**
+     * The {@link ClassReader} option flags for the parsing of this class.
+     */
+    int flags;
 
-    @Override
-    public void visitEnd() {
-        // Compares TryCatchBlockNodes by the length of their "try" block.
-        Comparator<TryCatchBlockNode> comp = new Comparator<TryCatchBlockNode>() {
+    /**
+     * The buffer used to read strings.
+     */
+    char[] buffer;
 
-            public int compare(TryCatchBlockNode t1, TryCatchBlockNode t2) {
-                int len1 = blockLength(t1);
-                int len2 = blockLength(t2);
-                return len1 - len2;
-            }
+    /**
+     * The start index of each bootstrap method.
+     */
+    int[] bootstrapMethods;
 
-            private int blockLength(TryCatchBlockNode block) {
-                int startidx = instructions.indexOf(block.start);
-                int endidx = instructions.indexOf(block.end);
-                return endidx - startidx;
-            }
-        };
-        Collections.sort(tryCatchBlocks, comp);
-        // Updates the 'target' of each try catch block annotation.
-        for (int i = 0; i < tryCatchBlocks.size(); ++i) {
-            tryCatchBlocks.get(i).updateIndex(i);
-        }
-        if (mv != null) {
-            accept(mv);
-        }
-    }
+    /**
+     * The access flags of the method currently being parsed.
+     */
+    int access;
+
+    /**
+     * The name of the method currently being parsed.
+     */
+    String name;
+
+    /**
+     * The descriptor of the method currently being parsed.
+     */
+    String desc;
+
+    /**
+     * The label objects, indexed by bytecode offset, of the method currently
+     * being parsed (only bytecode offsets for which a label is needed have a
+     * non null associated Label object).
+     */
+    Label[] labels;
+
+    /**
+     * The target of the type annotation currently being parsed.
+     */
+    int typeRef;
+
+    /**
+     * The path of the type annotation currently being parsed.
+     */
+    TypePath typePath;
+
+    /**
+     * The offset of the latest stack map frame that has been parsed.
+     */
+    int offset;
+
+    /**
+     * The labels corresponding to the start of the local variable ranges in the
+     * local variable type annotation currently being parsed.
+     */
+    Label[] start;
+
+    /**
+     * The labels corresponding to the end of the local variable ranges in the
+     * local variable type annotation currently being parsed.
+     */
+    Label[] end;
+
+    /**
+     * The local variable indices for each local variable range in the local
+     * variable type annotation currently being parsed.
+     */
+    int[] index;
+
+    /**
+     * The encoding of the latest stack map frame that has been parsed.
+     */
+    int mode;
+
+    /**
+     * The number of locals in the latest stack map frame that has been parsed.
+     */
+    int localCount;
+
+    /**
+     * The number locals in the latest stack map frame that has been parsed,
+     * minus the number of locals in the previous frame.
+     */
+    int localDiff;
+
+    /**
+     * The local values of the latest stack map frame that has been parsed.
+     */
+    Object[] local;
+
+    /**
+     * The stack size of the latest stack map frame that has been parsed.
+     */
+    int stackCount;
+
+    /**
+     * The stack values of the latest stack map frame that has been parsed.
+     */
+    Object[] stack;
 }
