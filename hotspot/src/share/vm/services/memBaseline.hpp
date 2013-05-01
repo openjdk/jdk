@@ -133,7 +133,7 @@ typedef struct _memType2Name {
 
 
 // This class aggregates malloc'd records by memory type
-class MallocMem : public _ValueObj {
+class MallocMem VALUE_OBJ_CLASS_SPEC {
  private:
   MEMFLAGS       _type;
 
@@ -211,7 +211,7 @@ class ArenaMem : public MallocMem {
 };
 
 // This class aggregates virtual memory by its memory type
-class VMMem : public _ValueObj {
+class VMMem VALUE_OBJ_CLASS_SPEC {
  private:
   MEMFLAGS       _type;
 
@@ -296,7 +296,7 @@ class BaselineComparisonReporter;
  * aggregates memory usage by callsites when detail tracking
  * is on.
  */
-class MemBaseline : public _ValueObj {
+class MemBaseline VALUE_OBJ_CLASS_SPEC {
   friend class BaselineReporter;
   friend class BaselineComparisonReporter;
 
