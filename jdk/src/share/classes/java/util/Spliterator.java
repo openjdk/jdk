@@ -438,7 +438,7 @@ public interface Spliterator<T> {
     /**
      * If this Spliterator's source is {@link #SORTED} by a {@link Comparator},
      * returns that {@code Comparator}. If the source is {@code SORTED} in
-     * {@linkplain Comparable natural order, returns {@code null}.  Otherwise,
+     * {@linkplain Comparable natural order}, returns {@code null}.  Otherwise,
      * if the source is not {@code SORTED}, throws {@link IllegalStateException}.
      *
      * @implSpec
