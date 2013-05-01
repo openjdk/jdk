@@ -639,6 +639,8 @@ CXXFLAGS_DEBUG_SYMBOLS
 CFLAGS_DEBUG_SYMBOLS
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
+COMPILER_SUPPORTS_TARGET_BITS_FLAG
+ZERO_ARCHFLAG
 LDFLAGS_CXX_JDK
 LDFLAGS_JDKEXE_SUFFIX
 LDFLAGS_JDKLIB_SUFFIX
@@ -679,6 +681,7 @@ LIBRARY_PREFIX
 STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
+COMPILER_NAME
 LIPO
 ac_ct_OBJDUMP
 OBJDUMP
@@ -835,7 +838,6 @@ SYS_ROOT
 PATH_SEP
 SRC_ROOT
 ZERO_ARCHDEF
-ZERO_ARCHFLAG
 DEFINE_CROSS_COMPILE_ARCH
 LP64
 OPENJDK_TARGET_OS_API_DIR
@@ -3714,6 +3716,15 @@ fi
 
 
 
+
+# TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
+#                                   [RUN-IF-FALSE])
+# ------------------------------------------------------------
+# Check that the c and c++ compilers support an argument
+
+
+
+
 #
 # Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -3764,7 +3775,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1365493306
+DATE_WHEN_GENERATED=1367502949
 
 ###############################################################################
 #
@@ -7097,17 +7108,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     else
       DEFINE_CROSS_COMPILE_ARCH=""
     fi
-
-
-    # Some Zero and Shark settings.
-    # ZERO_ARCHFLAG tells the compiler which mode to build for
-    case "${OPENJDK_TARGET_CPU}" in
-      s390)
-        ZERO_ARCHFLAG="-m31"
-        ;;
-      *)
-        ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
-    esac
 
 
     # ZERO_ARCHDEF is used to enable architecture-specific code
@@ -28344,6 +28344,7 @@ done
 # (The JVM can use 32 or 64 bit Java pointers but that decision
 # is made at runtime.)
 #
+
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
   # Always specify -m flags on Solaris
 
@@ -28787,6 +28788,7 @@ else
         SET_EXECUTABLE_ORIGIN=''
     fi
 fi
+
 
 
 
@@ -29268,6 +29270,161 @@ esac
 
 
 
+
+  # Some Zero and Shark settings.
+  # ZERO_ARCHFLAG tells the compiler which mode to build for
+  case "${OPENJDK_TARGET_CPU}" in
+    s390)
+      ZERO_ARCHFLAG="-m31"
+      ;;
+    *)
+      ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  esac
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$ZERO_ARCHFLAG\"" >&5
+$as_echo_n "checking if compiler supports \"$ZERO_ARCHFLAG\"... " >&6; }
+  supports=yes
+
+  saved_cflags="$CFLAGS"
+  CFLAGS="$CFLAGS $ZERO_ARCHFLAG"
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    int i;
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CFLAGS="$saved_cflags"
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG $ZERO_ARCHFLAG"
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    int i;
+
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$saved_cxxflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+  else
+    ZERO_ARCHFLAG=""
+  fi
+
+
+
+  # Check that the compiler supports -mX flags
+  # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-m${OPENJDK_TARGET_CPU_BITS}\"" >&5
+$as_echo_n "checking if compiler supports \"-m${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
+  supports=yes
+
+  saved_cflags="$CFLAGS"
+  CFLAGS="$CFLAGS -m${OPENJDK_TARGET_CPU_BITS}"
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    int i;
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CFLAGS="$saved_cflags"
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG -m${OPENJDK_TARGET_CPU_BITS}"
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    int i;
+
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$saved_cxxflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    COMPILER_SUPPORTS_TARGET_BITS_FLAG=true
+  else
+    COMPILER_SUPPORTS_TARGET_BITS_FLAG=false
+  fi
+
+
+
+
 # Setup debug symbols (need objcopy from the toolchain for that)
 
 #
@@ -29443,7 +29600,6 @@ $as_echo_n "checking what is not needed on an X11 build on MacOSX?... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
 $as_echo "alsa pulse" >&6; }
 fi
-
 
 
 
