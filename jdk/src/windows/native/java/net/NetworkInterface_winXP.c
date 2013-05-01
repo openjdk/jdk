@@ -818,10 +818,12 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0_XP
       ptr = getAdapter(env, index);
       if (ptr != NULL) {
         len = ptr->PhysicalAddressLength;
-        ret = (*env)->NewByteArray(env, len);
-        if (!IS_NULL(ret)) {
-          (*env)->SetByteArrayRegion(env, ret, 0, len,
-                                     (jbyte*) ptr->PhysicalAddress);
+        if (len > 0) {
+          ret = (*env)->NewByteArray(env, len);
+          if (!IS_NULL(ret)) {
+            (*env)->SetByteArrayRegion(env, ret, 0, len,
+                                       (jbyte*) ptr->PhysicalAddress);
+          }
         }
         free(ptr);
       }
