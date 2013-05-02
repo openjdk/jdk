@@ -92,7 +92,7 @@ public abstract class ObjectCreator {
             }
         }
 
-        paddedFieldCount = (fieldCount + FIELD_PADDING + FIELD_ROUNDING - 1) / FIELD_ROUNDING * FIELD_ROUNDING;
+        paddedFieldCount = fieldCount + FIELD_PADDING;
     }
 
     /**
