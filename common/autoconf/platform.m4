@@ -333,18 +333,6 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
     fi
     AC_SUBST(DEFINE_CROSS_COMPILE_ARCH)
 
-    # Some Zero and Shark settings.
-    # ZERO_ARCHFLAG tells the compiler which mode to build for
-    case "${OPENJDK_TARGET_CPU}" in
-      s390)
-        ZERO_ARCHFLAG="-m31"
-        ;;
-      *)
-        ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
-    esac
-    PLATFORM_COMPILER_CHECK_ARGUMENTS([$ZERO_ARCHFLAG], [], [ZERO_ARCHFLAG=""])
-    AC_SUBST(ZERO_ARCHFLAG)
-
     # ZERO_ARCHDEF is used to enable architecture-specific code
     case "${OPENJDK_TARGET_CPU}" in
       ppc*)    ZERO_ARCHDEF=PPC   ;;
@@ -418,51 +406,6 @@ AC_SUBST(OS_VERSION_MINOR)
 AC_SUBST(OS_VERSION_MICRO)
 ])
 
-# PLATFORM_COMPILER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
-#                                   [RUN-IF-FALSE])
-# ------------------------------------------------------------
-# Check that the c and c++ compilers support an argument
-AC_DEFUN([PLATFORM_COMPILER_CHECK_ARGUMENTS],
-[
-  AC_MSG_CHECKING([if compiler supports "$1"])
-  supports=yes
-
-  saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS $1"
-  AC_LANG_PUSH([C])
-  AC_COMPILE_IFELSE([
-    AC_LANG_SOURCE([[int i;]])
-  ], [], [supports=no])
-  AC_LANG_POP([C])
-  CFLAGS="$saved_cflags"
-
-  saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG $1"
-  AC_LANG_PUSH([C++])
-  AC_COMPILE_IFELSE([
-    AC_LANG_SOURCE([[int i;]])
-  ], [], [supports=no])
-  AC_LANG_POP([C++])
-  CXXFLAGS="$saved_cxxflags"
-
-  AC_MSG_RESULT([$supports])
-  if test "x$supports" = "xyes" ; then
-    m4_ifval([$2], [$2], [:])
-  else
-    m4_ifval([$3], [$3], [:])
-  fi
-])
-
-# Check that the compiler supports -mX flags
-# Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
-AC_DEFUN([PLATFORM_CHECK_COMPILER_TARGET_BITS_FLAGS],
-[
-  PLATFORM_COMPILER_CHECK_ARGUMENTS([-m${OPENJDK_TARGET_CPU_BITS}],
-    [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
-    [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
-  AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
-])
-
 # Support macro for PLATFORM_SETUP_OPENJDK_TARGET_BITS.
 # Add -mX to various FLAGS variables.
 AC_DEFUN([PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS],
@@ -490,8 +433,6 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
 # (The JVM can use 32 or 64 bit Java pointers but that decision
 # is made at runtime.)
 #
-
-PLATFORM_CHECK_COMPILER_TARGET_BITS_FLAGS
 
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
   # Always specify -m flags on Solaris
