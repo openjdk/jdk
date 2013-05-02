@@ -1030,3 +1030,61 @@ AC_SUBST(LDFLAGS_JDKLIB_SUFFIX)
 AC_SUBST(LDFLAGS_JDKEXE_SUFFIX)
 AC_SUBST(LDFLAGS_CXX_JDK)
 ])
+
+
+# TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
+#                                   [RUN-IF-FALSE])
+# ------------------------------------------------------------
+# Check that the c and c++ compilers support an argument
+AC_DEFUN([TOOLCHAIN_COMPILER_CHECK_ARGUMENTS],
+[
+  AC_MSG_CHECKING([if compiler supports "$1"])
+  supports=yes
+
+  saved_cflags="$CFLAGS"
+  CFLAGS="$CFLAGS $1"
+  AC_LANG_PUSH([C])
+  AC_COMPILE_IFELSE([
+    AC_LANG_SOURCE([[int i;]])
+  ], [], [supports=no])
+  AC_LANG_POP([C])
+  CFLAGS="$saved_cflags"
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG $1"
+  AC_LANG_PUSH([C++])
+  AC_COMPILE_IFELSE([
+    AC_LANG_SOURCE([[int i;]])
+  ], [], [supports=no])
+  AC_LANG_POP([C++])
+  CXXFLAGS="$saved_cxxflags"
+
+  AC_MSG_RESULT([$supports])
+  if test "x$supports" = "xyes" ; then
+    m4_ifval([$2], [$2], [:])
+  else
+    m4_ifval([$3], [$3], [:])
+  fi
+])
+
+AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_MISC],
+[
+  # Some Zero and Shark settings.
+  # ZERO_ARCHFLAG tells the compiler which mode to build for
+  case "${OPENJDK_TARGET_CPU}" in
+    s390)
+      ZERO_ARCHFLAG="-m31"
+      ;;
+    *)
+      ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  esac
+  TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([$ZERO_ARCHFLAG], [], [ZERO_ARCHFLAG=""])
+  AC_SUBST(ZERO_ARCHFLAG)
+
+  # Check that the compiler supports -mX flags
+  # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
+  TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([-m${OPENJDK_TARGET_CPU_BITS}],
+    [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
+    [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
+  AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
+])
