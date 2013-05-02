@@ -1325,6 +1325,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * Flag this object as having a prototype.
      */
     public void setIsPrototype() {
+        if (proto != null && !isPrototype()) {
+            proto.addPropertyListener(this);
+        }
         flags |= IS_PROTOTYPE;
     }
 
