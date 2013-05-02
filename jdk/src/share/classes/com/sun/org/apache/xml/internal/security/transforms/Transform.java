@@ -44,7 +44,6 @@ import com.sun.org.apache.xml.internal.security.transforms.implementations.Trans
 import com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXPath;
 import com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXPath2Filter;
 import com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXSLT;
-import com.sun.org.apache.xml.internal.security.utils.ClassLoaderUtils;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.HelperNodeList;
 import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;

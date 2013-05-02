@@ -21,7 +21,7 @@
  * under the License.
  */
 
-package com.sun.org.apache.xml.internal.security.utils;
+package com.sun.org.apache.xml.internal.security.transforms;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +36,10 @@ import java.util.List;
  * touch this unless you're a grizzled classloading guru veteran who is going to
  * verify any change on 6 different application servers.
  */
-public final class ClassLoaderUtils {
+// NOTE! This is a duplicate of utils.ClassLoaderUtils with public
+// modifiers changed to package-private. Make sure to integrate any future
+// changes to utils.ClassLoaderUtils to this file.
+final class ClassLoaderUtils {
 
     /** {@link org.apache.commons.logging} logging facility */
     private static final java.util.logging.Logger log =
@@ -57,7 +60,7 @@ public final class ClassLoaderUtils {
      * @param resourceName The name of the resource to load
      * @param callingClass The Class object of the calling object
      */
-    public static URL getResource(String resourceName, Class<?> callingClass) {
+    static URL getResource(String resourceName, Class<?> callingClass) {
         URL url = Thread.currentThread().getContextClassLoader().getResource(resourceName);
         if (url == null && resourceName.startsWith("/")) {
             //certain classloaders need it without the leading /
@@ -110,7 +113,7 @@ public final class ClassLoaderUtils {
      * @param resourceName The name of the resource to load
      * @param callingClass The Class object of the calling object
      */
-    public static List<URL> getResources(String resourceName, Class<?> callingClass) {
+    static List<URL> getResources(String resourceName, Class<?> callingClass) {
         List<URL> ret = new ArrayList<URL>();
         Enumeration<URL> urls = new Enumeration<URL>() {
             public boolean hasMoreElements() {
@@ -210,7 +213,7 @@ public final class ClassLoaderUtils {
      * @param resourceName The name of the resource to load
      * @param callingClass The Class object of the calling object
      */
-    public static InputStream getResourceAsStream(String resourceName, Class<?> callingClass) {
+    static InputStream getResourceAsStream(String resourceName, Class<?> callingClass) {
         URL url = getResource(resourceName, callingClass);
 
         try {
@@ -237,7 +240,7 @@ public final class ClassLoaderUtils {
      * @param callingClass The Class object of the calling object
      * @throws ClassNotFoundException If the class cannot be found anywhere.
      */
-    public static Class<?> loadClass(String className, Class<?> callingClass)
+    static Class<?> loadClass(String className, Class<?> callingClass)
         throws ClassNotFoundException {
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
