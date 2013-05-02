@@ -162,9 +162,11 @@ public class ObjectStreamField
      */
     @CallerSensitive
     public Class<?> getType() {
-        Class<?> caller = Reflection.getCallerClass();
-        if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), type.getClassLoader())) {
-            ReflectUtil.checkPackageAccess(type);
+        if (System.getSecurityManager() != null) {
+            Class<?> caller = Reflection.getCallerClass();
+            if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), type.getClassLoader())) {
+                ReflectUtil.checkPackageAccess(type);
+            }
         }
         return type;
     }

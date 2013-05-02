@@ -266,9 +266,11 @@ public class ObjectStreamClass implements Serializable {
         if (cl == null) {
             return null;
         }
-        Class<?> caller = Reflection.getCallerClass();
-        if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), cl.getClassLoader())) {
-            ReflectUtil.checkPackageAccess(cl);
+        if (System.getSecurityManager() != null) {
+            Class<?> caller = Reflection.getCallerClass();
+            if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), cl.getClassLoader())) {
+                ReflectUtil.checkPackageAccess(cl);
+            }
         }
         return cl;
     }
