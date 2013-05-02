@@ -65,7 +65,7 @@ HS_DTRACE_PROBE_DECL8(hotspot, method__compile__begin,
 HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
   char*, intptr_t, char*, intptr_t, char*, intptr_t, char*, intptr_t, bool);
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)   \
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, comp_name)             \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
@@ -77,8 +77,7 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
       signature->bytes(), signature->utf8_length());                     \
   }
 
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method,                \
-                                        comp_name, success)              \
+#define DTRACE_METHOD_COMPILE_END_PROBE(method, comp_name, success)      \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
@@ -92,7 +91,7 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 
 #else /* USDT2 */
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)   \
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, comp_name)             \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
@@ -104,8 +103,7 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
       (char *) signature->bytes(), signature->utf8_length());            \
   }
 
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method,                \
-                                        comp_name, success)              \
+#define DTRACE_METHOD_COMPILE_END_PROBE(method, comp_name, success)      \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
@@ -120,8 +118,8 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 
 #else //  ndef DTRACE_ENABLED
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, comp_name, success)
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, comp_name)
+#define DTRACE_METHOD_COMPILE_END_PROBE(method, comp_name, success)
 
 #endif // ndef DTRACE_ENABLED
 
@@ -1766,8 +1764,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     // Save information about this method in case of failure.
     set_last_compile(thread, method, is_osr, task_level);
 
-    DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler(task_level), method,
-                                      compiler_name(task_level));
+    DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, compiler_name(task_level));
   }
 
   // Allocate a new set of JNI handles.
@@ -1849,8 +1846,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   methodHandle method(thread, task->method());
 
-  DTRACE_METHOD_COMPILE_END_PROBE(compiler(task_level), method,
-                                  compiler_name(task_level), task->is_success());
+  DTRACE_METHOD_COMPILE_END_PROBE(method, compiler_name(task_level), task->is_success());
 
   collect_statistics(thread, time, task);
 
