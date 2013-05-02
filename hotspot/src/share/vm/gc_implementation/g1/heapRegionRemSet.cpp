@@ -285,7 +285,7 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr) :
   _fine_grain_regions = new PerRegionTablePtr[_max_fine_entries];
 
   if (_fine_grain_regions == NULL) {
-    vm_exit_out_of_memory(sizeof(void*)*_max_fine_entries,
+    vm_exit_out_of_memory(sizeof(void*)*_max_fine_entries, OOM_MALLOC_ERROR,
                           "Failed to allocate _fine_grain_entries.");
   }
 

@@ -824,7 +824,7 @@ void os::init_system_properties_values() {
       // allocate new buffer and initialize
       info = (Dl_serinfo*)malloc(_info.dls_size);
       if (info == NULL) {
-        vm_exit_out_of_memory(_info.dls_size,
+        vm_exit_out_of_memory(_info.dls_size, OOM_MALLOC_ERROR,
                               "init_system_properties_values info");
       }
       info->dls_size = _info.dls_size;
@@ -866,7 +866,7 @@ void os::init_system_properties_values() {
       common_path = malloc(bufsize);
       if (common_path == NULL) {
         free(info);
-        vm_exit_out_of_memory(bufsize,
+        vm_exit_out_of_memory(bufsize, OOM_MALLOC_ERROR,
                               "init_system_properties_values common_path");
       }
       sprintf(common_path, COMMON_DIR "/lib/%s", cpu_arch);
@@ -879,7 +879,7 @@ void os::init_system_properties_values() {
       if (library_path == NULL) {
         free(info);
         free(common_path);
-        vm_exit_out_of_memory(bufsize,
+        vm_exit_out_of_memory(bufsize, OOM_MALLOC_ERROR,
                               "init_system_properties_values library_path");
       }
       library_path[0] = '\0';
@@ -1623,7 +1623,8 @@ void os::thread_local_storage_at_put(int index, void* value) {
   // %%% this is used only in threadLocalStorage.cpp
   if (thr_setspecific((thread_key_t)index, value)) {
     if (errno == ENOMEM) {
-       vm_exit_out_of_memory(SMALLINT, "thr_setspecific: out of swap space");
+       vm_exit_out_of_memory(SMALLINT, OOM_MALLOC_ERROR,
+                             "thr_setspecific: out of swap space");
     } else {
       fatal(err_msg("os::thread_local_storage_at_put: thr_setspecific failed "
                     "(%s)", strerror(errno)));
