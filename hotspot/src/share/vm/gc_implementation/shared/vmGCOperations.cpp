@@ -225,7 +225,10 @@ void VM_CollectForMetadataAllocation::doit() {
         gclog_or_tty->print_cr("\nCMS full GC for Metaspace");
       }
       heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
-      _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+      // After a GC try to allocate without expanding.  Could fail
+      // and expansion will be tried below.
+      _result =
+        _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
     }
     if (_result == NULL && !UseConcMarkSweepGC /* CMS already tried */) {
       // If still failing, allow the Metaspace to expand.
