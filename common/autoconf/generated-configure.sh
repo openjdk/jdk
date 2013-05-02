@@ -681,6 +681,7 @@ LIBRARY_PREFIX
 STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
+COMPILER_NAME
 LIPO
 ac_ct_OBJDUMP
 OBJDUMP
@@ -3774,7 +3775,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1367502345
+DATE_WHEN_GENERATED=1367502949
 
 ###############################################################################
 #
@@ -28787,6 +28788,7 @@ else
         SET_EXECUTABLE_ORIGIN=''
     fi
 fi
+
 
 
 
