@@ -280,6 +280,9 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
 void ClassLoaderData::unload() {
   _unloading = true;
 
+  // Tell serviceability tools these classes are unloading
+  classes_do(InstanceKlass::notify_unload_class);
+
   if (TraceClassLoaderData) {
     ResourceMark rm;
     tty->print("[ClassLoaderData: unload loader data "PTR_FORMAT, this);
@@ -303,6 +306,9 @@ bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
 
 
 ClassLoaderData::~ClassLoaderData() {
+  // Release C heap structures for all the classes.
+  classes_do(InstanceKlass::release_C_heap_structures);
+
   Metaspace *m = _metaspace;
   if (m != NULL) {
     _metaspace = NULL;
