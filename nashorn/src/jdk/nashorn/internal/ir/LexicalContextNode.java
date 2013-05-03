@@ -70,4 +70,16 @@ public abstract class LexicalContextNode extends Node {
         final LexicalContextNode newNode = (LexicalContextNode)accept(lc, visitor);
         return lc.pop(newNode);
     }
+
+    /**
+     * Set the symbol and replace in lexical context if applicable
+     * @param lc     lexical context
+     * @param symbol symbol
+     * @return new node if symbol changed
+     */
+    @Override
+    public Node setSymbol(final LexicalContext lc, final Symbol symbol) {
+        return Node.replaceInLexicalContext(lc, this, (LexicalContextNode)super.setSymbol(null, symbol));
+    }
+
 }

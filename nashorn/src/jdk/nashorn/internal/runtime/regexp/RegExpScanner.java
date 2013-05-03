@@ -934,7 +934,7 @@ final class RegExpScanner extends Scanner {
         return true;
     }
 
-    private void unicode(final int value, final StringBuilder buffer) {
+    private static void unicode(final int value, final StringBuilder buffer) {
         final String hex = Integer.toHexString(value);
         buffer.append('u');
         for (int i = 0; i < 4 - hex.length(); i++) {
@@ -944,7 +944,7 @@ final class RegExpScanner extends Scanner {
     }
 
     // Convert what would have been a backreference into a unicode escape, or a number literal, or both.
-    private void octalOrLiteral(final String numberLiteral, final StringBuilder buffer) {
+    private static void octalOrLiteral(final String numberLiteral, final StringBuilder buffer) {
         final int length = numberLiteral.length();
         int octalValue = 0;
         int pos = 0;

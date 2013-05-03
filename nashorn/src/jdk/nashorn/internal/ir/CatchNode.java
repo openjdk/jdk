@@ -138,7 +138,12 @@ public final class CatchNode extends Node {
         return body;
     }
 
-    private CatchNode setException(final IdentNode exception) {
+    /**
+     * Resets the exception of a catch block
+     * @param exception new exception
+     * @return new catch node if changed, same otherwise
+     */
+    public CatchNode setException(final IdentNode exception) {
         if (this.exception == exception) {
             return this;
         }

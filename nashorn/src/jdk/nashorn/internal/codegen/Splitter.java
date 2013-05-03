@@ -75,7 +75,7 @@ final class Splitter extends NodeVisitor {
      */
     public Splitter(final Compiler compiler, final FunctionNode functionNode, final CompileUnit outermostCompileUnit) {
         this.compiler             = compiler;
-        this.outermost = functionNode;
+        this.outermost            = functionNode;
         this.outermostCompileUnit = outermostCompileUnit;
     }
 
@@ -95,7 +95,7 @@ final class Splitter extends NodeVisitor {
         final LexicalContext lc = getLexicalContext();
 
         long weight = WeighNodes.weigh(functionNode);
-        final boolean top = compiler.getFunctionNode() == outermost;
+        final boolean top = fn.isProgram(); //compiler.getFunctionNode() == outermost;
 
         if (weight >= SPLIT_THRESHOLD) {
             LOG.finest("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
@@ -273,7 +273,9 @@ final class Splitter extends NodeVisitor {
             return literal;
         }
 
-        getLexicalContext().setFlag(getLexicalContext().getCurrentFunction(), FunctionNode.IS_SPLIT);
+        final FunctionNode functionNode = getLexicalContext().getCurrentFunction();
+
+        getLexicalContext().setFlag(functionNode, FunctionNode.IS_SPLIT);
 
         if (literal instanceof ArrayLiteralNode) {
             final ArrayLiteralNode arrayLiteralNode = (ArrayLiteralNode) literal;

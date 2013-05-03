@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.List;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.FIELD_PADDING;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.FIELD_ROUNDING;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;

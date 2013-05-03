@@ -252,10 +252,17 @@ public abstract class Node extends Location {
      * Assign a symbol to this node. See {@link Node#getSymbol()} for explanation
      * of what a symbol is
      *
+     * @param lc lexical context
      * @param symbol the symbol
+     * @return new node
      */
-    public void setSymbol(final Symbol symbol) {
-        this.symbol = symbol;
+    public Node setSymbol(final LexicalContext lc, final Symbol symbol) {
+        if (this.symbol == symbol) {
+            return this;
+        }
+        final Node newNode = (Node)clone();
+        newNode.symbol = symbol;
+        return newNode;
     }
 
     /**
@@ -274,7 +281,7 @@ public abstract class Node extends Location {
         final List<T> newList = new ArrayList<>();
 
         for (final Node node : list) {
-            final T newNode = clazz.cast(node.accept(visitor));
+            final T newNode = node == null ? null : clazz.cast(node.accept(visitor));
             if (newNode != node) {
                 changed = true;
             }

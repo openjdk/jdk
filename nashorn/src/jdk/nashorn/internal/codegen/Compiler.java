@@ -77,6 +77,8 @@ public final class Compiler {
     /** Name of the objects package */
     public static final String OBJECTS_PACKAGE = "jdk/nashorn/internal/objects";
 
+    private Source source;
+
     private final Map<String, byte[]> bytecode;
 
     private final Set<CompileUnit> compileUnits;
@@ -87,11 +89,9 @@ public final class Compiler {
 
     private final ScriptEnvironment env;
 
-    private final String scriptName;
+    private String scriptName;
 
     private boolean strict;
-
-    private FunctionNode functionNode;
 
     private CodeInstaller<ScriptEnvironment> installer;
 
@@ -168,6 +168,41 @@ public final class Compiler {
     }
 
     /**
+     * Environment information known to the compile, e.g. params
+     */
+    public static class Hints {
+        private final Type[] paramTypes;
+
+        /** singleton empty hints */
+        public static final Hints EMPTY = new Hints();
+
+        private Hints() {
+            this.paramTypes = null;
+        }
+
+        /**
+         * Constructor
+         * @param paramTypes known parameter types for this callsite
+         */
+        public Hints(final Type[] paramTypes) {
+            this.paramTypes = paramTypes;
+        }
+
+        /**
+         * Get the parameter type for this parameter position, or
+         * null if now known
+         * @param pos position
+         * @return parameter type for this callsite if known
+         */
+        public Type getParameterType(final int pos) {
+            if (paramTypes != null && pos < paramTypes.length) {
+                return paramTypes[pos];
+            }
+            return null;
+        }
+    }
+
+    /**
      * Standard (non-lazy) compilation, that basically will take an entire script
      * and JIT it at once. This can lead to long startup time and fewer type
      * specializations
@@ -207,21 +242,22 @@ public final class Compiler {
      * @param strict       should this compilation use strict mode semantics
      */
     //TODO support an array of FunctionNodes for batch lazy compilation
-    Compiler(final ScriptEnvironment env, final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode, final CompilationSequence sequence, final boolean strict) {
+    Compiler(final ScriptEnvironment env, final CodeInstaller<ScriptEnvironment> installer, final CompilationSequence sequence, final boolean strict) {
         this.env           = env;
-        this.functionNode  = functionNode;
         this.sequence      = sequence;
         this.installer     = installer;
-        this.strict        = strict || functionNode.isStrict();
         this.constantData  = new ConstantData();
         this.compileUnits  = new HashSet<>();
         this.bytecode      = new HashMap<>();
+    }
 
+    private void initCompiler(final FunctionNode functionNode) {
+        this.strict        = strict || functionNode.isStrict();
         final StringBuilder sb = new StringBuilder();
         sb.append(functionNode.uniqueName(DEFAULT_SCRIPT_NAME.symbolName() + lazyTag(functionNode))).
                 append('$').
                 append(safeSourceName(functionNode.getSource()));
-
+        this.source = functionNode.getSource();
         this.scriptName = sb.toString();
     }
 
@@ -229,52 +265,43 @@ public final class Compiler {
      * Constructor
      *
      * @param installer    code installer
-     * @param functionNode function node (in any available {@link CompilationState}) to compile
      * @param strict       should this compilation use strict mode semantics
      */
-    public Compiler(final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode, final boolean strict) {
-        this(installer.getOwner(), installer, functionNode, sequence(installer.getOwner()._lazy_compilation), strict);
+    public Compiler(final CodeInstaller<ScriptEnvironment> installer, final boolean strict) {
+        this(installer.getOwner(), installer, sequence(installer.getOwner()._lazy_compilation), strict);
     }
 
     /**
      * Constructor - compilation will use the same strict semantics as in script environment
      *
      * @param installer    code installer
-     * @param functionNode function node (in any available {@link CompilationState}) to compile
      */
-    public Compiler(final CodeInstaller<ScriptEnvironment> installer, final FunctionNode functionNode) {
-        this(installer.getOwner(), installer, functionNode, sequence(installer.getOwner()._lazy_compilation), installer.getOwner()._strict);
+    public Compiler(final CodeInstaller<ScriptEnvironment> installer) {
+        this(installer.getOwner(), installer, sequence(installer.getOwner()._lazy_compilation), installer.getOwner()._strict);
     }
 
     /**
      * Constructor - compilation needs no installer, but uses a script environment
      * Used in "compile only" scenarios
      * @param env a script environment
-     * @param functionNode functionNode to compile
      */
-    public Compiler(final ScriptEnvironment env, final FunctionNode functionNode) {
-        this(env, null, functionNode, sequence(env._lazy_compilation), env._strict);
+    public Compiler(final ScriptEnvironment env) {
+        this(env, null, sequence(env._lazy_compilation), env._strict);
     }
 
     /**
      * Execute the compilation this Compiler was created with
-     * @params param types if known, for specialization
+     * @param functionNode function node to compile from its current state
      * @throws CompilationException if something goes wrong
      * @return function node that results from code transforms
      */
-    public FunctionNode compile() throws CompilationException {
-        return compile(null);
-    }
+    public FunctionNode compile(final FunctionNode functionNode) throws CompilationException {
+        FunctionNode newFunctionNode = functionNode;
 
-    /**
-     * Execute the compilation this Compiler was created with
-     * @param paramTypes param types if known, for specialization
-     * @throws CompilationException if something goes wrong
-     * @return function node that results from code transforms
-     */
-    public FunctionNode compile(final Class<?> paramTypes) throws CompilationException {
+        initCompiler(newFunctionNode); //TODO move this state into functionnode?
+
         for (final String reservedName : RESERVED_NAMES) {
-            functionNode.uniqueName(reservedName);
+            newFunctionNode.uniqueName(reservedName);
         }
 
         final boolean fine = !LOG.levelAbove(Level.FINE);
@@ -283,7 +310,7 @@ public final class Compiler {
         long time = 0L;
 
         for (final CompilationPhase phase : sequence) {
-            this.functionNode = phase.apply(this, functionNode);
+            newFunctionNode = phase.apply(this, newFunctionNode);
 
             final long duration = Timing.isEnabled() ? (phase.getEndTime() - phase.getStartTime()) : 0L;
             time += duration;
@@ -293,7 +320,7 @@ public final class Compiler {
 
                 sb.append(phase.toString()).
                     append(" done for function '").
-                    append(functionNode.getName()).
+                    append(newFunctionNode.getName()).
                     append('\'');
 
                 if (duration > 0L) {
@@ -309,7 +336,7 @@ public final class Compiler {
         if (info) {
             final StringBuilder sb = new StringBuilder();
             sb.append("Compile job for '").
-                append(functionNode.getName()).
+                append(newFunctionNode.getName()).
                 append("' finished");
 
             if (time > 0L) {
@@ -321,16 +348,15 @@ public final class Compiler {
             LOG.info(sb);
         }
 
-        return functionNode;
+        return newFunctionNode;
     }
 
-    private Class<?> install(final String className, final byte[] code) {
+    private Class<?> install(final FunctionNode functionNode, final String className, final byte[] code) {
         LOG.fine("Installing class ", className);
 
         final Class<?> clazz = installer.install(Compiler.binaryName(className), code);
 
         try {
-            final Source   source    = getSource();
             final Object[] constants = getConstantData().toArray();
             // Need doPrivileged because these fields are private
             AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
@@ -355,9 +381,10 @@ public final class Compiler {
 
     /**
      * Install compiled classes into a given loader
+     * @param functionNode function node to install - must be in {@link CompilationState#EMITTED} state
      * @return root script class - if there are several compile units they will also be installed
      */
-    public Class<?> install() {
+    public Class<?> install(final FunctionNode functionNode) {
         final long t0 = Timing.isEnabled() ? System.currentTimeMillis() : 0L;
 
         assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " has no bytecode and cannot be installed";
@@ -366,7 +393,7 @@ public final class Compiler {
 
         final String   rootClassName = firstCompileUnitName();
         final byte[]   rootByteCode  = bytecode.get(rootClassName);
-        final Class<?> rootClass     = install(rootClassName, rootByteCode);
+        final Class<?> rootClass     = install(functionNode, rootClassName, rootByteCode);
 
         int length = rootByteCode.length;
 
@@ -380,7 +407,7 @@ public final class Compiler {
             final byte[] code = entry.getValue();
             length += code.length;
 
-            installedClasses.put(className, install(className, code));
+            installedClasses.put(className, install(functionNode, className, code));
         }
 
         for (final CompileUnit unit : compileUnits) {
@@ -430,20 +457,12 @@ public final class Compiler {
         this.strict = strict;
     }
 
-    FunctionNode getFunctionNode() {
-        return functionNode;
-    }
-
     ConstantData getConstantData() {
         return constantData;
     }
 
     CodeInstaller<ScriptEnvironment> getCodeInstaller() {
         return installer;
-    }
-
-    Source getSource() {
-        return functionNode.getSource();
     }
 
     void addClass(final String name, final byte[] code) {
@@ -496,7 +515,7 @@ public final class Compiler {
     }
 
     private CompileUnit initCompileUnit(final String unitClassName, final long initialWeight) {
-        final ClassEmitter classEmitter = new ClassEmitter(env, functionNode.getSource().getName(), unitClassName, strict);
+        final ClassEmitter classEmitter = new ClassEmitter(env, source.getName(), unitClassName, strict);
         final CompileUnit  compileUnit  = new CompileUnit(unitClassName, classEmitter, initialWeight);
 
         classEmitter.begin();
