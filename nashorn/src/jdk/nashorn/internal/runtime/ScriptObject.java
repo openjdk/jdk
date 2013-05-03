@@ -662,9 +662,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         if (deep) {
-            final ScriptObject proto = getProto();
-            if(proto != null) {
-                return proto.findProperty(key, deep, stopOnNonScope, start);
+            final ScriptObject myProto = getProto();
+            if (myProto != null) {
+                return myProto.findProperty(key, deep, stopOnNonScope, start);
             }
         }
 

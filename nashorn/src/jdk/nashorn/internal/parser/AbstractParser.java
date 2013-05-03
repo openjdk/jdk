@@ -249,6 +249,7 @@ public abstract class AbstractParser {
      *
      * @param errorType  The error type of the warning
      * @param message    Warning message.
+     * @param errorToken error token
      */
     protected final void warning(final JSErrorType errorType, final String message, final long errorToken) {
         errors.warning(error(errorType, message, errorToken));

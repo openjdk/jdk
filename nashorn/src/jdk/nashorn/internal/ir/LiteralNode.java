@@ -659,9 +659,12 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
          * Copy constructor
          * @param node source array literal node
          */
-        protected ArrayLiteralNode(final ArrayLiteralNode node) {
-            super(node);
+        private ArrayLiteralNode(final ArrayLiteralNode node, final Node[] value) {
+            super(node, value);
             this.elementType = node.elementType;
+            this.presets     = node.presets;
+            this.postsets    = node.postsets;
+            this.units       = node.units;
         }
 
         /**
@@ -750,9 +753,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
                     break;
                 }
 
-                final Symbol symbol = node.getSymbol();
-                assert symbol != null; //don't run this on unresolved nodes or you are in trouble
-                Type symbolType = symbol.getSymbolType();
+                assert node.getSymbol() != null; //don't run this on unresolved nodes or you are in trouble
+                Type symbolType = node.getSymbol().getSymbolType();
                 if (symbolType.isUnknown()) {
                     symbolType = Type.OBJECT;
                 }
@@ -813,7 +815,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         }
 
         /**
-         * Get indices of arrays containing computed post sets
+         * Get indices of arrays containing computed post sets. post sets
+         * are things like non literals e.g. "x+y" instead of i or 17
          * @return post set indices
          */
         public int[] getPostsets() {
@@ -849,15 +852,15 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         @Override
         public Node accept(final NodeVisitor visitor) {
             if (visitor.enterLiteralNode(this)) {
-                for (int i = 0; i < value.length; i++) {
-                    final Node element = value[i];
-                    if (element != null) {
-                        value[i] = element.accept(visitor);
-                    }
-                }
-                return visitor.leaveLiteralNode(this);
+                final List<Node> oldValue = Arrays.asList(value);
+                final List<Node> newValue = Node.accept(visitor, Node.class, oldValue);
+                return visitor.leaveLiteralNode(oldValue != newValue ? setValue(newValue) : this);
             }
             return this;
+        }
+
+        private ArrayLiteralNode setValue(final List<Node> value) {
+            return new ArrayLiteralNode(this, value.toArray(new Node[value.size()]));
         }
 
         @Override

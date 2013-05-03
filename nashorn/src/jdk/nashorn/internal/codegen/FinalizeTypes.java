@@ -30,7 +30,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
@@ -354,13 +353,6 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         return true;
     }
 
-    /*
-    @Override
-    public Node leaveBlock(final Block block) {
-        final LexicalContext lc = getLexicalContext();
-        return block;//.setFlag(lc, lc.getFlags(block));
-    }*/
-
     @Override
     public Node leaveCatchNode(final CatchNode catchNode) {
         final Node exceptionCondition = catchNode.getExceptionCondition();
@@ -551,8 +543,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         final boolean        allVarsInScope = functionNode.allVarsInScope();
         final boolean        isVarArg       = functionNode.isVarArg();
 
-        for (final Iterator<Symbol> iter = block.symbolIterator(); iter.hasNext(); ) {
-            final Symbol symbol = iter.next();
+        for (final Symbol symbol : block.getSymbols()) {
             if (symbol.isInternal() || symbol.isThis() || symbol.isTemp()) {
                 continue;
             }
@@ -812,14 +803,12 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
         LOG.info("CONVERT('", node, "', ", to, ") => '", resultNode, "'");
 
+        assert !node.isTerminal();
+
         final LexicalContext lc = getLexicalContext();
         //This is the only place in this file that can create new temporaries
         //FinalizeTypes may not introduce ANY node that is not a conversion.
-        lc.getCurrentFunction().ensureSymbol(lc.getCurrentBlock(), to, resultNode);
-
-        assert !node.isTerminal();
-
-        return resultNode;
+        return Attr.ensureSymbol(lc, lc.getCurrentBlock(), to, resultNode);
     }
 
     private static Node discard(final Node node) {
@@ -905,7 +894,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
             if (literalNode != null) {
                 //inherit literal symbol for attr.
-                literalNode.setSymbol(parent.getSymbol());
+                literalNode = (LiteralNode<?>)literalNode.setSymbol(null, parent.getSymbol());
             }
 
             return literalNode;

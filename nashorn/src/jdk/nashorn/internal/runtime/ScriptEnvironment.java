@@ -26,9 +26,13 @@
 package jdk.nashorn.internal.runtime;
 
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
+
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.options.KeyValueOption;
@@ -151,6 +155,9 @@ public final class ScriptEnvironment {
     /** is this environment in scripting mode? */
     public final boolean _scripting;
 
+    /** is the JIT allowed to specializ calls based on callsite types? */
+    public final Set<String> _specialize_calls;
+
     /** is this environment in strict mode? */
     public final boolean _strict;
 
@@ -213,6 +220,17 @@ public final class ScriptEnvironment {
         _version              = options.getBoolean("version");
         _verify_code          = options.getBoolean("verify.code");
 
+        final String specialize = options.getString("specialize.calls");
+        if (specialize == null) {
+            _specialize_calls = null;
+        } else {
+            _specialize_calls = new HashSet<>();
+            final StringTokenizer st = new StringTokenizer(specialize, ",");
+            while (st.hasMoreElements()) {
+                _specialize_calls.add(st.nextToken());
+            }
+        }
+
         int callSiteFlags = 0;
         if (options.getBoolean("profile.callsites")) {
             callSiteFlags |= NashornCallSiteDescriptor.CALLSITE_PROFILE;
@@ -244,6 +262,18 @@ public final class ScriptEnvironment {
         }
 
         this._locale = Locale.getDefault();
+    }
+
+    /**
+     * Can we specialize a particular method name?
+     * @param functionName method name
+     * @return true if we are allowed to generate versions of this method
+     */
+    public boolean canSpecialize(final String functionName) {
+        if (_specialize_calls == null) {
+            return false;
+        }
+        return _specialize_calls.isEmpty() || _specialize_calls.contains(functionName);
     }
 
     /**

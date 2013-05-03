@@ -67,6 +67,8 @@ public final class Symbol implements Comparable<Symbol> {
     public static final int IS_INTERNAL      = 1 << 9;
     /** Is this a function self-reference symbol */
     public static final int IS_FUNCTION_SELF = 1 << 10;
+    /** Is this a specialized param? */
+    public static final int IS_SPECIALIZED_PARAM = 1 << 11;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -381,6 +383,15 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public boolean isParam() {
         return (flags & KINDMASK) == IS_PARAM;
+    }
+
+    /**
+     * Check if this symbol is a function parameter of known
+     * narrowest type
+     * @return true if parameter
+     */
+    public boolean isSpecializedParam() {
+        return (flags & IS_SPECIALIZED_PARAM) == IS_SPECIALIZED_PARAM;
     }
 
     /**

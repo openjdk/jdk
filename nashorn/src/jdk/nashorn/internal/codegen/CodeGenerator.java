@@ -568,8 +568,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
      * @param block block containing symbols.
      */
     private void symbolInfo(final Block block) {
-        for (final Iterator<Symbol> iter = block.symbolIterator(); iter.hasNext(); ) {
-            final Symbol symbol = iter.next();
+        for (final Symbol symbol : block.getSymbols()) {
             if (symbol.hasSlot()) {
                 method.localVariable(symbol, block.getEntryLabel(), block.getBreakLabel());
             }
@@ -937,11 +936,10 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     private static int assignSlots(final Block block, final int firstSlot) {
         int nextSlot = firstSlot;
-        for (final Iterator<Symbol> iter = block.symbolIterator(); iter.hasNext(); ) {
-            final Symbol next = iter.next();
-            if (next.hasSlot()) {
-                next.setSlot(nextSlot);
-                nextSlot += next.slotCount();
+        for (final Symbol symbol : block.getSymbols()) {
+            if (symbol.hasSlot()) {
+                symbol.setSlot(nextSlot);
+                nextSlot += symbol.slotCount();
             }
         }
         return nextSlot;
@@ -1002,10 +1000,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
             final boolean hasArguments = function.needsArguments();
 
-            final Iterator<Symbol> symbols = block.symbolIterator();
-
-            while (symbols.hasNext()) {
-                final Symbol symbol = symbols.next();
+            for (final Symbol symbol : block.getSymbols()) {
 
                 if (symbol.isInternal() || symbol.isThis() || symbol.isTemp()) {
                     continue;
@@ -1076,12 +1071,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
                 }
             }
 
-            final Iterator<Symbol> iter = block.symbolIterator();
-            final List<Symbol> symbols = new ArrayList<>();
-            while (iter.hasNext()) {
-                symbols.add(iter.next());
-            }
-            initSymbols(symbols);
+            initSymbols(block.getSymbols());
         }
 
         // Debugging: print symbols? @see --print-symbols flag
@@ -2364,7 +2354,6 @@ final class CodeGenerator extends NodeOperatorVisitor {
     public boolean enterDISCARD(final UnaryNode unaryNode) {
         final Node rhs = unaryNode.rhs();
 
-       // System.err.println("**** Enter discard " + unaryNode);
         discard.push(rhs);
         load(rhs);
 
@@ -2373,7 +2362,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
             method.pop();
             discard.pop();
         }
-       // System.err.println("**** Leave discard " + unaryNode);
+
         return false;
     }
 

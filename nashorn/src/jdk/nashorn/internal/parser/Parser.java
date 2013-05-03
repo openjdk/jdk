@@ -305,6 +305,11 @@ loop:
         if (isStrictMode) {
             flags |= FunctionNode.IS_STRICT;
         }
+        if (env._specialize_calls != null) {
+            if (env._specialize_calls.contains(name)) {
+                flags |= FunctionNode.CAN_SPECIALIZE;
+            }
+        }
 
         // Start new block.
         FunctionNode functionNode =
@@ -320,11 +325,11 @@ loop:
                 kind,
                 flags);
 
-        functionNode = functionNode.setState(lc, errors.hasErrors() ? CompilationState.PARSE_ERROR : CompilationState.PARSED);
         lc.push(functionNode);
         // Create new block, and just put it on the context stack, restoreFunctionNode() will associate it with the
         // FunctionNode.
         newBlock();
+
         return functionNode;
     }
 
@@ -332,14 +337,19 @@ loop:
      * Restore the current block.
      */
     private Block restoreBlock(final Block block) {
-        return lc.pop(block);//.setFlag(lc, flags);
+        return lc.pop(block);
     }
+
 
     private FunctionNode restoreFunctionNode(final FunctionNode functionNode, final long lastToken) {
         final Block newBody = restoreBlock(lc.getFunctionBody(functionNode));
 
-        return lc.pop(functionNode).setBody(lc, newBody).setLastToken(lc, lastToken);
-    }
+        return lc.pop(functionNode).
+            setBody(lc, newBody).
+            setLastToken(lc, lastToken).
+            setState(lc, errors.hasErrors() ? CompilationState.PARSE_ERROR : CompilationState.PARSED).
+            snapshot(lc);
+        }
 
     /**
      * Get the statements in a block.
@@ -529,6 +539,7 @@ loop:
 
         script = restoreFunctionNode(script, token); //commit code
         script = script.setBody(lc, script.getBody().setNeedsScope(lc));
+
         return script;
     }
 
@@ -800,7 +811,6 @@ loop:
      * @param ident         Identifier that is verified
      * @param contextString String used in error message to give context to the user
      */
-    @SuppressWarnings("fallthrough")
     private void verifyStrictIdent(final IdentNode ident, final String contextString) {
         if (isStrictMode) {
             switch (ident.getName()) {
