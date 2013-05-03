@@ -173,9 +173,9 @@ public class Shell {
 
         if (env._fx) {
             return runFXScripts(context, global, files);
-        } else {
-            return runScripts(context, global, files);
         }
+
+        return runScripts(context, global, files);
     }
 
     /**

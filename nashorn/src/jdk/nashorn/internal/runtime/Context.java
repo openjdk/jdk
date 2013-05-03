@@ -171,7 +171,6 @@ public final class Context {
      * @param str  text to write
      * @param crlf write a carriage return/new line after text
      */
-    @SuppressWarnings("resource")
     public static void err(final String str, final boolean crlf) {
         final PrintWriter err = Context.getCurrentErr();
         if (err != null) {
