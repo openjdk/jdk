@@ -25,7 +25,7 @@ import java.lang.annotation.*;
 
 /*
  * @test
- * @ignore // syntax not sure yet.
+ * @ignore 8013408: Need specification for type exceptions on multicatch
  * @bug 8006775
  * @summary new type annotation location: multicatch
  * @author Werner Dietl

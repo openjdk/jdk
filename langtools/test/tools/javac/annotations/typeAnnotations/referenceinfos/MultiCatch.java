@@ -26,7 +26,7 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
 /*
  * @test
  * @bug 8006732 8006775
- * @ignore
+ * @ignore 8013408: Need specification for type exceptions on multicatch
  * @summary Test population of reference info for multicatch exception parameters
  * @author Werner Dietl
  * @compile -g Driver.java ReferenceInfoUtil.java MultiCatch.java

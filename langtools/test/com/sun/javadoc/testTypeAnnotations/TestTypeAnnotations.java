@@ -45,7 +45,7 @@ public class TestTypeAnnotations extends JavadocTester {
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[][] TEST = {
         // Test for type annotations on Class Extends (ClassExtends.java).
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "MyClass.html",
             "extends <a href=\"../typeannos/ClassExtA.html\" title=\"annotation " +
             "in typeannos\">@ClassExtA</a> <a href=\"../typeannos/ParameterizedClass.html\" " +
@@ -54,7 +54,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "@ClassExtB</a> java.lang.String&gt;"
         },
         */
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "MyClass.html",
             "implements <a href=\"../typeannos/ClassExtB.html\" title=\"" +
             "annotation in typeannos\">@ClassExtB</a> java.lang.CharSequence, " +
@@ -65,7 +65,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "typeannos\">@ClassExtB</a> java.lang.String&gt;</pre>"
         },
         */
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "MyInterface.html",
             "extends <a href=\"../typeannos/ClassExtA.html\" title=\"annotation " +
             "in typeannos\">@ClassExtA</a> <a href=\"../typeannos/" +
@@ -83,7 +83,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> java.lang.String&gt;</span>"
         },
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "ExtendsGeneric.html",
             "<pre> class <span class=\"strong\">ExtendsGeneric&lt;K extends " +
             "<a href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
@@ -119,7 +119,7 @@ public class TestTypeAnnotations extends JavadocTester {
         },
 
         // Test for type annotations on fields (Fields.java).
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "DefaultScope.html",
             "<pre><a href=\"../typeannos/Parameterized.html\" title=\"class in " +
             "typeannos\">Parameterized</a>&lt;<a href=\"../typeannos/FldA.html\" " +
@@ -147,7 +147,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "typeannos\">@FldC</a> <a href=\"../typeannos/FldB.html\" title=\"" +
             "annotation in typeannos\">@FldB</a> [] array2Deep</pre>"
         },
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "ModifiedScoped.html",
             "<pre>public final&nbsp;<a href=\"../typeannos/Parameterized.html\" " +
             "title=\"class in typeannos\">Parameterized</a>&lt;<a href=\"../" +
@@ -184,7 +184,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "<pre><a href=\"../typeannos/MRtnA.html\" title=\"annotation in " +
             "typeannos\">@MRtnA</a> java.lang.String[][]&nbsp;array2()</pre>"
         },
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "MtdModifiedScoped.html",
             "<pre>public final&nbsp;<a href=\"../typeannos/MtdParameterized.html\" " +
             "title=\"class in typeannos\">MtdParameterized</a>&lt;<a href=\"../" +
@@ -205,7 +205,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "annotation in typeannos\">@MTyParamA</a> java.lang.String&gt;" +
             "&nbsp;void&nbsp;methodExtends()</pre>"
         },
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "UnscopedUnmodified.html",
             "<pre>&lt;K extends <a href=\"../typeannos/MTyParamA.html\" title=\"" +
             "annotation in typeannos\">@MTyParamA</a> <a href=\"../typeannos/" +
@@ -220,7 +220,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> " +
             "java.lang.String&gt;&nbsp;void&nbsp;methodExtends()</pre>"
         },
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "PublicModifiedMethods.html",
             "<pre>public final&nbsp;&lt;K extends <a href=\"../typeannos/" +
             "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> " +
@@ -240,7 +240,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "ParaParameterized</a>&lt;java.lang.String,java.lang.String&gt;" +
             "&nbsp;a)</pre>"
         },
-        /* @ignore 8012173
+        /* @ignore 8012173: javadoc does not receive all type annotations information from javac
         {BUG_ID + FS + "typeannos" + FS + "Parameters.html",
             "<pre>void&nbsp;nestedParaParameterized(<a href=\"../typeannos/" +
             "ParaParameterized.html\" title=\"class in typeannos\">" +
