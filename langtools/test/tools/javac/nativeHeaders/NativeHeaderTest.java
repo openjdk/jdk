@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7150368 8003412
+ * @bug 7150368 8003412 8000407
  * @summary javac should include basic ability to generate native headers
  */
 
@@ -125,35 +125,12 @@ public class NativeHeaderTest {
     }
 
     @Test
-    void oldAnnoTest(RunKind rk, GenKind gk) throws Exception {
-        List<File> files = new ArrayList<File>();
-        files.add(createFile("p/C.java",
-                "@javax.tools.annotation.GenerateNativeHeader class C { }"));
-
-        Set<String> expect = createSet("C.h");
-
-        test(rk, gk, files, expect);
-    }
-
-    @Test
     void annoTest(RunKind rk, GenKind gk) throws Exception {
         List<File> files = new ArrayList<File>();
         files.add(createFile("p/C.java",
                 "class C { @java.lang.annotation.Native public static final int i = 1907; }"));
 
         Set<String> expect = createSet("C.h");
-
-        test(rk, gk, files, expect);
-    }
-
-    @Test
-    void oldAnnoNestedClassTest(RunKind rk, GenKind gk) throws Exception {
-        List<File> files = new ArrayList<File>();
-        files.add(createFile("p/C.java",
-                "class C { @javax.tools.annotation.GenerateNativeHeader class Inner { } }"));
-
-        Set<String> expect = createSet("C_Inner.h");
-        if (gk == GenKind.FULL) expect.add("C.h");
 
         test(rk, gk, files, expect);
     }
