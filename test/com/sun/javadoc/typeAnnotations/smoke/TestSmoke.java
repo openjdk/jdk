@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8006735
- * @ignore
  * @summary  Smoke test for ensuring that annotations are emited to javadoc
  *
  * @author   Mahmood Ali <mali>
@@ -37,7 +36,7 @@
 public class TestSmoke extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "NOT_SPECIFIED_YET";
+    private static final String BUG_ID = "8006735";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
@@ -47,19 +46,37 @@ public class TestSmoke extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "T0x1C.html", "@DA"},
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x1D.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x0D.html", "@DA"},
+        */
         {BUG_ID + FS + "pkg" + FS + "T0x06.html", "@DA"},
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x0B.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x0F.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x20.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x22.html", "@DA"},
+        */
         {BUG_ID + FS + "pkg" + FS + "T0x10.html", "@DA"},
         {BUG_ID + FS + "pkg" + FS + "T0x10A.html", "@DA"},
         {BUG_ID + FS + "pkg" + FS + "T0x12.html", "@DA"},
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x11.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x13.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x15.html", "@DA"},
+        */
         {BUG_ID + FS + "pkg" + FS + "T0x14.html", "@DA"},
         {BUG_ID + FS + "pkg" + FS + "T0x16.html", "@DA"}
     };

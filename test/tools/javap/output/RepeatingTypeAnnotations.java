@@ -121,7 +121,7 @@ public class RepeatingTypeAnnotations extends Tester {
      */
 
     @TestCase
-    @ignore // 8008082:missing type annotation for cast
+    @ignore // 8008082: missing type annotation for cast
     public static class TC1 extends RepeatingTypeAnnotations {
         public TC1() {
             setSrc("    static String so = \"hello world\";",
@@ -176,7 +176,7 @@ public class RepeatingTypeAnnotations extends Tester {
     }
 
     @TestCase
-    @ignore // 8008082:missing type annotation for cast
+    @ignore // 8008082: missing type annotation for cast
     public static class TC5 extends RepeatingTypeAnnotations {
         public TC5() {
             setSrc("    static String so = \"hello world\";",
@@ -231,7 +231,7 @@ public class RepeatingTypeAnnotations extends Tester {
     }
 
     @TestCase
-    @ignore // 8008082:missing type annotation for cast
+    @ignore // 8008082: missing type annotation for cast
     public static class TC9 extends RepeatingTypeAnnotations {
         public TC9() {
             setSrc("    public Test(@A @A @A Object o, @A int i, long l) {",
@@ -305,7 +305,7 @@ public class RepeatingTypeAnnotations extends Tester {
     }
 
     @TestCase
-    @ignore // 8008082:missing type annotation for cast
+    @ignore // 8008082: missing type annotation for cast
     public static class TC13 extends RepeatingTypeAnnotations {
         public TC13() {
             setSrc("    public @A @A @A String foo(@A @A @A Object o, @A int i, long l) {",
