@@ -65,7 +65,7 @@ final class RegExpScanner extends Scanner {
     /** Are we currently inside a negated character class? */
     private boolean inNegativeClass = false;
 
-    private static final String NON_IDENT_ESCAPES = "$^*+(){}[]|\\.?";
+    private static final String NON_IDENT_ESCAPES = "$^*+(){}[]|\\.?-";
 
     private static class Capture {
         /**
