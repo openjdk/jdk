@@ -483,7 +483,8 @@ ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
     {
       // We have to lock the cpool to keep the oop from being resolved
       // while we are accessing it.
-        MonitorLockerEx ml(cpool->lock());
+      oop cplock = cpool->lock();
+      ObjectLocker ol(cplock, THREAD, cplock != NULL);
       constantTag tag = cpool->tag_at(index);
       if (tag.is_klass()) {
         // The klass has been inserted into the constant pool
@@ -1149,23 +1150,9 @@ void ciEnv::record_out_of_memory_failure() {
   record_method_not_compilable("out of memory");
 }
 
-fileStream* ciEnv::_replay_data_stream = NULL;
-
-void ciEnv::dump_replay_data() {
+void ciEnv::dump_replay_data(outputStream* out) {
   VM_ENTRY_MARK;
   MutexLocker ml(Compile_lock);
-  if (_replay_data_stream == NULL) {
-    _replay_data_stream = new (ResourceObj::C_HEAP, mtCompiler) fileStream(ReplayDataFile);
-    if (_replay_data_stream == NULL) {
-      fatal(err_msg("Can't open %s for replay data", ReplayDataFile));
-    }
-  }
-  dump_replay_data(_replay_data_stream);
-}
-
-
-void ciEnv::dump_replay_data(outputStream* out) {
-  ASSERT_IN_VM;
   ResourceMark rm;
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
@@ -1178,13 +1165,15 @@ void ciEnv::dump_replay_data(outputStream* out) {
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
-  Method* method = task()->method();
-  int entry_bci = task()->osr_bci();
+  CompileTask* task = this->task();
+  Method* method = task->method();
+  int entry_bci = task->osr_bci();
+  int comp_level = task->comp_level();
   // Klass holder = method->method_holder();
-  out->print_cr("compile %s %s %s %d",
+  out->print_cr("compile %s %s %s %d %d",
                 method->klass_name()->as_quoted_ascii(),
                 method->name()->as_quoted_ascii(),
                 method->signature()->as_quoted_ascii(),
-                entry_bci);
+                entry_bci, comp_level);
   out->flush();
 }

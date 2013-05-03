@@ -519,6 +519,9 @@ bool klassVtable::is_miranda_entry_at(int i) {
 // check if a method is a miranda method, given a class's methods table and it's super
 // the caller must make sure that the method belongs to an interface implemented by the class
 bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods, Klass* super) {
+  if (m->is_static()) {
+    return false;
+  }
   Symbol* name = m->name();
   Symbol* signature = m->signature();
   if (InstanceKlass::find_method(class_methods, name, signature) == NULL) {

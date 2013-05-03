@@ -1316,12 +1316,6 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
 
-  // MethodHandle invokes don't have a CompiledIC and should always
-  // simply redispatch to the callee_target.
-  address   sender_pc = caller_frame.pc();
-  CodeBlob* sender_cb = caller_frame.cb();
-  nmethod*  sender_nm = sender_cb->as_nmethod_or_null();
-
   if (caller_frame.is_interpreted_frame() ||
       caller_frame.is_entry_frame()) {
     Method* callee = thread->callee_target();

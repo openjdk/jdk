@@ -573,7 +573,7 @@ void MemTracker::thread_exiting(JavaThread* thread) {
 
 // baseline current memory snapshot
 bool MemTracker::baseline() {
-  MutexLockerEx lock(_query_lock, true);
+  MutexLocker lock(_query_lock);
   MemSnapshot* snapshot = get_snapshot();
   if (snapshot != NULL) {
     return _baseline.baseline(*snapshot, false);
@@ -584,7 +584,7 @@ bool MemTracker::baseline() {
 // print memory usage from current snapshot
 bool MemTracker::print_memory_usage(BaselineOutputer& out, size_t unit, bool summary_only) {
   MemBaseline  baseline;
-  MutexLockerEx lock(_query_lock, true);
+  MutexLocker  lock(_query_lock);
   MemSnapshot* snapshot = get_snapshot();
   if (snapshot != NULL && baseline.baseline(*snapshot, summary_only)) {
     BaselineReporter reporter(out, unit);
@@ -597,7 +597,7 @@ bool MemTracker::print_memory_usage(BaselineOutputer& out, size_t unit, bool sum
 // Whitebox API for blocking until the current generation of NMT data has been merged
 bool MemTracker::wbtest_wait_for_data_merge() {
   // NMT can't be shutdown while we're holding _query_lock
-  MutexLockerEx lock(_query_lock, true);
+  MutexLocker lock(_query_lock);
   assert(_worker_thread != NULL, "Invalid query");
   // the generation at query time, so NMT will spin till this generation is processed
   unsigned long generation_at_query_time = SequenceGenerator::current_generation();
@@ -641,7 +641,7 @@ bool MemTracker::wbtest_wait_for_data_merge() {
 
 // compare memory usage between current snapshot and baseline
 bool MemTracker::compare_memory_usage(BaselineOutputer& out, size_t unit, bool summary_only) {
-  MutexLockerEx lock(_query_lock, true);
+  MutexLocker lock(_query_lock);
   if (_baseline.baselined()) {
     MemBaseline baseline;
     MemSnapshot* snapshot = get_snapshot();

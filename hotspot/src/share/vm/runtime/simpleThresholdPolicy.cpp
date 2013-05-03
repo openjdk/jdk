@@ -154,9 +154,10 @@ void SimpleThresholdPolicy::set_carry_if_necessary(InvocationCounter *counter) {
 // Set carry flags on the counters if necessary
 void SimpleThresholdPolicy::handle_counter_overflow(Method* method) {
   MethodCounters *mcs = method->method_counters();
-  assert(mcs != NULL, "");
-  set_carry_if_necessary(mcs->invocation_counter());
-  set_carry_if_necessary(mcs->backedge_counter());
+  if (mcs != NULL) {
+    set_carry_if_necessary(mcs->invocation_counter());
+    set_carry_if_necessary(mcs->backedge_counter());
+  }
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     set_carry_if_necessary(mdo->invocation_counter());
