@@ -454,6 +454,7 @@ class os: AllStatic {
   // File i/o operations
   static const int default_file_open_flags();
   static int open(const char *path, int oflag, int mode);
+  static FILE* open(int fd, const char* mode);
   static int close(int fd);
   static jlong lseek(int fd, jlong offset, int whence);
   static char* native_path(char *path);
@@ -477,7 +478,7 @@ class os: AllStatic {
   static const char*    dll_file_extension();
 
   static const char*    get_temp_directory();
-  static const char*    get_current_directory(char *buf, int buflen);
+  static const char*    get_current_directory(char *buf, size_t buflen);
 
   // Builds a platform-specific full library path given a ld path and lib name
   // Returns true if buffer contains full path to existing file, false otherwise

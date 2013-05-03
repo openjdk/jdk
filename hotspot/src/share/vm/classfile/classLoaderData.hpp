@@ -62,7 +62,7 @@ class ClassLoaderDataGraph : public AllStatic {
   // CMS support.
   static ClassLoaderData* _saved_head;
 
-  static ClassLoaderData* add(ClassLoaderData** loader_data_addr, Handle class_loader, TRAPS);
+  static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
  public:
   static ClassLoaderData* find_or_create(Handle class_loader, TRAPS);
   static void purge();
@@ -100,6 +100,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                     Thread* THREAD);
    public:
     Dependencies() : _list_head(NULL) {}
+    Dependencies(TRAPS) : _list_head(NULL) {
+      init(CHECK);
+    }
     void add(Handle dependency, TRAPS);
     void init(TRAPS);
     void oops_do(OopClosure* f);
@@ -150,7 +153,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void set_next(ClassLoaderData* next) { _next = next; }
   ClassLoaderData* next() const        { return _next; }
 
-  ClassLoaderData(Handle h_class_loader, bool is_anonymous);
+  ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies);
   ~ClassLoaderData();
 
   void set_metaspace(Metaspace* m) { _metaspace = m; }
@@ -190,7 +193,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static void init_null_class_loader_data() {
     assert(_the_null_class_loader_data == NULL, "cannot initialize twice");
     assert(ClassLoaderDataGraph::_head == NULL, "cannot initialize twice");
-    _the_null_class_loader_data = new ClassLoaderData((oop)NULL, false);
+
+    // We explicitly initialize the Dependencies object at a later phase in the initialization
+    _the_null_class_loader_data = new ClassLoaderData((oop)NULL, false, Dependencies());
     ClassLoaderDataGraph::_head = _the_null_class_loader_data;
     assert(_the_null_class_loader_data->is_the_null_class_loader_data(), "Must be");
     if (DumpSharedSpaces) {
