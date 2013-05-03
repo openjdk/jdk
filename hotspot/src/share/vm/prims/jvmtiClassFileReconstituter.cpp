@@ -513,6 +513,11 @@ void JvmtiClassFileReconstituter::write_method_info(methodHandle method) {
   AnnotationArray* param_anno = method->parameter_annotations();
   AnnotationArray* default_anno = method->annotation_default();
 
+  // skip generated default interface methods
+  if (method->is_overpass()) {
+    return;
+  }
+
   write_u2(access_flags.get_flags() & JVM_RECOGNIZED_METHOD_MODIFIERS);
   write_u2(const_method->name_index());
   write_u2(const_method->signature_index());
@@ -619,8 +624,19 @@ void JvmtiClassFileReconstituter::write_method_infos() {
   HandleMark hm(thread());
   Array<Method*>* methods = ikh()->methods();
   int num_methods = methods->length();
+  int num_overpass = 0;
 
-  write_u2(num_methods);
+  // count the generated default interface methods
+  // these will not be re-created by write_method_info
+  // and should not be included in the total count
+  for (int index = 0; index < num_methods; index++) {
+    Method* method = methods->at(index);
+    if (method->is_overpass()) {
+      num_overpass++;
+    }
+  }
+
+  write_u2(num_methods - num_overpass);
   if (JvmtiExport::can_maintain_original_method_order()) {
     int index;
     int original_index;
