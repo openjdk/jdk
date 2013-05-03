@@ -34,26 +34,33 @@
 
 void DCmdRegistrant::register_dcmds(){
   // Registration of the diagnostic commands
-  // First boolean argument specifies if the command is enabled
-  // Second boolean argument specifies if the command is hidden
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(true, false));
+  // First argument specifies which interfaces will export the command
+  // Second argument specifies if the command is enabled
+  // Third  argument specifies if the command is hidden
+  uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI
+                         | DCmd_Source_MBean;
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassStatsDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassStatsDCmd>(full_export, true, false));
 #endif // INCLUDE_SERVICES
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(true, false));
-  //Enhanced JMX Agent Support
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
+
+  // Enhanced JMX Agent Support
+  // These commands won't be exported via the DiagnosticCommandMBean until an
+  // appropriate permission is created for them
+  uint32_t jmx_agent_export_flags = DCmd_Source_Internal | DCmd_Source_AttachAPI;
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(jmx_agent_export_flags, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(jmx_agent_export_flags, true,false));
 
 }
 
@@ -72,29 +79,37 @@ HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, hea
   _dcmdparser.add_dcmd_argument(&_cmd);
 };
 
-void HelpDCmd::execute(TRAPS) {
+void HelpDCmd::execute(DCmdSource source, TRAPS) {
   if (_all.value()) {
-    GrowableArray<const char*>* cmd_list = DCmdFactory::DCmd_list();
+    GrowableArray<const char*>* cmd_list = DCmdFactory::DCmd_list(source);
     for (int i = 0; i < cmd_list->length(); i++) {
-      DCmdFactory* factory = DCmdFactory::factory(cmd_list->at(i),
+      DCmdFactory* factory = DCmdFactory::factory(source, cmd_list->at(i),
                                                   strlen(cmd_list->at(i)));
-      if (!factory->is_hidden()) {
-        output()->print_cr("%s%s", factory->name(),
-                           factory->is_enabled() ? "" : " [disabled]");
-        output()->print_cr("\t%s", factory->description());
-        output()->cr();
-      }
+      output()->print_cr("%s%s", factory->name(),
+                         factory->is_enabled() ? "" : " [disabled]");
+      output()->print_cr("\t%s", factory->description());
+      output()->cr();
       factory = factory->next();
     }
   } else if (_cmd.has_value()) {
     DCmd* cmd = NULL;
-    DCmdFactory* factory = DCmdFactory::factory(_cmd.value(),
+    DCmdFactory* factory = DCmdFactory::factory(source, _cmd.value(),
                                                 strlen(_cmd.value()));
     if (factory != NULL) {
       output()->print_cr("%s%s", factory->name(),
                          factory->is_enabled() ? "" : " [disabled]");
       output()->print_cr(factory->description());
       output()->print_cr("\nImpact: %s", factory->impact());
+      JavaPermission p = factory->permission();
+      if(p._class != NULL) {
+        if(p._action != NULL) {
+          output()->print_cr("\nPermission: %s(%s, %s)",
+                  p._class, p._name == NULL ? "null" : p._name, p._action);
+        } else {
+          output()->print_cr("\nPermission: %s(%s)",
+                  p._class, p._name == NULL ? "null" : p._name);
+        }
+      }
       output()->cr();
       cmd = factory->create_resource_instance(output());
       if (cmd != NULL) {
@@ -106,14 +121,12 @@ void HelpDCmd::execute(TRAPS) {
     }
   } else {
     output()->print_cr("The following commands are available:");
-    GrowableArray<const char *>* cmd_list = DCmdFactory::DCmd_list();
+    GrowableArray<const char *>* cmd_list = DCmdFactory::DCmd_list(source);
     for (int i = 0; i < cmd_list->length(); i++) {
-      DCmdFactory* factory = DCmdFactory::factory(cmd_list->at(i),
+      DCmdFactory* factory = DCmdFactory::factory(source, cmd_list->at(i),
                                                   strlen(cmd_list->at(i)));
-      if (!factory->is_hidden()) {
-        output()->print_cr("%s%s", factory->name(),
-                           factory->is_enabled() ? "" : " [disabled]");
-      }
+      output()->print_cr("%s%s", factory->name(),
+                         factory->is_enabled() ? "" : " [disabled]");
       factory = factory->_next;
     }
     output()->print_cr("\nFor more information about a specific command use 'help <command>'.");
@@ -131,7 +144,7 @@ int HelpDCmd::num_arguments() {
   }
 }
 
-void VersionDCmd::execute(TRAPS) {
+void VersionDCmd::execute(DCmdSource source, TRAPS) {
   output()->print_cr("%s version %s", Abstract_VM_Version::vm_name(),
           Abstract_VM_Version::vm_release());
   JDK_Version jdk_version = JDK_Version::current();
@@ -150,7 +163,7 @@ PrintVMFlagsDCmd::PrintVMFlagsDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_all);
 }
 
-void PrintVMFlagsDCmd::execute(TRAPS) {
+void PrintVMFlagsDCmd::execute(DCmdSource source, TRAPS) {
   if (_all.value()) {
     CommandLineFlags::printFlags(output(), true);
   } else {
@@ -169,7 +182,7 @@ int PrintVMFlagsDCmd::num_arguments() {
     }
 }
 
-void PrintSystemPropertiesDCmd::execute(TRAPS) {
+void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   // load sun.misc.VMSupport
   Symbol* klass = vmSymbols::sun_misc_VMSupport();
   Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
@@ -219,7 +232,7 @@ VMUptimeDCmd::VMUptimeDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_date);
 }
 
-void VMUptimeDCmd::execute(TRAPS) {
+void VMUptimeDCmd::execute(DCmdSource source, TRAPS) {
   if (_date.value()) {
     output()->date_stamp(true, "", ": ");
   }
@@ -239,11 +252,15 @@ int VMUptimeDCmd::num_arguments() {
   }
 }
 
-void SystemGCDCmd::execute(TRAPS) {
-  Universe::heap()->collect(GCCause::_java_lang_system_gc);
+void SystemGCDCmd::execute(DCmdSource source, TRAPS) {
+  if (!DisableExplicitGC) {
+    Universe::heap()->collect(GCCause::_java_lang_system_gc);
+  } else {
+    output()->print_cr("Explicit GC is disabled, no GC has been performed.");
+  }
 }
 
-void RunFinalizationDCmd::execute(TRAPS) {
+void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(),
                                                  true, CHECK);
   instanceKlassHandle klass(THREAD, k);
@@ -263,7 +280,7 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_filename);
 }
 
-void HeapDumpDCmd::execute(TRAPS) {
+void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
@@ -301,7 +318,7 @@ ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_all);
 }
 
-void ClassHistogramDCmd::execute(TRAPS) {
+void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
   VM_GC_HeapInspection heapop(output(),
                               !_all.value() /* request full gc if false */,
                               true /* need_prologue */);
@@ -337,7 +354,7 @@ ClassStatsDCmd::ClassStatsDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_columns);
 }
 
-void ClassStatsDCmd::execute(TRAPS) {
+void ClassStatsDCmd::execute(DCmdSource source, TRAPS) {
   if (!UnlockDiagnosticVMOptions) {
     output()->print_cr("GC.class_stats command requires -XX:+UnlockDiagnosticVMOptions");
     return;
@@ -384,7 +401,7 @@ ThreadDumpDCmd::ThreadDumpDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_locks);
 }
 
-void ThreadDumpDCmd::execute(TRAPS) {
+void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
   // thread stacks
   VM_PrintThreads op1(output(), _locks.value());
   VMThread::execute(&op1);
@@ -526,7 +543,8 @@ int JMXStartRemoteDCmd::num_arguments() {
   }
 }
 
-void JMXStartRemoteDCmd::execute(TRAPS) {
+
+void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
 
@@ -593,7 +611,7 @@ JMXStartLocalDCmd::JMXStartLocalDCmd(outputStream *output, bool heap_allocated) 
   // do nothing
 }
 
-void JMXStartLocalDCmd::execute(TRAPS) {
+void JMXStartLocalDCmd::execute(DCmdSource source, TRAPS) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
 
@@ -611,7 +629,7 @@ void JMXStartLocalDCmd::execute(TRAPS) {
 }
 
 
-void JMXStopRemoteDCmd::execute(TRAPS) {
+void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
 
