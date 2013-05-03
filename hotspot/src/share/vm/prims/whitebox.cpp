@@ -439,9 +439,29 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
       instanceKlassHandle ikh = instanceKlassHandle(JNIHandles::resolve(wbclass)->klass());
       Handle loader(ikh->class_loader());
       if (loader.is_null()) {
+        ResourceMark rm;
         ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
-        jint result = env->RegisterNatives(wbclass, methods, sizeof(methods)/sizeof(methods[0]));
-        if (result == 0) {
+        bool result = true;
+        //  one by one registration natives for exception catching
+        jclass exceptionKlass = env->FindClass(vmSymbols::java_lang_NoSuchMethodError()->as_C_string());
+        for (int i = 0, n = sizeof(methods) / sizeof(methods[0]); i < n; ++i) {
+          if (env->RegisterNatives(wbclass, methods + i, 1) != 0) {
+            result = false;
+            if (env->ExceptionCheck() && env->IsInstanceOf(env->ExceptionOccurred(), exceptionKlass)) {
+              // j.l.NoSuchMethodError is thrown when a method can't be found or a method is not native
+              // ignoring the exception
+              tty->print_cr("Warning: 'NoSuchMethodError' on register of sun.hotspot.WhiteBox::%s%s", methods[i].name, methods[i].signature);
+              env->ExceptionClear();
+            } else {
+              // register is failed w/o exception or w/ unexpected exception
+              tty->print_cr("Warning: unexpected error on register of sun.hotspot.WhiteBox::%s%s. All methods will be unregistered", methods[i].name, methods[i].signature);
+              env->UnregisterNatives(wbclass);
+              break;
+            }
+          }
+        }
+
+        if (result) {
           WhiteBox::set_used();
         }
       }
