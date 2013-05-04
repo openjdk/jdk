@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,8 @@ public class InheritDocTaglet extends BaseInlineTaglet {
 
     /**
      * Will return false because this inline tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
+     * not appear in Fields.
+     * @return false
      */
     public boolean inField() {
         return false;
@@ -69,8 +69,8 @@ public class InheritDocTaglet extends BaseInlineTaglet {
 
     /**
      * Will return false because this inline tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
+     * not appear in Constructors.
+     * @return false
      */
     public boolean inConstructor() {
         return false;
@@ -78,8 +78,8 @@ public class InheritDocTaglet extends BaseInlineTaglet {
 
     /**
      * Will return false because this inline tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
+     * not appear in Overview.
+     * @return false
      */
     public boolean inOverview() {
         return false;
@@ -87,20 +87,20 @@ public class InheritDocTaglet extends BaseInlineTaglet {
 
     /**
      * Will return false because this inline tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
+     * not appear in Packages.
+     * @return false
      */
     public boolean inPackage() {
         return false;
     }
 
     /**
-     * Will return false because this inline tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
+     * Will return true because this inline tag may
+     * appear in Type (Class).
+     * @return true
      */
     public boolean inType() {
-        return false;
+        return true;
     }
 
     /**
@@ -109,12 +109,13 @@ public class InheritDocTaglet extends BaseInlineTaglet {
      * of @inheritDoc with documentation from it's superclass or superinterface.
      *
      * @param writer the writer that is writing the output.
-     * @param md the {@link MethodDoc} that we are documenting.
-     * @param holderTag the tag that holds the inheritDoc tag.
+     * @param ped the {@link ProgramElementDoc} that we are documenting.
+     * @param holderTag the tag that holds the inheritDoc tag or null for type
+     * (class) docs.
      * @param isFirstSentence true if we only want to inherit the first sentence.
      */
     private TagletOutput retrieveInheritedDocumentation(TagletWriter writer,
-            MethodDoc md, Tag holderTag, boolean isFirstSentence) {
+            ProgramElementDoc ped, Tag holderTag, boolean isFirstSentence) {
         TagletOutput replacement = writer.getTagletOutputInstance();
 
         Configuration configuration = writer.configuration();
@@ -122,20 +123,30 @@ public class InheritDocTaglet extends BaseInlineTaglet {
             null : configuration.tagletManager.getTaglet(holderTag.name());
         if (inheritableTaglet != null &&
             !(inheritableTaglet instanceof InheritableTaglet)) {
+                String message = ped.name() +
+                    ((ped instanceof ExecutableMemberDoc)
+                        ? ((ExecutableMemberDoc)ped).flatSignature()
+                        : "");
                 //This tag does not support inheritence.
-                configuration.message.warning(md.position(),
-                "doclet.noInheritedDoc", md.name() + md.flatSignature());
+                configuration.message.warning(ped.position(),
+                "doclet.noInheritedDoc", message);
          }
         DocFinder.Output inheritedDoc =
-            DocFinder.search(new DocFinder.Input(md,
+            DocFinder.search(new DocFinder.Input(ped,
                 (InheritableTaglet) inheritableTaglet, holderTag,
                 isFirstSentence, true));
-        if (inheritedDoc.isValidInheritDocTag == false) {
-            configuration.message.warning(md.position(),
-                "doclet.noInheritedDoc", md.name() + md.flatSignature());
-        } else if (inheritedDoc.inlineTags.length > 0) {
-            replacement = writer.commentTagsToOutput(inheritedDoc.holderTag,
-                inheritedDoc.holder, inheritedDoc.inlineTags, isFirstSentence);
+        if (inheritedDoc.isValidInheritDocTag) {
+            if (inheritedDoc.inlineTags.length > 0) {
+                replacement = writer.commentTagsToOutput(inheritedDoc.holderTag,
+                    inheritedDoc.holder, inheritedDoc.inlineTags, isFirstSentence);
+            }
+        } else {
+            String message = ped.name() +
+                    ((ped instanceof ExecutableMemberDoc)
+                        ? ((ExecutableMemberDoc)ped).flatSignature()
+                        : "");
+            configuration.message.warning(ped.position(),
+                "doclet.noInheritedDoc", message);
         }
         return replacement;
     }
@@ -149,11 +160,11 @@ public class InheritDocTaglet extends BaseInlineTaglet {
      * @return the TagletOutput representation of this <code>Tag</code>.
      */
     public TagletOutput getTagletOutput(Tag tag, TagletWriter tagletWriter) {
-        if (! (tag.holder() instanceof MethodDoc)) {
+        if (! (tag.holder() instanceof ProgramElementDoc)) {
             return tagletWriter.getOutputInstance();
         }
         return tag.name().equals("@inheritDoc") ?
-                retrieveInheritedDocumentation(tagletWriter, (MethodDoc) tag.holder(), null, tagletWriter.isFirstSentence) :
-                retrieveInheritedDocumentation(tagletWriter, (MethodDoc) tag.holder(), tag, tagletWriter.isFirstSentence);
+                retrieveInheritedDocumentation(tagletWriter, (ProgramElementDoc) tag.holder(), null, tagletWriter.isFirstSentence) :
+                retrieveInheritedDocumentation(tagletWriter, (ProgramElementDoc) tag.holder(), tag, tagletWriter.isFirstSentence);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,15 +60,15 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
                 throwsTag.exceptionName() :
                 throwsTag.exception().qualifiedName();
         } else {
-            exception = input.method.containingClass().findClass(input.tagId);
+            exception = input.element.containingClass().findClass(input.tagId);
         }
 
-        ThrowsTag[] tags = input.method.throwsTags();
+        ThrowsTag[] tags = ((MethodDoc)input.element).throwsTags();
         for (int i = 0; i < tags.length; i++) {
             if (input.tagId.equals(tags[i].exceptionName()) ||
                 (tags[i].exception() != null &&
                     (input.tagId.equals(tags[i].exception().qualifiedName())))) {
-                output.holder = input.method;
+                output.holder = input.element;
                 output.holderTag = tags[i];
                 output.inlineTags = input.isFirstSentence ?
                     tags[i].firstSentenceTags() : tags[i].inlineTags();
