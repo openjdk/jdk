@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ public class ReturnTaglet extends BaseExecutableMemberTaglet
      * {@inheritDoc}
      */
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
-       Tag[] tags = input.method.tags("return");
+       Tag[] tags = input.element.tags("return");
         if (tags.length > 0) {
-            output.holder = input.method;
+            output.holder = input.element;
             output.holderTag = tags[0];
             output.inlineTags = input.isFirstSentence ?
                 tags[0].firstSentenceTags() : tags[0].inlineTags();
