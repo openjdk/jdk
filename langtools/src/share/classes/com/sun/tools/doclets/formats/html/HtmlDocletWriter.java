@@ -1497,7 +1497,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param htmltree the content tree to which the comment will be added
      */
     public void addInlineComment(Doc doc, Tag tag, Content htmltree) {
-        addCommentTags(doc, tag.inlineTags(), false, false, htmltree);
+        addCommentTags(doc, tag, tag.inlineTags(), false, false, htmltree);
     }
 
     /**
@@ -1557,11 +1557,26 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     private void addCommentTags(Doc doc, Tag[] tags, boolean depr,
             boolean first, Content htmltree) {
+        addCommentTags(doc, null, tags, depr, first, htmltree);
+    }
+
+    /**
+     * Adds the comment tags.
+     *
+     * @param doc the doc for which the comment tags will be generated
+     * @param holderTag the block tag context for the inline tags
+     * @param tags the first sentence tags for the doc
+     * @param depr true if it is deprecated
+     * @param first true if the first sentence tags should be added
+     * @param htmltree the documentation tree to which the comment tags will be added
+     */
+    private void addCommentTags(Doc doc, Tag holderTag, Tag[] tags, boolean depr,
+            boolean first, Content htmltree) {
         if(configuration.nocomment){
             return;
         }
         Content div;
-        Content result = new RawHtml(commentTagsToString(null, doc, tags, first));
+        Content result = new RawHtml(commentTagsToString(holderTag, doc, tags, first));
         if (depr) {
             Content italic = HtmlTree.I(result);
             div = HtmlTree.DIV(HtmlStyle.block, italic);

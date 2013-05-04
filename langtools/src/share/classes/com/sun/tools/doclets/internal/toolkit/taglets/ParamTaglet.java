@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,14 +101,14 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             }
         }
         ParamTag[] tags = input.isTypeVariableParamTag ?
-            input.method.typeParamTags() : input.method.paramTags();
+            ((MethodDoc)input.element).typeParamTags() : ((MethodDoc)input.element).paramTags();
         Map<String, String> rankMap = getRankMap(input.isTypeVariableParamTag ?
-            (Object[]) input.method.typeParameters() :
-            (Object[]) input.method.parameters());
+            (Object[]) ((MethodDoc)input.element).typeParameters() :
+            (Object[]) ((MethodDoc)input.element).parameters());
         for (int i = 0; i < tags.length; i++) {
             if (rankMap.containsKey(tags[i].parameterName()) &&
                     rankMap.get(tags[i].parameterName()).equals((input.tagId))) {
-                output.holder = input.method;
+                output.holder = input.element;
                 output.holderTag = tags[i];
                 output.inlineTags = input.isFirstSentence ?
                     tags[i].firstSentenceTags() : tags[i].inlineTags();
