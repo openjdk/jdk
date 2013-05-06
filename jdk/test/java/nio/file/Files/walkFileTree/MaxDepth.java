@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Unit test for Files.walkFileTree to test maxDepth parameter
+ * @library ../..
  * @compile MaxDepth.java CreateFileTree.java
  * @run main MaxDepth
  */
@@ -34,9 +35,16 @@ import java.io.IOException;
 import java.util.*;
 
 public class MaxDepth {
-    public static void main(String[] args) throws Exception {
-        final Path top = CreateFileTree.create();
+    public static void main(String[] args) throws IOException {
+        Path top = CreateFileTree.create();
+        try {
+            test(top);
+        } finally {
+            TestUtil.removeAll(top);
+        }
+    }
 
+    static void test(final Path top) throws IOException {
         for (int i=0; i<5; i++) {
             Set<FileVisitOption> opts = Collections.emptySet();
             final int maxDepth = i;

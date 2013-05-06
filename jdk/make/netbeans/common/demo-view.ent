@@ -31,7 +31,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<source-folder style="tree">
+<source-folder style="tree"> <!-- hierarchy in demo/ dir isn't packages -->
     <label>Demos</label>
     <location>${root}/src/share/demo</location>
     <includes>${demos}</includes>

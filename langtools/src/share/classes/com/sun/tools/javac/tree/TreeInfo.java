@@ -249,23 +249,6 @@ public class TreeInfo {
         }
     }
 
-    /** Return true if a a tree corresponds to a poly expression. */
-    public static boolean isPoly(JCTree tree, JCTree origin) {
-        switch (tree.getTag()) {
-            case APPLY:
-            case NEWCLASS:
-            case CONDEXPR:
-                return !origin.hasTag(TYPECAST);
-            case LAMBDA:
-            case REFERENCE:
-                return true;
-            case PARENS:
-                return isPoly(((JCParens)tree).expr, origin);
-            default:
-                return false;
-        }
-    }
-
     /** set 'polyKind' on given tree */
     public static void setPolyKind(JCTree tree, PolyKind pkind) {
         switch (tree.getTag()) {

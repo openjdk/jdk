@@ -44,4 +44,12 @@ public interface LinkOutput {
      * @param o the object to append.
      */
     public void append(Object o);
+
+    /**
+     * Insert the given object into the output sequence.
+     *
+     * @param offset the offset.
+     * @param o the object to be inserted.
+     */
+    public void insert(int offset, Object o);
 }
