@@ -22,61 +22,52 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
- * Loop representing do while loops. This is mostly split from WhileNode
- * because of the different order of the Phi Traversals
- *
+ * Superclass for nodes that can be part of the lexical context
+ * @see LexicalContext
  */
-public class DoWhileNode extends WhileNode {
-
+public abstract class LexicalContextNode extends Node {
     /**
      * Constructor
      *
-     * @param source     the source
-     * @param token      token
-     * @param finish     finish
+     * @param source source
+     * @param token  token
+     * @param finish finish
      */
-    public DoWhileNode(final Source source, final long token, final int finish) {
+    protected LexicalContextNode(final Source source, final long token, final int finish) {
         super(source, token, finish);
     }
 
     /**
      * Copy constructor
      *
-     * @param doWhileNode source node
-     * @param cs          copy state
+     * @param node source node
      */
-    protected DoWhileNode(final DoWhileNode doWhileNode, final CopyState cs) {
-        super(doWhileNode, cs);
+    protected LexicalContextNode(final LexicalContextNode node) {
+        super(node);
     }
 
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new DoWhileNode(this, cs);
-    }
+    /**
+     * Accept function for the node given a lexical context. It must be prepared
+     * to replace itself if present in the lexical context
+     *
+     * @param lc      lexical context
+     * @param visitor node visitor
+     *
+     * @return new node or same node depending on state change
+     */
+    protected abstract Node accept(final LexicalContext lc, final NodeVisitor visitor);
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterDoWhileNode(this) != null) {
-            body = (Block)body.accept(visitor);
-            test = test.accept(visitor);
-
-            return visitor.leaveDoWhileNode(this);
-        }
-
-        return this;
-    }
-
-    @Override
-    public void toString(final StringBuilder sb) {
-        sb.append("while (");
-        test.toString(sb);
-        sb.append(')');
+        final LexicalContext lc = visitor.getLexicalContext();
+        lc.push(this);
+        final LexicalContextNode newNode = (LexicalContextNode)accept(lc, visitor);
+        return lc.pop(newNode);
     }
 }

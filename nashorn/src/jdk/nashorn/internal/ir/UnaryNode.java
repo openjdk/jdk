@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.parser.TokenType.DECPOSTFIX;
 import static jdk.nashorn.internal.parser.TokenType.INCPOSTFIX;
 
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
@@ -39,9 +40,10 @@ import jdk.nashorn.internal.runtime.Source;
 /**
  * UnaryNode nodes represent single operand operations.
  */
-public class UnaryNode extends Node implements Assignment<Node> {
+@Immutable
+public final class UnaryNode extends Node implements Assignment<Node> {
     /** Right hand side argument. */
-    private Node rhs;
+    private final Node rhs;
 
     /**
      * Constructor
@@ -51,23 +53,26 @@ public class UnaryNode extends Node implements Assignment<Node> {
      * @param rhs    expression
      */
     public UnaryNode(final Source source, final long token, final Node rhs) {
-        super(source, token, Token.descPosition(token));
-
-        this.start  = Math.min(rhs.getStart(), Token.descPosition(token));
-        this.finish = Math.max(Token.descPosition(token) + Token.descLength(token), rhs.getFinish());
-        this.rhs    = rhs;
+        this(source, token, Math.min(rhs.getStart(), Token.descPosition(token)), Math.max(Token.descPosition(token) + Token.descLength(token), rhs.getFinish()), rhs);
     }
 
     /**
-     * Copy constructor
-     *
-     * @param unaryNode source node
-     * @param cs        copy state
+     * Constructor
+     * @param source the source
+     * @param token  token
+     * @param start  start
+     * @param finish finish
+     * @param rhs    expression
      */
-    protected UnaryNode(final UnaryNode unaryNode, final CopyState cs) {
-        super(unaryNode);
+    public UnaryNode(final Source source, final long token, final int start, final int finish, final Node rhs) {
+        super(source, token, start, finish);
+        this.rhs = rhs;
+    }
 
-        this.rhs = cs.existingOrCopy(unaryNode.rhs);
+
+    private UnaryNode(final UnaryNode unaryNode, final Node rhs) {
+        super(unaryNode);
+        this.rhs = rhs;
     }
 
     /**
@@ -113,31 +118,13 @@ public class UnaryNode extends Node implements Assignment<Node> {
         return getAssignmentDest();
     }
 
-    @Override
-    public boolean equals(final Object other) {
-        if (!super.equals(other)) {
-            return false;
-        }
-        return rhs.equals(((UnaryNode)other).rhs());
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode() ^ rhs().hashCode();
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new UnaryNode(this, cs);
-    }
-
     /**
      * Assist in IR navigation.
      * @param visitor IR navigating visitor.
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterUnaryNode(this) != null) {
+        if (visitor.enterUnaryNode(this)) {
             return visitor.leaveUnaryNode(setRHS(rhs.accept(visitor)));
         }
 
@@ -219,9 +206,9 @@ public class UnaryNode extends Node implements Assignment<Node> {
      * @return a node equivalent to this one except for the requested change.
      */
     public UnaryNode setRHS(final Node rhs) {
-        if(this.rhs == rhs) return this;
-        final UnaryNode n = (UnaryNode)clone();
-        n.rhs = rhs;
-        return n;
+        if (this.rhs == rhs) {
+            return this;
+        }
+        return new UnaryNode(this, rhs);
     }
 }
