@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,14 +241,29 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         int off = secret.length >> 1;
         int seclen = off + (secret.length & 1);
 
+        byte[] secKey = secret;
+        int keyLen = seclen;
         byte[] output = new byte[outputLength];
 
         // P_MD5(S1, label + seed)
-        expand(md5, 16, secret, 0, seclen, labelBytes, seed, output,
+        // If we have a long secret, digest it first.
+        if (seclen > 64) {              // 64: block size of HMAC-MD5
+            md5.update(secret, 0, seclen);
+            secKey = md5.digest();
+            keyLen = secKey.length;
+        }
+        expand(md5, 16, secKey, 0, keyLen, labelBytes, seed, output,
             HMAC_ipad64.clone(), HMAC_opad64.clone());
 
         // P_SHA-1(S2, label + seed)
-        expand(sha, 20, secret, off, seclen, labelBytes, seed, output,
+        // If we have a long secret, digest it first.
+        if (seclen > 64) {              // 64: block size of HMAC-SHA1
+            sha.update(secret, off, seclen);
+            secKey = sha.digest();
+            keyLen = secKey.length;
+            off = 0;
+        }
+        expand(sha, 20, secKey, off, keyLen, labelBytes, seed, output,
             HMAC_ipad64.clone(), HMAC_opad64.clone());
 
         return output;

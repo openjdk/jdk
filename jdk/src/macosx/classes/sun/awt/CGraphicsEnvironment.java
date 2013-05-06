@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,20 @@
 package sun.awt;
 
 import java.awt.*;
-import java.awt.print.*;
 import java.util.*;
 
 import sun.java2d.*;
 
 /**
- * This is an implementation of a GraphicsEnvironment object for the default local GraphicsEnvironment used by the Java
- * Runtime Environment for Mac OS X GUI environments.
+ * This is an implementation of a GraphicsEnvironment object for the default
+ * local GraphicsEnvironment used by the Java Runtime Environment for Mac OS X
+ * GUI environments.
  *
  * @see GraphicsDevice
  * @see GraphicsConfiguration
  */
-public class CGraphicsEnvironment extends SunGraphicsEnvironment {
+public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
+
     // Global initialization of the Cocoa runtime.
     private static native void initCocoa();
 
@@ -53,7 +54,8 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
     private static native int getMainDisplayID();
 
     /**
-     * Noop function that just acts as an entry point for someone to force a static initialization of this class.
+     * Noop function that just acts as an entry point for someone to force a
+     * static initialization of this class.
      */
     public static void init() { }
 
@@ -78,8 +80,9 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     /**
-     * Register the instance with CGDisplayRegisterReconfigurationCallback()
-     * The registration uses a weak global reference -- if our instance is garbage collected, the reference will be dropped.
+     * Register the instance with CGDisplayRegisterReconfigurationCallback().
+     * The registration uses a weak global reference -- if our instance is
+     * garbage collected, the reference will be dropped.
      *
      * @return Return the registration context (a pointer).
      */
@@ -91,7 +94,7 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
     private native void deregisterDisplayReconfiguration(long context);
 
     /** Available CoreGraphics displays. */
-    private final Map<Integer, CGraphicsDevice> devices = new HashMap<Integer, CGraphicsDevice>();
+    private final Map<Integer, CGraphicsDevice> devices = new HashMap<>(5);
 
     /** Reference to the display reconfiguration callback context. */
     private final long displayReconfigContext;
@@ -118,11 +121,18 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
     /**
      * Called by the CoreGraphics Display Reconfiguration Callback.
      *
-     * @param displayId
-     *            CoreGraphics displayId
+     * @param displayId CoreGraphics displayId
+     * @param removed   true if displayId was removed, false otherwise.
      */
-    void _displayReconfiguration(long displayId) {
-        displayChanged();
+    void _displayReconfiguration(final int displayId, final boolean removed) {
+        synchronized (this) {
+            if (removed && devices.containsKey(displayId)) {
+                final CGraphicsDevice gd = devices.remove(displayId);
+                gd.invalidate(getMainDisplayID());
+                gd.displayChanged();
+            }
+        }
+        initDevices();
     }
 
     @Override
@@ -135,31 +145,30 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     /**
-     * (Re)create all CGraphicsDevices
-     *
-     * @return
+     * (Re)create all CGraphicsDevices, reuses a devices if it is possible.
      */
-    private synchronized void initDevices() {
-        devices.clear();
+    private void initDevices() {
+        synchronized (this) {
+            final Map<Integer, CGraphicsDevice> old = new HashMap<>(devices);
+            devices.clear();
 
-        int mainID = getMainDisplayID();
+            int mainID = getMainDisplayID();
 
-        // initialization of the graphics device may change
-        // list of displays on hybrid systems via an activation
-        // of discrete video.
-        // So, we initialize the main display first, and then
-        // retrieve actual list of displays.
-        CGraphicsDevice mainDevice = new CGraphicsDevice(mainID);
+            // initialization of the graphics device may change
+            // list of displays on hybrid systems via an activation
+            // of discrete video.
+            // So, we initialize the main display first, and then
+            // retrieve actual list of displays.
+            if (!old.containsKey(mainID)) {
+                old.put(mainID, new CGraphicsDevice(mainID));
+            }
 
-        final int[] displayIDs = getDisplayIDs();
-
-        for (int displayID : displayIDs) {
-            if (displayID != mainID) {
-                devices.put(displayID, new CGraphicsDevice(displayID));
-            } else {
-                devices.put(mainID, mainDevice);
+            for (final int id : getDisplayIDs()) {
+                devices.put(id, old.containsKey(id) ? old.get(id)
+                                                    : new CGraphicsDevice(id));
             }
         }
+        displayChanged();
     }
 
     @Override
@@ -167,7 +176,7 @@ public class CGraphicsEnvironment extends SunGraphicsEnvironment {
         final int mainDisplayID = getMainDisplayID();
         CGraphicsDevice d = devices.get(mainDisplayID);
         if (d == null) {
-            // we do not exepct that this may happen, the only responce
+            // we do not expect that this may happen, the only response
             // is to re-initialize the list of devices
             initDevices();
 

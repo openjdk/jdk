@@ -141,6 +141,7 @@ public class Main {
     String tsaUrl; // location of the Timestamping Authority
     String tsaAlias; // alias for the Timestamping Authority's certificate
     String altCertChain; // file to read alternative cert chain from
+    String tSAPolicyID;
     boolean verify = false; // verify the jar
     String verbose = null; // verbose output when signing/verifying
     boolean showcerts = false; // show certs when verifying
@@ -331,6 +332,9 @@ public class Main {
             } else if (collator.compare(flags, "-certchain") ==0) {
                 if (++n == args.length) usageNoArg();
                 altCertChain = args[n];
+            } else if (collator.compare(flags, "-tsapolicyid") ==0) {
+                if (++n == args.length) usageNoArg();
+                tSAPolicyID = args[n];
             } else if (collator.compare(flags, "-debug") ==0) {
                 debug = true;
             } else if (collator.compare(flags, "-keypass") ==0) {
@@ -529,6 +533,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".tsacert.alias.public.key.certificate.for.Timestamping.Authority"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".tsapolicyid.tsapolicyid.for.Timestamping.Authority"));
         System.out.println();
         System.out.println(rb.getString
                 (".altsigner.class.class.name.of.an.alternative.signing.mechanism"));
@@ -1232,7 +1239,7 @@ public class Main {
             try {
                 block =
                     sf.generateBlock(privateKey, sigalg, certChain,
-                        externalSF, tsaUrl, tsaCert, signingMechanism, args,
+                        externalSF, tsaUrl, tsaCert, tSAPolicyID, signingMechanism, args,
                         zipFile);
             } catch (SocketTimeoutException e) {
                 // Provide a helpful message when TSA is beyond a firewall
@@ -2206,13 +2213,14 @@ class SignatureFile {
                                X509Certificate[] certChain,
                                boolean externalSF, String tsaUrl,
                                X509Certificate tsaCert,
+                               String tSAPolicyID,
                                ContentSigner signingMechanism,
                                String[] args, ZipFile zipFile)
         throws NoSuchAlgorithmException, InvalidKeyException, IOException,
             SignatureException, CertificateException
     {
         return new Block(this, privateKey, sigalg, certChain, externalSF,
-                tsaUrl, tsaCert, signingMechanism, args, zipFile);
+                tsaUrl, tsaCert, tSAPolicyID, signingMechanism, args, zipFile);
     }
 
 
@@ -2226,7 +2234,7 @@ class SignatureFile {
          */
         Block(SignatureFile sfg, PrivateKey privateKey, String sigalg,
             X509Certificate[] certChain, boolean externalSF, String tsaUrl,
-            X509Certificate tsaCert, ContentSigner signingMechanism,
+            X509Certificate tsaCert, String tSAPolicyID, ContentSigner signingMechanism,
             String[] args, ZipFile zipFile)
             throws NoSuchAlgorithmException, InvalidKeyException, IOException,
             SignatureException, CertificateException {
@@ -2309,7 +2317,7 @@ class SignatureFile {
 
             // Assemble parameters for the signing mechanism
             ContentSignerParameters params =
-                new JarSignerParameters(args, tsaUri, tsaCert, signature,
+                new JarSignerParameters(args, tsaUri, tsaCert, tSAPolicyID, signature,
                     signatureAlgorithm, certChain, content, zipFile);
 
             // Generate the signature block
@@ -2353,11 +2361,13 @@ class JarSignerParameters implements ContentSignerParameters {
     private X509Certificate[] signerCertificateChain;
     private byte[] content;
     private ZipFile source;
+    private String tSAPolicyID;
 
     /**
      * Create a new object.
      */
     JarSignerParameters(String[] args, URI tsa, X509Certificate tsaCertificate,
+        String tSAPolicyID,
         byte[] signature, String signatureAlgorithm,
         X509Certificate[] signerCertificateChain, byte[] content,
         ZipFile source) {
@@ -2369,6 +2379,7 @@ class JarSignerParameters implements ContentSignerParameters {
         this.args = args;
         this.tsa = tsa;
         this.tsaCertificate = tsaCertificate;
+        this.tSAPolicyID = tSAPolicyID;
         this.signature = signature;
         this.signatureAlgorithm = signatureAlgorithm;
         this.signerCertificateChain = signerCertificateChain;
@@ -2401,6 +2412,10 @@ class JarSignerParameters implements ContentSignerParameters {
      */
     public X509Certificate getTimestampingAuthorityCertificate() {
         return tsaCertificate;
+    }
+
+    public String getTSAPolicyID() {
+        return tSAPolicyID;
     }
 
     /**

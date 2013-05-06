@@ -45,7 +45,6 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
     }
 
     protected GSSContext secCtx = null;
-    protected MessageProp msgProp;              // QOP and privacy for unwrap
     protected static final int JGSS_QOP = 0;    // unrelated to SASL QOP mask
 
     protected GssKrb5Base(Map<String, ?> props, String className)
@@ -74,6 +73,7 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
         }
 
         try {
+            MessageProp msgProp = new MessageProp(JGSS_QOP, privacy);
             byte[] answer = secCtx.unwrap(incoming, start, len, msgProp);
             if (logger.isLoggable(Level.FINEST)) {
                 traceOutput(myClassName, "KRB501:Unwrap", "incoming: ",
@@ -99,6 +99,7 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
 
         // Generate GSS token
         try {
+            MessageProp msgProp = new MessageProp(JGSS_QOP, privacy);
             byte[] answer = secCtx.wrap(outgoing, start, len, msgProp);
             if (logger.isLoggable(Level.FINEST)) {
                 traceOutput(myClassName, "KRB503:Wrap", "outgoing: ",
