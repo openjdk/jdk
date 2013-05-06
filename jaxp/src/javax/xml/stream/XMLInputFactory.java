@@ -23,13 +23,13 @@
  */
 
 /*
- * Copyright (c) 2009 by Oracle Corporation. All Rights Reserved.
+ * Copyright (c) 2009, 2013, by Oracle Corporation. All Rights Reserved.
  */
 
 package javax.xml.stream;
 
-import javax.xml.transform.Source;
 import javax.xml.stream.util.XMLEventAllocator;
+import javax.xml.transform.Source;
 
 /**
  * Defines an abstract implementation of a factory for getting streams.
@@ -144,48 +144,59 @@ public abstract class XMLInputFactory {
   protected XMLInputFactory(){}
 
   /**
-   * Create a new instance of the factory.
+   * Creates a new instance of the factory in exactly the same manner as the
+   * {@link #newFactory()} method.
    * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
    */
   public static XMLInputFactory newInstance()
     throws FactoryConfigurationError
   {
-    return (XMLInputFactory) FactoryFinder.find(
-      "javax.xml.stream.XMLInputFactory",
-      DEFAULIMPL);
+    return FactoryFinder.find(XMLInputFactory.class, DEFAULIMPL);
   }
 
   /**
    * Create a new instance of the factory.
+   * <p>
    * This static method creates a new factory instance.
    * This method uses the following ordered lookup procedure to determine
    * the XMLInputFactory implementation class to load:
+   * </p>
+   * <ul>
+   * <li>
    *   Use the javax.xml.stream.XMLInputFactory system property.
+   * </li>
+   * <li>
    *   Use the properties file "lib/stax.properties" in the JRE directory.
    *     This configuration file is in standard java.util.Properties format
    *     and contains the fully qualified name of the implementation class
    *     with the key being the system property defined above.
-   *   Use the Services API (as detailed in the JAR specification), if available,
-   *     to determine the classname. The Services API will look for a classname
-   *     in the file META-INF/services/javax.xml.stream.XMLInputFactory in jars
-   *     available to the runtime.
-   *   Platform default XMLInputFactory instance.
-   *
+   * </li>
+   * <li>
+   *   Use the service-provider loading facilities, defined by the
+   *   {@link java.util.ServiceLoader} class, to attempt to locate and load an
+   *   implementation of the service.
+   * </li>
+   * <li>
+   * Otherwise, the system-default implementation is returned.
+   * </li>
+   * </ul>
+   * <p>
    *   Once an application has obtained a reference to a XMLInputFactory it
    *   can use the factory to configure and obtain stream instances.
-   *
+   * </p>
+   * <p>
    *   Note that this is a new method that replaces the deprecated newInstance() method.
    *     No changes in behavior are defined by this replacement method relative to
    *     the deprecated method.
-   *
-   * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
+   * </p>
+   * @throws FactoryConfigurationError in case of {@linkplain
+   *   java.util.ServiceConfigurationError service configuration error} or if
+   *   the implementation is not available or cannot be instantiated.
    */
   public static XMLInputFactory newFactory()
     throws FactoryConfigurationError
   {
-    return (XMLInputFactory) FactoryFinder.find(
-      "javax.xml.stream.XMLInputFactory",
-      DEFAULIMPL);
+    return FactoryFinder.find(XMLInputFactory.class, DEFAULIMPL);
   }
 
   /**
@@ -206,40 +217,60 @@ public abstract class XMLInputFactory {
   public static XMLInputFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {
-      try {
-          //do not fallback if given classloader can't find the class, throw exception
-          return (XMLInputFactory) FactoryFinder.find(factoryId, classLoader, null);
-      } catch (FactoryFinder.ConfigurationError e) {
-          throw new FactoryConfigurationError(e.getException(),
-                  e.getMessage());
-      }
+      //do not fallback if given classloader can't find the class, throw exception
+      return FactoryFinder.find(XMLInputFactory.class, factoryId, classLoader, null);
   }
 
   /**
    * Create a new instance of the factory.
    * If the classLoader argument is null, then the ContextClassLoader is used.
+   * <p>
+   * This method uses the following ordered lookup procedure to determine
+   * the XMLInputFactory implementation class to load:
+   * </p>
+   * <ul>
+   * <li>
+   *   Use the value of the system property identified by {@code factoryId}.
+   * </li>
+   * <li>
+   *   Use the properties file "lib/stax.properties" in the JRE directory.
+   *     This configuration file is in standard java.util.Properties format
+   *     and contains the fully qualified name of the implementation class
+   *     with the key being the given {@code factoryId}.
+   * </li>
+   * <li>
+   *   If {@code factoryId} is "javax.xml.stream.XMLInputFactory",
+   *   use the service-provider loading facilities, defined by the
+   *   {@link java.util.ServiceLoader} class, to attempt to locate and load an
+   *   implementation of the service.
+   * </li>
+   * <li>
+   *   Otherwise, throws a {@link FactoryConfigurationError}.
+   * </li>
+   * </ul>
    *
+   * <p>
    * Note that this is a new method that replaces the deprecated
-   *   newInstance(String factoryId, ClassLoader classLoader) method.
+   *   {@link #newInstance(java.lang.String, java.lang.ClassLoader)
+   *   newInstance(String factoryId, ClassLoader classLoader)} method.
    * No changes in behavior are defined by this replacement method relative
    * to the deprecated method.
+   * </p>
    *
    * @param factoryId             Name of the factory to find, same as
    *                              a property name
    * @param classLoader           classLoader to use
    * @return the factory implementation
+   * @throws FactoryConfigurationError in case of {@linkplain
+   *   java.util.ServiceConfigurationError service configuration error} or if
+   *   the implementation is not available or cannot be instantiated.
    * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
    */
   public static XMLInputFactory newFactory(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {
-      try {
-          //do not fallback if given classloader can't find the class, throw exception
-          return (XMLInputFactory) FactoryFinder.find(factoryId, classLoader, null);
-      } catch (FactoryFinder.ConfigurationError e) {
-          throw new FactoryConfigurationError(e.getException(),
-                  e.getMessage());
-      }
+      //do not fallback if given classloader can't find the class, throw exception
+      return FactoryFinder.find(XMLInputFactory.class, factoryId, classLoader, null);
   }
 
   /**
