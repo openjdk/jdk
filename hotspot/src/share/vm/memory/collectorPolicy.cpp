@@ -48,6 +48,13 @@
 // CollectorPolicy methods.
 
 void CollectorPolicy::initialize_flags() {
+  assert(max_alignment() >= min_alignment(),
+      err_msg("max_alignment: " SIZE_FORMAT " less than min_alignment: " SIZE_FORMAT,
+          max_alignment(), min_alignment()));
+  assert(max_alignment() % min_alignment() == 0,
+      err_msg("max_alignment: " SIZE_FORMAT " not aligned by min_alignment: " SIZE_FORMAT,
+          max_alignment(), min_alignment()));
+
   if (MetaspaceSize > MaxMetaspaceSize) {
     MaxMetaspaceSize = MetaspaceSize;
   }
@@ -201,9 +208,6 @@ void GenCollectorPolicy::initialize_flags() {
   // All sizes must be multiples of the generation granularity.
   set_min_alignment((uintx) Generation::GenGrain);
   set_max_alignment(compute_max_alignment());
-  assert(max_alignment() >= min_alignment() &&
-         max_alignment() % min_alignment() == 0,
-         "invalid alignment constraints");
 
   CollectorPolicy::initialize_flags();
 
