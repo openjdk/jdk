@@ -1,3 +1,4 @@
+
 #
 # Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -432,20 +433,22 @@ endif
 ##################################################################################################
 
 ifndef OPENJDK
-    DB_DEMO_ZIPFILE := $(wildcard $(JDK_TOPDIR)/src/closed/share/db/*demo*.zip)
+    DB_DEMO_ZIPFILE := $(wildcard $(JDK_TOPDIR)/src/closed/share/db/*.zip)
 
     $(JDK_OUTPUTDIR)/demo/_the.db.unzipped: $(DB_DEMO_ZIPFILE)
 	$(MKDIR) -p $(@D)
 	$(RM) -r $(JDK_OUTPUTDIR)/demo/db $(JDK_OUTPUTDIR)/demo/demo
 	$(CD) $(JDK_OUTPUTDIR)/demo && $(UNZIP) -q -o $<
-	$(MV) $(JDK_OUTPUTDIR)/demo/demo $(JDK_OUTPUTDIR)/demo/db
+	$(MV) $(JDK_OUTPUTDIR)/demo/db-derby-*-bin/demo $(JDK_OUTPUTDIR)/demo/db
+	$(CD) $(JDK_OUTPUTDIR)/demo && $(RM) -r db-derby-*-bin
 	$(TOUCH) $@
 
 #    Copy this after the unzip above to avoid race with directory creation and mv command.
      $(JDK_OUTPUTDIR)/demo/db/README-JDK-DEMOS.html: \
 		$(JDK_TOPDIR)/src/closed/share/db/README-JDK-DEMOS.html \
 		| $(JDK_OUTPUTDIR)/demo/_the.db.unzipped
-	$(call install-file)
+	$(MKDIR) -p $(@D)
+	$(CAT) $< | $(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > $@
 
      BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/_the.db.unzipped $(JDK_OUTPUTDIR)/demo/db/README-JDK-DEMOS.html
 endif
