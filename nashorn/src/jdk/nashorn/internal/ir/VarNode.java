@@ -25,21 +25,31 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Node represents a var/let declaration.
  */
-public class VarNode extends Node implements Assignment<IdentNode> {
+@Immutable
+public final class VarNode extends Node implements Assignment<IdentNode> {
     /** Var name. */
-    private IdentNode name;
+    private final IdentNode name;
 
     /** Initialization expression. */
-    private Node init;
+    private final Node init;
 
     /** Is this a var statement (as opposed to a "var" in a for loop statement) */
-    private final boolean isStatement;
+    private final int flags;
+
+    /** Flag that determines if this function node is a statement */
+    public static final int IS_STATEMENT = 1 << 0;
+
+    /** Flag that determines if this is the last function declaration in a function
+     *  This is used to micro optimize the placement of return value assignments for
+     *  a program node */
+    public static final int IS_LAST_FUNCTION_DECLARATION = 1 << 1;
 
     /**
      * Constructor
@@ -51,7 +61,14 @@ public class VarNode extends Node implements Assignment<IdentNode> {
      * @param init   init node or null if just a declaration
      */
     public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init) {
-        this(source, token, finish, name, init, true);
+        this(source, token, finish, name, init, IS_STATEMENT);
+    }
+
+    private VarNode(final VarNode varNode, final IdentNode name, final Node init, final int flags) {
+        super(varNode);
+        this.name = init == null ? name : name.setIsInitializedHere();
+        this.init = init;
+        this.flags = flags;
     }
 
     /**
@@ -62,28 +79,14 @@ public class VarNode extends Node implements Assignment<IdentNode> {
      * @param finish finish
      * @param name   name of variable
      * @param init   init node or null if just a declaration
-     * @param isStatement if this is a var statement (true), or a for-loop initializer (false)
+     * @param flags  flags
      */
-    public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init, boolean isStatement) {
+    public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init, final int flags) {
         super(source, token, finish);
 
         this.name  = init == null ? name : name.setIsInitializedHere();
         this.init  = init;
-        this.isStatement = isStatement;
-    }
-
-
-    private VarNode(final VarNode varNode, final CopyState cs) {
-        super(varNode);
-
-        this.name = (IdentNode)cs.existingOrCopy(varNode.name);
-        this.init = cs.existingOrCopy(varNode.init);
-        this.isStatement = varNode.isStatement;
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new VarNode(this, cs);
+        this.flags = flags;
     }
 
     @Override
@@ -115,45 +118,17 @@ public class VarNode extends Node implements Assignment<IdentNode> {
     }
 
     /**
-     * Test to see if two VarNodes are the same.
-     * @param other Other VarNode.
-     * @return True if the VarNodes are the same.
-     */
-    @Override
-    public boolean equals(final Object other) {
-        if (other instanceof VarNode) {
-            final VarNode otherNode    = (VarNode)other;
-            final boolean nameMatches  = name.equals(otherNode.name);
-            if (hasInit() != otherNode.hasInit()) {
-                return false;
-            } else if (init == null) {
-                return nameMatches;
-            } else {
-                return nameMatches && init.equals(otherNode.init);
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return name.hashCode() ^ (init == null ? 0 : init.hashCode());
-    }
-
-    /**
      * Assist in IR navigation.
      * @param visitor IR navigating visitor.
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterVarNode(this) != null) {
+        if (visitor.enterVarNode(this)) {
             final IdentNode newName = (IdentNode)name.accept(visitor);
-            final Node newInit = init == null ? null : init.accept(visitor);
-            final VarNode newThis;
-            if(name != newName || init != newInit) {
-                newThis = (VarNode)clone();
-                newThis.init = newInit;
-                newThis.name = newInit == null ? newName : newName.setIsInitializedHere();
+            final Node      newInit = init == null ? null : init.accept(visitor);
+            final VarNode   newThis;
+            if (name != newName || init != newInit) {
+                newThis = new VarNode(this, newName, newInit, flags);
             } else {
                 newThis = this;
             }
@@ -187,10 +162,10 @@ public class VarNode extends Node implements Assignment<IdentNode> {
      * @return a node equivalent to this one except for the requested change.
      */
     public VarNode setInit(final Node init) {
-        if(this.init == init) return this;
-        final VarNode n = (VarNode)clone();
-        n.init = init;
-        return n;
+        if (this.init == init) {
+            return this;
+        }
+        return new VarNode(this, name, init, flags);
     }
 
     /**
@@ -204,12 +179,38 @@ public class VarNode extends Node implements Assignment<IdentNode> {
     /**
      * Reset the identifier for this VarNode
      * @param name new IdentNode representing the variable being set or declared
+     * @return a node equivalent to this one except for the requested change.
      */
-    private VarNode setName(final IdentNode name) {
-        if(this.name == name) return this;
-        final VarNode n = (VarNode)clone();
-        n.name = name;
-        return n;
+    public VarNode setName(final IdentNode name) {
+        if (this.name == name) {
+            return this;
+        }
+        return new VarNode(this, name, init, flags);
+    }
+
+    private VarNode setFlags(final int flags) {
+        if (this.flags == flags) {
+            return this;
+        }
+        return new VarNode(this, name, init, flags);
+    }
+
+    /**
+     * Check if a flag is set for this var node
+     * @param flag flag
+     * @return true if flag is set
+     */
+    public boolean getFlag(final int flag) {
+        return (flags & flag) == flag;
+    }
+
+    /**
+     * Set a flag for this var node
+     * @param flag flag
+     * @return new node if flags changed, same otherwise
+     */
+    public VarNode setFlag(final int flag) {
+        return setFlags(flags | flag);
     }
 
     /**
@@ -217,7 +218,7 @@ public class VarNode extends Node implements Assignment<IdentNode> {
      * @return true if this is a var statement (as opposed to a var initializer in a for loop).
      */
     public boolean isStatement() {
-        return isStatement;
+        return (flags & IS_STATEMENT) != 0;
     }
 
     /**

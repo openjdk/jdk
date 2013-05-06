@@ -25,16 +25,18 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of an object literal.
  */
-public class ObjectNode extends Node {
+@Immutable
+public final class ObjectNode extends Node {
 
     /** Literal elements. */
     private final List<Node> elements;
@@ -49,35 +51,18 @@ public class ObjectNode extends Node {
      */
     public ObjectNode(final Source source, final long token, final int finish, final List<Node> elements) {
         super(source, token, finish);
-
         this.elements = elements;
     }
 
-    private ObjectNode(final ObjectNode objectNode, final CopyState cs) {
+    private ObjectNode(final ObjectNode objectNode, final List<Node> elements) {
         super(objectNode);
-
-        final List<Node> newElements = new ArrayList<>();
-
-        for (final Node element : objectNode.elements) {
-            newElements.add(cs.existingOrCopy(element));
-        }
-
-        this.elements = newElements;
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new ObjectNode(this, cs);
+        this.elements = elements;
     }
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterObjectNode(this) != null) {
-            for (int i = 0, count = elements.size(); i < count; i++) {
-                elements.set(i, elements.get(i).accept(visitor));
-            }
-
-            return visitor.leaveObjectNode(this);
+        if (visitor.enterObjectNode(this)) {
+            return visitor.leaveObjectNode(setElements(Node.accept(visitor, Node.class, elements)));
         }
 
         return this;
@@ -111,5 +96,12 @@ public class ObjectNode extends Node {
      */
     public List<Node> getElements() {
         return Collections.unmodifiableList(elements);
+    }
+
+    private ObjectNode setElements(final List<Node> elements) {
+        if (this.elements == elements) {
+            return this;
+        }
+        return new ObjectNode(this, elements);
     }
 }
