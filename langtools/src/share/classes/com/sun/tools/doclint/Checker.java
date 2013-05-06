@@ -42,7 +42,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
@@ -70,7 +69,8 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
-import com.sun.source.util.DocTreeScanner;
+import com.sun.source.util.DocTreePath;
+import com.sun.source.util.DocTreePathScanner;
 import com.sun.source.util.TreePath;
 import com.sun.tools.doclint.HtmlTag.AttrKind;
 import com.sun.tools.javac.tree.DocPretty;
@@ -85,7 +85,7 @@ import static com.sun.tools.doclint.Messages.Group.*;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
  */
-public class Checker extends DocTreeScanner<Void, Void> {
+public class Checker extends DocTreePathScanner<Void, Void> {
     final Env env;
 
     Set<Element> foundParams = new HashSet<Element>();
@@ -152,7 +152,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
         foundInheritDoc = false;
         foundReturn = false;
 
-        scan(tree, (Void) null);
+        scan(new DocTreePath(p, tree), null);
 
         if (!isOverridingMethod) {
             switch (env.currElement.getKind()) {
@@ -620,46 +620,35 @@ public class Checker extends DocTreeScanner<Void, Void> {
     }
 
     @Override
+    @SuppressWarnings("fallthrough")
     public Void visitParam(ParamTree tree, Void ignore) {
         boolean typaram = tree.isTypeParameter();
         IdentifierTree nameTree = tree.getName();
-        Element e = env.currElement;
-        switch (e.getKind()) {
-            case METHOD: case CONSTRUCTOR: {
-                ExecutableElement ee = (ExecutableElement) e;
-                checkParamDeclared(nameTree, typaram ? ee.getTypeParameters() : ee.getParameters());
-                break;
-            }
+        Element paramElement = nameTree != null ? env.trees.getElement(new DocTreePath(getCurrentPath(), nameTree)) : null;
 
-            case CLASS: case INTERFACE: {
-                TypeElement te = (TypeElement) e;
-                if (typaram) {
-                    checkParamDeclared(nameTree, te.getTypeParameters());
-                } else {
-                    env.messages.error(REFERENCE, tree, "dc.invalid.param");
+        if (paramElement == null) {
+            switch (env.currElement.getKind()) {
+                case CLASS: case INTERFACE: {
+                    if (!typaram) {
+                        env.messages.error(REFERENCE, tree, "dc.invalid.param");
+                        break;
+                    }
                 }
-                break;
-            }
+                case METHOD: case CONSTRUCTOR: {
+                    env.messages.error(REFERENCE, nameTree, "dc.param.name.not.found");
+                    break;
+                }
 
-            default:
-                env.messages.error(REFERENCE, tree, "dc.invalid.param");
-                break;
+                default:
+                    env.messages.error(REFERENCE, tree, "dc.invalid.param");
+                    break;
+            }
+        } else {
+            foundParams.add(paramElement);
         }
+
         warnIfEmpty(tree, tree.getDescription());
         return super.visitParam(tree, ignore);
-    }
-    // where
-    private void checkParamDeclared(IdentifierTree nameTree, List<? extends Element> list) {
-        Name name = nameTree.getName();
-        boolean found = false;
-        for (Element e: list) {
-            if (name.equals(e.getSimpleName())) {
-                foundParams.add(e);
-                found = true;
-            }
-        }
-        if (!found)
-            env.messages.error(REFERENCE, nameTree, "dc.param.name.not.found");
     }
 
     private void checkParamsDocumented(List<? extends Element> list) {
@@ -678,7 +667,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
 
     @Override
     public Void visitReference(ReferenceTree tree, Void ignore) {
-        Element e = env.trees.getElement(env.currPath, tree);
+        Element e = env.trees.getElement(getCurrentPath());
         if (e == null)
             env.messages.error(REFERENCE, tree, "dc.ref.not.found");
         return super.visitReference(tree, ignore);
@@ -716,7 +705,7 @@ public class Checker extends DocTreeScanner<Void, Void> {
     @Override
     public Void visitThrows(ThrowsTree tree, Void ignore) {
         ReferenceTree exName = tree.getExceptionName();
-        Element ex = env.trees.getElement(env.currPath, exName);
+        Element ex = env.trees.getElement(new DocTreePath(getCurrentPath(), exName));
         if (ex == null) {
             env.messages.error(REFERENCE, tree, "dc.ref.not.found");
         } else if (ex.asType().getKind() == TypeKind.DECLARED
