@@ -40,10 +40,9 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.comp.LambdaToMethod.LambdaAnalyzer.*;
+import com.sun.tools.javac.comp.LambdaToMethod.LambdaAnalyzerPreprocessor.*;
 import com.sun.tools.javac.comp.Lower.BasicFreeVarCollector;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.util.*;
@@ -81,7 +80,7 @@ public class LambdaToMethod extends TreeTranslator {
     private Env<AttrContext> attrEnv;
 
     /** the analyzer scanner */
-    private LambdaAnalyzer analyzer;
+    private LambdaAnalyzerPreprocessor analyzer;
 
     /** map from lambda trees to translation contexts */
     private Map<JCTree, TranslationContext<?>> contextMap;
@@ -156,7 +155,7 @@ public class LambdaToMethod extends TreeTranslator {
         make = TreeMaker.instance(context);
         types = Types.instance(context);
         transTypes = TransTypes.instance(context);
-        analyzer = new LambdaAnalyzer();
+        analyzer = new LambdaAnalyzerPreprocessor();
     }
     // </editor-fold>
 
@@ -206,7 +205,7 @@ public class LambdaToMethod extends TreeTranslator {
     public void visitClassDef(JCClassDecl tree) {
         if (tree.sym.owner.kind == PCK) {
             //analyze class
-            analyzer.analyzeClass(tree);
+            tree = analyzer.analyzeAndPreprocessClass(tree);
         }
         KlassInfo prevKlassInfo = kInfo;
         try {
@@ -531,15 +530,24 @@ public class LambdaToMethod extends TreeTranslator {
     /** Make an attributed class instance creation expression.
      *  @param ctype    The class type.
      *  @param args     The constructor arguments.
+     *  @param cons     The constructor symbol
      */
-    JCNewClass makeNewClass(Type ctype, List<JCExpression> args) {
+    JCNewClass makeNewClass(Type ctype, List<JCExpression> args, Symbol cons) {
         JCNewClass tree = make.NewClass(null,
             null, make.QualIdent(ctype.tsym), args, null);
-        tree.constructor = rs.resolveConstructor(
-            null, attrEnv, ctype, TreeInfo.types(args), List.<Type>nil());
+        tree.constructor = cons;
         tree.type = ctype;
         return tree;
     }
+
+    /** Make an attributed class instance creation expression.
+     *  @param ctype    The class type.
+     *  @param args     The constructor arguments.
+     */
+    JCNewClass makeNewClass(Type ctype, List<JCExpression> args) {
+        return makeNewClass(ctype, args,
+                rs.resolveConstructor(null, attrEnv, ctype, TreeInfo.types(args), List.<Type>nil()));
+     }
 
     private void addDeserializationCase(int implMethodKind, Symbol refSym, Type targetType, MethodSymbol samSym,
             DiagnosticPosition pos, List<Object> staticArgs, MethodType indyType) {
@@ -1019,8 +1027,9 @@ public class LambdaToMethod extends TreeTranslator {
      * This visitor collects information about translation of a lambda expression.
      * More specifically, it keeps track of the enclosing contexts and captured locals
      * accessed by the lambda being translated (as well as other useful info).
+     * It also translates away problems for LambdaToMethod.
      */
-    class LambdaAnalyzer extends TreeScanner {
+    class LambdaAnalyzerPreprocessor extends TreeTranslator {
 
         /** the frame stack - used to reconstruct translation info about enclosing scopes */
         private List<Frame> frameStack;
@@ -1047,10 +1056,10 @@ public class LambdaToMethod extends TreeTranslator {
         private Map<ClassSymbol, Symbol> clinits =
                 new HashMap<ClassSymbol, Symbol>();
 
-        private void analyzeClass(JCClassDecl tree) {
+        private JCClassDecl analyzeAndPreprocessClass(JCClassDecl tree) {
             frameStack = List.nil();
             localClassDefs = new HashMap<Symbol, JCClassDecl>();
-            scan(tree);
+            return translate(tree);
         }
 
         @Override
@@ -1154,7 +1163,7 @@ public class LambdaToMethod extends TreeTranslator {
                     frameStack.head.addLocal(param.sym);
                 }
                 contextMap.put(tree, context);
-                scan(tree.body);
+                super.visitLambda(tree);
                 context.complete();
             }
             finally {
@@ -1220,12 +1229,47 @@ public class LambdaToMethod extends TreeTranslator {
                     };
                     fvc.scan(localCDef);
                 }
-            }
+        }
 
+        /**
+         * Method references to local class constructors, may, if the local
+         * class references local variables, have implicit constructor
+         * parameters added in Lower; As a result, the invokedynamic bootstrap
+         * information added in the LambdaToMethod pass will have the wrong
+         * signature. Hooks between Lower and LambdaToMethod have been added to
+         * handle normal "new" in this case. This visitor converts potentially
+         * effected method references into a lambda containing a normal "new" of
+         * the class.
+         *
+         * @param tree
+         */
         @Override
         public void visitReference(JCMemberReference tree) {
-            scan(tree.getQualifierExpression());
-            contextMap.put(tree, makeReferenceContext(tree));
+            if (tree.getMode() == ReferenceMode.NEW
+                    && tree.kind != ReferenceKind.ARRAY_CTOR
+                    && tree.sym.owner.isLocal()) {
+                MethodSymbol consSym = (MethodSymbol) tree.sym;
+                List<Type> ptypes = ((MethodType) consSym.type).getParameterTypes();
+                Type classType = consSym.owner.type;
+
+                // Make new-class call
+                List<JCVariableDecl> params = make.Params(ptypes, owner());
+                JCNewClass nc = makeNewClass(classType, make.Idents(params));
+                nc.pos = tree.pos;
+
+                // Make lambda holding the new-class call
+                JCLambda slam = make.Lambda(params, nc);
+                slam.descriptorType = tree.descriptorType;
+                slam.targets = tree.targets;
+                slam.type = tree.type;
+                slam.pos = tree.pos;
+
+                // Now it is a lambda, process as such
+                visitLambda(slam);
+            } else {
+                super.visitReference(tree);
+                contextMap.put(tree, makeReferenceContext(tree));
+            }
         }
 
         @Override
@@ -1240,10 +1284,8 @@ public class LambdaToMethod extends TreeTranslator {
                     }
                     localContext = localContext.prev;
                 }
-                scan(tree.selected);
-            } else {
-                super.visitSelect(tree);
             }
+            super.visitSelect(tree);
         }
 
         @Override
