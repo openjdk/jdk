@@ -190,10 +190,16 @@ public final class AppContext {
     public static final String DISPOSED_PROPERTY_NAME = "disposed";
     public static final String GUI_DISPOSED = "guidisposed";
 
-    private volatile boolean isDisposed = false; // true if AppContext is disposed
+    private enum State {
+        VALID,
+        BEING_DISPOSED,
+        DISPOSED
+    };
+
+    private volatile State state = State.VALID;
 
     public boolean isDisposed() {
-        return isDisposed;
+        return state == State.DISPOSED;
     }
 
     /*
@@ -393,10 +399,11 @@ public final class AppContext {
         }
 
         synchronized(this) {
-            if (this.isDisposed) {
-                return; // If already disposed, bail.
+            if (this.state != State.VALID) {
+                return; // If already disposed or being disposed, bail.
             }
-            this.isDisposed = true;
+
+            this.state = State.BEING_DISPOSED;
         }
 
         final PropertyChangeSupport changeSupport = this.changeSupport;
@@ -464,6 +471,11 @@ public final class AppContext {
             try {
                 notificationLock.wait(DISPOSAL_TIMEOUT);
             } catch (InterruptedException e) { }
+        }
+
+        // We are done with posting events, so change the state to disposed
+        synchronized(this) {
+            this.state = State.DISPOSED;
         }
 
         // Next, we interrupt all Threads in the ThreadGroup
