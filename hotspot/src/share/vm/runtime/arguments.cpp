@@ -747,16 +747,16 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
     return;
   }
 
-  int index = *count;
+  int new_count = *count + 1;
 
   // expand the array and add arg to the last element
-  (*count)++;
   if (*bldarray == NULL) {
-    *bldarray = NEW_C_HEAP_ARRAY(char*, *count, mtInternal);
+    *bldarray = NEW_C_HEAP_ARRAY(char*, new_count, mtInternal);
   } else {
-    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, *count, mtInternal);
+    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtInternal);
   }
-  (*bldarray)[index] = strdup(arg);
+  (*bldarray)[*count] = strdup(arg);
+  *count = new_count;
 }
 
 void Arguments::build_jvm_args(const char* arg) {
