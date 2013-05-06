@@ -20,6 +20,7 @@
 
 package com.sun.org.apache.xerces.internal.impl.dv;
 
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.util.ResourceBundle;
 import java.util.PropertyResourceBundle;
 import java.util.MissingResourceException;
@@ -34,6 +35,7 @@ import java.util.MissingResourceException;
  *
  * @author Sandy Gao, IBM
  *
+ * @version $Id: DatatypeException.java,v 1.6 2010-11-01 04:39:43 joehw Exp $
  */
 public class DatatypeException extends Exception {
 
@@ -84,7 +86,7 @@ public class DatatypeException extends Exception {
      */
     public String getMessage() {
         ResourceBundle resourceBundle = null;
-        resourceBundle = PropertyResourceBundle.getBundle("com.sun.org.apache.xerces.internal.impl.msg.XMLSchemaMessages");
+        resourceBundle = SecuritySupport.getResourceBundle("com.sun.org.apache.xerces.internal.impl.msg.XMLSchemaMessages");
         if (resourceBundle == null)
             throw new MissingResourceException("Property file not found!", "com.sun.org.apache.xerces.internal.impl.msg.XMLSchemaMessages", key);
 

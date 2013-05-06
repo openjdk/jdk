@@ -957,6 +957,7 @@ public class LinkedList<E>
                 next = next.next;
                 nextIndex++;
             }
+            lastReturned = next;
             checkForComodification();
         }
 
