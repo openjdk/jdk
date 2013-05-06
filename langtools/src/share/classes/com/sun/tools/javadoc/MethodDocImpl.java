@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,12 +203,22 @@ public class MethodDocImpl
 
 
     public String name() {
-        return sym.name.toString();
+        if (name == null) {
+            name = sym.name.toString();
+        }
+        return name;
     }
 
+    private String name;
+
     public String qualifiedName() {
-        return sym.enclClass().getQualifiedName() + "." + sym.name;
+        if (qualifiedName == null) {
+            qualifiedName =  sym.enclClass().getQualifiedName() + "." + sym.name;
+        }
+        return qualifiedName;
     }
+
+    private String qualifiedName;
 
     /**
      * Returns a string representation of this method.  Includes the

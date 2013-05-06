@@ -223,23 +223,23 @@ void GenMarkSweep::mark_sweep_phase1(int level,
       &is_alive, &keep_alive, &follow_stack_closure, NULL);
   }
 
-  // Follow system dictionary roots and unload classes
+  // This is the point where the entire marking should have completed.
+  assert(_marking_stack.is_empty(), "Marking should have completed");
+
+  // Unload classes and purge the SystemDictionary.
   bool purged_class = SystemDictionary::do_unloading(&is_alive);
 
-  // Follow code cache roots
+  // Unload nmethods.
   CodeCache::do_unloading(&is_alive, purged_class);
-  follow_stack(); // Flush marking stack
 
-  // Update subklass/sibling/implementor links of live klasses
+  // Prune dead klasses from subklass/sibling/implementor lists.
   Klass::clean_weak_klass_links(&is_alive);
-  assert(_marking_stack.is_empty(), "just drained");
 
-  // Visit interned string tables and delete unmarked oops
+  // Delete entries for dead interned strings.
   StringTable::unlink(&is_alive);
+
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
-
-  assert(_marking_stack.is_empty(), "stack should be empty by now");
 }
 
 
@@ -282,11 +282,10 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
 
-  // Because the two closures below are created statically, cannot
+  // Because the closure below is created statically, we cannot
   // use OopsInGenClosure constructor which takes a generation,
   // as the Universe has not been created when the static constructors
   // are run.
-  adjust_root_pointer_closure.set_orig_generation(gch->get_gen(level));
   adjust_pointer_closure.set_orig_generation(gch->get_gen(level));
 
   gch->gen_process_strong_roots(level,
@@ -294,18 +293,17 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
                                 true,  // activate StrongRootsScope
                                 false, // not scavenging
                                 SharedHeap::SO_AllClasses,
-                                &adjust_root_pointer_closure,
+                                &adjust_pointer_closure,
                                 false, // do not walk code
-                                &adjust_root_pointer_closure,
+                                &adjust_pointer_closure,
                                 &adjust_klass_closure);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   CodeBlobToOopClosure adjust_code_pointer_closure(&adjust_pointer_closure,
                                                    /*do_marking=*/ false);
-  gch->gen_process_weak_roots(&adjust_root_pointer_closure,
-                              &adjust_code_pointer_closure,
-                              &adjust_pointer_closure);
+  gch->gen_process_weak_roots(&adjust_pointer_closure,
+                              &adjust_code_pointer_closure);
 
   adjust_marks();
   GenAdjustPointersClosure blk;

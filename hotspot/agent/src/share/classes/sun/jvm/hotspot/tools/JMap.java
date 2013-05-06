@@ -117,8 +117,6 @@ public class JMap extends Tool {
                 mode = MODE_HEAP_SUMMARY;
             } else if (modeFlag.equals("-histo")) {
                 mode = MODE_HISTOGRAM;
-            } else if (modeFlag.equals("-permstat")) {
-                mode = MODE_CLSTATS;
             } else if (modeFlag.equals("-clstats")) {
                 mode = MODE_CLSTATS;
             } else if (modeFlag.equals("-finalizerinfo")) {

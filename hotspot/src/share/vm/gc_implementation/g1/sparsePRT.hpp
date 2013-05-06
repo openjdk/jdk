@@ -192,18 +192,11 @@ class RSHashTableIter VALUE_OBJ_CLASS_SPEC {
   size_t compute_card_ind(CardIdx_t ci);
 
 public:
-  RSHashTableIter() :
-    _tbl_ind(RSHashTable::NullEntry),
+  RSHashTableIter(RSHashTable* rsht) :
+    _tbl_ind(RSHashTable::NullEntry), // So that first increment gets to 0.
     _bl_ind(RSHashTable::NullEntry),
     _card_ind((SparsePRTEntry::cards_num() - 1)),
-    _rsht(NULL) {}
-
-  void init(RSHashTable* rsht) {
-    _rsht = rsht;
-    _tbl_ind = -1; // So that first increment gets to 0.
-    _bl_ind = RSHashTable::NullEntry;
-    _card_ind = (SparsePRTEntry::cards_num() - 1);
-  }
+    _rsht(rsht) {}
 
   bool has_next(size_t& card_index);
 };
@@ -284,8 +277,6 @@ public:
   static void cleanup_all();
   RSHashTable* cur() const { return _cur; }
 
-  void init_iterator(SparsePRTIter* sprt_iter);
-
   static void add_to_expanded_list(SparsePRT* sprt);
   static SparsePRT* get_from_expanded_list();
 
@@ -321,9 +312,9 @@ public:
 
 class SparsePRTIter: public RSHashTableIter {
 public:
-  void init(const SparsePRT* sprt) {
-    RSHashTableIter::init(sprt->cur());
-  }
+  SparsePRTIter(const SparsePRT* sprt) :
+    RSHashTableIter(sprt->cur()) {}
+
   bool has_next(size_t& card_index) {
     return RSHashTableIter::has_next(card_index);
   }

@@ -25,27 +25,147 @@
 
 package java.nio.file;
 
-import java.nio.file.attribute.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.io.Closeable;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.Set;
 import sun.nio.fs.BasicFileAttributesHolder;
 
 /**
- * Simple file tree walker that works in a similar manner to nftw(3C).
+ * Walks a file tree, generating a sequence of events corresponding to the files
+ * in the tree.
+ *
+ * <pre>{@code
+ *     Path top = ...
+ *     Set<FileVisitOption> options = ...
+ *     int maxDepth = ...
+ *
+ *     try (FileTreeWalker walker = new FileTreeWalker(options, maxDepth)) {
+ *         FileTreeWalker.Event ev = walker.walk(top);
+ *         do {
+ *             process(ev);
+ *             ev = walker.next();
+ *         } while (ev != null);
+ *     }
+ * }</pre>
  *
  * @see Files#walkFileTree
  */
 
-class FileTreeWalker {
+class FileTreeWalker implements Closeable {
     private final boolean followLinks;
     private final LinkOption[] linkOptions;
-    private final FileVisitor<? super Path> visitor;
     private final int maxDepth;
+    private final ArrayDeque<DirectoryNode> stack = new ArrayDeque<>();
+    private boolean closed;
 
-    FileTreeWalker(Set<FileVisitOption> options,
-                   FileVisitor<? super Path> visitor,
-                   int maxDepth)
-    {
+    /**
+     * The element on the walking stack corresponding to a directory node.
+     */
+    private static class DirectoryNode {
+        private final Path dir;
+        private final Object key;
+        private final DirectoryStream<Path> stream;
+        private final Iterator<Path> iterator;
+        private boolean skipped;
+
+        DirectoryNode(Path dir, Object key, DirectoryStream<Path> stream) {
+            this.dir = dir;
+            this.key = key;
+            this.stream = stream;
+            this.iterator = stream.iterator();
+        }
+
+        Path directory() {
+            return dir;
+        }
+
+        Object key() {
+            return key;
+        }
+
+        DirectoryStream<Path> stream() {
+            return stream;
+        }
+
+        Iterator<Path> iterator() {
+            return iterator;
+        }
+
+        void skip() {
+            skipped = true;
+        }
+
+        boolean skipped() {
+            return skipped;
+        }
+    }
+
+    /**
+     * The event types.
+     */
+    static enum EventType {
+        /**
+         * Start of a directory
+         */
+        START_DIRECTORY,
+        /**
+         * End of a directory
+         */
+        END_DIRECTORY,
+        /**
+         * An entry in a directory
+         */
+        ENTRY;
+    }
+
+    /**
+     * Events returned by the {@link #walk} and {@link #next} methods.
+     */
+    static class Event {
+        private final EventType type;
+        private final Path file;
+        private final BasicFileAttributes attrs;
+        private final IOException ioe;
+
+        private Event(EventType type, Path file, BasicFileAttributes attrs, IOException ioe) {
+            this.type = type;
+            this.file = file;
+            this.attrs = attrs;
+            this.ioe = ioe;
+        }
+
+        Event(EventType type, Path file, BasicFileAttributes attrs) {
+            this(type, file, attrs, null);
+        }
+
+        Event(EventType type, Path file, IOException ioe) {
+            this(type, file, null, ioe);
+        }
+
+        EventType type() {
+            return type;
+        }
+
+        Path file() {
+            return file;
+        }
+
+        BasicFileAttributes attributes() {
+            return attrs;
+        }
+
+        IOException ioeException() {
+            return ioe;
+        }
+    }
+
+    /**
+     * Creates a {@code FileTreeWalker}.
+     */
+    FileTreeWalker(Set<FileVisitOption> options, int maxDepth) {
         boolean fl = false;
         for (FileVisitOption option: options) {
             // will throw NPE if options contains null
@@ -58,191 +178,236 @@ class FileTreeWalker {
         this.followLinks = fl;
         this.linkOptions = (fl) ? new LinkOption[0] :
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
-        this.visitor = visitor;
         this.maxDepth = maxDepth;
     }
 
     /**
-     * Walk file tree starting at the given file
+     * Returns the attributes of the given file, taking into account whether
+     * the walk is following sym links is not. The {@code canUseCached}
+     * argument determines whether this method can use cached attributes.
      */
-    void walk(Path start) throws IOException {
-        FileVisitResult result = walk(start,
-                                      0,
-                                      new ArrayList<AncestorDirectory>());
-        Objects.requireNonNull(result, "FileVisitor returned null");
-    }
-
-    /**
-     * @param   file
-     *          the directory to visit
-     * @param   depth
-     *          depth remaining
-     * @param   ancestors
-     *          use when cycle detection is enabled
-     */
-    private FileVisitResult walk(Path file,
-                                 int depth,
-                                 List<AncestorDirectory> ancestors)
+    private BasicFileAttributes getAttributes(Path file, boolean canUseCached)
         throws IOException
     {
         // if attributes are cached then use them if possible
-        BasicFileAttributes attrs = null;
-        if ((depth > 0) &&
+        if (canUseCached &&
             (file instanceof BasicFileAttributesHolder) &&
             (System.getSecurityManager() == null))
         {
             BasicFileAttributes cached = ((BasicFileAttributesHolder)file).get();
-            if (cached != null && (!followLinks || !cached.isSymbolicLink()))
-                attrs = cached;
+            if (cached != null && (!followLinks || !cached.isSymbolicLink())) {
+                return cached;
+            }
         }
-        IOException exc = null;
 
         // attempt to get attributes of file. If fails and we are following
         // links then a link target might not exist so get attributes of link
-        if (attrs == null) {
-            try {
-                try {
-                    attrs = Files.readAttributes(file, BasicFileAttributes.class, linkOptions);
-                } catch (IOException x1) {
-                    if (followLinks) {
-                        try {
-                            attrs = Files.readAttributes(file,
-                                                         BasicFileAttributes.class,
-                                                         LinkOption.NOFOLLOW_LINKS);
-                        } catch (IOException x2) {
-                            exc = x2;
-                        }
-                    } else {
-                        exc = x1;
-                    }
+        BasicFileAttributes attrs;
+        try {
+            attrs = Files.readAttributes(file, BasicFileAttributes.class, linkOptions);
+        } catch (IOException ioe) {
+            if (!followLinks)
+                throw ioe;
+
+            // attempt to get attrmptes without following links
+            attrs = Files.readAttributes(file,
+                                         BasicFileAttributes.class,
+                                         LinkOption.NOFOLLOW_LINKS);
+        }
+        return attrs;
+    }
+
+    /**
+     * Returns true if walking into the given directory would result in a
+     * file system loop/cycle.
+     */
+    private boolean wouldLoop(Path dir, Object key) {
+        // if this directory and ancestor has a file key then we compare
+        // them; otherwise we use less efficient isSameFile test.
+        for (DirectoryNode ancestor: stack) {
+            Object ancestorKey = ancestor.key();
+            if (key != null && ancestorKey != null) {
+                if (key.equals(ancestorKey)) {
+                    // cycle detected
+                    return true;
                 }
-            } catch (SecurityException x) {
-                // If access to starting file is denied then SecurityException
-                // is thrown, otherwise the file is ignored.
-                if (depth == 0)
-                    throw x;
-                return FileVisitResult.CONTINUE;
+            } else {
+                try {
+                    if (Files.isSameFile(dir, ancestor.directory())) {
+                        // cycle detected
+                        return true;
+                    }
+                } catch (IOException | SecurityException x) {
+                    // ignore
+                }
             }
         }
+        return false;
+    }
 
-        // unable to get attributes of file
-        if (exc != null) {
-            return visitor.visitFileFailed(file, exc);
+    /**
+     * Visits the given file, returning the {@code Event} corresponding to that
+     * visit.
+     *
+     * The {@code ignoreSecurityException} parameter determines whether
+     * any SecurityException should be ignored or not. If a SecurityException
+     * is thrown, and is ignored, then this method returns {@code null} to
+     * mean that there is no event corresponding to a visit to the file.
+     *
+     * The {@code canUseCached} parameter determines whether cached attributes
+     * for the file can be used or not.
+     */
+    private Event visit(Path entry, boolean ignoreSecurityException, boolean canUseCached) {
+        // need the file attributes
+        BasicFileAttributes attrs;
+        try {
+            attrs = getAttributes(entry, canUseCached);
+        } catch (IOException ioe) {
+            return new Event(EventType.ENTRY, entry, ioe);
+        } catch (SecurityException se) {
+            if (ignoreSecurityException)
+                return null;
+            throw se;
         }
 
         // at maximum depth or file is not a directory
+        int depth = stack.size();
         if (depth >= maxDepth || !attrs.isDirectory()) {
-            return visitor.visitFile(file, attrs);
+            return new Event(EventType.ENTRY, entry, attrs);
         }
 
         // check for cycles when following links
-        if (followLinks) {
-            Object key = attrs.fileKey();
-
-            // if this directory and ancestor has a file key then we compare
-            // them; otherwise we use less efficient isSameFile test.
-            for (AncestorDirectory ancestor: ancestors) {
-                Object ancestorKey = ancestor.fileKey();
-                if (key != null && ancestorKey != null) {
-                    if (key.equals(ancestorKey)) {
-                        // cycle detected
-                        return visitor.visitFileFailed(file,
-                            new FileSystemLoopException(file.toString()));
-                    }
-                } else {
-                    boolean isSameFile = false;
-                    try {
-                        isSameFile = Files.isSameFile(file, ancestor.file());
-                    } catch (IOException x) {
-                        // ignore
-                    } catch (SecurityException x) {
-                        // ignore
-                    }
-                    if (isSameFile) {
-                        // cycle detected
-                        return visitor.visitFileFailed(file,
-                            new FileSystemLoopException(file.toString()));
-                    }
-                }
-            }
-
-            ancestors.add(new AncestorDirectory(file, key));
+        if (followLinks && wouldLoop(entry, attrs.fileKey())) {
+            return new Event(EventType.ENTRY, entry,
+                             new FileSystemLoopException(entry.toString()));
         }
 
-        // visit directory
+        // file is a directory, attempt to open it
+        DirectoryStream<Path> stream = null;
         try {
-            DirectoryStream<Path> stream = null;
-            FileVisitResult result;
+            stream = Files.newDirectoryStream(entry);
+        } catch (IOException ioe) {
+            return new Event(EventType.ENTRY, entry, ioe);
+        } catch (SecurityException se) {
+            if (ignoreSecurityException)
+                return null;
+            throw se;
+        }
 
-            // open the directory
-            try {
-                stream = Files.newDirectoryStream(file);
-            } catch (IOException x) {
-                return visitor.visitFileFailed(file, x);
-            } catch (SecurityException x) {
-                // ignore, as per spec
-                return FileVisitResult.CONTINUE;
-            }
+        // push a directory node to the stack and return an event
+        stack.push(new DirectoryNode(entry, attrs.fileKey(), stream));
+        return new Event(EventType.START_DIRECTORY, entry, attrs);
+    }
 
-            // the exception notified to the postVisitDirectory method
+
+    /**
+     * Start walking from the given file.
+     */
+    Event walk(Path file) {
+        if (closed)
+            throw new IllegalStateException("Closed");
+
+        Event ev = visit(file,
+                         false,   // ignoreSecurityException
+                         false);  // canUseCached
+        assert ev != null;
+        return ev;
+    }
+
+    /**
+     * Returns the next Event or {@code null} if there are no more events or
+     * the walker is closed.
+     */
+    Event next() {
+        DirectoryNode top = stack.peek();
+        if (top == null)
+            return null;      // stack is empty, we are done
+
+        // continue iteration of the directory at the top of the stack
+        Event ev;
+        do {
+            Path entry = null;
             IOException ioe = null;
 
-            // invoke preVisitDirectory and then visit each entry
-            try {
-                result = visitor.preVisitDirectory(file, attrs);
-                if (result != FileVisitResult.CONTINUE) {
-                    return result;
-                }
-
+            // get next entry in the directory
+            if (!top.skipped()) {
+                Iterator<Path> iterator = top.iterator();
                 try {
-                    for (Path entry: stream) {
-                        result = walk(entry, depth+1, ancestors);
-
-                        // returning null will cause NPE to be thrown
-                        if (result == null || result == FileVisitResult.TERMINATE)
-                            return result;
-
-                        // skip remaining siblings in this directory
-                        if (result == FileVisitResult.SKIP_SIBLINGS)
-                            break;
+                    if (iterator.hasNext()) {
+                        entry = iterator.next();
                     }
-                } catch (DirectoryIteratorException e) {
-                    // IOException will be notified to postVisitDirectory
-                    ioe = e.getCause();
+                } catch (DirectoryIteratorException x) {
+                    ioe = x.getCause();
                 }
-            } finally {
+            }
+
+            // no next entry so close and pop directory, creating corresponding event
+            if (entry == null) {
                 try {
-                    stream.close();
+                    top.stream().close();
                 } catch (IOException e) {
-                    // IOException will be notified to postVisitDirectory
-                    if (ioe == null)
+                    if (ioe != null) {
                         ioe = e;
+                    } else {
+                        ioe.addSuppressed(e);
+                    }
                 }
+                stack.pop();
+                return new Event(EventType.END_DIRECTORY, top.directory(), ioe);
             }
 
-            // invoke postVisitDirectory last
-            return visitor.postVisitDirectory(file, ioe);
+            // visit the entry
+            ev = visit(entry,
+                       true,   // ignoreSecurityException
+                       true);  // canUseCached
 
-        } finally {
-            // remove key from trail if doing cycle detection
-            if (followLinks) {
-                ancestors.remove(ancestors.size()-1);
-            }
+        } while (ev == null);
+
+        return ev;
+    }
+
+    /**
+     * Pops the directory node that is the current top of the stack so that
+     * there are no more events for the directory (including no END_DIRECTORY)
+     * event. This method is a no-op if the stack is empty or the walker is
+     * closed.
+     */
+    void pop() {
+        if (!stack.isEmpty()) {
+            DirectoryNode node = stack.pop();
+            try {
+                node.stream().close();
+            } catch (IOException ignore) { }
         }
     }
 
-    private static class AncestorDirectory {
-        private final Path dir;
-        private final Object key;
-        AncestorDirectory(Path dir, Object key) {
-            this.dir = dir;
-            this.key = key;
+    /**
+     * Skips the remaining entries in the directory at the top of the stack.
+     * This method is a no-op if the stack is empty or the walker is closed.
+     */
+    void skipRemainingSiblings() {
+        if (!stack.isEmpty()) {
+            stack.peek().skip();
         }
-        Path file() {
-            return dir;
-        }
-        Object fileKey() {
-            return key;
+    }
+
+    /**
+     * Returns {@code true} if the walker is open.
+     */
+    boolean isOpen() {
+        return !closed;
+    }
+
+    /**
+     * Closes/pops all directories on the stack.
+     */
+    @Override
+    public void close() {
+        if (!closed) {
+            while (!stack.isEmpty()) {
+                pop();
+            }
+            closed = true;
         }
     }
 }
