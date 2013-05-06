@@ -4334,7 +4334,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 info.deterministic = detm;
             else
                 info.deterministic = false;
-
             return next.study(info);
         }
     }
@@ -4415,6 +4414,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
         // Aggressive group match
         boolean match0(Matcher matcher, int i, int j, CharSequence seq) {
+            // don't back off passing the starting "j"
+            int min = j;
             int[] groups = matcher.groups;
             int save0 = 0;
             int save1 = 0;
@@ -4452,7 +4453,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                         break;
                     }
                 }
-                while (j > cmin) {
+                while (j > min) {
                     if (next.match(matcher, i, seq)) {
                         if (capture) {
                             groups[groupIndex+1] = i;
@@ -4544,7 +4545,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             } else {
                 info.deterministic = false;
             }
-
             return next.study(info);
         }
     }

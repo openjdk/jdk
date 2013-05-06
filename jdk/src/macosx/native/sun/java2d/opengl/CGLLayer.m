@@ -216,7 +216,11 @@ Java_sun_java2d_opengl_CGLLayer_nativeSetScale
 {
     JNF_COCOA_ENTER(env);
     CGLLayer *layer = jlong_to_ptr(layerPtr);
-    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+    // We always call all setXX methods asynchronously, exception is only in 
+    // this method where we need to change native texture size and layer's scale
+    // in one call on appkit, otherwise we'll get window's contents blinking, 
+    // during screen-2-screen moving.
+    [ThreadUtilities performOnMainThreadWaiting:[NSThread isMainThread] block:^(){
         layer.contentsScale = scale;
     }];
     JNF_COCOA_EXIT(env);

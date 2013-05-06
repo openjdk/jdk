@@ -142,6 +142,7 @@ CORE_PKGS =                                      \
   java.util.prefs                                \
   java.util.regex                                \
   java.util.spi                                  \
+  java.util.stream                               \
   java.util.zip                                  \
   javax.accessibility                            \
   javax.activation                               \
