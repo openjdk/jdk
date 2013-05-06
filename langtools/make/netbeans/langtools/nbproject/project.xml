@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -67,7 +67,7 @@
             </folders>
             <ide-actions>
                 <!--
- Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -96,7 +96,7 @@
  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
-                <!-- 
+                <!--
  This file defines the standard actions accepted by langtools projects.
  It is normally included as an entity into a project's project.xml file.
 
@@ -104,7 +104,7 @@
    - NetBeans: Setting Up Projects
      at http://www.netbeans.org/kb/55/using-netbeans/project_setup.html
    - NetBeans: Advanced Freeform Project Configuration
-     at http://www.netbeans.org/kb/41/freeform-config.html 
+     at http://www.netbeans.org/kb/41/freeform-config.html
 -->
                 <action name="build">
                     <target>build</target>
@@ -144,7 +144,7 @@
                         </arity>
                     </context>
                 </action>
-                <!-- 
+                <!--
  Note: NetBeans does not appear to support context menu items
  on shell scripts :-(
 -->
@@ -178,7 +178,7 @@
                         </arity>
                     </context>
                 </action>
-                <!-- 
+                <!--
  Note: NetBeans does not appear to support context menu items
  on shell scripts :-(
 -->
@@ -239,10 +239,6 @@
                         <label>Build files</label>
                         <location>${root}/make</location>
                     </source-folder>
-                    <source-folder style="packages">
-                        <label>Source files</label>
-                        <location>${root}/src/share/classes</location>
-                    </source-folder>
                     <source-file>
                         <label>README</label>
                         <location>README</location>
@@ -250,7 +246,7 @@
                 </items>
                 <context-menu>
                     <!--
- Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -279,7 +275,7 @@
  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
-                    <!-- 
+                    <!--
  This file defines the actions that will appear on the project's context
  menu, in the Projects viewer.
  It is normally included as an entity into a project's project.xml file.
@@ -288,7 +284,7 @@
    - NetBeans: Setting Up Projects
      at http://www.netbeans.org/kb/55/using-netbeans/project_setup.html
    - NetBeans: Advanced Freeform Project Configuration
-     at http://www.netbeans.org/kb/41/freeform-config.html 
+     at http://www.netbeans.org/kb/41/freeform-config.html
 -->
                     <ide-action name="select-tool"/>
                     <separator/>
@@ -305,11 +301,11 @@
             </view>
             <subprojects/>
         </general-data>
-        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/3">
             <compilation-unit>
                 <package-root>${root}/src/share/classes</package-root>
                 <built-to>${root}/build/classes</built-to>
-                <source-level>1.5</source-level>
+                <source-level>1.7</source-level>
             </compilation-unit>
         </java-data>
     </configuration>

@@ -105,6 +105,22 @@ public final class FindProperty {
     }
 
     /**
+     * Return the appropriate receiver for a getter.
+     * @return appropriate receiver
+     */
+    public ScriptObject getGetterReceiver() {
+        return property != null && property.hasGetterFunction() ? self : prototype;
+    }
+
+   /**
+     * Return the appropriate receiver for a setter.
+     * @return appropriate receiver
+     */
+    public ScriptObject getSetterReceiver() {
+        return property != null && property.hasSetterFunction() ? self : prototype;
+    }
+
+    /**
      * Return the property that was found
      * @return property
      */

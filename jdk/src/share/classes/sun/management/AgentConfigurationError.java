@@ -128,19 +128,13 @@ public class AgentConfigurationError extends Error {
     public AgentConfigurationError(String error, String... params) {
         super();
         this.error = error;
-        this.params = new String[params.length];
-        for (int i = 0; i < params.length; i++) {
-            this.params[i] = params[i];
-        }
+        this.params = params.clone();
     }
 
     public AgentConfigurationError(String error, Throwable cause, String... params) {
         super(cause);
         this.error = error;
-        this.params = new String[params.length];
-        for (int i = 0; i < params.length; i++) {
-            this.params[i] = params[i];
-        }
+        this.params = params.clone();
     }
 
     public String getError() {
@@ -148,7 +142,7 @@ public class AgentConfigurationError extends Error {
     }
 
     public String[] getParams() {
-        return params;
+        return params.clone();
     }
 
     private static final long serialVersionUID = 1211605593516195475L;
