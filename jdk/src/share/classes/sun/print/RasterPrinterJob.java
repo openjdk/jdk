@@ -607,13 +607,17 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
     protected void updatePageAttributes(PrintService service,
                                         PageFormat page) {
+        if (this.attributes == null) {
+            this.attributes = new HashPrintRequestAttributeSet();
+        }
+
         updateAttributesWithPageFormat(service, page, this.attributes);
     }
 
     protected void updateAttributesWithPageFormat(PrintService service,
                                         PageFormat page,
-                                        PrintRequestAttributeSet attributes) {
-        if (service == null || page == null) {
+                                        PrintRequestAttributeSet pageAttributes) {
+        if (service == null || page == null || pageAttributes == null) {
             return;
         }
 
@@ -653,13 +657,10 @@ public abstract class RasterPrinterJob extends PrinterJob {
             orient = OrientationRequested.PORTRAIT;
         }
 
-        if (attributes == null) {
-            attributes = new HashPrintRequestAttributeSet();
-        }
         if (media != null) {
-            attributes.add(media);
+            pageAttributes.add(media);
         }
-        attributes.add(orient);
+        pageAttributes.add(orient);
 
         float ix = (float)(page.getPaper().getImageableX()/DPI);
         float iw = (float)(page.getPaper().getImageableWidth()/DPI);
@@ -667,7 +668,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         float ih = (float)(page.getPaper().getImageableHeight()/DPI);
         if (ix < 0) ix = 0f; if (iy < 0) iy = 0f;
         try {
-            attributes.add(new MediaPrintableArea(ix, iy, iw, ih,
+            pageAttributes.add(new MediaPrintableArea(ix, iy, iw, ih,
                                                   MediaPrintableArea.INCH));
         } catch (IllegalArgumentException iae) {
         }
