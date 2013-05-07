@@ -44,7 +44,6 @@ class PSMarkSweep : public MarkSweep {
   static KlassClosure* follow_klass_closure() { return &MarkSweep::follow_klass_closure; }
   static VoidClosure* follow_stack_closure() { return (VoidClosure*)&MarkSweep::follow_stack_closure; }
   static OopClosure* adjust_pointer_closure() { return (OopClosure*)&MarkSweep::adjust_pointer_closure; }
-  static OopClosure* adjust_root_pointer_closure() { return (OopClosure*)&MarkSweep::adjust_root_pointer_closure; }
   static KlassClosure* adjust_klass_closure() { return &MarkSweep::adjust_klass_closure; }
   static BoolObjectClosure* is_alive_closure() { return (BoolObjectClosure*)&MarkSweep::is_alive; }
 

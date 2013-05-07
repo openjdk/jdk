@@ -25,6 +25,7 @@ package test.java.util;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoField;
 
 import java.util.*;
@@ -34,6 +35,7 @@ import static org.testng.Assert.assertEquals;
 
 /* @test
  * @summary Unit test for j.u.Formatter threeten date/time support
+ * @bug 8003680 8012638
  */
 @Test
 public class TestFormatter {
@@ -64,25 +66,33 @@ public class TestFormatter {
         //locales = Locale.getAvailableLocales();
         Locale[] locales = new Locale[] {
            Locale.ENGLISH, Locale.FRENCH, Locale.JAPANESE, Locale.CHINESE};
-
         Random r = new Random();
-        ZonedDateTime  zdt = ZonedDateTime.now();
-        while (N-- > 0) {
-            zdt = zdt.withDayOfYear(r.nextInt(365) + 1)
-                     .with(ChronoField.SECOND_OF_DAY, r.nextInt(86400));
-            Instant instant = zdt.toInstant();
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(instant.toEpochMilli());
+        ZonedDateTime  zdt0 = ZonedDateTime.now();
+        ZonedDateTime[] zdts = new ZonedDateTime[] {
+            zdt0,
+            zdt0.withZoneSameLocal(ZoneId.of("UTC")),
+            zdt0.withZoneSameLocal(ZoneId.of("GMT")),
+            zdt0.withZoneSameLocal(ZoneId.of("UT")),
+        };
 
-            for (Locale locale : locales) {
+        while (N-- > 0) {
+            for (ZonedDateTime zdt : zdts) {
+                zdt = zdt.withDayOfYear(r.nextInt(365) + 1)
+                         .with(ChronoField.SECOND_OF_DAY, r.nextInt(86400));
+                Instant instant = zdt.toInstant();
+                Calendar cal = Calendar.getInstance();
+                cal.setTimeInMillis(instant.toEpochMilli());
+                cal.setTimeZone(TimeZone.getTimeZone(zdt.getZone()));
+                for (Locale locale : locales) {
                     for (String fmtStr : fmtStrDate) {
-                    testDate(fmtStr, locale, zdt, cal);
+                        testDate(fmtStr, locale, zdt, cal);
+                    }
+                    for (String fmtStr : fmtStrTime) {
+                        testTime(fmtStr, locale, zdt, cal);
+                    }
+                    testZoneId(locale, zdt, cal);
+                    testInstant(locale, instant, zdt, cal);
                 }
-                for (String fmtStr : fmtStrTime) {
-                    testTime(fmtStr, locale, zdt, cal);
-                }
-                testZoneId(locale, zdt, cal);
-                testInstant(locale, instant, zdt, cal);
             }
         }
         if (verbose) {
@@ -146,6 +156,10 @@ public class TestFormatter {
     }
 
     private String toZoneIdStr(String expected) {
+        return expected.replaceAll("(?:GMT|UTC)(?<off>[+\\-]?[0-9]{2}:[0-9]{2})", "${off}");
+    }
+
+    private String toZoneOffsetStr(String expected) {
         return expected.replaceAll("(?:GMT|UTC)(?<off>[+\\-]?[0-9]{2}:[0-9]{2})", "${off}")
                        .replaceAll("GMT|UTC|UT", "Z");
     }
@@ -159,7 +173,7 @@ public class TestFormatter {
         Calendar cal0 = Calendar.getInstance();
         cal0.setTimeInMillis(zdt.toInstant().toEpochMilli());
         cal0.setTimeZone(TimeZone.getTimeZone("GMT" + zdt.getOffset().getId()));
-        expected = toZoneIdStr(test(fmtStr, locale, null, cal0));
+        expected = toZoneOffsetStr(test(fmtStr, locale, null, cal0));
         test(fmtStr, locale, expected, zdt.toOffsetDateTime());
         test(fmtStr, locale, expected, zdt.toOffsetDateTime().toOffsetTime());
 

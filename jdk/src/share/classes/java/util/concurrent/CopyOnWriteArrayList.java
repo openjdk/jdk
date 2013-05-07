@@ -36,6 +36,9 @@
 package java.util.concurrent;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * A thread-safe variant of {@link java.util.ArrayList} in which all mutative
@@ -1056,6 +1059,17 @@ public class CopyOnWriteArrayList<E>
         public void add(E e) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEachRemaining(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+            final int size = snapshot.length;
+            for (int i=cursor; i < size; i++) {
+                action.accept((E) snapshot[i]);
+            }
+            cursor = size;
+        }
     }
 
     /**
@@ -1260,8 +1274,57 @@ public class CopyOnWriteArrayList<E>
             }
         }
 
-    }
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            @SuppressWarnings("unchecked")
+            final E[] elements = (E[]) l.getArray();
+            checkForComodification();
+            l.forEach(action, elements, offset, offset + size);
+        }
 
+        @Override
+        public void sort(Comparator<? super E> c) {
+            final ReentrantLock lock = l.lock;
+            lock.lock();
+            try {
+                checkForComodification();
+                l.sort(c, offset, offset + size);
+                expectedArray = l.getArray();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            Objects.requireNonNull(filter);
+            final ReentrantLock lock = l.lock;
+            lock.lock();
+            try {
+                checkForComodification();
+                final int removeCount =
+                        l.removeIf(filter, offset, offset + size);
+                expectedArray = l.getArray();
+                size -= removeCount;
+                return removeCount > 0;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void replaceAll(UnaryOperator<E> operator) {
+            final ReentrantLock lock = l.lock;
+            lock.lock();
+            try {
+                checkForComodification();
+                l.replaceAll(operator, offset, offset + size);
+                expectedArray = l.getArray();
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
 
     private static class COWSubListIterator<E> implements ListIterator<E> {
         private final ListIterator<E> it;
@@ -1315,6 +1378,15 @@ public class CopyOnWriteArrayList<E>
         public void add(E e) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEachRemaining(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+            while (nextIndex() < size) {
+                action.accept(it.next());
+            }
+        }
     }
 
     // Support for resetting lock while deserializing
@@ -1332,5 +1404,140 @@ public class CopyOnWriteArrayList<E>
         } catch (Exception e) {
             throw new Error(e);
         }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void forEach(Consumer<? super E> action) {
+        forEach(action, (E[]) getArray(), 0, size());
+    }
+
+    private void forEach(Consumer<? super E> action,
+                         final E[] elements,
+                         final int from, final int to) {
+        Objects.requireNonNull(action);
+        for (int i = from; i < to; i++) {
+            action.accept(elements[i]);
+        }
+    }
+
+    @Override
+    public void sort(Comparator<? super E> c) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            sort(c, 0, size());
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // must be called with this.lock held
+    @SuppressWarnings("unchecked")
+    private void sort(Comparator<? super E> c, final int from, final int to) {
+        final E[] elements = (E[]) getArray();
+        final E[] newElements = Arrays.copyOf(elements, elements.length);
+        // only elements [from, to) are sorted
+        Arrays.sort(newElements, from, to, c);
+        setArray(newElements);
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return removeIf(filter, 0, size()) > 0;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // must be called with this.lock held
+    private int removeIf(Predicate<? super E> filter, final int from, final int to) {
+        Objects.requireNonNull(filter);
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            @SuppressWarnings("unchecked")
+            final E[] elements = (E[]) getArray();
+
+            // figure out which elements are to be removed
+            // any exception thrown from the filter predicate at this stage
+            // will leave the collection unmodified
+            int removeCount = 0;
+            final int range = to - from;
+            final BitSet removeSet = new BitSet(range);
+            for (int i = 0; i < range; i++) {
+                final E element = elements[from + i];
+                if (filter.test(element)) {
+                    // removeSet is zero-based to keep its size small
+                    removeSet.set(i);
+                    removeCount++;
+                }
+            }
+
+            // copy surviving elements into a new array
+            if (removeCount > 0) {
+                final int newSize = elements.length - removeCount;
+                final int newRange = newSize - from;
+                @SuppressWarnings("unchecked")
+                final E[] newElements = (E[]) new Object[newSize];
+                // copy elements before [from, to) unmodified
+                for (int i = 0; i < from; i++) {
+                    newElements[i] = elements[i];
+                }
+                // elements [from, to) are subject to removal
+                int j = 0;
+                for (int i = 0; (i < range) && (j < newRange); i++) {
+                    i = removeSet.nextClearBit(i);
+                    if (i >= range) {
+                        break;
+                    }
+                    newElements[from + (j++)] = elements[from + i];
+                }
+                // copy any remaining elements beyond [from, to)
+                j += from;
+                for (int i = to; (i < elements.length) && (j < newSize); i++) {
+                    newElements[j++] = elements[i];
+                }
+                setArray(newElements);
+            }
+
+            return removeCount;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void replaceAll(UnaryOperator<E> operator) {
+        Objects.requireNonNull(operator);
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            replaceAll(operator, 0, size());
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // must be called with this.lock held
+    @SuppressWarnings("unchecked")
+    private void replaceAll(UnaryOperator<E> operator, final int from, final int to) {
+        final E[] elements = (E[]) getArray();
+        final E[] newElements = (E[]) new Object[elements.length];
+        for (int i = 0; i < from; i++) {
+            newElements[i] = elements[i];
+        }
+        // the operator is only applied to elements [from, to)
+        for (int i = from; i < to; i++) {
+            newElements[i] = operator.apply(elements[i]);
+        }
+        for (int i = to; i < elements.length; i++) {
+            newElements[i] = elements[i];
+        }
+        setArray(newElements);
     }
 }

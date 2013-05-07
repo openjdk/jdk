@@ -36,6 +36,7 @@ import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Position;
 import java.io.IOException;
 import java.io.StringWriter;
 import javax.tools.JavaFileObject;
@@ -82,8 +83,24 @@ public abstract class DCTree implements DocTree {
         return s.toString();
     }
 
+    public static abstract class DCEndPosTree<T extends DCEndPosTree<T>> extends DCTree {
+
+        private int endPos = Position.NOPOS;
+
+        public int getEndPos(DCDocComment dc) {
+            return dc.comment.getSourcePos(endPos);
+        }
+
+        @SuppressWarnings("unchecked")
+        public T setEndPos(int endPos) {
+            this.endPos = endPos;
+            return (T) this;
+        }
+
+    }
+
     public static class DCDocComment extends DCTree implements DocCommentTree {
-        final Comment comment; // required for the implicit source pos table
+        public final Comment comment; // required for the implicit source pos table
 
         public final List<DCTree> firstSentence;
         public final List<DCTree> body;
@@ -125,7 +142,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static abstract class DCInlineTag extends DCTree implements InlineTagTree {
+    public static abstract class DCInlineTag extends DCEndPosTree<DCInlineTag> implements InlineTagTree {
         public String getTagName() {
             return getKind().tagName;
         }
@@ -345,6 +362,7 @@ public abstract class DCTree implements DocTree {
         public int getEndPosition(EndPosTable endPosTable) {
             return pos + body.length();
         }
+
     }
 
     public static class DCIdentifier extends DCTree implements IdentifierTree {
@@ -478,7 +496,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCReference extends DCTree implements ReferenceTree {
+    public static class DCReference extends DCEndPosTree<DCReference> implements ReferenceTree {
         public final String signature;
 
         // The following are not directly exposed through ReferenceTree
@@ -663,7 +681,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCStartElement extends DCTree implements StartElementTree {
+    public static class DCStartElement extends DCEndPosTree<DCStartElement> implements StartElementTree {
         public final Name name;
         public final List<DCTree> attrs;
         public final boolean selfClosing;

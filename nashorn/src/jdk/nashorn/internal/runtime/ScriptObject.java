@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.CONFIGURABLE;
@@ -39,7 +40,6 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndexNoThrow;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -61,12 +61,13 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
+import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.AccessorPropertyDescriptor;
 import jdk.nashorn.internal.objects.DataPropertyDescriptor;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
@@ -901,7 +902,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final MethodHandle getter = find.getGetter(int.class);
         if (getter != null) {
             try {
-                return (int)getter.invokeExact((Object)find.getOwner());
+                return (int)getter.invokeExact((Object)find.getGetterReceiver());
             } catch (final Error|RuntimeException e) {
                 throw e;
             } catch (final Throwable e) {
@@ -916,7 +917,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final MethodHandle getter = find.getGetter(long.class);
         if (getter != null) {
             try {
-                return (long)getter.invokeExact((Object)find.getOwner());
+                return (long)getter.invokeExact((Object)find.getGetterReceiver());
             } catch (final Error|RuntimeException e) {
                 throw e;
             } catch (final Throwable e) {
@@ -931,7 +932,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final MethodHandle getter = find.getGetter(double.class);
         if (getter != null) {
             try {
-                return (double)getter.invokeExact((Object)find.getOwner());
+                return (double)getter.invokeExact((Object)find.getGetterReceiver());
             } catch (final Error|RuntimeException e) {
                 throw e;
             } catch (final Throwable e) {
@@ -953,7 +954,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final MethodHandle getter = find.getGetter(Object.class);
         if (getter != null) {
             try {
-                return getter.invokeExact((Object)find.getOwner());
+                return getter.invokeExact((Object)find.getGetterReceiver());
             } catch (final Error|RuntimeException e) {
                 throw e;
             } catch (final Throwable e) {
@@ -1679,12 +1680,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
-        final String name = desc.getNameToken(2);
-
-        if (request.isCallSiteUnstable()) {
-            return findMegaMorphicGetMethod(desc, name);
-        }
-
+        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final FindProperty find = findProperty(name, true);
 
         MethodHandle methodHandle;
@@ -1698,6 +1694,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 return createEmptyGetter(desc, name);
             }
             throw new AssertionError(); // never invoked with any other operation
+        }
+
+        if (request.isCallSiteUnstable()) {
+            return findMegaMorphicGetMethod(desc, name);
         }
 
         final Class<?> returnType = desc.getMethodType().returnType();
@@ -1727,7 +1727,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name) {
-        final GuardedInvocation inv = findGetIndexMethod(desc.getMethodType().insertParameterTypes(1, Object.class));
+        final MethodType mhType = desc.getMethodType().insertParameterTypes(1, Object.class);
+        final GuardedInvocation inv = findGetIndexMethod(mhType);
+
         return inv.replaceMethods(MH.insertArguments(inv.getInvocation(), 1, name), inv.getGuard());
     }
 
@@ -1890,8 +1892,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private static GuardedInvocation findMegaMorphicSetMethod(final CallSiteDescriptor desc, final String name) {
-        final GuardedInvocation inv = findSetIndexMethod(desc.getMethodType().insertParameterTypes(1, Object.class),
-                NashornCallSiteDescriptor.isStrict(desc));
+        final MethodType type = desc.getMethodType().insertParameterTypes(1, Object.class);
+        final GuardedInvocation inv = findSetIndexMethod(type, NashornCallSiteDescriptor.isStrict(desc));
         return inv.replaceMethods(MH.insertArguments(inv.getInvocation(), 1, name), inv.getGuard());
     }
 
@@ -1949,7 +1951,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return GuardedInvocation to be invoked at call site.
      */
     public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
-        final String name = desc.getNameToken(2);
+        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
         final boolean scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
@@ -1972,6 +1974,24 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         return createEmptyGetter(desc, name);
+    }
+    /**
+     * Invoke fall back if a property is not found.
+     * @param name Name of property.
+     * @return Result from call.
+     */
+    private Object invokeNoSuchProperty(final String name) {
+        final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
+
+        if (find != null) {
+            final Object func = getObjectValue(find);
+
+            if (func instanceof ScriptFunction) {
+                return ScriptRuntime.apply((ScriptFunction)func, this, name);
+            }
+        }
+
+        return UNDEFINED;
     }
 
     private GuardedInvocation createEmptyGetter(final CallSiteDescriptor desc, final String name) {
@@ -2120,8 +2140,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      *
      * Make sure arguments are paired correctly.
      * @param methodHandle MethodHandle to adjust.
-     * @param callType     MethodType of caller.
-     * @param callerVarArg true if the caller is vararg, false otherwise, null if it should be inferred.
+     * @param callType     MethodType of the call site.
+     * @param callerVarArg true if the caller is vararg, false otherwise, null if it should be inferred from the
+     * {@code callType}; basically, if the last parameter type of the call site is an array, it'll be considered a
+     * variable arity call site. These are ordinarily rare; Nashorn code generator creates variable arity call sites
+     * when the call has more than {@link LinkerCallSite#ARGLIMIT} parameters.
      *
      * @return method handle with adjusted arguments
      */
@@ -2136,7 +2159,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final int callCount      = callType.parameterCount();
 
         final boolean isCalleeVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
-        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : (callCount > 1 &&
+        final boolean isCallerVarArg = callerVarArg != null ? callerVarArg.booleanValue() : (callCount > 0 &&
                 callType.parameterType(callCount - 1).isArray());
 
         if (callCount < parameterCount) {
@@ -2239,310 +2262,314 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
            setArray(getArray().shrink(newLength));
            getArray().setLength(newLength);
        }
-   }
+    }
+
+    private int getInt(final int index, final String key) {
+        if (isValidArrayIndex(index)) {
+             for (ScriptObject object = this; ; ) {
+                final FindProperty find = object.findProperty(key, false, false, this);
+
+                if (find != null) {
+                    return getIntValue(find);
+                }
+
+                if ((object = object.getProto()) == null) {
+                    break;
+                }
+
+                final ArrayData array = object.getArray();
+
+                if (array.has(index)) {
+                    return array.getInt(index);
+                }
+           }
+        } else {
+            final FindProperty find = findProperty(key, true);
+
+            if (find != null) {
+                return getIntValue(find);
+            }
+        }
+
+        return JSType.toInt32(invokeNoSuchProperty(key));
+    }
 
     @Override
     public int getInt(final Object key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getInt(index);
+        if (array.has(index)) {
+            return array.getInt(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getIntValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getInt(key) : 0;
+        return getInt(index, convertKey(key));
     }
 
     @Override
     public int getInt(final double key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getInt(index);
+        if (array.has(index)) {
+            return array.getInt(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getIntValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getInt(key) : 0;
+        return getInt(index, convertKey(key));
     }
 
     @Override
     public int getInt(final long key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getInt(index);
+        if (array.has(index)) {
+            return array.getInt(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getIntValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getInt(key) : 0;
+        return getInt(index, convertKey(key));
     }
 
     @Override
     public int getInt(final int key) {
-        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getInt(index);
+        if (array.has(key)) {
+            return array.getInt(key);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
+        return getInt(key, convertKey(key));
+    }
 
-        if (find != null) {
-            return getIntValue(find);
+    private long getLong(final int index, final String key) {
+        if (isValidArrayIndex(index)) {
+            for (ScriptObject object = this; ; ) {
+                final FindProperty find = object.findProperty(key, false, false, this);
+
+                if (find != null) {
+                    return getLongValue(find);
+                }
+
+                if ((object = object.getProto()) == null) {
+                    break;
+                }
+
+                final ArrayData array = object.getArray();
+
+                if (array.has(index)) {
+                    return array.getLong(index);
+                }
+           }
+        } else {
+            final FindProperty find = findProperty(key, true);
+
+            if (find != null) {
+                return getLongValue(find);
+            }
         }
 
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getInt(key) : 0;
+        return JSType.toLong(invokeNoSuchProperty(key));
     }
 
     @Override
     public long getLong(final Object key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getLong(index);
+        if (array.has(index)) {
+            return array.getLong(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getLongValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getLong(key) : 0L;
+        return getLong(index, convertKey(key));
     }
 
     @Override
     public long getLong(final double key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getLong(index);
+        if (array.has(index)) {
+            return array.getLong(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getLongValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getLong(key) : 0L;
+        return getLong(index, convertKey(key));
     }
 
     @Override
     public long getLong(final long key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getLong(index);
+        if (array.has(index)) {
+            return array.getLong(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getLongValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getLong(key) : 0L;
+        return getLong(index, convertKey(key));
     }
 
     @Override
     public long getLong(final int key) {
-        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getLong(index);
+        if (array.has(key)) {
+            return array.getLong(key);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
+        return getLong(key, convertKey(key));
+    }
 
-        if (find != null) {
-            return getLongValue(find);
+    private double getDouble(final int index, final String key) {
+        if (isValidArrayIndex(index)) {
+            for (ScriptObject object = this; ; ) {
+                final FindProperty find = object.findProperty(key, false, false, this);
+
+                if (find != null) {
+                    return getDoubleValue(find);
+                }
+
+                if ((object = object.getProto()) == null) {
+                    break;
+                }
+
+                final ArrayData array = object.getArray();
+
+                if (array.has(index)) {
+                    return array.getDouble(index);
+                }
+           }
+        } else {
+            final FindProperty find = findProperty(key, true);
+
+            if (find != null) {
+                return getDoubleValue(find);
+            }
         }
 
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getLong(key) : 0L;
+        return JSType.toNumber(invokeNoSuchProperty(key));
     }
 
     @Override
     public double getDouble(final Object key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getDouble(index);
+        if (array.has(index)) {
+            return array.getDouble(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getDoubleValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getDouble(key) : Double.NaN;
+        return getDouble(index, convertKey(key));
     }
 
     @Override
     public double getDouble(final double key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getDouble(index);
+        if (array.has(index)) {
+            return array.getDouble(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getDoubleValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getDouble(key) : Double.NaN;
+        return getDouble(index, convertKey(key));
     }
 
     @Override
     public double getDouble(final long key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getDouble(index);
+        if (array.has(index)) {
+            return array.getDouble(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getDoubleValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getDouble(key) : Double.NaN;
+        return getDouble(index, convertKey(key));
     }
 
     @Override
     public double getDouble(final int key) {
-        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getDouble(index);
+        if (array.has(key)) {
+            return array.getDouble(key);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
+        return getDouble(key, convertKey(key));
+    }
 
-        if (find != null) {
-            return getDoubleValue(find);
+    private Object get(final int index, final String key) {
+        if (isValidArrayIndex(index)) {
+            for (ScriptObject object = this; ; ) {
+                final FindProperty find = object.findProperty(key, false, false, this);
+
+                if (find != null) {
+                    return getObjectValue(find);
+                }
+
+                if ((object = object.getProto()) == null) {
+                    break;
+                }
+
+                final ArrayData array = object.getArray();
+
+                if (array.has(index)) {
+                    return array.getObject(index);
+                }
+            }
+        } else {
+            final FindProperty find = findProperty(key, true);
+
+            if (find != null) {
+                return getObjectValue(find);
+            }
         }
 
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.getDouble(key) : Double.NaN;
+        return invokeNoSuchProperty(key);
     }
 
     @Override
     public Object get(final Object key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getObject(index);
+        if (array.has(index)) {
+            return array.getObject(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getObjectValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.get(key) : UNDEFINED;
+        return get(index, convertKey(key));
     }
 
     @Override
     public Object get(final double key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getObject(index);
+        if (array.has(index)) {
+            return array.getObject(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getObjectValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.get(key) : UNDEFINED;
+        return get(index, convertKey(key));
     }
 
     @Override
     public Object get(final long key) {
         final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getObject(index);
+        if (array.has(index)) {
+            return array.getObject(index);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getObjectValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.get(key) : UNDEFINED;
+        return get(index, convertKey(key));
     }
 
     @Override
     public Object get(final int key) {
-        final int index = getArrayIndexNoThrow(key);
+        final ArrayData array = getArray();
 
-        if (getArray().has(index)) {
-            return getArray().getObject(index);
+        if (array.has(key)) {
+            return array.getObject(key);
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
-
-        if (find != null) {
-            return getObjectValue(find);
-        }
-
-        final ScriptObject proto = this.getProto();
-
-        return proto != null ? proto.get(key) : UNDEFINED;
+        return get(key, convertKey(key));
     }
 
     /**
@@ -2554,7 +2581,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     private void doesNotHave(final int index, final Object value, final boolean strict) {
         final long oldLength = getArray().length();
-        final long longIndex = index & 0xffff_ffffL;
+        final long longIndex = index & JSType.MAX_UINT;
 
         if (!getArray().has(index)) {
             final String key = convertKey(longIndex);
@@ -2613,8 +2640,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             f = null;
         }
 
-        MethodHandle setter;
-
         if (f != null) {
             if (!f.getProperty().isWritable()) {
                 if (strict) {
@@ -2624,9 +2649,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 return;
             }
 
-            setter = f.getSetter(Object.class, strict); //TODO specfields
             try {
-                setter.invokeExact((Object)f.getOwner(), value);
+                final MethodHandle setter = f.getSetter(Object.class, strict); //TODO specfields
+                setter.invokeExact((Object)f.getSetterReceiver(), value);
             } catch (final Error|RuntimeException e) {
                 throw e;
             } catch (final Throwable e) {

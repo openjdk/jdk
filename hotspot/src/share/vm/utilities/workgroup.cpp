@@ -79,7 +79,7 @@ bool WorkGang::initialize_workers() {
   }
   _gang_workers = NEW_C_HEAP_ARRAY(GangWorker*, total_workers(), mtInternal);
   if (gang_workers() == NULL) {
-    vm_exit_out_of_memory(0, "Cannot create GangWorker array.");
+    vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create GangWorker array.");
     return false;
   }
   os::ThreadType worker_type;
@@ -93,7 +93,8 @@ bool WorkGang::initialize_workers() {
     assert(new_worker != NULL, "Failed to allocate GangWorker");
     _gang_workers[worker] = new_worker;
     if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
-      vm_exit_out_of_memory(0, "Cannot create worker GC thread. Out of system resources.");
+      vm_exit_out_of_memory(0, OOM_MALLOC_ERROR,
+              "Cannot create worker GC thread. Out of system resources.");
       return false;
     }
     if (!DisableStartThread) {
