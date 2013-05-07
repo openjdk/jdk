@@ -178,6 +178,7 @@ public final class NativeDebug extends ScriptObject {
      * @param self self reference
      * @return undefined
      */
+    @SuppressWarnings("resource")
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object dumpCounters(final Object self) {
         final PrintWriter out = Context.getCurrentErr();

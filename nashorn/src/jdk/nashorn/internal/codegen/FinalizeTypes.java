@@ -228,19 +228,19 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leaveBIT_AND(BinaryNode binaryNode) {
+    public Node leaveBIT_AND(final BinaryNode binaryNode) {
         assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
-    public Node leaveBIT_OR(BinaryNode binaryNode) {
+    public Node leaveBIT_OR(final BinaryNode binaryNode) {
         assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
-    public Node leaveBIT_XOR(BinaryNode binaryNode) {
+    public Node leaveBIT_XOR(final BinaryNode binaryNode) {
         assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }

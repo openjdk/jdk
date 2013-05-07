@@ -32,7 +32,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation of a catch clause.
  */
 @Immutable
-public final class CatchNode extends Node {
+public final class CatchNode extends Statement {
     /** Exception identifier. */
     private final IdentNode exception;
 
@@ -45,14 +45,15 @@ public final class CatchNode extends Node {
     /**
      * Constructors
      *
+     * @param lineNumber         lineNumber
      * @param token              token
      * @param finish             finish
      * @param exception          variable name of exception
      * @param exceptionCondition exception condition
      * @param body               catch body
      */
-    public CatchNode(final long token, final int finish, final IdentNode exception, final Node exceptionCondition, final Block body) {
-        super(token, finish);
+    public CatchNode(final int lineNumber, final long token, final int finish, final IdentNode exception, final Node exceptionCondition, final Block body) {
+        super(lineNumber, token, finish);
         this.exception          = exception;
         this.exceptionCondition = exceptionCondition;
         this.body               = body;

@@ -154,15 +154,6 @@ public abstract class Node implements Cloneable {
     }
 
     /**
-     * Is this a debug info node like LineNumberNode etc?
-     *
-     * @return true if this is a debug node
-     */
-    public boolean isDebug() {
-        return false;
-    }
-
-    /**
      * For reference copies - ensure that labels in the copy node are unique
      * using an appropriate copy constructor
      * @param lc lexical context

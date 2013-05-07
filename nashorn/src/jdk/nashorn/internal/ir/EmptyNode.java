@@ -32,25 +32,26 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for an empty statement.
  */
 @Immutable
-public final class EmptyNode extends Node {
+public final class EmptyNode extends Statement {
 
     /**
      * Constructor
      *
      * @param node node to wrap
      */
-    public EmptyNode(final Node node) {
+    public EmptyNode(final Statement node) {
         super(node);
     }
 
     /**
      * Constructor
      *
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      */
-    public EmptyNode(final long token, final int finish) {
-        super(token, finish);
+    public EmptyNode(final int lineNumber, final long token, final int finish) {
+        super(lineNumber, token, finish);
     }
 
 

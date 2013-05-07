@@ -275,9 +275,10 @@ public class LinkerCallSite extends ChainedCallSite {
         }
 
         static class ProfileDumper implements Runnable {
+            @SuppressWarnings("resource")
             @Override
             public void run() {
-                PrintWriter out = null;
+                PrintWriter out    = null;
                 boolean fileOutput = false;
 
                 try {
@@ -446,7 +447,7 @@ public class LinkerCallSite extends ChainedCallSite {
          *
          * @throws Throwable if invocation fails or throws exception/error
          */
-        @SuppressWarnings("unused")
+        @SuppressWarnings({"unused", "resource"})
         public Object traceObject(final MethodHandle mh, final Object... args) throws Throwable {
             final PrintWriter out = Context.getCurrentErr();
             tracePrint(out, "ENTER ", args, null);
@@ -464,7 +465,7 @@ public class LinkerCallSite extends ChainedCallSite {
          *
          * @throws Throwable if invocation fails or throws exception/error
          */
-        @SuppressWarnings("unused")
+        @SuppressWarnings({"unused", "resource"})
         public void traceVoid(final MethodHandle mh, final Object... args) throws Throwable {
             final PrintWriter out = Context.getCurrentErr();
             tracePrint(out, "ENTER ", args, null);

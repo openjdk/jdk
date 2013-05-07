@@ -204,6 +204,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      * Constructor
      *
      * @param source     the source
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param firstToken first token of the funtion node (including the function declaration)
@@ -216,6 +217,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      */
     public FunctionNode(
         final Source source,
+        final int lineNumber,
         final long token,
         final int finish,
         final long firstToken,
@@ -225,7 +227,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         final List<IdentNode> parameters,
         final FunctionNode.Kind kind,
         final int flags) {
-        super(token, finish);
+        super(lineNumber, token, finish);
 
         this.source           = source;
         this.ident            = ident;
@@ -300,6 +302,20 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      */
     public FunctionNode getSnapshot() {
         return snapshot;
+    }
+
+    /**
+     * Throw away the snapshot, if any, to save memory. Used when heuristic
+     * determines that a method is not worth specializing
+     *
+     * @param lc lexical context
+     * @return new function node if a snapshot was present, now with snapsnot null
+     */
+    public FunctionNode clearSnapshot(final LexicalContext lc) {
+        if (this.snapshot == null) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, null, hints));
     }
 
     /**
@@ -806,5 +822,4 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     public Symbol compilerConstant(final CompilerConstants cc) {
         return body.getExistingSymbol(cc.symbolName());
     }
-
 }

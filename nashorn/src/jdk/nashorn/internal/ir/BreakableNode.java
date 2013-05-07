@@ -44,12 +44,13 @@ public abstract class BreakableNode extends LexicalContextNode {
     /**
      * Constructor
      *
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param breakLabel break label
      */
-    protected BreakableNode(final long token, final int finish, final Label breakLabel) {
-        super(token, finish);
+    protected BreakableNode(final int lineNumber, final long token, final int finish, final Label breakLabel) {
+        super(lineNumber, token, finish);
         this.breakLabel = breakLabel;
     }
 

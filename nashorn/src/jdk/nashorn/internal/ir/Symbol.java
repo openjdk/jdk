@@ -263,32 +263,14 @@ public final class Symbol implements Comparable<Symbol> {
         return type.isCategory2() ? 2 : 1;
     }
 
-    private static String type(final String desc) {
-        switch (desc.charAt(desc.length() - 1)) {
-        case ';':
-            return desc;//"obj";
-        case 'D':
-            return "double";
-        case 'I':
-            return "int";
-        case 'J':
-            return "long";
-        case 'Z':
-            return "boolean";
-        default:
-            return "UNKNOWN";
-        }
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb   = new StringBuilder();
-        final String        desc = getSymbolType().getDescriptor();
 
         sb.append(name).
             append(' ').
             append('(').
-            append(type(desc)).
+            append(getSymbolType().getTypeClass().getSimpleName()).
             append(')');
 
         if (hasSlot()) {

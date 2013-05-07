@@ -78,6 +78,7 @@ import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TernaryNode;
@@ -154,7 +155,9 @@ final class Attr extends NodeOperatorVisitor {
 
     @Override
     public Node leaveAccessNode(final AccessNode accessNode) {
-        //While Object type is assigned here, Access Specialization in FinalizeTypes may narrow this
+        //While Object type is assigned here, Access Specialization in FinalizeTypes may narrow this, that
+        //is why we can't set the access node base to be an object here, that will ruin access specialization
+        //for example for a.x | 17.
         return end(ensureSymbol(Type.OBJECT, accessNode));
     }
 
@@ -435,6 +438,7 @@ final class Attr extends NodeOperatorVisitor {
             final IdentNode callee = compilerConstant(CALLEE);
             VarNode selfInit =
                 new VarNode(
+                    newFunctionNode.getLineNumber(),
                     newFunctionNode.getToken(),
                     newFunctionNode.getFinish(),
                     newFunctionNode.getIdent(),
@@ -442,7 +446,7 @@ final class Attr extends NodeOperatorVisitor {
 
             LOG.info("Accepting self symbol init ", selfInit, " for ", newFunctionNode.getName());
 
-            final List<Node> newStatements = new ArrayList<>();
+            final List<Statement> newStatements = new ArrayList<>();
             assert callee.getSymbol() != null && callee.getSymbol().hasSlot();
 
             final IdentNode name       = selfInit.getName();
@@ -492,7 +496,7 @@ final class Attr extends NodeOperatorVisitor {
             final Symbol pseudoSymbol = pseudoSymbol(name);
             LOG.info("IdentNode is property name -> assigning pseudo symbol ", pseudoSymbol);
             LOG.unindent();
-            return identNode.setSymbol(lc, pseudoSymbol);
+            return end(identNode.setSymbol(lc, pseudoSymbol));
         }
 
         final Block block = lc.getCurrentBlock();
@@ -658,7 +662,7 @@ final class Attr extends NodeOperatorVisitor {
         if (literalNode instanceof ArrayLiteralNode) {
             ((ArrayLiteralNode)literalNode).analyze();
         }
-        return literalNode.setSymbol(getLexicalContext(), symbol);
+        return end(literalNode.setSymbol(getLexicalContext(), symbol));
     }
 
     @Override
@@ -779,17 +783,18 @@ final class Attr extends NodeOperatorVisitor {
         final IdentNode ident = newVarNode.getName();
         final String    name  = ident.getName();
 
+        final LexicalContext lc = getLexicalContext();
+        final Symbol  symbol = findSymbol(lc.getCurrentBlock(), ident.getName());
+
         if (init == null) {
             // var x; with no init will be treated like a use of x by
             // leaveIdentNode unless we remove the name from the localdef list.
             removeLocalDef(name);
-            return newVarNode;
+            return newVarNode.setSymbol(lc, symbol);
         }
 
         addLocalDef(name);
 
-        final LexicalContext lc = getLexicalContext();
-        final Symbol  symbol = findSymbol(lc.getCurrentBlock(), ident.getName());
         assert symbol != null;
 
         final IdentNode newIdent = (IdentNode)ident.setSymbol(lc, symbol);
@@ -1398,7 +1403,9 @@ final class Attr extends NodeOperatorVisitor {
     private FunctionNode finalizeParameters(final FunctionNode functionNode) {
         final List<IdentNode> newParams = new ArrayList<>();
         final boolean isVarArg = functionNode.isVarArg();
+        final int nparams = functionNode.getParameters().size();
 
+        int specialize = 0;
         int pos = 0;
         for (final IdentNode param : functionNode.getParameters()) {
             final Symbol paramSymbol = functionNode.getBody().getExistingSymbol(param.getName());
@@ -1414,9 +1421,13 @@ final class Attr extends NodeOperatorVisitor {
 
             // if we know that a parameter is only used as a certain type throughout
             // this function, we can tell the runtime system that no matter what the
-            // call site is, use this information. TODO
-            if (!paramSymbol.getSymbolType().isObject()) {
+            // call site is, use this information:
+            // we also need more than half of the parameters to be specializable
+            // for the heuristic to be worth it, and we need more than one use of
+            // the parameter to consider it, i.e. function(x) { call(x); } doens't count
+            if (paramSymbol.getUseCount() > 1 && !paramSymbol.getSymbolType().isObject()) {
                 LOG.finest("Parameter ", param, " could profit from specialization to ", paramSymbol.getSymbolType());
+                specialize++;
             }
 
             newType(paramSymbol, Type.widest(type, paramSymbol.getSymbolType()));
@@ -1429,7 +1440,13 @@ final class Attr extends NodeOperatorVisitor {
             pos++;
         }
 
-        return functionNode.setParameters(getLexicalContext(), newParams);
+        FunctionNode newFunctionNode = functionNode;
+
+        if (nparams == 0 || (specialize * 2) < nparams) {
+            newFunctionNode = newFunctionNode.clearSnapshot(getLexicalContext());
+        }
+
+        return newFunctionNode.setParameters(getLexicalContext(), newParams);
     }
 
     /**
