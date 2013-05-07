@@ -53,7 +53,7 @@ public class Namespace {
      */
     public Namespace(final Namespace parent) {
         this.parent    = parent;
-        directory = new HashMap<>();
+        this.directory = new HashMap<>();
     }
 
     /**
@@ -65,10 +65,6 @@ public class Namespace {
         return parent;
     }
 
-    private HashMap<String, Integer> getDirectory() {
-        return directory;
-    }
-
     /**
      * Create a uniqueName name in the namespace in the form base$n where n varies
      * .
@@ -78,7 +74,7 @@ public class Namespace {
      */
     public String uniqueName(final String base) {
         for (Namespace namespace = this; namespace != null; namespace = namespace.getParent()) {
-            final HashMap<String, Integer> namespaceDirectory = namespace.getDirectory();
+            final HashMap<String, Integer> namespaceDirectory = namespace.directory;
             final Integer                  counter            = namespaceDirectory.get(base);
 
             if (counter != null) {

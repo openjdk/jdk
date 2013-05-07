@@ -99,7 +99,7 @@ public class AuthResources_pt_BR extends java.util.ListResourceBundle {
         /***    EVERYTHING BELOW IS DEPRECATED  ***/
 
         // com.sun.security.auth.PolicyFile
-        {".error.parsing.", ": erro de parse "},
+        {".error.parsing.", ": erro de parsing "},
         {"COLON", ": "},
         {".error.adding.Permission.", ": erro ao adicionar a Permiss\u00E3o "},
         {"SPACE", " "},

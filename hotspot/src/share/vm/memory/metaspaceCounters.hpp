@@ -37,6 +37,7 @@ class MetaspaceCounters: public CHeapObj<mtClass> {
                   size_t max_capacity,
                   size_t curr_capacity,
                   size_t used);
+  size_t calc_total_capacity();
  public:
   MetaspaceCounters();
   ~MetaspaceCounters();

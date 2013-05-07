@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,11 +103,17 @@ intptr_t oopDesc::slow_identity_hash() {
 
 // When String table needs to rehash
 unsigned int oopDesc::new_hash(jint seed) {
+  EXCEPTION_MARK;
   ResourceMark rm;
   int length;
-  jchar* chars = java_lang_String::as_unicode_string(this, length);
-  // Use alternate hashing algorithm on the string
-  return AltHashing::murmur3_32(seed, chars, length);
+  jchar* chars = java_lang_String::as_unicode_string(this, length, THREAD);
+  if (chars != NULL) {
+    // Use alternate hashing algorithm on the string
+    return AltHashing::murmur3_32(seed, chars, length);
+  } else {
+    vm_exit_out_of_memory(length, OOM_MALLOC_ERROR, "unable to create Unicode strings for String table rehash");
+    return 0;
+  }
 }
 
 VerifyOopClosure VerifyOopClosure::verify_oop;

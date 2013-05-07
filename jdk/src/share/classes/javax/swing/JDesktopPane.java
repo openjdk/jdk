@@ -428,6 +428,15 @@ public class JDesktopPane extends JLayeredPane implements Accessible
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void remove(Component comp) {
+        super.remove(comp);
+        updateFramesCache();
+    }
+
+    /**
      * Selects the next <code>JInternalFrame</code> in this desktop pane.
      *
      * @param forward a boolean indicating which direction to select in;

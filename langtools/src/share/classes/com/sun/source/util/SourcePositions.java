@@ -59,7 +59,7 @@ public interface SourcePositions {
 
     /**
      * Gets the ending position of tree within file.  If tree is not found within
-     * file, or if the starting position is not available,
+     * file, or if the ending position is not available,
      * return {@link javax.tools.Diagnostic#NOPOS}.
      * The returned position must be at the end of the yield of this tree,
      * that is for any sub-tree of this tree, the following must hold:

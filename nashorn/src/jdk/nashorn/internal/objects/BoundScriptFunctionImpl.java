@@ -40,7 +40,7 @@ class BoundScriptFunctionImpl extends ScriptFunctionImpl {
 
     BoundScriptFunctionImpl(ScriptFunctionData data, ScriptFunction targetFunction) {
         super(data);
-        this.prototype = ScriptRuntime.UNDEFINED;
+        setPrototype(ScriptRuntime.UNDEFINED);
         this.targetFunction = targetFunction;
     }
 

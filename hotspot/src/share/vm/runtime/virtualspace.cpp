@@ -60,72 +60,6 @@ ReservedSpace::ReservedSpace(size_t size, size_t alignment,
   initialize(size, alignment, large, NULL, 0, executable);
 }
 
-char *
-ReservedSpace::align_reserved_region(char* addr, const size_t len,
-                                     const size_t prefix_size,
-                                     const size_t prefix_align,
-                                     const size_t suffix_size,
-                                     const size_t suffix_align)
-{
-  assert(addr != NULL, "sanity");
-  const size_t required_size = prefix_size + suffix_size;
-  assert(len >= required_size, "len too small");
-
-  const size_t s = size_t(addr);
-  const size_t beg_ofs = (s + prefix_size) & (suffix_align - 1);
-  const size_t beg_delta = beg_ofs == 0 ? 0 : suffix_align - beg_ofs;
-
-  if (len < beg_delta + required_size) {
-     return NULL; // Cannot do proper alignment.
-  }
-  const size_t end_delta = len - (beg_delta + required_size);
-
-  if (beg_delta != 0) {
-    os::release_memory(addr, beg_delta);
-  }
-
-  if (end_delta != 0) {
-    char* release_addr = (char*) (s + beg_delta + required_size);
-    os::release_memory(release_addr, end_delta);
-  }
-
-  return (char*) (s + beg_delta);
-}
-
-char* ReservedSpace::reserve_and_align(const size_t reserve_size,
-                                       const size_t prefix_size,
-                                       const size_t prefix_align,
-                                       const size_t suffix_size,
-                                       const size_t suffix_align)
-{
-  assert(reserve_size > prefix_size + suffix_size, "should not be here");
-
-  char* raw_addr = os::reserve_memory(reserve_size, NULL, prefix_align);
-  if (raw_addr == NULL) return NULL;
-
-  char* result = align_reserved_region(raw_addr, reserve_size, prefix_size,
-                                       prefix_align, suffix_size,
-                                       suffix_align);
-  if (result == NULL && !os::release_memory(raw_addr, reserve_size)) {
-    fatal("os::release_memory failed");
-  }
-
-#ifdef ASSERT
-  if (result != NULL) {
-    const size_t raw = size_t(raw_addr);
-    const size_t res = size_t(result);
-    assert(res >= raw, "alignment decreased start addr");
-    assert(res + prefix_size + suffix_size <= raw + reserve_size,
-           "alignment increased end addr");
-    assert((res & (prefix_align - 1)) == 0, "bad alignment of prefix");
-    assert(((res + prefix_size) & (suffix_align - 1)) == 0,
-           "bad alignment of suffix");
-  }
-#endif
-
-  return result;
-}
-
 // Helper method.
 static bool failed_to_reserve_as_requested(char* base, char* requested_address,
                                            const size_t size, bool special)
@@ -153,92 +87,6 @@ static bool failed_to_reserve_as_requested(char* base, char* requested_address,
     }
   }
   return true;
-}
-
-ReservedSpace::ReservedSpace(const size_t suffix_size,
-                             const size_t suffix_align,
-                             char* requested_address,
-                             const size_t noaccess_prefix)
-{
-  assert(suffix_size != 0, "sanity");
-  assert(suffix_align != 0, "sanity");
-  assert((suffix_size & (suffix_align - 1)) == 0,
-    "suffix_size not divisible by suffix_align");
-
-  // Assert that if noaccess_prefix is used, it is the same as prefix_align.
-  // Add in noaccess_prefix to prefix
-  const size_t adjusted_prefix_size = noaccess_prefix;
-  const size_t size = adjusted_prefix_size + suffix_size;
-
-  // On systems where the entire region has to be reserved and committed up
-  // front, the compound alignment normally done by this method is unnecessary.
-  const bool try_reserve_special = UseLargePages &&
-    suffix_align == os::large_page_size();
-  if (!os::can_commit_large_page_memory() && try_reserve_special) {
-    initialize(size, suffix_align, true, requested_address, noaccess_prefix,
-               false);
-    return;
-  }
-
-  _base = NULL;
-  _size = 0;
-  _alignment = 0;
-  _special = false;
-  _noaccess_prefix = 0;
-  _executable = false;
-
-  // Optimistically try to reserve the exact size needed.
-  char* addr;
-  if (requested_address != 0) {
-    requested_address -= noaccess_prefix; // adjust address
-    assert(requested_address != NULL, "huge noaccess prefix?");
-    addr = os::attempt_reserve_memory_at(size, requested_address);
-    if (failed_to_reserve_as_requested(addr, requested_address, size, false)) {
-      // OS ignored requested address. Try different address.
-      addr = NULL;
-    }
-  } else {
-    addr = os::reserve_memory(size, NULL, suffix_align);
-  }
-  if (addr == NULL) return;
-
-  // Check whether the result has the needed alignment
-  const size_t ofs = (size_t(addr) + adjusted_prefix_size) & (suffix_align - 1);
-  if (ofs != 0) {
-    // Wrong alignment.  Release, allocate more space and do manual alignment.
-    //
-    // On most operating systems, another allocation with a somewhat larger size
-    // will return an address "close to" that of the previous allocation.  The
-    // result is often the same address (if the kernel hands out virtual
-    // addresses from low to high), or an address that is offset by the increase
-    // in size.  Exploit that to minimize the amount of extra space requested.
-    if (!os::release_memory(addr, size)) {
-      fatal("os::release_memory failed");
-    }
-
-    const size_t extra = MAX2(ofs, suffix_align - ofs);
-    addr = reserve_and_align(size + extra, adjusted_prefix_size, suffix_align,
-                             suffix_size, suffix_align);
-    if (addr == NULL) {
-      // Try an even larger region.  If this fails, address space is exhausted.
-      addr = reserve_and_align(size + suffix_align, adjusted_prefix_size,
-                               suffix_align, suffix_size, suffix_align);
-    }
-
-    if (requested_address != 0 &&
-        failed_to_reserve_as_requested(addr, requested_address, size, false)) {
-      // As a result of the alignment constraints, the allocated addr differs
-      // from the requested address. Return back to the caller who can
-      // take remedial action (like try again without a requested address).
-      assert(_base == NULL, "should be");
-      return;
-    }
-  }
-
-  _base = addr;
-  _size = size;
-  _alignment = suffix_align;
-  _noaccess_prefix = noaccess_prefix;
 }
 
 void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
@@ -474,20 +322,6 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment,
   // Only reserved space for the java heap should have a noaccess_prefix
   // if using compressed oops.
   protect_noaccess_prefix(size);
-}
-
-ReservedHeapSpace::ReservedHeapSpace(const size_t heap_space_size,
-                                     const size_t alignment,
-                                     char* requested_address) :
-  ReservedSpace(heap_space_size, alignment,
-                requested_address,
-                (UseCompressedOops && (Universe::narrow_oop_base() != NULL) &&
-                 Universe::narrow_oop_use_implicit_null_checks()) ?
-                  lcm(os::vm_page_size(), alignment) : 0) {
-  if (base() > 0) {
-    MemTracker::record_virtual_memory_type((address)base(), mtJavaHeap);
-  }
-  protect_noaccess_prefix(heap_space_size);
 }
 
 // Reserve space for code segment.  Same as Java heap only we mark this as

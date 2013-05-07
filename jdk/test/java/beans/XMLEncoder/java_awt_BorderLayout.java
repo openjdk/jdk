@@ -68,11 +68,9 @@ public final class java_awt_BorderLayout extends AbstractTest<BorderLayout> {
     @Override
     protected void validate(BorderLayout before, BorderLayout after) {
         super.validate(before, after);
-
-        BeanValidator validator = new BeanValidator();
         for (String constraint : CONSTRAINTS) {
-            validator.validate(before.getLayoutComponent(constraint),
-                               after.getLayoutComponent(constraint));
+            super.validator.validate(before.getLayoutComponent(constraint),
+                                     after.getLayoutComponent(constraint));
         }
     }
 
