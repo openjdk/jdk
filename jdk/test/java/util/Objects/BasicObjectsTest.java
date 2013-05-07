@@ -40,6 +40,8 @@ public class BasicObjectsTest {
         errors += testToString();
         errors += testToString2();
         errors += testCompare();
+        errors += testRequireNonNull();
+        errors += testIsNull();
         errors += testNonNull();
         if (errors > 0 )
             throw new RuntimeException();
@@ -158,7 +160,7 @@ public class BasicObjectsTest {
         return errors;
     }
 
-    private static int testNonNull() {
+    private static int testRequireNonNull() {
         int errors = 0;
         String s;
 
@@ -204,6 +206,24 @@ public class BasicObjectsTest {
                 errors++;
             }
         }
+        return errors;
+    }
+
+    private static int testIsNull() {
+        int errors = 0;
+
+        errors += Objects.isNull(null) ? 0 : 1;
+        errors += Objects.isNull(Objects.class) ? 1 : 0;
+
+        return errors;
+    }
+
+    private static int testNonNull() {
+        int errors = 0;
+
+        errors += Objects.nonNull(null) ? 1 : 0;
+        errors += Objects.nonNull(Objects.class) ? 0 : 1;
+
         return errors;
     }
 }
