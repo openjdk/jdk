@@ -2545,7 +2545,6 @@ BUILD_LIBRARIES += $(BUILD_LIBJ2PCSC)
 ##########################################################################################
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
-ifneq ($(OPENJDK_TARGET_OS), macosx)
 $(eval $(call SetupNativeCompilation,BUILD_LIBJ2GSS,\
 		LIBRARY:=j2gss,\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
@@ -2564,7 +2563,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2GSS,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2gss))
 
 BUILD_LIBRARIES += $(BUILD_LIBJ2GSS)
-endif
 endif
 
 ##########################################################################################
