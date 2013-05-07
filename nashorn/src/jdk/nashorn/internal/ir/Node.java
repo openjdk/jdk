@@ -31,12 +31,12 @@ import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
-import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.parser.TokenType;
 
 /**
  * Nodes are used to compose Abstract Syntax Trees.
  */
-public abstract class Node extends Location {
+public abstract class Node implements Cloneable {
     /** Node symbol. */
     private Symbol symbol;
 
@@ -46,16 +46,17 @@ public abstract class Node extends Location {
     /** End of source range. */
     protected int finish;
 
+    /** Token descriptor. */
+    private final long token;
+
     /**
      * Constructor
      *
-     * @param source the source
      * @param token  token
      * @param finish finish
      */
-    public Node(final Source source, final long token, final int finish) {
-        super(source, token);
-
+    public Node(final long token, final int finish) {
+        this.token  = token;
         this.start  = Token.descPosition(token);
         this.finish = finish;
     }
@@ -63,16 +64,14 @@ public abstract class Node extends Location {
     /**
      * Constructor
      *
-     * @param source  source
      * @param token   token
      * @param start   start
      * @param finish  finish
      */
-    protected Node(final Source source, final long token, final int start, final int finish) {
-        super(source, token);
-
+    protected Node(final long token, final int start, final int finish) {
         this.start = start;
         this.finish = finish;
+        this.token = token;
     }
 
     /**
@@ -81,8 +80,7 @@ public abstract class Node extends Location {
      * @param node source node
      */
     protected Node(final Node node) {
-        super(node);
-
+        this.token  = node.token;
         this.symbol = node.symbol;
         this.start  = node.start;
         this.finish = node.finish;
@@ -248,6 +246,15 @@ public abstract class Node extends Location {
         return symbol;
     }
 
+    @Override
+    protected Object clone() {
+        try {
+            return super.clone();
+        } catch (final CloneNotSupportedException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     /**
      * Assign a symbol to this node. See {@link Node#getSymbol()} for explanation
      * of what a symbol is
@@ -263,6 +270,62 @@ public abstract class Node extends Location {
         final Node newNode = (Node)clone();
         newNode.symbol = symbol;
         return newNode;
+    }
+
+
+    @Override
+    public final boolean equals(final Object other) {
+        return super.equals(other);
+    }
+
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
+    /**
+     * Return token position from a token descriptor.
+     *
+     * @return Start position of the token in the source.
+     */
+    public int position() {
+        return Token.descPosition(token);
+    }
+
+    /**
+     * Return token length from a token descriptor.
+     *
+     * @return Length of the token.
+     */
+    public int length() {
+        return Token.descLength(token);
+    }
+
+    /**
+     * Return token tokenType from a token descriptor.
+     *
+     * @return Type of token.
+     */
+    public TokenType tokenType() {
+        return Token.descType(token);
+    }
+
+    /**
+     * Test token tokenType.
+     *
+     * @param type a type to check this token against
+     * @return true if token types match.
+     */
+    public boolean isTokenType(final TokenType type) {
+        return Token.descType(token) == type;
+    }
+
+    /**
+     * Get the token for this location
+     * @return the token
+     */
+    public long getToken() {
+        return token;
     }
 
     /**

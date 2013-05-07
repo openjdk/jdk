@@ -261,14 +261,15 @@ final class CodeGenerator extends NodeOperatorVisitor {
             return method.load(symbol);
         }
 
-        final String name = symbol.getName();
+        final String name   = symbol.getName();
+        final Source source = getLexicalContext().getCurrentFunction().getSource();
 
         if (CompilerConstants.__FILE__.name().equals(name)) {
-            return method.load(identNode.getSource().getName());
+            return method.load(source.getName());
         } else if (CompilerConstants.__DIR__.name().equals(name)) {
-            return method.load(identNode.getSource().getBase());
+            return method.load(source.getBase());
         } else if (CompilerConstants.__LINE__.name().equals(name)) {
-            return method.load(identNode.getSource().getLine(identNode.position())).convert(Type.OBJECT);
+            return method.load(source.getLine(identNode.position())).convert(Type.OBJECT);
         } else {
             assert identNode.getSymbol().isScope() : identNode + " is not in scope!";
 
@@ -2005,8 +2006,9 @@ final class CodeGenerator extends NodeOperatorVisitor {
     public boolean enterThrowNode(final ThrowNode throwNode) {
         method._new(ECMAException.class).dup();
 
+        final Source source     = getLexicalContext().getCurrentFunction().getSource();
+
         final Node   expression = throwNode.getExpression();
-        final Source source     = throwNode.getSource();
         final int    position   = throwNode.position();
         final int    line       = source.getLine(position);
         final int    column     = source.getColumn(position);
@@ -3013,7 +3015,6 @@ final class CodeGenerator extends NodeOperatorVisitor {
             return;
         }
 
-        @SuppressWarnings("resource")
         final PrintWriter out = compiler.getEnv().getErr();
         out.println("[BLOCK in '" + ident + "']");
         if (!block.printSymbols(out)) {

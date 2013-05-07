@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for THROW statements.
@@ -40,14 +39,12 @@ public final class ThrowNode extends Node {
     /**
      * Constructor
      *
-     * @param source     the source
      * @param token      token
      * @param finish     finish
      * @param expression expression to throw
      */
-    public ThrowNode(final Source source, final long token, final int finish, final Node expression) {
-        super(source, token, finish);
-
+    public ThrowNode(final long token, final int finish, final Node expression) {
+        super(token, finish);
         this.expression = expression;
     }
 

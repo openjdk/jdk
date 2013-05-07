@@ -773,7 +773,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     private Node convert(final Node node, final Type to) {
         assert !to.isUnknown() : "unknown type for " + node + " class=" + node.getClass();
         assert node != null : "node is null";
-        assert node.getSymbol() != null : "node " + node + " " + node.getClass() + " has no symbol! " + getLexicalContext().getCurrentFunction() + " " + node.getSource();
+        assert node.getSymbol() != null : "node " + node + " " + node.getClass() + " has no symbol! " + getLexicalContext().getCurrentFunction();
         assert node.tokenType() != TokenType.CONVERT : "assert convert in convert " + node + " in " + getLexicalContext().getCurrentFunction();
 
         final Type from = node.getType();
@@ -798,7 +798,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
                 assert node instanceof TypeOverride;
                 return setTypeOverride(node, to);
             }
-            resultNode = new UnaryNode(node.getSource(), Token.recast(node.getToken(), TokenType.CONVERT), node);
+            resultNode = new UnaryNode(Token.recast(node.getToken(), TokenType.CONVERT), node);
         }
 
         LOG.info("CONVERT('", node, "', ", to, ") => '", resultNode, "'");
@@ -813,7 +813,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     private static Node discard(final Node node) {
         if (node.getSymbol() != null) {
-            final Node discard = new UnaryNode(node.getSource(), Token.recast(node.getToken(), TokenType.DISCARD), node);
+            final Node discard = new UnaryNode(Token.recast(node.getToken(), TokenType.DISCARD), node);
             //discard never has a symbol in the discard node - then it would be a nop
             assert !node.isTerminal();
             return discard;
@@ -881,15 +881,15 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             LiteralNode<?> literalNode = null;
 
             if (type.isString()) {
-                literalNode = LiteralNode.newInstance(source, token, finish, JSType.toString(value));
+                literalNode = LiteralNode.newInstance(token, finish, JSType.toString(value));
             } else if (type.isBoolean()) {
-                literalNode = LiteralNode.newInstance(source, token, finish, JSType.toBoolean(value));
+                literalNode = LiteralNode.newInstance(token, finish, JSType.toBoolean(value));
             } else if (type.isInteger()) {
-                literalNode = LiteralNode.newInstance(source, token, finish, JSType.toInt32(value));
+                literalNode = LiteralNode.newInstance(token, finish, JSType.toInt32(value));
             } else if (type.isLong()) {
-                literalNode = LiteralNode.newInstance(source, token, finish, JSType.toLong(value));
+                literalNode = LiteralNode.newInstance(token, finish, JSType.toLong(value));
             } else if (type.isNumber() || parent.getType().isNumeric() && !parent.getType().isNumber()) {
-                literalNode = LiteralNode.newInstance(source, token, finish, JSType.toNumber(value));
+                literalNode = LiteralNode.newInstance(token, finish, JSType.toNumber(value));
             }
 
             if (literalNode != null) {

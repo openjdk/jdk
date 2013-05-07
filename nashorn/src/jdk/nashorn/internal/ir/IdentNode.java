@@ -34,7 +34,6 @@ import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for an identifier.
@@ -56,13 +55,12 @@ public final class IdentNode extends Node implements PropertyKey, TypeOverride<I
     /**
      * Constructor
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish position
      * @param name    name of identifier
      */
-    public IdentNode(final Source source, final long token, final int finish, final String name) {
-        super(source, token, finish);
+    public IdentNode(final long token, final int finish, final String name) {
+        super(token, finish);
         this.name = name;
         this.callSiteType = null;
         this.flags = 0;

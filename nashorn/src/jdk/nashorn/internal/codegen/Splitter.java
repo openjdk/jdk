@@ -42,7 +42,6 @@ import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.DebugLogger;
-import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -221,12 +220,11 @@ final class Splitter extends NodeVisitor {
      * @return New split node.
      */
     private SplitNode createBlockSplitNode(final Block parent, final FunctionNode function, final List<Node> statements, final long weight) {
-        final Source source = parent.getSource();
         final long   token  = parent.getToken();
         final int    finish = parent.getFinish();
         final String name   = function.uniqueName(SPLIT_PREFIX.symbolName());
 
-        final Block newBlock = new Block(source, token, finish, statements);
+        final Block newBlock = new Block(token, finish, statements);
 
         return new SplitNode(name, newBlock, compiler.findUnit(weight + WeighNodes.FUNCTION_WEIGHT));
     }

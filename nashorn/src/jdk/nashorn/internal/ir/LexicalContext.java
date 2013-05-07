@@ -392,8 +392,7 @@ public class LexicalContext {
      */
     public boolean isFunctionDefinedInCurrentCall(FunctionNode functionNode) {
         final LexicalContextNode parent = stack[sp - 2];
-        if(parent instanceof CallNode && ((CallNode)parent).getFunction() == functionNode) {
-            assert functionNode.getSource() == peek().getSource();
+        if (parent instanceof CallNode && ((CallNode)parent).getFunction() == functionNode) {
             return true;
         }
         return false;
@@ -540,13 +539,16 @@ public class LexicalContext {
             sb.append('@');
             sb.append(Debug.id(node));
             sb.append(':');
-            final Source source = node.getSource();
-            String src = source.toString();
-            if (src.indexOf(File.pathSeparator) != -1) {
-                src = src.substring(src.lastIndexOf(File.pathSeparator));
+            if (node instanceof FunctionNode) {
+                final Source source = ((FunctionNode)node).getSource();
+                String src = source.toString();
+                if (src.indexOf(File.pathSeparator) != -1) {
+                    src = src.substring(src.lastIndexOf(File.pathSeparator));
+                }
+                src += ' ';
+                src += source.getLine(node.getStart());
+                sb.append(src);
             }
-            src += ' ';
-            src += source.getLine(node.getStart());
             sb.append(' ');
         }
         sb.append(" ==> ]");

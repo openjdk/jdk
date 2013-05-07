@@ -86,6 +86,8 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         /** method has been emitted to bytecode */
         EMITTED
     }
+    /** Source of entity. */
+    private final Source source;
 
     /** External function identifier. */
     @Ignore
@@ -223,8 +225,9 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         final List<IdentNode> parameters,
         final FunctionNode.Kind kind,
         final int flags) {
-        super(source, token, finish);
+        super(token, finish);
 
+        this.source           = source;
         this.ident            = ident;
         this.name             = name;
         this.kind             = kind;
@@ -265,6 +268,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         this.hints            = hints;
 
         // the fields below never change - they are final and assigned in constructor
+        this.source          = functionNode.source;
         this.name            = functionNode.name;
         this.ident           = functionNode.ident;
         this.namespace       = functionNode.namespace;
@@ -279,6 +283,14 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
             return visitor.leaveFunctionNode(setBody(lc, (Block)body.accept(visitor)));
         }
         return this;
+    }
+
+    /**
+     * Get the source for this function
+     * @return the source
+     */
+    public Source getSource() {
+        return source;
     }
 
     /**
@@ -299,6 +311,9 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     public FunctionNode snapshot(final LexicalContext lc) {
         if (this.snapshot == this) {
             return this;
+        }
+        if (isProgram() || parameters.isEmpty()) {
+            return this; //never specialize anything that won't be recompiled
         }
         return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, this, hints));
     }

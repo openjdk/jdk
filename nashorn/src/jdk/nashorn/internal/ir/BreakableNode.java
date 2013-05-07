@@ -30,7 +30,6 @@ import java.util.List;
 
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * This class represents a node from which control flow can execute
@@ -45,13 +44,12 @@ public abstract class BreakableNode extends LexicalContextNode {
     /**
      * Constructor
      *
-     * @param source     source code
      * @param token      token
      * @param finish     finish
      * @param breakLabel break label
      */
-    protected BreakableNode(final Source source, final long token, final int finish, final Label breakLabel) {
-        super(source, token, finish);
+    protected BreakableNode(final long token, final int finish, final Label breakLabel) {
+        super(token, finish);
         this.breakLabel = breakLabel;
     }
 

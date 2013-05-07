@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a catch clause.
@@ -46,16 +45,14 @@ public final class CatchNode extends Node {
     /**
      * Constructors
      *
-     * @param source             the source
      * @param token              token
      * @param finish             finish
      * @param exception          variable name of exception
      * @param exceptionCondition exception condition
      * @param body               catch body
      */
-    public CatchNode(final Source source, final long token, final int finish, final IdentNode exception, final Node exceptionCondition, final Block body) {
-        super(source, token, finish);
-
+    public CatchNode(final long token, final int finish, final IdentNode exception, final Node exceptionCondition, final Block body) {
+        super(token, finish);
         this.exception          = exception;
         this.exceptionCondition = exceptionCondition;
         this.body               = body;
@@ -63,7 +60,6 @@ public final class CatchNode extends Node {
 
     private CatchNode(final CatchNode catchNode, final IdentNode exception, final Node exceptionCondition, final Block body) {
         super(catchNode);
-
         this.exception          = exception;
         this.exceptionCondition = exceptionCondition;
         this.body               = body;

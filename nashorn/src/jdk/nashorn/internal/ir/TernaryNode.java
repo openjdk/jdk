@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * TernaryNode nodes represent three operand operations (?:).
@@ -44,14 +43,13 @@ public final class TernaryNode extends Node {
     /**
      * Constructor
      *
-     * @param source the source
      * @param token  token
      * @param lhs    left hand side node
      * @param rhs    right hand side node
      * @param third  third node
      */
-    public TernaryNode(final Source source, final long token, final Node lhs, final Node rhs, final Node third) {
-        super(source, token, third.getFinish());
+    public TernaryNode(final long token, final Node lhs, final Node rhs, final Node third) {
+        super(token, third.getFinish());
         this.lhs = lhs;
         this.rhs = rhs;
         this.third = third;
