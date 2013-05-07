@@ -25,7 +25,6 @@
 package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Superclass for nodes that can be part of the lexical context
@@ -35,12 +34,11 @@ public abstract class LexicalContextNode extends Node {
     /**
      * Constructor
      *
-     * @param source source
      * @param token  token
      * @param finish finish
      */
-    protected LexicalContextNode(final Source source, final long token, final int finish) {
-        super(source, token, finish);
+    protected LexicalContextNode(final long token, final int finish) {
+        super(token, finish);
     }
 
     /**

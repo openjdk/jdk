@@ -970,9 +970,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param bindName  null or name to bind to second argument (property not found method.)
      *
      * @return value of property as a MethodHandle or null.
-     *
      */
-    @SuppressWarnings("static-method")
     protected MethodHandle getCallMethodHandle(final FindProperty find, final MethodType type, final String bindName) {
         return getCallMethodHandle(getObjectValue(find), type, bindName);
     }

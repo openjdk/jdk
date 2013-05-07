@@ -435,7 +435,6 @@ final class Attr extends NodeOperatorVisitor {
             final IdentNode callee = compilerConstant(CALLEE);
             VarNode selfInit =
                 new VarNode(
-                    newFunctionNode.getSource(),
                     newFunctionNode.getToken(),
                     newFunctionNode.getFinish(),
                     newFunctionNode.getIdent(),
@@ -531,6 +530,7 @@ final class Attr extends NodeOperatorVisitor {
         setBlockScope(name, symbol);
 
         if (symbol != null && !identNode.isInitializedHere()) {
+
             symbol.increaseUseCount();
         }
         addLocalUse(identNode.getName());
@@ -914,7 +914,6 @@ final class Attr extends NodeOperatorVisitor {
         final FunctionNode functionNode = getLexicalContext().getCurrentFunction();
         return (IdentNode)
             new IdentNode(
-                functionNode.getSource(),
                 functionNode.getToken(),
                 functionNode.getFinish(),
                 cc.symbolName()).

@@ -36,7 +36,6 @@ import java.util.Map;
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for a list of statements and functions. All provides the
@@ -77,13 +76,12 @@ public class Block extends BreakableNode implements Flags<Block> {
     /**
      * Constructor
      *
-     * @param source     source code
      * @param token      token
      * @param finish     finish
      * @param statements statements
      */
-    public Block(final Source source, final long token, final int finish, final Node... statements) {
-        super(source, token, finish, new Label("block_break"));
+    public Block(final long token, final int finish, final Node... statements) {
+        super(token, finish, new Label("block_break"));
 
         this.statements = Arrays.asList(statements);
         this.symbols    = new LinkedHashMap<>();
@@ -94,13 +92,12 @@ public class Block extends BreakableNode implements Flags<Block> {
     /**
      * Constructor
      *
-     * @param source     source code
      * @param token      token
      * @param finish     finish
      * @param statements statements
      */
-    public Block(final Source source, final long token, final int finish, final List<Node> statements) {
-        this(source, token, finish, statements.toArray(new Node[statements.size()]));
+    public Block(final long token, final int finish, final List<Node> statements) {
+        this(token, finish, statements.toArray(new Node[statements.size()]));
     }
 
     private Block(final Block block, final int finish, final List<Node> statements, final int flags, final Map<String, Symbol> symbols) {

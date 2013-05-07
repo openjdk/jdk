@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a property access (period operator.)
@@ -41,14 +40,13 @@ public final class AccessNode extends BaseNode {
     /**
      * Constructor
      *
-     * @param source    source code
      * @param token     token
      * @param finish    finish
      * @param base      base node
      * @param property  property
      */
-    public AccessNode(final Source source, final long token, final int finish, final Node base, final IdentNode property) {
-        super(source, token, finish, base, false, false);
+    public AccessNode(final long token, final int finish, final Node base, final IdentNode property) {
+        super(token, finish, base, false, false);
         this.property = property.setIsPropertyName();
     }
 

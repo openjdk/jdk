@@ -32,7 +32,6 @@ import java.util.List;
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a TRY statement.
@@ -60,15 +59,14 @@ public final class TryNode extends Node {
     /**
      * Constructor
      *
-     * @param source      the source
      * @param token       token
      * @param finish      finish
      * @param body        try node body
      * @param catchBlocks list of catch blocks in order
      * @param finallyBody body of finally block or null if none
      */
-    public TryNode(final Source source, final long token, final int finish, final Block body, final List<Block> catchBlocks, final Block finallyBody) {
-        super(source, token, finish);
+    public TryNode(final long token, final int finish, final Block body, final List<Block> catchBlocks, final Block finallyBody) {
+        super(token, finish);
         this.body = body;
         this.catchBlocks = catchBlocks;
         this.finallyBody = finallyBody;

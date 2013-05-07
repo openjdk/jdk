@@ -275,8 +275,7 @@ loop:
      * @return New block.
      */
     private Block newBlock() {
-        final Block block = new Block(source, token, Token.descPosition(token));
-        return lc.push(block);
+        return lc.push(new Block(token, Token.descPosition(token)));
     }
 
     /**
@@ -479,7 +478,7 @@ loop:
         }
 
         // Build up node.
-        return new BinaryNode(source, op, lhs, rhs);
+        return new BinaryNode(op, lhs, rhs);
     }
 
     /**
@@ -490,12 +489,12 @@ loop:
      * @param isPostfix  Prefix or postfix.
      * @return           Reduced expression.
      */
-    private Node incDecExpression(final long firstToken, final TokenType tokenType, final Node expression, final boolean isPostfix) {
+    private static Node incDecExpression(final long firstToken, final TokenType tokenType, final Node expression, final boolean isPostfix) {
         if (isPostfix) {
-            return new UnaryNode(source, Token.recast(firstToken, tokenType == DECPREFIX ? DECPOSTFIX : INCPOSTFIX), expression.getStart(), Token.descPosition(firstToken) + Token.descLength(firstToken), expression);
+            return new UnaryNode(Token.recast(firstToken, tokenType == DECPREFIX ? DECPOSTFIX : INCPOSTFIX), expression.getStart(), Token.descPosition(firstToken) + Token.descLength(firstToken), expression);
         }
 
-        return new UnaryNode(source, firstToken, expression);
+        return new UnaryNode(firstToken, expression);
     }
 
     /**
@@ -524,7 +523,7 @@ loop:
 
         FunctionNode script = newFunctionNode(
             functionToken,
-            new IdentNode(source, functionToken, Token.descPosition(functionToken), scriptName),
+            new IdentNode(functionToken, Token.descPosition(functionToken), scriptName),
             new ArrayList<IdentNode>(),
             FunctionNode.Kind.SCRIPT);
 
@@ -774,7 +773,7 @@ loop:
     private void block() {
         final Block newBlock = getBlock(true);
         // Force block execution.
-        appendStatement(new ExecuteNode(source, newBlock.getToken(), finish, newBlock));
+        appendStatement(new ExecuteNode(newBlock.getToken(), finish, newBlock));
     }
 
     /**
@@ -867,7 +866,7 @@ loop:
             }
 
             // Allocate var node.
-            final VarNode var = new VarNode(source, varToken, finish, name, init);
+            final VarNode var = new VarNode(varToken, finish, name, init);
             vars.add(var);
             appendStatement(var);
 
@@ -899,7 +898,7 @@ loop:
      */
     private void emptyStatement() {
         if (env._empty_statements) {
-            appendStatement(new EmptyNode(source, token, Token.descPosition(token) + Token.descLength(token)));
+            appendStatement(new EmptyNode(token, Token.descPosition(token) + Token.descLength(token)));
         }
 
         // SEMICOLON checked in caller.
@@ -923,7 +922,7 @@ loop:
 
         ExecuteNode executeNode = null;
         if (expression != null) {
-            executeNode = new ExecuteNode(source, expressionToken, finish, expression);
+            executeNode = new ExecuteNode(expressionToken, finish, expression);
             appendStatement(executeNode);
         } else {
             expect(null);
@@ -963,7 +962,7 @@ loop:
             fail = getStatement();
         }
 
-        appendStatement(new IfNode(source, ifToken, fail != null ? fail.getFinish() : pass.getFinish(), test, pass, fail));
+        appendStatement(new IfNode(ifToken, fail != null ? fail.getFinish() : pass.getFinish(), test, pass, fail));
     }
 
     /**
@@ -980,7 +979,7 @@ loop:
      */
     private void forStatement() {
         // Create FOR node, capturing FOR token.
-        ForNode forNode = new ForNode(source, token, Token.descPosition(token), null, null, null, null, ForNode.IS_FOR);
+        ForNode forNode = new ForNode(token, Token.descPosition(token), null, null, null, null, ForNode.IS_FOR);
 
 
         // Set up new block for scope of vars. Captures first token.
@@ -1084,7 +1083,7 @@ loop:
             outer = restoreBlock(outer);
         }
 
-        appendStatement(new ExecuteNode(source, outer.getToken(), outer.getFinish(), outer));
+        appendStatement(new ExecuteNode(outer.getToken(), outer.getFinish(), outer));
      }
 
     /**
@@ -1120,7 +1119,7 @@ loop:
         next();
 
         // Construct WHILE node.
-        WhileNode whileNode = new WhileNode(source, whileToken, Token.descPosition(whileToken), false);
+        WhileNode whileNode = new WhileNode(whileToken, Token.descPosition(whileToken), false);
         lc.push(whileNode);
 
         try {
@@ -1150,7 +1149,7 @@ loop:
         // DO tested in the caller.
         next();
 
-        WhileNode doWhileNode = new WhileNode(source, doToken, Token.descPosition(doToken), true);
+        WhileNode doWhileNode = new WhileNode(doToken, Token.descPosition(doToken), true);
         lc.push(doWhileNode);
 
         try {
@@ -1216,7 +1215,7 @@ loop:
         endOfLine();
 
         // Construct and add CONTINUE node.
-        appendStatement(new ContinueNode(source, continueToken, finish, label == null ? null : new IdentNode(label)));
+        appendStatement(new ContinueNode(continueToken, finish, label == null ? null : new IdentNode(label)));
     }
 
     /**
@@ -1263,7 +1262,7 @@ loop:
         endOfLine();
 
         // Construct and add BREAK node.
-        appendStatement(new BreakNode(source, breakToken, finish, label == null ? null : new IdentNode(label)));
+        appendStatement(new BreakNode(breakToken, finish, label == null ? null : new IdentNode(label)));
     }
 
     /**
@@ -1302,7 +1301,7 @@ loop:
         endOfLine();
 
         // Construct and add RETURN node.
-        appendStatement(new ReturnNode(source, returnToken, finish, expression));
+        appendStatement(new ReturnNode(returnToken, finish, expression));
     }
 
     /**
@@ -1336,7 +1335,7 @@ loop:
         endOfLine();
 
         // Construct and add YIELD node.
-        appendStatement(new ReturnNode(source, yieldToken, finish, expression));
+        appendStatement(new ReturnNode(yieldToken, finish, expression));
     }
 
     /**
@@ -1359,7 +1358,7 @@ loop:
         }
 
         // Get WITH expression.
-        WithNode withNode = new WithNode(source, withToken, finish);
+        WithNode withNode = new WithNode(withToken, finish);
 
         try {
             lc.push(withNode);
@@ -1402,7 +1401,7 @@ loop:
         next();
 
         // Create and add switch statement.
-        SwitchNode switchNode = new SwitchNode(source, switchToken, Token.descPosition(switchToken), null, new ArrayList<CaseNode>(), null);
+        SwitchNode switchNode = new SwitchNode(switchToken, Token.descPosition(switchToken), null, new ArrayList<CaseNode>(), null);
         lc.push(switchNode);
 
         try {
@@ -1444,7 +1443,7 @@ loop:
 
                 // Get CASE body.
                 final Block statements = getBlock(false);
-                final CaseNode caseNode = new CaseNode(source, caseToken, finish, caseExpression, statements);
+                final CaseNode caseNode = new CaseNode(caseToken, finish, caseExpression, statements);
                 statements.setFinish(finish);
 
                 if (caseExpression == null) {
@@ -1484,7 +1483,7 @@ loop:
             throw error(AbstractParser.message("duplicate.label", ident.getName()), labelToken);
         }
 
-        LabelNode labelNode = new LabelNode(source, labelToken, finish, ident, null);
+        LabelNode labelNode = new LabelNode(labelToken, finish, ident, null);
         try {
             lc.push(labelNode);
             labelNode = labelNode.setBody(lc, getStatement());
@@ -1530,7 +1529,7 @@ loop:
 
         endOfLine();
 
-        appendStatement(new ThrowNode(source, throwToken, finish, expression));
+        appendStatement(new ThrowNode(throwToken, finish, expression));
     }
 
     /**
@@ -1588,7 +1587,7 @@ loop:
                 try {
                     // Get CATCH body.
                     final Block catchBody = getBlock(true);
-                    final CatchNode catchNode = new CatchNode(source, catchToken, finish, exception, ifExpression, catchBody);
+                    final CatchNode catchNode = new CatchNode(catchToken, finish, exception, ifExpression, catchBody);
                     appendStatement(catchNode);
                 } finally {
                     catchBlock = restoreBlock(catchBlock);
@@ -1614,7 +1613,7 @@ loop:
                 throw error(AbstractParser.message("missing.catch.or.finally"), tryToken);
             }
 
-            final TryNode tryNode = new TryNode(source, tryToken, Token.descPosition(tryToken), tryBody, catchBlocks, finallyStatements);
+            final TryNode tryNode = new TryNode(tryToken, Token.descPosition(tryToken), tryBody, catchBlocks, finallyStatements);
             // Add try.
             assert lc.peek() == outer;
             appendStatement(tryNode);
@@ -1626,7 +1625,7 @@ loop:
             outer = restoreBlock(outer);
         }
 
-        appendStatement(new ExecuteNode(source, outer.getToken(), outer.getFinish(), outer));
+        appendStatement(new ExecuteNode(outer.getToken(), outer.getFinish(), outer));
     }
 
     /**
@@ -1643,7 +1642,7 @@ loop:
         // DEBUGGER tested in caller.
         next();
         endOfLine();
-        appendStatement(new RuntimeNode(source, debuggerToken, finish, RuntimeNode.Request.DEBUGGER, new ArrayList<Node>()));
+        appendStatement(new RuntimeNode(debuggerToken, finish, RuntimeNode.Request.DEBUGGER, new ArrayList<Node>()));
     }
 
     /**
@@ -1669,7 +1668,7 @@ loop:
         case THIS:
             final String name = type.getName();
             next();
-            return new IdentNode(source, primaryToken, finish, name);
+            return new IdentNode(primaryToken, finish, name);
         case IDENT:
             final IdentNode ident = getIdent();
             if (ident == null) {
@@ -1693,13 +1692,13 @@ loop:
             return execString(primaryToken);
         case FALSE:
             next();
-            return LiteralNode.newInstance(source, primaryToken, finish, false);
+            return LiteralNode.newInstance(primaryToken, finish, false);
         case TRUE:
             next();
-            return LiteralNode.newInstance(source, primaryToken, finish, true);
+            return LiteralNode.newInstance(primaryToken, finish, true);
         case NULL:
             next();
-            return LiteralNode.newInstance(source, primaryToken, finish);
+            return LiteralNode.newInstance(primaryToken, finish);
         case LBRACKET:
             return arrayLiteral();
         case LBRACE:
@@ -1736,7 +1735,7 @@ loop:
      */
     Node execString(final long primaryToken) {
         // Synthesize an ident to call $EXEC.
-        final IdentNode execIdent = new IdentNode(source, primaryToken, finish, ScriptingFunctions.EXEC_NAME);
+        final IdentNode execIdent = new IdentNode(primaryToken, finish, ScriptingFunctions.EXEC_NAME);
         // Skip over EXECSTRING.
         next();
         // Set up argument list for call.
@@ -1748,7 +1747,7 @@ loop:
         // Skip ending of edit string expression.
         expect(RBRACE);
 
-        return new CallNode(source, primaryToken, finish, execIdent, arguments);
+        return new CallNode(primaryToken, finish, execIdent, arguments);
     }
 
     /**
@@ -1819,7 +1818,7 @@ loop:
             }
         }
 
-        return LiteralNode.newInstance(source, arrayToken, finish, elements);
+        return LiteralNode.newInstance(arrayToken, finish, elements);
     }
 
     /**
@@ -1926,7 +1925,7 @@ loop:
                             map.put(key, newProperty = newProperty.setValue(value));
                         } else {
                             final long propertyToken = Token.recast(newProperty.getToken(), COMMARIGHT);
-                            map.put(key, newProperty = newProperty.setValue(new BinaryNode(source, propertyToken, prevValue, value)));
+                            map.put(key, newProperty = newProperty.setValue(new BinaryNode(propertyToken, prevValue, value)));
                         }
 
                         map.put(key, newProperty = newProperty.setGetter(null).setSetter(null));
@@ -1943,7 +1942,7 @@ loop:
             }
         }
 
-        return new ObjectNode(source, objectToken, finish, new ArrayList<Node>(map.values()));
+        return new ObjectNode(objectToken, finish, new ArrayList<Node>(map.values()));
     }
 
     /**
@@ -2013,16 +2012,16 @@ loop:
                 case "get":
                     final PropertyKey getIdent = propertyName();
                     final String getterName = getIdent.getPropertyName();
-                    final IdentNode getNameNode = new IdentNode(source, ((Node)getIdent).getToken(), finish, "get " + getterName);
+                    final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, "get " + getterName);
                     expect(LPAREN);
                     expect(RPAREN);
                     functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER);
-                    return new PropertyNode(source, propertyToken, finish, getIdent, null, functionNode, null);
+                    return new PropertyNode(propertyToken, finish, getIdent, null, functionNode, null);
 
                 case "set":
                     final PropertyKey setIdent = propertyName();
                     final String setterName = setIdent.getPropertyName();
-                    final IdentNode setNameNode = new IdentNode(source, ((Node)setIdent).getToken(), finish, "set " + setterName);
+                    final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, "set " + setterName);
                     expect(LPAREN);
                     final IdentNode argIdent = getIdent();
                     verifyStrictIdent(argIdent, "setter argument");
@@ -2030,21 +2029,21 @@ loop:
                     List<IdentNode> parameters = new ArrayList<>();
                     parameters.add(argIdent);
                     functionNode = functionBody(getSetToken, setNameNode, parameters, FunctionNode.Kind.SETTER);
-                    return new PropertyNode(source, propertyToken, finish, setIdent, null, null, functionNode);
+                    return new PropertyNode(propertyToken, finish, setIdent, null, null, functionNode);
 
                 default:
                     break;
                 }
             }
 
-            propertyName =  new IdentNode(source, propertyToken, finish, ident);
+            propertyName =  new IdentNode(propertyToken, finish, ident);
         } else {
             propertyName = propertyName();
         }
 
         expect(COLON);
 
-        return new PropertyNode(source, propertyToken, finish, propertyName, assignmentExpression(false), null, null);
+        return new PropertyNode(propertyToken, finish, propertyName, assignmentExpression(false), null, null);
     }
 
     /**
@@ -2076,7 +2075,7 @@ loop:
                 detectSpecialFunction((IdentNode)lhs);
             }
 
-            lhs = new CallNode(source, callToken, finish, lhs, arguments);
+            lhs = new CallNode(callToken, finish, lhs, arguments);
         }
 
 loop:
@@ -2090,7 +2089,7 @@ loop:
                 final List<Node> arguments = argumentList();
 
                 // Create call node.
-                lhs = new CallNode(source, callToken, finish, lhs, arguments);
+                lhs = new CallNode(callToken, finish, lhs, arguments);
 
                 break;
 
@@ -2103,7 +2102,7 @@ loop:
                 expect(RBRACKET);
 
                 // Create indexing node.
-                lhs = new IndexNode(source, callToken, finish, lhs, rhs);
+                lhs = new IndexNode(callToken, finish, lhs, rhs);
 
                 break;
 
@@ -2113,7 +2112,7 @@ loop:
                 final IdentNode property = getIdentifierName();
 
                 // Create property access node.
-                lhs = new AccessNode(source, callToken, finish, lhs, property);
+                lhs = new AccessNode(callToken, finish, lhs, property);
 
                 break;
 
@@ -2169,9 +2168,9 @@ loop:
             arguments.add(objectLiteral());
         }
 
-        final CallNode callNode = new CallNode(source, constructor.getToken(), finish, constructor, arguments);
+        final CallNode callNode = new CallNode(constructor.getToken(), finish, constructor, arguments);
 
-        return new UnaryNode(source, newToken, callNode);
+        return new UnaryNode(newToken, callNode);
     }
 
     /**
@@ -2223,7 +2222,7 @@ loop:
                 expect(RBRACKET);
 
                 // Create indexing node.
-                lhs = new IndexNode(source, callToken, finish, lhs, index);
+                lhs = new IndexNode(callToken, finish, lhs, index);
 
                 break;
 
@@ -2237,7 +2236,7 @@ loop:
                 final IdentNode property = getIdentifierName();
 
                 // Create property access node.
-                lhs = new AccessNode(source, callToken, finish, lhs, property);
+                lhs = new AccessNode(callToken, finish, lhs, property);
 
                 break;
 
@@ -2326,7 +2325,7 @@ loop:
         boolean isAnonymous = false;
         if (name == null) {
             final String tmpName = "_L" + source.getLine(Token.descPosition(token));
-            name = new IdentNode(source, functionToken, Token.descPosition(functionToken), tmpName);
+            name = new IdentNode(functionToken, Token.descPosition(functionToken), tmpName);
             isAnonymous = true;
         }
 
@@ -2377,7 +2376,7 @@ loop:
                     // rename in non-strict mode
                     parameterName = functionNode.uniqueName(parameterName);
                     final long parameterToken = parameter.getToken();
-                    parameters.set(i, new IdentNode(source, parameterToken, Token.descPosition(parameterToken), functionNode.uniqueName(parameterName)));
+                    parameters.set(i, new IdentNode(parameterToken, Token.descPosition(parameterToken), functionNode.uniqueName(parameterName)));
                 }
 
                 parametersSet.add(parameterName);
@@ -2389,7 +2388,7 @@ loop:
         }
 
         if (isStatement) {
-            final VarNode varNode = new VarNode(source, functionToken, finish, name, functionNode, VarNode.IS_STATEMENT);
+            final VarNode varNode = new VarNode(functionToken, finish, name, functionNode, VarNode.IS_STATEMENT);
             if (topLevel) {
                 functionDeclarations.add(lineNumber);
                 functionDeclarations.add(varNode);
@@ -2469,7 +2468,7 @@ loop:
                 assert lc.getCurrentBlock() == lc.getFunctionBody(functionNode);
                 // create a return statement - this creates code in itself and does not need to be
                 // wrapped into an ExecuteNode
-                final ReturnNode returnNode = new ReturnNode(source, expr.getToken(), finish, expr);
+                final ReturnNode returnNode = new ReturnNode(expr.getToken(), finish, expr);
                 appendStatement(returnNode);
                 lastToken = token;
                 functionNode.setFinish(Token.descPosition(token) + Token.descLength(token));
@@ -2511,16 +2510,16 @@ loop:
         }
     }
 
-    private RuntimeNode referenceError(final Node lhs, final Node rhs) {
+    private static RuntimeNode referenceError(final Node lhs, final Node rhs) {
         final ArrayList<Node> args = new ArrayList<>();
         args.add(lhs);
         if (rhs == null) {
-            args.add(LiteralNode.newInstance(source, lhs.getToken(), lhs.getFinish()));
+            args.add(LiteralNode.newInstance(lhs.getToken(), lhs.getFinish()));
         } else {
             args.add(rhs);
         }
-        args.add(LiteralNode.newInstance(source, lhs.getToken(), lhs.getFinish(), lhs.toString()));
-        return new RuntimeNode(source, lhs.getToken(), lhs.getFinish(), RuntimeNode.Request.REFERENCE_ERROR, args);
+        args.add(LiteralNode.newInstance(lhs.getToken(), lhs.getFinish(), lhs.toString()));
+        return new RuntimeNode(lhs.getToken(), lhs.getFinish(), RuntimeNode.Request.REFERENCE_ERROR, args);
     }
 
     /*
@@ -2570,7 +2569,7 @@ loop:
         case NOT:
             next();
             final Node expr = unaryExpression();
-            return new UnaryNode(source, unaryToken, expr);
+            return new UnaryNode(unaryToken, expr);
 
         case INCPREFIX:
         case DECPREFIX:
@@ -2759,7 +2758,7 @@ loop:
                 final Node third = expression(unaryExpression(), ASSIGN.getPrecedence(), noIn);
 
                 // Build up node.
-                lhs = new TernaryNode(source, op, lhs, rhs, third);
+                lhs = new TernaryNode(op, lhs, rhs, third);
             } else {
                 // Skip operator.
                 next();
@@ -2820,7 +2819,7 @@ loop:
      */
     private LineNumberNode lineNumber() {
         if (env._debug_lines) {
-            return new LineNumberNode(source, token, line);
+            return new LineNumberNode(token, line);
         }
         return null;
     }

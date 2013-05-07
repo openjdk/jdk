@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for an empty statement.
@@ -47,12 +46,11 @@ public final class EmptyNode extends Node {
     /**
      * Constructor
      *
-     * @param source     the source
      * @param token      token
      * @param finish     finish
      */
-    public EmptyNode(final Source source, final long token, final int finish) {
-        super(source, token, finish);
+    public EmptyNode(final long token, final int finish) {
+        super(token, finish);
     }
 
 

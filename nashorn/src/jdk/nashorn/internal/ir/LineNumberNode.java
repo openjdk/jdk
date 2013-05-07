@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR Node representing a line number
@@ -41,12 +40,11 @@ public final class LineNumberNode extends Node {
     /**
      * Constructor
      *
-     * @param source     the source
      * @param token      token
      * @param lineNumber the line number
      */
-    public LineNumberNode(final Source source, final long token, final int lineNumber) {
-        super(source, token, Token.descPosition(token));
+    public LineNumberNode(final long token, final int lineNumber) {
+        super(token, Token.descPosition(token));
         this.lineNumber = lineNumber;
     }
 

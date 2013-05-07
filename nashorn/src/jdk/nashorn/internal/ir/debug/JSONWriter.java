@@ -971,7 +971,7 @@ public final class JSONWriter extends NodeVisitor {
             objectStart("loc");
 
             // source name
-            final Source src = node.getSource();
+            final Source src = getLexicalContext().getCurrentFunction().getSource();
             property("source", src.getName());
             comma();
 

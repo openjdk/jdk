@@ -229,6 +229,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         }
 
         final FunctionNode snapshot = functionNode.getSnapshot();
+        if (snapshot == null) {
+            return mh;
+        }
+
         int i;
 
         //classes known at runtime

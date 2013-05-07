@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of an indexed access (brackets operator.)
@@ -41,14 +40,13 @@ public final class IndexNode extends BaseNode {
     /**
      * Constructors
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param base    base node for access
      * @param index   index for access
      */
-    public IndexNode(final Source source, final long token, final int finish, final Node base, final Node index) {
-        super(source, token, finish, base, false, false);
+    public IndexNode(final long token, final int finish, final Node base, final Node index) {
+        super(token, finish, base, false, false);
         this.index = index;
     }
 

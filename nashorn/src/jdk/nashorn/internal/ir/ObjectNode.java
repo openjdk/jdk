@@ -30,7 +30,6 @@ import java.util.List;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of an object literal.
@@ -44,13 +43,12 @@ public final class ObjectNode extends Node {
     /**
      * Constructor
      *
-     * @param source   the source
      * @param token    token
      * @param finish   finish
      * @param elements the elements used to initialize this ObjectNode
      */
-    public ObjectNode(final Source source, final long token, final int finish, final List<Node> elements) {
-        super(source, token, finish);
+    public ObjectNode(final long token, final int finish, final List<Node> elements) {
+        super(token, finish);
         this.elements = elements;
     }
 

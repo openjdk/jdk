@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Node represents a var/let declaration.
@@ -54,14 +53,13 @@ public final class VarNode extends Node implements Assignment<IdentNode> {
     /**
      * Constructor
      *
-     * @param source the source
      * @param token  token
      * @param finish finish
      * @param name   name of variable
      * @param init   init node or null if just a declaration
      */
-    public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init) {
-        this(source, token, finish, name, init, IS_STATEMENT);
+    public VarNode(final long token, final int finish, final IdentNode name, final Node init) {
+        this(token, finish, name, init, IS_STATEMENT);
     }
 
     private VarNode(final VarNode varNode, final IdentNode name, final Node init, final int flags) {
@@ -74,15 +72,14 @@ public final class VarNode extends Node implements Assignment<IdentNode> {
     /**
      * Constructor
      *
-     * @param source the source
      * @param token  token
      * @param finish finish
      * @param name   name of variable
      * @param init   init node or null if just a declaration
      * @param flags  flags
      */
-    public VarNode(final Source source, final long token, final int finish, final IdentNode name, final Node init, final int flags) {
-        super(source, token, finish);
+    public VarNode(final long token, final int finish, final IdentNode name, final Node init, final int flags) {
+        super(token, finish);
 
         this.name  = init == null ? name : name.setIsInitializedHere();
         this.init  = init;
