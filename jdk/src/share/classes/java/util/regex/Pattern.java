@@ -612,6 +612,7 @@ import java.util.Arrays;
  *   <li> White_Space
  *   <li> Digit
  *   <li> Hex_Digit
+ *   <li> Join_Control
  *   <li> Noncharacter_Code_Point
  *   <li> Assigned
  * </ul>
@@ -662,7 +663,7 @@ import java.util.Arrays;
  * <tr><td><tt>\S</tt></td>
  *     <td>A non-whitespace character: <tt>[^\s]</tt></td></tr>
  * <tr><td><tt>\w</tt></td>
- *     <td>A word character: <tt>[\p{Alpha}\p{gc=Mn}\p{gc=Me}\p{gc=Mc}\p{Digit}\p{gc=Pc}]</tt></td></tr>
+ *     <td>A word character: <tt>[\p{Alpha}\p{gc=Mn}\p{gc=Me}\p{gc=Mc}\p{Digit}\p{gc=Pc}\p{IsJoin_Control}]</tt></td></tr>
  * <tr><td><tt>\W</tt></td>
  *     <td>A non-word character: <tt>[^\w]</tt></td></tr>
  * </table>
