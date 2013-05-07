@@ -392,6 +392,7 @@ public class Shell {
      * @param global  global scope object to use
      * @return return code
      */
+    @SuppressWarnings("resource")
     private static int readEvalPrint(final Context context, final ScriptObject global) {
         final String prompt = bundle.getString("shell.prompt");
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));

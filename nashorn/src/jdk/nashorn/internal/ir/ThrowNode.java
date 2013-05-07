@@ -32,23 +32,24 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for THROW statements.
  */
 @Immutable
-public final class ThrowNode extends Node {
+public final class ThrowNode extends Statement {
     /** Exception expression. */
     private final Node expression;
 
     /**
      * Constructor
      *
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param expression expression to throw
      */
-    public ThrowNode(final long token, final int finish, final Node expression) {
-        super(token, finish);
+    public ThrowNode(final int lineNumber, final long token, final int finish, final Node expression) {
+        super(lineNumber, token, finish);
         this.expression = expression;
     }
 
-    private ThrowNode(final Node node, final Node expression) {
+    private ThrowNode(final ThrowNode node, final Node expression) {
         super(node);
         this.expression = expression;
     }

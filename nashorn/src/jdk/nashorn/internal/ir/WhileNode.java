@@ -41,12 +41,13 @@ public final class WhileNode extends LoopNode {
     /**
      * Constructor
      *
-     * @param token     token
-     * @param finish    finish
-     * @param isDoWhile is this a do while loop?
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param isDoWhile  is this a do while loop?
      */
-    public WhileNode(final long token, final int finish, final boolean isDoWhile) {
-        super(token, finish, null, null, false);
+    public WhileNode(final int lineNumber, final long token, final int finish, final boolean isDoWhile) {
+        super(lineNumber, token, finish, null, null, false);
         this.isDoWhile = isDoWhile;
     }
 
@@ -133,17 +134,9 @@ public final class WhileNode extends LoopNode {
 
     @Override
     public void toString(final StringBuilder sb) {
-        if (isDoWhile()) {
-            sb.append("do {");
-            body.toString(sb);
-            sb.append("} while (");
-            test.toString(sb);
-            sb.append(')');
-        } else {
-            sb.append("while (");
-            test.toString(sb);
-            sb.append(')');
-        }
+        sb.append("while (");
+        test.toString(sb);
+        sb.append(')');
     }
 
     @Override

@@ -136,13 +136,14 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
     /**
      * Constructors
      *
-     * @param token    token
-     * @param finish   finish
-     * @param function the function to call
-     * @param args     args to the call
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param function   the function to call
+     * @param args       args to the call
      */
-    public CallNode(final long token, final int finish, final Node function, final List<Node> args) {
-        super(token, finish);
+    public CallNode(final int lineNumber, final long token, final int finish, final Node function, final List<Node> args) {
+        super(lineNumber, token, finish);
 
         this.function = function;
         this.args     = args;

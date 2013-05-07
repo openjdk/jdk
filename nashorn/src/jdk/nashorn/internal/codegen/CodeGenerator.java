@@ -63,6 +63,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.RuntimeCallSite.SpecializedRuntimeNode;
@@ -88,7 +89,6 @@ import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
-import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
@@ -100,6 +100,7 @@ import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TernaryNode;
@@ -190,6 +191,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     /** Current compile unit */
     private CompileUnit unit;
+
+    private int lastLineNumber = -1;
 
     /** When should we stop caching regexp expressions in fields to limit bytecode size? */
     private static final int MAX_REGEX_FIELDS = 2 * 1024;
@@ -619,6 +622,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterBreakNode(final BreakNode breakNode) {
+        lineNumber(breakNode);
+
         final BreakableNode breakFrom = getLexicalContext().getBreakable(breakNode.getLabel());
         for (int i = 0; i < getLexicalContext().getScopeNestingLevelTo(breakFrom); i++) {
             closeWith();
@@ -663,6 +668,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterCallNode(final CallNode callNode) {
+        lineNumber(callNode);
+
         final List<Node>   args            = callNode.getArgs();
         final Node         function        = callNode.getFunction();
         final Block        currentBlock    = getLexicalContext().getCurrentBlock();
@@ -836,6 +843,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterContinueNode(final ContinueNode continueNode) {
+        lineNumber(continueNode);
+
         final LoopNode continueTo = getLexicalContext().getContinueTo(continueNode.getLabel());
         for (int i = 0; i < getLexicalContext().getScopeNestingLevelTo(continueTo); i++) {
             closeWith();
@@ -847,11 +856,15 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterEmptyNode(final EmptyNode emptyNode) {
+        lineNumber(emptyNode);
+
         return false;
     }
 
     @Override
     public boolean enterExecuteNode(final ExecuteNode executeNode) {
+        lineNumber(executeNode);
+
         final Node expression = executeNode.getExpression();
         expression.accept(this);
 
@@ -860,6 +873,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterForNode(final ForNode forNode) {
+        lineNumber(forNode);
+
         final Node  test   = forNode.getTest();
         final Block body   = forNode.getBody();
         final Node  modify = forNode.getModify();
@@ -1148,6 +1163,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterIfNode(final IfNode ifNode) {
+        lineNumber(ifNode);
+
         final Node  test = ifNode.getTest();
         final Block pass = ifNode.getPass();
         final Block fail = ifNode.getFail();
@@ -1187,12 +1204,12 @@ final class CodeGenerator extends NodeOperatorVisitor {
         return false;
     }
 
-    @Override
-    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        final Label label = new Label((String)null);
-        method.label(label);
-        method.lineNumber(lineNumberNode.getLineNumber(), label);
-        return false;
+    private void lineNumber(final Statement statement) {
+        final int lineNumber = statement.getLineNumber();
+        if (lineNumber != lastLineNumber) {
+            method.lineNumber(statement.getLineNumber());
+        }
+        lastLineNumber = lineNumber;
     }
 
     /**
@@ -1524,6 +1541,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterReturnNode(final ReturnNode returnNode) {
+        lineNumber(returnNode);
+
         method.registerReturn();
 
         final Type returnType = getLexicalContext().getCurrentFunction().getReturnType();
@@ -1733,6 +1752,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterSplitNode(final SplitNode splitNode) {
+        lineNumber(splitNode);
+
         final CompileUnit splitCompileUnit = splitNode.getCompileUnit();
 
         final FunctionNode fn   = getLexicalContext().getCurrentFunction();
@@ -1876,6 +1897,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterSwitchNode(final SwitchNode switchNode) {
+        lineNumber(switchNode);
+
         final Node           expression  = switchNode.getExpression();
         final Symbol         tag         = switchNode.getTag();
         final boolean        allInteger  = tag.getSymbolType().isInteger();
@@ -1958,7 +1981,6 @@ final class CodeGenerator extends NodeOperatorVisitor {
                 method.tableswitch(lo, hi, defaultLabel, table);
             } else {
                 final int[] ints = new int[size];
-
                 for (int i = 0; i < size; i++) {
                     ints[i] = values[i];
                 }
@@ -2004,6 +2026,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterThrowNode(final ThrowNode throwNode) {
+        lineNumber(throwNode);
+
         method._new(ECMAException.class).dup();
 
         final Source source     = getLexicalContext().getCurrentFunction().getSource();
@@ -2028,6 +2052,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterTryNode(final TryNode tryNode) {
+        lineNumber(tryNode);
+
         final Block       body        = tryNode.getBody();
         final List<Block> catchBlocks = tryNode.getCatchBlocks();
         final Symbol      symbol      = tryNode.getException();
@@ -2124,11 +2150,14 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterVarNode(final VarNode varNode) {
+
         final Node init = varNode.getInit();
 
         if (init == null) {
             return false;
         }
+
+        lineNumber(varNode);
 
         final Symbol varSymbol = varNode.getSymbol();
         assert varSymbol != null : "variable node " + varNode + " requires a symbol";
@@ -2162,6 +2191,8 @@ final class CodeGenerator extends NodeOperatorVisitor {
 
     @Override
     public boolean enterWhileNode(final WhileNode whileNode) {
+        lineNumber(whileNode);
+
         final Node  test          = whileNode.getTest();
         final Block body          = whileNode.getBody();
         final Label breakLabel    = whileNode.getBreakLabel();
@@ -2184,7 +2215,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
     }
 
     private void closeWith() {
-        if(method.hasScope()) {
+        if (method.hasScope()) {
             method.loadCompilerConstant(SCOPE);
             method.invoke(ScriptRuntime.CLOSE_WITH);
             method.storeCompilerConstant(SCOPE);
@@ -2227,7 +2258,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
         // Always process body
         body.accept(this);
 
-        if(hasScope) {
+        if (hasScope) {
             // Ensure we always close the WithObject
             final Label endLabel   = new Label("with_end");
             final Label catchLabel = new Label("with_catch");
@@ -3010,6 +3041,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
      * @param block the block we are in
      * @param ident identifier for block or function where applicable
      */
+    @SuppressWarnings("resource")
     private void printSymbols(final Block block, final String ident) {
         if (!compiler.getEnv()._print_symbols) {
             return;
@@ -3190,9 +3222,6 @@ final class CodeGenerator extends NodeOperatorVisitor {
                 return;
             }
 
-            //System.err.println("Store with out discard that shouldn't just return " + assignNode);
-            //new Throwable().printStackTrace();
-
             final Symbol symbol = assignNode.getSymbol();
             if (symbol.hasSlot()) {
                 method.dup().store(symbol);
@@ -3288,7 +3317,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
         //    Such immediately-called functions are invoked using INVOKESTATIC (see enterFunctionNode() of the embedded
         //    visitor of enterCallNode() for details), and if they don't need a callee, they don't have it on their
         //    static method's parameter list.
-        if(lc.getOutermostFunction() == functionNode ||
+        if (lc.getOutermostFunction() == functionNode ||
                 (!functionNode.needsCallee()) && lc.isFunctionDefinedInCurrentCall(originalFunctionNode)) {
             return;
         }

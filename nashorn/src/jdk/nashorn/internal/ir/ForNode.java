@@ -56,16 +56,17 @@ public final class ForNode extends LoopNode {
     /**
      * Constructor
      *
-     * @param token  token
-     * @param finish finish
-     * @param init   init
-     * @param test   test
-     * @param body   body
-     * @param modify modify
-     * @param flags  flags
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param init       initialization expression
+     * @param test       test
+     * @param body       body
+     * @param modify     modify
+     * @param flags      flags
      */
-    public ForNode(final long token, final int finish, final Node init, final Node test, final Block body, final Node modify, final int flags) {
-        super(token, finish, test, body, false);
+    public ForNode(final int lineNumber, final long token, final int finish, final Node init, final Node test, final Block body, final Node modify, final int flags) {
+        super(lineNumber, token, finish, test, body, false);
         this.init   = init;
         this.modify = modify;
         this.flags  = flags;

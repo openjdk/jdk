@@ -42,11 +42,12 @@ public final class WithNode extends LexicalContextNode {
     /**
      * Constructor
      *
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      */
-    public WithNode(final long token, final int finish) {
-        super(token, finish);
+    public WithNode(final int lineNumber, final long token, final int finish) {
+        super(lineNumber, token, finish);
         this.expression = null;
         this.body       = null;
     }

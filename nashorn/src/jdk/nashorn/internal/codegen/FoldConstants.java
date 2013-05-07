@@ -88,7 +88,7 @@ final class FoldConstants extends NodeVisitor {
         if (test instanceof LiteralNode) {
             final Block shortCut = ((LiteralNode<?>)test).isTrue() ? ifNode.getPass() : ifNode.getFail();
             if (shortCut != null) {
-                return new ExecuteNode(shortCut);
+                return new ExecuteNode(shortCut.getLineNumber(), shortCut.getToken(), shortCut.getFinish(), shortCut);
             }
             return new EmptyNode(ifNode);
         }

@@ -49,14 +49,15 @@ public abstract class LoopNode extends BreakableNode {
     /**
      * Constructor
      *
-     * @param token   token
-     * @param finish  finish
-     * @param test    test, or null if infinite loop
-     * @param body    loop body
+     * @param lineNumber         lineNumber
+     * @param token              token
+     * @param finish             finish
+     * @param test               test, or null if infinite loop
+     * @param body               loop body
      * @param controlFlowEscapes controlFlowEscapes
      */
-    protected LoopNode(final long token, final int finish, final Node test, final Block body, final boolean controlFlowEscapes) {
-        super(token, finish, new Label("while_break"));
+    protected LoopNode(final int lineNumber, final long token, final int finish, final Node test, final Block body, final boolean controlFlowEscapes) {
+        super(lineNumber, token, finish, new Label("while_break"));
         this.continueLabel = new Label("while_continue");
         this.test = test;
         this.body = body;

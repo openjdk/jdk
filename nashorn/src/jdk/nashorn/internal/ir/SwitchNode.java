@@ -53,14 +53,15 @@ public final class SwitchNode extends BreakableNode {
     /**
      * Constructor
      *
+     * @param lineNumber  lineNumber
      * @param token       token
      * @param finish      finish
      * @param expression  switch expression
      * @param cases       cases
      * @param defaultCase the default case node - null if none, otherwise has to be present in cases list
      */
-    public SwitchNode(final long token, final int finish, final Node expression, final List<CaseNode> cases, final CaseNode defaultCase) {
-        super(token, finish, new Label("switch_break"));
+    public SwitchNode(final int lineNumber, final long token, final int finish, final Node expression, final List<CaseNode> cases, final CaseNode defaultCase) {
+        super(lineNumber, token, finish, new Label("switch_break"));
         this.expression       = expression;
         this.cases            = cases;
         this.defaultCaseIndex = defaultCase == null ? -1 : cases.indexOf(defaultCase);

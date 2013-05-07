@@ -42,13 +42,14 @@ public final class LabelNode extends LexicalContextNode {
     /**
      * Constructor
      *
-     * @param token  token
-     * @param finish finish
-     * @param label  label identifier
-     * @param body   body of label node
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param label      label identifier
+     * @param body       body of label node
      */
-    public LabelNode(final long token, final int finish, final IdentNode label, final Block body) {
-        super(token, finish);
+    public LabelNode(final int lineNumber, final long token, final int finish, final IdentNode label, final Block body) {
+        super(lineNumber, token, finish);
 
         this.label = label;
         this.body  = body;

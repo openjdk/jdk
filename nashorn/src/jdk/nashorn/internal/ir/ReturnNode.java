@@ -34,19 +34,20 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for RETURN or YIELD statements.
  */
 @Immutable
-public class ReturnNode extends Node {
+public class ReturnNode extends Statement {
     /** Optional expression. */
     private final Node expression;
 
     /**
      * Constructor
      *
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param expression expression to return
      */
-    public ReturnNode(final long token, final int finish, final Node expression) {
-        super(token, finish);
+    public ReturnNode(final int lineNumber, final long token, final int finish, final Node expression) {
+        super(lineNumber, token, finish);
         this.expression = expression;
     }
 
@@ -99,9 +100,9 @@ public class ReturnNode extends Node {
 
     @Override
     public void toString(final StringBuilder sb) {
-        sb.append(isYield() ? "yield" : "return ");
-
+        sb.append(isYield() ? "yield" : "return");
         if (expression != null) {
+            sb.append(' ');
             expression.toString(sb);
         }
     }

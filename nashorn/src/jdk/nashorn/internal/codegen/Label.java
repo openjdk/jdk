@@ -27,6 +27,7 @@ package jdk.nashorn.internal.codegen;
 import java.util.ArrayDeque;
 
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.runtime.Debug;
 
 /**
  * Abstraction for labels, separating a label from the underlying
@@ -35,12 +36,15 @@ import jdk.nashorn.internal.codegen.types.Type;
  *
  * see -Dnashorn.codegen.debug, --log=codegen
  */
-public class Label extends jdk.internal.org.objectweb.asm.Label {
+public final class Label {
     /** Name of this label */
     private final String name;
 
     /** Type stack at this label */
     private ArrayDeque<Type> stack;
+
+    /** ASM representation of this label */
+    private jdk.internal.org.objectweb.asm.Label label;
 
     /**
      * Constructor
@@ -62,6 +66,14 @@ public class Label extends jdk.internal.org.objectweb.asm.Label {
         this.name = label.name;
     }
 
+
+    jdk.internal.org.objectweb.asm.Label getLabel() {
+        if (this.label == null) {
+            this.label = new jdk.internal.org.objectweb.asm.Label();
+        }
+        return label;
+    }
+
     ArrayDeque<Type> getStack() {
         return stack;
     }
@@ -72,12 +84,7 @@ public class Label extends jdk.internal.org.objectweb.asm.Label {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        String s = super.toString();
-        s = s.substring(1, s.length());
-        sb.append(name).append('_').append(Long.toHexString(Long.parseLong(s)));
-
-        return sb.toString();
+        return name + '_' + Debug.id(this);
     }
 }
 

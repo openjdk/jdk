@@ -44,7 +44,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 @Immutable
 public class Block extends BreakableNode implements Flags<Block> {
     /** List of statements */
-    protected final List<Node> statements;
+    protected final List<Statement> statements;
 
     /** Symbol table - keys must be returned in the order they were put in. */
     protected final Map<String, Symbol> symbols;
@@ -76,12 +76,13 @@ public class Block extends BreakableNode implements Flags<Block> {
     /**
      * Constructor
      *
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param statements statements
      */
-    public Block(final long token, final int finish, final Node... statements) {
-        super(token, finish, new Label("block_break"));
+    public Block(final int lineNumber, final long token, final int finish, final Statement... statements) {
+        super(lineNumber, token, finish, new Label("block_break"));
 
         this.statements = Arrays.asList(statements);
         this.symbols    = new LinkedHashMap<>();
@@ -92,15 +93,16 @@ public class Block extends BreakableNode implements Flags<Block> {
     /**
      * Constructor
      *
+     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param statements statements
      */
-    public Block(final long token, final int finish, final List<Node> statements) {
-        this(token, finish, statements.toArray(new Node[statements.size()]));
+    public Block(final int lineNumber, final long token, final int finish, final List<Statement> statements) {
+        this(lineNumber, token, finish, statements.toArray(new Statement[statements.size()]));
     }
 
-    private Block(final Block block, final int finish, final List<Node> statements, final int flags, final Map<String, Symbol> symbols) {
+    private Block(final Block block, final int finish, final List<Statement> statements, final int flags, final Map<String, Symbol> symbols) {
         super(block);
         this.statements = statements;
         this.flags      = flags;
@@ -131,7 +133,7 @@ public class Block extends BreakableNode implements Flags<Block> {
     @Override
     public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
         if (visitor.enterBlock(this)) {
-            return visitor.leaveBlock(setStatements(lc, Node.accept(visitor, Node.class, statements)));
+            return visitor.leaveBlock(setStatements(lc, Node.accept(visitor, Statement.class, statements)));
         }
 
         return this;
@@ -226,7 +228,7 @@ public class Block extends BreakableNode implements Flags<Block> {
      *
      * @return a list of statements
      */
-    public List<Node> getStatements() {
+    public List<Statement> getStatements() {
         return Collections.unmodifiableList(statements);
     }
 
@@ -237,7 +239,7 @@ public class Block extends BreakableNode implements Flags<Block> {
      * @param statements new statement list
      * @return new block if statements changed, identity of statements == block.statements
      */
-    public Block setStatements(final LexicalContext lc, final List<Node> statements) {
+    public Block setStatements(final LexicalContext lc, final List<Statement> statements) {
         if (this.statements == statements) {
             return this;
         }

@@ -1625,6 +1625,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.addOwnProperty("Debug", Attribute.NOT_ENUMERABLE, initConstructor("Debug"));
     }
 
+    @SuppressWarnings("resource")
     private static Object printImpl(final boolean newLine, final Object... objects) {
         final PrintWriter out = Global.getEnv().getOut();
 
