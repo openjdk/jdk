@@ -970,7 +970,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      *             <li> invocation of
      *             {@link SecurityManager#checkMemberAccess
-     *             s.checkMemberAccess(enclosingClass, Member.PUBLIC)} denies
+     *             s.checkMemberAccess(enclosingClass, Member.DECLARED)} denies
      *             access to the methods within the enclosing class
      *
      *             <li> the caller's class loader is not the same as or an
@@ -1126,7 +1126,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      *             <li> invocation of
      *             {@link SecurityManager#checkMemberAccess
-     *             s.checkMemberAccess(enclosingClass, Member.PUBLIC)} denies
+     *             s.checkMemberAccess(enclosingClass, Member.DECLARED)} denies
      *             access to the constructors within the enclosing class
      *
      *             <li> the caller's class loader is not the same as or an
@@ -1248,13 +1248,9 @@ public final class Class<T> implements java.io.Serializable,
                 enclosingCandidate = enclosingClass;
         }
 
-        // be very careful not to change the stack depth of this
-        // checkMemberAccess call for security reasons
-        // see java.lang.SecurityManager.checkMemberAccess
-        if (enclosingCandidate != null) {
-            enclosingCandidate.checkMemberAccess(Member.DECLARED,
-                                                 Reflection.getCallerClass(), true);
-        }
+        if (enclosingCandidate != null)
+            enclosingCandidate.checkPackageAccess(
+                    ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
         return enclosingCandidate;
     }
 
@@ -2303,6 +2299,8 @@ public final class Class<T> implements java.io.Serializable,
      * Check if client is allowed to access members.  If access is denied,
      * throw a SecurityException.
      *
+     * This method also enforces package access.
+     *
      * <p> Default policy: allow all clients access with normal Java access
      * control.
      */
@@ -2323,7 +2321,19 @@ public final class Class<T> implements java.io.Serializable,
                 // checkMemberAccess of subclasses of SecurityManager as specified.
                 s.checkMemberAccess(this, which);
             }
+            this.checkPackageAccess(ccl, checkProxyInterfaces);
+        }
+    }
 
+    /*
+     * Checks if a client loaded in ClassLoader ccl is allowed to access this
+     * class under the current package access policy. If access is denied,
+     * throw a SecurityException.
+     */
+    private void checkPackageAccess(final ClassLoader ccl, boolean checkProxyInterfaces) {
+        final SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            final ClassLoader cl = getClassLoader0();
 
             if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
                 String name = this.getName();
