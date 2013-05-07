@@ -60,6 +60,10 @@ public class LocaleProviders {
                 bug8010666Test();
                 break;
 
+            case "bug8013086Test":
+                bug8013086Test(args[1], args[2]);
+                break;
+
             default:
                 throw new RuntimeException("Test method '"+methodName+"' not found.");
         }
@@ -141,5 +145,14 @@ public class LocaleProviders {
                 throw new RuntimeException("Parsing Windows version failed: "+pe.toString());
             }
         }
+    }
+
+    static void bug8013086Test(String lang, String ctry) {
+        try {
+            // Throws a NullPointerException if the test fails.
+            System.out.println(new SimpleDateFormat("z", new Locale(lang, ctry)).parse("UTC"));
+        } catch (ParseException pe) {
+            // ParseException is fine in this test, as it's not "UTC"
+}
     }
 }
