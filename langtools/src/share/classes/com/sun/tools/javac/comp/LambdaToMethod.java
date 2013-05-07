@@ -1252,8 +1252,17 @@ public class LambdaToMethod extends TreeTranslator {
                 List<Type> ptypes = ((MethodType) consSym.type).getParameterTypes();
                 Type classType = consSym.owner.type;
 
+                // Build lambda parameters
+                // partially cloned from TreeMaker.Params until 8014021 is fixed
+                Symbol owner = owner();
+                ListBuffer<JCVariableDecl> paramBuff = new ListBuffer<JCVariableDecl>();
+                int i = 0;
+                for (List<Type> l = ptypes; l.nonEmpty(); l = l.tail) {
+                    paramBuff.append(make.Param(make.paramName(i++), l.head, owner));
+                }
+                List<JCVariableDecl> params = paramBuff.toList();
+
                 // Make new-class call
-                List<JCVariableDecl> params = make.Params(ptypes, owner());
                 JCNewClass nc = makeNewClass(classType, make.Idents(params));
                 nc.pos = tree.pos;
 
