@@ -350,13 +350,13 @@ void JvmtiClassFileReconstituter::write_annotations_attribute(const char* attr_n
 //        u2 bootstrap_arguments[num_bootstrap_arguments];
 //    } bootstrap_methods[num_bootstrap_methods];
 //  }
-void JvmtiClassFileReconstituter::write_boostrapmethod_attribute() {
+void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
   Array<u2>* operands = cpool()->operands();
   write_attribute_name_index("BootstrapMethods");
   int num_bootstrap_methods = ConstantPool::operand_array_length(operands);
 
   // calculate length of attribute
-  int length = sizeof(u2); // num_boostrap_methods
+  int length = sizeof(u2); // num_bootstrap_methods
   for (int n = 0; n < num_bootstrap_methods; n++) {
     u2 num_bootstrap_arguments = cpool()->operand_argument_count_at(n);
     length += sizeof(u2); // bootstrap_method_ref
@@ -657,7 +657,7 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
     write_annotations_attribute("RuntimeVisibleAnnotations", anno);
   }
   if (cpool()->operands() != NULL) {
-    write_boostrapmethod_attribute();
+    write_bootstrapmethod_attribute();
   }
 }
 
