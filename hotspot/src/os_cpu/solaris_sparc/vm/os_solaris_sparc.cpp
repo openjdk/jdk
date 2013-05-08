@@ -591,7 +591,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
   // on the thread stack, which could get a mapping error when touched.
   address addr = (address) info->si_addr;
   if (sig == SIGBUS && info->si_code == BUS_OBJERR && info->si_errno == ENOMEM) {
-    vm_exit_out_of_memory(0, "Out of swap space to map in thread stack.");
+    vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "Out of swap space to map in thread stack.");
   }
 
   VMError err(t, sig, pc, info, ucVoid);

@@ -50,9 +50,6 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
     /** Is this a "new" operation */
     public static final int IS_NEW        = 0x1;
 
-    /** Is this call tagged as inside a with block */
-    public static final int IN_WITH_BLOCK = 0x2;
-
     private final int flags;
 
     /**
@@ -145,14 +142,13 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
      * @param finish   finish
      * @param function the function to call
      * @param args     args to the call
-     * @param flags    flags
      */
-    public CallNode(final Source source, final long token, final int finish, final Node function, final List<Node> args, final int flags) {
+    public CallNode(final Source source, final long token, final int finish, final Node function, final List<Node> args) {
         super(source, token, finish);
 
         this.function = function;
         this.args     = args;
-        this.flags    = flags;
+        this.flags    = 0;
         this.type     = null;
         this.evalArgs = null;
     }
@@ -331,14 +327,6 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
      */
     public CallNode setIsNew() {
         return setFlags(IS_NEW);
-    }
-
-    /**
-     * Check if this call is inside a {@code with} block
-     * @return true if the call is inside a {@code with} block
-     */
-    public boolean inWithBlock() {
-        return (flags & IN_WITH_BLOCK) == IN_WITH_BLOCK;
     }
 
     private CallNode setFlags(final int flags) {

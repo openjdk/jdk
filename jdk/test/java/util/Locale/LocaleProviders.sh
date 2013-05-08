@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 #!/bin/sh
 #
 # @test
-# @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440
+# @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440 8010666
 # @summary tests for "java.locale.providers" system property
 # @compile -XDignore.symbol.file LocaleProviders.java
 # @run shell/timeout=600 LocaleProviders.sh
@@ -257,5 +257,16 @@ PARAM1=
 PARAM2=
 PARAM3=
 runTest
+
+# testing 8010666 fix.
+if [ "${DEFLANG}" = "en" ]
+then
+  METHODNAME=bug8010666Test
+  PREFLIST=HOST
+  PARAM1=
+  PARAM2=
+  PARAM3=
+  runTest
+fi
 
 exit $result

@@ -411,6 +411,8 @@ define SetupNativeCompilation
             $1_EXTRA_LDFLAGS+="-implib:$$($1_OBJECT_DIR)/$$($1_LIBRARY).lib"
         endif
 
+        $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)        
+
         ifneq (,$$($1_DEBUG_SYMBOLS))
             ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
                 ifeq ($(OPENJDK_TARGET_OS), windows)
@@ -548,6 +550,8 @@ define SetupNativeCompilation
                 endif
             endif
         endif
+
+        $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
 
         $$($1_TARGET) : $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_GEN_MANIFEST)
 	    	$$(call LINKING_EXE_MSG,$$($1_BASENAME))
