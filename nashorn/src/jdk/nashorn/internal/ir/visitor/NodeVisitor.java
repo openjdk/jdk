@@ -25,8 +25,6 @@
 
 package jdk.nashorn.internal.ir.visitor;
 
-import jdk.nashorn.internal.codegen.CompileUnit;
-import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -35,7 +33,6 @@ import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
-import jdk.nashorn.internal.ir.DoWhileNode;
 import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
@@ -44,6 +41,7 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LabelNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
@@ -65,41 +63,30 @@ import jdk.nashorn.internal.ir.WithNode;
  * Visitor used to navigate the IR.
  */
 public abstract class NodeVisitor {
-    /** Current functionNode. */
-    private FunctionNode currentFunctionNode;
-
-    /** Current compile unit used for class generation. */
-    private CompileUnit compileUnit;
+    private final LexicalContext lc;
 
     /**
-     * Current method visitor used for method generation.
-     * <p>
-     * TODO: protected is just for convenience and readability, so that
-     * subclasses can directly use 'method' - might want to change that
-     */
-    protected MethodEmitter method;
-
-    /** Current block. */
-    private Block currentBlock;
-
-    /**
-     * Constructor.
+     * Constructor
      */
     public NodeVisitor() {
-        this(null, null);
+        this(new LexicalContext());
     }
 
     /**
      * Constructor
      *
-     * @param compileUnit compile unit for this node visitor
-     * @param method method emitter for this node visitor
+     * @param lc a custom lexical context
      */
-    public NodeVisitor(final CompileUnit compileUnit, final MethodEmitter method) {
-        super();
+    public NodeVisitor(final LexicalContext lc) {
+        this.lc = lc;
+    }
 
-        this.compileUnit = compileUnit;
-        this.method      = method;
+    /**
+     * Get the lexical context of this node visitor
+     * @return lexical context
+     */
+    public LexicalContext getLexicalContext() {
+        return lc;
     }
 
     /**
@@ -118,10 +105,10 @@ public abstract class NodeVisitor {
      *
      * @see NodeVisitor#leaveDefault(Node)
      * @param node the node to visit
-     * @return the node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    protected Node enterDefault(final Node node) {
-        return node;
+    protected boolean enterDefault(final Node node) {
+        return true;
     }
 
     /**
@@ -150,9 +137,9 @@ public abstract class NodeVisitor {
      * Callback for entering an AccessNode
      *
      * @param  accessNode the node
-     * @return processed node, null if traversal should end, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterAccessNode(final AccessNode accessNode) {
+    public boolean enterAccessNode(final AccessNode accessNode) {
         return enterDefault(accessNode);
     }
 
@@ -170,9 +157,9 @@ public abstract class NodeVisitor {
      * Callback for entering a Block
      *
      * @param  block     the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterBlock(final Block block) {
+    public boolean enterBlock(final Block block) {
         return enterDefault(block);
     }
 
@@ -192,7 +179,7 @@ public abstract class NodeVisitor {
      * @param  binaryNode  the node
      * @return processed   node
      */
-    public Node enterBinaryNode(final BinaryNode binaryNode) {
+    public boolean enterBinaryNode(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -210,9 +197,9 @@ public abstract class NodeVisitor {
      * Callback for entering a BreakNode
      *
      * @param  breakNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterBreakNode(final BreakNode breakNode) {
+    public boolean enterBreakNode(final BreakNode breakNode) {
         return enterDefault(breakNode);
     }
 
@@ -230,9 +217,9 @@ public abstract class NodeVisitor {
      * Callback for entering a CallNode
      *
      * @param  callNode  the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterCallNode(final CallNode callNode) {
+    public boolean enterCallNode(final CallNode callNode) {
         return enterDefault(callNode);
     }
 
@@ -250,9 +237,9 @@ public abstract class NodeVisitor {
      * Callback for entering a CaseNode
      *
      * @param  caseNode  the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterCaseNode(final CaseNode caseNode) {
+    public boolean enterCaseNode(final CaseNode caseNode) {
         return enterDefault(caseNode);
     }
 
@@ -270,9 +257,9 @@ public abstract class NodeVisitor {
      * Callback for entering a CatchNode
      *
      * @param  catchNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterCatchNode(final CatchNode catchNode) {
+    public boolean enterCatchNode(final CatchNode catchNode) {
         return enterDefault(catchNode);
     }
 
@@ -290,9 +277,9 @@ public abstract class NodeVisitor {
      * Callback for entering a ContinueNode
      *
      * @param  continueNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterContinueNode(final ContinueNode continueNode) {
+    public boolean enterContinueNode(final ContinueNode continueNode) {
         return enterDefault(continueNode);
     }
 
@@ -307,32 +294,12 @@ public abstract class NodeVisitor {
     }
 
     /**
-     * Callback for entering a DoWhileNode
-     *
-     * @param  doWhileNode the node
-     * @return processed   node
-     */
-    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
-        return enterDefault(doWhileNode);
-    }
-
-    /**
-     * Callback for leaving a DoWhileNode
-     *
-     * @param  doWhileNode the node
-     * @return processed node, which will replace the original one, or the original node
-     */
-    public Node leaveDoWhileNode(final DoWhileNode doWhileNode) {
-        return leaveDefault(doWhileNode);
-    }
-
-    /**
      * Callback for entering an EmptyNode
      *
      * @param  emptyNode   the node
-     * @return processed   node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterEmptyNode(final EmptyNode emptyNode) {
+    public boolean enterEmptyNode(final EmptyNode emptyNode) {
         return enterDefault(emptyNode);
     }
 
@@ -350,9 +317,9 @@ public abstract class NodeVisitor {
      * Callback for entering an ExecuteNode
      *
      * @param  executeNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterExecuteNode(final ExecuteNode executeNode) {
+    public boolean enterExecuteNode(final ExecuteNode executeNode) {
         return enterDefault(executeNode);
     }
 
@@ -370,9 +337,9 @@ public abstract class NodeVisitor {
      * Callback for entering a ForNode
      *
      * @param  forNode   the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterForNode(final ForNode forNode) {
+    public boolean enterForNode(final ForNode forNode) {
         return enterDefault(forNode);
     }
 
@@ -390,9 +357,9 @@ public abstract class NodeVisitor {
      * Callback for entering a FunctionNode
      *
      * @param  functionNode the node
-     * @return processed    node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterFunctionNode(final FunctionNode functionNode) {
+    public boolean enterFunctionNode(final FunctionNode functionNode) {
         return enterDefault(functionNode);
     }
 
@@ -410,9 +377,9 @@ public abstract class NodeVisitor {
      * Callback for entering an IdentNode
      *
      * @param  identNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterIdentNode(final IdentNode identNode) {
+    public boolean enterIdentNode(final IdentNode identNode) {
         return enterDefault(identNode);
     }
 
@@ -429,10 +396,10 @@ public abstract class NodeVisitor {
     /**
      * Callback for entering an IfNode
      *
-     * @param  ifNode    the node
-     * @return processed node, null if traversal should end
+     * @param  ifNode the node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterIfNode(final IfNode ifNode) {
+    public boolean enterIfNode(final IfNode ifNode) {
         return enterDefault(ifNode);
     }
 
@@ -450,9 +417,9 @@ public abstract class NodeVisitor {
      * Callback for entering an IndexNode
      *
      * @param  indexNode  the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterIndexNode(final IndexNode indexNode) {
+    public boolean enterIndexNode(final IndexNode indexNode) {
         return enterDefault(indexNode);
     }
 
@@ -470,9 +437,9 @@ public abstract class NodeVisitor {
      * Callback for entering a LabelNode
      *
      * @param  labelNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterLabelNode(final LabelNode labelNode) {
+    public boolean enterLabelNode(final LabelNode labelNode) {
         return enterDefault(labelNode);
     }
 
@@ -490,9 +457,9 @@ public abstract class NodeVisitor {
      * Callback for entering a LineNumberNode
      *
      * @param  lineNumberNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterLineNumberNode(final LineNumberNode lineNumberNode) {
+    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
         return enterDefault(lineNumberNode);
     }
 
@@ -510,9 +477,9 @@ public abstract class NodeVisitor {
      * Callback for entering a LiteralNode
      *
      * @param  literalNode the node
-     * @return processed   node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterLiteralNode(final LiteralNode<?> literalNode) {
+    public boolean enterLiteralNode(final LiteralNode<?> literalNode) {
         return enterDefault(literalNode);
     }
 
@@ -530,9 +497,9 @@ public abstract class NodeVisitor {
      * Callback for entering an ObjectNode
      *
      * @param  objectNode the node
-     * @return processed  node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterObjectNode(final ObjectNode objectNode) {
+    public boolean enterObjectNode(final ObjectNode objectNode) {
         return enterDefault(objectNode);
     }
 
@@ -550,9 +517,9 @@ public abstract class NodeVisitor {
      * Callback for entering a PropertyNode
      *
      * @param  propertyNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterPropertyNode(final PropertyNode propertyNode) {
+    public boolean enterPropertyNode(final PropertyNode propertyNode) {
         return enterDefault(propertyNode);
     }
 
@@ -570,9 +537,9 @@ public abstract class NodeVisitor {
      * Callback for entering a ReturnNode
      *
      * @param  returnNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterReturnNode(final ReturnNode returnNode) {
+    public boolean enterReturnNode(final ReturnNode returnNode) {
         return enterDefault(returnNode);
     }
 
@@ -590,9 +557,9 @@ public abstract class NodeVisitor {
      * Callback for entering a RuntimeNode
      *
      * @param  runtimeNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterRuntimeNode(final RuntimeNode runtimeNode) {
+    public boolean enterRuntimeNode(final RuntimeNode runtimeNode) {
         return enterDefault(runtimeNode);
     }
 
@@ -610,9 +577,9 @@ public abstract class NodeVisitor {
      * Callback for entering a SplitNode
      *
      * @param  splitNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterSplitNode(final SplitNode splitNode) {
+    public boolean enterSplitNode(final SplitNode splitNode) {
         return enterDefault(splitNode);
     }
 
@@ -630,9 +597,9 @@ public abstract class NodeVisitor {
      * Callback for entering a SwitchNode
      *
      * @param  switchNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterSwitchNode(final SwitchNode switchNode) {
+    public boolean enterSwitchNode(final SwitchNode switchNode) {
         return enterDefault(switchNode);
     }
 
@@ -650,9 +617,9 @@ public abstract class NodeVisitor {
      * Callback for entering a TernaryNode
      *
      * @param  ternaryNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterTernaryNode(final TernaryNode ternaryNode) {
+    public boolean enterTernaryNode(final TernaryNode ternaryNode) {
         return enterDefault(ternaryNode);
     }
 
@@ -670,9 +637,9 @@ public abstract class NodeVisitor {
      * Callback for entering a ThrowNode
      *
      * @param  throwNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterThrowNode(final ThrowNode throwNode) {
+    public boolean enterThrowNode(final ThrowNode throwNode) {
         return enterDefault(throwNode);
     }
 
@@ -690,9 +657,9 @@ public abstract class NodeVisitor {
      * Callback for entering a TryNode
      *
      * @param  tryNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterTryNode(final TryNode tryNode) {
+    public boolean enterTryNode(final TryNode tryNode) {
         return enterDefault(tryNode);
     }
 
@@ -710,9 +677,9 @@ public abstract class NodeVisitor {
      * Callback for entering a UnaryNode
      *
      * @param  unaryNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterUnaryNode(final UnaryNode unaryNode) {
+    public boolean enterUnaryNode(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -730,9 +697,9 @@ public abstract class NodeVisitor {
      * Callback for entering a VarNode
      *
      * @param  varNode   the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterVarNode(final VarNode varNode) {
+    public boolean enterVarNode(final VarNode varNode) {
         return enterDefault(varNode);
     }
 
@@ -750,9 +717,9 @@ public abstract class NodeVisitor {
      * Callback for entering a WhileNode
      *
      * @param  whileNode the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterWhileNode(final WhileNode whileNode) {
+    public boolean enterWhileNode(final WhileNode whileNode) {
         return enterDefault(whileNode);
     }
 
@@ -770,9 +737,9 @@ public abstract class NodeVisitor {
      * Callback for entering a WithNode
      *
      * @param  withNode  the node
-     * @return processed node, null if traversal should end
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterWithNode(final WithNode withNode) {
+    public boolean enterWithNode(final WithNode withNode) {
         return enterDefault(withNode);
     }
 
@@ -786,74 +753,5 @@ public abstract class NodeVisitor {
         return leaveDefault(withNode);
     }
 
-    /**
-     * Get the current function node for this NodeVisitor
-     * @see FunctionNode
-     * @return the function node being visited
-     */
-    public FunctionNode getCurrentFunctionNode() {
-        return currentFunctionNode;
-    }
-
-    /**
-     * Reset the current function node being visited for this NodeVisitor
-     * @see FunctionNode
-     * @param currentFunctionNode a new function node to traverse
-     */
-    public void setCurrentFunctionNode(final FunctionNode currentFunctionNode) {
-        this.currentFunctionNode = currentFunctionNode;
-    }
-
-    /**
-     * Get the current compile unit for this NodeVisitor
-     * @see CompileUnit
-     * @return a compile unit, or null if not a compiling NodeVisitor
-     */
-    public CompileUnit getCurrentCompileUnit() {
-        return compileUnit;
-    }
-
-    /**
-     * Set the current compile unit for this NodeVisitor
-     * @see CompileUnit
-     * @param compileUnit a new compile unit
-     */
-    public void setCurrentCompileUnit(final CompileUnit compileUnit) {
-        this.compileUnit = compileUnit;
-    }
-
-    /**
-     * Get the current method emitter for this NodeVisitor
-     * @see MethodEmitter
-     * @return the method emitter
-     */
-    public MethodEmitter getCurrentMethodEmitter() {
-        return method;
-    }
-
-    /**
-     * Reset the current method emitter for this NodeVisitor
-     * @see MethodEmitter
-     * @param method a new method emitter
-     */
-    public void setCurrentMethodEmitter(final MethodEmitter method) {
-        this.method = method;
-    }
-
-    /**
-     * Get the current Block being traversed for this NodeVisitor
-     * @return the current block
-     */
-    public Block getCurrentBlock() {
-        return currentBlock;
-    }
-
-    /**
-     * Reset the Block to be traversed for this NodeVisitor
-     * @param currentBlock the new current block
-     */
-    public void setCurrentBlock(final Block currentBlock) {
-        this.currentBlock = currentBlock;
-    }
 
 }

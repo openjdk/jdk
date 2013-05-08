@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,16 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
+import com.sun.source.util.DocSourcePositions;
+import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
@@ -76,8 +78,14 @@ import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.DCTree;
+import com.sun.tools.javac.tree.DCTree.DCBlockTag;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
+import com.sun.tools.javac.tree.DCTree.DCEndPosTree;
+import com.sun.tools.javac.tree.DCTree.DCErroneous;
+import com.sun.tools.javac.tree.DCTree.DCIdentifier;
+import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCReference;
+import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -94,6 +102,7 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Pair;
+import com.sun.tools.javac.util.Position;
 import static com.sun.tools.javac.code.TypeTag.*;
 
 /**
@@ -166,8 +175,8 @@ public class JavacTrees extends DocTrees {
             javacTaskImpl = (JavacTaskImpl) t;
     }
 
-    public SourcePositions getSourcePositions() {
-        return new SourcePositions() {
+    public DocSourcePositions getSourcePositions() {
+        return new DocSourcePositions() {
                 public long getStartPosition(CompilationUnitTree file, Tree tree) {
                     return TreeInfo.getStartPos((JCTree) tree);
                 }
@@ -176,7 +185,78 @@ public class JavacTrees extends DocTrees {
                     EndPosTable endPosTable = ((JCCompilationUnit) file).endPositions;
                     return TreeInfo.getEndPos((JCTree) tree, endPosTable);
                 }
+
+                public long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
+                    return ((DCTree) tree).getSourcePosition((DCDocComment) comment);
+                }
+                @SuppressWarnings("fallthrough")
+                public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
+                    DCDocComment dcComment = (DCDocComment) comment;
+                    if (tree instanceof DCEndPosTree) {
+                        int endPos = ((DCEndPosTree) tree).getEndPos(dcComment);
+
+                        if (endPos != Position.NOPOS) {
+                            return endPos;
+                        }
+                    }
+                    int correction = 0;
+                    switch (tree.getKind()) {
+                        case TEXT:
+                            DCText text = (DCText) tree;
+
+                            return dcComment.comment.getSourcePos(text.pos + text.text.length());
+                        case ERRONEOUS:
+                            DCErroneous err = (DCErroneous) tree;
+
+                            return dcComment.comment.getSourcePos(err.pos + err.body.length());
+                        case IDENTIFIER:
+                            DCIdentifier ident = (DCIdentifier) tree;
+
+                            return dcComment.comment.getSourcePos(ident.pos + (ident.name != names.error ? ident.name.length() : 0));
+                        case PARAM:
+                            DCParam param = (DCParam) tree;
+
+                            if (param.isTypeParameter && param.getDescription().isEmpty()) {
+                                correction = 1;
+                            }
+                        case AUTHOR: case DEPRECATED: case RETURN: case SEE:
+                        case SERIAL: case SERIAL_DATA: case SERIAL_FIELD: case SINCE:
+                        case THROWS: case UNKNOWN_BLOCK_TAG: case VERSION: {
+                            DocTree last = getLastChild(tree);
+
+                            if (last != null) {
+                                return getEndPosition(file, comment, last) + correction;
+                            }
+
+                            DCBlockTag block = (DCBlockTag) tree;
+
+                            return dcComment.comment.getSourcePos(block.pos + block.getTagName().length() + 1);
+                        }
+                        default:
+                            DocTree last = getLastChild(tree);
+
+                            if (last != null) {
+                                return getEndPosition(file, comment, last);
+                            }
+                            break;
+                    }
+
+                    return Position.NOPOS;
+                }
             };
+    }
+
+    private DocTree getLastChild(DocTree tree) {
+        final DocTree[] last = new DocTree[] {null};
+
+        tree.accept(new DocTreeScanner<Void, Void>() {
+            @Override public Void scan(DocTree node, Void p) {
+                if (node != null) last[0] = node;
+                return null;
+            }
+        }, null);
+
+        return last[0];
     }
 
     public JCClassDecl getTree(TypeElement element) {

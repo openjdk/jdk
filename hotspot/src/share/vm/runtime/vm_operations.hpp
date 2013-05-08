@@ -302,7 +302,7 @@ class VM_Verify: public VM_Operation {
  private:
   bool _silent;
  public:
-  VM_Verify(bool silent) : _silent(silent) {}
+  VM_Verify(bool silent = VerifySilently) : _silent(silent) {}
   VMOp_Type type() const { return VMOp_Verify; }
   void doit();
 };

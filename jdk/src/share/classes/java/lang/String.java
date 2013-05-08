@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -131,7 +132,7 @@ public final class String
      * string instance within the stream.
      */
     private static final ObjectStreamField[] serialPersistentFields =
-            new ObjectStreamField[0];
+        new ObjectStreamField[0];
 
     /**
      * Initializes a newly created {@code String} object so that it represents
@@ -970,7 +971,7 @@ public final class String
             return true;
         }
         if (anObject instanceof String) {
-            String anotherString = (String) anObject;
+            String anotherString = (String)anObject;
             int n = value.length;
             if (n == anotherString.value.length) {
                 char v1[] = value;
@@ -978,7 +979,7 @@ public final class String
                 int i = 0;
                 while (n-- != 0) {
                     if (v1[i] != v2[i])
-                            return false;
+                        return false;
                     i++;
                 }
                 return true;
@@ -1003,7 +1004,7 @@ public final class String
      * @since  1.4
      */
     public boolean contentEquals(StringBuffer sb) {
-        return contentEquals((CharSequence) sb);
+        return contentEquals((CharSequence)sb);
     }
 
     private boolean nonSyncContentEquals(AbstractStringBuilder sb) {
@@ -1248,7 +1249,8 @@ public final class String
      * argument.
      * <li>There is some nonnegative integer <i>k</i> less than {@code len}
      * such that:
-     * <code>this.charAt(toffset+<i>k</i>)&nbsp;!=&nbsp;other.charAt(ooffset+<i>k</i>)</code>
+     * {@code this.charAt(toffset + }<i>k</i>{@code ) != other.charAt(ooffset + }
+     * <i>k</i>{@code )}
      * </ul>
      *
      * @param   toffset   the starting offset of the subregion in this string.
@@ -1872,7 +1874,7 @@ public final class String
         int min = sourceOffset + targetCount - 1;
         int i = min + fromIndex;
 
-        startSearchForLastChar:
+    startSearchForLastChar:
         while (true) {
             while (i >= min && source[i] != strLastChar) {
                 i--;
@@ -1973,7 +1975,7 @@ public final class String
      * str.substring(begin,&nbsp;end)</pre></blockquote>
      *
      * This method is defined so that the {@code String} class can implement
-     * the {@link CharSequence} interface. </p>
+     * the {@link CharSequence} interface.
      *
      * @param   beginIndex   the begin index, inclusive.
      * @param   endIndex     the end index, exclusive.
@@ -2352,9 +2354,11 @@ public final class String
 
             // Construct result
             int resultSize = list.size();
-            if (limit == 0)
-                while (resultSize > 0 && list.get(resultSize - 1).length() == 0)
+            if (limit == 0) {
+                while (resultSize > 0 && list.get(resultSize - 1).length() == 0) {
                     resultSize--;
+                }
+            }
             String[] result = new String[resultSize];
             return list.subList(0, resultSize).toArray(result);
         }
@@ -2401,6 +2405,90 @@ public final class String
      */
     public String[] split(String regex) {
         return split(regex, 0);
+    }
+
+    /**
+     * Returns a new String composed of copies of the
+     * {@code CharSequence elements} joined together with a copy of
+     * the specified {@code delimiter}.
+     *
+     * <blockquote>For example,
+     * <pre>{@code
+     *     String message = String.join("-", "Java", "is", "cool");
+     *     // message returned is: "Java-is-cool"
+     * }</pre></blockquote>
+     *
+     * Note that if an element is null, then {@code "null"} is added.
+     *
+     * @param  delimiter the delimiter that separates each element
+     * @param  elements the elements to join together.
+     *
+     * @return a new {@code String} that is composed of the {@code elements}
+     *         separated by the {@code delimiter}
+     *
+     * @throws NullPointerException If {@code delimiter} or {@code elements}
+     *         is {@code null}
+     *
+     * @see java.util.StringJoiner
+     * @since 1.8
+     */
+    public static String join(CharSequence delimiter, CharSequence... elements) {
+        Objects.requireNonNull(delimiter);
+        Objects.requireNonNull(elements);
+        // Number of elements not likely worth Arrays.stream overhead.
+        StringJoiner joiner = new StringJoiner(delimiter);
+        for (CharSequence cs: elements) {
+            joiner.add(cs);
+        }
+        return joiner.toString();
+    }
+
+    /**
+     * Returns a new {@code String} composed of copies of the
+     * {@code CharSequence elements} joined together with a copy of the
+     * specified {@code delimiter}.
+     *
+     * <blockquote>For example,
+     * <pre>{@code
+     *     List<String> strings = new LinkedList<>();
+     *     strings.add("Java");strings.add("is");
+     *     strings.add("cool");
+     *     String message = String.join(" ", strings);
+     *     //message returned is: "Java is cool"
+     *
+     *     Set<String> strings = new HashSet<>();
+     *     Strings.add("Java"); strings.add("is");
+     *     strings.add("very"); strings.add("cool");
+     *     String message = String.join("-", strings);
+     *     //message returned is: "Java-is-very-cool"
+     * }</pre></blockquote>
+     *
+     * Note that if an individual element is {@code null}, then {@code "null"} is added.
+     *
+     * @param  delimiter a sequence of characters that is used to separate each
+     *         of the {@code elements} in the resulting {@code String}
+     * @param  elements an {@code Iterable} that will have its {@code elements}
+     *         joined together.
+     *
+     * @return a new {@code String} that is composed from the {@code elements}
+     *         argument
+     *
+     * @throws NullPointerException If {@code delimiter} or {@code elements}
+     *         is {@code null}
+     *
+     * @see    #join(CharSequence,CharSequence...)
+     * @see    java.util.StringJoiner
+     * @since 1.8
+     */
+    public static String join(CharSequence delimiter,
+            Iterable<? extends CharSequence> elements) {
+        Objects.requireNonNull(delimiter);
+        Objects.requireNonNull(elements);
+        StringJoiner joiner = new StringJoiner(delimiter);
+        for (CharSequence cs: elements) {
+            joiner.add(cs);
+        }
+        return joiner.toString();
     }
 
     /**
@@ -2650,9 +2738,9 @@ public final class String
             return this;
         }
 
+        /* result may grow, so i+resultOffset is the write location in result */
+        int resultOffset = 0;
         char[] result = new char[len]; /* may grow */
-        int resultOffset = 0;  /* result may grow, so i+resultOffset
-         * is the write location in result */
 
         /* Just copy the first few upperCase characters. */
         System.arraycopy(value, 0, result, 0, firstLower);
@@ -2757,7 +2845,7 @@ public final class String
      * object is created, representing the substring of this string that
      * begins with the character at index <i>k</i> and ends with the
      * character at index <i>m</i>-that is, the result of
-     * <code>this.substring(<i>k</i>,&nbsp;<i>m</i>+1)</code>.
+     * {@code this.substring(k, m + 1)}.
      * <p>
      * This method may be used to trim whitespace (as defined above) from
      * the beginning and end of a string.
@@ -3143,8 +3231,8 @@ public final class String
     *     programmer should be aware that producing distinct integer results
     *     for unequal objects may improve the performance of hash tables.
     * </ul>
-    * </p>
-     * The hash value will never be zero.
+    *
+    * The hash value will never be zero.
     *
     * @return  a hash code value for this object.
     * @see     java.lang.Object#equals(java.lang.Object)

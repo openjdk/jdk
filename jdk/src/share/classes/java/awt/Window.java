@@ -3914,7 +3914,7 @@ public class Window extends Container implements Accessible {
 
     // ************************** MIXING CODE *******************************
 
-    // A window has a parent, but it does NOT have a container
+    // A window has an owner, but it does NOT have a container
     @Override
     final Container getContainer() {
         return null;
