@@ -170,7 +170,7 @@ public final class NativeJavaPackage extends ScriptObject {
         Class<?> javaClass = null;
         try {
             javaClass = context.findClass(fullName);
-        } catch (final ClassNotFoundException e) {
+        } catch (final NoClassDefFoundError | ClassNotFoundException e) {
             //ignored
         }
 

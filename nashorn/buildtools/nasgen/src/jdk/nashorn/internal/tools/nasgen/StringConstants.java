@@ -55,7 +55,6 @@ public interface StringConstants {
     static final Type TYPE_SCRIPTFUNCTIONIMPL = Type.getType(ScriptFunctionImpl.class);
     static final Type TYPE_SCRIPTOBJECT       = Type.getType(ScriptObject.class);
 
-    static final String PROTOTYPE = "prototype";
     static final String PROTOTYPE_SUFFIX = "$Prototype";
     static final String CONSTRUCTOR_SUFFIX = "$Constructor";
     // This field name is known to Nashorn runtime (Context).
@@ -88,6 +87,8 @@ public interface StringConstants {
         Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING, TYPE_METHODHANDLE, TYPE_PROPERTYMAP, TYPE_METHODHANDLE_ARRAY);
     static final String SCRIPTFUNCTION_SETARITY = "setArity";
     static final String SCRIPTFUNCTION_SETARITY_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE);
+    static final String SCRIPTFUNCTION_SETPROTOTYPE = "setPrototype";
+    static final String SCRIPTFUNCTION_SETPROTOTYPE_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_OBJECT);
     static final String PROTOTYPEOBJECT_TYPE = TYPE_PROTOTYPEOBJECT.getInternalName();
     static final String PROTOTYPEOBJECT_SETCONSTRUCTOR = "setConstructor";
     static final String PROTOTYPEOBJECT_SETCONSTRUCTOR_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_OBJECT, TYPE_OBJECT);
