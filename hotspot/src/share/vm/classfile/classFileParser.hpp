@@ -304,7 +304,19 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
 
   inline void assert_property(bool b, const char* msg, TRAPS) {
 #ifdef ASSERT
-    if (!b) { fatal(msg); }
+    if (!b) {
+      ResourceMark rm(THREAD);
+      fatal(err_msg(msg, _class_name->as_C_string()));
+    }
+#endif
+  }
+
+  inline void assert_property(bool b, const char* msg, int index, TRAPS) {
+#ifdef ASSERT
+    if (!b) {
+      ResourceMark rm(THREAD);
+      fatal(err_msg(msg, index, _class_name->as_C_string()));
+    }
 #endif
   }
 
@@ -312,7 +324,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     if (_need_verify) {
       guarantee_property(property, msg, index, CHECK);
     } else {
-      assert_property(property, msg, CHECK);
+      assert_property(property, msg, index, CHECK);
     }
   }
 

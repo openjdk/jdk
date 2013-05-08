@@ -30,8 +30,10 @@ import java.io.ByteArrayOutputStream;
 
 import java.nio.charset.Charset;
 
+import java.lang.reflect.Field;
+
 abstract class AbstractTest<T> implements ExceptionListener {
-    private final BeanValidator validator = new BeanValidator();
+    final BeanValidator validator = new BeanValidator();
 
     public final void exceptionThrown(Exception exception) {
         throw new Error("unexpected exception", exception);
@@ -59,7 +61,7 @@ abstract class AbstractTest<T> implements ExceptionListener {
     }
 
     /**
-     * This method should be overriden
+     * This method should be overridden
      * if specified encoder should be initialized.
      *
      * @param encoder  the XML encoder to initialize
@@ -68,7 +70,7 @@ abstract class AbstractTest<T> implements ExceptionListener {
     }
 
     /**
-     * This method should be overriden
+     * This method should be overridden
      * if specified decoder should be initialized.
      *
      * @param decoder  the XML decoder to initialize
@@ -77,7 +79,7 @@ abstract class AbstractTest<T> implements ExceptionListener {
     }
 
     /**
-     * This method should be overriden
+     * This method should be overridden
      * for test-specific comparison.
      *
      * @param before  the object before encoding
@@ -134,6 +136,7 @@ abstract class AbstractTest<T> implements ExceptionListener {
     private byte[] writeObject(Object object) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         XMLEncoder encoder = new XMLEncoder(output);
+        encoder.setExceptionListener(this);
         initialize(encoder);
         encoder.writeObject(object);
         encoder.close();
@@ -143,9 +146,24 @@ abstract class AbstractTest<T> implements ExceptionListener {
     private Object readObject(byte[] array) {
         ByteArrayInputStream input = new ByteArrayInputStream(array);
         XMLDecoder decoder = new XMLDecoder(input);
+        decoder.setExceptionListener(this);
         initialize(decoder);
         Object object = decoder.readObject();
         decoder.close();
         return object;
+    }
+
+    static Field getField(String name) {
+        try {
+            int index = name.lastIndexOf('.');
+            String className = name.substring(0, index);
+            String fieldName = name.substring(1 + index);
+            Field field = Class.forName(className).getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field;
+        }
+        catch (Exception exception) {
+            throw new Error(exception);
+        }
     }
 }

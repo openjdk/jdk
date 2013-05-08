@@ -33,7 +33,9 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
 import jdk.nashorn.internal.ir.BinaryNode;
+import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.annotations.Ignore;
@@ -113,6 +115,10 @@ public final class ASTWriter {
             type += "#" + node.getSymbol();
         }
 
+        if (node instanceof Block && ((Block)node).needsScope()) {
+            type += " <scope>";
+        }
+
         final List<Field> children = new LinkedList<>();
 
         if (!isReference) {
@@ -120,10 +126,6 @@ public final class ASTWriter {
         }
 
         String status = "";
-
-        if (node.shouldDiscard()) {
-            status += " Discard";
-        }
 
         if (node.isTerminal()) {
             status += " Terminal";

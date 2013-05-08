@@ -57,6 +57,9 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 @SuppressWarnings("fallthrough")
 public class Lexer extends Scanner {
+    private static final long MIN_INT_L = Integer.MIN_VALUE;
+    private static final long MAX_INT_L = Integer.MAX_VALUE;
+
     private static final boolean XML_LITERALS = Options.getBooleanProperty("nashorn.lexer.xmlliterals");
 
     /** Content source. */
@@ -984,27 +987,27 @@ public class Lexer extends Scanner {
      */
     private static Number valueOf(final String valueString, final int radix) throws NumberFormatException {
         try {
-            return Integer.valueOf(valueString, radix);
-        } catch (final NumberFormatException e) {
-            try {
-                return Long.valueOf(valueString, radix);
-            } catch (final NumberFormatException e2) {
-                if (radix == 10) {
-                    return Double.valueOf(valueString);
-                }
-
-                double value = 0.0;
-
-                for (int i = 0; i < valueString.length(); i++) {
-                    final char ch = valueString.charAt(i);
-                    // Preverified, should always be a valid digit.
-                    final int digit = convertDigit(ch, radix);
-                    value *= radix;
-                    value += digit;
-                }
-
-                return value;
+            final long value = Long.parseLong(valueString, radix);
+            if(value >= MIN_INT_L && value <= MAX_INT_L) {
+                return Integer.valueOf((int)value);
             }
+            return Long.valueOf(value);
+        } catch (final NumberFormatException e) {
+            if (radix == 10) {
+                return Double.valueOf(valueString);
+            }
+
+            double value = 0.0;
+
+            for (int i = 0; i < valueString.length(); i++) {
+                final char ch = valueString.charAt(i);
+                // Preverified, should always be a valid digit.
+                final int digit = convertDigit(ch, radix);
+                value *= radix;
+                value += digit;
+            }
+
+            return value;
         }
     }
 
