@@ -1221,8 +1221,10 @@ bool os::dll_build_name(char *buffer, size_t buflen,
 
 // Needs to be in os specific directory because windows requires another
 // header file <direct.h>
-const char* os::get_current_directory(char *buf, int buflen) {
-  return _getcwd(buf, buflen);
+const char* os::get_current_directory(char *buf, size_t buflen) {
+  int n = static_cast<int>(buflen);
+  if (buflen > INT_MAX)  n = INT_MAX;
+  return _getcwd(buf, n);
 }
 
 //-----------------------------------------------------------
@@ -4096,6 +4098,10 @@ int os::open(const char *path, int oflag, int mode) {
   }
   os::native_path(strcpy(pathbuf, path));
   return ::open(pathbuf, oflag | O_BINARY | O_NOINHERIT, mode);
+}
+
+FILE* os::open(int fd, const char* mode) {
+  return ::_fdopen(fd, mode);
 }
 
 // Is a (classpath) directory empty?

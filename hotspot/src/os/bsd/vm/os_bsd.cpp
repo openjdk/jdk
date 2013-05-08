@@ -1230,10 +1230,6 @@ bool os::dll_build_name(char* buffer, size_t buflen,
   return retval;
 }
 
-const char* os::get_current_directory(char *buf, int buflen) {
-  return getcwd(buf, buflen);
-}
-
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
@@ -2080,9 +2076,10 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool fixed) {
     flags |= MAP_FIXED;
   }
 
-  // Map uncommitted pages PROT_READ and PROT_WRITE, change access
-  // to PROT_EXEC if executable when we commit the page.
-  addr = (char*)::mmap(requested_addr, bytes, PROT_READ|PROT_WRITE,
+  // Map reserved/uncommitted pages PROT_NONE so we fail early if we
+  // touch an uncommitted page. Otherwise, the read/write might
+  // succeed if we have enough swap space to back the physical page.
+  addr = (char*)::mmap(requested_addr, bytes, PROT_NONE,
                        flags, -1, 0);
 
   if (addr != MAP_FAILED) {

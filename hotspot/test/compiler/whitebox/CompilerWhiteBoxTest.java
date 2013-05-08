@@ -42,6 +42,11 @@ public abstract class CompilerWhiteBoxTest {
     protected static int COMP_LEVEL_NONE = 0;
     /** {@code CompLevel::CompLevel_any}, {@code CompLevel::CompLevel_all} */
     protected static int COMP_LEVEL_ANY = -1;
+    /** {@code CompLevel::CompLevel_simple} -- C1 */
+    protected static int COMP_LEVEL_SIMPLE = 1;
+    /** {@code CompLevel::CompLevel_full_optimization} -- C2 or Shark */
+    protected static int COMP_LEVEL_FULL_OPTIMIZATION = 4;
+
     /** Instance of WhiteBox */
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     /** Value of {@code -XX:CompileThreshold} */
@@ -89,6 +94,17 @@ public abstract class CompilerWhiteBoxTest {
     protected static String getVMOption(String name, String defaultValue) {
         String result = getVMOption(name);
         return result == null ? defaultValue : result;
+    }
+
+    /** copy of is_c1_compile(int) from utilities/globalDefinitions.hpp */
+    protected static boolean isC1Compile(int compLevel) {
+        return (compLevel > COMP_LEVEL_NONE)
+                && (compLevel < COMP_LEVEL_FULL_OPTIMIZATION);
+    }
+
+    /** copy of is_c2_compile(int) from utilities/globalDefinitions.hpp */
+    protected static boolean isC2Compile(int compLevel) {
+        return compLevel == COMP_LEVEL_FULL_OPTIMIZATION;
     }
 
     /** tested method */

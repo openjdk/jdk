@@ -259,7 +259,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
     }
     if (p == NULL) p = os::malloc(bytes, mtChunk, CURRENT_PC);
     if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
-      vm_exit_out_of_memory(bytes, "ChunkPool::allocate");
+      vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "ChunkPool::allocate");
     }
     return p;
   }
@@ -371,7 +371,7 @@ void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, 
    default: {
      void* p = os::malloc(bytes, mtChunk, CALLER_PC);
      if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
-       vm_exit_out_of_memory(bytes, "Chunk::new");
+       vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
      }
      return p;
    }
@@ -532,7 +532,7 @@ size_t Arena::used() const {
 }
 
 void Arena::signal_out_of_memory(size_t sz, const char* whence) const {
-  vm_exit_out_of_memory(sz, whence);
+  vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR, whence);
 }
 
 // Grow a new Chunk

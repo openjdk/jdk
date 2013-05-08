@@ -86,10 +86,10 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
 
     public KerberosClientKeyExchange(ProtocolVersion protocolVersion,
         ProtocolVersion clientVersion, SecureRandom rand,
-        HandshakeInStream input, SecretKey[] serverKeys) throws IOException {
+        HandshakeInStream input, AccessControlContext acc, Object serverKeys) throws IOException {
 
         if (impl != null) {
-            init(protocolVersion, clientVersion, rand, input, serverKeys);
+            init(protocolVersion, clientVersion, rand, input, acc, serverKeys);
         } else {
             throw new IllegalStateException("Kerberos is unavailable");
         }
@@ -126,10 +126,10 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
 
     public void init(ProtocolVersion protocolVersion,
         ProtocolVersion clientVersion, SecureRandom rand,
-        HandshakeInStream input, SecretKey[] serverKeys) throws IOException {
+        HandshakeInStream input, AccessControlContext acc, Object ServiceCreds) throws IOException {
 
         if (impl != null) {
-            impl.init(protocolVersion, clientVersion, rand, input, serverKeys);
+            impl.init(protocolVersion, clientVersion, rand, input, acc, ServiceCreds);
         }
     }
 

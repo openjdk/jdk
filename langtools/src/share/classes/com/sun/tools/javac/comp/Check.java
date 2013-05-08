@@ -1078,7 +1078,8 @@ public class Check {
                 mask = MethodFlags;
             }
             // Imply STRICTFP if owner has STRICTFP set.
-            if (((flags|implicit) & Flags.ABSTRACT) == 0)
+            if (((flags|implicit) & Flags.ABSTRACT) == 0 ||
+                ((flags) & Flags.DEFAULT) != 0)
                 implicit |= sym.owner.flags_field & STRICTFP;
             break;
         case TYP:

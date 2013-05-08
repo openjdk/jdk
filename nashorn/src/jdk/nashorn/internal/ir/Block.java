@@ -27,14 +27,15 @@ package jdk.nashorn.internal.ir;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
-import jdk.nashorn.internal.codegen.Frame;
+import java.util.Map;
 import jdk.nashorn.internal.codegen.Label;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -42,97 +43,79 @@ import jdk.nashorn.internal.runtime.Source;
  * IR representation for a list of statements and functions. All provides the
  * basis for script body.
  */
-public class Block extends Node {
+@Immutable
+public class Block extends BreakableNode implements Flags<Block> {
     /** List of statements */
-    protected List<Node> statements;
+    protected final List<Node> statements;
 
-    /** Symbol table. */
-    protected final HashMap<String, Symbol> symbols;
-
-    /** Variable frame. */
-    protected Frame frame;
+    /** Symbol table - keys must be returned in the order they were put in. */
+    protected final Map<String, Symbol> symbols;
 
     /** Entry label. */
     protected final Label entryLabel;
 
-    /** Break label. */
-    protected final Label breakLabel;
-
     /** Does the block/function need a new scope? */
-    protected boolean needsScope;
+    protected final int flags;
+
+    /** Flag indicating that this block needs scope */
+    public static final int NEEDS_SCOPE = 1 << 0;
+
+    /**
+     * Flag indicating whether this block needs
+     * self symbol assignment at the start. This is used only for
+     * blocks that are the bodies of function nodes who refer to themselves
+     * by name. It causes codegen to insert a var [fn_name] = __callee__
+     * at the start of the body
+     */
+    public static final int NEEDS_SELF_SYMBOL = 1 << 1;
+
+    /**
+     * Is this block tagged as terminal based on its contents
+     * (usually the last statement)
+     */
+    public static final int IS_TERMINAL = 1 << 2;
 
     /**
      * Constructor
      *
-     * @param source   source code
-     * @param token    token
-     * @param finish   finish
+     * @param source     source code
+     * @param token      token
+     * @param finish     finish
+     * @param statements statements
      */
-    public Block(final Source source, final long token, final int finish) {
-        super(source, token, finish);
+    public Block(final Source source, final long token, final int finish, final Node... statements) {
+        super(source, token, finish, new Label("block_break"));
 
-        this.statements = new ArrayList<>();
-        this.symbols    = new HashMap<>();
+        this.statements = Arrays.asList(statements);
+        this.symbols    = new LinkedHashMap<>();
         this.entryLabel = new Label("block_entry");
-        this.breakLabel = new Label("block_break");
+        this.flags     =  0;
     }
 
     /**
-     * Internal copy constructor
+     * Constructor
      *
-     * @param block the source block
-     * @param cs    the copy state
+     * @param source     source code
+     * @param token      token
+     * @param finish     finish
+     * @param statements statements
      */
-    protected Block(final Block block, final CopyState cs) {
+    public Block(final Source source, final long token, final int finish, final List<Node> statements) {
+        this(source, token, finish, statements.toArray(new Node[statements.size()]));
+    }
+
+    private Block(final Block block, final int finish, final List<Node> statements, final int flags) {
         super(block);
-
-        this.statements = new ArrayList<>();
-        for (final Node statement : block.getStatements()) {
-            statements.add(cs.existingOrCopy(statement));
-        }
-        this.symbols    = new HashMap<>();
-        this.frame      = block.frame == null ? null : block.frame.copy();
+        this.statements = statements;
+        this.flags      = flags;
+        this.symbols    = block.symbols; //todo - symbols have no dependencies on any IR node and can as far as we understand it be shallow copied now
         this.entryLabel = new Label(block.entryLabel);
-        this.breakLabel = new Label(block.breakLabel);
-
-        assert block.symbols.isEmpty() : "must not clone with symbols";
+        this.finish = finish;
     }
 
     @Override
-    protected Node copy(final CopyState cs) {
-        return new Block(this, cs);
-    }
-
-    /**
-     * Add a new statement to the statement list.
-     *
-     * @param statement Statement node to add.
-     */
-    public void addStatement(final Node statement) {
-        if (statement != null) {
-            statements.add(statement);
-            if (getFinish() < statement.getFinish()) {
-                setFinish(statement.getFinish());
-            }
-        }
-    }
-
-    /**
-     * Prepend statements to the statement list
-     *
-     * @param prepended statement to add
-     */
-    public void prependStatements(final List<Node> prepended) {
-        statements.addAll(0, prepended);
-    }
-
-    /**
-     * Add a list of statements to the statement list.
-     *
-     * @param statementList Statement nodes to add.
-     */
-    public void addStatements(final List<Node> statementList) {
-        statements.addAll(statementList);
+    public Node ensureUniqueLabels(final LexicalContext lc) {
+        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags));
     }
 
     /**
@@ -142,19 +125,9 @@ public class Block extends Node {
      * @return new or same node
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
-        final Block saveBlock = visitor.getCurrentBlock();
-        visitor.setCurrentBlock(this);
-
-        try {
-            // Ignore parent to avoid recursion.
-
-            if (visitor.enterBlock(this) != null) {
-                visitStatements(visitor);
-                return visitor.leaveBlock(this);
-            }
-        } finally {
-            visitor.setCurrentBlock(saveBlock);
+    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+        if (visitor.enterBlock(this)) {
+            return visitor.leaveBlock(setStatements(lc, Node.accept(visitor, Node.class, statements)));
         }
 
         return this;
@@ -222,11 +195,18 @@ public class Block extends Node {
     }
 
     /**
-     * Get the break label for this block
-     * @return the break label
+     * Tag block as terminal or non terminal
+     * @param lc          lexical context
+     * @param isTerminal is block terminal
+     * @return same block, or new if flag changed
      */
-    public Label getBreakLabel() {
-        return breakLabel;
+    public Block setIsTerminal(final LexicalContext lc, final boolean isTerminal) {
+        return isTerminal ? setFlag(lc, IS_TERMINAL) : clearFlag(lc, IS_TERMINAL);
+    }
+
+    @Override
+    public boolean isTerminal() {
+        return getFlag(IS_TERMINAL);
     }
 
     /**
@@ -235,23 +215,6 @@ public class Block extends Node {
      */
     public Label getEntryLabel() {
         return entryLabel;
-    }
-
-    /**
-     * Get the frame for this block
-     * @return the frame
-     */
-    public Frame getFrame() {
-        return frame;
-    }
-
-    /**
-     * Reset the frame for this block
-     *
-     * @param frame  the new frame
-     */
-    public void setFrame(final Frame frame) {
-        this.frame = frame;
     }
 
     /**
@@ -264,21 +227,21 @@ public class Block extends Node {
     }
 
     /**
-     * Applies the specified visitor to all statements in the block.
-     * @param visitor the visitor.
-     */
-    public void visitStatements(NodeVisitor visitor) {
-        for (ListIterator<Node> stmts = statements.listIterator(); stmts.hasNext();) {
-            stmts.set(stmts.next().accept(visitor));
-        }
-    }
-    /**
      * Reset the statement list for this block
      *
-     * @param statements  new statement list
+     * @param lc lexical context
+     * @param statements new statement list
+     * @return new block if statements changed, identity of statements == block.statements
      */
-    public void setStatements(final List<Node> statements) {
-        this.statements = statements;
+    public Block setStatements(final LexicalContext lc, final List<Node> statements) {
+        if (this.statements == statements) {
+            return this;
+        }
+        int lastFinish = 0;
+        if (!statements.isEmpty()) {
+            lastFinish = statements.get(statements.size() - 1).getFinish();
+        }
+        return Node.replaceInLexicalContext(lc, this, new Block(this, Math.max(finish, lastFinish), statements, flags));
     }
 
     /**
@@ -297,39 +260,65 @@ public class Block extends Node {
      * @return true if this function needs a scope
      */
     public boolean needsScope() {
-        return needsScope;
+        return (flags & NEEDS_SCOPE) == NEEDS_SCOPE;
+    }
+
+    @Override
+    public Block setFlags(final LexicalContext lc, int flags) {
+        if (this.flags == flags) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags));
+    }
+
+    @Override
+    public Block clearFlag(final LexicalContext lc, int flag) {
+        return setFlags(lc, flags & ~flag);
+    }
+
+    @Override
+    public Block setFlag(final LexicalContext lc, int flag) {
+        return setFlags(lc, flags | flag);
+    }
+
+    @Override
+    public boolean getFlag(final int flag) {
+        return (flags & flag) == flag;
     }
 
     /**
      * Set the needs scope flag.
+     * @param lc lexicalContext
+     * @return new block if state changed, otherwise this
      */
-    public void setNeedsScope() {
-        needsScope = true;
+    public Block setNeedsScope(final LexicalContext lc) {
+        if (needsScope()) {
+            return this;
+        }
+
+        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags | NEEDS_SCOPE));
     }
 
     /**
-     * Marks this block as using a specified scoped symbol. The block and its parent blocks up to but not
-     * including the block defining the symbol will be marked as needing parent scope. The block defining the symbol
-     * will be marked as one that needs to have its own scope.
-     * @param symbol the symbol being used.
-     * @param ancestors the iterator over block's containing lexical context
+     * Computationally determine the next slot for this block,
+     * indexed from 0. Use this as a relative base when computing
+     * frames
+     * @return next slot
      */
-    public void setUsesScopeSymbol(final Symbol symbol, Iterator<Block> ancestors) {
-        if(symbol.getBlock() == this) {
-            setNeedsScope();
-        } else {
-            setUsesParentScopeSymbol(symbol, ancestors);
+    public int nextSlot() {
+        final Iterator<Symbol> iter = symbolIterator();
+        int next = 0;
+        while (iter.hasNext()) {
+        final Symbol symbol = iter.next();
+        if (symbol.hasSlot()) {
+            next += symbol.slotCount();
         }
+        }
+        return next;
     }
 
-    /**
-     * Invoked when this block uses a scope symbol defined in one of its ancestors.
-     * @param symbol the scope symbol being used
-     * @param ancestors iterator over ancestor blocks
-     */
-    void setUsesParentScopeSymbol(final Symbol symbol, Iterator<Block> ancestors) {
-        if(ancestors.hasNext()) {
-            ancestors.next().setUsesScopeSymbol(symbol, ancestors);
-        }
+    @Override
+    protected boolean isBreakableWithoutLabel() {
+        return false;
     }
 }

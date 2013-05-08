@@ -229,7 +229,7 @@ public final class NativeJSON extends ScriptObject {
         final JSType type = JSType.of(value);
         if (type == JSType.OBJECT) {
             if (isArray(value)) {
-                return JA((NativeArray)value, state);
+                return JA((ScriptObject)value, state);
             } else if (value instanceof ScriptObject) {
                 return JO((ScriptObject)value, state);
             }
@@ -315,7 +315,7 @@ public final class NativeJSON extends ScriptObject {
     }
 
     // Spec: The abstract operation JA(value) serializes an array.
-    private static Object JA(final NativeArray value, final StringifyState state) {
+    private static Object JA(final ScriptObject value, final StringifyState state) {
         if (state.stack.containsKey(value)) {
             throw typeError("JSON.stringify.cyclic");
         }

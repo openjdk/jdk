@@ -3447,7 +3447,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   assert (Universe::is_fully_initialized(), "not initialized");
   if (VerifyDuringStartup) {
-    VM_Verify verify_op(false /* silent */);   // make sure we're starting with a clean slate
+    // Make sure we're starting with a clean slate.
+    VM_Verify verify_op;
     VMThread::execute(&verify_op);
   }
 

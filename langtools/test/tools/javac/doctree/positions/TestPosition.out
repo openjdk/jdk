@@ -1,0 +1,99 @@
+valid:
+DOC_COMMENT:First sentence.
+     *
+     * <p>Description with {@link java.io.InputStream link}
+     *
+     * @param first description
+     * @param second description
+     * @return whatever
+     * @throws IllegalStateException why?
+     * @since 1.15
+     * @see java.util.List
+TEXT:First sentence.
+START_ELEMENT:<p>
+TEXT:Description with!trailing-whitespace!
+LINK:{@link java.io.InputStream link}
+REFERENCE:java.io.InputStream
+TEXT:link
+PARAM:@param first description
+IDENTIFIER:first
+TEXT:description
+PARAM:@param second description
+IDENTIFIER:second
+TEXT:description
+RETURN:@return whatever
+TEXT:whatever
+THROWS:@throws IllegalStateException why?
+REFERENCE:IllegalStateException
+TEXT:why?
+SINCE:@since 1.15
+TEXT:1.15
+SEE:@see java.util.List
+REFERENCE:java.util.List
+erroneous:
+DOC_COMMENT:First sentence.
+     *
+     * <p>Description with {@link}, {@link java.util.List}, {@link
+     *
+     * @param
+     * @param second
+     * @return
+     * @throws
+     * @throws IllegalStateException
+     * @since
+     * @see
+TEXT:First sentence.
+START_ELEMENT:<p>
+TEXT:Description with!trailing-whitespace!
+LINK:{@link}
+TEXT:,!trailing-whitespace!
+LINK:{@link java.util.List}
+REFERENCE:java.util.List
+TEXT:,!trailing-whitespace!
+ERRONEOUS:{@link
+ERRONEOUS:@param
+PARAM:@param second
+IDENTIFIER:second
+RETURN:@return
+ERRONEOUS:@throws
+THROWS:@throws IllegalStateException
+REFERENCE:IllegalStateException
+SINCE:@since
+ERRONEOUS:@see
+withWhiteSpaces:
+DOC_COMMENT:First sentence.
+     *
+     * <p>Description with {@link    }, {@link java.util.List#add(   int   )},
+     * {@link java.util.List#add(   int   ) some   text   with   whitespaces}, {@link
+     *
+     * @param     first
+     * @param     second   some   text   with trailing whitespace
+     * @return      some   return
+     * @throws      java.lang.IllegalStateException
+     * @throws   java.lang.IllegalStateException some     text
+TEXT:First sentence.
+START_ELEMENT:<p>
+TEXT:Description with!trailing-whitespace!
+LINK:{@link    }
+TEXT:,!trailing-whitespace!
+LINK:{@link java.util.List#add(   int   )}
+REFERENCE:java.util.List#add(   int   )
+TEXT:,
+     *!trailing-whitespace!
+LINK:{@link java.util.List#add(   int   ) some   text   with   whitespaces}
+REFERENCE:java.util.List#add(   int   )
+TEXT:some   text   with   whitespaces
+TEXT:,!trailing-whitespace!
+ERRONEOUS:{@link
+PARAM:@param     first
+IDENTIFIER:first
+PARAM:@param     second   some   text   with trailing whitespace
+IDENTIFIER:second
+TEXT:some   text   with trailing whitespace
+RETURN:@return      some   return
+TEXT:some   return
+THROWS:@throws      java.lang.IllegalStateException
+REFERENCE:java.lang.IllegalStateException
+THROWS:@throws   java.lang.IllegalStateException some     text
+REFERENCE:java.lang.IllegalStateException
+TEXT:some     text

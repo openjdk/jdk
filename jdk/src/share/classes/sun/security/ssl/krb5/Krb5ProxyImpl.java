@@ -28,9 +28,11 @@ package sun.security.ssl.krb5;
 import java.security.AccessControlContext;
 import java.security.Permission;
 import java.security.Principal;
+import java.util.Set;
 import javax.crypto.SecretKey;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosKey;
+import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.kerberos.ServicePermission;
 import javax.security.auth.login.LoginException;
 
@@ -61,17 +63,16 @@ public class Krb5ProxyImpl implements Krb5Proxy {
     }
 
     @Override
-    public SecretKey[] getServerKeys(AccessControlContext acc)
+    public Object getServiceCreds(AccessControlContext acc)
             throws LoginException {
         ServiceCreds serviceCreds =
             Krb5Util.getServiceCreds(GSSCaller.CALLER_SSL_SERVER, null, acc);
-        return serviceCreds != null ? serviceCreds.getKKeys() :
-                                        new KerberosKey[0];
+        return serviceCreds;
     }
 
     @Override
-    public String getServerPrincipalName(SecretKey kerberosKey) {
-        return ((KerberosKey)kerberosKey).getPrincipal().getName();
+    public String getServerPrincipalName(Object serviceCreds) {
+        return ((ServiceCreds)serviceCreds).getName();
     }
 
     @Override
@@ -99,5 +100,22 @@ public class Krb5ProxyImpl implements Krb5Proxy {
     public Permission getServicePermission(String principalName,
             String action) {
         return new ServicePermission(principalName, action);
+    }
+
+    @Override
+    public boolean isRelated(Subject subject, Principal princ) {
+        if (princ == null) return false;
+        Set<Principal> principals =
+                subject.getPrincipals(Principal.class);
+        if (principals.contains(princ)) {
+            // bound to this principal
+            return true;
+        }
+        for (KeyTab pc: subject.getPrivateCredentials(KeyTab.class)) {
+            if (!pc.isBound()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

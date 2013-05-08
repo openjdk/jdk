@@ -153,7 +153,8 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
     size_t s = initial_size * sizeof(JvmtiTagHashmapEntry*);
     _table = (JvmtiTagHashmapEntry**)os::malloc(s, mtInternal);
     if (_table == NULL) {
-      vm_exit_out_of_memory(s, "unable to allocate initial hashtable for jvmti object tags");
+      vm_exit_out_of_memory(s, OOM_MALLOC_ERROR,
+        "unable to allocate initial hashtable for jvmti object tags");
     }
     for (int i=0; i<initial_size; i++) {
       _table[i] = NULL;
