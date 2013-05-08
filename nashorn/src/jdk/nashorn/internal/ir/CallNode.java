@@ -170,7 +170,7 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
     }
 
     @Override
-    public CallNode setType(final Type type) {
+    public CallNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
         if (this.type == type) {
             return this;
         }
@@ -200,7 +200,7 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
                     setFunction(function.accept(visitor)).
                     setArgs(Node.accept(visitor, Node.class, args)).
                     setFlags(flags).
-                    setType(type).
+                    setType(null, lc, type).
                     setEvalArgs(evalArgs == null ?
                             null :
                             evalArgs.setCode(evalArgs.getCode().accept(visitor)).

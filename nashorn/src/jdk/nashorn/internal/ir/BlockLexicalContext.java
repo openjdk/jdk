@@ -64,7 +64,6 @@ public class BlockLexicalContext extends LexicalContext {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends LexicalContextNode> T pop(final T node) {
         T expected = node;
         if (node instanceof Block) {
