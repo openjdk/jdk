@@ -170,8 +170,7 @@ public class JSONParser extends AbstractParser {
                 }
             case '"':
             case '\\':
-                error(AbstractParser.message("unexpected.token", str));
-                break;
+                throw error(AbstractParser.message("unexpected.token", str));
             }
         }
 
@@ -222,14 +221,12 @@ public class JSONParser extends AbstractParser {
                 return new UnaryNode(source, literalToken, LiteralNode.newInstance(source, realToken, finish, (Number)value));
             }
 
-            error(AbstractParser.message("expected", "number", type.getNameOrType()));
-            break;
+            throw error(AbstractParser.message("expected", "number", type.getNameOrType()));
         default:
             break;
         }
 
-        error(AbstractParser.message("expected", "json literal", type.getNameOrType()));
-        return null;
+        throw error(AbstractParser.message("expected", "json literal", type.getNameOrType()));
     }
 
     /**
@@ -265,7 +262,7 @@ loop:
                 elements.add(jsonLiteral());
                 // Comma between array elements is mandatory in JSON.
                 if (type != COMMARIGHT && type != RBRACKET) {
-                    error(AbstractParser.message("expected", ", or ]", type.getNameOrType()));
+                   throw error(AbstractParser.message("expected", ", or ]", type.getNameOrType()));
                 }
                 break;
             }
@@ -306,7 +303,7 @@ loop:
 
                 // Comma between property assigments is mandatory in JSON.
                 if (type != RBRACE && type != COMMARIGHT) {
-                    error(AbstractParser.message("expected", ", or }", type.getNameOrType()));
+                    throw error(AbstractParser.message("expected", ", or }", type.getNameOrType()));
                 }
                 break;
             }
@@ -334,13 +331,11 @@ loop:
         if (name != null) {
             expect(COLON);
             final Node value = jsonLiteral();
-            return new PropertyNode(source, propertyToken, value.getFinish(), name, value);
+            return new PropertyNode(source, propertyToken, value.getFinish(), name, value, null, null);
         }
 
         // Raise an error.
-        error(AbstractParser.message("expected", "string", type.getNameOrType()));
-
-        return null;
+        throw error(AbstractParser.message("expected", "string", type.getNameOrType()));
     }
 
 }

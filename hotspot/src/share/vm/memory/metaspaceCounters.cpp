@@ -29,6 +29,16 @@
 
 MetaspaceCounters* MetaspaceCounters::_metaspace_counters = NULL;
 
+size_t MetaspaceCounters::calc_total_capacity() {
+  // The total capacity is the sum of
+  //   1) capacity of Metachunks in use by all Metaspaces
+  //   2) unused space at the end of each Metachunk
+  //   3) space in the freelist
+  size_t total_capacity = MetaspaceAux::allocated_capacity_bytes()
+    + MetaspaceAux::free_bytes() + MetaspaceAux::free_chunks_total_in_bytes();
+  return total_capacity;
+}
+
 MetaspaceCounters::MetaspaceCounters() :
     _capacity(NULL),
     _used(NULL),
@@ -36,8 +46,8 @@ MetaspaceCounters::MetaspaceCounters() :
   if (UsePerfData) {
     size_t min_capacity = MetaspaceAux::min_chunk_size();
     size_t max_capacity = MetaspaceAux::reserved_in_bytes();
-    size_t curr_capacity = MetaspaceAux::capacity_in_bytes();
-    size_t used = MetaspaceAux::used_in_bytes();
+    size_t curr_capacity = calc_total_capacity();
+    size_t used = MetaspaceAux::allocated_used_bytes();
 
     initialize(min_capacity, max_capacity, curr_capacity, used);
   }
@@ -82,15 +92,13 @@ void MetaspaceCounters::initialize(size_t min_capacity,
 
 void MetaspaceCounters::update_capacity() {
   assert(UsePerfData, "Should not be called unless being used");
-  assert(_capacity != NULL, "Should be initialized");
-  size_t capacity_in_bytes = MetaspaceAux::capacity_in_bytes();
-  _capacity->set_value(capacity_in_bytes);
+  size_t total_capacity = calc_total_capacity();
+  _capacity->set_value(total_capacity);
 }
 
 void MetaspaceCounters::update_used() {
   assert(UsePerfData, "Should not be called unless being used");
-  assert(_used != NULL, "Should be initialized");
-  size_t used_in_bytes = MetaspaceAux::used_in_bytes();
+  size_t used_in_bytes = MetaspaceAux::allocated_used_bytes();
   _used->set_value(used_in_bytes);
 }
 
